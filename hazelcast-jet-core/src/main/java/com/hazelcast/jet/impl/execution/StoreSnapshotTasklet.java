@@ -136,7 +136,8 @@ public class StoreSnapshotTasklet implements Tasklet {
                     snapshotContext.reportError(error);
                 }
                 progTracker.madeProgress();
-                snapshotContext.snapshotDoneForTasklet();
+                snapshotContext.snapshotDoneForTasklet(ssWriter.getTotalPayloadBytes(), ssWriter.getTotalKeys(),
+                        ssWriter.getTotalChunks());
                 pendingSnapshotId++;
                 resetCurrentMap();
                 hasReachedBarrier = false;

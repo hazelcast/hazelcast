@@ -27,9 +27,11 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 public class OutboxImpl implements Outbox {
@@ -38,6 +40,7 @@ public class OutboxImpl implements Outbox {
     private final ProgressTracker progTracker;
     private final SerializationService serializationService;
     private final int batchSize;
+    private final AtomicLongArray counters;
 
     private final int[] singleEdge = {0};
     private final int[] allEdges;
@@ -61,11 +64,12 @@ public class OutboxImpl implements Outbox {
      *                  {@link #reset()} is called.
      */
     public OutboxImpl(OutboundCollector[] outstreams, boolean hasSnapshot, ProgressTracker progTracker,
-                      SerializationService serializationService, int batchSize) {
+                      SerializationService serializationService, int batchSize, AtomicLongArray counters) {
         this.outstreams = outstreams;
         this.progTracker = progTracker;
         this.serializationService = serializationService;
         this.batchSize = batchSize;
+        this.counters = counters;
         checkPositive(batchSize, "batchSize must be positive");
 
         allEdges = IntStream.range(0, outstreams.length - (hasSnapshot ? 1 : 0)).toArray();
@@ -126,6 +130,8 @@ public class OutboxImpl implements Outbox {
                 }
                 if (result.isDone()) {
                     broadcastTracker.set(i);
+                    // we are the only updating thread, no need for CAS operations
+                    lazyIncrement(counters, i);
                 } else {
                     done = false;
                 }

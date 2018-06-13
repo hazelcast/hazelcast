@@ -17,7 +17,9 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.List;
@@ -34,6 +36,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class UtilTest {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void when_addClamped_then_doesntOverflow() {
@@ -74,13 +79,14 @@ public class UtilTest {
         final Object obj = new Object();
         Supplier<Object> supplier = new Supplier<Object>() {
             boolean supplied;
+
             @Override
             public Object get() {
-               if (supplied) {
-                   throw new IllegalStateException("Supplier was already called once.");
-               }
-               supplied = true;
-               return obj;
+                if (supplied) {
+                    throw new IllegalStateException("Supplier was already called once.");
+                }
+                supplied = true;
+                return obj;
             }
         };
 
@@ -91,8 +97,8 @@ public class UtilTest {
 
     @Test(expected = NullPointerException.class)
     public void when_memoizeConcurrentWithNullSupplier_then_exception() {
-       Supplier<Object> supplier = () -> null;
-       memoizeConcurrent(supplier).get();
+        Supplier<Object> supplier = () -> null;
+        memoizeConcurrent(supplier).get();
     }
 
     @Test
@@ -104,6 +110,17 @@ public class UtilTest {
         assertEquals("ffff-ffff-ffff-ffff", Util.idToString(-1));
         assertEquals("1122-10f4-7de9-8115", Util.idToString(1234567890123456789L));
         assertEquals("eedd-ef0b-8216-7eeb", Util.idToString(-1234567890123456789L));
+    }
+
+    @Test
+    public void test_idFromString() {
+        assertEquals(0, Util.idFromString("0000-0000-0000-0000"));
+        assertEquals(1, Util.idFromString("0000-0000-0000-0001"));
+        assertEquals(Long.MAX_VALUE, Util.idFromString("7fff-ffff-ffff-ffff"));
+        assertEquals(Long.MIN_VALUE, Util.idFromString("8000-0000-0000-0000"));
+        assertEquals(-1, Util.idFromString("ffff-ffff-ffff-ffff"));
+        assertEquals(1234567890123456789L, Util.idFromString("1122-10f4-7de9-8115"));
+        assertEquals(-1234567890123456789L, Util.idFromString("eedd-ef0b-8216-7eeb"));
     }
 
     @Test

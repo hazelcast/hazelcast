@@ -20,6 +20,7 @@ import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.spring.AbstractHazelcastBeanDefinitionParser;
 import com.hazelcast.spring.HazelcastConfigBeanDefinitionParser;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -90,6 +91,8 @@ public class JetInstanceBeanDefinitionParser extends AbstractHazelcastBeanDefini
                     createAndFillBeanBuilder(node, EdgeConfig.class, "defaultEdgeConfig", configBuilder);
                 } else if ("properties".equals(nodeName)) {
                     handleProperties(node, configBuilder);
+                } else if ("metrics-config".equals(nodeName)) {
+                    createAndFillBeanBuilder(node, MetricsConfig.class, "metricsConfig", configBuilder);
                 } else {
                     throw new IllegalArgumentException("Unknown configuration for JetConfig nodeName: " + nodeName);
                 }

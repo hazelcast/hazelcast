@@ -91,7 +91,7 @@ public interface Pipeline {
     }
 
     /**
-     * Returns a DOT format (graphviz) representation of the DAG
+     * Returns a DOT format (graphviz) representation of the Pipeline.
      */
     @Nonnull
     String toDotString();

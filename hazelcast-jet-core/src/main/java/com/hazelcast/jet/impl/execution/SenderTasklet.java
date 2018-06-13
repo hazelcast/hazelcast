@@ -30,6 +30,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.jet.impl.Networking.createStreamPacketHeader;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
@@ -38,6 +39,7 @@ import static com.hazelcast.jet.impl.execution.ReceiverTasklet.estimatedMemoryFo
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.Util.getMemberConnection;
+import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 public class SenderTasklet implements Tasklet {
@@ -49,6 +51,8 @@ public class SenderTasklet implements Tasklet {
     private final BufferObjectDataOutput outputBuffer;
     private final int bufPosPastHeader;
     private final int packetSizeLimit;
+    private final AtomicLong itemsOutCounter = new AtomicLong();
+    private final AtomicLong bytesOutCounter = new AtomicLong();
 
     private boolean instreamExhausted;
     // read and written by Jet thread
@@ -110,15 +114,18 @@ public class SenderTasklet implements Tasklet {
                          && isWithinLimit(sentSeq, sendSeqLimitCompressed)
                          && (item = inbox.poll()) != null;
                  writtenCount++
-                    ) {
-                ObjectWithPartitionId itemWithpId = item instanceof ObjectWithPartitionId ?
+            ) {
+                ObjectWithPartitionId itemWithPId = item instanceof ObjectWithPartitionId ?
                         (ObjectWithPartitionId) item : new ObjectWithPartitionId(item, - 1);
                 final int mark = outputBuffer.position();
-                outputBuffer.writeObject(itemWithpId.getItem());
+                outputBuffer.writeObject(itemWithPId.getItem());
                 sentSeq += estimatedMemoryFootprint(outputBuffer.position() - mark);
-                outputBuffer.writeInt(itemWithpId.getPartitionId());
+                outputBuffer.writeInt(itemWithPId.getPartitionId());
+
             }
             outputBuffer.writeInt(bufPosPastHeader, writtenCount);
+            lazyAdd(bytesOutCounter, outputBuffer.position());
+            lazyAdd(itemsOutCounter, writtenCount);
             return writtenCount > 0;
         } catch (IOException e) {
             throw rethrow(e);
@@ -150,5 +157,13 @@ public class SenderTasklet implements Tasklet {
     // handle wrap-around that is allowed to happen on sendSeqLimitCompressed.
     static boolean isWithinLimit(long sentSeq, int sendSeqLimitCompressed) {
         return compressSeq(sentSeq) - sendSeqLimitCompressed <= 0;
+    }
+
+    public AtomicLong getItemsOutCounter() {
+        return itemsOutCounter;
+    }
+
+    public AtomicLong getBytesOutCounter() {
+        return bytesOutCounter;
     }
 }

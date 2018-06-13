@@ -58,13 +58,6 @@ public class CircularListCursor<E> {
     }
 
     /**
-     * Positions the cursor at the first list element.
-     */
-    public void reset() {
-        index = 0;
-    }
-
-    /**
      * Removes the current item from the underlying collection and points the cursor
      * to the previous item, wrapping around to the last item if necessary.
      */
@@ -78,5 +71,9 @@ public class CircularListCursor<E> {
     @Override
     public String toString() {
         return "CircularListCursor{index=" + index + '}';
+    }
+
+    public List<E> getList() {
+        return list;
     }
 }

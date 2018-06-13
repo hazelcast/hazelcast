@@ -108,6 +108,19 @@ public class SnapshotRepository {
     }
 
     /**
+     * Updates status of the given snapshot. Returns the elapsed time for the snapshot.
+     */
+    long setSnapshotComplete(long jobId, long snapshotId, SnapshotStatus status,
+                               long numBytes, long numKeys, long numChunks) {
+        IMapJet<Long, SnapshotRecord> snapshots = getSnapshotMap(jobId);
+        SnapshotRecord record = compute(snapshots, snapshotId, (k, r) -> {
+            r.snapshotComplete(status, numBytes, numKeys, numChunks);
+            return r;
+        });
+        return System.currentTimeMillis() - record.startTime();
+    }
+
+    /**
      * Return the newest complete snapshot ID for the specified job or null if no such snapshot is found.
      */
     @Nullable

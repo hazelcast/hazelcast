@@ -473,7 +473,7 @@ public class TopologyChangeTest extends JetTestSupport {
             memberInfos.add(new MemberInfo(getNode(instances[i].getHazelcastInstance()).getLocalMember()));
         }
 
-        JobRecord jobRecord = new JobRecord(jobId, 0, null, new JobConfig(), 2);
+        JobRecord jobRecord = new JobRecord(jobId, 0, null, "", new JobConfig(), 2);
         instances[0].getMap(JOB_RECORDS_MAP_NAME).put(jobId, jobRecord);
 
         InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, memberInfos, null);

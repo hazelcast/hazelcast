@@ -26,9 +26,12 @@
         <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->
        <backup-count>1</backup-count>
     </instance>
+
+    <!-- custom properties which can be read in the user code -->
     <properties>
        <property name="custom.property">custom property</property>
     </properties>
+
     <edge-defaults>
         <!-- capacity of the concurrent SPSC queue between each two processors -->
        <queue-size>1024</queue-size>
@@ -39,5 +42,17 @@
         <!-- receive window size multiplier, only applies to distributed edges -->
        <receive-window-multiplier>3</receive-window-multiplier>
     </edge-defaults>
-    <!-- custom properties which can be read within a ProcessorSupplier -->
+
+    <metrics>
+        <!-- if metrics collection is enabled -->
+        <enabled>true</enabled>
+
+        <!-- the number of seconds the metrics will be retained on the instance -->
+        <retention-seconds>120</retention-seconds>
+
+        <!-- whether metrics should be collected for data structures. Metrics
+            collection can have some overhead if there is a large number of data
+            structures -->
+        <enabled-for-data-structures>false</enabled-for-data-structures>
+    </metrics>
 </hazelcast-jet>

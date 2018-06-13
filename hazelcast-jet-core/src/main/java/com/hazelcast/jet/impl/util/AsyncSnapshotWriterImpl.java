@@ -421,4 +421,19 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
             return size;
         }
     }
+
+    @Override
+    public long getTotalPayloadBytes() {
+        return totalPayloadBytes;
+    }
+
+    @Override
+    public long getTotalKeys() {
+        return totalKeys;
+    }
+
+    @Override
+    public long getTotalChunks() {
+        return totalChunks;
+    }
 }

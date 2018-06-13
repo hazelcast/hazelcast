@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -44,6 +45,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.StringJoiner;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
@@ -54,6 +56,8 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.lazyAdd;
+import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.util.Preconditions.checkTrue;
@@ -94,6 +98,13 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     private final FlatMapper<Watermark, OUT> closedWindowFlatmapper;
     private ProcessingGuarantee processingGuarantee;
 
+    @Probe
+    private AtomicLong lateEventsDropped = new AtomicLong();
+    @Probe
+    private AtomicLong totalKeys = new AtomicLong();
+    @Probe
+    private AtomicLong totalWindows = new AtomicLong();
+
     private Traverser snapshotTraverser;
     private long minRestoredCurrentWatermark = Long.MAX_VALUE;
 
@@ -127,10 +138,15 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         final long timestamp = timestampFns.get(ordinal).applyAsLong(item);
         if (timestamp < currentWatermark) {
             logLateEvent(getLogger(), currentWatermark, item);
+            lazyIncrement(lateEventsDropped);
             return true;
         }
         K key = keyFns.get(ordinal).apply(item);
-        addItem(ordinal, keyToWindows.computeIfAbsent(key, k -> new Windows<>()),
+        addItem(ordinal,
+                keyToWindows.computeIfAbsent(key, k -> {
+                    lazyIncrement(totalKeys);
+                    return new Windows<>();
+                }),
                 key, timestamp, item);
         return true;
     }
@@ -138,6 +154,9 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
         currentWatermark = wm.timestamp();
+        assert totalWindows.get() == deadlineToKeys.values().stream().mapToInt(Set::size).sum()
+                : "unexpected totalWindows. Expected=" + deadlineToKeys.values().stream().mapToInt(Set::size).sum()
+                + ", actual=" + totalWindows.get();
         return closedWindowFlatmapper.tryProcess(wm);
     }
 
@@ -148,6 +167,8 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     private Traverser<OUT> traverseClosedWindows(Watermark wm) {
         SortedMap<Long, Set<K>> windowsToClose = deadlineToKeys.headMap(wm.timestamp());
+        lazyAdd(totalWindows, -windowsToClose.values().stream().mapToInt(Set::size).sum());
+
         List<K> distinctKeys = windowsToClose
                 .values().stream()
                 .flatMap(Set::stream)
@@ -163,12 +184,15 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     }
 
     private void addToDeadlines(K key, long deadline) {
-        deadlineToKeys.computeIfAbsent(deadline, x -> new HashSet<>()).add(key);
+        if (deadlineToKeys.computeIfAbsent(deadline, x -> new HashSet<>()).add(key)) {
+            lazyIncrement(totalWindows);
+        }
     }
 
     private void removeFromDeadlines(K key, long deadline) {
         Set<K> ks = deadlineToKeys.get(deadline);
         ks.remove(key);
+        lazyAdd(totalWindows, -1);
         if (ks.isEmpty()) {
             deadlineToKeys.remove(deadline);
         }
@@ -202,7 +226,9 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
             return;
         }
 
-        keyToWindows.put((K) key, (Windows) value);
+        if (keyToWindows.put((K) key, (Windows) value) != null) {
+            throw new JetException("Duplicate key in snapshot: " + key);
+        }
     }
 
     @Override
@@ -215,6 +241,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
             }
         }
         currentWatermark = minRestoredCurrentWatermark;
+        totalKeys.set(keyToWindows.size());
         logFine(getLogger(), "Restored currentWatermark from snapshot to: %s", currentWatermark);
         return true;
     }
@@ -233,6 +260,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
             w.removeHead(i);
         } else {
             keyToWindows.remove(key);
+            totalKeys.set(keyToWindows.size());
         }
         return results;
     }

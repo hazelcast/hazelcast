@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -83,7 +84,7 @@ public final class TestOutbox implements Outbox {
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         outbox = new OutboxImpl(outstreams, snapshotCapacity > 0, new ProgressTracker(), serializationService,
-                Integer.MAX_VALUE);
+                Integer.MAX_VALUE, new AtomicLongArray(outstreams.length + (snapshotCapacity > 0 ? 1 : 0)));
         outbox.reset();
     }
 

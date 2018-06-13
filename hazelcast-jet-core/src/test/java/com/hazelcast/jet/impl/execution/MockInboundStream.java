@@ -91,4 +91,14 @@ public class MockInboundStream implements InboundEdgeStream {
     public Deque<Object> remainingItems() {
         return mockData;
     }
+
+    @Override
+    public int sizes() {
+        return mockData.size();
+    }
+
+    @Override
+    public int capacities() {
+        return Integer.MAX_VALUE;
+    }
 }

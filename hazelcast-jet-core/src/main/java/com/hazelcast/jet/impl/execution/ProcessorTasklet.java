@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.ProbeBuilder;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
@@ -36,6 +39,8 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongArray;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE;
@@ -50,6 +55,9 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.SAVE_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
+import static com.hazelcast.jet.impl.util.Util.lazyAdd;
+import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
+import static com.hazelcast.jet.impl.util.Util.sum;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
@@ -57,6 +65,7 @@ import static java.util.stream.Collectors.toCollection;
 public class ProcessorTasklet implements Tasklet {
 
     private static final int OUTBOX_BATCH_SIZE = 2048;
+
     private final ProgressTracker progTracker = new ProgressTracker();
     private final OutboundEdgeStream[] outstreams;
     private final OutboxImpl outbox;
@@ -76,6 +85,12 @@ public class ProcessorTasklet implements Tasklet {
     private ProcessorState state;
     private long pendingSnapshotId;
     private Watermark pendingWatermark;
+
+    private final AtomicLongArray receivedCounts;
+    private final AtomicLongArray receivedBatches;
+    private final AtomicLongArray emittedCounts;
+    private final AtomicLong queuesSize = new AtomicLong();
+    private final AtomicLong queuesCapacity = new AtomicLong();
 
     public ProcessorTasklet(@Nonnull ProcCtx context,
                             @Nonnull Processor processor,
@@ -102,6 +117,9 @@ public class ProcessorTasklet implements Tasklet {
 
         instreamCursor = popInstreamGroup();
         currInstream = instreamCursor != null ? instreamCursor.value() : null;
+        receivedCounts = new AtomicLongArray(instreams.size());
+        receivedBatches = new AtomicLongArray(instreams.size());
+        emittedCounts = new AtomicLongArray(outstreams.size() + 1);
         outbox = createOutbox(ssCollector);
         receivedBarriers = new BitSet(instreams.size());
         state = initialProcessingState();
@@ -110,16 +128,42 @@ public class ProcessorTasklet implements Tasklet {
         watermarkCoalescer = WatermarkCoalescer.create(maxWatermarkRetainMillis, instreams.size());
     }
 
-    private OutboxImpl createOutbox(OutboundCollector ssCollector) {
-        OutboundCollector[] collectors = new OutboundCollector[outstreams.length + (ssCollector == null ? 0 : 1)];
+    public void registerMetrics(final ProbeBuilder probeBuilder) {
+        for (int i = 0; i < receivedCounts.length(); i++) {
+            int finalI = i;
+            ProbeBuilder builderWithOrdinal = probeBuilder
+                    .withTag("ordinal", String.valueOf(i));
+            builderWithOrdinal.register(this, "receivedCount", ProbeLevel.INFO,
+                            (LongProbeFunction<ProcessorTasklet>) t -> t.receivedCounts.get(finalI));
+
+            builderWithOrdinal.register(this, "receivedBatches", ProbeLevel.INFO,
+                            (LongProbeFunction<ProcessorTasklet>) t -> t.receivedBatches.get(finalI));
+        }
+
+        for (int i = 0; i < emittedCounts.length() - (context.snapshottingEnabled() ? 0 : 1); i++) {
+            int finalI = i;
+            probeBuilder
+                    .withTag("ordinal", i == emittedCounts.length() - 1 ? "snapshot" : String.valueOf(i))
+                    .register(this, "emittedCount", ProbeLevel.INFO,
+                            (LongProbeFunction<ProcessorTasklet>) t -> t.emittedCounts.get(finalI));
+        }
+
+        probeBuilder.register(this, "lastReceivedWm", ProbeLevel.INFO,
+                (LongProbeFunction<ProcessorTasklet>) t -> t.watermarkCoalescer.lastEmittedWm());
+        probeBuilder.register(this, "queuesSize", ProbeLevel.INFO,
+                (LongProbeFunction<ProcessorTasklet>) t -> t.queuesSize.get());
+        probeBuilder.register(this, "queuesCapacity", ProbeLevel.INFO,
+                (LongProbeFunction<ProcessorTasklet>) t -> t.queuesCapacity.get());
+    }
+
+    private OutboxImpl createOutbox(@Nonnull OutboundCollector ssCollector) {
+        OutboundCollector[] collectors = new OutboundCollector[outstreams.length + 1];
         for (int i = 0; i < outstreams.length; i++) {
             collectors[i] = outstreams[i].getCollector();
         }
-        if (ssCollector != null) {
-            collectors[outstreams.length] = ssCollector;
-        }
-        return new OutboxImpl(collectors, ssCollector != null, progTracker,
-                context.getSerializationService(), OUTBOX_BATCH_SIZE);
+        collectors[outstreams.length] = ssCollector;
+        return new OutboxImpl(collectors, true, progTracker,
+                context.getSerializationService(), OUTBOX_BATCH_SIZE, emittedCounts);
     }
 
     @Override
@@ -324,9 +368,15 @@ public class ProcessorTasklet implements Tasklet {
             // pop current priority group
             if (!instreamCursor.advance()) {
                 instreamCursor = popInstreamGroup();
-                return;
+                break;
             }
         } while (!result.isMadeProgress() && instreamCursor.value() != first);
+
+        // we are the only updating thread, no need for CAS operations
+        lazyAdd(receivedCounts, currInstream.ordinal(), inbox.size());
+        lazyIncrement(receivedBatches, currInstream.ordinal());
+        queuesCapacity.lazySet(instreamCursor == null ? 0 : sum(instreamCursor.getList(), InboundEdgeStream::capacities));
+        queuesSize.lazySet(instreamCursor == null ? 0 : sum(instreamCursor.getList(), InboundEdgeStream::sizes));
     }
 
     private CircularListCursor<InboundEdgeStream> popInstreamGroup() {

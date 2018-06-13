@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -75,18 +76,18 @@ public class SnapshotContextTest {
                 new SnapshotContext(mock(ILogger.class), 1, 1, 9, ProcessingGuarantee.EXACTLY_ONCE);
 
         ssContext.initTaskletCount(taskletCount, numHigherPriority);
-        CompletableFuture<Void> future = null;
+        CompletableFuture<SnapshotOperationResult> future = null;
         if (snapshotStarted == SnapshotStarted.BEFORE) {
             future = ssContext.startNewSnapshot(10);
             assertEquals("lastSnapshotId initially", numHigherPriority > 0 ? 9 : 10, ssContext.lastSnapshotId());
         }
 
         if (taskletDone == TaskletDone.NOT_DONE) {
-            ssContext.snapshotDoneForTasklet();
+            ssContext.snapshotDoneForTasklet(0, 0, 0);
         } else if (taskletDone == TaskletDone.DONE_BEFORE_CURRENT_SNAPSHOT) {
             ssContext.taskletDone(9, numHigherPriority > 0);
         } else if (taskletDone == TaskletDone.DONE_AFTER_CURRENT_SNAPSHOT) {
-            ssContext.snapshotDoneForTasklet();
+            ssContext.snapshotDoneForTasklet(0, 0, 0);
             ssContext.taskletDone(10, numHigherPriority > 0);
         }
 

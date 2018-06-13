@@ -14,13 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.exception;
+package com.hazelcast.jet.impl.metrics;
 
-import com.hazelcast.jet.JetException;
+public class Metric {
 
-/**
- * The exception class thrown and handled internally when a job restart is
- * requested.
- */
-public class JobRestartRequestedException extends JetException {
+    private final String key;
+    private final long value;
+
+    Metric(String key, long value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    public String key() {
+        return key;
+    }
+
+    public long value() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return key + "=" + value;
+    }
 }

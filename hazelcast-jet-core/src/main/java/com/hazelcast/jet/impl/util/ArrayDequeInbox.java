@@ -66,4 +66,7 @@ public final class ArrayDequeInbox implements Inbox {
         return queue;
     }
 
+    public int size() {
+        return queue.size();
+    }
 }

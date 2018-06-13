@@ -18,11 +18,11 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.jet.impl.JobRepository.FilterJobResultByNamePredicate;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository.FilterExecutionIdByJobIdPredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobIdPredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobRecordByNamePredicate;
+import com.hazelcast.jet.impl.JobRepository.FilterJobResultByNamePredicate;
 import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordQuorumEntryBackupProcessor;
 import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordQuorumEntryProcessor;
 import com.hazelcast.jet.impl.JobResult;
@@ -32,14 +32,15 @@ import com.hazelcast.jet.impl.operation.CancelJobOperation;
 import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
-import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
-import com.hazelcast.jet.impl.operation.RestartJobOperation;
-import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
+import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
+import com.hazelcast.jet.impl.operation.RestartJobOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation;
+import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
+import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SnapshotKey;
@@ -62,7 +63,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int COMPLETE_EXECUTION_OP = 7;
     public static final int SUBMIT_JOB_OP = 8;
     public static final int GET_JOB_STATUS_OP = 9;
-    public static final int SNAPSHOT_OP = 10;
+    public static final int SNAPSHOT_OPERATION = 10;
     public static final int MASTER_SNAPSHOT_RECORD = 11;
     public static final int SESSION_WINDOW_P_WINDOWS = 12;
     public static final int FILTER_EXECUTION_ID_BY_JOB_ID_PREDICATE = 13;
@@ -82,6 +83,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int RESTART_JOB_OP = 27;
     public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_KEY = 28;
     public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR = 29;
+    public static final int SNAPSHOT_OPERATION_RESULT = 30;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -121,7 +123,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new SubmitJobOperation();
                 case GET_JOB_STATUS_OP:
                     return new GetJobStatusOperation();
-                case SNAPSHOT_OP:
+                case SNAPSHOT_OPERATION:
                     return new SnapshotOperation();
                 case MASTER_SNAPSHOT_RECORD:
                     return new SnapshotRecord();
@@ -161,6 +163,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new AsyncSnapshotWriterImpl.SnapshotDataKey();
                 case ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR:
                     return AsyncSnapshotWriterImpl.SnapshotDataValueTerminator.INSTANCE;
+                case SNAPSHOT_OPERATION_RESULT:
+                    return new SnapshotOperationResult();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

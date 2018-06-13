@@ -22,6 +22,7 @@ import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
@@ -49,23 +50,25 @@ public class SnapshotOperation extends AsyncOperation {
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, this
         );
-        ctx.beginSnapshot(snapshotId).thenAccept(r -> {
-            logFine(getLogger(),
-                    "Snapshot %s for job %s finished successfully on member",
-                    snapshotId, idToString(jobId()));
-            doSendResponse(null);
-        }).exceptionally(e -> {
-            getLogger().warning(String.format("Snapshot %d for job %s finished with error on member",
-                    snapshotId, idToString(jobId())), e);
-            doSendResponse(new JetException("Exception during snapshot: " + e, e));
-            return null;
+        ctx.beginSnapshot(snapshotId).thenAccept(result -> {
+            if (result.getError() == null) {
+                logFine(getLogger(),
+                        "Snapshot %s for job %s finished successfully on member",
+                        snapshotId, idToString(jobId()));
+            } else {
+                getLogger().warning(String.format("Snapshot %d for job %s finished with an error on member",
+                        snapshotId, idToString(jobId())), result.getError());
+                // wrap the exception
+                result.error = new JetException("Exception during snapshot: " + result.error, result.error);
+            }
+            doSendResponse(result);
         });
 
     }
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.SNAPSHOT_OP;
+        return JetInitDataSerializerHook.SNAPSHOT_OPERATION;
     }
 
     @Override
@@ -80,5 +83,79 @@ public class SnapshotOperation extends AsyncOperation {
         super.readInternal(in);
         executionId = in.readLong();
         snapshotId = in.readLong();
+    }
+
+    /**
+     * The result of SnapshotOperation with snapshot statistics and error.
+     */
+    public static final class SnapshotOperationResult implements IdentifiedDataSerializable {
+        private long numBytes;
+        private long numKeys;
+        private long numChunks;
+        private Throwable error;
+
+        public SnapshotOperationResult() {
+        }
+
+        public SnapshotOperationResult(long numBytes, long numKeys, long numChunks, Throwable error) {
+            this.numBytes = numBytes;
+            this.numKeys = numKeys;
+            this.numChunks = numChunks;
+            this.error = error;
+        }
+
+        public long getNumBytes() {
+            return numBytes;
+        }
+
+        public long getNumKeys() {
+            return numKeys;
+        }
+
+        public long getNumChunks() {
+            return numChunks;
+        }
+
+        public Throwable getError() {
+            return error;
+        }
+
+        /**
+         * Merge other SnapshotOperationResult into this one. It adds the
+         * totals and if the other result has error, it will take it to this,
+         * unless there already was one.
+         */
+        public void merge(SnapshotOperationResult other) {
+            numBytes += other.numBytes;
+            numKeys += other.numKeys;
+            numChunks += other.numChunks;
+            if (error == null) {
+                error = other.error;
+            }
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetInitDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getId() {
+            return JetInitDataSerializerHook.SNAPSHOT_OPERATION_RESULT;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeLong(numBytes);
+            out.writeLong(numKeys);
+            out.writeLong(numChunks);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            numBytes = in.readLong();
+            numKeys = in.readLong();
+            numChunks = in.readLong();
+        }
     }
 }

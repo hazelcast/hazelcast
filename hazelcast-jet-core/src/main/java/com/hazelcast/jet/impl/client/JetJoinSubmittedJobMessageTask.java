@@ -40,7 +40,7 @@ public class JetJoinSubmittedJobMessageTask extends AbstractJetMessageTask<JetJo
     @Override
     protected void processMessage() {
         Operation op = prepareOperation();
-        op.setCallerUuid(getEndpoint().getUuid());
+        op.setCallerUuid(endpoint.getUuid());
         InvocationBuilder builder = getInvocationBuilder(op).setResultDeserialized(false);
 
         InternalCompletableFuture<Object> invocation = builder.invoke();

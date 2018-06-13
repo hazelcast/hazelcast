@@ -18,11 +18,12 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import java.util.Properties;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
@@ -63,6 +64,17 @@ public class JetConfigTest {
 
         // Then
         assertEquals(hzConfig, jetConfig.getHazelcastConfig());
+    }
+
+    @Test
+    public void when_setMetricsConfig_thenReturnsMetricsConfig() {
+        // When
+        JetConfig jetConfig = new JetConfig();
+        MetricsConfig metricsConfig = new MetricsConfig();
+        jetConfig.setMetricsConfig(metricsConfig);
+
+        // Then
+        assertEquals(metricsConfig, jetConfig.getMetricsConfig());
     }
 
     @Test

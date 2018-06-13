@@ -36,4 +36,8 @@ public interface InboundEdgeStream {
     ProgressState drainTo(Predicate<Object> dest);
 
     boolean isDone();
+
+    int capacities();
+
+    int sizes();
 }

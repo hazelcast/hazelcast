@@ -28,6 +28,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.util.function.Predicate;
 
 import java.util.BitSet;
+import java.util.function.ToIntFunction;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
@@ -218,5 +219,26 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
             }
             return dest.test(o);
         }
+    }
+
+    @Override
+    public int sizes() {
+        return conveyorSum(QueuedPipe::size);
+    }
+
+    @Override
+    public int capacities() {
+        return conveyorSum(QueuedPipe::capacity);
+    }
+
+    private int conveyorSum(ToIntFunction<QueuedPipe<Object>> toIntF) {
+        int sum = 0;
+        for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
+            final QueuedPipe<Object> q = conveyor.queue(queueIndex);
+            if (q != null) {
+                sum += toIntF.applyAsInt(q);
+            }
+        }
+        return sum;
     }
 }

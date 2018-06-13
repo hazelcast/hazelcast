@@ -40,4 +40,8 @@ public interface AsyncSnapshotWriter {
     Throwable getError();
 
     boolean isEmpty();
+
+    long getTotalPayloadBytes();
+    long getTotalKeys();
+    long getTotalChunks();
 }

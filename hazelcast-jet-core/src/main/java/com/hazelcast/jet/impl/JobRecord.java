@@ -33,16 +33,19 @@ public class JobRecord implements IdentifiedDataSerializable {
     private long jobId;
     private long creationTime;
     private Data dag;
+    // JSON representation of DAG, used by mancenter
+    private String dagJson;
     private JobConfig config;
     private int quorumSize;
 
     public JobRecord() {
     }
 
-    public JobRecord(long jobId, long creationTime, Data dag, JobConfig config, int quorumSize) {
+    public JobRecord(long jobId, long creationTime, Data dag, String dagJson, JobConfig config, int quorumSize) {
         this.jobId = jobId;
         this.creationTime = creationTime;
         this.dag = dag;
+        this.dagJson = dagJson;
         this.config = config;
         this.quorumSize = quorumSize;
     }
@@ -57,6 +60,10 @@ public class JobRecord implements IdentifiedDataSerializable {
 
     public Data getDag() {
         return dag;
+    }
+
+    public String getDagJson() {
+        return dagJson;
     }
 
     public JobConfig getConfig() {
@@ -82,6 +89,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         out.writeLong(jobId);
         out.writeLong(creationTime);
         out.writeData(dag);
+        out.writeUTF(dagJson);
         out.writeObject(config);
         out.writeInt(quorumSize);
     }
@@ -91,6 +99,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         jobId = in.readLong();
         creationTime = in.readLong();
         dag = in.readData();
+        dagJson = in.readUTF();
         config = in.readObject();
         quorumSize = in.readInt();
     }
@@ -100,10 +109,9 @@ public class JobRecord implements IdentifiedDataSerializable {
         return "JobRecord{" +
                 "jobId=" + idToString(jobId) +
                 ", creationTime=" + toLocalDateTime(creationTime) +
-                ", dag=" + dag +
+                ", dagJson=" + dagJson +
                 ", config=" + config +
                 ", quorumSize=" + quorumSize +
                 '}';
     }
-
 }

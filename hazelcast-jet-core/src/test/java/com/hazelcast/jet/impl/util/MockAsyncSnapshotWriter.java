@@ -77,4 +77,19 @@ public class MockAsyncSnapshotWriter implements AsyncSnapshotWriter {
     public Entry<? extends Data, ? extends Data> poll() {
         return entries.poll();
     }
+
+    @Override
+    public long getTotalPayloadBytes() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalKeys() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalChunks() {
+        return 0;
+    }
 }

@@ -47,6 +47,7 @@
                         <xs:element name="instance-config" type="instance-config" minOccurs="0"/>
                         <xs:element name="default-edge-config" type="edge-config" minOccurs="0"/>
                         <xs:element name="properties" type="hz:properties" minOccurs="0"/>
+                        <xs:element name="metrics-config" type="metrics-config" minOccurs="0"/>
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -152,6 +153,12 @@
         <xs:attribute name="queue-size" type="hz:parameterized-positive-integer"/>
         <xs:attribute name="packet-size-limit" type="hz:parameterized-positive-integer"/>
         <xs:attribute name="receive-window-multiplier" type="hz:parameterized-positive-integer"/>
+    </xs:complexType>
+
+    <xs:complexType name="metrics-config">
+        <xs:attribute name="enabled" type="hz:parameterized-boolean"/>
+        <xs:attribute name="retention-seconds" type="hz:parameterized-positive-integer"/>
+        <xs:attribute name="enabled-for-data-structures" type="hz:parameterized-boolean"/>
     </xs:complexType>
 
 </xs:schema>

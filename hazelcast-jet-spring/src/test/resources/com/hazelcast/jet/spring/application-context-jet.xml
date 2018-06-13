@@ -45,6 +45,7 @@
         <jet:properties>
             <hz:property name="foo">bar</hz:property>
         </jet:properties>
+        <jet:metrics-config enabled="false" retention-seconds="123" enabled-for-data-structures="true"/>
     </jet:instance>
 
     <jet:client id="jet-client" depends-on="jet-instance">

@@ -200,7 +200,7 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     private JobRecord createJobRecord(long jobId, Data dag) {
-        return new JobRecord(jobId, System.currentTimeMillis(), dag, jobConfig, QUORUM_SIZE);
+        return new JobRecord(jobId, System.currentTimeMillis(), dag, "", jobConfig, QUORUM_SIZE);
     }
 
     private void sleepUntilJobExpires() {

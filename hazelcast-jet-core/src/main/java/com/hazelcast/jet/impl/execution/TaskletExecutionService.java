@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
@@ -37,11 +39,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.Executors.newCachedThreadPool;
@@ -66,14 +70,21 @@ public class TaskletExecutionService {
     private final String hzInstanceName;
     private final ILogger logger;
     private final AtomicInteger cooperativeThreadIndex = new AtomicInteger();
+    private final MetricsRegistry metricsRegistry;
+    @Probe
+    private final AtomicInteger blockingWorkerCount = new AtomicInteger();
 
     private volatile boolean isShutdown;
 
-    public TaskletExecutionService(HazelcastInstance hz, int threadCount) {
-        this.hzInstanceName = hz.getName();
+    public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount) {
+        this.hzInstanceName = nodeEngine.getHazelcastInstance().getName();
         this.cooperativeWorkers = new CooperativeWorker[threadCount];
         this.cooperativeThreadPool = new Thread[threadCount];
-        this.logger = hz.getLoggingService().getLogger(TaskletExecutionService.class);
+        this.logger = nodeEngine.getLoggingService().getLogger(TaskletExecutionService.class);
+        this.metricsRegistry = nodeEngine.getMetricsRegistry();
+        metricsRegistry.newProbeBuilder()
+                       .withTag("module", "jet")
+                       .scanAndRegister(this);
     }
 
     /**
@@ -156,6 +167,12 @@ public class TaskletExecutionService {
         Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
                 String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
         Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
+        for (int i = 0; i < cooperativeWorkers.length; i++) {
+            metricsRegistry.newProbeBuilder()
+                           .withTag("module", "jet")
+                           .withTag("cooperativeWorker", String.valueOf(i))
+                           .scanAndRegister(cooperativeWorkers[i]);
+        }
     }
 
     private String trackersToString() {
@@ -186,6 +203,7 @@ public class TaskletExecutionService {
             final String oldName = currentThread().getName();
             currentThread().setName(oldName.replaceAll(".thread-[0-9]+$", quoteReplacement("." + tracker.tasklet)));
             assert !oldName.equals(currentThread().getName()) : "unexpected thread name pattern: " + oldName;
+            blockingWorkerCount.incrementAndGet();
 
             try {
                 startedLatch.countDown();
@@ -206,6 +224,7 @@ public class TaskletExecutionService {
                 logger.warning("Exception in " + t, e);
                 tracker.executionTracker.exception(new JetException("Exception in " + t + ": " + e, e));
             } finally {
+                blockingWorkerCount.decrementAndGet();
                 currentThread().setContextClassLoader(clBackup);
                 currentThread().setName(oldName);
                 tracker.executionTracker.taskletDone();
@@ -216,8 +235,11 @@ public class TaskletExecutionService {
     private final class CooperativeWorker implements Runnable {
         private static final int COOPERATIVE_LOGGING_THRESHOLD = 5;
 
+        @Probe(name = "taskletCount")
         private final List<TaskletTracker> trackers;
         private final CooperativeWorker[] colleagues;
+        @Probe
+        private final AtomicLong iterationCount = new AtomicLong();
 
         CooperativeWorker(CooperativeWorker[] colleagues) {
             this.colleagues = colleagues;
@@ -268,6 +290,7 @@ public class TaskletExecutionService {
                         }
                     }
                 }
+                lazyIncrement(iterationCount);
                 if (madeProgress) {
                     idleCount = 0;
                 } else {

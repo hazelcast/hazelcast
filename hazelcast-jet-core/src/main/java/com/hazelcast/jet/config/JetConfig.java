@@ -41,6 +41,7 @@ public class JetConfig {
     private Config hazelcastConfig = defaultHazelcastConfig();
     private InstanceConfig instanceConfig = new InstanceConfig();
     private EdgeConfig defaultEdgeConfig = new EdgeConfig();
+    private MetricsConfig metricsConfig = new MetricsConfig();
     private Properties properties = new Properties();
 
     /**
@@ -72,6 +73,7 @@ public class JetConfig {
      * The mechanism is the same for the nested Hazelcast config, just with the
      * {@code hazelcast.config} system property.
      */
+    @Nonnull
     public static JetConfig loadDefault() {
         return XmlJetConfigBuilder.loadConfig(null, null);
     }
@@ -83,6 +85,7 @@ public class JetConfig {
      * mechanism. Uses the given {@code properties} to resolve the variables in
      * the XML.
      */
+    @Nonnull
     public static JetConfig loadDefault(@Nonnull Properties properties) {
         return XmlJetConfigBuilder.loadConfig(null, properties);
     }
@@ -104,6 +107,7 @@ public class JetConfig {
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      * @throws IllegalArgumentException if classpath resource is not found
      */
+    @Nonnull
     public static JetConfig loadFromClasspath(@Nonnull String resource) {
         return loadFromClasspath(resource, System.getProperties());
     }
@@ -126,6 +130,7 @@ public class JetConfig {
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      * @throws IllegalArgumentException if classpath resource is not found
      */
+    @Nonnull
     public static JetConfig loadFromClasspath(@Nonnull String resource, @Nonnull Properties properties) {
         LOGGER.info("Configuring Hazelcast Jet from '" + resource + "' on classpath");
         InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);
@@ -150,6 +155,7 @@ public class JetConfig {
      *
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
+    @Nonnull
     public static JetConfig loadFromStream(@Nonnull InputStream configStream) {
         return loadFromStream(configStream, System.getProperties());
     }
@@ -170,6 +176,7 @@ public class JetConfig {
      *
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
+    @Nonnull
     public static JetConfig loadFromStream(@Nonnull InputStream configStream, @Nonnull Properties properties) {
         return XmlJetConfigBuilder.loadConfig(configStream, properties);
     }
@@ -178,6 +185,7 @@ public class JetConfig {
      * Returns the configuration object for the underlying Hazelcast IMDG
      * instance.
      */
+    @Nonnull
     public Config getHazelcastConfig() {
         return hazelcastConfig;
     }
@@ -185,7 +193,8 @@ public class JetConfig {
     /**
      * Sets the underlying Hazelcast IMDG instance's configuration object.
      */
-    public JetConfig setHazelcastConfig(Config config) {
+    @Nonnull
+    public JetConfig setHazelcastConfig(@Nonnull Config config) {
         hazelcastConfig = config;
         return this;
     }
@@ -193,6 +202,7 @@ public class JetConfig {
     /**
      * Returns the Jet instance config.
      */
+    @Nonnull
     public InstanceConfig getInstanceConfig() {
         return instanceConfig;
     }
@@ -200,8 +210,26 @@ public class JetConfig {
     /**
      * Sets the Jet instance config.
      */
-    public JetConfig setInstanceConfig(InstanceConfig instanceConfig) {
+    @Nonnull
+    public JetConfig setInstanceConfig(@Nonnull InstanceConfig instanceConfig) {
         this.instanceConfig = instanceConfig;
+        return this;
+    }
+
+    /**
+     * Returns the metrics collection config.
+     */
+    @Nonnull
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    /**
+     * Sets the metrics collection config.
+     */
+    @Nonnull
+    public JetConfig setMetricsConfig(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
         return this;
     }
 

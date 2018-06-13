@@ -34,4 +34,10 @@
        <packet-size-limit>997</packet-size-limit>
        <receive-window-multiplier>996</receive-window-multiplier>
     </edge-defaults>
+
+    <metrics>
+        <enabled>false</enabled>
+        <retention-seconds>124</retention-seconds>
+        <enabled-for-data-structures>true</enabled-for-data-structures>
+    </metrics>
 </hazelcast-jet>

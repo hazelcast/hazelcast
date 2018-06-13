@@ -46,6 +46,15 @@ public class SnapshotRecord implements IdentifiedDataSerializable {
     private long jobId;
     private long snapshotId;
     private long startTime = System.currentTimeMillis();
+    private long endTime = Long.MIN_VALUE;
+
+    /** Net number of bytes in primary copy. Doesn't include IMap overhead and backup copies. */
+    private long numBytes;
+    /** Number of snapshot keys (after exploding chunks). */
+    private long numKeys;
+    /** Number of chunks the snapshot is stored in. One chunk is one IMap entry. */
+    private long numChunks;
+
     private SnapshotStatus status = ONGOING;
     private Collection<String> vertices;
 
@@ -72,6 +81,14 @@ public class SnapshotRecord implements IdentifiedDataSerializable {
 
     public SnapshotStatus status() {
         return status;
+    }
+
+    public void snapshotComplete(SnapshotStatus status, long numBytes, long numKeys, long numChunks) {
+        setStatus(status);
+        this.numBytes = numBytes;
+        this.numKeys = numKeys;
+        this.numChunks = numChunks;
+        this.endTime = System.currentTimeMillis();
     }
 
     public void setStatus(SnapshotStatus newStatus) {
@@ -111,6 +128,10 @@ public class SnapshotRecord implements IdentifiedDataSerializable {
         out.writeLong(jobId);
         out.writeLong(snapshotId);
         out.writeLong(startTime);
+        out.writeLong(endTime);
+        out.writeLong(numBytes);
+        out.writeLong(numKeys);
+        out.writeLong(numChunks);
         out.writeUTF(status.toString());
         out.writeObject(vertices);
     }
@@ -120,6 +141,10 @@ public class SnapshotRecord implements IdentifiedDataSerializable {
         jobId = in.readLong();
         snapshotId = in.readLong();
         startTime = in.readLong();
+        endTime = in.readLong();
+        numBytes = in.readLong();
+        numKeys = in.readLong();
+        numChunks = in.readLong();
         status = SnapshotStatus.valueOf(in.readUTF());
         vertices = in.readObject();
     }
@@ -130,6 +155,10 @@ public class SnapshotRecord implements IdentifiedDataSerializable {
                 "jobId=" + idToString(jobId) +
                 ", snapshotId=" + snapshotId +
                 ", startTime=" + toLocalDateTime(startTime) +
+                ", endTime=" + toLocalDateTime(endTime) +
+                ", numBytes=" + numBytes +
+                ", numKeys=" + numKeys +
+                ", numChunks=" + numChunks +
                 ", status=" + status +
                 ", vertices=" + vertices +
                 '}';

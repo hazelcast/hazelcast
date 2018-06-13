@@ -283,7 +283,9 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         // instance1 is always coordinator
         delayOperationsFrom(
-                hz(instance1), JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.SNAPSHOT_OP)
+                hz(instance1),
+                JetInitDataSerializerHook.FACTORY_ID,
+                singletonList(JetInitDataSerializerHook.SNAPSHOT_OPERATION)
         );
 
         DAG dag = new DAG();

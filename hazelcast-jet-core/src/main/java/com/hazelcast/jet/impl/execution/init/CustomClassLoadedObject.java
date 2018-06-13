@@ -102,7 +102,7 @@ public final class CustomClassLoadedObject {
         @SuppressFBWarnings({ "BC_UNCONFIRMED_CAST", "OS_OPEN_STREAM"})
         public CustomClassLoadedObject read(ObjectDataInput in) throws IOException {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            ObjectInputStream objectInputStream = newObjectInputStream(cl, (InputStream) in);
+            ObjectInputStream objectInputStream = newObjectInputStream(cl, null, (InputStream) in);
             try {
                 return new CustomClassLoadedObject((Serializable) objectInputStream.readObject());
             } catch (ClassNotFoundException e) {

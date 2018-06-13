@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.impl.operation.SnapshotOperation;
+import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
 import com.hazelcast.logging.ILogger;
 
 import java.util.concurrent.CompletableFuture;
@@ -81,7 +81,11 @@ public class SnapshotContext {
     private boolean snapshotPostponed;
 
     /** Future which will be completed when the current snapshot completes. */
-    private volatile CompletableFuture<Void> future;
+    private volatile CompletableFuture<SnapshotOperationResult> future;
+
+    private final AtomicLong totalBytes = new AtomicLong();
+    private final AtomicLong totalKeys = new AtomicLong();
+    private final AtomicLong totalChunks = new AtomicLong();
 
     SnapshotContext(ILogger logger, long jobId, long executionId, long lastSnapshotId,
                     ProcessingGuarantee guarantee
@@ -120,13 +124,13 @@ public class SnapshotContext {
      * com.hazelcast.jet.impl.operation.SnapshotOperation}.
      * <p>
      * <b>Note:</b> this method can be called <i>after</i> {@link
-     * #taskletDone(long, boolean)} or {@link #snapshotDoneForTasklet()} is
+     * #taskletDone(long, boolean)} or {@link #snapshotDoneForTasklet} is
      * called. This can happen in a situation when a processor only has input
      * queues from remote members and the remote members happen to process
      * {@code SnapshotOperation} and send barriers to such processor before
      * the {@code SnapshotOperation} is called on this member.
      */
-    synchronized CompletableFuture<Void> startNewSnapshot(long snapshotId) {
+    synchronized CompletableFuture<SnapshotOperationResult> startNewSnapshot(long snapshotId) {
         assert snapshotId == lastSnapshotId.get() + 1
                 : "new snapshotId not incremented by 1. Previous=" + lastSnapshotId + ", new=" + snapshotId;
         assert numTasklets >= 0 : "numTasklets=" + numTasklets;
@@ -147,7 +151,7 @@ public class SnapshotContext {
             // member is already done with the job and master didn't know it yet - we are immediately done.
             return completedFuture(null);
         }
-        CompletableFuture<Void> res = future = new CompletableFuture<>();
+        CompletableFuture<SnapshotOperationResult> res = future = new CompletableFuture<>();
         if (newNumRemainingTasklets == 0) {
             handleSnapshotDone();
         }
@@ -158,7 +162,7 @@ public class SnapshotContext {
      * Called when {@link StoreSnapshotTasklet} is done (received DONE_ITEM
      * from all its processors).
      *
-     * @param lastSnapshotId id fo the last snapshot completed by the tasklet
+     * @param lastSnapshotId id of the last snapshot completed by the tasklet
      */
     synchronized void taskletDone(long lastSnapshotId, boolean isHigherPrioritySource) {
         assert numTasklets > 0 : "numTasklets=" + numTasklets;
@@ -177,7 +181,7 @@ public class SnapshotContext {
             }
         }
         if (this.lastSnapshotId.get() > lastSnapshotId) {
-            snapshotDoneForTasklet();
+            snapshotDoneForTasklet(0, 0, 0);
         } else if (this.lastSnapshotId.get() < lastSnapshotId) {
             // tasklet is done with snapshot before startNewSnapshot was called
             numRemainingTasklets.incrementAndGet();
@@ -192,9 +196,13 @@ public class SnapshotContext {
      * This method can be called before the snapshot was started with {@link
      * #startNewSnapshot(long)}. This can happen, if the processor only has
      * input queues from remote members, from which it can possibly receive
-     * barriers before {@link SnapshotOperation} is handled on this member.
+     * barriers before {@link com.hazelcast.jet.impl.operation.SnapshotOperation}
+     * is handled on this member.
      */
-    void snapshotDoneForTasklet() {
+    void snapshotDoneForTasklet(long numBytes, long numKeys, long numChunks) {
+        totalBytes.addAndGet(numBytes);
+        totalKeys.addAndGet(numKeys);
+        totalChunks.addAndGet(numChunks);
         // note that numRemainingTasklets can get negative values here.
         if (numRemainingTasklets.decrementAndGet() == 0) {
             handleSnapshotDone();
@@ -202,14 +210,14 @@ public class SnapshotContext {
     }
 
     private void handleSnapshotDone() {
-        Throwable t = snapshotError.get();
-        if (t == null) {
-            future.complete(null);
-        } else {
-            future.completeExceptionally(t);
-        }
+        future.complete(
+                new SnapshotOperationResult(totalBytes.get(), totalKeys.get(), totalChunks.get(), snapshotError.get()));
+
         future = null;
         snapshotError.set(null);
+        totalBytes.set(0);
+        totalKeys.set(0);
+        totalChunks.set(0);
     }
 
     void reportError(Throwable ex) {

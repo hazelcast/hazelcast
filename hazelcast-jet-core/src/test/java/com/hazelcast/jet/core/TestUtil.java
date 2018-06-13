@@ -33,7 +33,6 @@ import static org.junit.Assert.assertEquals;
 public final class TestUtil {
 
     private TestUtil() {
-
     }
 
     public static void executeAndPeel(Job job) throws Throwable {

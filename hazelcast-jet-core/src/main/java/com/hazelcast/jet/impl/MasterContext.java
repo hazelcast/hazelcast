@@ -33,12 +33,12 @@ import com.hazelcast.jet.impl.operation.CancelExecutionOperation;
 import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation;
+import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.util.CompletionToken;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
@@ -449,17 +449,18 @@ public class MasterContext {
     }
 
     private void onSnapshotCompleted(Map<MemberInfo, Object> responses, long executionId, long snapshotId) {
-        Map<Address, Throwable> errors = responses.entrySet().stream()
-            .filter(e -> e.getValue() instanceof Throwable)
-            .filter(e -> !(e.getValue() instanceof CancellationException) || !isTopologicalFailure(e.getValue()))
-            .collect(Collectors.toMap(e -> e.getKey().getAddress(), e -> (Throwable) e.getValue()));
-
-        boolean isSuccess = errors.isEmpty();
-        if (!isSuccess) {
-            logger.warning(jobAndExecutionId(jobId, executionId) + " snapshot " + snapshotId + " has failures: "
-                    + errors);
+        SnapshotOperationResult mergedResult = new SnapshotOperationResult();
+        for (Object response : responses.values()) {
+            mergedResult.merge((SnapshotOperationResult) response);
         }
-        coordinationService.completeSnapshot(jobId, executionId, snapshotId, isSuccess);
+
+        boolean isSuccess = mergedResult.getError() == null;
+        if (!isSuccess) {
+            logger.warning(jobAndExecutionId(jobId, executionId) + " snapshot " + snapshotId + " has failure, " +
+                    "first failure: " + mergedResult.getError());
+        }
+        coordinationService.completeSnapshot(jobId, executionId, snapshotId, isSuccess,
+                mergedResult.getNumBytes(), mergedResult.getNumKeys(), mergedResult.getNumChunks());
     }
 
     // Called as callback when all ExecuteOperation invocations are done

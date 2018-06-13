@@ -29,4 +29,10 @@
        <property name="property1">value1</property>
        <property name="property2">value2</property>
     </properties>
+
+    <metrics>
+        <enabled>${metrics.enabled}</enabled>
+        <retention-seconds>${metrics.retention}</retention-seconds>
+        <enabled-for-data-structures>${metrics.enabled-for-data-structures}</enabled-for-data-structures>
+    </metrics>
 </hazelcast-jet>

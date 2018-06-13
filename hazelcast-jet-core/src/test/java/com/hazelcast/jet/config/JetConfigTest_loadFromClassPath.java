@@ -23,6 +23,8 @@ import org.junit.rules.ExpectedException;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class JetConfigTest_loadFromClassPath {
 
@@ -51,9 +53,18 @@ public class JetConfigTest_loadFromClassPath {
         properties.setProperty("flow.control.period", "456");
         properties.setProperty("backup.count", "6");
 
+        properties.setProperty("metrics.enabled", "false");
+        properties.setProperty("metrics.retention", "124");
+        properties.setProperty("metrics.enabled-for-data-structures", "true");
+
         JetConfig config = JetConfig.loadFromClasspath(TEST_XML_JET_WITH_VARIABLES, properties);
         assertEquals(123, config.getInstanceConfig().getCooperativeThreadCount());
         assertEquals(456, config.getInstanceConfig().getFlowControlPeriodMs());
         assertEquals(6, config.getInstanceConfig().getBackupCount());
+
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertEquals(124, metricsConfig.getRetentionSeconds());
+        assertTrue(metricsConfig.isEnabledForDataStructures());
     }
 }

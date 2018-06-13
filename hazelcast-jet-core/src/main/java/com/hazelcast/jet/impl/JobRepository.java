@@ -454,7 +454,7 @@ public class JobRepository {
             updated = (newQuorumSize > jobRecord.getQuorumSize());
             if (updated) {
                 JobRecord newJobRecord = new JobRecord(jobRecord.getJobId(), jobRecord.getCreationTime(),
-                        jobRecord.getDag(), jobRecord.getConfig(), newQuorumSize);
+                        jobRecord.getDag(), jobRecord.getDagJson(), jobRecord.getConfig(), newQuorumSize);
                 entry.setValue(newJobRecord);
             }
 
@@ -507,7 +507,7 @@ public class JobRepository {
             }
 
             JobRecord newJobRecord = new JobRecord(jobRecord.getJobId(), jobRecord.getCreationTime(),
-                    jobRecord.getDag(), jobRecord.getConfig(), newQuorumSize);
+                    jobRecord.getDag(), jobRecord.getDagJson(), jobRecord.getConfig(), newQuorumSize);
             entry.setValue(newJobRecord);
         }
 

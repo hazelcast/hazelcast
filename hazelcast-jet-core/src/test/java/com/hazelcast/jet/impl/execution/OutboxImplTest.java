@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.function.Predicate;
 
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
@@ -38,7 +39,7 @@ public class OutboxImplTest {
     public ExpectedException exception = ExpectedException.none();
 
     private OutboxImpl outbox = new OutboxImpl(new OutboundCollector[] {e -> DONE, e -> DONE, e -> DONE},
-            true, new ProgressTracker(), mock(SerializationService.class), 3);
+            true, new ProgressTracker(), mock(SerializationService.class), 3, new AtomicLongArray(4));
 
     @Before
     public void before() {
@@ -81,7 +82,7 @@ public class OutboxImplTest {
     public void when_queueFullAndOfferReturnedFalse_then_subsequentCallFails() {
         // See https://github.com/hazelcast/hazelcast-jet/issues/622
         outbox = new OutboxImpl(new OutboundCollector[] {e -> DONE, e -> NO_PROGRESS},
-                true, new ProgressTracker(), mock(SerializationService.class), 128);
+                true, new ProgressTracker(), mock(SerializationService.class), 128, new AtomicLongArray(3));
 
         // we succeed offering to one queue, but not to the other, thus false
         assertFalse(outbox.offer(4));

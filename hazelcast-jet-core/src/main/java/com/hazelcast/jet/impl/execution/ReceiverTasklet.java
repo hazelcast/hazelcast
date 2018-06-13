@@ -31,9 +31,11 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static java.lang.Math.ceil;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -82,6 +84,9 @@ public class ReceiverTasklet implements Tasklet {
     private final OutboundCollector collector;
 
     private boolean receptionDone;
+
+    private final AtomicLong itemsInCounter = new AtomicLong();
+    private final AtomicLong bytesInCounter = new AtomicLong();
 
     //                    FLOW-CONTROL STATE
     //            All arrays are indexed by sender ID.
@@ -242,6 +247,8 @@ public class ReceiverTasklet implements Tasklet {
 
     private void tryFillInbox() {
         try {
+            long totalBytes = 0;
+            long totalItems = 0;
             for (BufferObjectDataInput received; (received = incoming.poll()) != null; ) {
                 final int itemCount = received.readInt();
                 for (int i = 0; i < itemCount; i++) {
@@ -250,9 +257,13 @@ public class ReceiverTasklet implements Tasklet {
                     final int itemSize = received.position() - mark;
                     inbox.add(new ObjWithPtionIdAndSize(item, received.readInt(), itemSize));
                 }
+                totalItems += itemCount;
+                totalBytes += received.position();
                 received.close();
                 tracker.madeProgress();
             }
+            lazyAdd(bytesInCounter, totalBytes);
+            lazyAdd(itemsInCounter, totalItems);
         } catch (IOException e) {
             throw rethrow(e);
         }
@@ -265,5 +276,13 @@ public class ReceiverTasklet implements Tasklet {
             super(item, partitionId);
             this.estimatedMemoryFootprint = estimatedMemoryFootprint(itemBlobSize);
         }
+    }
+
+    public AtomicLong getItemsInCounter() {
+        return itemsInCounter;
+    }
+
+    public AtomicLong getBytesInCounter() {
+        return bytesInCounter;
     }
 }

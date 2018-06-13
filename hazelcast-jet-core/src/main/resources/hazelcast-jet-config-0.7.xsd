@@ -49,6 +49,15 @@
                         </xs:all>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="metrics" minOccurs="0">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
+                            <xs:element name="retention-seconds" type="positive-int" minOccurs="0"/>
+                            <xs:element name="enabled-for-data-structures" type="xs:boolean" minOccurs="0"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
             </xs:all>
         </xs:complexType>
     </xs:element>

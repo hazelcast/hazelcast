@@ -82,7 +82,6 @@ public class JetService
         this.config = config;
     }
 
-
     // ManagedService
 
     @Override
@@ -92,7 +91,7 @@ public class JetService
         }
 
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
-        taskletExecutionService = new TaskletExecutionService(nodeEngine.getHazelcastInstance(),
+        taskletExecutionService = new TaskletExecutionService(nodeEngine,
                 config.getInstanceConfig().getCooperativeThreadCount());
 
         SnapshotRepository snapshotRepository = new SnapshotRepository(jetInstance);

@@ -28,6 +28,7 @@ import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
@@ -169,6 +170,9 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
                 case "edge-defaults":
                     parseEdgeDefaults(node);
                     break;
+                case "metrics":
+                    parseMetrics(node);
+                    break;
                 default:
                     throw new AssertionError("Unrecognized XML element: " + name);
             }
@@ -215,6 +219,26 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
         }
     }
 
+    private void parseMetrics(Node edgeNode) {
+        MetricsConfig config = jetConfig.getMetricsConfig();
+        for (Node child : childElements(edgeNode)) {
+            String name = cleanNodeName(child);
+            switch (name) {
+                case "enabled":
+                    config.setEnabled(booleanValue(child));
+                    break;
+                case "retention-seconds":
+                    config.setRetentionSeconds(intValue(child));
+                    break;
+                case "enabled-for-data-structures":
+                    config.setEnabledForDataStructures(booleanValue(child));
+                    break;
+                default:
+                    throw new AssertionError("Unrecognized XML element: " + name);
+            }
+        }
+    }
+
     private int intValue(Node node) {
         return Integer.parseInt(stringValue(node));
     }
@@ -223,4 +247,7 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
         return getTextContent(node);
     }
 
+    private boolean booleanValue(Node node) {
+        return Boolean.parseBoolean(getTextContent(node));
+    }
 }

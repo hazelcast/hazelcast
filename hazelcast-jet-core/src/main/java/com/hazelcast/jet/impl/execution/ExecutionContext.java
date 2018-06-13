@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
@@ -64,7 +65,7 @@ public class ExecutionContext {
     private List<ProcessorSupplier> procSuppliers = emptyList();
     private List<Processor> processors = emptyList();
 
-    private List<Tasklet> tasklets;
+    private List<Tasklet> tasklets = emptyList();
 
     // future which is completed only after all tasklets are completed and contains execution result
     private volatile CompletableFuture<Void> executionFuture;
@@ -154,6 +155,7 @@ public class ExecutionContext {
         }
         MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
         processors.forEach(metricsRegistry::deregister);
+        tasklets.forEach(metricsRegistry::deregister);
     }
 
     /**
@@ -174,7 +176,7 @@ public class ExecutionContext {
     /**
      * Starts a new snapshot by incrementing the current snapshot id
      */
-    public CompletionStage<Void> beginSnapshot(long snapshotId) {
+    public CompletionStage<SnapshotOperationResult> beginSnapshot(long snapshotId) {
         synchronized (executionLock) {
             if (cancellationFuture.isDone() || executionFuture != null && executionFuture.isDone()) {
                 throw new CancellationException();

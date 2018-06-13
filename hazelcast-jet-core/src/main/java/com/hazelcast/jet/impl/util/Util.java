@@ -48,6 +48,7 @@ import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -56,14 +57,18 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -334,6 +339,15 @@ public final class Util {
         return new String(buf);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
+    public static long idFromString(String str) {
+        if (str == null || str.length() != ID_TEMPLATE.length) {
+            return -1;
+        }
+        str = str.replaceAll("-", "");
+        return new BigInteger(str, 16).longValue();
+    }
+
     public static <K, V> EntryProcessor<K, V> entryProcessor(
             DistributedBiFunction<? super K, ? super V, ? extends V> remappingFunction
     ) {
@@ -374,6 +388,9 @@ public final class Util {
         return future;
     }
 
+    /**
+     * Logs a late event that was dropped.
+     */
     public static void logLateEvent(ILogger logger, long currentWm, @Nonnull Object item) {
         if (!logger.isInfoEnabled()) {
             return;
@@ -414,6 +431,46 @@ public final class Util {
             return a;
         }
         return gcd(b, a % b);
+    }
+
+    public static void lazyIncrement(AtomicLong counter) {
+        lazyAdd(counter, 1);
+    }
+
+    public static void lazyIncrement(AtomicLongArray counters, int index) {
+        lazyAdd(counters, index, 1);
+    }
+
+    /**
+     * Adds {@code addend} to the counter, using {@code lazySet}. Useful for
+     * incrementing {@linkplain com.hazelcast.internal.metrics.Probe probes}
+     * if only one thread is updating the value.
+     */
+    public static void lazyAdd(AtomicLong counter, long addend) {
+        counter.lazySet(counter.get() + addend);
+    }
+
+    /**
+     * Adds {@code addend} to the counter, using {@code lazySet}. Useful for
+     * incrementing {@linkplain com.hazelcast.internal.metrics.Probe probes}
+     * if only one thread is updating the value.
+     */
+    public static void lazyAdd(AtomicLongArray counters, int index, long addend) {
+        counters.lazySet(index, counters.get(index) + addend);
+    }
+
+    /**
+     * Adds items of the collection. Faster than {@code
+     * collection.stream().mapToInt(toIntF).sum()} and equal to plain old loop
+     * in performance. Crates no GC litter (if you use non-capturing lambda for
+     * {@code toIntF}, else new lambda instance is created for each call).
+     */
+    public static <E> int sum(Collection<E> collection, ToIntFunction<E> toIntF) {
+        int sum = 0;
+        for (E e : collection) {
+            sum += toIntF.applyAsInt(e);
+        }
+        return sum;
     }
 
     /**
