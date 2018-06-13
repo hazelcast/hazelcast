@@ -19,7 +19,6 @@ package com.hazelcast.util.collection;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.collection.OAHashSet;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -72,7 +71,7 @@ public class OAHashSetTest {
     @Test(expected = NullPointerException.class)
     public void testAddWithHashNull() {
         final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
-        set.add(1, null);
+        set.add(null, 1);
     }
 
     @Test
@@ -198,7 +197,7 @@ public class OAHashSetTest {
     @Test(expected = NullPointerException.class)
     public void testContainsWithHashNull() {
         final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
-        set.contains(1, null);
+        set.contains(null, 1);
     }
 
     @Test
@@ -287,7 +286,7 @@ public class OAHashSetTest {
     @Test(expected = NullPointerException.class)
     public void testRemoveWithHashNull() {
         final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
-        set.remove(1, null);
+        set.remove(null, 1);
     }
 
     @Test
