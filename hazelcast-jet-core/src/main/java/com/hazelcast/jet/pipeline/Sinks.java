@@ -483,7 +483,7 @@ public final class Sinks {
 
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
-     * a custom file sink for the Pipeline API. See javadoc on {@link
+     * a custom file sink for the Pipeline API. See javadoc of methods in {@link
      * FileSinkBuilder} for more details.
      * <p>
      * The sink writes the items it receives to files. Each
