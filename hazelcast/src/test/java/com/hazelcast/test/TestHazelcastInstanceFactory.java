@@ -47,7 +47,10 @@ import static java.util.Collections.unmodifiableCollection;
 
 public class TestHazelcastInstanceFactory {
 
+    private static final int DEFAULT_INITIAL_PORT = 5000;
     private static final AtomicInteger PORTS = new AtomicInteger(5000);
+    private static final Set<Integer> OCCUPIED_PORTS
+            = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
 
     protected final TestNodeRegistry registry;
 
@@ -309,6 +312,13 @@ public class TestHazelcastInstanceFactory {
 
     private Address createAddress() {
         return createAddress("127.0.0.1", PORTS.incrementAndGet());
+    }
+
+    public int nextAvailablePort(int port) {
+        while (!OCCUPIED_PORTS.add(port)) {
+            port++;
+        }
+        return port;
     }
 
     private static Address createAddress(String host, int port) {
