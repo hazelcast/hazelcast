@@ -36,7 +36,7 @@ public class PersonCacheLoaderFactory implements Factory<CacheLoader<String, Per
             @Override
             public Map<String, Person> loadAll(Iterable<? extends String> itrbl) throws CacheLoaderException {
                 Map<String, Person> rv = new HashMap<String, Person>();
-                for(String it : itrbl) {
+                for (String it : itrbl) {
                     rv.put(it, load(it));
                 }
                 return rv;

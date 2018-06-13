@@ -56,7 +56,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testImportElementOnlyAppersInTopLevel() throws Exception {
+    public void testImportElementOnlyAppersInTopLevel() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "   <network>\n"
                 + "        <import resource=\"\"/>\n"
@@ -67,7 +67,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testHazelcastElementOnlyAppearsOnce() throws Exception {
+    public void testHazelcastElementOnlyAppearsOnce() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "   <hazelcast-client>"
                 + "   </hazelcast-client>"
@@ -196,7 +196,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testImportEmptyResourceThrowsException() throws Exception {
+    public void testImportEmptyResourceThrowsException() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"\"/>\n"
                 + HAZELCAST_CLIENT_END_TAG;
@@ -205,7 +205,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testImportNotExistingResourceThrowsException() throws Exception {
+    public void testImportNotExistingResourceThrowsException() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"notexisting.xml\"/>\n"
                 + HAZELCAST_CLIENT_END_TAG;
@@ -243,12 +243,12 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
                 + "    </group>\n"
                 + HAZELCAST_CLIENT_END_TAG;
         GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
-        assertEquals(System.getProperty("java.version")+ " dev", groupConfig.getName());
+        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getName());
         assertEquals("My very secret secret", groupConfig.getPassword());
     }
 
     @Test(expected = ConfigurationException.class)
-    public void testMissingReplacement() throws Exception {
+    public void testMissingReplacement() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <config-replacers>\n"
                 + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'/>\n"
@@ -261,7 +261,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
     }
 
     @Test
-    public void testReplacerProperties() throws Exception {
+    public void testReplacerProperties() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <config-replacers fail-if-value-missing='false'>\n"
                 + "        <replacer class-name='" + TestReplacer.class.getName() + "'>\n"
@@ -289,7 +289,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
      * behavior, as if {@code fail-if-value-missing} attribute is {@code false}).
      */
     @Test
-    public void testNoConfigReplacersMissingProperties() throws Exception {
+    public void testNoConfigReplacersMissingProperties() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <group>\n"
                 + "        <name>${noSuchPropertyAvailable}</name>\n"
@@ -300,7 +300,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
     }
 
     @Test
-    public void testImportGroupConfigFromClassPath() throws Exception {
+    public void testImportGroupConfigFromClassPath() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"classpath:hazelcast-client-c1.xml\"/>\n"
                 + HAZELCAST_CLIENT_END_TAG;

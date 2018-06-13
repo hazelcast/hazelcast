@@ -27,8 +27,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
-
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,7 +60,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -1817,7 +1814,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "        <value-collection-type>SET</value-collection-type>"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "        <entry-listeners>\n"
-                + "            <entry-listener include-value=\"true\" local=\"true\">com.hazelcast.examples.EntryListener</entry-listener>\n"
+                +
+                "            <entry-listener include-value=\"true\" local=\"true\">com.hazelcast.examples.EntryListener</entry-listener>\n"
                 + "          </entry-listeners>"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
                 + "  </multimap>"
@@ -1989,7 +1987,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>\n"
                 + "          </partition-lost-listeners>"
                 + "        <entry-listeners>\n"
-                + "            <entry-listener include-value=\"false\" local=\"false\">com.your-package.MyEntryListener</entry-listener>\n"
+                +
+                "            <entry-listener include-value=\"false\" local=\"false\">com.your-package.MyEntryListener</entry-listener>\n"
                 + "          </entry-listeners>"
                 + "    </map>\n"
                 + HAZELCAST_END_TAG;
@@ -2405,9 +2404,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "      </java-serialization-filter>\n"
                 + "  </serialization>\n"
                 + HAZELCAST_END_TAG;
-        
+
         Config config = new InMemoryXmlConfig(xml);
-        JavaSerializationFilterConfig javaSerializationFilterConfig = config.getSerializationConfig().getJavaSerializationFilterConfig();
+        JavaSerializationFilterConfig javaSerializationFilterConfig
+                = config.getSerializationConfig().getJavaSerializationFilterConfig();
         assertNotNull(javaSerializationFilterConfig);
         ClassFilter blackList = javaSerializationFilterConfig.getBlacklist();
         assertNotNull(blackList);

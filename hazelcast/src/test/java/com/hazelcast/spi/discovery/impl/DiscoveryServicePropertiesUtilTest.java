@@ -128,5 +128,4 @@ public class DiscoveryServicePropertiesUtilTest {
             throw new ValidationException("Invalid property");
         }
     }
-
 }

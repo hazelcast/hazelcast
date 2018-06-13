@@ -202,12 +202,12 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void invokeAll_timeout_quorum() throws Exception {
-        wait(exec(0).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS));
+        wait(exec(0).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10L, TimeUnit.SECONDS));
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void invokeAll_timeout_noQuorum() throws Exception {
-        wait(exec(3).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS));
+        wait(exec(3).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10L, TimeUnit.SECONDS));
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -222,12 +222,12 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void invokeAny_timeout_quorum() throws Exception {
-        exec(0).invokeAny(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS);
+        exec(0).invokeAny(Arrays.<Callable<Object>>asList(callable(), callable()), 10L, TimeUnit.SECONDS);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void invokeAny_timeout_noQuorum() throws Exception {
-        exec(3).invokeAny(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS);
+        exec(3).invokeAny(Arrays.<Callable<Object>>asList(callable(), callable()), 10L, TimeUnit.SECONDS);
     }
 
     @Test

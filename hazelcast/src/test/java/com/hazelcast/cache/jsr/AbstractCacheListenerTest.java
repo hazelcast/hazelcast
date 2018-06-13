@@ -127,35 +127,35 @@ public abstract class AbstractCacheListenerTest extends org.jsr107.tck.event.Cac
         assertEquals(0, filteredListener.getUpdated());
         assertEquals(0, filteredListener.getRemoved());
 
-        cache.put(1l, "Sooty");
+        cache.put(1L, "Sooty");
         assertEquals(1, filteredListener.getCreated());
         assertEquals(0, filteredListener.getUpdated());
         assertEquals(0, filteredListener.getRemoved());
 
         Map<Long, String> entries = new HashMap<Long, String>();
-        entries.put(2l, "Lucky");
-        entries.put(3l, "Bryn");
+        entries.put(2L, "Lucky");
+        entries.put(3L, "Bryn");
         cache.putAll(entries);
         assertEquals(2, filteredListener.getCreated());
         assertEquals(0, filteredListener.getUpdated());
         assertEquals(0, filteredListener.getRemoved());
 
-        cache.put(1l, "Zyn");
+        cache.put(1L, "Zyn");
         assertEquals(2, filteredListener.getCreated());
         assertEquals(0, filteredListener.getUpdated());
         assertEquals(0, filteredListener.getRemoved());
 
-        cache.remove(2l);
+        cache.remove(2L);
         assertEquals(2, filteredListener.getCreated());
         assertEquals(0, filteredListener.getUpdated());
         assertEquals(1, filteredListener.getRemoved());
 
-        cache.replace(1l, "Fred");
+        cache.replace(1L, "Fred");
         assertEquals(2, filteredListener.getCreated());
         assertEquals(1, filteredListener.getUpdated());
         assertEquals(1, filteredListener.getRemoved());
 
-        cache.replace(3l, "Bryn", "Sooty");
+        cache.replace(3L, "Bryn", "Sooty");
         assertEquals(2, filteredListener.getCreated());
         assertEquals(2, filteredListener.getUpdated());
         assertEquals(1, filteredListener.getRemoved());
@@ -180,7 +180,7 @@ public abstract class AbstractCacheListenerTest extends org.jsr107.tck.event.Cac
         assertEquals(2, filteredListener.getUpdated());
         assertEquals(1, filteredListener.getRemoved());
 
-        cache.getAndPut(1l, "Pistachio");
+        cache.getAndPut(1L, "Pistachio");
         assertEquals(2, filteredListener.getCreated());
         assertEquals(3, filteredListener.getUpdated());
         assertEquals(1, filteredListener.getRemoved());
@@ -192,12 +192,12 @@ public abstract class AbstractCacheListenerTest extends org.jsr107.tck.event.Cac
         assertEquals(3, filteredListener.getUpdated());
         assertEquals(1, filteredListener.getRemoved());
 
-        cache.getAndReplace(1l, "Prince");
+        cache.getAndReplace(1L, "Prince");
         assertEquals(2, filteredListener.getCreated());
         assertEquals(4, filteredListener.getUpdated());
         assertEquals(1, filteredListener.getRemoved());
 
-        cache.getAndRemove(1l);
+        cache.getAndRemove(1L);
         assertEquals(2, filteredListener.getCreated());
         assertEquals(4, filteredListener.getUpdated());
         assertEquals(2, filteredListener.getRemoved());
