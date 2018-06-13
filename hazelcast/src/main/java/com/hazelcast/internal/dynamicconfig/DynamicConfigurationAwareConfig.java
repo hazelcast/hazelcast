@@ -58,7 +58,6 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
 import com.hazelcast.internal.dynamicconfig.search.Searcher;
@@ -80,11 +79,9 @@ import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
 import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
 import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
 
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"unchecked", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class DynamicConfigurationAwareConfig extends Config {
 
-    private final Config staticConfig;
-    private final ConfigPatternMatcher configPatternMatcher;
     private final ConfigSupplier<MapConfig> mapConfigOrNullConfigSupplier = new ConfigSupplier<MapConfig>() {
         @Override
         public MapConfig getDynamicConfig(@Nonnull ConfigurationService configurationService, @Nonnull String name) {
@@ -137,25 +134,22 @@ public class DynamicConfigurationAwareConfig extends Config {
                     return staticConfig.getCacheEventJournalConfigs();
                 }
             };
+
+    private final Config staticConfig;
+    private final ConfigPatternMatcher configPatternMatcher;
     private final boolean isStaticFirst;
 
     private volatile ConfigurationService configurationService = new EmptyConfigurationService();
-    private volatile Searcher configSearcher;
-    private volatile ClusterService clusterService;
     private volatile DynamicSecurityConfig dynamicSecurityConfig;
+    private volatile Searcher configSearcher;
 
     public DynamicConfigurationAwareConfig(Config staticConfig, HazelcastProperties properties) {
         assert !(staticConfig instanceof DynamicConfigurationAwareConfig) : "A static Config object is required";
         this.staticConfig = staticConfig;
         this.configPatternMatcher = staticConfig.getConfigPatternMatcher();
-        dynamicSecurityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), null);
-        isStaticFirst = !properties.getBoolean(SEARCH_DYNAMIC_CONFIG_FIRST);
-        initConfigSearcher();
-    }
-
-    private void initConfigSearcher() {
-        configSearcher = ConfigSearch.searcherFor(staticConfig, configurationService, configPatternMatcher,
-                isStaticFirst);
+        this.isStaticFirst = !properties.getBoolean(SEARCH_DYNAMIC_CONFIG_FIRST);
+        this.dynamicSecurityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), null);
+        this.configSearcher = initConfigSearcher();
     }
 
     @Override
@@ -482,7 +476,6 @@ public class DynamicConfigurationAwareConfig extends Config {
     private MultiMapConfig getMultiMapConfigInternal(String name, String fallbackName) {
         return (MultiMapConfig) configSearcher.getConfig(name, fallbackName, supplierFor(MultiMapConfig.class));
     }
-
 
     @Override
     public Config addMultiMapConfig(MultiMapConfig multiMapConfig) {
@@ -939,7 +932,6 @@ public class DynamicConfigurationAwareConfig extends Config {
         return (SemaphoreConfig) configSearcher.getConfig(name, fallbackName, supplierFor(SemaphoreConfig.class));
     }
 
-
     @Override
     public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
         checkStaticConfigurationDoesNotExist(staticConfig.getSemaphoreConfigsAsMap(),
@@ -1318,17 +1310,16 @@ public class DynamicConfigurationAwareConfig extends Config {
         return staticConfig.toString();
     }
 
-
     public void setConfigurationService(ConfigurationService configurationService) {
         this.configurationService = configurationService;
-        initConfigSearcher();
-    }
-
-    public void setClusterService(ClusterService clusterService) {
-        this.clusterService = clusterService;
+        this.configSearcher = initConfigSearcher();
     }
 
     public void onSecurityServiceUpdated(SecurityService securityService) {
         this.dynamicSecurityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), securityService);
+    }
+
+    private Searcher initConfigSearcher() {
+        return ConfigSearch.searcherFor(staticConfig, configurationService, configPatternMatcher, isStaticFirst);
     }
 }

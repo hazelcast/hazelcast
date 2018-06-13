@@ -225,8 +225,6 @@ public class Node {
             textCommandService = new TextCommandServiceImpl(this);
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             joiner = nodeContext.createJoiner(this);
-
-            config.setClusterService(clusterService);
         } catch (Throwable e) {
             closeResource(serverSocketChannel);
             try {
