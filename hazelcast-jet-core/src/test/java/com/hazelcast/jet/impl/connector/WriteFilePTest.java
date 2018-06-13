@@ -243,7 +243,10 @@ public class WriteFilePTest extends JetTestSupport {
         // Given
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.<String>list(list.getName()))
-         .drainTo(Sinks.files(directory.toString(), val -> Integer.toString(Integer.parseInt(val) - 1)));
+         .drainTo(Sinks.<String>filesBuilder(directory.toString())
+                       .toStringFn(val -> Integer.toString(Integer.parseInt(val) - 1))
+                       .build());
+
         addItemsToList(1, 11);
 
         // When
@@ -307,7 +310,11 @@ public class WriteFilePTest extends JetTestSupport {
         }
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.<String>list(list.getName()))
-         .drainTo(Sinks.files(directory.toString(), toStringFn, charset, append));
+         .drainTo(Sinks.<String>filesBuilder(directory.toString())
+                 .toStringFn(toStringFn)
+                 .charset(charset)
+                 .append(append)
+                 .build());
         return p;
     }
 

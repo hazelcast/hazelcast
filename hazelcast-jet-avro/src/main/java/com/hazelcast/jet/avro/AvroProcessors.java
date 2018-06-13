@@ -52,17 +52,17 @@ public final class AvroProcessors {
     public static <W, R> ProcessorMetaSupplier readFilesP(
             @Nonnull String directory,
             @Nonnull String glob,
+            boolean sharedFileSystem,
             @Nonnull DistributedSupplier<DatumReader<W>> datumReaderSupplier,
-            @Nonnull DistributedBiFunction<String, W, R> mapOutputFn,
-            boolean sharedFileSystem
+            @Nonnull DistributedBiFunction<String, W, R> mapOutputFn
     ) {
-        return ReadFilesP.metaSupplier(directory, glob,
+        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem,
                 path -> uncheckCall(() -> {
                     DataFileReader<W> reader = new DataFileReader<>(path.toFile(), datumReaderSupplier.get());
                     return StreamSupport.stream(reader.spliterator(), false)
                                         .onClose(() -> uncheckRun(reader::close));
                 }),
-                mapOutputFn, sharedFileSystem);
+                mapOutputFn);
     }
 
     /**

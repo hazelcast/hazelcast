@@ -50,7 +50,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Static utility class with factories of sink processors (the terminators
@@ -67,7 +66,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier writeMapP(@Nonnull String mapName) {
-        return HazelcastWriters.writeMapP(mapName, null);
+        return HazelcastWriters.writeMapSupplier(mapName, null);
     }
 
     /**
@@ -76,7 +75,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return HazelcastWriters.writeMapP(mapName, clientConfig);
+        return HazelcastWriters.writeMapSupplier(mapName, clientConfig);
     }
 
     /**
@@ -91,7 +90,7 @@ public final class SinkProcessors {
             @Nonnull DistributedFunction<E, V> toValueFn,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
-        return HazelcastWriters.mergeMapP(mapName, null, toKeyFn, toValueFn, mergeFn);
+        return HazelcastWriters.mergeMapSupplier(mapName, null, toKeyFn, toValueFn, mergeFn);
     }
 
     /**
@@ -107,7 +106,7 @@ public final class SinkProcessors {
             @Nonnull DistributedFunction<E, V> toValueFn,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
-        return HazelcastWriters.mergeMapP(mapName, clientConfig, toKeyFn, toValueFn, mergeFn);
+        return HazelcastWriters.mergeMapSupplier(mapName, clientConfig, toKeyFn, toValueFn, mergeFn);
     }
 
     /**
@@ -120,7 +119,7 @@ public final class SinkProcessors {
             @Nonnull DistributedFunction<E, K> toKeyFn,
             @Nonnull DistributedBiFunction<V, E, V> updateFn
     ) {
-        return HazelcastWriters.updateMapP(mapName, null, toKeyFn, updateFn);
+        return HazelcastWriters.updateMapSupplier(mapName, null, toKeyFn, updateFn);
     }
 
     /**
@@ -135,7 +134,7 @@ public final class SinkProcessors {
             @Nonnull DistributedFunction<E, K> toKeyFn,
             @Nonnull DistributedBiFunction<V, E, V> updateFn
     ) {
-        return HazelcastWriters.updateMapP(mapName, clientConfig, toKeyFn, updateFn);
+        return HazelcastWriters.updateMapSupplier(mapName, clientConfig, toKeyFn, updateFn);
     }
 
     /**
@@ -149,7 +148,7 @@ public final class SinkProcessors {
             @Nonnull DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn
 
     ) {
-        return HazelcastWriters.updateMapP(mapName, null, toKeyFn, toEntryProcessorFn);
+        return HazelcastWriters.updateMapSupplier(mapName, null, toKeyFn, toEntryProcessorFn);
     }
 
     /**
@@ -164,7 +163,7 @@ public final class SinkProcessors {
             @Nonnull DistributedFunction<T, K> toKeyFn,
             @Nonnull DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn
     ) {
-        return HazelcastWriters.updateMapP(mapName, clientConfig, toKeyFn, toEntryProcessorFn);
+        return HazelcastWriters.updateMapSupplier(mapName, clientConfig, toKeyFn, toEntryProcessorFn);
     }
 
     /**
@@ -173,7 +172,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier writeCacheP(@Nonnull String cacheName) {
-        return HazelcastWriters.writeCacheP(cacheName, null);
+        return HazelcastWriters.writeCacheSupplier(cacheName, null);
     }
 
     /**
@@ -184,7 +183,7 @@ public final class SinkProcessors {
     public static ProcessorMetaSupplier writeRemoteCacheP(
             @Nonnull String cacheName, @Nonnull ClientConfig clientConfig
     ) {
-        return HazelcastWriters.writeCacheP(cacheName, clientConfig);
+        return HazelcastWriters.writeCacheSupplier(cacheName, clientConfig);
     }
 
     /**
@@ -193,7 +192,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier writeListP(@Nonnull String listName) {
-        return HazelcastWriters.writeListP(listName, null);
+        return HazelcastWriters.writeListSupplier(listName, null);
     }
 
     /**
@@ -202,7 +201,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return HazelcastWriters.writeListP(listName, clientConfig);
+        return HazelcastWriters.writeListSupplier(listName, clientConfig);
     }
 
     /**
@@ -236,8 +235,7 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for
-     * {@link Sinks#files(String, DistributedFunction, Charset, boolean)}.
+     * Returns a supplier of processors for {@link Sinks#filesBuilder}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFileP(
@@ -251,24 +249,6 @@ public final class SinkProcessors {
         return WriteFileP.metaSupplier(directoryName, toStringFn, charset.name(), append);
     }
 
-    /**
-     * Returns a supplier of processors for
-     * {@link Sinks#files(String, DistributedFunction)}.
-     */
-    @Nonnull
-    public static <T> ProcessorMetaSupplier writeFileP(
-            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringFn
-    ) {
-        return writeFileP(directoryName, toStringFn, UTF_8, false);
-    }
-
-    /**
-     * Returns a supplier of processors for {@link Sinks#files(String)}.
-     */
-    @Nonnull
-    public static ProcessorMetaSupplier writeFileP(@Nonnull String directoryName) {
-        return writeFileP(directoryName, Object::toString, UTF_8, false);
-    }
 
     /**
      * Shortcut for {@link #writeBufferedP(DistributedFunction,

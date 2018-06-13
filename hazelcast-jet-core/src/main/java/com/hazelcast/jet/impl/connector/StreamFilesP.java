@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
@@ -46,7 +45,6 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
@@ -56,7 +54,6 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Private API. Access via {@link
@@ -96,8 +93,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
     private final Path watchedDirectory;
     private final Charset charset;
     private final PathMatcher glob;
-    private final int parallelism;
-    private final int id;
+    private final boolean sharedFileSystem;
     private final DistributedBiFunction<String, String, R> mapOutputFn;
 
     private final Queue<Path> eventQueue = new ArrayDeque<>();
@@ -109,21 +105,25 @@ public class StreamFilesP<R> extends AbstractProcessor {
     private String currentFileName;
     private FileInputStream currentInputStream;
     private Reader currentReader;
+    private int parallelism;
+    private int processorIndex;
 
     StreamFilesP(@Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob,
-                 int parallelism, int id, @Nonnull DistributedBiFunction<String, String, R> mapOutputFn
+                 boolean sharedFileSystem, @Nonnull DistributedBiFunction<String, String, R> mapOutputFn
     ) {
         this.watchedDirectory = Paths.get(watchedDirectory);
         this.charset = charset;
         this.glob = FileSystems.getDefault().getPathMatcher("glob:" + glob);
-        this.parallelism = parallelism;
-        this.id = id;
+        this.sharedFileSystem = sharedFileSystem;
         this.mapOutputFn = mapOutputFn;
         setCooperative(false);
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
+        processorIndex = sharedFileSystem ? context.globalProcessorIndex() : context.localProcessorIndex();
+        parallelism = sharedFileSystem ? context.totalParallelism() : context.localParallelism();
+
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(watchedDirectory)) {
             for (Path file : directoryStream) {
                 if (Files.isRegularFile(file)) {
@@ -212,7 +212,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
     }
 
     private boolean belongsToThisProcessor(Path path) {
-        return ((path.hashCode() & Integer.MAX_VALUE) % parallelism) == id;
+        return ((path.hashCode() & Integer.MAX_VALUE) % parallelism) == processorIndex;
     }
 
     private void processFile() {
@@ -348,14 +348,11 @@ public class StreamFilesP<R> extends AbstractProcessor {
             @Nonnull String watchedDirectory,
             @Nonnull String charset,
             @Nonnull String glob,
+            boolean sharedFileSystem,
             @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
     ) {
-        return ProcessorMetaSupplier.of((ProcessorSupplier)
-                count -> IntStream.range(0, count)
-                        .mapToObj(i -> new StreamFilesP(watchedDirectory, Charset.forName(charset), glob, count, i,
-                                mapOutputFn))
-                        .collect(toList()),
-                2);
+        return ProcessorMetaSupplier.of(() ->
+                new StreamFilesP<>(watchedDirectory, Charset.forName(charset), glob, sharedFileSystem, mapOutputFn), 2);
     }
 
     private static WatchEvent.Modifier[] getHighSensitivityModifiers() {

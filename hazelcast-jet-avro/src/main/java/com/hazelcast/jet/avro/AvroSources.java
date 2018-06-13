@@ -19,7 +19,8 @@ package com.hazelcast.jet.avro;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.jet.pipeline.FileSourceBuilder;
+import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
@@ -28,7 +29,10 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificRecord;
 
 import javax.annotation.Nonnull;
-import java.io.File;
+import java.util.stream.StreamSupport;
+
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
  * Contains factory methods for Apache Avro sources.
@@ -39,81 +43,53 @@ public final class AvroSources {
     }
 
     /**
-     * A source that reads records from Apache Avro files in a directory (but
-     * not its subdirectories).
-     * <p>
-     * If {@code sharedFileSystem} is {@code true}, Jet will assume all members
-     * see the same files. They will split the work so that each member will
-     * read a part of the files. If {@code sharedFileSystem} is {@code false},
-     * each member will read all files in the directory, assuming the are
-     * local.
-     * <p>
-     * The source does not save any state to snapshot. If the job is restarted,
-     * it will re-emit all entries.
-     * <p>
-     * Any {@code IOException} will cause the job to fail. The files must not
-     * change while being read; if they do, the behavior is unspecified.
-     * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom Avro file source for the Pipeline API. The source reads records
+     * from Apache Avro files in a directory (but not its subdirectories).
      *
      * @param directory           parent directory of the files
-     * @param glob                the globbing mask, see {@link
-     *                            java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
-     *                            Use {@code "*"} for all files.
-     * @param datumReaderSupplier the datum reader supplier
-     * @param mapOutputFn         function to create output items. Parameters are
-     *                            {@code fileName} and {@code W}.
-     * @param sharedFileSystem    {@code true} if files are in a shared storage
-     *                                        visible to all members, {@code
-     *                                        false} otherwise
      * @param <W>                 the type of the records
      * @param <R>                 the type of the emitted value
      */
     @Nonnull
-    public static <W, R> BatchSource<R> files(
+    public static <W, R> FileSourceBuilder<W, R> filesBuilder(
             @Nonnull String directory,
-            @Nonnull String glob,
-            @Nonnull DistributedSupplier<DatumReader<W>> datumReaderSupplier,
-            @Nonnull DistributedBiFunction<String, W, ? extends R> mapOutputFn,
-            boolean sharedFileSystem
+            @Nonnull DistributedSupplier<DatumReader<W>> datumReaderSupplier
     ) {
-        return Sources.batchFromProcessor("avroFilesSource(" + new File(directory, glob) + ')',
-                AvroProcessors.readFilesP(directory, glob, datumReaderSupplier, mapOutputFn, sharedFileSystem));
+        return new FileSourceBuilder<>(directory, "avroFilesSource",
+                path -> uncheckCall(() -> {
+                    DataFileReader<W> reader = new DataFileReader<>(path.toFile(), datumReaderSupplier.get());
+                    return StreamSupport.stream(reader.spliterator(), false)
+                                        .onClose(() -> uncheckRun(reader::close));
+                }));
     }
 
     /**
-     * Convenience for {@link
-     * #files(String, String, DistributedSupplier, DistributedBiFunction, boolean)}
-     * which reads all the files in the supplied directory as specific records
-     * using supplied {@code recordClass}. If {@code recordClass} implements
-     * {@link SpecificRecord}, {@link SpecificDatumReader} is used to read the
-     * records, {@link ReflectDatumReader} is used otherwise.
+     * Convenience for {@link #filesBuilder(String, DistributedSupplier)} which
+     * reads all the files in the supplied directory as specific records using
+     * supplied {@code recordClass}. If {@code recordClass} implements {@link
+     * SpecificRecord}, {@link SpecificDatumReader} is used to read the records,
+     * {@link ReflectDatumReader} is used otherwise.
      */
     @Nonnull
-    public static <R> BatchSource<R> files(
-            @Nonnull String directory,
-            @Nonnull Class<R> recordClass,
-            boolean sharedFileSystem
-    ) {
-        return files(directory, "*", () -> SpecificRecord.class.isAssignableFrom(recordClass) ?
-                        new SpecificDatumReader<>(recordClass) : new ReflectDatumReader<>(recordClass),
-                (s, r) -> r, sharedFileSystem);
+    public static <R> BatchSource<R> files(@Nonnull String directory, @Nonnull Class<R> recordClass) {
+        return AvroSources.<R, R>filesBuilder(directory, () -> SpecificRecord.class.isAssignableFrom(recordClass) ?
+                new SpecificDatumReader<>(recordClass) : new ReflectDatumReader<>(recordClass)).build();
     }
 
     /**
-     * Convenience for {@link
-     * #files(String, String, DistributedSupplier, DistributedBiFunction, boolean)}
-     * which reads all the files in the supplied directory as generic records and
+     * Convenience for {@link #filesBuilder(String, DistributedSupplier)} which
+     * reads all the files in the supplied directory as generic records and
      * emits the results of transforming each generic record with the supplied
      * mapping function.
      */
     @Nonnull
     public static <R> BatchSource<R> files(
             @Nonnull String directory,
-            @Nonnull DistributedBiFunction<String, GenericRecord, R> mapOutputFn,
-            boolean sharedFileSystem
+            @Nonnull DistributedBiFunction<String, GenericRecord, R> mapOutputFn
     ) {
-        return files(directory, "*", GenericDatumReader::new, mapOutputFn, sharedFileSystem);
+        return AvroSources.<GenericRecord, R>filesBuilder(directory, GenericDatumReader::new)
+                .mapOutputFn(mapOutputFn)
+                .build();
     }
 }

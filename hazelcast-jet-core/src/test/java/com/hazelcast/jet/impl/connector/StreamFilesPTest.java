@@ -94,7 +94,7 @@ public class StreamFilesPTest extends JetTestSupport {
 
     @Test
     public void when_metaSupplier_then_returnsCorrectProcessors() {
-        ProcessorMetaSupplier metaSupplier = streamFilesP(workDir.getAbsolutePath(), UTF_8, "*", Util::entry);
+        ProcessorMetaSupplier metaSupplier = streamFilesP(workDir.getAbsolutePath(), UTF_8, "*", false, Util::entry);
         Address a = new Address();
         ProcessorSupplier supplier = metaSupplier.get(singletonList(a)).apply(a);
         supplier.init(new TestProcessorContext());
@@ -260,7 +260,7 @@ public class StreamFilesPTest extends JetTestSupport {
         Thread.sleep(2000);
         logger.info("complete1");
         writeToFile(file1, " complete1\n");
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         logger.info("complete2");
         writeToFile(file2, " complete2\n");
 
@@ -297,7 +297,7 @@ public class StreamFilesPTest extends JetTestSupport {
         if (glob == null) {
             glob = "*";
         }
-        processor = new StreamFilesP(workDir.getAbsolutePath(), UTF_8, glob, 1, 0, Util::entry);
+        processor = new StreamFilesP<>(workDir.getAbsolutePath(), UTF_8, glob, false, Util::entry);
         outbox = new TestOutbox(1);
         Context ctx = new TestProcessorContext()
                 .setLogger(Logger.getLogger(StreamFilesP.class));

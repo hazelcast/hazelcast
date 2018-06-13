@@ -61,10 +61,9 @@ public final class ReadFilesP<W, R> extends AbstractProcessor {
     private Traverser<R> outputTraverser;
     private Stream<W> currentStream;
 
-    private ReadFilesP(@Nonnull String directory, @Nonnull String glob,
+    private ReadFilesP(@Nonnull String directory, @Nonnull String glob, boolean sharedFileSystem,
                        @Nonnull DistributedFunction<Path, Stream<W>> readFileFn,
-                       @Nonnull DistributedBiFunction<String, W, R> mapOutputFn,
-                       boolean sharedFileSystem) {
+                       @Nonnull DistributedBiFunction<String, W, R> mapOutputFn) {
         this.directory = Paths.get(directory);
         this.glob = glob;
         this.readFileFn = readFileFn;
@@ -140,11 +139,11 @@ public final class ReadFilesP<W, R> extends AbstractProcessor {
     public static <W, R> ProcessorMetaSupplier metaSupplier(
             @Nonnull String directory,
             @Nonnull String glob,
+            boolean sharedFileSystem,
             @Nonnull DistributedFunction<Path, Stream<W>> readFileFn,
-            @Nonnull DistributedBiFunction<String, W, R> mapOutputFn,
-            boolean sharedFileSystem
+            @Nonnull DistributedBiFunction<String, W, R> mapOutputFn
     ) {
-        return ProcessorMetaSupplier.of(() -> new ReadFilesP<>(directory, glob, readFileFn, mapOutputFn, sharedFileSystem),
+        return ProcessorMetaSupplier.of(() -> new ReadFilesP<>(directory, glob, sharedFileSystem, readFileFn, mapOutputFn),
                 2);
     }
 }

@@ -120,7 +120,7 @@ public class ReadFilesPTest extends JetTestSupport {
         }
 
         DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", readFilesP(directory.getPath(), UTF_8, glob, Util::entry, false))
+        Vertex reader = dag.newVertex("reader", readFilesP(directory.getPath(), UTF_8, glob, false, Util::entry))
                 .localParallelism(1);
         Vertex writer = dag.newVertex("writer", writeListP(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));

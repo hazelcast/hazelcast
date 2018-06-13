@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 
@@ -96,9 +97,8 @@ public final class ContextFactory<C> implements Serializable {
      * Returns a copy of this {@link ContextFactory} with the
      * <em>isCooperative</em> flag set to {@code false}. The context factory is
      * cooperative by default. Call this method if your transform function
-     * doesn't follow the {@linkplain
-     * com.hazelcast.jet.core.Processor#isCooperative() cooperative processor
-     * contract}.
+     * doesn't follow the {@linkplain Processor#isCooperative() cooperative
+     * processor contract}.
      *
      * @return a copy of this factory with the {@code isCooperative} flag set
      * to {@code false}.

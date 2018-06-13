@@ -43,14 +43,14 @@ public final class AvroSinks {
      * files. Each processor will write to its own file whose name is equal to
      * the processor's global index (an integer unique to each processor of the
      * vertex), but a single pathname is used to resolve the containing
-     * directory of all files, on all cluster members.
+     * directory of all files, on all cluster members. The sink always
+     * overwrites the files.
      * <p>
      * The sink creates a {@link DataFileWriter} for each processor using the
      * supplied {@code datumWriterSupplier} with the given {@link Schema}.
      * <p>
      * No state is saved to snapshot for this sink. After the job is restarted,
-     * the items will likely be duplicated, providing an <i>at-least-once</i>
-     * guarantee.
+     * the items will be missing since files will be overwritten.
      * <p>
      * The default local parallelism for this sink is 1.
      *
@@ -66,6 +66,7 @@ public final class AvroSinks {
             @Nonnull DistributedSupplier<Schema> schemaSupplier,
             @Nonnull DistributedSupplier<DatumWriter<R>> datumWriterSupplier
     ) {
+
         return Sinks.fromProcessor("avroFilesSink(" + directoryName + ')',
                 AvroProcessors.writeFilesP(directoryName, schemaSupplier, datumWriterSupplier));
     }

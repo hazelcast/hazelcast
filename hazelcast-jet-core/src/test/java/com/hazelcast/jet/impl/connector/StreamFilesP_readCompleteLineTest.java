@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 public class StreamFilesP_readCompleteLineTest {
 
-    private StreamFilesP p = new StreamFilesP("", UTF_8, "*", 0, 0, (file, line) -> line);
+    private StreamFilesP<String> p = new StreamFilesP<>("", UTF_8, "*", false, (file, line) -> line);
 
     @Test
     public void when_emptyFile_then_null() throws Exception {

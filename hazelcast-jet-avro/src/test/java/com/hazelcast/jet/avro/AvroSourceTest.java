@@ -70,7 +70,7 @@ public class AvroSourceTest extends JetTestSupport {
     @Test
     public void testReflectReader() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(AvroSources.files(directory.getPath(), User.class, false))
+        p.drawFrom(AvroSources.files(directory.getPath(), User.class))
          .drainTo(Sinks.list(list.getName()));
 
         jet.newJob(p).join();
@@ -81,7 +81,7 @@ public class AvroSourceTest extends JetTestSupport {
     @Test
     public void testSpecificReader() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(AvroSources.files(directory.getPath(), SpecificUser.class, false))
+        p.drawFrom(AvroSources.files(directory.getPath(), SpecificUser.class))
          .drainTo(Sinks.list(list.getName()));
 
         jet.newJob(p).join();
@@ -92,7 +92,7 @@ public class AvroSourceTest extends JetTestSupport {
     @Test
     public void testGenericReader() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(AvroSources.files(directory.getPath(), (file, record) -> toUser(record), false))
+        p.drawFrom(AvroSources.files(directory.getPath(), (file, record) -> toUser(record)))
          .drainTo(Sinks.list(list.getName()));
 
         jet.newJob(p).join();

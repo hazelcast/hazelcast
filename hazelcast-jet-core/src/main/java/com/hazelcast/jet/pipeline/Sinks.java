@@ -40,7 +40,6 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.mergeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeCacheP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
@@ -483,60 +482,37 @@ public final class Sinks {
     }
 
     /**
-     * Returns a sink that that writes the items it receives to files. Each
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom file sink for the Pipeline API. See javadoc on {@link
+     * FileSinkBuilder} for more details.
+     * <p>
+     * The sink writes the items it receives to files. Each
      * processor will write to its own file whose name is equal to the
      * processor's global index (an integer unique to each processor of the
      * vertex), but a single pathname is used to resolve the containing
      * directory of all files, on all cluster members.
      * <p>
-     * The sink converts an item to its string representation using the
-     * supplied {@code toStringFn} function and encodes the string using the
-     * supplied {@code Charset}. It follows each item with a platform-specific
-     * line separator.
-     * <p>
-     * No state is saved to snapshot for this sink. After the job is restarted,
-     * the items will likely be duplicated, providing an <i>at-least-once</i>
+     * No state is saved to snapshot for this sink. If the job is restarted and
+     * {@linkplain FileSinkBuilder#append(boolean) appending} is enabled, the
+     * items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
      * <p>
      * The default local parallelism for this sink is 1.
      *
-     * @param directoryName directory to create the files in. Will be created
-     *                      if it doesn't exist. Must be the same on all members.
-     * @param toStringFn a function to convert items to String (a formatter)
-     * @param charset charset used to encode the file output
-     * @param append whether to append ({@code true}) or overwrite ({@code false})
-     *               an existing file
+     * @param <T> type of the items the sink accepts
      */
     @Nonnull
-    public static <T> Sink<T> files(
-            @Nonnull String directoryName,
-            @Nonnull DistributedFunction<T, String> toStringFn,
-            @Nonnull Charset charset,
-            boolean append
-    ) {
-        return fromProcessor("filesSink(" + directoryName + ')',
-                writeFileP(directoryName, toStringFn, charset, append));
+    public static <T> FileSinkBuilder<T> filesBuilder(@Nonnull String directoryName) {
+        return new FileSinkBuilder<>(directoryName);
     }
 
     /**
-     * Convenience for {@link #files(String, DistributedFunction, Charset,
-     * boolean)} with the UTF-8 charset and with overwriting of existing files.
-     */
-    @Nonnull
-    public static <T> Sink<T> files(
-            @Nonnull String directoryName,
-            @Nonnull DistributedFunction<T, String> toStringFn
-    ) {
-        return files(directoryName, toStringFn, UTF_8, false);
-    }
-
-    /**
-     * Convenience for {@link #files(String, DistributedFunction, Charset,
-     * boolean)} with the UTF-8 charset and with overwriting of existing files.
+     * Convenience for {@link #filesBuilder} with the UTF-8 charset and with
+     * overwriting of existing files.
      */
     @Nonnull
     public static <T> Sink<T> files(@Nonnull String directoryName) {
-        return files(directoryName, Object::toString, UTF_8, false);
+        return Sinks.<T>filesBuilder(directoryName).build();
     }
 
     /**

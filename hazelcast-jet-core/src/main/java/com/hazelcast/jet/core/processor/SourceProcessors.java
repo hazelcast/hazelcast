@@ -32,6 +32,7 @@ import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamJmsP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
+import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.journal.EventJournalMapEvent;
@@ -70,7 +71,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readMapP(@Nonnull String mapName) {
-        return ReadWithPartitionIteratorP.readMapP(mapName);
+        return ReadWithPartitionIteratorP.readMapSupplier(mapName);
     }
 
     /**
@@ -83,7 +84,7 @@ public final class SourceProcessors {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<Entry<K, V>, T> projectionFn
     ) {
-        return ReadWithPartitionIteratorP.readMapP(mapName, predicate, projectionFn);
+        return ReadWithPartitionIteratorP.readMapSupplier(mapName, predicate, projectionFn);
     }
 
     /**
@@ -96,7 +97,7 @@ public final class SourceProcessors {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
     ) {
-        return ReadWithPartitionIteratorP.readMapP(mapName, predicate, toProjection(projectionFn));
+        return ReadWithPartitionIteratorP.readMapSupplier(mapName, predicate, toProjection(projectionFn));
     }
 
 
@@ -128,7 +129,7 @@ public final class SourceProcessors {
         checkSerializable(predicateFn, "predicateFn");
         checkSerializable(projectionFn, "projectionFn");
 
-        return StreamEventJournalP.streamMapP(mapName, predicateFn, projectionFn, initialPos, wmGenParams);
+        return StreamEventJournalP.streamMapSupplier(mapName, predicateFn, projectionFn, initialPos, wmGenParams);
     }
 
     /**
@@ -137,7 +138,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return ReadWithPartitionIteratorP.readRemoteMapP(mapName, clientConfig);
+        return ReadWithPartitionIteratorP.readRemoteMapSupplier(mapName, clientConfig);
     }
 
     /**
@@ -151,7 +152,7 @@ public final class SourceProcessors {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<Entry<K, V>, T> projection
     ) {
-        return ReadWithPartitionIteratorP.readRemoteMapP(mapName, clientConfig, projection, predicate);
+        return ReadWithPartitionIteratorP.readRemoteMapSupplier(mapName, clientConfig, projection, predicate);
     }
 
     /**
@@ -165,7 +166,7 @@ public final class SourceProcessors {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
     ) {
-        return ReadWithPartitionIteratorP.readRemoteMapP(
+        return ReadWithPartitionIteratorP.readRemoteMapSupplier(
                 mapName, clientConfig, toProjection(projectionFn), predicate
         );
     }
@@ -199,7 +200,7 @@ public final class SourceProcessors {
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<T> wmGenParams
     ) {
-        return StreamEventJournalP.streamRemoteMapP(
+        return StreamEventJournalP.streamRemoteMapSupplier(
                 mapName, clientConfig, predicateFn, projectionFn, initialPos, wmGenParams);
     }
 
@@ -209,7 +210,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readCacheP(@Nonnull String cacheName) {
-        return ReadWithPartitionIteratorP.readCacheP(cacheName);
+        return ReadWithPartitionIteratorP.readCacheSupplier(cacheName);
     }
 
     /**
@@ -238,7 +239,7 @@ public final class SourceProcessors {
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<T> wmGenParams
     ) {
-        return StreamEventJournalP.streamCacheP(cacheName, predicateFn, projectionFn, initialPos,
+        return StreamEventJournalP.streamCacheSupplier(cacheName, predicateFn, projectionFn, initialPos,
                 wmGenParams);
     }
 
@@ -250,7 +251,7 @@ public final class SourceProcessors {
     public static ProcessorMetaSupplier readRemoteCacheP(
             @Nonnull String cacheName, @Nonnull ClientConfig clientConfig
     ) {
-        return ReadWithPartitionIteratorP.readRemoteCacheP(cacheName, clientConfig);
+        return ReadWithPartitionIteratorP.readRemoteCacheSupplier(cacheName, clientConfig);
     }
 
     /**
@@ -281,8 +282,8 @@ public final class SourceProcessors {
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<T> wmGenParams
     ) {
-        return StreamEventJournalP.streamRemoteCacheP(cacheName, clientConfig, predicateFn, projectionFn, initialPos,
-                wmGenParams);
+        return StreamEventJournalP
+                .streamRemoteCacheSupplier(cacheName, clientConfig, predicateFn, projectionFn, initialPos, wmGenParams);
     }
 
     /**
@@ -315,37 +316,40 @@ public final class SourceProcessors {
     }
 
     /**
-     * Returns a supplier of processors for
-     * {@link Sources#files(String, Charset, String, DistributedBiFunction, boolean)}.
+     * Returns a supplier of processors for {@link Sources#filesBuilder}.
+     * See {@link FileSourceBuilder#build} for more details.
      */
     @Nonnull
     public static <R> ProcessorMetaSupplier readFilesP(
             @Nonnull String directory,
             @Nonnull Charset charset,
             @Nonnull String glob,
-            @Nonnull DistributedBiFunction<String, String, R> mapOutputFn,
-            boolean sharedFileSystem
+            boolean sharedFileSystem,
+            @Nonnull DistributedBiFunction<String, String, R> mapOutputFn
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         String charsetName = charset.name();
-        return ReadFilesP.metaSupplier(directory, glob,
+        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem,
                 path -> uncheckCall(() -> Files.lines(path, Charset.forName(charsetName))),
-                mapOutputFn, sharedFileSystem);
+                mapOutputFn);
     }
 
     /**
-     * Returns a supplier of processors for
-     * {@link Sources#fileWatcher(String, Charset, String)}.
+     * Returns a supplier of processors for {@link Sources#filesBuilder}.
+     * See {@link FileSourceBuilder#buildWatcher} for more details.
      */
     @Nonnull
     public static ProcessorMetaSupplier streamFilesP(
             @Nonnull String watchedDirectory,
             @Nonnull Charset charset,
             @Nonnull String glob,
+            boolean sharedFileSystem,
             @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
     ) {
-        return StreamFilesP.metaSupplier(watchedDirectory, charset.name(), glob, mapOutputFn);
+        checkSerializable(mapOutputFn, "mapOutputFn");
+
+        return StreamFilesP.metaSupplier(watchedDirectory, charset.name(), glob, sharedFileSystem, mapOutputFn);
     }
 
     /**

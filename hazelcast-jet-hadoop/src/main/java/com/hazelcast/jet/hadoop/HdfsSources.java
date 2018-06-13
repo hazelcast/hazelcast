@@ -17,6 +17,7 @@
 package com.hazelcast.jet.hadoop;
 
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.hadoop.impl.ReadHdfsP.MetaSupplier;
 import com.hazelcast.jet.pipeline.BatchSource;
@@ -41,8 +42,8 @@ public final class HdfsSources {
      * the results of transforming each record (a key-value pair) with the
      * supplied mapping function.
      * <p>
-     * This source splits and balances the input data among Jet {@link
-     * com.hazelcast.jet.core.Processor processors}, doing its best to achieve
+     * This source splits and balances the input data among Jet {@linkplain
+     * Processor processors}, doing its best to achieve
      * data locality. To this end the Jet cluster topology should be aligned
      * with Hadoop's &mdash; on each Hadoop member there should be a Jet
      * member.

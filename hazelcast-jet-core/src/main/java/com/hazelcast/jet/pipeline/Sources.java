@@ -26,7 +26,6 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
-import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -41,7 +40,6 @@ import com.hazelcast.query.PredicateBuilder;
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
-import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,14 +50,12 @@ import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readCacheP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readFilesP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.streamFilesP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteMapP;
@@ -80,8 +76,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * documentation of individual methods.
  */
 public final class Sources {
-
-    private static final String GLOB_WILDCARD = "*";
 
     private Sources() {
     }
@@ -739,124 +733,55 @@ public final class Sources {
     }
 
     /**
-     * A source that emits lines from files in a directory (but not its
-     * subdirectories).
-     * <p>
-     * If {@code sharedFileSystem} is {@code true}, Jet will assume all members
-     * see the same files. They will split the work so that each member will
-     * read a part of the files. If {@code sharedFileSystem} is {@code false},
-     * each member will read all files in the directory, assuming the are
-     * local.
-     * <p>
-     * The source does not save any state to snapshot. If the job is restarted,
-     * it will re-emit all entries.
-     * <p>
-     * Any {@code IOException} will cause the job to fail. The files must not
-     * change while being read; if they do, the behavior is unspecified.
-     * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
-     *
-     * @param directory parent directory of the files
-     * @param charset charset to use to decode the files
-     * @param glob the globbing mask, see {@link
-     *             java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
-     *             Use {@code "*"} for all files.
-     * @param mapOutputFn function to create output items. Parameters are
-     *                    {@code fileName} and {@code line}.
-     * @param sharedFileSystem {@code true} if files are in a shared storage
-     *                         visible to all members, {@code false} otherwise
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom source to read files for the Pipeline API. The source reads
+     * lines from files in a directory (but not its subdirectories). Using this
+     * builder you can build {@linkplain FileSourceBuilder#build() batching} or
+     * {@linkplain FileSourceBuilder#buildWatcher() streaming} reader.
      */
     @Nonnull
-    public static <R> BatchSource<R> files(
-            @Nonnull String directory,
-            @Nonnull Charset charset,
-            @Nonnull String glob,
-            @Nonnull DistributedBiFunction<String, String, ? extends R> mapOutputFn,
-            boolean sharedFileSystem
-    ) {
-        return batchFromProcessor("filesSource(" + new File(directory, glob) + ')',
-                readFilesP(directory, charset, glob, mapOutputFn, sharedFileSystem));
+    public static <R> FileSourceBuilder<String, R> filesBuilder(@Nonnull String directory) {
+        return new FileSourceBuilder<>(directory);
     }
 
     /**
-     * Shortcut for <pre>{@code
-     *   files(directory, UTF_8, GLOB_WILDCARD, (file, line) -> line, false)
+     * A source to read all files in a directory in a batch way.
+     * <p>
+     * This method is a shortcut for: <pre>{@code
+     *   filesBuilder(directory)
+     *      .charset(UTF_8)
+     *      .glob(GLOB_WILDCARD)
+     *      .sharedFileSystem(false)
+     *      .mapToOutputFn((fileName, line) -> line)
+     *      .build()
      * }</pre>
      *
-     * See the {@linkplain #files(String, Charset, String,
-     * DistributedBiFunction, boolean) full method}.
+     * See {@link #filesBuilder(String)}.
      */
     @Nonnull
     public static BatchSource<String> files(@Nonnull String directory) {
-        return files(directory, UTF_8, GLOB_WILDCARD, (file, line) -> line, false);
+        return Sources.<String>filesBuilder(directory).build();
     }
 
     /**
-     * A source that emits a stream of lines of text coming from files in
-     * the watched directory (but not its subdirectories). It will emit only
-     * new contents added after startup: both new files and new content
-     * appended to existing ones.
+     * A source to stream lines added to files in a directory. This is a
+     * streaming source, it will watch directory and emit lines as they are
+     * appended to files in that directory.
      * <p>
-     * To be useful, the source should be configured to read data local to each
-     * member. For example, if the pathname resolves to a shared network
-     * filesystem visible by multiple members, they will emit duplicate data.
-     * <p>
-     * If, during the scanning phase, the source observes a file that doesn't
-     * end with a newline, it will assume that there is a line just being
-     * written. This line won't appear in its output.
-     * <p>
-     * The source completes when the directory is deleted. However, in order
-     * to delete the directory, all files in it must be deleted and if you
-     * delete a file that is currently being read from, the job may encounter
-     * an {@code IOException}. The directory must be deleted on all nodes.
-     * <p>
-     * Any {@code IOException} will cause the job to fail.
-     * <p>
-     * The source does not save any state to snapshot. If the job is restarted,
-     * lines added after the restart will be emitted, which gives at-most-once
-     * behavior.
-     * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
+     * This method is a shortcut for: <pre>{@code
+     *   filesBuilder(directory)
+     *      .charset(UTF_8)
+     *      .glob(GLOB_WILDCARD)
+     *      .sharedFileSystem(false)
+     *      .mapToOutputFn((fileName, line) -> line)
+     *      .buildWatcher()
+     * }</pre>
      *
-     * <h3>Limitation on Windows</h3>
-     * On Windows the {@code WatchService} is not notified of appended lines
-     * until the file is closed. If the file-writing process keeps the file
-     * open while appending, the processor may fail to observe the changes.
-     * It will be notified if any process tries to open that file, such as
-     * looking at the file in Explorer. This holds for Windows 10 with the NTFS
-     * file system and might change in future. You are advised to do your own
-     * testing on your target Windows platform.
-     *
-     * <h3>Use the latest JRE</h3>
-     * The underlying JDK API ({@link java.nio.file.WatchService}) has a
-     * history of unreliability and this source may experience infinite
-     * blocking, missed, or duplicate events as a result. Such problems may be
-     * resolved by upgrading the JRE to the latest version.
-     *
-     * @param watchedDirectory pathname to the source directory
-     * @param charset charset to use to decode the files
-     * @param glob the globbing mask, see {@link
-     *             java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
-     *             Use {@code "*"} for all files.
-     */
-    @Nonnull
-    public static StreamSource<String> fileWatcher(
-            @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
-    ) {
-        return streamFromProcessor("fileWatcherSource(" + watchedDirectory + '/' + glob + ')',
-                streamFilesP(watchedDirectory, charset, glob, (file, line) -> line)
-        );
-    }
-
-    /**
-     * Convenience for {@link #fileWatcher(String, Charset, String)
-     * streamFiles(watchedDirectory, UTF_8, "*")}.
+     * See {@link #filesBuilder(String)}.
      */
     @Nonnull
     public static StreamSource<String> fileWatcher(@Nonnull String watchedDirectory) {
-        return fileWatcher(watchedDirectory, UTF_8, GLOB_WILDCARD);
+        return Sources.<String>filesBuilder(watchedDirectory).buildWatcher();
     }
 
     /**

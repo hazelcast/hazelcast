@@ -470,7 +470,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, V, T> ProcessorMetaSupplier streamMapP(
+    public static <K, V, T> ProcessorMetaSupplier streamMapSupplier(
             @Nonnull String mapName,
             @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
             @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
@@ -486,7 +486,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, V, T> ProcessorMetaSupplier streamRemoteMapP(
+    public static <K, V, T> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
@@ -502,7 +502,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, V, T> ProcessorMetaSupplier streamCacheP(
+    public static <K, V, T> ProcessorMetaSupplier streamCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
@@ -517,7 +517,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, V, T> ProcessorMetaSupplier streamRemoteCacheP(
+    public static <K, V, T> ProcessorMetaSupplier streamRemoteCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,

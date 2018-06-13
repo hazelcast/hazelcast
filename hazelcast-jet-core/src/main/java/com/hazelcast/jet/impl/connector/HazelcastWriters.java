@@ -76,7 +76,7 @@ public final class HazelcastWriters {
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    public static <T, K, V> ProcessorMetaSupplier mergeMapP(
+    public static <T, K, V> ProcessorMetaSupplier mergeMapSupplier(
             @Nonnull String name,
             @Nullable ClientConfig clientConfig,
             @Nonnull DistributedFunction<T, K> toKeyFn,
@@ -87,7 +87,7 @@ public final class HazelcastWriters {
         checkSerializable(toValueFn, "toValueFn");
         checkSerializable(mergeFn, "mergeFn");
 
-        return updateMapP(name, clientConfig, toKeyFn, (V oldValue, T item) -> {
+        return updateMapSupplier(name, clientConfig, toKeyFn, (V oldValue, T item) -> {
             V newValue = toValueFn.apply(item);
             if (oldValue == null) {
                 return newValue;
@@ -98,7 +98,7 @@ public final class HazelcastWriters {
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    public static <T, K, V> ProcessorMetaSupplier updateMapP(
+    public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String name,
             @Nullable ClientConfig clientConfig,
             @Nonnull DistributedFunction<T, K> toKeyFn,
@@ -146,7 +146,7 @@ public final class HazelcastWriters {
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    public static <T, K, V> ProcessorMetaSupplier updateMapP(
+    public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String name,
             @Nullable ClientConfig clientConfig,
             @Nonnull DistributedFunction<T, K> toKeyFn,
@@ -169,7 +169,7 @@ public final class HazelcastWriters {
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    public static ProcessorMetaSupplier writeMapP(@Nonnull String name, @Nullable ClientConfig clientConfig) {
+    public static ProcessorMetaSupplier writeMapSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
         boolean isLocal = clientConfig == null;
         return preferLocalParallelismOne(new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
@@ -191,7 +191,7 @@ public final class HazelcastWriters {
     }
 
     @Nonnull
-    public static ProcessorMetaSupplier writeCacheP(@Nonnull String name, @Nullable ClientConfig clientConfig) {
+    public static ProcessorMetaSupplier writeCacheSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
         boolean isLocal = clientConfig == null;
         return preferLocalParallelismOne(new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
@@ -203,7 +203,7 @@ public final class HazelcastWriters {
     }
 
     @Nonnull
-    public static ProcessorMetaSupplier writeListP(@Nonnull String name, @Nullable ClientConfig clientConfig) {
+    public static ProcessorMetaSupplier writeListSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
         boolean isLocal = clientConfig == null;
         return preferLocalParallelismOne(new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
