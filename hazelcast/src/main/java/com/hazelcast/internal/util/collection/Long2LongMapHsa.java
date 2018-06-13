@@ -20,6 +20,7 @@ import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
+import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 import com.hazelcast.internal.util.hashslot.impl.HashSlotArray8byteKeyImpl;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
@@ -53,27 +54,25 @@ public class Long2LongMapHsa implements Long2LongMap {
 
     @Override public long put(long key, long value) {
         assert value != nullValue : "put() called with null-sentinel value " + nullValue;
-        long valueAddr = hsa.ensure(key);
+        SlotAssignmentResult slot = hsa.ensure(key);
         long result;
-        if (valueAddr < 0) {
-            valueAddr = -valueAddr;
-            result = mem.getLong(valueAddr);
+        if (!slot.isNew()) {
+            result = mem.getLong(slot.address());
         } else {
             result = nullValue;
         }
-        mem.putLong(valueAddr, value);
+        mem.putLong(slot.address(), value);
         return result;
     }
 
     @Override public long putIfAbsent(long key, long value) {
         assert value != nullValue : "putIfAbsent() called with null-sentinel value " + nullValue;
-        long valueAddr = hsa.ensure(key);
-        if (valueAddr > 0) {
-            mem.putLong(valueAddr, value);
+        SlotAssignmentResult slot = hsa.ensure(key);
+        if (slot.isNew()) {
+            mem.putLong(slot.address(), value);
             return nullValue;
         } else {
-            valueAddr = -valueAddr;
-            return mem.getLong(valueAddr);
+            return mem.getLong(slot.address());
         }
     }
 

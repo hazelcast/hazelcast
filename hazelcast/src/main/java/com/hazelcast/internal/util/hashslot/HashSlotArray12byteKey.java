@@ -26,15 +26,15 @@ public interface HashSlotArray12byteKey extends HashSlotArray {
 
     /**
      * Ensures that there is a mapping from {@code (key1, key2)} to a slot in the array.
-     * The {@code abs} of the returned integer is the address of the slot's value block.
-     * The returned integer is positive if a new slot had to be assigned and negative
-     * if the slot was already assigned.
+     * The returned object contains the slot value block address and if a new
+     * slot had to be assigned. This object is valid until the next invocation
+     * of this method.
      *
      * @param key1 key part 1
      * @param key2 key part 2
-     * @return address of value block
+     * @return the value block assignment result
      */
-    long ensure(long key1, int key2);
+    SlotAssignmentResult ensure(long key1, int key2);
 
     /**
      * Returns the address of the value block mapped by {@code (key1, key2)}.
