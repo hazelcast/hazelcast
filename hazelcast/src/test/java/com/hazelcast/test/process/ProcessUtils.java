@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * Utility to deal with processes.
@@ -16,7 +17,6 @@ import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
  *
  */
 public final class ProcessUtils {
-
     private ProcessUtils() {
 
     }
@@ -72,6 +72,18 @@ public final class ProcessUtils {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting for external process", e);
         }
+    }
+
+    public static void printResult(String name, ExecutionResult result) {
+        StringBuilder sb = new StringBuilder();
+        if (result.getExitCode() == 0) {
+            sb.append(name).append(LINE_SEPARATOR).append(result.getSysout());
+        } else {
+            sb.append("Error while generating ").append(name).append("Exit code").append(result.getExitCode())
+                    .append("Standard output: ").append(LINE_SEPARATOR).append(result.getSysout())
+                    .append("Error output: ").append(LINE_SEPARATOR).append(result.getExitCode());
+        }
+        System.out.println(sb);
     }
 
     private static class StreamPump extends Thread {

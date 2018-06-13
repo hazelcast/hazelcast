@@ -57,6 +57,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.classhistogram.ClassHistogramRule;
 import com.hazelcast.test.jitter.JitterRule;
+import com.hazelcast.test.perfcounter.PerfCounterRule;
 import org.junit.After;
 import org.junit.AssumptionViolatedException;
 import org.junit.ComparisonFailure;
@@ -130,6 +131,9 @@ public abstract class HazelcastTestSupport {
 
     @Rule
     public ClassHistogramRule classHistogramRule = new ClassHistogramRule();
+
+    @Rule
+    public PerfCounterRule perfCounterRule = new PerfCounterRule();
 
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
