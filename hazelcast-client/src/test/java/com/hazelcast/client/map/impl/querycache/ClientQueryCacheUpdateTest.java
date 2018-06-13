@@ -87,8 +87,8 @@ public class ClientQueryCacheUpdateTest extends HazelcastTestSupport {
         });
     }
 
-
     public static class IdWrapper implements Serializable {
+
         public int id;
         public int value;
 
@@ -97,5 +97,4 @@ public class ClientQueryCacheUpdateTest extends HazelcastTestSupport {
             this.value = value;
         }
     }
-
 }

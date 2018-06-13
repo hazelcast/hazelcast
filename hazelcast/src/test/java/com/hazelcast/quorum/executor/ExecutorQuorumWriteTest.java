@@ -456,7 +456,7 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     @Test
     public void invokeAll_timeout_quorum_short_timeout() throws Exception {
-        List<? extends Future<?>> futures = exec(0).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS);
+        List<? extends Future<?>> futures = exec(0).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10L, TimeUnit.SECONDS);
 
         // 10s is relatively short timeout -> there is some chance the task will be cancelled before it
         // had a chance to be executed. especially in slow environments -> we have to tolerate the CancellationException
@@ -467,12 +467,12 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     @Test
     public void invokeAll_timeout_quorum_long_timeout() throws Exception {
         // 30s is a long enough timeout - the task should never be cancelled -> any exception means a test failure
-        wait(exec(0).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 30l, TimeUnit.SECONDS));
+        wait(exec(0).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 30L, TimeUnit.SECONDS));
     }
 
     @Test
     public void invokeAll_timeout_noQuorum() throws Exception {
-        expectQuorumException(exec(3).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS));
+        expectQuorumException(exec(3).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10L, TimeUnit.SECONDS));
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -487,12 +487,12 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void invokeAny_timeout_quorum() throws Exception {
-        exec(0).invokeAny(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS);
+        exec(0).invokeAny(Arrays.<Callable<Object>>asList(callable(), callable()), 10L, TimeUnit.SECONDS);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void invokeAny_timeout_noQuorum() throws Exception {
-        exec(3).invokeAny(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS);
+        exec(3).invokeAny(Arrays.<Callable<Object>>asList(callable(), callable()), 10L, TimeUnit.SECONDS);
     }
 
     @Test

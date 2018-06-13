@@ -103,7 +103,7 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
 
         assertEquals(semaphore.availablePermits(), numberOfPermits);
     }
-    
+
     @Test(timeout = 30000)
     public void testAllowNegativePermits() {
         assertTrue(semaphore.init(10));
@@ -113,7 +113,7 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
         assertEquals(-5, semaphore.availablePermits());
 
         semaphore.release(10);
-        
+
         assertEquals(5, semaphore.availablePermits());
     }
 
@@ -137,14 +137,14 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
     @Test(timeout = 30000)
     public void testIncreasePermits() {
         assertTrue(semaphore.init(10));
-                
+
         assertEquals(10, semaphore.availablePermits());
-        
+
         semaphore.increasePermits(100);
-        
+
         assertEquals(110, semaphore.availablePermits());
     }
-    
+
     @Test(timeout = 30000)
     public void testRelease_whenArgumentNegative() {
         try {
@@ -320,7 +320,7 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
         }
         assertEquals(0, semaphore.availablePermits());
     }
-    
+
 
     @Test(timeout = 30000)
     public void testTryAcquire() {

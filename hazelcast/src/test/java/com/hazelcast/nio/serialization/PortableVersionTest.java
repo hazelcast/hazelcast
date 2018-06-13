@@ -112,11 +112,14 @@ public class PortableVersionTest {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             Child child = (Child) o;
-
             return name != null ? name.equals(child.name) : child.name == null;
         }
 
@@ -159,11 +162,14 @@ public class PortableVersionTest {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             Parent parent = (Parent) o;
-
             return child != null ? child.equals(parent.child) : parent.child == null;
         }
 
@@ -172,6 +178,4 @@ public class PortableVersionTest {
             return child != null ? child.hashCode() : 0;
         }
     }
-
-
 }
