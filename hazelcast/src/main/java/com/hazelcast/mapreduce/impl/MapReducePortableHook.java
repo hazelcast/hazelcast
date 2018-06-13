@@ -32,14 +32,10 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_REDU
 /**
  * This class registers all Portable serializers that are needed for communication between nodes and clients
  */
-public class MapReducePortableHook
-        implements PortableHook {
+public class MapReducePortableHook implements PortableHook {
 
-    //CHECKSTYLE:OFF
     public static final int F_ID = FactoryIdHelper.getFactoryId(MAP_REDUCE_PORTABLE_FACTORY, MAP_REDUCE_PORTABLE_FACTORY_ID);
-
     public static final int TRANSFERABLE_PROCESS_INFORMATION = 4;
-    //CHECKSTYLE:ON
 
     private static final int LENGTH = TRANSFERABLE_PROCESS_INFORMATION + 1;
 
@@ -48,11 +44,12 @@ public class MapReducePortableHook
         return F_ID;
     }
 
-    //CHECKSTYLE:OFF
     @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            private final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[LENGTH];
+
+            @SuppressWarnings("unchecked")
+            private final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[LENGTH];
 
             {
                 constructors[TRANSFERABLE_PROCESS_INFORMATION] = new ConstructorFunction<Integer, Portable>() {
@@ -68,11 +65,9 @@ public class MapReducePortableHook
             }
         };
     }
-    //CHECKSTYLE:ON
 
     @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }
-
 }

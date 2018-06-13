@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.ASSIGN_PARTITIONS;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.FETCH_PARTITION_STATE;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.F_ID;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_STATE_OP;
@@ -80,6 +81,8 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         // nextMaster & slave1 won't receive partition table updates from initialMaster.
         dropOperationsBetween(initialMaster, asList(slave1, nextMaster), F_ID, singletonList(PARTITION_STATE_OP));
+        dropOperationsBetween(nextMaster, singletonList(initialMaster), F_ID, singletonList(ASSIGN_PARTITIONS));
+        dropOperationsBetween(slave1, singletonList(initialMaster), F_ID, singletonList(ASSIGN_PARTITIONS));
 
         warmUpPartitions(initialMaster, slave2, slave3);
 
@@ -128,6 +131,8 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         // nextMaster & slave1 won't receive partition table updates from initialMaster.
         dropOperationsBetween(initialMaster, asList(slave1, nextMaster), F_ID, singletonList(PARTITION_STATE_OP));
+        dropOperationsBetween(nextMaster, singletonList(initialMaster), F_ID, singletonList(ASSIGN_PARTITIONS));
+        dropOperationsBetween(slave1, singletonList(initialMaster), F_ID, singletonList(ASSIGN_PARTITIONS));
 
         warmUpPartitions(initialMaster, slave2, slave3);
 

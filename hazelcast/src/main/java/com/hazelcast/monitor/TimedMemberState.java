@@ -32,6 +32,9 @@ import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
+/**
+ * Container for a {@link MemberState} with a timestamp.
+ */
 public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     long time;

@@ -86,6 +86,7 @@ public class HazelcastProxyFactory {
     private static final String CLASS_NAME_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
     private static final String CLASS_NAME_ADDRESS = "com.hazelcast.nio.Address";
     private static final String CLASS_NAME_VERSION = "com.hazelcast.version.Version";
+    private static final String CLASS_NAME_GREATER_LESS_PREDICATE = "com.hazelcast.query.impl.predicates.GreaterLessPredicate";
 
     static {
         Set<String> notProxiedClasses = new HashSet<String>();
@@ -95,6 +96,7 @@ public class HazelcastProxyFactory {
         notProxiedClasses.add(CLASS_NAME_CLIENT_CONFIG);
         notProxiedClasses.add(CLASS_NAME_ADDRESS);
         notProxiedClasses.add(CLASS_NAME_VERSION);
+        notProxiedClasses.add(CLASS_NAME_GREATER_LESS_PREDICATE);
         NO_PROXYING_WHITELIST = notProxiedClasses;
 
         Set<String> subclassProxiedClasses = new HashSet<String>();
@@ -296,6 +298,8 @@ public class HazelcastProxyFactory {
                             return new VersionConstructor(input);
                         } else if (input.isEnum()) {
                             return new EnumConstructor(input);
+                        } else if (className.equals(CLASS_NAME_GREATER_LESS_PREDICATE)) {
+                            return new GreaterLessPredicateConstructor(input);
                         } else {
                             throw new UnsupportedOperationException("Cannot construct target object for target class" + input
                                     + " on classloader " + input.getClassLoader());

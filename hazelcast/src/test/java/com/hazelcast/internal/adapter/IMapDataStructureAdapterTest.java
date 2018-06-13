@@ -377,6 +377,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         mapStore.setKeys(singleton(23));
 
         adapterWithLoader.loadAll(true);
+        adapterWithLoader.waitUntilLoaded();
 
         assertEquals("newValue-23", mapWithLoader.get(23));
     }

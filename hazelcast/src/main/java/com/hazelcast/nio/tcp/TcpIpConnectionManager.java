@@ -616,6 +616,9 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
                 scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
                 return true;
             } catch (RejectedExecutionException e) {
+                if (live) {
+                    throw e;
+                }
                 if (logger.isFinestEnabled()) {
                     logger.finest("Packet send task is rejected. Packet cannot be sent to " + target);
                 }

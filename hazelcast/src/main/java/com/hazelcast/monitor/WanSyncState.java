@@ -18,6 +18,9 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.wan.WanSyncStatus;
 
+/**
+ * Local WAN sync statistics to be used by {@link MemberState} implementations.
+ */
 public interface WanSyncState extends LocalInstanceStats {
 
     WanSyncStatus getStatus();
@@ -27,5 +30,4 @@ public interface WanSyncState extends LocalInstanceStats {
     String getActiveWanConfigName();
 
     String getActivePublisherName();
-
 }

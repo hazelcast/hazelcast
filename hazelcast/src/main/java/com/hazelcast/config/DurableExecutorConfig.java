@@ -237,6 +237,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, Versio
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public final boolean equals(Object o) {
         if (this == o) {
             return true;

@@ -17,11 +17,15 @@
 package com.hazelcast.monitor;
 
 /**
- * Local map statistics. As {@link com.hazelcast.core.IMap} is a partitioned data structure
- * in Hazelcast, each member owns a fraction of the total number of entries of a distributed map.
- * Depending on the {@link com.hazelcast.core.IMap}'s configuration, each member may also hold backup
- * entries of other members. LocalMapStats provides the count of owned and backup
- * entries besides their size in memory.
+ * Local map statistics to be used by {@link MemberState} implementations.
+ * <p>
+ * As {@link com.hazelcast.core.IMap} is a partitioned data structure in
+ * Hazelcast, each member owns a fraction of the total number of entries of a
+ * distributed map.
+ * <p>
+ * Depending on the {@link com.hazelcast.core.IMap}'s configuration, each
+ * member may also hold backup entries of other members. LocalMapStats
+ * provides the count of owned and backup entries besides their size in memory.
  */
 public interface LocalMapStats extends LocalInstanceStats {
 
@@ -84,7 +88,7 @@ public interface LocalMapStats extends LocalInstanceStats {
     /**
      * Returns the number of hits (reads) of locally owned entries, including those
      * which are no longer in the map (for example, may have been evicted).
-     *
+     * <p>
      * The number of hits may be inaccurate after a partition is migrated to a new
      * owner member.
      *
@@ -193,7 +197,7 @@ public interface LocalMapStats extends LocalInstanceStats {
 
     /**
      * Cost of map & Near Cache & backup in bytes
-     *
+     * <p>
      * When {@link com.hazelcast.config.InMemoryFormat#OBJECT} is used, the heapcost is zero.
      *
      * @return heap cost
@@ -206,5 +210,4 @@ public interface LocalMapStats extends LocalInstanceStats {
      * @return statistics object for the Near Cache
      */
     NearCacheStats getNearCacheStats();
-
 }

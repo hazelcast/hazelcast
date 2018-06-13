@@ -252,6 +252,9 @@ public abstract class AbstractHazelcastCacheManager
                 cache = cacheProxy;
             }
         }
+        if (cache != null) {
+            cache.setCacheManager(this);
+        }
         return cache;
     }
 
@@ -330,7 +333,6 @@ public abstract class AbstractHazelcastCacheManager
             cache.close();
         }
         postClose();
-        // TODO: do we need to clear it as "caches.clear();"?
     }
 
     /**

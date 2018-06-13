@@ -415,6 +415,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Override
     public CardinalityEstimator getCardinalityEstimator(String name) {
+        checkNotNull(name, "Retrieving a cardinality estimator instance with a null name is not allowed!");
         return getDistributedObject(CardinalityEstimatorService.SERVICE_NAME, name);
     }
 
@@ -426,6 +427,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Override
     public IScheduledExecutorService getScheduledExecutorService(String name) {
+        checkNotNull(name, "Retrieving a scheduled executor instance with a null name is not allowed!");
         return getDistributedObject(DistributedScheduledExecutorService.SERVICE_NAME, name);
     }
 

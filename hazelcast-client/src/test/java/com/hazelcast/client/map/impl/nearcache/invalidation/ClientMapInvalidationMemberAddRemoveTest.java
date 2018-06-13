@@ -50,10 +50,10 @@ import static org.junit.Assert.assertEquals;
 public class ClientMapInvalidationMemberAddRemoveTest extends NearCacheTestSupport {
 
     private static final int TEST_RUN_SECONDS = 30;
-    private static final int KEY_COUNT = 100000;
-    private static final int INVALIDATION_BATCH_SIZE = 10000;
+    private static final int KEY_COUNT = 1000;
+    private static final int INVALIDATION_BATCH_SIZE = 100;
     private static final int RECONCILIATION_INTERVAL_SECS = 30;
-    private static final int NEAR_CACHE_POPULATE_THREAD_COUNT = 3;
+    private static final int NEAR_CACHE_POPULATE_THREAD_COUNT = 5;
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 

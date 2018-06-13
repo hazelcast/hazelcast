@@ -16,6 +16,9 @@
 
 package com.hazelcast.monitor;
 
+/**
+ * Local topic statistics to be used by {@link MemberState} implementations.
+ */
 public interface LocalTopicStats extends LocalInstanceStats {
 
     /**
@@ -38,6 +41,4 @@ public interface LocalTopicStats extends LocalInstanceStats {
      * @return total number of received messages of this topic on this member
      */
     long getReceiveOperationCount();
-
-
 }

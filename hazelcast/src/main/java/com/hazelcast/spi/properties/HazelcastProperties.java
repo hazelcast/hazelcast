@@ -30,7 +30,7 @@ import static java.util.Collections.unmodifiableSet;
  * <p>
  * A {@link HazelcastProperty} can be set as:
  * <ul>
- * <li>an environmental variable using {@link System#setProperty(String, String)}</li>
+ * <li>a system property using {@link System#setProperty(String, String)}</li>
  * <li>the programmatic configuration using {@link Config#setProperty(String, String)}</li>
  * <li>the XML configuration</li>
  * </ul>
@@ -46,8 +46,8 @@ public class HazelcastProperties {
     /**
      * Creates a container with configured Hazelcast properties.
      * <p>
-     * Uses the environmental value if no value is defined in the configuration.
-     * Uses the default value if no environmental value is defined.
+     * Uses the system property value if no value is defined in the configuration.
+     * Uses the default value if no system property value is defined.
      *
      * @param config {@link Config} used to configure the {@link HazelcastProperty} values;
      *               properties in config are allowed to be {@code null}
@@ -59,8 +59,8 @@ public class HazelcastProperties {
     /**
      * Creates a container with configured Hazelcast properties.
      * <p>
-     * Uses the environmental value if no value is defined in the configuration.
-     * Uses the default value if no environmental value is defined.
+     * Uses the system property value if no value is defined in the configuration.
+     * Uses the default value if no system property value is defined.
      *
      * @param nullableProperties {@link Properties} used to configure the {@link HazelcastProperty} values;
      *                           properties are allowed to be {@code null}

@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -71,7 +70,8 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
             // here object conversion is for interceptors.
             Object value = hasInterceptor ? mapServiceContext.toObject(dataValue) : dataValue;
-            Object previousValue = recordStore.putFromLoad(key, value);
+
+            recordStore.putFromLoad(key, value, getCallerAddress());
             // the following check is for the case when the putFromLoad does not put the data due to various reasons
             // one of the reasons may be size eviction threshold has been reached
             if (value != null && !recordStore.existInMemory(key)) {
@@ -87,7 +87,6 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
                 checkNotNull(record, "Value loaded by a MapLoader cannot be null.");
                 value = record.getValue();
             }
-            publishEntryEvent(key, previousValue, value);
             publishWanReplicationEvent(key, value, record);
             addInvalidation(key);
         }
@@ -108,11 +107,6 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     private void callAfterPutInterceptors(Object value) {
         mapService.getMapServiceContext().interceptAfterPut(name, value);
-    }
-
-    private void publishEntryEvent(Data key, Object previousValue, Object newValue) {
-        final EntryEventType eventType = previousValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, previousValue, newValue);
     }
 
     private void publishWanReplicationEvent(Data key, Object value, Record record) {

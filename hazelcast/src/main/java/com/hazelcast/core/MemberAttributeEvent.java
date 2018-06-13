@@ -31,6 +31,9 @@ import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
 import static java.util.Collections.EMPTY_SET;
 
+/**
+ * Event for member attribute changes.
+ */
 @SuppressFBWarnings("SE_BAD_FIELD")
 @SerializableByConvention(PUBLIC_API)
 public class MemberAttributeEvent extends MembershipEvent implements DataSerializable {
@@ -105,5 +108,4 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         }
         this.source = member;
     }
-
 }

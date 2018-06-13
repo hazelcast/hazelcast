@@ -25,17 +25,17 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-public class TopicEvent implements IdentifiedDataSerializable {
+class TopicEvent implements IdentifiedDataSerializable {
 
-    public String name;
-    public long publishTime;
-    public Address publisherAddress;
-    public Data data;
+    String name;
+    long publishTime;
+    Address publisherAddress;
+    Data data;
 
     public TopicEvent() {
     }
 
-    public TopicEvent(String name, Data data, Address publisherAddress) {
+    TopicEvent(String name, Data data, Address publisherAddress) {
         this.name = name;
         this.publishTime = Clock.currentTimeMillis();
         this.publisherAddress = publisherAddress;

@@ -28,34 +28,32 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * A specialized map whose keys can be associated with multiple values.
- * <p/>
  * <p>
  * <b>Gotchas:</b>
  * <ul>
  * <li>
- * Methods -- including but not limited to <tt>get</tt>, <tt>containsKey</tt>,
- * <tt>containsValue</tt>, <tt>remove</tt>, <tt>put</tt>,
- * <tt>lock</tt>, and <tt>unlock</tt>  -- do not use <tt>hashCode</tt> and <tt>equals</tt>
+ * Methods -- including but not limited to {@code get}, {@code containsKey},
+ * {@code containsValue}, {@code remove}, {@code put},
+ * {@code lock}, and {@code unlock}  -- do not use {@code hashCode} and {@code equals}
  * implementations of the keys.
- * Instead, they use <tt>hashCode</tt> and <tt>equals</tt> of the binary (serialized) forms of the objects.
+ * Instead, they use {@code hashCode} and {@code equals} of the binary (serialized) forms of the objects.
  * </li>
  * <li>
- * Methods -- including but not limited to <tt>get</tt>, <tt>remove</tt>,
- * <tt>keySet</tt>, <tt>values</tt>, <tt>entrySet</tt> --
+ * Methods -- including but not limited to {@code get}, {@code remove},
+ * {@code keySet}, {@code values}, {@code entrySet} --
  * return a collection clone of the values. The collection is <b>NOT</b> backed by the map,
  * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
  * </li>
  * </ul>
- * </p>
- *
+ * <p>
  * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  *
- * @author oztalip
+ * @param <K> type of the multimap key
+ * @param <V> type of the multimap value
  * @see IMap
  */
 @SuppressWarnings("checkstyle:methodcount")
-public interface MultiMap<K, V>
-        extends BaseMultiMap<K, V>, DistributedObject {
+public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
 
     /**
      * Returns the name of this multimap.
@@ -66,99 +64,89 @@ public interface MultiMap<K, V>
 
     /**
      * Stores a key-value pair in the multimap.
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * </p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
      * @param key   the key to be stored
      * @param value the value to be stored
-     * @return true if size of the multimap is increased, false if the multimap
-     * already contains the key-value pair.
+     * @return {@code true} if size of the multimap is increased,
+     * {@code false} if the multimap already contains the key-value pair
      */
     boolean put(K key, V value);
 
     /**
      * Returns the collection of values associated with the key.
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * </p>
-     * <p/>
-     * <p><b>Warning-2:</b></p>
-     * The collection is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+     * <b>Warning 1:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
+     * <p>
+     * <b>Warning 2:</b> The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection,
+     * and vice-versa.
      *
      * @param key the key whose associated values are to be returned
-     * @return the collection of the values associated with the key.
+     * @return the collection of the values associated with the key
      */
     Collection<V> get(K key);
 
     /**
      * Removes the given key value pair from the multimap.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
+     * <p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
      * @param key   the key of the entry to remove
      * @param value the value of the entry to remove
-     * @return true if the size of the multimap changed after the remove operation, false otherwise.
+     * @return {@code true} if the size of the multimap changed after the remove operation,
+     * {@code false} otherwise
      */
     boolean remove(Object key, Object value);
 
     /**
      * Removes all the entries with the given key.
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * </p>
-     * <p/>
-     * <p><b>Warning-2:</b></p>
-     * The collection is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+     * <b>Warning 1:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
+     * <p>
+     * <b>Warning 2:</b> The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection,
+     * and vice-versa.
      *
      * @param key the key of the entries to remove
-     * @return the collection of removed values associated with the given key. The returned collection
-     * might be modifiable but it has no effect on the multimap.
+     * @return the collection of removed values associated with the given key.
+     * The returned collection might be modifiable but it has no effect on the multimap.
      */
     Collection<V> remove(Object key);
 
     /**
-     *  Deletes all the entries with the given key.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
+     * Deletes all the entries with the given key.
+     * <p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
      * @param key the key of the entry to remove
      */
 
     void delete(Object key);
+
     /**
      * Returns the locally owned set of keys.
-     * <p/>
-     * Each key in this map is owned and managed by a specific
-     * member in the cluster.
-     * <p/>
-     * Note that ownership of these keys might change over time
-     * so that key ownerships can be almost evenly distributed
-     * in the cluster.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * <p>
+     * Each key in this map is owned and managed by a specific member in the
+     * cluster.
+     * <p>
+     * Note that ownership of these keys might change over time so that key
+     * ownerships can be almost evenly distributed in the cluster.
+     * <p>
+     * <b>Warning:</b> The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection,
+     * and vice-versa.
      *
      * @return the locally owned keys
      */
@@ -166,81 +154,80 @@ public interface MultiMap<K, V>
 
     /**
      * Returns the set of keys in the multimap.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * <p>
+     * <b>Warning:</b> The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection,
+     * and vice-versa.
      *
-     * @return the set of keys in the multimap. The returned set might be modifiable
-     * but it has no effect on the multimap.
+     * @return the set of keys in the multimap (the returned set might be
+     * modifiable but it has no effect on the multimap)
      */
     Set<K> keySet();
 
     /**
      * Returns the collection of values in the multimap.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * The collection is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+     * <p>
+     * <b>Warning:</b> The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection,
+     * and vice-versa.
      *
-     * @return the collection of values in the multimap. the returned collection might be modifiable
-     * but it has no effect on the multimap.
+     * @return the collection of values in the multimap (the returned
+     * collection might be modifiable but it has no effect on the multimap)
      */
     Collection<V> values();
 
     /**
      * Returns the set of key-value pairs in the multimap.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * <p>
+     * <b>Warning:</b> The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection,
+     * and vice-versa.
      *
-     * @return the set of key-value pairs in the multimap. The returned set might be modifiable
-     * but it has no effect on the multimap.
+     * @return the set of key-value pairs in the multimap (the returned
+     * set might be modifiable but it has no effect on the multimap)
      */
     Set<Map.Entry<K, V>> entrySet();
 
     /**
      * Returns whether the multimap contains an entry with the key.
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * </p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
-     * @param key the key whose existence is checked.
-     * @return true if the multimap contains an entry with the key, false otherwise.
+     * @param key the key whose existence is checked
+     * @return {@code true} if the multimap contains an entry with the key,
+     * {@code false} otherwise
      */
     boolean containsKey(K key);
 
     /**
      * Returns whether the multimap contains an entry with the value.
-     * <p/>
      *
-     * @param value the value whose existence is checked.
-     * @return true if the multimap contains an entry with the value, false otherwise.
+     * @param value the value whose existence is checked
+     * @return {@code true} if the multimap contains an entry with the value,
+     * {@code false} otherwise.
      */
     boolean containsValue(Object value);
 
     /**
      * Returns whether the multimap contains the given key-value pair.
-     * <p/>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s class.
+     * <p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
-     * @param key   the key whose existence is checked.
-     * @param value the value whose existence is checked.
-     * @return true if the multimap contains the key-value pair, false otherwise.
+     * @param key   the key whose existence is checked
+     * @param value the value whose existence is checked
+     * @return {@code true} if the multimap contains the key-value pair,
+     * {@code false} otherwise
      */
     boolean containsEntry(K key, V value);
 
     /**
      * Returns the number of key-value pairs in the multimap.
      *
-     * @return the number of key-value pairs in the multimap.
+     * @return the number of key-value pairs in the multimap
      */
     int size();
 
@@ -251,13 +238,10 @@ public interface MultiMap<K, V>
 
     /**
      * Returns the number of values that match the given key in the multimap.
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * </p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
      * @param key the key whose values count is to be returned
      * @return the number of values that match the given key in the multimap
@@ -265,18 +249,21 @@ public interface MultiMap<K, V>
     int valueCount(K key);
 
     /**
-     * Adds a local entry listener for this multimap. The added listener will be only
-     * listening for the events (add/remove/update) of the locally owned entries.
-     * <p/>
-     * Note that entries in distributed multimap are partitioned across
-     * the cluster members; each member owns and manages some portion of the
-     * entries. Owned entries are called local entries. This
-     * listener will be listening for the events of local entries. Let's say
-     * your cluster has member1 and member2. On member2 you added a local listener, and from
-     * member1, you call <code>multimap.put(key2, value2)</code>.
-     * If the key2 is owned by member2, then the local listener will be
-     * notified for the add/update event. Also note that entries can migrate to
-     * other nodes for load balancing and/or membership change.
+     * Adds a local entry listener for this multimap.
+     * <p>
+     * The added listener will be only listening for the events
+     * (add/remove/update) of the locally owned entries.
+     * <p>
+     * Note that entries in distributed multimap are partitioned across the
+     * cluster members; each member owns and manages some portion of the
+     * entries. Owned entries are called local entries. This listener will be
+     * listening for the events of local entries.
+     * <p>
+     * For example your cluster has member1 and member2. On member2 you added a
+     * local listener, and from member1, you call {@code multimap.put(key2, value2)}.
+     * If the key2 is owned by member2, then the local listener will be notified
+     * for the add/update event. Also note that entries can migrate to other
+     * nodes for load balancing and/or membership change.
      *
      * @param listener entry listener for this multimap
      * @return returns registration ID for the entry listener
@@ -285,18 +272,21 @@ public interface MultiMap<K, V>
     String addLocalEntryListener(EntryListener<K, V> listener);
 
     /**
-     * Adds an entry listener for this multimap. The listener will be notified
-     * for all multimap add/remove/update/evict events.
+     * Adds an entry listener for this multimap.
+     * <p>
+     * The listener will be notified for all multimap
+     * add/remove/update/evict events.
      *
      * @param listener     entry listener for this multimap
-     * @param includeValue true if <tt>EntryEvent</tt> should
-     *                     contain the value, false otherwise
+     * @param includeValue {@code true} if {@code EntryEvent} should contain the value,
+     *                     {@code false} otherwise
      * @return returns registration ID for the entry listener
      */
     String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
 
     /**
      * Removes the specified entry listener.
+     * <p>
      * Returns silently if no such listener was added before.
      *
      * @param registrationId registration ID of listener
@@ -306,189 +296,178 @@ public interface MultiMap<K, V>
 
     /**
      * Adds the specified entry listener for the specified key.
-     * The listener will be notified for all
-     * add/remove/update/evict events for the specified key only.
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * </p>
+     * The listener will be notified for all add/remove/update/evict events for
+     * the specified key only.
+     * <p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
      * @param listener     the entry listener
      * @param key          the key to listen to
-     * @param includeValue true if <tt>EntryEvent</tt> should
-     *                     contain the value, false otherwise
+     * @param includeValue {@code true} if {@code EntryEvent} should contain the value,
+     *                     {@code false} otherwise
      * @return returns registration ID
      */
     String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
 
     /**
      * Acquires a lock for the specified key.
-     * <p>If the lock is not available, then
-     * the current thread becomes disabled for thread scheduling
-     * purposes and lies dormant until the lock has been acquired.
-     * <p/>
-     * The scope of the lock is for this multimap only.
-     * The acquired lock is only for the key in this multimap.
-     * <p/>
-     * Locks are re-entrant, so if the key is locked N times, then
-     * it should be unlocked N times before another thread can acquire it.
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * </p>
+     * If the lock is not available, then the current thread becomes disabled
+     * for thread scheduling purposes and lies dormant until the lock has
+     * been acquired.
+     * <p>
+     * The scope of the lock is for this multimap only. The acquired lock is
+     * only for the key in this multimap.
+     * <p>
+     * Locks are re-entrant, so if the key is locked N times, then it should
+     * be unlocked N times before another thread can acquire it.
+     * <p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
-     * @param key the key to lock.
+     * @param key the key to lock
      */
     void lock(K key);
 
     /**
      * Acquires the lock for the specified key for the specified lease time.
-     * <p>After the lease time, the lock will be released.
-     * <p/>
-     * <p>If the lock is not available, then
-     * the current thread becomes disabled for thread scheduling
-     * purposes and lies dormant until the lock has been acquired.
-     * <p/>
-     * Scope of the lock is for this map only.
-     * The acquired lock is only for the key in this map.
-     * <p/>
-     * Locks are re-entrant, so if the key is locked N times, then
-     * it should be unlocked N times before another thread can acquire it.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
+     * <p>
+     * After the lease time, the lock will be released.
+     * <p>
+     * If the lock is not available, then the current thread becomes disabled
+     * for thread scheduling purposes and lies dormant until the lock has been
+     * acquired.
+     * <p>
+     * Scope of the lock is for this map only.The acquired lock is only for
+     * the key in this map.
+     * <p>
+     * Locks are re-entrant, so if the key is locked N times, then it should
+     * be unlocked N times before another thread can acquire it.
+     * <p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
-     * @param key       the key to lock.
-     * @param leaseTime time to wait before releasing the lock.
-     * @param timeUnit  unit of time for the lease time.
+     * @param key       the key to lock
+     * @param leaseTime time to wait before releasing the lock
+     * @param timeUnit  unit of time for the lease time
      */
     void lock(K key, long leaseTime, TimeUnit timeUnit);
 
     /**
      * Checks the lock for the specified key.
-     * <p>If the lock is acquired, this method returns true, else it returns false.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
+     * <p>
+     * If the lock is acquired, this method returns {@code true}, else it
+     * returns {@code false}.
+     * <p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
      * @param key key to lock to be checked.
-     * @return true if the lock is acquired, false otherwise.
+     * @return {@code true} if the lock is acquired, {@code false} otherwise.
      */
     boolean isLocked(K key);
 
     /**
      * Tries to acquire the lock for the specified key.
-     * <p>If the lock is not available, then the current thread
-     * does not wait and the method returns false immediately.
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * </p>
+     * If the lock is not available, then the current thread does not wait and
+     * the method returns false immediately.
+     * <p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
      * @param key the key to lock.
-     * @return true if lock is acquired, false otherwise.
+     * @return {@code true} if lock is acquired, {@code false} otherwise
      */
     boolean tryLock(K key);
 
     /**
      * Tries to acquire the lock for the specified key.
-     * <p>If the lock is not available, then
-     * the current thread becomes disabled for thread scheduling
-     * purposes and lies dormant until one of two things happens:
+     * <p>
+     * If the lock is not available, then the current thread becomes disabled
+     * for thread scheduling purposes and lies dormant until one of two things
+     * happens:
      * <ul>
      * <li>the lock is acquired by the current thread, or
      * <li>the specified waiting time elapses.
      * </ul>
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * </p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
      * @param time     the maximum time to wait for the lock
-     * @param timeunit the time unit of the <tt>time</tt> argument
-     * @return true if the lock was acquired, false
-     * if the waiting time elapsed before the lock was acquired.
+     * @param timeunit the time unit of the {@code time} argument
+     * @return {@code true} if the lock was acquired, {@code false} if the
+     * waiting time elapsed before the lock was acquired
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit)
-            throws InterruptedException;
+    boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException;
 
     /**
-     * Tries to acquire the lock for the specified key for the specified lease time.
-     * <p>After lease time, the lock will be released.
-     * <p/>
-     * <p>If the lock is not available, then
-     * the current thread becomes disabled for thread scheduling
-     * purposes and lies dormant until one of two things happens:
+     * Tries to acquire the lock for the specified key for the specified
+     * lease time.
+     * <p>
+     * After lease time, the lock will be released.
+     * <p>
+     * If the lock is not available, then the current thread becomes disabled
+     * for thread scheduling purposes and lies dormant until one of two things
+     * happens:
      * <ul>
      * <li>the lock is acquired by the current thread, or
      * <li>the specified waiting time elapses.
      * </ul>
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
-     * @param key           key to lock in this map.
-     * @param time          maximum time to wait for the lock.
-     * @param timeunit      time unit of the <tt>time</tt> argument.
-     * @param leaseTime     time to wait before releasing the lock.
-     * @param leaseTimeunit unit of time to specify lease time.
-     * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
-     * if the waiting time elapsed before the lock was acquired.
-     * @throws NullPointerException if the specified key is null.
+     * @param key           key to lock in this map
+     * @param time          maximum time to wait for the lock
+     * @param timeunit      time unit of the {@code time} argument
+     * @param leaseTime     time to wait before releasing the lock
+     * @param leaseTimeunit unit of time to specify lease time
+     * @return {@code true} if the lock was acquired and {@code false} if the
+     * waiting time elapsed before the lock was acquired
+     * @throws NullPointerException if the specified key is {@code null}
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseTimeunit)
-            throws InterruptedException;
+    boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseTimeunit) throws InterruptedException;
 
     /**
-     * Releases the lock for the specified key. It never blocks and
-     * returns immediately.
-     * <p/>
-     * <p><b>Warning:</b></p>
+     * Releases the lock for the specified key.
      * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * </p>
+     * It never blocks and returns immediately.
+     * <p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
-     * @param key the key to lock.
+     * @param key the key to lock
      */
     void unlock(K key);
 
     /**
      * Releases the lock for the specified key regardless of the lock owner.
-     * It always successfully unlocks the key, never blocks
-     * and returns immediately.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s class.
+     * <p>
+     * It always successfully unlocks the key, never blocks and returns immediately.
+     * <p>
+     * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of
+     * the binary form of the {@code key}, not the actual implementations of
+     * {@code hashCode} and {@code equals} defined in the {@code key}'s class.
      *
-     * @param key key to lock.
+     * @param key key to lock
      */
     void forceUnlock(K key);
 
     /**
-     * Returns <tt>LocalMultiMapStats</tt> for this map.
-     * <tt>LocalMultiMapStats</tt> is the statistics for the local portion of this
+     * Returns {@code LocalMultiMapStats} for this map.
+     * <p>
+     * {@code LocalMultiMapStats} is the statistics for the local portion of this
      * distributed multi map and contains information such as ownedEntryCount
      * backupEntryCount, lastUpdateTime, and lockedEntryCount.
      * <p/>
@@ -501,11 +480,14 @@ public interface MultiMap<K, V>
     LocalMultiMapStats getLocalMultiMapStats();
 
     /**
-     * Executes a predefined aggregation on the multimaps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
-     * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
+     * Executes a predefined aggregation on the multimaps data set.
+     * <p>
+     * The {@link com.hazelcast.mapreduce.aggregation.Supplier} is used to
+     * either select or to select and extract a (sub-)value.
+     * A predefined set of aggregations can be found in
      * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
-     *
-     * Method does not honour Quorum
+     * <p>
+     * Method does not honor Quorum.
      *
      * @param supplier        the supplier to select and / or extract a (sub-)value from the multimap
      * @param aggregation     the aggregation that is being executed against the multimap
@@ -520,11 +502,14 @@ public interface MultiMap<K, V>
                                              Aggregation<K, SuppliedValue, Result> aggregation);
 
     /**
-     * Executes a predefined aggregation on the multimaps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
-     * is used to either select, or to select and extract, a (sub-)value. A predefined set of aggregations can be found in
+     * Executes a predefined aggregation on the multimaps data set.
+     * <p>
+     * The {@link com.hazelcast.mapreduce.aggregation.Supplier} is used to
+     * either select, or to select and extract, a (sub-)value.
+     * A predefined set of aggregations can be found in
      * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
-     *
-     * Method does not honour Quorum
+     * <p>
+     * Method does not honor Quorum.
      *
      * @param supplier        the supplier to select and / or extract a (sub-)value from the multimap
      * @param aggregation     the aggregation that is being executed against the multimap

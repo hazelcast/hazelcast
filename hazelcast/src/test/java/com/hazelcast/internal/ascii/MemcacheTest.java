@@ -192,7 +192,7 @@ public class MemcacheTest extends HazelcastTestSupport {
     @Test
     public void testSetGetDelete_WithCustomIMap() throws Exception {
         String mapName = randomMapName();
-        testSetGetDelete_WithIMap(MemcacheCommandProcessor.MAP_NAME_PRECEDER + mapName, mapName + ":");
+        testSetGetDelete_WithIMap(MemcacheCommandProcessor.MAP_NAME_PREFIX + mapName, mapName + ":");
     }
 
     private void testSetGetDelete_WithIMap(String mapName, String prefix) throws Exception {
@@ -220,7 +220,7 @@ public class MemcacheTest extends HazelcastTestSupport {
     public void testDeleteAll_withIMapPrefix() throws Exception {
         String mapName = randomMapName();
         String prefix = mapName + ":";
-        IMap<String, Object> map = instance.getMap(MemcacheCommandProcessor.MAP_NAME_PRECEDER + mapName);
+        IMap<String, Object> map = instance.getMap(MemcacheCommandProcessor.MAP_NAME_PREFIX + mapName);
 
         for (int i = 0; i < 100; i++) {
             map.put(String.valueOf(i), i);

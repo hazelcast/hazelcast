@@ -140,7 +140,7 @@ public final class HazelcastProperty {
     }
 
     /**
-     * Sets the environmental value of the property.
+     * Sets the system property value of the property.
      *
      * @param value the value to set
      */
@@ -149,7 +149,7 @@ public final class HazelcastProperty {
     }
 
     /**
-     * Gets the environmental value of the property.
+     * Gets the system property value of the property.
      *
      * @return the value of the property
      */

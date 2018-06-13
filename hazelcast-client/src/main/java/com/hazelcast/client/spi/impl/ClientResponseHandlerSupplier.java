@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
@@ -116,9 +115,6 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
         } catch (Exception e) {
             logger.severe("Failed to process response: " + response
                     + " on responseThread: " + Thread.currentThread().getName(), e);
-        } finally {
-            ClientConnection connection = (ClientConnection) response.getConnection();
-            connection.decrementPendingPacketCount();
         }
     }
 

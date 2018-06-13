@@ -102,7 +102,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 for (HazelcastInstance node : nodes) {
-                    assertEquals(0, getTotalEntryCount(node.getMap(MAP_NAME)));
+                    assertEquals(0, getTotalEntryCount(node.getMap(MAP_NAME).getLocalMapStats()));
                 }
             }
         });
@@ -129,7 +129,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
 
         int total = 0;
         for (HazelcastInstance node : nodes) {
-            total += getTotalEntryCount(node.getMap(MAP_NAME));
+            total += getTotalEntryCount(node.getMap(MAP_NAME).getLocalMapStats());
         }
 
         // key 1 should still be in all replicas
@@ -165,7 +165,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
             Data dataKey = ss.toData(1);
             recordStore.put(dataKey, "value", 100);
             sleepSeconds(1);
-            recordStore.get(dataKey, false);
+            recordStore.get(dataKey, false, null);
 
             InvalidationQueue expiredKeys = recordStore.getExpiredKeys();
             return expiredKeys.size();
@@ -177,8 +177,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
         }
     }
 
-    public static long getTotalEntryCount(IMap map) {
-        LocalMapStats localMapStats = map.getLocalMapStats();
+    public static long getTotalEntryCount(LocalMapStats localMapStats) {
         long ownedEntryCount = localMapStats.getOwnedEntryCount();
         long backupEntryCount = localMapStats.getBackupEntryCount();
         return ownedEntryCount + backupEntryCount;

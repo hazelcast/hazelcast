@@ -529,6 +529,11 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
+    public void testGetCacheWithNullName() {
+        assertNull(cacheManager.getCache(null));
+    }
+
+    @Test
     public void testRemovingSameEntryTwiceShouldTriggerEntryListenerOnlyOnce() {
         String cacheName = randomString();
 

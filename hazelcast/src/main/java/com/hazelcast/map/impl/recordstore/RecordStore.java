@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.monitor.LocalRecordStoreStats;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -63,7 +64,7 @@ public interface RecordStore<R extends Record> {
      */
     Object put(Data dataKey, Object dataValue, long ttl);
 
-    Object putIfAbsent(Data dataKey, Object value, long ttl);
+    Object putIfAbsent(Data dataKey, Object value, long ttl, Address callerAddress);
 
     R putBackup(Data key, Object value);
 
@@ -102,7 +103,7 @@ public interface RecordStore<R extends Record> {
      * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return value of an entry in {@link RecordStore}
      */
-    Object get(Data dataKey, boolean backup);
+    Object get(Data dataKey, boolean backup, Address callerAddress);
 
     /**
      * Called when {@link com.hazelcast.config.MapConfig#isReadBackupData} is <code>true</code> from
@@ -117,14 +118,14 @@ public interface RecordStore<R extends Record> {
      */
     Data readBackupData(Data key);
 
-    MapEntries getAll(Set<Data> keySet);
+    MapEntries getAll(Set<Data> keySet, Address callerAddress);
 
     /**
      * Checks if the key exist in memory without trying to load data from map-loader
      */
     boolean existInMemory(Data key);
 
-    boolean containsKey(Data dataKey);
+    boolean containsKey(Data dataKey, Address callerAddress);
 
     int getLockedEntryCount();
 
@@ -154,7 +155,7 @@ public interface RecordStore<R extends Record> {
      * <tt>null</tt> if there was no mapping for <tt>key</tt>.
      * @see com.hazelcast.map.impl.operation.PutFromLoadAllOperation
      */
-    Object putFromLoad(Data key, Object value);
+    Object putFromLoad(Data key, Object value, Address callerAddress);
 
     /**
      * Puts key-value pair to map which is the result of a load from map store operation on backup.
@@ -372,7 +373,7 @@ public interface RecordStore<R extends Record> {
 
     Record createRecord(Object value, long ttlMillis, long now);
 
-    Record loadRecordOrNull(Data key, boolean backup);
+    Record loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 
     /**
      * This can be used to release unused resources.
