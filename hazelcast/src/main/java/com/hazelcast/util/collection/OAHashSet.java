@@ -50,6 +50,9 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * <p>
  * This {@link Set} implementation does not permit concurrent modifications
  * during iteration.
+ * <p>
+ * Please note that this {@link Set} implementation does not shrink when
+ * elements are removed.
  *
  * @param <E> The type of the elements stored in the set
  */
