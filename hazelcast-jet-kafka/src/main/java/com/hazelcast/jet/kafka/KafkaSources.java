@@ -30,6 +30,7 @@ import java.util.Properties;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.kafka.KafkaProcessors.streamKafkaP;
 import static com.hazelcast.jet.pipeline.Sources.streamFromProcessorWithWatermarks;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * Contains factory methods for Apache Kafka sources.
@@ -40,16 +41,15 @@ public final class KafkaSources {
     }
 
     /**
-     * Convenience for {@link #kafka(Properties, DistributedFunction, String, String...)}
+     * Convenience for {@link #kafka(Properties, DistributedFunction, String...)}
      * wrapping the output in {@code Map.Entry}.
      */
     @Nonnull
     public static <K, V> StreamSource<Entry<K, V>> kafka(
             @Nonnull Properties properties,
-            @Nonnull String topic,
-            @Nonnull String... moreTopics
+            @Nonnull String ... topics
     ) {
-        return KafkaSources.<K, V, Entry<K, V>>kafka(properties, r -> entry(r.key(), r.value()), topic, moreTopics);
+        return KafkaSources.<K, V, Entry<K, V>>kafka(properties, r -> entry(r.key(), r.value()), topics);
     }
 
     /**
@@ -96,24 +96,16 @@ public final class KafkaSources {
      * @param projectionFn function to create output objects from the Kafka record.
      *                    If the projection returns a {@code null} for an item,
      *                    that item will be filtered out.
-     * @param topic the topic to consume
-     * @param moreTopics more topics to consume
+     * @param topics the topics to consume, at least one is required
      */
     @Nonnull
     public static <K, V, T> StreamSource<T> kafka(
             @Nonnull Properties properties,
             @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
-            @Nonnull String topic,
-            @Nonnull String... moreTopics
+            @Nonnull String ... topics
     ) {
+        checkPositive(topics.length, "At least one topic required");
         return streamFromProcessorWithWatermarks("streamKafka",
-                w -> streamKafkaP(properties, projectionFn, w, merge(topic, moreTopics)));
-    }
-
-    private static String[] merge(String s0, String[] others) {
-        String[] res = new String[others.length + 1];
-        res[0] = s0;
-        System.arraycopy(others, 0, res, 1, others.length);
-        return res;
+                w -> streamKafkaP(properties, projectionFn, w, topics));
     }
 }

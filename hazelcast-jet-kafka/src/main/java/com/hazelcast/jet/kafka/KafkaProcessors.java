@@ -42,7 +42,7 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for {@link
-     * KafkaSources#kafka(Properties, DistributedFunction, String, String...)}.
+     * KafkaSources#kafka(Properties, DistributedFunction, String...)}.
      */
     public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
