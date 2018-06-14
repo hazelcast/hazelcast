@@ -16,10 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
-import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,11 +29,11 @@ import java.io.IOException;
  * Operation implementation for
  * {@link com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String, int)} and
  * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String, int)}.
+ *
  * @see com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String, int)
  * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String, int)
  */
-public class CachePutOperation
-        extends AbstractMutatingCacheOperation {
+public class CachePutOperation extends MutatingCacheOperation {
 
     private Data value;
     // getAndPut
@@ -58,20 +55,16 @@ public class CachePutOperation
     public void run()
             throws Exception {
         if (get) {
-            response = cache.getAndPut(key, value, expiryPolicy, getCallerUuid(), completionId);
-            backupRecord = cache.getRecord(key);
+            response = recordStore.getAndPut(key, value, expiryPolicy, getCallerUuid(), completionId);
+            backupRecord = recordStore.getRecord(key);
         } else {
-            backupRecord = cache.put(key, value, expiryPolicy, getCallerUuid(), completionId);
+            backupRecord = recordStore.put(key, value, expiryPolicy, getCallerUuid(), completionId);
         }
     }
 
     @Override
     public void afterRun() throws Exception {
-        if (cache.isWanReplicationEnabled()) {
-            CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key, value, backupRecord);
-            CacheWanEventPublisher publisher = cacheService.getCacheWanEventPublisher();
-            publisher.publishWanReplicationUpdate(name, entryView);
-        }
+        publishWanUpdate(key, backupRecord);
         super.afterRun();
     }
 

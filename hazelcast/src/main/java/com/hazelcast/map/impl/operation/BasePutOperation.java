@@ -17,9 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.serialization.Data;
@@ -50,34 +47,13 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     @Override
     public void afterRun() {
         mapServiceContext.interceptAfterPut(name, dataValue);
-        Object value = isPostProcessing(recordStore) ? recordStore.getRecord(dataKey).getValue() : dataValue;
+        Record record = recordStore.getRecord(dataKey);
+        Object value = isPostProcessing(recordStore) ? record.getValue() : dataValue;
         mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(),
                 dataKey, dataOldValue, value, dataMergingValue);
         invalidateNearCache(dataKey);
-        publishWANReplicationEvent(mapEventPublisher, value);
+        publishWanUpdate(dataKey, value);
         evict(dataKey);
-    }
-
-    private void publishWANReplicationEvent(MapEventPublisher mapEventPublisher, Object value) {
-        if (!mapContainer.isWanReplicationEnabled() || !canThisOpGenerateWANEvent()) {
-            return;
-        }
-
-        Record record = recordStore.getRecord(dataKey);
-        if (record == null) {
-            return;
-        }
-        final Data valueConvertedData = mapServiceContext.toData(value);
-        final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, valueConvertedData, record);
-        mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-    }
-
-    /**
-     * @return {@code true} if this operation can generate WAN event, otherwise return {@code false}
-     * to indicate WAN event generation is not allowed for this operation
-     */
-    protected boolean canThisOpGenerateWANEvent() {
-        return true;
     }
 
     private EntryEventType getEventType() {

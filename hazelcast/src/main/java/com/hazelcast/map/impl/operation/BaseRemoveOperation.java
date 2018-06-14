@@ -21,7 +21,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.util.Clock;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
 
@@ -50,11 +49,13 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         mapServiceContext.interceptAfterRemove(name, dataValue);
         mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
         invalidateNearCache(dataKey);
-        if (mapContainer.isWanReplicationEnabled() && !disableWanReplicationEvent) {
-            // todo should evict operation replicated??
-            mapEventPublisher.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
-        }
+        publishWanRemove(dataKey);
         evict(dataKey);
+    }
+
+    @Override
+    protected boolean canThisOpGenerateWANEvent() {
+        return !disableWanReplicationEvent;
     }
 
     @Override

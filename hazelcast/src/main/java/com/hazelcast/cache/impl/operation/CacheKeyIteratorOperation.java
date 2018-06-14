@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheKeyIterationResult;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,10 +30,11 @@ import java.io.IOException;
  * Initializes and grabs a number of keys defined by <code>size</code> parameter from the
  * {@link com.hazelcast.cache.impl.ICacheRecordStore} with the last table index.
  * </p>
+ *
  * @see com.hazelcast.cache.impl.ICacheRecordStore#fetchKeys(int, int)
  */
 public class CacheKeyIteratorOperation
-        extends AbstractCacheOperation
+        extends KeyBasedCacheOperation
         implements ReadonlyOperation {
 
     private int tableIndex;
@@ -55,23 +55,19 @@ public class CacheKeyIteratorOperation
     }
 
     @Override
-    public void run()
-            throws Exception {
-        final CacheKeyIterationResult iterator = this.cache.fetchKeys(tableIndex, size);
-        response = iterator;
+    public void run() throws Exception {
+        response = recordStore.fetchKeys(tableIndex, size);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(tableIndex);
         out.writeInt(size);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         tableIndex = in.readInt();
         size = in.readInt();

@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Clock;
 
 /**
  * Helper methods for publishing events related to map actions. The implementation may delegate
@@ -36,35 +35,15 @@ public interface MapEventPublisher {
      * @param mapName   the map name
      * @param entryView the updated entry
      */
-    void publishWanReplicationUpdate(String mapName, EntryView<Data, Data> entryView);
+    void publishWanUpdate(String mapName, EntryView<Data, Data> entryView);
 
     /**
      * Notifies the WAN subsystem of a map entry removal on a replica owner.
      *
-     * @param mapName    the map name
-     * @param key        the key of the removed entry
-     * @param removeTime the clock time for the remove event
-     * @see Clock#currentTimeMillis()
+     * @param mapName the map name
+     * @param key     the key of the removed entry
      */
-    void publishWanReplicationRemove(String mapName, Data key, long removeTime);
-
-    /**
-     * Notifies the WAN subsystem of a map update on a backup replica.
-     *
-     * @param mapName   the map name
-     * @param entryView the updated entry
-     */
-    void publishWanReplicationUpdateBackup(String mapName, EntryView entryView);
-
-    /**
-     * Notifies the WAN subsystem of a map entry removal on a backup replica.
-     *
-     * @param mapName    the map name
-     * @param key        the key of the removed entry
-     * @param removeTime the clock time for the remove event
-     * @see Clock#currentTimeMillis()
-     */
-    void publishWanReplicationRemoveBackup(String mapName, Data key, long removeTime);
+    void publishWanRemove(String mapName, Data key);
 
     void publishMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected);
 

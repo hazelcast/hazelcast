@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.operation.KeyBasedCacheOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
@@ -43,12 +44,12 @@ import com.hazelcast.spi.serialization.SerializationService;
  *         cache.get(key, expiryPolicy);
  *         </code>
  *     </pre>
- * See {@link com.hazelcast.cache.impl.operation.AbstractCacheOperation} subclasses for actual examples.
+ * See {@link KeyBasedCacheOperation} subclasses for actual examples.
  * </p>
  *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
  * @see com.hazelcast.cache.impl.CacheService
- * @see com.hazelcast.cache.impl.operation.AbstractCacheOperation
+ * @see KeyBasedCacheOperation
  */
 public class CacheRecordStore
         extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap> {

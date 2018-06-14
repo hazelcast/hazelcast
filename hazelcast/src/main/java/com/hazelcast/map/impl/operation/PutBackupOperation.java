@@ -16,11 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
@@ -79,31 +75,17 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         if (recordInfo != null) {
             evict(dataKey);
         }
-        if (!disableWanReplicationEvent) {
-            publishWANReplicationEventBackup(mapServiceContext, mapEventPublisher);
-        }
-
+        publishWanUpdate(dataKey, dataValue);
     }
 
-    private void publishWANReplicationEventBackup(MapServiceContext mapServiceContext, MapEventPublisher mapEventPublisher) {
-        if (!mapContainer.isWanReplicationEnabled()) {
-            return;
-        }
-
-        Record record = recordStore.getRecord(dataKey);
-        if (record == null) {
-            return;
-        }
-
-        final Data valueConvertedData = mapServiceContext.toData(dataValue);
-        final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, valueConvertedData, record);
-        mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+    @Override
+    protected boolean canThisOpGenerateWANEvent() {
+        return !disableWanReplicationEvent;
     }
-
 
     @Override
     public Object getResponse() {

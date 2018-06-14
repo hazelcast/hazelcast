@@ -16,62 +16,50 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
 /**
- * Backup operation used by remove operations.
+ * Operations running on a single key should extend this class.
  */
-public class CacheRemoveBackupOperation
-        extends KeyBasedCacheOperation implements BackupOperation {
+public abstract class KeyBasedCacheOperation extends CacheOperation {
 
-    private boolean wanOriginated;
+    protected Data key;
+    protected Object response;
 
-    public CacheRemoveBackupOperation() {
+    protected transient CacheRecord backupRecord;
+
+    protected KeyBasedCacheOperation() {
     }
 
-    public CacheRemoveBackupOperation(String name, Data key) {
+    protected KeyBasedCacheOperation(String name, Data key) {
         this(name, key, false);
     }
 
-    public CacheRemoveBackupOperation(String name, Data key, boolean wanOriginated) {
-        super(name, key, true);
-        this.wanOriginated = wanOriginated;
+    protected KeyBasedCacheOperation(String name, Data key,
+                                     boolean dontCreateCacheRecordStoreIfNotExist) {
+        super(name, dontCreateCacheRecordStoreIfNotExist);
+        this.key = key;
     }
 
     @Override
-    public void run() {
-        if (recordStore != null) {
-            recordStore.removeRecord(key);
-        }
-    }
-
-    @Override
-    public void afterRun() {
-        if (recordStore != null && !wanOriginated) {
-            publishWanRemove(key);
-        }
-    }
-
-    @Override
-    public int getId() {
-        return CacheDataSerializerHook.REMOVE_BACKUP;
+    public final Object getResponse() {
+        return response;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(wanOriginated);
+        out.writeData(key);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        wanOriginated = in.readBoolean();
+        key = in.readData();
     }
 }

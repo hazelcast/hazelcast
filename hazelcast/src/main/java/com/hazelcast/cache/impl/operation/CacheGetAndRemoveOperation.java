@@ -24,10 +24,10 @@ import com.hazelcast.spi.Operation;
  * Cache GetAndRemove Operation.
  * <p>Operation to call the record store's functionality. Backup is also triggered by this operation
  * if a record is removed.</p>
+ *
  * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndRemove(com.hazelcast.nio.serialization.Data, String, int)
  */
-public class CacheGetAndRemoveOperation
-        extends AbstractMutatingCacheOperation {
+public class CacheGetAndRemoveOperation extends MutatingCacheOperation {
 
     public CacheGetAndRemoveOperation() {
     }
@@ -39,15 +39,13 @@ public class CacheGetAndRemoveOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.getAndRemove(key, getCallerUuid(), completionId);
+        response = recordStore.getAndRemove(key, getCallerUuid(), completionId);
     }
 
     @Override
     public void afterRun() throws Exception {
         if (response != null) {
-            if (cache.isWanReplicationEnabled()) {
-                wanEventPublisher.publishWanReplicationRemove(name, key);
-            }
+            publishWanRemove(key);
         }
         super.afterRun();
     }

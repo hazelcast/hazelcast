@@ -16,9 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,8 +31,7 @@ import java.io.IOException;
  *
  * @see com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String, int)
  */
-public class CachePutIfAbsentOperation
-        extends AbstractMutatingCacheOperation {
+public class CachePutIfAbsentOperation extends MutatingCacheOperation {
 
     private Data value;
     private ExpiryPolicy expiryPolicy;
@@ -52,19 +49,16 @@ public class CachePutIfAbsentOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.putIfAbsent(key, value, expiryPolicy, getCallerUuid(), completionId);
+        response = recordStore.putIfAbsent(key, value, expiryPolicy, getCallerUuid(), completionId);
         if (Boolean.TRUE.equals(response)) {
-            backupRecord = cache.getRecord(key);
+            backupRecord = recordStore.getRecord(key);
         }
     }
 
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            if (cache.isWanReplicationEnabled()) {
-                CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key, value, backupRecord);
-                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
-            }
+            publishWanUpdate(key, backupRecord);
         }
         super.afterRun();
     }

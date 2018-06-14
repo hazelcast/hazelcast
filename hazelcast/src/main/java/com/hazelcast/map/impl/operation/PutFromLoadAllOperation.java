@@ -16,10 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -82,12 +79,12 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
             if (value != null) {
                 callAfterPutInterceptors(value);
             }
-            Record record = recordStore.getRecord(key);
             if (isPostProcessing(recordStore)) {
+                Record record = recordStore.getRecord(key);
                 checkNotNull(record, "Value loaded by a MapLoader cannot be null.");
                 value = record.getValue();
             }
-            publishWanReplicationEvent(key, value, record);
+            publishWanUpdate(key, value);
             addInvalidation(key);
         }
     }
@@ -107,17 +104,6 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     private void callAfterPutInterceptors(Object value) {
         mapService.getMapServiceContext().interceptAfterPut(name, value);
-    }
-
-    private void publishWanReplicationEvent(Data key, Object value, Record record) {
-        if (record == null || !mapContainer.isWanReplicationEnabled()) {
-            return;
-        }
-
-        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-        value = mapServiceContext.toData(value);
-        EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
-        mapEventPublisher.publishWanReplicationUpdate(name, entryView);
     }
 
     @Override
