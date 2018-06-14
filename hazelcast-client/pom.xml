@@ -121,6 +121,9 @@
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                        <manifestEntries>
+                            <Automatic-Module-Name>com.hazelcast.client</Automatic-Module-Name>
+                        </manifestEntries>
                     </archive>
                 </configuration>
                 <executions>

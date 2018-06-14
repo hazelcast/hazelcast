@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
+import java.util.jar.Attributes.Name;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
@@ -56,6 +57,8 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
 
     private static final String IMPORT_PACKAGE = "Import-Package";
     private static final String EXPORT_PACKAGE = "Export-Package";
+
+    private static final Name AUTOMATIC_MODULE_NAME = new Name("Automatic-Module-Name");
 
     // configuration
     @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "Filled by Maven")
@@ -189,6 +192,9 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
                 attributes.put(new Attributes.Name(entry.getKey()), entry.getValue());
             }
         }
+
+        // the Manifest in hazelcast-all uberjar won't have the Automatic-Module-Name
+        attributes.remove(AUTOMATIC_MODULE_NAME);
 
         jarOutputStream.putNextEntry(new JarEntry(JarFile.MANIFEST_NAME));
         shadedManifest.write(jarOutputStream);
