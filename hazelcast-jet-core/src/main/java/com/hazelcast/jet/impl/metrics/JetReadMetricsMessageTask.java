@@ -14,27 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.client;
+package com.hazelcast.jet.impl.metrics;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class JetReadMetricsMessageTask extends AbstractMessageTask<RequestParameters> {
+public class JetReadMetricsMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
-    protected JetReadMetricsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public JetReadMetricsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() {
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(),
+                op, nodeEngine.getThisAddress());
+    }
+
+    @Override
+    protected Operation prepareOperation() {
         // readMetrics requests are sent to member identified by address, but we want it by member UUID.
         // After a member restart, the address remains, but UUID changes. If the local member has different
         // UUID than then intended one, fail.
@@ -45,8 +51,7 @@ public class JetReadMetricsMessageTask extends AbstractMessageTask<RequestParame
                             + ", but local member is " + nodeEngine.getLocalMember().getUuid()
             );
         }
-        JetMetricsService jetMetricsService = getService(JetMetricsService.SERVICE_NAME);
-        sendResponse(jetMetricsService.readMetrics(parameters.fromSequence));
+        return new ReadMetricsOperation(parameters.fromSequence);
     }
 
     @Override
@@ -61,7 +66,7 @@ public class JetReadMetricsMessageTask extends AbstractMessageTask<RequestParame
 
     @Override
     public String getServiceName() {
-        return JetService.SERVICE_NAME;
+        return JetMetricsService.SERVICE_NAME;
     }
 
     @Override

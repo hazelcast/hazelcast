@@ -31,6 +31,7 @@ import com.hazelcast.client.impl.protocol.codec.JetRestartJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jet.impl.metrics.JetReadMetricsMessageTask;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
