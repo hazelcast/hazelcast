@@ -106,6 +106,7 @@ public class TestApplicationContext {
         MetricsConfig metricsConfig = jetConfig.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
         assertEquals(123, metricsConfig.getRetentionSeconds());
+        assertEquals(10, metricsConfig.getCollectionIntervalSeconds());
         assertTrue(metricsConfig.isEnabledForDataStructures());
     }
 

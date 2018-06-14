@@ -221,14 +221,18 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
 
     private void parseMetrics(Node edgeNode) {
         MetricsConfig config = jetConfig.getMetricsConfig();
+        Node enabled = edgeNode.getAttributes().getNamedItem("enabled");
+        if (enabled != null) {
+            config.setEnabled(Boolean.parseBoolean(getTextContent(enabled)));
+        }
         for (Node child : childElements(edgeNode)) {
             String name = cleanNodeName(child);
             switch (name) {
-                case "enabled":
-                    config.setEnabled(booleanValue(child));
-                    break;
                 case "retention-seconds":
                     config.setRetentionSeconds(intValue(child));
+                    break;
+                case "collection-interval-seconds":
+                    config.setCollectionIntervalSeconds(intValue(child));
                     break;
                 case "enabled-for-data-structures":
                     config.setEnabledForDataStructures(booleanValue(child));

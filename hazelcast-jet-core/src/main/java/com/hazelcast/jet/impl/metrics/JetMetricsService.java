@@ -37,8 +37,6 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
 
     public static final String SERVICE_NAME = "hz:impl:jetMetricsService";
 
-    public static final int COLLECTION_INTERVAL_SECONDS = 1;
-
     private static final int INITIAL_BUFFER_SIZE = 2 << 16;
     private static final int SIZE_FACTOR_NUMERATOR = 11;
     private static final int SIZE_FACTOR_DENOMINATOR = 10;
@@ -67,7 +65,12 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         if (config.isEnabled()) {
-            metricsJournal = new ConcurrentArrayRingbuffer<>(config.getRetentionSeconds());
+            int journalSize = Math.max(
+                    1, (int) Math.ceil((double) config.getRetentionSeconds() / config.getCollectionIntervalSeconds())
+            );
+            metricsJournal = new ConcurrentArrayRingbuffer<>(journalSize);
+            logger.info("Configuring metrics collection, collection interval=" + config.getCollectionIntervalSeconds()
+                    + " seconds and retention=" + config.getRetentionSeconds() + " seconds");
             int[] lastSize = {INITIAL_BUFFER_SIZE};
             nodeEngine.getExecutionService().scheduleWithRepetition("MetricsForManCenterCollection", () -> {
                 CompressingProbeRenderer renderer = new CompressingProbeRenderer(
@@ -77,7 +80,7 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
                 lastSize[0] = blob.length;
                 metricsJournal.add(entry(System.currentTimeMillis(), blob));
                 logFine(logger, "Collected %,d metrics, %,d bytes", renderer.getCount(), blob.length);
-            }, COLLECTION_INTERVAL_SECONDS, COLLECTION_INTERVAL_SECONDS, TimeUnit.SECONDS);
+            }, 1, config.getCollectionIntervalSeconds(), TimeUnit.SECONDS);
         }
     }
 

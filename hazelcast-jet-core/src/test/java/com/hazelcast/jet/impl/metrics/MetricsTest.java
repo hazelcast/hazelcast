@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl;
+package com.hazelcast.jet.impl.metrics;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.impl.metrics.MetricsResultSet;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import org.junit.Test;
 
 import java.util.stream.StreamSupport;
@@ -28,13 +27,11 @@ import java.util.stream.StreamSupport;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class JetClientInstanceImplTest extends JetTestSupport {
+public class MetricsTest extends JetTestSupport {
 
     @Test
-    public void test() {
-        JetConfig cfg = new JetConfig();
-        cfg.getMetricsConfig().setEnabled(true);
-        JetInstance inst = createJetMember(cfg);
+    public void test_readMetricsAsync() {
+        JetInstance inst = createJetMember();
         JetClientInstanceImpl client = (JetClientInstanceImpl) createJetClient();
         assertTrueEventually(() -> {
             ICompletableFuture<MetricsResultSet> resultFuture =
@@ -43,6 +40,6 @@ public class JetClientInstanceImplTest extends JetTestSupport {
             assertFalse(result.collections().isEmpty());
             assertTrue(StreamSupport.stream(result.collections().get(0).spliterator(), false)
                          .anyMatch(m -> m.key().equals("[metric=os.processCpuLoad]")));
-        }, 5);
+        }, 30);
     }
 }

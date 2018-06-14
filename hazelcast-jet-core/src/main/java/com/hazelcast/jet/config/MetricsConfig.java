@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.util.Preconditions;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -24,13 +26,19 @@ import javax.annotation.Nonnull;
 public class MetricsConfig {
 
     /**
+     * Default collection interval for metrics
+     */
+    public static final int DEFAULT_METRICS_COLLECTION_SECONDS = 5;
+
+    /**
      * Default retention period for metrics.
      */
-    public static final int DEFAULT_METRICS_RETENTION_SECONDS = 120;
+    public static final int DEFAULT_METRICS_RETENTION_SECONDS = 5;
 
     private boolean enabled = true;
     private int retentionSeconds = DEFAULT_METRICS_RETENTION_SECONDS;
     private boolean enableDataStructures;
+    private int intervalSeconds = DEFAULT_METRICS_COLLECTION_SECONDS;
 
     /**
      * Sets whether metrics collection should be enabled for the node. It's
@@ -43,7 +51,7 @@ public class MetricsConfig {
     }
 
     /**
-     * Returns if metrics collection is enabled. It's enabled by default.
+     * Returns if metrics collection is enabled.
      */
     public boolean isEnabled() {
         return enabled;
@@ -51,20 +59,39 @@ public class MetricsConfig {
 
     /**
      * Returns the number of seconds the metrics will be retained on the
-     * instance. Default is {@link #DEFAULT_METRICS_RETENTION_SECONDS}.
+     * instance. By default metrics are retained for 5 seconds.
      */
     @Nonnull
     public MetricsConfig setRetentionSeconds(int retentionSeconds) {
+        Preconditions.checkPositive(intervalSeconds, "retentionSeconds must be positive");
         this.retentionSeconds = retentionSeconds;
         return this;
     }
 
     /**
      * Returns the number of seconds the metrics will be retained on the
-     * instance. Default is {@link #DEFAULT_METRICS_RETENTION_SECONDS}.
+     * instance.
      */
     public int getRetentionSeconds() {
         return retentionSeconds;
+    }
+
+    /**
+     * Sets the metrics collection interval in seconds. By default, metrics
+     * are collected every 5 seconds.
+     */
+    @Nonnull
+    public MetricsConfig setCollectionIntervalSeconds(int intervalSeconds) {
+        Preconditions.checkPositive(intervalSeconds, "intervalSeconds must be positive");
+        this.intervalSeconds = intervalSeconds;
+        return this;
+    }
+
+    /**
+     * Returns the metrics collection interval.
+     */
+    public int getCollectionIntervalSeconds() {
+        return this.intervalSeconds;
     }
 
     /**
@@ -79,8 +106,7 @@ public class MetricsConfig {
     }
 
     /**
-     * Returns if metric collection is enabled for data structures. It's
-     * disabled by default.
+     * Returns if metric collection is enabled for data structures.
      */
     public boolean isEnabledForDataStructures() {
         return enableDataStructures;

@@ -43,13 +43,15 @@
        <receive-window-multiplier>3</receive-window-multiplier>
     </edge-defaults>
 
-    <metrics>
-        <!-- if metrics collection is enabled -->
-        <enabled>true</enabled>
+    <!-- whether metrics collection is enabled -->
+    <metrics enabled="false">
 
         <!-- the number of seconds the metrics will be retained on the instance -->
         <retention-seconds>120</retention-seconds>
 
+        <!-- the metrics collection interval in seconds -->
+        <collection-interval-seconds>5</collection-interval-seconds>
+        
         <!-- whether metrics should be collected for data structures. Metrics
             collection can have some overhead if there is a large number of data
             structures -->

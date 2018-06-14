@@ -158,6 +158,7 @@
     <xs:complexType name="metrics-config">
         <xs:attribute name="enabled" type="hz:parameterized-boolean"/>
         <xs:attribute name="retention-seconds" type="hz:parameterized-positive-integer"/>
+        <xs:attribute name="collection-interval-seconds" type="hz:parameterized-positive-integer"/>
         <xs:attribute name="enabled-for-data-structures" type="hz:parameterized-boolean"/>
     </xs:complexType>
 
