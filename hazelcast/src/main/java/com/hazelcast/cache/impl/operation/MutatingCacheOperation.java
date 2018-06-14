@@ -29,16 +29,15 @@ import java.io.IOException;
  * completion event functionality.
  * <p>This operation publishes COMPLETE event.</p>
  */
-public abstract class AbstractMutatingCacheOperation
-        extends AbstractCacheOperation
+public abstract class MutatingCacheOperation extends KeyBasedCacheOperation
         implements BackupAwareOperation, MutableOperation, MutatingOperation {
 
     protected int completionId;
 
-    protected AbstractMutatingCacheOperation() {
+    protected MutatingCacheOperation() {
     }
 
-    protected AbstractMutatingCacheOperation(String name, Data key, int completionId) {
+    protected MutatingCacheOperation(String name, Data key, int completionId) {
         super(name, key);
         this.completionId = completionId;
     }

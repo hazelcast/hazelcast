@@ -31,7 +31,7 @@ import java.io.IOException;
  * @see com.hazelcast.cache.impl.ICacheRecordStore#get(Data, javax.cache.expiry.ExpiryPolicy)
  */
 public class CacheGetOperation
-        extends AbstractCacheOperation
+        extends KeyBasedCacheOperation
         implements ReadonlyOperation {
 
     private ExpiryPolicy expiryPolicy;
@@ -47,7 +47,7 @@ public class CacheGetOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.get(key, expiryPolicy);
+        response = recordStore.get(key, expiryPolicy);
     }
 
     @Override

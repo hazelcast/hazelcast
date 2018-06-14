@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -25,6 +26,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -34,6 +36,8 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.List;
 
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
 public abstract class MapOperation extends AbstractNamedOperation implements IdentifiedDataSerializable, ServiceNamespaceAware {
@@ -177,5 +181,41 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
             container = service.getMapServiceContext().getMapContainer(name);
         }
         return container.getObjectNamespace();
+    }
+
+    /**
+     * @return {@code true} if this operation can generate WAN event, otherwise return {@code false}
+     * to indicate WAN event generation is not allowed for this operation
+     */
+    protected boolean canThisOpGenerateWANEvent() {
+        return true;
+    }
+
+    protected final void publishWanUpdate(Data dataKey, Object value) {
+        if (!canPublishWANEvent()) {
+            return;
+        }
+
+        Record record = recordStore.getRecord(dataKey);
+        if (record == null) {
+            return;
+        }
+
+        Data dataValue = toHeapData(mapServiceContext.toData(value));
+        EntryView entryView = createSimpleEntryView(toHeapData(dataKey), dataValue, record);
+
+        mapEventPublisher.publishWanUpdate(name, entryView);
+    }
+
+    protected final void publishWanRemove(Data dataKey) {
+        if (!canPublishWANEvent()) {
+            return;
+        }
+
+        mapEventPublisher.publishWanRemove(name, toHeapData(dataKey));
+    }
+
+    private boolean canPublishWANEvent() {
+        return mapContainer.isWanReplicationEnabled() && canThisOpGenerateWANEvent();
     }
 }

@@ -40,7 +40,7 @@ public interface CacheWanEventPublisher {
      * @see com.hazelcast.cache.impl.operation.CachePutOperation
      * @see com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation
      */
-    void publishWanReplicationUpdate(String cacheNameWithPrefix, CacheEntryView<Data, Data> entryView);
+    void publishWanUpdate(String cacheNameWithPrefix, CacheEntryView<Data, Data> entryView);
 
     /**
      * This method will create a wrapper object using the given {@link CacheEntryView}
@@ -53,26 +53,5 @@ public interface CacheWanEventPublisher {
      * @param key                 the key of the removed entry
      * @see com.hazelcast.cache.impl.operation.CacheRemoveOperation
      */
-    void publishWanReplicationRemove(String cacheNameWithPrefix, Data key);
-
-    /**
-     * Backup operations of operations that call {@link this#publishWanReplicationUpdate(String, CacheEntryView)}
-     * should call this method to provide wan event backups
-     *
-     * @param cacheNameWithPrefix the full name of the {@link com.hazelcast.cache.ICache}, including the manager scope prefix
-     * @param entryView           the updated cache entry
-     * @see com.hazelcast.cache.impl.operation.CachePutBackupOperation
-     */
-    void publishWanReplicationUpdateBackup(String cacheNameWithPrefix, CacheEntryView<Data, Data> entryView);
-
-    /**
-     * Backup operations of operations that call {@link this#publishWanReplicationRemove(String, Data)}
-     * should call this method to provide wan event backups
-     *
-     * @param cacheNameWithPrefix the full name of the {@link com.hazelcast.cache.ICache}, including the manager scope prefix
-     * @param key                 the key of the removed entry
-     * @see com.hazelcast.cache.impl.operation.CacheRemoveBackupOperation
-     */
-    void publishWanReplicationRemoveBackup(String cacheNameWithPrefix, Data key);
-
+    void publishWanRemove(String cacheNameWithPrefix, Data key);
 }

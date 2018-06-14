@@ -16,9 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,10 +28,10 @@ import java.io.IOException;
 /**
  * Cache GetAndReplace Operation.
  * <p>Operation to call the cache record store method.</p>
+ *
  * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndReplace(Data, Object, javax.cache.expiry.ExpiryPolicy, String, int)
  */
-public class CacheGetAndReplaceOperation
-        extends AbstractMutatingCacheOperation {
+public class CacheGetAndReplaceOperation extends MutatingCacheOperation {
 
     private Data value;
     private ExpiryPolicy expiryPolicy;
@@ -51,17 +49,13 @@ public class CacheGetAndReplaceOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.getAndReplace(key, value, expiryPolicy, getCallerUuid(), completionId);
-        backupRecord = cache.getRecord(key);
+        response = recordStore.getAndReplace(key, value, expiryPolicy, getCallerUuid(), completionId);
+        backupRecord = recordStore.getRecord(key);
     }
 
     @Override
     public void afterRun() throws Exception {
-        if (cache.isWanReplicationEnabled()) {
-            CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
-                    getNodeEngine().getSerializationService().toData(backupRecord.getValue()), backupRecord);
-            wanEventPublisher.publishWanReplicationUpdate(name, entryView);
-        }
+        publishWanUpdate(key, backupRecord);
         super.afterRun();
     }
 

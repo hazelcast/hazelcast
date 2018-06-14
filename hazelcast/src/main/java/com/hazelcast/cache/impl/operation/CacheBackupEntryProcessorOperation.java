@@ -16,9 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,7 +37,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
  * functionality to apply the backup using the given {@link javax.cache.processor.EntryProcessor}.</p>
  */
 public class CacheBackupEntryProcessorOperation
-        extends AbstractBackupCacheOperation
+        extends KeyBasedCacheOperation
         implements BackupOperation, IdentifiedDataSerializable {
 
     private EntryProcessor entryProcessor;
@@ -61,23 +59,28 @@ public class CacheBackupEntryProcessorOperation
     }
 
     @Override
-    public void runInternal()
-            throws Exception {
-        cache.invoke(key, entryProcessor, arguments, IGNORE_COMPLETION);
+    public void run() throws Exception {
+        if (recordStore != null) {
+            recordStore.invoke(key, entryProcessor, arguments, IGNORE_COMPLETION);
+        }
     }
 
     @Override
-    public void afterRunInternal() throws Exception {
-        if (cache.isWanReplicationEnabled()) {
-            CacheRecord record = cache.getRecord(key);
+    public void afterRun() throws Exception {
+        if (recordStore == null) {
+            return;
+        }
+
+        if (recordStore.isWanReplicationEnabled()) {
+            CacheRecord record = recordStore.getRecord(key);
             if (record != null) {
-                CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
-                        getNodeEngine().getSerializationService().toData(record.getValue()), record);
-                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
+                publishWanUpdate(key, record);
             } else {
-                wanEventPublisher.publishWanReplicationRemove(name, key);
+                publishWanRemove(key);
             }
         }
+
+        super.afterRun();
     }
 
     @Override
