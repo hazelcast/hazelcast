@@ -119,7 +119,11 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     protected void publishWanEvent(String mapName, ReplicationEventObject event) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         WanReplicationPublisher wanReplicationPublisher = mapContainer.getWanReplicationPublisher();
-        wanReplicationPublisher.publishReplicationEvent(SERVICE_NAME, event);
+        if (isOwnedPartition(event.getKey())) {
+            wanReplicationPublisher.publishReplicationEvent(SERVICE_NAME, event);
+        } else {
+            wanReplicationPublisher.publishReplicationEventBackup(SERVICE_NAME, event);
+        }
     }
 
     private boolean isOwnedPartition(Data dataKey) {
