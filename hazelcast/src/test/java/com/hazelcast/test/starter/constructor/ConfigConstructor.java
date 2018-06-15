@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.starter;
+package com.hazelcast.test.starter.constructor;
 
 import com.hazelcast.nio.ClassLoaderUtil;
 
@@ -29,7 +29,8 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.test.starter.HazelcastProxyFactory.isJDKClass;
+import static com.hazelcast.test.starter.HazelcastProxyFactory.ProxyPolicy.RETURN_SAME;
+import static com.hazelcast.test.starter.HazelcastProxyFactory.shouldProxy;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
@@ -69,12 +70,11 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
         }
 
         Class thisConfigClass = thisConfigObject.getClass();
-        if (thisConfigClass.isPrimitive() || isJDKClass(thisConfigClass)) {
+        if (shouldProxy(thisConfigClass, new Class[0]) == RETURN_SAME) {
             return thisConfigObject;
         }
 
         Class<?> otherConfigClass = classloader.loadClass(thisConfigClass.getName());
-
         if (isQuorumFunctionImplementation(thisConfigClass)) {
             return cloneQuorumFunctionImplementation(thisConfigObject, otherConfigClass);
         }

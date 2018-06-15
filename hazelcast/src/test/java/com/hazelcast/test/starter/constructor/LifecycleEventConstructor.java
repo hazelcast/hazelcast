@@ -14,32 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.starter;
+package com.hazelcast.test.starter.constructor;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
 
+import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-/**
- * Constructor for {@link com.hazelcast.version.Version} class proxies
- */
-public class VersionConstructor extends AbstractStarterObjectConstructor {
+public class LifecycleEventConstructor extends AbstractStarterObjectConstructor {
 
-    public VersionConstructor(Class<?> targetClass) {
+    public LifecycleEventConstructor(Class<?> targetClass) {
         super(targetClass);
     }
 
     @Override
     Object createNew0(Object delegate) throws Exception {
         ClassLoader starterClassLoader = targetClass.getClassLoader();
-        Class<?> versionClass = starterClassLoader.loadClass("com.hazelcast.version.Version");
-        Method versionOf = versionClass.getDeclaredMethod("of", Integer.TYPE, Integer.TYPE);
+        Class<?> stateClass = starterClassLoader.loadClass("com.hazelcast.core.LifecycleEvent$LifecycleState");
+        Constructor<?> constructor = targetClass.getDeclaredConstructor(stateClass);
 
-        Byte major = (Byte) getFieldValueReflectively(delegate, "major");
-        Byte minor = (Byte) getFieldValueReflectively(delegate, "minor");
+        Object state = getFieldValueReflectively(delegate, "state");
+        Object[] args = new Object[]{state};
+        Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
 
-        Object[] args = new Object[]{major.intValue(), minor.intValue()};
-
-        return versionOf.invoke(null, args);
+        return constructor.newInstance(proxiedArgs);
     }
 }

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.starter.test;
+package com.hazelcast.test.starter.constructor.test;
 
 import com.hazelcast.query.impl.predicates.GreaterLessPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.starter.GreaterLessPredicateConstructor;
+import com.hazelcast.test.starter.constructor.GreaterLessPredicateConstructor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

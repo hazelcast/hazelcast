@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.starter.test;
+package com.hazelcast.test.starter.constructor.test;
 
-import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.starter.AddressConstructor;
+import com.hazelcast.test.starter.constructor.VersionConstructor;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,18 +29,16 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class AddressConstructorTest {
+public class VersionConstructorTest {
 
     @Test
-    public void addressCloneTest() throws Exception {
-        Address address = new Address("172.16.16.1", 4223);
+    public void versionCloneTest() {
+        Version version = Version.of(23, 42);
 
-        AddressConstructor constructor = new AddressConstructor(Address.class);
-        Address clonedAddress = (Address) constructor.createNew(address);
+        VersionConstructor constructor = new VersionConstructor(Version.class);
+        Version clonedVersion = (Version) constructor.createNew(version);
 
-        assertEquals(address.getHost(), clonedAddress.getHost());
-        assertEquals(address.getPort(), clonedAddress.getPort());
-        assertEquals(address.getInetAddress(), clonedAddress.getInetAddress());
-        assertEquals(address.getInetSocketAddress(), clonedAddress.getInetSocketAddress());
+        assertEquals(version.getMajor(), clonedVersion.getMajor());
+        assertEquals(version.getMinor(), clonedVersion.getMinor());
     }
 }

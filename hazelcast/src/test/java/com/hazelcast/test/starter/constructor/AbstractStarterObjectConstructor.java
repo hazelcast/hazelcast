@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.starter;
+package com.hazelcast.test.starter.constructor;
 
 import com.hazelcast.util.ConstructorFunction;
 
+import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable;
 
 /**
@@ -39,7 +40,7 @@ public abstract class AbstractStarterObjectConstructor implements ConstructorFun
         try {
             return createNew0(arg);
         } catch (Exception e) {
-            throw new GuardianException(transferThrowable(e));
+            throw rethrowGuardianException(transferThrowable(e));
         }
     }
 
