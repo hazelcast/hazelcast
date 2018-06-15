@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.starter;
+package com.hazelcast.test.starter.constructor;
 
 import java.lang.reflect.Method;
 

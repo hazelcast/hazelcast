@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.starter.test;
+package com.hazelcast.test.starter.constructor.test;
 
+import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.starter.EnumConstructor;
+import com.hazelcast.test.starter.constructor.LifecycleEventConstructor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,18 +29,15 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class EnumConstructorTest {
+public class LifecycleEventConstructorTest {
 
     @Test
-    public void enumCloneTest() {
-        EnumConstructor constructor = new EnumConstructor(TestEnum.class);
+    public void lifecycleEventCloneTest() {
+        LifecycleEvent lifecycleEvent = new LifecycleEvent(LifecycleEvent.LifecycleState.MERGING);
 
-        assertEquals(TestEnum.FOO, constructor.createNew(TestEnum.FOO));
-        assertEquals(TestEnum.BAR, constructor.createNew(TestEnum.BAR));
-    }
+        LifecycleEventConstructor constructor = new LifecycleEventConstructor(LifecycleEvent.class);
+        LifecycleEvent clonedLifecycleEvent = (LifecycleEvent) constructor.createNew(lifecycleEvent);
 
-    public enum TestEnum {
-        FOO,
-        BAR
+        assertEquals(lifecycleEvent.getState(), clonedLifecycleEvent.getState());
     }
 }

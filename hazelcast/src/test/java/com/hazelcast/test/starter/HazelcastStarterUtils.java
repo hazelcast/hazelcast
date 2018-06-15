@@ -35,11 +35,11 @@ public class HazelcastStarterUtils {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastStarterUtils.class);
 
-    public static RuntimeException rethrowGuardianException(Exception e) {
-        if (e instanceof RuntimeException) {
-            throw (RuntimeException) e;
+    public static RuntimeException rethrowGuardianException(Throwable t) {
+        if (t instanceof RuntimeException) {
+            throw (RuntimeException) t;
         }
-        throw new GuardianException(e);
+        throw new GuardianException(t);
     }
 
     public static boolean isDebugEnabled() {

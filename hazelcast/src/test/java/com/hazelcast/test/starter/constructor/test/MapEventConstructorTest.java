@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.starter.test;
+package com.hazelcast.test.starter.constructor.test;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
@@ -22,7 +22,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.starter.MapEventConstructor;
+import com.hazelcast.test.starter.constructor.MapEventConstructor;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
