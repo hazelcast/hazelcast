@@ -54,7 +54,7 @@ public class ReadMetricsTest extends JetTestSupport {
             assertFalse(result.collections().isEmpty());
             assertTrue(
                     StreamSupport.stream(result.collections().get(0).spliterator(), false)
-                                 .anyMatch(m -> m.key().equals("[metric=os.processCpuLoad]"))
+                            .anyMatch(m -> m.key().equals("[metric=cluster.size]"))
             );
 
             // immediate next call should not return empty result
