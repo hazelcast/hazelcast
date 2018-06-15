@@ -127,8 +127,8 @@ public class OAHashSet<E> extends AbstractSet<E> {
      * enable avoiding {@link #hashCode()} calls if the hash is already
      * known on the caller side.
      *
-     * @param elementToAdd object to be removed from this set, if present
-     * @param hash         the hash of the element to be removed
+     * @param elementToAdd element to be added to this set
+     * @param hash         the hash of the element to be added
      * @return <tt>true</tt> if this set did not already contain the specified
      * element
      * @see #add(Object)
@@ -172,8 +172,8 @@ public class OAHashSet<E> extends AbstractSet<E> {
      * enable avoiding {@link #hashCode()} calls if the hash is already
      * known on the caller side.
      *
-     * @param objectToCheck object to be removed from this set, if present
-     * @param hash          the hash of the element to be removed
+     * @param objectToCheck element whose presence in this set is to be tested
+     * @param hash          the hash of the element to be tested
      * @return <tt>true</tt> if this set contains the specified element
      * @see #contains(Object)
      */
