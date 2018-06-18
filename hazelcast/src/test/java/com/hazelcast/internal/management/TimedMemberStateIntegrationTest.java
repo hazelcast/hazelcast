@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.monitor;
+package com.hazelcast.internal.management;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;

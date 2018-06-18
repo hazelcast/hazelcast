@@ -21,7 +21,6 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.ParseException;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
