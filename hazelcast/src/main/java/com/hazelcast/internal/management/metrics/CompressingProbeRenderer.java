@@ -126,6 +126,10 @@ public class CompressingProbeRenderer implements ProbeRenderer {
         return count;
     }
 
+    public void flush() throws IOException {
+        dos.flush();
+    }
+
     public byte[] getRenderedBlob() {
         try {
             dos.close();

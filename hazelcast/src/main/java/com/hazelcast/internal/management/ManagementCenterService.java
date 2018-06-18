@@ -463,6 +463,7 @@ public class ManagementCenterService {
                 MetricsRegistry metricsRegistry = getHazelcastInstance().node.nodeEngine.getMetricsRegistry();
                 CompressingProbeRenderer probeRenderer = new CompressingProbeRenderer(outputStream);
                 metricsRegistry.render(probeRenderer);
+                probeRenderer.flush();
                 outputStream.flush();
 
                 boolean success = post(connection);
