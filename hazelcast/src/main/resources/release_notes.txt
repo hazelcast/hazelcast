@@ -1,5 +1,24 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for 3.10.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.10.3 ====
+
+NOTE: Starting with Hazelcast 3.10.3, Hazelcast IMDG Enterprise license keys are required only for members. You do not need to set a license key for your Java clients for which you want to use Enterprise features.
+
+1. Enhancements
+
+- Descriptive null checks should be added when accessing a data structure on the client. [#13256]
+
+2. Fixes
+
+- When a cache is closed, it is no longer managed by the `CacheManager`;
+its `CacheManager` should be reset to null and the method `getCacheManager()` should
+return null as per specification. [#13236]
+- Hazelcast client produces `OutOfMemoryError` when there is no Hazelcast member available at startup. [#13186]
+
+3. Removed/Deprecated Features
+
+- The method 'ClientConfig.setLicenseKey()' is deprecated.
+
 ==== 3.10.2 ====
 
 1. Enhancements
