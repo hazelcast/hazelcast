@@ -27,6 +27,7 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
+import com.hazelcast.internal.management.metrics.CompressingProbeRenderer;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.internal.management.request.AsyncConsoleRequest;
 import com.hazelcast.internal.management.request.ChangeClusterStateRequest;
@@ -48,6 +49,7 @@ import com.hazelcast.internal.management.request.RunGcRequest;
 import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
 import com.hazelcast.internal.management.request.TriggerPartialStartRequest;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;
@@ -71,6 +73,7 @@ import java.net.URLConnection;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -335,6 +338,8 @@ public class ManagementCenterService {
     private final class StateSendThread extends Thread {
 
         private final long updateIntervalMs;
+        private final SendTimedMemberStateTask sendTimedMemberStateTask = new SendTimedMemberStateTask();
+        private final SendMetricsTask sendMetricsTask = new SendMetricsTask();
 
         private StateSendThread() {
             super(createThreadName(instance.getName(), "MC.State.Sender"));
@@ -351,7 +356,8 @@ public class ManagementCenterService {
             try {
                 while (isRunning()) {
                     long startMs = Clock.currentTimeMillis();
-                    sendState();
+                    sendTimedMemberStateTask.call();
+                    sendTimedMemberStateTask.call();
                     long endMs = Clock.currentTimeMillis();
                     sleepIfPossible(endMs - startMs);
                 }
@@ -369,8 +375,11 @@ public class ManagementCenterService {
                 Thread.sleep(sleepTimeMs);
             }
         }
+    }
 
-        private void sendState() throws InterruptedException, MalformedURLException {
+    private final class SendTimedMemberStateTask implements Callable {
+        @Override
+        public Object call() throws Exception {
             URL url = newCollectorUrl();
             OutputStream outputStream = null;
             OutputStreamWriter writer = null;
@@ -405,6 +414,7 @@ public class ManagementCenterService {
                 closeResource(writer);
                 closeResource(outputStream);
             }
+            return null;
         }
 
         private HttpURLConnection openConnection(URL url) throws IOException {
@@ -413,8 +423,8 @@ public class ManagementCenterService {
             }
 
             HttpURLConnection connection = (HttpURLConnection) (connectionFactory != null
-                ? connectionFactory.openConnection(url)
-                : url.openConnection());
+                    ? connectionFactory.openConnection(url)
+                    : url.openConnection());
 
             connection.setDoOutput(true);
             connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
@@ -427,6 +437,62 @@ public class ManagementCenterService {
 
         private URL newCollectorUrl() throws MalformedURLException {
             String url = cleanupUrl(managementCenterUrl) + "collector.do";
+            return new URL(url);
+        }
+    }
+
+    private final class SendMetricsTask implements Callable {
+        @Override
+        public Object call() throws Exception {
+            URL url = newCollectorUrl();
+            OutputStream outputStream = null;
+            try {
+                HttpURLConnection connection = openConnection(url);
+                outputStream = connection.getOutputStream();
+
+                MetricsRegistry metricsRegistry = getHazelcastInstance().node.nodeEngine.getMetricsRegistry();
+                CompressingProbeRenderer probeRenderer = new CompressingProbeRenderer(outputStream);
+                metricsRegistry.render(probeRenderer);
+                outputStream.flush();
+
+                boolean success = post(connection);
+                if (manCenterConnectionLost && success) {
+                    logger.info("Connection to management center restored.");
+                    manCenterConnectionLost = false;
+                } else if (!success) {
+                    manCenterConnectionLost = true;
+                }
+            } catch (Exception e) {
+                if (!manCenterConnectionLost) {
+                    manCenterConnectionLost = true;
+                    log("Failed to connect to:" + url, e);
+                }
+            } finally {
+                closeResource(outputStream);
+            }
+            return null;
+        }
+
+        private HttpURLConnection openConnection(URL url) throws IOException {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Opening collector connection:" + url);
+            }
+
+            HttpURLConnection connection = (HttpURLConnection) (connectionFactory != null
+                    ? connectionFactory.openConnection(url)
+                    : url.openConnection());
+
+            connection.setDoOutput(true);
+            connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
+            connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
+            connection.setRequestProperty("Accept", "application/octet-stream");
+            connection.setRequestProperty("Content-Type", "application/octet-stream");
+            connection.setRequestMethod("POST");
+            return connection;
+        }
+
+        private URL newCollectorUrl() throws MalformedURLException {
+            String url = cleanupUrl(managementCenterUrl) + "metrics.do";
             return new URL(url);
         }
     }
@@ -584,8 +650,8 @@ public class ManagementCenterService {
                 logger.finest("Opening getTask connection:" + url);
             }
             URLConnection connection = connectionFactory != null
-                                        ? connectionFactory.openConnection(url)
-                                        : url.openConnection();
+                    ? connectionFactory.openConnection(url)
+                    : url.openConnection();
 
             connection.setRequestProperty("Connection", "keep-alive");
             return connection;
