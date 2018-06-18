@@ -32,7 +32,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
@@ -71,7 +71,7 @@ public class InitExecutionOperation extends AbstractJobOperation {
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        return isTopologicalFailure(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
+        return isRestartableException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
     }
 
     @Override

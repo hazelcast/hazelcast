@@ -65,9 +65,6 @@ public final class TestUtil {
         }
     }
 
-    public static final class DummyUncheckedTestException extends RuntimeException {
-    }
-
     @Nonnull
     public static ProcessorMetaSupplier throttle(@Nonnull DistributedSupplier<Processor> wrapped, long itemsPerSecond) {
         return new WrappingProcessorMetaSupplier(ProcessorMetaSupplier.of(wrapped), p -> new ThrottleWrappedP(p,

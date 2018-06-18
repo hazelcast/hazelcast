@@ -51,7 +51,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.Edge.between;
@@ -83,20 +82,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        MockPMS.initCalled.set(false);
-        MockPMS.closeCalled.set(false);
-        MockPMS.receivedCloseError.set(null);
-
-        MockPS.closeCount.set(0);
-        MockPS.initCount.set(0);
-        MockPS.receivedCloseErrors.clear();
-
-        MockP.initCount.set(0);
-        MockP.closeCount.set(0);
-        MockP.receivedCloseErrors.clear();
-
-        StuckProcessor.proceedLatch = new CountDownLatch(1);
-        StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
+        TestProcessors.reset(TOTAL_PARALLELISM);
 
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);

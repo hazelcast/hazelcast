@@ -20,6 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
@@ -75,7 +76,7 @@ import static com.hazelcast.jet.impl.SnapshotRepository.snapshotDataMapName;
 import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.idToString;
@@ -359,7 +360,7 @@ public class MasterContext {
         return failures
                 .stream()
                 .map(e -> (Throwable) e.getValue())
-                .filter(t -> !isTopologicalFailure(t))
+                .filter(t -> !isRestartableException(t))
                 .findFirst()
                 .map(ExceptionUtil::peel)
                 .orElse(new TopologyChangedException());
@@ -502,7 +503,7 @@ public class MasterContext {
         return failures
                 .stream()
                 .map(e -> (Throwable) e.getValue())
-                .filter(t -> !(t instanceof CancellationException || isTopologicalFailure(t)))
+                .filter(t -> !(t instanceof CancellationException || isRestartableException(t)))
                 .findFirst()
                 .map(ExceptionUtil::peel)
                 .orElse(new TopologyChangedException());
@@ -591,8 +592,9 @@ public class MasterContext {
     }
 
     private boolean shouldRestart(Throwable t) {
-        return t instanceof JobRestartRequestedException ||
-                (t instanceof TopologyChangedException && jobRecord.getConfig().isAutoRestartOnMemberFailureEnabled());
+        return t instanceof JobRestartRequestedException
+                || (t instanceof RestartableException || t instanceof TopologyChangedException)
+                        && jobRecord.getConfig().isAutoRestartOnMemberFailureEnabled();
     }
 
     void setFinalResult(Throwable failure) {

@@ -28,7 +28,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
@@ -65,7 +65,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        return isTopologicalFailure(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
+        return isRestartableException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
     }
 
     @Override

@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -135,7 +136,7 @@ public final class HazelcastWriters {
                             map.executeOnKeys(tmpMap.keySet(), entryProcessor);
                             tmpMap.clear();
                         } catch (HazelcastInstanceNotActiveException e) {
-                            handleInstanceNotActive(instance, e, isLocal);
+                            throw handleInstanceNotActive(e, isLocal);
                         }
                         buffer.clear();
                     };
@@ -181,7 +182,7 @@ public final class HazelcastWriters {
                         try {
                             map.putAll(buffer);
                         } catch (HazelcastInstanceNotActiveException e) {
-                            handleInstanceNotActive(instance, e, isLocal);
+                            throw handleInstanceNotActive(e, isLocal);
                         }
                         buffer.clear();
                     };
@@ -215,7 +216,7 @@ public final class HazelcastWriters {
                         try {
                             list.addAll(buffer);
                         } catch (HazelcastInstanceNotActiveException e) {
-                            handleInstanceNotActive(instance, e, isLocal);
+                            throw handleInstanceNotActive(e, isLocal);
                         }
                         buffer.clear();
                     };
@@ -224,18 +225,9 @@ public final class HazelcastWriters {
         ));
     }
 
-    private static void handleInstanceNotActive(
-            HazelcastInstance instance, HazelcastInstanceNotActiveException e, boolean isLocal
-    ) {
-        if (isLocal) {
-            // if we are writing to a local instance, we can safely ignore this exception
-            // as the job will eventually restart on its own.
-            instance.getLoggingService().getLogger(HazelcastWriters.class).fine(
-                    "Ignoring HazelcastInstanceNotActiveException from local cluster as the job will be" +
-                            " restarted automatically.", e);
-            return;
-        }
-        throw e;
+    private static RuntimeException handleInstanceNotActive(HazelcastInstanceNotActiveException e, boolean isLocal) {
+        // if we are writing to a local instance, restarting the job should resolve the error
+        return isLocal ? new RestartableException(e) : e;
     }
 
     private static SerializableClientConfig serializableConfig(ClientConfig clientConfig) {
@@ -257,7 +249,7 @@ public final class HazelcastWriters {
                     try {
                         cache.putAll(buffer);
                     } catch (HazelcastInstanceNotActiveException e) {
-                        handleInstanceNotActive(instance, e, isLocal);
+                        throw handleInstanceNotActive(e, isLocal);
                     }
                     buffer.clear();
                 };
@@ -310,7 +302,6 @@ public final class HazelcastWriters {
         private final DistributedFunction<T, K> toKeyFn;
         private final DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn;
         private final AtomicReference<Throwable> lastError = new AtomicReference<>();
-        private final HazelcastInstance instance;
         private final ExecutionCallback callback = callbackOf(
                 response -> numConcurrentOps.decrementAndGet(),
                 exception -> {
@@ -326,7 +317,6 @@ public final class HazelcastWriters {
                                      DistributedFunction toKeyFn,
                                      DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn,
                                      boolean isLocal) {
-            this.instance = instance;
             this.map = instance.getMap(name);
             this.toKeyFn = toKeyFn;
             this.toEntryProcessorFn = toEntryProcessorFn;
@@ -357,8 +347,7 @@ public final class HazelcastWriters {
                 map.submitToKey(key, entryProcessor, callback);
                 return true;
             } catch (HazelcastInstanceNotActiveException e) {
-                handleInstanceNotActive(instance, e, isLocal);
-                return false;
+                throw handleInstanceNotActive(e, isLocal);
             }
         }
 

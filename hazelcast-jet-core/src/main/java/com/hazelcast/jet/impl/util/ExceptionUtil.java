@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.logging.ILogger;
@@ -40,12 +41,15 @@ public final class ExceptionUtil {
 
     private ExceptionUtil() { }
 
-    public static boolean isTopologicalFailure(Object t) {
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+    public static boolean isRestartableException(Throwable t) {
         return t instanceof TopologyChangedException
                 || t instanceof MemberLeftException
                 || t instanceof TargetNotMemberException
                 || t instanceof CallerNotMemberException
-                || t instanceof HazelcastInstanceNotActiveException;
+                || t instanceof HazelcastInstanceNotActiveException
+                || t instanceof RestartableException
+                || t instanceof JetException && t.getCause() instanceof RestartableException;
     }
 
     /**
