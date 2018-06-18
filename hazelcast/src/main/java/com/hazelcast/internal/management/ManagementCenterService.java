@@ -61,11 +61,15 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -357,7 +361,7 @@ public class ManagementCenterService {
                 while (isRunning()) {
                     long startMs = Clock.currentTimeMillis();
                     sendTimedMemberStateTask.call();
-                    sendTimedMemberStateTask.call();
+                    sendMetricsTask.call();
                     long endMs = Clock.currentTimeMillis();
                     sleepIfPossible(endMs - startMs);
                 }
@@ -449,6 +453,12 @@ public class ManagementCenterService {
             try {
                 HttpURLConnection connection = openConnection(url);
                 outputStream = connection.getOutputStream();
+
+                DataOutputStream printWriter = new DataOutputStream(outputStream);
+                printWriter.writeLong(System.currentTimeMillis());
+                printWriter.writeUTF(getHazelcastInstance().node.address.toString());
+                printWriter.writeUTF(getHazelcastInstance().node.config.getGroupConfig().getName());
+                printWriter.flush();
 
                 MetricsRegistry metricsRegistry = getHazelcastInstance().node.nodeEngine.getMetricsRegistry();
                 CompressingProbeRenderer probeRenderer = new CompressingProbeRenderer(outputStream);
