@@ -48,7 +48,7 @@ public class MapEventJournalSubscribeOperation extends MapOperation implements P
         namespace = getServiceNamespace();
         if (!mapServiceContext.getEventJournal().hasEventJournal(namespace)) {
             throw new UnsupportedOperationException(
-                    "Cannot subscribe to event journal because it is either not configured or disabled for map " + name);
+                    "Cannot subscribe to event journal because it is either not configured or disabled for map '" + name + '\'');
         }
     }
 

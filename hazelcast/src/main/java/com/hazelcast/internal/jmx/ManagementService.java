@@ -194,8 +194,7 @@ public class ManagementService implements DistributedObjectListener {
     }
 
     public static String quote(String text) {
-        return Pattern.compile("[:\",=*?]")
-                .matcher(text)
-                .find() ? ObjectName.quote(text) : text;
+        return Pattern.compile("[:\",=*?]").matcher(text).find() || text.indexOf('\n') >= 0
+                ? ObjectName.quote(text) : text;
     }
 }

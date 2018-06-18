@@ -37,7 +37,7 @@ public interface OperationParker {
      *
      * If wait time-outs, {@link BlockingOperation#onWaitExpire()} method is called.
      *
-     * This method should be called in the thread executes the actual {@link BlockingOperation} operation.
+     * This method should be called in the thread that executes the actual {@link BlockingOperation} operation.
      *
      *
      * @param op operation which will wait for notification

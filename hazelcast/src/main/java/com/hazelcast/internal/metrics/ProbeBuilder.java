@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.metrics;
 
+import javax.annotation.Nonnull;
+
 /**
  * Immutable builder object to register Probes.
  */
@@ -34,10 +36,16 @@ public interface ProbeBuilder {
      * @param source the object to pass to probeFn
      * @param metricName the value of "metric" tag
      * @param level the ProbeLevel
+     * @param unit the unit
      * @param probeFn the probe function
      * @throws NullPointerException if any of the arguments is null
      */
-    <S> void register(S source, String metricName, ProbeLevel level, DoubleProbeFunction<S> probeFn);
+    <S> void register(
+            @Nonnull S source,
+            @Nonnull String metricName,
+            @Nonnull ProbeLevel level,
+            @Nonnull ProbeUnit unit,
+            @Nonnull DoubleProbeFunction<S> probeFn);
 
     /**
      * Registers a single probe.
@@ -47,10 +55,16 @@ public interface ProbeBuilder {
      * @param source the object to pass to probeFn
      * @param metricName the value of "metric" tag
      * @param level the ProbeLevel
+     * @param unit the unit
      * @param probeFn the probe function
      * @throws NullPointerException if any of the arguments is null
      */
-    <S> void register(S source, String metricName, ProbeLevel level, LongProbeFunction<S> probeFn);
+    <S> void register(
+            @Nonnull S source,
+            @Nonnull String metricName,
+            @Nonnull ProbeLevel level,
+            @Nonnull ProbeUnit unit,
+            @Nonnull LongProbeFunction<S> probeFn);
 
     /**
      * Scans the source object for any fields/methods that have been annotated
@@ -67,4 +81,10 @@ public interface ProbeBuilder {
      * on a field/method of unsupported type.
      */
     <S> void scanAndRegister(S source);
+
+    /**
+     * Returns the name for the metric.
+     */
+    String metricName();
 }
+
