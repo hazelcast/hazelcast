@@ -51,7 +51,7 @@ public class SetTTLBackupOperation extends KeyBasedMapOperation implements Backu
         }
         if (mapContainer.isWanReplicationEnabled()) {
             EntryView entryView = EntryViews.toSimpleEntryView(record);
-            mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+            mapEventPublisher.publishWanUpdate(name, entryView);
         }
     }
 }
