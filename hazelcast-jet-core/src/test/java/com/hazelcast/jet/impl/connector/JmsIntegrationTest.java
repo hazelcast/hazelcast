@@ -127,12 +127,12 @@ public class JmsIntegrationTest extends PipelineTestSupport {
 
     @Test
     public void sourceQueue_whenBuilder() {
-        StreamSource<TextMessage> source = Sources.<TextMessage>jmsQueueBuilder(() -> broker.createConnectionFactory())
+        StreamSource<Message> source = Sources.jmsQueueBuilder(() -> broker.createConnectionFactory())
                 .destinationName(destinationName)
                 .build();
 
         p.drawFrom(source)
-         .map(message -> uncheckCall(message::getText))
+         .map(TEXT_MESSAGE_FN)
          .drainTo(sink);
 
         startJob();
@@ -150,8 +150,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
                 .sessionFn(connection -> uncheckCall(() -> connection.createSession(false, AUTO_ACKNOWLEDGE)))
                 .consumerFn(session -> uncheckCall(() -> session.createConsumer(session.createQueue(queueName))))
                 .flushFn(noopConsumer())
-                .projectionFn(TEXT_MESSAGE_FN)
-                .build();
+                .build(TEXT_MESSAGE_FN);
 
         p.drawFrom(source).drainTo(sink);
 
@@ -166,8 +165,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
     public void sourceTopic_whenBuilder() {
         StreamSource<String> source = Sources.<String>jmsTopicBuilder(() -> broker.createConnectionFactory())
                 .destinationName(destinationName)
-                .projectionFn(TEXT_MESSAGE_FN)
-                .build();
+                .build(TEXT_MESSAGE_FN);
 
         p.drawFrom(source).drainTo(sink);
 
@@ -185,8 +183,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
                 .connectionParams(null, null)
                 .sessionParams(false, AUTO_ACKNOWLEDGE)
                 .destinationName(destinationName)
-                .projectionFn(TEXT_MESSAGE_FN)
-                .build();
+                .build(TEXT_MESSAGE_FN);
 
         p.drawFrom(source).drainTo(sink);
 

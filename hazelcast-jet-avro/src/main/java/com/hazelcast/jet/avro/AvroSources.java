@@ -19,8 +19,6 @@ package com.hazelcast.jet.avro;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.FileSourceBuilder;
-import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
@@ -29,10 +27,6 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificRecord;
 
 import javax.annotation.Nonnull;
-import java.util.stream.StreamSupport;
-
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
  * Contains factory methods for Apache Avro sources.
@@ -48,20 +42,16 @@ public final class AvroSources {
      * from Apache Avro files in a directory (but not its subdirectories).
      *
      * @param directory           parent directory of the files
-     * @param <W>                 the type of the records
-     * @param <R>                 the type of the emitted value
+     * @param datumReaderSupplier the supplier of datum reader which reads
+     *                            records from the files
+     * @param <T>                 the type of the records
      */
     @Nonnull
-    public static <W, R> FileSourceBuilder<W, R> filesBuilder(
+    public static <T> AvroSourceBuilder<T> filesBuilder(
             @Nonnull String directory,
-            @Nonnull DistributedSupplier<DatumReader<W>> datumReaderSupplier
+            @Nonnull DistributedSupplier<DatumReader<T>> datumReaderSupplier
     ) {
-        return new FileSourceBuilder<>(directory, "avroFilesSource",
-                path -> uncheckCall(() -> {
-                    DataFileReader<W> reader = new DataFileReader<>(path.toFile(), datumReaderSupplier.get());
-                    return StreamSupport.stream(reader.spliterator(), false)
-                                        .onClose(() -> uncheckRun(reader::close));
-                }));
+        return new AvroSourceBuilder<>(directory, datumReaderSupplier);
     }
 
     /**
@@ -73,7 +63,7 @@ public final class AvroSources {
      */
     @Nonnull
     public static <R> BatchSource<R> files(@Nonnull String directory, @Nonnull Class<R> recordClass) {
-        return AvroSources.<R, R>filesBuilder(directory, () -> SpecificRecord.class.isAssignableFrom(recordClass) ?
+        return filesBuilder(directory, () -> SpecificRecord.class.isAssignableFrom(recordClass) ?
                 new SpecificDatumReader<>(recordClass) : new ReflectDatumReader<>(recordClass)).build();
     }
 
@@ -88,8 +78,7 @@ public final class AvroSources {
             @Nonnull String directory,
             @Nonnull DistributedBiFunction<String, GenericRecord, R> mapOutputFn
     ) {
-        return AvroSources.<GenericRecord, R>filesBuilder(directory, GenericDatumReader::new)
-                .mapOutputFn(mapOutputFn)
-                .build();
+        return filesBuilder(directory, GenericDatumReader<GenericRecord>::new)
+                .build(mapOutputFn);
     }
 }

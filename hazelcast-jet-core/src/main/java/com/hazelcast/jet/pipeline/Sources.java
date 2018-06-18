@@ -740,8 +740,8 @@ public final class Sources {
      * {@linkplain FileSourceBuilder#buildWatcher() streaming} reader.
      */
     @Nonnull
-    public static <R> FileSourceBuilder<String, R> filesBuilder(@Nonnull String directory) {
-        return new FileSourceBuilder<>(directory);
+    public static FileSourceBuilder filesBuilder(@Nonnull String directory) {
+        return new FileSourceBuilder(directory);
     }
 
     /**
@@ -760,7 +760,7 @@ public final class Sources {
      */
     @Nonnull
     public static BatchSource<String> files(@Nonnull String directory) {
-        return Sources.<String>filesBuilder(directory).build();
+        return filesBuilder(directory).build();
     }
 
     /**
@@ -781,7 +781,7 @@ public final class Sources {
      */
     @Nonnull
     public static StreamSource<String> fileWatcher(@Nonnull String watchedDirectory) {
-        return Sources.<String>filesBuilder(watchedDirectory).buildWatcher();
+        return filesBuilder(watchedDirectory).buildWatcher();
     }
 
     /**
@@ -798,7 +798,7 @@ public final class Sources {
             @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
             @Nonnull String name
     ) {
-        return Sources.<Message>jmsQueueBuilder(factorySupplier)
+        return jmsQueueBuilder(factorySupplier)
                 .destinationName(name)
                 .build();
     }
@@ -818,12 +818,10 @@ public final class Sources {
      * <p>
      * Default local parallelism for this processor is 4 (or less if less CPUs
      * are available).
-     *
-     * @param <T> type of the items the source emits
      */
     @Nonnull
-    public static <T> JmsSourceBuilder<T> jmsQueueBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
-        return new JmsSourceBuilder<>(factorySupplier, false);
+    public static JmsSourceBuilder jmsQueueBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
+        return new JmsSourceBuilder(factorySupplier, false);
     }
 
     /**
@@ -840,7 +838,7 @@ public final class Sources {
             @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
             @Nonnull String name
     ) {
-        return Sources.<Message>jmsTopicBuilder(factorySupplier)
+        return jmsTopicBuilder(factorySupplier)
                 .destinationName(name)
                 .build();
     }
@@ -867,11 +865,9 @@ public final class Sources {
      * throws an exception, the job will fail. Most of the providers offer a
      * configuration parameter to enable auto-reconnection, refer to provider
      * documentation for details.
-     *
-     * @param <T> type of the items the source emits
      */
     @Nonnull
-    public static <T> JmsSourceBuilder<T> jmsTopicBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
-        return new JmsSourceBuilder<>(factorySupplier, true);
+    public static JmsSourceBuilder jmsTopicBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
+        return new JmsSourceBuilder(factorySupplier, true);
     }
 }

@@ -46,19 +46,19 @@ public final class AvroProcessors {
     }
 
     /**
-     * Returns a supplier of processors for {@link AvroSources#files}.
+     * Returns a supplier of processors for {@link AvroSources#filesBuilder}.
      */
     @Nonnull
-    public static <W, R> ProcessorMetaSupplier readFilesP(
+    public static <T, R> ProcessorMetaSupplier readFilesP(
             @Nonnull String directory,
             @Nonnull String glob,
             boolean sharedFileSystem,
-            @Nonnull DistributedSupplier<DatumReader<W>> datumReaderSupplier,
-            @Nonnull DistributedBiFunction<String, W, R> mapOutputFn
+            @Nonnull DistributedSupplier<DatumReader<T>> datumReaderSupplier,
+            @Nonnull DistributedBiFunction<String, T, R> mapOutputFn
     ) {
         return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem,
                 path -> uncheckCall(() -> {
-                    DataFileReader<W> reader = new DataFileReader<>(path.toFile(), datumReaderSupplier.get());
+                    DataFileReader<T> reader = new DataFileReader<>(path.toFile(), datumReaderSupplier.get());
                     return StreamSupport.stream(reader.spliterator(), false)
                                         .onClose(() -> uncheckRun(reader::close));
                 }),
