@@ -2591,7 +2591,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
      * Updates TTL (time to live) value of the entry specified by {@code key} with a new TTL value.
-     * New TTL value is valid from this operation is invoked, not from the original creation of the entry.
+     * New TTL value is valid starting from the time this operation is invoked, not since the time the entry was created.
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL

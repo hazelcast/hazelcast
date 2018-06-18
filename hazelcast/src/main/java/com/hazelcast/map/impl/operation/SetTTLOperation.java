@@ -53,7 +53,7 @@ public class SetTTLOperation extends LockAwareOperation implements BackupAwareOp
         }
         if (mapContainer.isWanReplicationEnabled()) {
             EntryView entryView = EntryViews.toSimpleEntryView(record);
-            mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+            mapEventPublisher.publishWanUpdate(name, entryView);
         }
         invalidateNearCache(dataKey);
     }
