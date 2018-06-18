@@ -296,12 +296,12 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         assertOpenEventually(StuckProcessor.executionStarted);
 
         for (int i = 1; i < clusterSize; i++) {
-            instances[i].getHazelcastInstance().getLifecycleService().terminate();
+            instances[i].shutdown();
         }
 
         StuckProcessor.proceedLatch.countDown();
 
-        assertTrueEventually(() -> assertEquals(RESTARTING, job.getStatus()));
+        assertTrueEventually(() -> assertEquals(RESTARTING, job.getStatus()), 10);
 
         createJetMember(jetConfig);
 
