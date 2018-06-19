@@ -33,13 +33,13 @@ public class JCachePartitionLostListener implements HazelcastInstanceAware, Node
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();
 
-    public static JCachePartitionLostListener INSTANCE;
+    public static JCachePartitionLostListener instance;
 
     @Resource(name = "dummy")
     private IJCacheDummyBean dummyBean;
 
     public JCachePartitionLostListener() {
-        INSTANCE = this;
+        instance = this;
     }
 
     @Override
