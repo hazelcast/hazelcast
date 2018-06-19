@@ -95,4 +95,23 @@ public final class NotPredicate
     public int getId() {
         return PredicateDataSerializerHook.NOT_PREDICATE;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        NotPredicate that = (NotPredicate) o;
+
+        return predicate != null ? predicate.equals(that.predicate) : that.predicate == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return predicate != null ? predicate.hashCode() : 0;
+    }
 }

@@ -112,4 +112,28 @@ public class PartitionPredicate<K, V> implements Predicate<K, V>, IdentifiedData
                 + ", target=" + target
                 + '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        PartitionPredicate<?, ?> that = (PartitionPredicate<?, ?>) o;
+
+        if (partitionKey != null ? !partitionKey.equals(that.partitionKey) : that.partitionKey != null) {
+            return false;
+        }
+        return target != null ? target.equals(that.target) : that.target == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = partitionKey != null ? partitionKey.hashCode() : 0;
+        result = 31 * result + (target != null ? target.hashCode() : 0);
+        return result;
+    }
 }

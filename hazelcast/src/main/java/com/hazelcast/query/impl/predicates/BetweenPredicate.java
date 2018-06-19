@@ -90,4 +90,28 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
     public int getId() {
         return PredicateDataSerializerHook.BETWEEN_PREDICATE;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        BetweenPredicate that = (BetweenPredicate) o;
+
+        if (to != null ? !to.equals(that.to) : that.to != null) {
+            return false;
+        }
+        return from != null ? from.equals(that.from) : that.from == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = to != null ? to.hashCode() : 0;
+        result = 31 * result + (from != null ? from.hashCode() : 0);
+        return result;
+    }
 }

@@ -83,4 +83,23 @@ public class InstanceOfPredicate
     public int getId() {
         return PredicateDataSerializerHook.INSTANCEOF_PREDICATE;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        InstanceOfPredicate that = (InstanceOfPredicate) o;
+
+        return klass != null ? klass.equals(that.klass) : that.klass == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return klass != null ? klass.hashCode() : 0;
+    }
 }
