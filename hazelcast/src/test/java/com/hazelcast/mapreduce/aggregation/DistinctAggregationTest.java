@@ -40,7 +40,7 @@ public class DistinctAggregationTest extends AbstractAggregationTest {
     @Test
     public void testDistinctAggregationWithPredicates() {
         String mapName = randomMapName();
-        IMap<Integer, Car> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<Integer, Car> map = hazelcastInstance.getMap(mapName);
 
         Car vw1999 = Car.newCar(1999, "VW");
         Car bmw2000 = Car.newCar(2000, "BMW");
@@ -58,6 +58,7 @@ public class DistinctAggregationTest extends AbstractAggregationTest {
     }
 
     private static class Car implements Serializable {
+
         private int buildYear;
         private String brand;
 
@@ -83,7 +84,6 @@ public class DistinctAggregationTest extends AbstractAggregationTest {
                 return false;
             }
             return brand.equals(car.brand);
-
         }
 
         @Override

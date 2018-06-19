@@ -56,7 +56,7 @@ public class LegacyCacheSplitBrainTest extends SplitBrainTestSupport {
                 {BINARY, HigherHitsCacheMergePolicy.class},
                 {BINARY, PutIfAbsentCacheMergePolicy.class},
                 {BINARY, PassThroughCacheMergePolicy.class},
-                {BINARY, CustomCacheMergePolicy.class}
+                {BINARY, CustomCacheMergePolicy.class},
         });
     }
 

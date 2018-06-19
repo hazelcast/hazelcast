@@ -53,7 +53,6 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     private static final int ASYNC_BACKUP_COUNT = 0;
 
     private LockService mockLockServiceImpl;
-    private EntryTaskScheduler<Data, Integer> mockScheduler;
     private LockStoreImpl lockStore;
 
     private Data key = new HeapData();
@@ -66,7 +65,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     public void setUp() {
         mockLockServiceImpl = mock(LockService.class);
         when(mockLockServiceImpl.getMaxLeaseTimeInMillis()).thenReturn(Long.MAX_VALUE);
-        mockScheduler = mock(EntryTaskScheduler.class);
+        EntryTaskScheduler<Data, Integer> mockScheduler = mock(EntryTaskScheduler.class);
         lockStore = new LockStoreImpl(mockLockServiceImpl, OBJECT_NAME_SPACE, mockScheduler, BACKUP_COUNT, ASYNC_BACKUP_COUNT);
     }
 
@@ -439,7 +438,6 @@ public class LockStoreImplTest extends HazelcastTestSupport {
         assertTrue(locked);
     }
 
-
     private boolean lock() {
         return lockStore.lock(key, callerId, threadId, referenceId, leaseTime);
     }
@@ -469,5 +467,4 @@ public class LockStoreImplTest extends HazelcastTestSupport {
         referenceId++;
         return isUnlocked;
     }
-
 }

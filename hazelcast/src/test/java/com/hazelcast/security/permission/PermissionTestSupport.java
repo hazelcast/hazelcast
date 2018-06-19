@@ -30,9 +30,9 @@ public abstract class PermissionTestSupport {
         private static final String DEFAULT_ALLOWED_NAME = "someMapsPermission";
         private static final String DEFAULT_REQUESTED_NAME = "someMapsPermission";
 
-        private String requested = null;
-        private String[] allowed = null;
-        private Boolean expectedResult = null;
+        private String requested;
+        private String[] allowed;
+        private Boolean expectedResult;
         private String allowedName = DEFAULT_ALLOWED_NAME;
         private String requestedName = DEFAULT_REQUESTED_NAME;
 

@@ -126,6 +126,8 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
             case OBJECT:
                 assertEquals(0, memoryCostWhenFull);
                 break;
+            default:
+                // NOP
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -144,6 +146,8 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
             case OBJECT:
                 assertEquals(0, nearCacheStats.getOwnedEntryMemoryCost());
                 break;
+            default:
+                // NOP
         }
 
         nearCacheRecordStore.clear();

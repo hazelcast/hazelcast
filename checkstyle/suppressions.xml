@@ -26,6 +26,7 @@
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
     <!-- Suppress checking of copyright notice -->
+    <suppress checks="Header" files="classloading[\\/]ThreadLocalLeakTestUtils"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]buildutils[\\/]ElementParser"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]logging[\\/]Log4j2Factory"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]util[\\/]HashUtil"/>
@@ -307,4 +308,26 @@
 
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="[\\/]src-instrumented[\\/]"/>
+
+    <!-- Test suppressions -->
+    <suppress
+            checks="FileLength|MethodLength|LineLength|AnonInnerLength|MethodCount|ReturnCount|ExecutableStatementCount"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress
+            checks="Javadoc|MagicNumber|ClassDataAbstractionCoupling|ClassFanOutComplexityCheck|IllegalImport|IllegalType"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress
+            checks="NPathComplexity|CyclomaticComplexity|BooleanExpressionComplexity|RegexpSinglelineJava"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress
+            checks="TypeName|MemberName|ConstantName|LocalVariableName|LocalFinalVariableName|MethodName"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress
+            checks="FinalClass|HideUtilityClassConstructor|InnerAssignment|EmptyBlock|DeclarationOrder|VisibilityModifier"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress
+            checks="ExplicitInitialization|EqualsHashCode|MissingSwitchDefault|TrailingComment"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]protocol[\\/]compatibility[\\/]"/>
+    <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
 </suppressions>

@@ -258,6 +258,9 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                 assertResultMap("second getAll()", value, resultMap);
                 assertAndResetSerializationCounts(nearCacheContext, "second getAll()", 2);
                 break;
+
+            default:
+                throw new UnsupportedOperationException("Unsupported test method: " + testMethod);
         }
     }
 
@@ -386,8 +389,8 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
     private static class KeySerializationCountingData implements Portable {
 
-        private static int FACTORY_ID = 1;
-        private static int CLASS_ID = 1;
+        private static final int FACTORY_ID = 1;
+        private static final int CLASS_ID = 1;
 
         private boolean executeEqualsAndHashCode;
 
@@ -450,8 +453,8 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
     private static class ValueSerializationCountingData implements Portable {
 
-        private static int FACTORY_ID = 2;
-        private static int CLASS_ID = 2;
+        private static final int FACTORY_ID = 2;
+        private static final int CLASS_ID = 2;
 
         private boolean executeEqualsAndHashCode;
 

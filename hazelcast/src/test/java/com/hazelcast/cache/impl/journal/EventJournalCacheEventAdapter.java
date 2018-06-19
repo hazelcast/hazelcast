@@ -20,6 +20,7 @@ import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.journal.EventJournalEventAdapter;
 
 public class EventJournalCacheEventAdapter<K, V> implements EventJournalEventAdapter<K, V, EventJournalCacheEvent<K, V>> {
+
     @Override
     public K getKey(EventJournalCacheEvent<K, V> e) {
         return e.getKey();

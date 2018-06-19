@@ -37,10 +37,12 @@ import static org.junit.Assert.assertNotNull;
 @Category(QuickTest.class)
 public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
 
+    private static final int ENTRY_COUNT = 100;
+    private static final int SAMPLE_COUNT = 15;
+    private static final int COUNT = 10;
+
     @Test
     public void samplesSuccessfullyRetrieved() {
-        final int ENTRY_COUNT = 100;
-        final int SAMPLE_COUNT = 15;
         SampleableConcurrentHashMap<Integer, Integer> sampleableConcurrentHashMap =
                 new SampleableConcurrentHashMap<Integer, Integer>(ENTRY_COUNT);
 
@@ -77,9 +79,6 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
         }), "value");
 
         final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-
-        final int COUNT = 10;
-
         final CountDownLatch latch = new CountDownLatch(COUNT);
 
         for (int i = 0; i < COUNT; i++) {

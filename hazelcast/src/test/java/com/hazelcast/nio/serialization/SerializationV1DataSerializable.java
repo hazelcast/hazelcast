@@ -26,7 +26,7 @@ import java.util.Arrays;
 /**
  * Sample DataSerializable for testing internal constant serializers
  */
-public class SerializationV1Dataserializable implements DataSerializable {
+public class SerializationV1DataSerializable implements DataSerializable {
 
     byte aByte;
     boolean aBoolean;
@@ -50,11 +50,11 @@ public class SerializationV1Dataserializable implements DataSerializable {
     // used to assert version provided in ObjectDataInput & ObjectDataOutput in read/writeData methods
     Version version;
 
-
-    public SerializationV1Dataserializable() {
+    public SerializationV1DataSerializable() {
     }
 
-    public SerializationV1Dataserializable(byte aByte, boolean aBoolean, char character, short aShort, int integer, long aLong,
+    @SuppressWarnings("checkstyle:parameternumber")
+    public SerializationV1DataSerializable(byte aByte, boolean aBoolean, char character, short aShort, int integer, long aLong,
                                            float aFloat, double aDouble, byte[] bytes, boolean[] booleans, char[] chars,
                                            short[] shorts, int[] ints, long[] longs, float[] floats, double[] doubles,
                                            String string, String[] strings) {
@@ -140,8 +140,7 @@ public class SerializationV1Dataserializable implements DataSerializable {
             return false;
         }
 
-        SerializationV1Dataserializable that = (SerializationV1Dataserializable) o;
-
+        SerializationV1DataSerializable that = (SerializationV1DataSerializable) o;
         if (aByte != that.aByte) {
             return false;
         }
@@ -199,8 +198,35 @@ public class SerializationV1Dataserializable implements DataSerializable {
         return true;
     }
 
-    public static SerializationV1Dataserializable createInstanceWithNonNullFields() {
-        return new SerializationV1Dataserializable((byte) 99, true, 'c', (short) 11, 1234134, 1341431221L, 1.12312f, 432.424,
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = (int) aByte;
+        result = 31 * result + (aBoolean ? 1 : 0);
+        result = 31 * result + (int) character;
+        result = 31 * result + (int) aShort;
+        result = 31 * result + integer;
+        result = 31 * result + (int) (aLong ^ (aLong >>> 32));
+        result = 31 * result + (aFloat != +0.0f ? Float.floatToIntBits(aFloat) : 0);
+        temp = Double.doubleToLongBits(aDouble);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + Arrays.hashCode(bytes);
+        result = 31 * result + Arrays.hashCode(booleans);
+        result = 31 * result + Arrays.hashCode(chars);
+        result = 31 * result + Arrays.hashCode(shorts);
+        result = 31 * result + Arrays.hashCode(ints);
+        result = 31 * result + Arrays.hashCode(longs);
+        result = 31 * result + Arrays.hashCode(floats);
+        result = 31 * result + Arrays.hashCode(doubles);
+        result = 31 * result + (string != null ? string.hashCode() : 0);
+        result = 31 * result + Arrays.hashCode(strings);
+        result = 31 * result + (version != null ? version.hashCode() : 0);
+        return result;
+    }
+
+    public static SerializationV1DataSerializable createInstanceWithNonNullFields() {
+        return new SerializationV1DataSerializable((byte) 99, true, 'c', (short) 11, 1234134, 1341431221L, 1.12312f, 432.424,
                 new byte[]{(byte) 1, (byte) 2, (byte) 3}, new boolean[]{true, false, true}, new char[]{'a', 'b', 'c'},
                 new short[]{1, 2, 3}, new int[]{4, 2, 3}, new long[]{11, 2, 3}, new float[]{1.0f, 2.1f, 3.4f},
                 new double[]{11.1, 22.2, 33.3}, "the string text", new String[]{"item1", "item2", "item3"});

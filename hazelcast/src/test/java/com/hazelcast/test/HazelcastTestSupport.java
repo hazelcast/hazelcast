@@ -56,6 +56,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.jitter.JitterRule;
+import com.hazelcast.util.UuidUtil;
 import org.junit.After;
 import org.junit.AssumptionViolatedException;
 import org.junit.ComparisonFailure;
@@ -91,7 +92,6 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -475,7 +475,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static String randomString() {
-        return randomUUID().toString();
+        return UuidUtil.newUnsecureUuidString();
     }
 
     public static String randomMapName() {

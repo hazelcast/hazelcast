@@ -44,6 +44,7 @@ import com.hazelcast.query.impl.predicates.RegexPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -57,11 +58,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.toData;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static java.util.concurrent.TimeUnit.DAYS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -72,25 +73,18 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class SqlPredicateTest {
 
-    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-
-    // these are used to test compound predicates flattening
-    TruePredicate leftOfOr = new TruePredicate();
-    TruePredicate rightOfOr = new TruePredicate();
-    TruePredicate leftOfAnd = new TruePredicate();
-    TruePredicate rightOfAnd = new TruePredicate();
-
-    static final String[] TEST_MATCHING_SQL_PREDICATES = new String[]{
+    private static final String[] TEST_MATCHING_SQL_PREDICATES = new String[]{
             "name = 'Joe' and age = 25 and (city = 'austin' or city = 'AUSTIN')",
             "name = 'Joe' or city = 'Athens'",
             "(name = 'Jane' or name = 'Joe' or city = 'AUSTIN') and age = 25",
             "(name = 'Jane' or name = 'Joe' or city = 'AUSTIN') and age = 25 and salary = 0",
             "(name = 'Jane' or name = 'Joe') and age = 25 and salary = 0 or age = 24",
-            "name = 'Jane' or age = 25 and name = 'Joe'", // correct precedence is "name = 'Jane' or (age = 25 and name = 'Joe')
+            // correct precedence is "name = 'Jane' or (age = 25 and name = 'Joe')
+            "name = 'Jane' or age = 25 and name = 'Joe'",
             "age = 35 or age = 24 or age = 31 or (name = 'Joe' and age = 25)",
     };
 
-    static final String[] TEST_NOT_MATCHING_SQL_PREDICATES = new String[]{
+    private static final String[] TEST_NOT_MATCHING_SQL_PREDICATES = new String[]{
             "name = 'Joe' and age = 21 and (city = 'austin' or city = 'ATHENS')",
             "name = 'Jane' or city = 'Athens'",
             "(name = 'Jane' or name = 'Catie' or city = 'San Jose') and age = 25",
@@ -101,6 +95,14 @@ public class SqlPredicateTest {
             "name = 'Jane' or age = 25 and name = 'Catie'",
             "age = 35 or age = 24 or age = 31 or (name = 'Joe' and age = 27)",
     };
+
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
+    // these are used to test compound predicates flattening
+    private TruePredicate leftOfOr = new TruePredicate();
+    private TruePredicate rightOfOr = new TruePredicate();
+    private TruePredicate leftOfAnd = new TruePredicate();
+    private TruePredicate rightOfAnd = new TruePredicate();
 
     @Test
     public void testSqlPredicates() {
@@ -222,10 +224,8 @@ public class SqlPredicateTest {
         SimpleDateFormat format = new SimpleDateFormat(DateHelperTest.SQL_DATE_FORMAT, Locale.US);
         assertSqlMatching("attribute > '" + format.format(new java.sql.Date(0)) + "'", value);
         assertSqlMatching("attribute >= '" + format.format(new java.sql.Date(0)) + "'", value);
-        assertSqlMatching("attribute < '" + format.format(new java.sql.Date(date.getTime() + TimeUnit.DAYS.toMillis(2))) + "'",
-                value);
-        assertSqlMatching("attribute <= '" + format.format(new java.sql.Date(date.getTime() + TimeUnit.DAYS.toMillis(2))) + "'",
-                value);
+        assertSqlMatching("attribute < '" + format.format(new java.sql.Date(date.getTime() + DAYS.toMillis(2))) + "'", value);
+        assertSqlMatching("attribute <= '" + format.format(new java.sql.Date(date.getTime() + DAYS.toMillis(2))) + "'", value);
     }
 
     @Test
@@ -391,10 +391,10 @@ public class SqlPredicateTest {
 
     @Test
     public void testSql_withUUID() {
-        UUID uuid = UUID.randomUUID();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         ObjectWithUUID value = new ObjectWithUUID(uuid);
         assertSqlMatching("attribute = '" + uuid.toString() + "'", value);
-        assertSqlNotMatching("attribute = '" + UUID.randomUUID().toString() + "'", value);
+        assertSqlNotMatching("attribute = '" + UuidUtil.newUnsecureUuidString() + "'", value);
     }
 
     @Test
@@ -649,9 +649,8 @@ public class SqlPredicateTest {
     @Test
     // http://stackoverflow.com/questions/37382505/hazelcast-imap-valuespredicate-miss-data
     public void testAndWithRegex_stackOverflowIssue() {
-        SqlPredicate sqlPredicate
-                = new SqlPredicate("nextExecuteTime < 1463975296703 AND autoIncrementId REGEX '.*[5,6,7,8,9]$'");
-        Predicate predicate = sqlPredicate.predicate;
+        String sqlPredicate = "nextExecuteTime < 1463975296703 AND autoIncrementId REGEX '.*[5,6,7,8,9]$'";
+        Predicate predicate = new SqlPredicate(sqlPredicate).predicate;
 
         AndPredicate andPredicate = (AndPredicate) predicate;
         assertEquals(GreaterLessPredicate.class, andPredicate.getPredicates()[0].getClass());

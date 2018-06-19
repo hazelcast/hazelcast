@@ -18,8 +18,6 @@ package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.management.TimedMemberState;
-import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;

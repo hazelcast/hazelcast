@@ -32,7 +32,6 @@ import static java.util.Arrays.asList;
 public class DefaultPortableReaderTestStructure {
 
     public enum Method {
-
         Byte("byte_"),
         Boolean("boolean_"),
         Char("char_"),
@@ -107,6 +106,26 @@ public class DefaultPortableReaderTestStructure {
         static final int FACTORY_ID = 1;
         static final int ID = 10;
 
+        byte byte_;
+        short short_;
+        int int_;
+        long long_;
+        float float_;
+        double double_;
+        boolean boolean_;
+        char char_;
+        String string_;
+
+        byte[] bytes;
+        short[] shorts;
+        int[] ints;
+        long[] longs;
+        float[] floats;
+        double[] doubles;
+        boolean[] booleans;
+        char[] chars;
+        String[] strings;
+
         enum Init {
             FULL, NONE, NULL
         }
@@ -153,26 +172,6 @@ public class DefaultPortableReaderTestStructure {
                 string_ = null;
             }
         }
-
-        byte byte_;
-        short short_;
-        int int_;
-        long long_;
-        float float_;
-        double double_;
-        boolean boolean_;
-        char char_;
-        String string_;
-
-        byte[] bytes;
-        short[] shorts;
-        int[] ints;
-        long[] longs;
-        float[] floats;
-        double[] doubles;
-        boolean[] booleans;
-        char[] chars;
-        String[] strings;
 
         PrimitivePortable() {
         }

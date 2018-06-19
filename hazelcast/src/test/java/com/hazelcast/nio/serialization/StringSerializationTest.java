@@ -46,8 +46,6 @@ import static org.junit.Assert.assertNull;
 @Category(QuickTest.class)
 public class StringSerializationTest {
 
-    private InternalSerializationService serializationService;
-
     private static final String TEST_DATA_TURKISH = "Pijamalı hasta, yağız şoföre çabucak güvendi.";
     private static final String TEST_DATA_JAPANESE = "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム";
     private static final String TEST_DATA_ASCII = "The quick brown fox jumps over the lazy dog";
@@ -57,6 +55,8 @@ public class StringSerializationTest {
     private static final byte[] TEST_DATA_BYTES_ALL = TEST_DATA_ALL.getBytes(Charset.forName("utf8"));
 
     private static final char[] allChars;
+
+    private InternalSerializationService serializationService;
 
     static {
         CharBuffer cb = CharBuffer.allocate(Character.MAX_VALUE);

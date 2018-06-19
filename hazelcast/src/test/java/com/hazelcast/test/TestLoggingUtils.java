@@ -22,8 +22,8 @@ import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 
 public final class TestLoggingUtils {
 
-    private static String LOGGING_TYPE_PROP_NAME = "hazelcast.logging.type";
-    private static String LOGGING_CLASS_PROP_NAME = "hazelcast.logging.class";
+    private static final String LOGGING_TYPE_PROP_NAME = "hazelcast.logging.type";
+    private static final String LOGGING_CLASS_PROP_NAME = "hazelcast.logging.class";
 
     private static final boolean IS_LOG4J2_AVAILABLE = isClassAvailable("org.apache.logging.log4j.Logger");
 

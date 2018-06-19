@@ -348,7 +348,8 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     static class HazelcastInstanceAwareRunnable implements Runnable, HazelcastInstanceAware, Serializable {
-        private transient boolean initializeCalled = false;
+
+        private transient boolean initializeCalled;
 
         @Override
         public void run() {

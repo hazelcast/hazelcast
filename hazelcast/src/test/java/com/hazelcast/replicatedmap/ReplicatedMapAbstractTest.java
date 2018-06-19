@@ -41,7 +41,7 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("WeakerAccess")
 public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
 
-    protected static Field REPLICATED_MAP_SERVICE;
+    protected static final Field REPLICATED_MAP_SERVICE;
 
     static {
         try {

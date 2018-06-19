@@ -79,7 +79,7 @@ public class EntryCostEstimatorTest
         String name = randomString();
         Config config = getConfig();
         config.getMapConfig(name).setBackupCount(1);
-        HazelcastInstance h[] = factory.newInstances(config);
+        HazelcastInstance[] h = factory.newInstances(config);
         warmUpPartitions(h);
 
         // create map
@@ -145,7 +145,7 @@ public class EntryCostEstimatorTest
         config.getMapConfig(nearCachedMapName).setBackupCount(0).setNearCacheConfig(nearCacheConfig);
         config.getMapConfig(noNearCacheMapName).setBackupCount(0);
 
-        HazelcastInstance h[] = factory.newInstances(config);
+        HazelcastInstance[] h = factory.newInstances(config);
         warmUpPartitions(h);
 
         IMap<String, String> noNearCached = h[0].getMap(noNearCacheMapName);

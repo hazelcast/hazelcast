@@ -259,7 +259,7 @@ public class MapAvgAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        IMap<String, T> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<String, T> map = hazelcastInstance.getMap(mapName);
 
         for (int i = 0; i < values.length; i++) {
             map.put("key-" + i, values[i]);
@@ -273,7 +273,7 @@ public class MapAvgAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        IMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<String, Value<T>> map = hazelcastInstance.getMap(mapName);
 
         for (int i = 0; i < values.length; i++) {
             map.put("key-" + i, values[i]);

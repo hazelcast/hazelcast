@@ -29,6 +29,7 @@ package com.hazelcast.test.backup;
  * @param <V> type of values
  */
 public interface BackupAccessor<K, V> {
+
     /**
      * Number of existing backup entries in a given structure and replica index
      *

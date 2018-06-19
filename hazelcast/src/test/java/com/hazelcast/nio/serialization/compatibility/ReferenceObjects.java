@@ -51,8 +51,8 @@ class ReferenceObjects {
     /**
      * CUSTOM SERIALIZER IDS
      */
-    static int CUSTOM_STREAM_SERILAZABLE_ID = 1;
-    static int CUSTOM_BYTE_ARRAY_SERILAZABLE_ID = 2;
+    static int CUSTOM_STREAM_SERIALIZABLE_ID = 1;
+    static int CUSTOM_BYTE_ARRAY_SERIALIZABLE_ID = 2;
 
     /**
      * OBJECTS

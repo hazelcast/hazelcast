@@ -41,7 +41,7 @@ public class OperationCallIdTest {
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
-    final Operation op = new MockOperation();
+    private final Operation op = new MockOperation();
 
     @Test
     public void when_callIdNotSet_thenIsZero() {
@@ -49,14 +49,14 @@ public class OperationCallIdTest {
     }
 
     @Test
-    public void when_setCallIdInitial_thenActive() throws Exception {
+    public void when_setCallIdInitial_thenActive() {
         op.setCallId(1);
         assertEquals(1, op.getCallId());
         assertTrue(op.isActive());
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void when_setZeroCallId_thenFail() throws Exception {
+    public void when_setZeroCallId_thenFail() {
         op.setCallId(0);
     }
 
@@ -150,81 +150,81 @@ public class OperationCallIdTest {
     public void when_concurrentlySetCallId_thenOnlyOneSucceeds() {
         new ConcurrentExcerciser().run();
     }
-}
 
-class MockOperation extends Operation {
+    class MockOperation extends Operation {
 
-    @Override
-    public void run() throws Exception {
+        @Override
+        public void run() throws Exception {
+        }
     }
-}
 
-class ConcurrentExcerciser {
-    final Operation op = new MockOperation();
-    volatile AssertionFailedError testFailure;
-    volatile int activationCount;
+    class ConcurrentExcerciser {
+        final Operation op = new MockOperation();
+        volatile AssertionFailedError testFailure;
+        volatile int activationCount;
 
-    void run() {
-        final Thread reader = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    long previousCallId = 0;
-                    while (!interrupted()) {
-                        long callId;
-                        while ((callId = op.getCallId()) == previousCallId) {
-                            // Wait until a writer thread sets a call ID
-                        }
-                        activationCount++;
-                        long deadline = System.currentTimeMillis() + SECONDS.toMillis(1);
-                        while (System.currentTimeMillis() < deadline) {
-                            assertEquals(callId, op.getCallId());
-                        }
-                        op.deactivate();
-                        previousCallId = callId;
-                    }
-                } catch (AssertionFailedError e) {
-                    testFailure = e;
-                }
-            }
-        };
-        final int writerCount = 4;
-        final Thread[] writers = new Thread[writerCount];
-        for (int i = 0; i < writers.length; i++) {
-            final int initialCallId = i + 1;
-            writers[i] = new Thread() {
+        void run() {
+            final Thread reader = new Thread() {
                 @Override
                 public void run() {
-                    long nextCallId = initialCallId;
-                    while (!interrupted()) {
-                        try {
-                            op.setCallId(nextCallId);
-                            nextCallId += writerCount;
-                        } catch (IllegalStateException e) {
-                            // Things are working as expected
+                    try {
+                        long previousCallId = 0;
+                        while (!interrupted()) {
+                            long callId;
+                            while ((callId = op.getCallId()) == previousCallId) {
+                                // Wait until a writer thread sets a call ID
+                            }
+                            activationCount++;
+                            long deadline = System.currentTimeMillis() + SECONDS.toMillis(1);
+                            while (System.currentTimeMillis() < deadline) {
+                                assertEquals(callId, op.getCallId());
+                            }
+                            op.deactivate();
+                            previousCallId = callId;
                         }
+                    } catch (AssertionFailedError e) {
+                        testFailure = e;
                     }
                 }
             };
-        }
-        try {
-            reader.start();
-            for (Thread t : writers) {
-                t.start();
+            final int writerCount = 4;
+            final Thread[] writers = new Thread[writerCount];
+            for (int i = 0; i < writers.length; i++) {
+                final int initialCallId = i + 1;
+                writers[i] = new Thread() {
+                    @Override
+                    public void run() {
+                        long nextCallId = initialCallId;
+                        while (!interrupted()) {
+                            try {
+                                op.setCallId(nextCallId);
+                                nextCallId += writerCount;
+                            } catch (IllegalStateException e) {
+                                // Things are working as expected
+                            }
+                        }
+                    }
+                };
             }
-            final long deadline = System.currentTimeMillis() + SECONDS.toMillis(5);
-            while (System.currentTimeMillis() < deadline) {
-                if (testFailure != null) {
-                    throw testFailure;
+            try {
+                reader.start();
+                for (Thread t : writers) {
+                    t.start();
                 }
-                LockSupport.parkNanos(MILLISECONDS.toNanos(1));
+                final long deadline = System.currentTimeMillis() + SECONDS.toMillis(5);
+                while (System.currentTimeMillis() < deadline) {
+                    if (testFailure != null) {
+                        throw testFailure;
+                    }
+                    LockSupport.parkNanos(MILLISECONDS.toNanos(1));
+                }
+            } finally {
+                reader.interrupt();
+                for (Thread t : writers) {
+                    t.interrupt();
+                }
             }
-        } finally {
-            reader.interrupt();
-            for (Thread t : writers) {
-                t.interrupt();
-            }
+            assertTrue("Failed to activate the operation at least twice", activationCount >= 2);
         }
-        assertTrue("Failed to activate the operation at least twice", activationCount >= 2);
     }
 }

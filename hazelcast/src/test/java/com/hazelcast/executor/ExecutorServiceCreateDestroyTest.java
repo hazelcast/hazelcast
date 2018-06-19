@@ -104,7 +104,7 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
         }
     }
 
-    private static abstract class ExecutorServiceCommand {
+    private abstract static class ExecutorServiceCommand {
         final void run(IExecutorService ex) throws Exception {
             try {
                 Collection<Future<Void>> futures = submit(ex, new VoidCallableTask());

@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -36,7 +37,7 @@ import static org.junit.Assert.assertNotNull;
 @Category(QuickTest.class)
 public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
 
-    private class SimpleEvictionCandidate<K, V extends Evictable> implements EvictionCandidate<K, V> {
+    private final class SimpleEvictionCandidate<K, V extends Evictable> implements EvictionCandidate<K, V> {
 
         private K key;
         private V value;
@@ -93,9 +94,9 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
     }
 
     private void test_evictionPolicyLRU(boolean useExpiredEntry) {
-        final int RECORD_COUNT = 100;
-        final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
-        final int EXPECTED_EXPIRED_RECORD_VALUE = useExpiredEntry ? RECORD_COUNT / 4 : -1;
+        final int recordCount = 100;
+        final int expectedEvictedRecordValue = recordCount / 2;
+        final int expectedExpiredRecordValue = useExpiredEntry ? recordCount / 4 : -1;
 
         EvictionConfiguration evictionConfig = new EvictionConfiguration() {
             @Override
@@ -123,21 +124,20 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
                 return null;
             }
         };
-        EvictionPolicyEvaluator evictionPolicyEvaluator =
-                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, null);
-        List<EvictionCandidate<Integer, CacheObjectRecord>> records =
-                new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
+        EvictionPolicyEvaluator evictionPolicyEvaluator = getEvictionPolicyEvaluator(evictionConfig, null);
+        List<EvictionCandidate<Integer, CacheObjectRecord>> records
+                = new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 
         long baseTime = System.currentTimeMillis();
 
-        for (int i = 0; i < RECORD_COUNT; i++) {
+        for (int i = 0; i < recordCount; i++) {
             long creationTime = baseTime + (i * 100);
             CacheObjectRecord record = new CacheObjectRecord(i, creationTime, Long.MAX_VALUE);
-            if (i == EXPECTED_EVICTED_RECORD_VALUE) {
+            if (i == expectedEvictedRecordValue) {
                 // The record in the middle will be minimum access time.
                 // So, it will be selected for eviction
                 record.setAccessTime(baseTime - 1000);
-            } else if (i == EXPECTED_EXPIRED_RECORD_VALUE) {
+            } else if (i == expectedExpiredRecordValue) {
                 record.setExpirationTime(System.currentTimeMillis());
             } else {
                 record.setAccessTime(creationTime + 1000);
@@ -153,9 +153,9 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         CacheObjectRecord evictedRecord = evictionCandidate.getEvictable();
         assertNotNull(evictedRecord);
         if (useExpiredEntry) {
-            assertEquals(EXPECTED_EXPIRED_RECORD_VALUE, evictedRecord.getValue());
+            assertEquals(expectedExpiredRecordValue, evictedRecord.getValue());
         } else {
-            assertEquals(EXPECTED_EVICTED_RECORD_VALUE, evictedRecord.getValue());
+            assertEquals(expectedEvictedRecordValue, evictedRecord.getValue());
         }
     }
 
@@ -170,9 +170,9 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
     }
 
     private void test_evictionPolicyLFU(boolean useExpiredEntry) {
-        final int RECORD_COUNT = 100;
-        final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
-        final int EXPECTED_EXPIRED_RECORD_VALUE = useExpiredEntry ? RECORD_COUNT / 4 : -1;
+        final int recordCount = 100;
+        final int expectedEvictedRecordValue = recordCount / 2;
+        final int expectedExpiredRecordValue = useExpiredEntry ? recordCount / 4 : -1;
 
         EvictionConfiguration evictionConfig = new EvictionConfiguration() {
             @Override
@@ -200,18 +200,17 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
                 return null;
             }
         };
-        EvictionPolicyEvaluator evictionPolicyEvaluator =
-                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, null);
-        List<EvictionCandidate<Integer, CacheObjectRecord>> records =
-                new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
+        EvictionPolicyEvaluator evictionPolicyEvaluator = getEvictionPolicyEvaluator(evictionConfig, null);
+        List<EvictionCandidate<Integer, CacheObjectRecord>> records
+                = new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 
-        for (int i = 0; i < RECORD_COUNT; i++) {
+        for (int i = 0; i < recordCount; i++) {
             CacheObjectRecord record = new CacheObjectRecord(i, System.currentTimeMillis(), Long.MAX_VALUE);
-            if (i == EXPECTED_EVICTED_RECORD_VALUE) {
+            if (i == expectedEvictedRecordValue) {
                 // The record in the middle will be minimum access hit.
                 // So, it will be selected for eviction
                 record.setAccessHit(0);
-            } else if (i == EXPECTED_EXPIRED_RECORD_VALUE) {
+            } else if (i == expectedExpiredRecordValue) {
                 record.setExpirationTime(System.currentTimeMillis());
             } else {
                 record.setAccessHit(i + 1);
@@ -226,10 +225,9 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         CacheObjectRecord evictedRecord = evictionCandidate.getEvictable();
         assertNotNull(evictedRecord);
         if (useExpiredEntry) {
-            assertEquals(EXPECTED_EXPIRED_RECORD_VALUE, evictedRecord.getValue());
+            assertEquals(expectedExpiredRecordValue, evictedRecord.getValue());
         } else {
-            assertEquals(EXPECTED_EVICTED_RECORD_VALUE, evictedRecord.getValue());
+            assertEquals(expectedEvictedRecordValue, evictedRecord.getValue());
         }
     }
-
 }

@@ -50,7 +50,7 @@ public class FirewallingConnectionManager implements ConnectionManager, Consumer
     public FirewallingConnectionManager(ConnectionManager delegate, Set<Address> initiallyBlockedAddresses) {
         this.delegate = delegate;
         this.blockedAddresses.addAll(initiallyBlockedAddresses);
-        packetConsumer = delegate instanceof Consumer ? (Consumer<Packet>) delegate : null;
+        this.packetConsumer = delegate instanceof Consumer ? (Consumer<Packet>) delegate : null;
     }
 
     @Override
@@ -139,6 +139,8 @@ public class FirewallingConnectionManager implements ConnectionManager, Consumer
                 case DELAY:
                     scheduledExecutor.schedule(new DelayedPacketTask(packet, connection), getDelayMs(), MILLISECONDS);
                     return true;
+                default:
+                    // NOP
             }
         }
         return delegate.transmit(packet, connection);
@@ -155,8 +157,9 @@ public class FirewallingConnectionManager implements ConnectionManager, Consumer
             case DELAY:
                 scheduledExecutor.schedule(new DelayedPacketTask(packet, target), getDelayMs(), MILLISECONDS);
                 return true;
+            default:
+                return delegate.transmit(packet, target);
         }
-        return delegate.transmit(packet, target);
     }
 
     @Override
@@ -251,6 +254,7 @@ public class FirewallingConnectionManager implements ConnectionManager, Consumer
     }
 
     private static class PacketDelayProps {
+
         final long minDelayMs;
         final long maxDelayMs;
 

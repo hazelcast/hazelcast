@@ -72,6 +72,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
 
     private Data data;
 
+    @SuppressWarnings({"checkstyle:parameternumber", "checkstyle:executablestatementcount"})
     public AnIdentifiedDataSerializable(boolean bool, byte b, char c, double d, short s,
                                         float f, int i, long l, String str,
                                         boolean[] booleans, byte[] bytes, char[] chars, double[] doubles, short[] shorts,
@@ -247,7 +248,6 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         }
 
         AnIdentifiedDataSerializable that = (AnIdentifiedDataSerializable) o;
-
         if (bool != that.bool) {
             return false;
         }
@@ -369,6 +369,53 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
             return false;
         }
         return !(data != null ? !data.equals(that.data) : that.data != null);
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = (bool ? 1 : 0);
+        result = 31 * result + (int) b;
+        result = 31 * result + (int) c;
+        temp = Double.doubleToLongBits(d);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + (int) s;
+        result = 31 * result + (f != +0.0f ? Float.floatToIntBits(f) : 0);
+        result = 31 * result + i;
+        result = 31 * result + (int) (l ^ (l >>> 32));
+        result = 31 * result + (str != null ? str.hashCode() : 0);
+        result = 31 * result + Arrays.hashCode(booleans);
+        result = 31 * result + Arrays.hashCode(bytes);
+        result = 31 * result + Arrays.hashCode(chars);
+        result = 31 * result + Arrays.hashCode(doubles);
+        result = 31 * result + Arrays.hashCode(shorts);
+        result = 31 * result + Arrays.hashCode(floats);
+        result = 31 * result + Arrays.hashCode(ints);
+        result = 31 * result + Arrays.hashCode(longs);
+        result = 31 * result + Arrays.hashCode(strings);
+        result = 31 * result + Arrays.hashCode(booleansNull);
+        result = 31 * result + Arrays.hashCode(bytesNull);
+        result = 31 * result + Arrays.hashCode(charsNull);
+        result = 31 * result + Arrays.hashCode(doublesNull);
+        result = 31 * result + Arrays.hashCode(shortsNull);
+        result = 31 * result + Arrays.hashCode(floatsNull);
+        result = 31 * result + Arrays.hashCode(intsNull);
+        result = 31 * result + Arrays.hashCode(longsNull);
+        result = 31 * result + Arrays.hashCode(stringsNull);
+        result = 31 * result + (int) byteSize;
+        result = 31 * result + Arrays.hashCode(bytesFully);
+        result = 31 * result + Arrays.hashCode(bytesOffset);
+        result = 31 * result + Arrays.hashCode(strChars);
+        result = 31 * result + Arrays.hashCode(strBytes);
+        result = 31 * result + unsignedByte;
+        result = 31 * result + unsignedShort;
+        result = 31 * result + (portableObject != null ? portableObject.hashCode() : 0);
+        result = 31 * result + (identifiedDataSerializableObject != null ? identifiedDataSerializableObject.hashCode() : 0);
+        result = 31 * result + (customStreamSerializableObject != null ? customStreamSerializableObject.hashCode() : 0);
+        result = 31 * result + (customByteArraySerializableObject != null ? customByteArraySerializableObject.hashCode() : 0);
+        result = 31 * result + (data != null ? data.hashCode() : 0);
+        return result;
     }
 
     @Override

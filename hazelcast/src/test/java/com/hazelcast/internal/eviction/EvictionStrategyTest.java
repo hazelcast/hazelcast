@@ -56,7 +56,7 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
         instance = createHazelcastInstance();
     }
 
-    private class SimpleEvictionCandidate implements EvictionCandidate<K, V> {
+    private final class SimpleEvictionCandidate implements EvictionCandidate<K, V> {
 
         private K key;
         private V value;
@@ -104,8 +104,8 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
 
     @Test
     public void evictionPolicySuccessfullyEvaluatedOnSamplingBasedEvictionStrategy() {
-        final int RECORD_COUNT = 100;
-        final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
+        final int recordCount = 100;
+        final int expectedEvictedRecordValue = recordCount / 2;
 
         Node node = getNode(instance);
 
@@ -118,11 +118,11 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
         CacheObjectRecord expectedEvictedRecord = null;
         Data expectedData = null;
 
-        for (int i = 0; i < RECORD_COUNT; i++) {
+        for (int i = 0; i < recordCount; i++) {
             CacheObjectRecord record = new CacheObjectRecord(i, System.currentTimeMillis(), Long.MAX_VALUE);
             Data data = serializationService.toData(i);
             cacheRecordMap.put(data, record);
-            if (i == EXPECTED_EVICTED_RECORD_VALUE) {
+            if (i == expectedEvictedRecordValue) {
                 expectedEvictedRecord = record;
                 expectedData = data;
             }
@@ -139,13 +139,13 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
                 thenReturn(evictionCandidate);
         when(evictionPolicyEvaluator.getEvictionPolicyComparator()).thenReturn(null);
 
-        assertEquals(RECORD_COUNT, cacheRecordMap.size());
+        assertEquals(recordCount, cacheRecordMap.size());
         assertTrue(cacheRecordMap.containsKey(expectedData));
         assertTrue(cacheRecordMap.containsValue(expectedEvictedRecord));
 
         boolean evicted = evictionStrategy.evict((S) cacheRecordMap, evictionPolicyEvaluator, EVICT_ALWAYS, NO_LISTENER);
         assertTrue(evicted);
-        assertEquals(RECORD_COUNT - 1, cacheRecordMap.size());
+        assertEquals(recordCount - 1, cacheRecordMap.size());
         assertFalse(cacheRecordMap.containsKey(expectedData));
         assertFalse(cacheRecordMap.containsValue(expectedEvictedRecord));
     }

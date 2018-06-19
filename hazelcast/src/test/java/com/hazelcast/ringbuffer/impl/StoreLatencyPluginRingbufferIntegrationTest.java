@@ -42,7 +42,7 @@ import static com.hazelcast.test.TestStringUtils.fileAsText;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class StoreLatencyPlugin_RingbufferIntegrationTest extends HazelcastTestSupport {
+public class StoreLatencyPluginRingbufferIntegrationTest extends HazelcastTestSupport {
 
     private HazelcastInstance hz;
     private Ringbuffer<Object> rb;

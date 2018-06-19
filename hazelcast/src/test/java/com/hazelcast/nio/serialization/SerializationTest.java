@@ -252,8 +252,15 @@ public class SerializationTest extends HazelcastTestSupport {
     }
 
     private static class SingletonValue {
+
+        @Override
         public boolean equals(Object obj) {
             return obj instanceof SingletonValue;
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode();
         }
     }
 

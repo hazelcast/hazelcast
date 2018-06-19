@@ -663,7 +663,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         return spiedTransactionManagerService;
     }
 
-    private static abstract class TransactionAnswer implements Answer<Transaction> {
+    private abstract static class TransactionAnswer implements Answer<Transaction> {
         @Override
         public Transaction answer(InvocationOnMock invocation) throws Throwable {
             Transaction tx = (Transaction) invocation.callRealMethod();

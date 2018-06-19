@@ -29,13 +29,13 @@ import com.hazelcast.query.extractor.ValueReader;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collection;
-import java.util.UUID;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.NO_INDEX;
@@ -47,6 +47,7 @@ import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataSt
 import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.tattoos;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction with extractor and arguments.
@@ -82,7 +83,7 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     protected void doWithMap() {
         // init fully populated object to handle nulls properly
         if (mv == PORTABLE) {
-            String key = UUID.randomUUID().toString();
+            String key = UuidUtil.newUnsecureUuidString();
             map.put(key, KRUEGER.getPortable());
             map.remove(key);
         }
@@ -205,17 +206,15 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
                     }
                 });
             }
-
         }
     }
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> parametrisationData() {
         return axes(
-                asList(OBJECT),
-                asList(NO_INDEX),
+                singletonList(OBJECT),
+                singletonList(NO_INDEX),
                 asList(PORTABLE, LIST)
         );
     }
-
 }

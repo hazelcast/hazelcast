@@ -147,8 +147,8 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
     @Test
     public void testClientGenerateEncrypted() throws Exception {
         assumeDefaultAlgorithmsSupported();
-        String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" + XML_DEFAULT_CONFIG +
-                "</hazelcast-client>";
+        String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" + XML_DEFAULT_CONFIG
+                + "</hazelcast-client>";
         File configFile = createFileWithString(xml);
         hazelcastConfigProperty.setOrClearProperty(configFile.getAbsolutePath());
         String encrypted = encrypt("test");
@@ -158,8 +158,8 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
     @Test
     public void testClientGenerateEncryptedLegacy() throws Exception {
         assumeAlgorithmsSupported("PBKDF2WithHmacSHA1", "DES");
-        String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" + XML_LEGACY_CONFIG +
-                "</hazelcast-client>";
+        String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" + XML_LEGACY_CONFIG
+                + "</hazelcast-client>";
         File configFile = createFileWithString(xml);
         hazelcastConfigProperty.setOrClearProperty(configFile.getAbsolutePath());
         String encrypted = encrypt("test");

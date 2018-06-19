@@ -16,19 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JavaSerializationFilterConfig;
@@ -37,8 +24,19 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-
 import example.serialization.TestDeserialized;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.io.IOException;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests untrusted deserialization protection.
@@ -54,7 +52,7 @@ public class DeserializationProtectionTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        TestDeserialized.IS_DESERIALIZED = false;
+        TestDeserialized.isDeserialized = false;
     }
 
     /**
@@ -131,7 +129,7 @@ public class DeserializationProtectionTest extends HazelcastTestSupport {
             instances[1].getMap("test").get(key);
             fail("Deserialization should have failed");
         } catch (HazelcastSerializationException e) {
-            assertFalse(TestDeserialized.IS_DESERIALIZED);
+            assertFalse(TestDeserialized.isDeserialized);
         }
     }
 
@@ -142,7 +140,7 @@ public class DeserializationProtectionTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = factory.newInstances(config);
         instances[0].getMap("test").put("a", new TestDeserialized());
         assertNotNull(instances[1].getMap("test").get("a"));
-        assertTrue(TestDeserialized.IS_DESERIALIZED);
+        assertTrue(TestDeserialized.isDeserialized);
     }
 
 }

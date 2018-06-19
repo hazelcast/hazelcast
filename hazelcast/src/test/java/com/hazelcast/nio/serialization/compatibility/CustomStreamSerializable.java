@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization.compatibility;
 
 public class CustomStreamSerializable {
+
     int i;
     float f;
 
@@ -39,6 +40,13 @@ public class CustomStreamSerializable {
             return false;
         }
         return Float.compare(that.f, f) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = i;
+        result = 31 * result + (f != +0.0f ? Float.floatToIntBits(f) : 0);
+        return result;
     }
 
     @Override

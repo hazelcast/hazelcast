@@ -40,9 +40,10 @@ import static org.junit.Assert.fail;
  */
 final class MBeanDataHolder {
 
+    private static final AtomicInteger ID_GEN = new AtomicInteger(0);
+
     private HazelcastInstance hz;
     private MBeanServer mbs;
-    private static final AtomicInteger ID_GEN = new AtomicInteger(0);
 
     /**
      * Initialize with new hazelcast instance and MBean server

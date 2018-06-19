@@ -302,16 +302,16 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
         // first we are going to lock
         int otherThreadId = 1;
-        opService.createInvocationBuilder
-                (null, new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId, -1, -1), partitionId)
+        LockOperation otherOp = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId, -1, -1);
+        opService.createInvocationBuilder(null, otherOp, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke()
                 .join();
 
         // then we are going to send the invocation and share the future by many threads
         int thisThreadId = 2;
-        final InternalCompletableFuture<Object> future = opService.createInvocationBuilder
-                (null, new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), thisThreadId, -1, -1), partitionId)
+        LockOperation thisOp = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), thisThreadId, -1, -1);
+        final InternalCompletableFuture<Object> future = opService.createInvocationBuilder(null, thisOp, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke();
         // now we are going to do a get on the future by a whole bunch of threads
@@ -330,8 +330,8 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         sleepMillis(callTimeout * 5);
 
         // unlocking the lock
-        opService.createInvocationBuilder
-                (null, new UnlockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId), partitionId)
+        UnlockOperation op = new UnlockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId);
+        opService.createInvocationBuilder(null, op, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke()
                 .join();
@@ -365,16 +365,16 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
         // first we are going to lock
         int otherThreadId = 1;
-        opService.createInvocationBuilder
-                (null, new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId, -1, -1), partitionId)
+        LockOperation otherOp = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId, -1, -1);
+        opService.createInvocationBuilder(null, otherOp, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke()
                 .join();
 
         // then we are going to send another lock request by a different thread; so it can't complete
         int thisThreadId = 2;
-        final InternalCompletableFuture<Object> future = opService.createInvocationBuilder
-                (null, new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), thisThreadId, -1, -1), partitionId)
+        LockOperation thisOp = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), thisThreadId, -1, -1);
+        final InternalCompletableFuture<Object> future = opService.createInvocationBuilder(null, thisOp, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke();
 
@@ -404,8 +404,8 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         sleepMillis(callTimeout * 5);
 
         // unlocking the lock
-        opService.createInvocationBuilder
-                (null, new UnlockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId), partitionId)
+        UnlockOperation op = new UnlockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId);
+        opService.createInvocationBuilder(null, op, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke()
                 .join();

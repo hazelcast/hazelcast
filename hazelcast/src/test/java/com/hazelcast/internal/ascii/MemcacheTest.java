@@ -357,6 +357,7 @@ public class MemcacheTest extends HazelcastTestSupport {
         }
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     private void checkStats(int sets, int gets, int getHits, int getMisses, int deleteHits, int deleteMisses,
                             int incHits, int incMisses, int decHits, int decMisses) {
         InetSocketAddress address = instance.getCluster().getLocalMember().getSocketAddress();

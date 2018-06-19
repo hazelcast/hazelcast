@@ -53,7 +53,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClusterFailureDetectorTest {
 
-    private static long HEARTBEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
+    private static final long HEARTBEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
 
     @Parameterized.Parameters(name = "fd:{0}")
     public static Collection<ClusterFailureDetectorType> parameters() {

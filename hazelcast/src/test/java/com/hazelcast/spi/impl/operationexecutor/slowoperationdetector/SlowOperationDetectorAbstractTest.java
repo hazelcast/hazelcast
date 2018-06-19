@@ -199,9 +199,9 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     static class SlowEntryProcessor extends CountDownLatchHolder implements EntryProcessor<String, String> {
 
-        static int GLOBAL_INSTANCE_COUNTER;
+        static int globalInstanceCounter;
 
-        final int instance = ++GLOBAL_INSTANCE_COUNTER;
+        final int instance = ++globalInstanceCounter;
         final int sleepSeconds;
 
         SlowEntryProcessor(int sleepSeconds) {
@@ -255,7 +255,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         }
     }
 
-    static abstract class JoinableOperation extends Operation {
+    abstract static class JoinableOperation extends Operation {
 
         private final CountDownLatch completedLatch = new CountDownLatch(1);
 
@@ -272,7 +272,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         }
     }
 
-    static abstract class CountDownLatchHolder {
+    abstract static class CountDownLatchHolder {
 
         private final CountDownLatch latch = new CountDownLatch(1);
 

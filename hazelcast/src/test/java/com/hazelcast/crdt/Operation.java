@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Random;
 
 public class Operation<T, S> {
+
     protected final Random rnd;
     protected final int crdtIndex;
 

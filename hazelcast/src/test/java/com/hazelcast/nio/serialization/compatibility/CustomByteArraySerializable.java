@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio.serialization.compatibility;
 
-
 public class CustomByteArraySerializable {
+
     int i;
     float f;
 
@@ -36,14 +36,18 @@ public class CustomByteArraySerializable {
         }
 
         CustomByteArraySerializable that = (CustomByteArraySerializable) o;
-
         if (i != that.i) {
             return false;
         }
         return Float.compare(that.f, f) == 0;
-
     }
 
+    @Override
+    public int hashCode() {
+        int result = i;
+        result = 31 * result + (f != +0.0f ? Float.floatToIntBits(f) : 0);
+        return result;
+    }
 
     @Override
     public String toString() {

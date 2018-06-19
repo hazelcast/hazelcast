@@ -449,7 +449,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
             public void run() {
                 try {
                     latch1.await(100, TimeUnit.SECONDS);
-                    pass.set(map.tryPut("var", "value1", 0, TimeUnit.SECONDS) == false);
+                    pass.set(!map.tryPut("var", "value1", 0, TimeUnit.SECONDS));
                     latch2.countDown();
                 } catch (Exception e) {
                 }
@@ -459,7 +459,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 try {
-                    final TransactionalMap<String, Integer> txMap = context.getMap("default");
+                    final TransactionalMap<String, String> txMap = context.getMap("default");
                     assertEquals("value0", txMap.getForUpdate("var"));
                     latch1.countDown();
                     latch2.await(100, TimeUnit.SECONDS);

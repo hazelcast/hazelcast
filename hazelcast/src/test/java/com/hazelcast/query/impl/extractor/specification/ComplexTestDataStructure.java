@@ -37,6 +37,9 @@ import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification
  */
 public class ComplexTestDataStructure {
 
+    private ComplexTestDataStructure() {
+    }
+
     public static class Person implements Serializable, PortableAware {
         String name;
         List<Limb> limbs_list = new ArrayList<Limb>();
