@@ -62,7 +62,8 @@ public class ClientCacheStatsTest extends CacheStatsTest {
     @Parameters(name = "nearCached:{0}")
     public static Collection<Object> parameters() {
         return Arrays.asList(new Object[]{
-                Boolean.TRUE, Boolean.FALSE
+                Boolean.TRUE,
+                Boolean.FALSE,
         });
     }
 

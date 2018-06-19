@@ -22,7 +22,7 @@ import java.util.concurrent.CountDownLatch;
 
 public class ClientCacheEntryExpiredLatchCountdownListener<K, V> implements javax.cache.event.CacheEntryExpiredListener<K, V> {
 
-    private transient static final CountDownLatch EXPIRED_LATCH = new CountDownLatch(2);
+    private static final transient CountDownLatch EXPIRED_LATCH = new CountDownLatch(2);
 
     @Override
     public void onExpired(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)

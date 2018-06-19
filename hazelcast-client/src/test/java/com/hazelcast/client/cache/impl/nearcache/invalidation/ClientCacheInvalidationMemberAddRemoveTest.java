@@ -67,6 +67,7 @@ import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESS
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.util.RandomPicker.getInt;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
@@ -219,8 +220,8 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
 
                 StaleReadDetector staleReadDetector = nearCacheRecordStore.getStaleReadDetector();
                 MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
-                return String.format("On client: [uuid=%s, partition=%d, onRecordSequence=%d, latestSequence=%d, staleSequence=%d]," +
-                                "%nOn members: [memberUuid1=%s, memberSequence1=%d, memberUuid2=%s, memberSequence2=%d]",
+                return format("On client: [uuid=%s, partition=%d, onRecordSequence=%d, latestSequence=%d, staleSequence=%d],"
+                                + "%nOn members: [memberUuid1=%s, memberSequence1=%d, memberUuid2=%s, memberSequence2=%d]",
                         metaDataContainer.getUuid(), partitionId, recordSequence, metaDataContainer.getSequence(),
                         metaDataContainer.getStaleSequence(), memberUuid1, memberSequence1, memberUuid2, memberSequence2);
             }

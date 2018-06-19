@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.serialization.SerializationService;
 

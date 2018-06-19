@@ -80,7 +80,7 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
                 {true, false, false},
                 {true, false, true},
                 {true, true, false},
-                {true, true, true}
+                {true, true, true},
         });
     }
 

@@ -64,7 +64,6 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-
     @Test
     public void testClientReconnectOnClusterDown() throws Exception {
         final HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
@@ -176,9 +175,9 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         client.shutdown();
     }
 
-    public static abstract class CustomCredentials extends UsernamePasswordCredentials {
+    public abstract static class CustomCredentials extends UsernamePasswordCredentials {
 
-        public CustomCredentials() {
+        CustomCredentials() {
         }
 
         CustomCredentials(String username, String password) {
@@ -194,7 +193,6 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         public int getClassId() {
             return 1;
         }
-
     }
 
     public static class CustomCredentials_takesLong extends CustomCredentials {

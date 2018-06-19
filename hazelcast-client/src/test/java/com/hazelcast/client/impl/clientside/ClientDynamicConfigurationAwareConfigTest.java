@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.impl.clientside.ClientDynamicClusterConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfigTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
