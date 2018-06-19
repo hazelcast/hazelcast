@@ -132,9 +132,9 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
                 + HAZELCAST_CLIENT_END_TAG;
         writeStringToStreamAndClose(os, networkConfig);
 
-        String xml = HAZELCAST_CLIENT_START_TAG +
-                "    <import resource=\"${config.location}\"/>\n" +
-                HAZELCAST_CLIENT_END_TAG;
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <import resource=\"${config.location}\"/>\n"
+                + HAZELCAST_CLIENT_END_TAG;
 
         Properties properties = new Properties();
         properties.setProperty("config.location", file.getAbsolutePath());

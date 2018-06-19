@@ -25,7 +25,7 @@ import static com.hazelcast.client.quorum.QuorumTestUtil.createClient;
 public class PartitionedClusterClients {
 
     private TestHazelcastFactory factory;
-    private HazelcastInstance clients[];
+    private HazelcastInstance[] clients;
     private PartitionedCluster cluster;
 
     public PartitionedClusterClients(PartitionedCluster cluster, TestHazelcastFactory factory) {

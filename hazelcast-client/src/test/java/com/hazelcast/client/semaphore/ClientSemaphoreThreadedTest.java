@@ -73,7 +73,7 @@ public class ClientSemaphoreThreadedTest {
         final AtomicInteger upTotal = new AtomicInteger(0);
         final AtomicInteger downTotal = new AtomicInteger(0);
 
-        final SemaphoreTestThread threads[] = new SemaphoreTestThread[8];
+        final SemaphoreTestThread[] threads = new SemaphoreTestThread[8];
         for (int i = 0; i < threads.length; i++) {
             SemaphoreTestThread t;
             if (tryWithTimeOut) {
@@ -119,13 +119,17 @@ public class ClientSemaphoreThreadedTest {
         }
     }
 
-    static abstract class SemaphoreTestThread extends Thread {
-        static private final int MAX_ITTERATIONS = 1000 * 10;
-        private final Random random = new Random();
+    abstract static class SemaphoreTestThread extends Thread {
+
+        private static final int MAX_ITTERATIONS = 1000 * 10;
+
+        public volatile Throwable error;
+
         protected final ISemaphore semaphore;
         protected final AtomicInteger upTotal;
         protected final AtomicInteger downTotal;
-        public volatile Throwable error;
+
+        private final Random random = new Random();
 
         public SemaphoreTestThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal) {
             this.semaphore = semaphore;
@@ -133,7 +137,7 @@ public class ClientSemaphoreThreadedTest {
             this.downTotal = downTotal;
         }
 
-        final public void run() {
+        public final void run() {
             try {
                 for (int i = 0; i < MAX_ITTERATIONS; i++) {
                     iterativelyRun();

@@ -38,7 +38,7 @@ import usercodedeployment.IncrementingEntryProcessor;
 import java.io.FileNotFoundException;
 
 import static java.util.Collections.singletonList;
-import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -66,7 +66,7 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         IMap<Integer, Integer> map = client.getMap(randomName());
         try {
             map.executeOnEntries(incrementingEntryProcessor);
-            assertTrue(false);
+            fail();
         } catch (HazelcastSerializationException e) {
             assertEquals(ClassNotFoundException.class, e.getCause().getClass());
         }
@@ -98,33 +98,27 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         factory.newHazelcastClient(clientConfig);
     }
 
+    /**
+     * The two JARs {@code IncrementingEntryProcessor.jar} and {@code IncrementingEntryProcessorConflicting.jar}
+     * contain the same class {@link IncrementingEntryProcessor} with different implementations
+     */
     @Test(expected = IllegalStateException.class)
     public void testClientsWithConflictingClassRepresentations() {
-        /*
-            These two jars IncrementingEntryProcessor.jar and IncrementingEntryProcessorConflicting.jar
-            contains same class `IncrementingEntryProcessor` with different implementations
-         */
         Config config = createNodeConfig();
         config.getUserCodeDeploymentConfig().setEnabled(true);
-
         factory.newHazelcastInstance(config);
 
-        {
-            ClientConfig clientConfig = new ClientConfig();
-            ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
-            clientUserCodeDeploymentConfig.addJar("IncrementingEntryProcessor.jar").setEnabled(true);
-            clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig);
-            factory.newHazelcastClient(clientConfig);
-        }
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig1 = new ClientUserCodeDeploymentConfig()
+                .addJar("IncrementingEntryProcessor.jar").setEnabled(true);
+        ClientConfig clientConfig1 = new ClientConfig()
+                .setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig1);
+        factory.newHazelcastClient(clientConfig1);
 
-        {
-            ClientConfig clientConfig = new ClientConfig();
-            ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
-            clientUserCodeDeploymentConfig.addJar("IncrementingEntryProcessorConflicting.jar").setEnabled(true);
-            clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig);
-            factory.newHazelcastClient(clientConfig);
-        }
-
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig2 = new ClientUserCodeDeploymentConfig()
+                .addJar("IncrementingEntryProcessorConflicting.jar").setEnabled(true);
+        ClientConfig clientConfig2 = new ClientConfig()
+                .setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig2);
+        factory.newHazelcastClient(clientConfig2);
     }
 
     @Test(expected = ClassNotFoundException.class)
@@ -143,7 +137,6 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         } catch (HazelcastException e) {
             throw e.getCause();
         }
-
     }
 
     @Test(expected = FileNotFoundException.class)
@@ -162,7 +155,5 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         } catch (HazelcastException e) {
             throw e.getCause();
         }
-
     }
-
 }

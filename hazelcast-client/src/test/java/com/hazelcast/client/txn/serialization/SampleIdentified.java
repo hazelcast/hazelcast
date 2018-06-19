@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.txn.serialization;
 
-
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -27,6 +26,7 @@ class SampleIdentified implements IdentifiedDataSerializable {
 
     public static final int FACTORY_ID = 1;
     public static final int CLASS_ID = 1;
+
     private int amount;
 
     public SampleIdentified() {
@@ -77,8 +77,8 @@ class SampleIdentified implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "SampleIdentified{" +
-                "amount=" + amount +
-                '}';
+        return "SampleIdentified{"
+                + "amount=" + amount
+                + '}';
     }
 }

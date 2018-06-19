@@ -50,7 +50,10 @@ public class ClientTxnReconnectModeTest {
 
     @Parameterized.Parameters(name = "smartRouting:{0} ")
     public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{{true}, {false},});
+        return asList(new Object[][]{
+                {true},
+                {false},
+        });
     }
 
     @After

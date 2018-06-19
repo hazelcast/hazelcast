@@ -42,9 +42,9 @@ import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 
 public class Issue9766Test {
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private static final String TOPIC_NAME = "foo";
 
-    static final String topicName = "foo";
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {
@@ -59,8 +59,8 @@ public class Issue9766Test {
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         HazelcastInstance hazelcastClient = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastInstance hazelcastClient2 = hazelcastFactory.newHazelcastClient(clientConfig);
-        ITopic<Integer> topic = hazelcastClient.getReliableTopic(topicName);
-        final ITopic<Integer> topic2 = hazelcastClient2.getReliableTopic(topicName);
+        ITopic<Integer> topic = hazelcastClient.getReliableTopic(TOPIC_NAME);
+        final ITopic<Integer> topic2 = hazelcastClient2.getReliableTopic(TOPIC_NAME);
 
         final CountDownLatch listenerLatch = new CountDownLatch(1);
 
