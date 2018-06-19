@@ -55,9 +55,9 @@ public class CompressingProbeRenderer implements ProbeRenderer {
     private String lastName = "";
     private int count;
 
-//    public CompressingProbeRenderer(int estimatedBytes) throws IOException {
-//        this(new ByteArrayOutputStream(estimatedBytes));
-//    }
+    public CompressingProbeRenderer(int estimatedBytes) throws IOException {
+        this(new ByteArrayOutputStream(estimatedBytes));
+    }
 
     public CompressingProbeRenderer(OutputStream out) throws IOException {
         Deflater compressor = new Deflater();
