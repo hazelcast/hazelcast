@@ -440,8 +440,7 @@ public class ManagementCenterService {
         }
 
         private URL newCollectorUrl() throws MalformedURLException {
-            String url = cleanupUrl(managementCenterUrl) + "collector.do";
-            return new URL(url);
+            return new URL(cleanupUrl(managementCenterUrl) + "collector.do");
         }
     }
 
@@ -461,9 +460,9 @@ public class ManagementCenterService {
                 printWriter.flush();
 
                 MetricsRegistry metricsRegistry = getHazelcastInstance().node.nodeEngine.getMetricsRegistry();
-                CompressingProbeRenderer probeRenderer = new CompressingProbeRenderer(outputStream);
+                CompressingProbeRenderer probeRenderer = new CompressingProbeRenderer(10000);
                 metricsRegistry.render(probeRenderer);
-                probeRenderer.flush();
+                outputStream.write(probeRenderer.getRenderedBlob());
                 outputStream.flush();
 
                 boolean success = post(connection);
@@ -503,8 +502,7 @@ public class ManagementCenterService {
         }
 
         private URL newCollectorUrl() throws MalformedURLException {
-            String url = cleanupUrl(managementCenterUrl) + "metrics.do";
-            return new URL(url);
+            return new URL(cleanupUrl(managementCenterUrl) + "metrics.do");
         }
     }
 
