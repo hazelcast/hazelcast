@@ -50,6 +50,11 @@ public interface RecordStore<R extends Record> {
      */
     long DEFAULT_TTL = -1L;
 
+    /**
+     * Default Max Idle value of a record.
+     */
+    long DEFAULT_MAX_IDLE = -1L;
+
     LocalRecordStoreStats getLocalRecordStoreStats();
 
     String getName();
@@ -58,15 +63,15 @@ public interface RecordStore<R extends Record> {
      * @return oldValue only if it exists in memory, otherwise just returns
      * null and doesn't try to load it from {@link com.hazelcast.core.MapLoader}
      */
-    Object set(Data dataKey, Object value, long ttl);
+    Object set(Data dataKey, Object value, long ttl, long maxIdle);
 
     /**
      * @return oldValue if it exists in memory otherwise tries to load oldValue
      * by using {@link com.hazelcast.core.MapLoader}
      */
-    Object put(Data dataKey, Object dataValue, long ttl);
+    Object put(Data dataKey, Object dataValue, long ttl, long maxIdle);
 
-    Object putIfAbsent(Data dataKey, Object value, long ttl, Address callerAddress);
+    Object putIfAbsent(Data dataKey, Object value, long ttl, long maxIdle, Address callerAddress);
 
     /**
      * @param key        the key
@@ -80,17 +85,18 @@ public interface RecordStore<R extends Record> {
      * @param key          the key to be processed.
      * @param value        the value to be processed.
      * @param ttl          milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
+     * @param maxIdle      milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
      * @param putTransient {@code true} if putting transient entry, otherwise {@code false}
      * @param provenance   origin of call to this method.
      * @return previous record if exists otherwise null.
      */
-    R putBackup(Data key, Object value, long ttl, boolean putTransient, CallerProvenance provenance);
+    R putBackup(Data key, Object value, long ttl, long maxIdle, boolean putTransient, CallerProvenance provenance);
 
     /**
-     * Does exactly the same thing as {@link #set(Data, Object, long)} except the invocation is not counted as
+     * Does exactly the same thing as {@link #set(Data, Object, long, long)} except the invocation is not counted as
      * a read access while updating the access statics.
      */
-    boolean setWithUncountedAccess(Data dataKey, Object value, long ttl);
+    boolean setWithUncountedAccess(Data dataKey, Object value, long ttl, long maxIdle);
 
     /**
      * @param key        the key to be removed
@@ -165,7 +171,7 @@ public interface RecordStore<R extends Record> {
      */
     boolean replace(Data dataKey, Object expect, Object update);
 
-    Object putTransient(Data dataKey, Object value, long ttl);
+    Object putTransient(Data dataKey, Object value, long ttl, long maxIdle);
 
     /**
      * Puts key-value pair to map which is the result of a load from map store operation.
@@ -405,7 +411,7 @@ public interface RecordStore<R extends Record> {
 
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
-    Record createRecord(Object value, long ttlMillis, long now);
+    Record createRecord(Object value, long ttlMillis, long maxIdle, long now);
 
     Record loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 

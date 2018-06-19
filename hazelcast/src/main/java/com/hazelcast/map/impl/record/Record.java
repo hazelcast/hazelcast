@@ -32,6 +32,8 @@ public interface Record<V> {
 
     Data getKey();
 
+    void setKey(Data key);
+
     V getValue();
 
     void setValue(V value);
@@ -77,6 +79,10 @@ public interface Record<V> {
     long getTtl();
 
     void setTtl(long ttl);
+
+    long getMaxIdle();
+
+    void setMaxIdle(long maxIdle);
 
     long getLastAccessTime();
 

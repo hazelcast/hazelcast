@@ -211,7 +211,8 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     Data putInternal(Data key, Data value, long ttl, TimeUnit timeUnit) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         long timeInMillis = getTimeInMillis(ttl, timeUnit);
-        MapOperation operation = operationProvider.createTxnSetOperation(name, key, value, versionedValue.version, timeInMillis);
+        MapOperation operation = operationProvider.createTxnSetOperation(name, key, value, versionedValue.version,
+                timeInMillis);
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }

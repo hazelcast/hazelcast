@@ -24,6 +24,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
@@ -34,11 +35,11 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     protected transient boolean putTransient;
 
     public BasePutOperation(String name, Data dataKey, Data value) {
-        super(name, dataKey, value, DEFAULT_TTL);
+        super(name, dataKey, value, DEFAULT_TTL, DEFAULT_MAX_IDLE);
     }
 
-    public BasePutOperation(String name, Data dataKey, Data value, long ttl) {
-        super(name, dataKey, value, ttl);
+    public BasePutOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
+        super(name, dataKey, value, ttl, maxIdle);
     }
 
     public BasePutOperation() {

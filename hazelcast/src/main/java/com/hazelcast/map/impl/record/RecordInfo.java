@@ -31,6 +31,7 @@ import static com.hazelcast.map.impl.record.Record.NOT_AVAILABLE;
 public class RecordInfo implements IdentifiedDataSerializable {
     protected long version;
     protected long ttl;
+    protected long maxIdle;
     protected long creationTime;
     protected long lastAccessTime;
     protected long lastUpdateTime;
@@ -46,6 +47,7 @@ public class RecordInfo implements IdentifiedDataSerializable {
         this.version = recordInfo.version;
         this.hits = recordInfo.hits;
         this.ttl = recordInfo.ttl;
+        this.maxIdle = recordInfo.maxIdle;
         this.creationTime = recordInfo.creationTime;
         this.lastAccessTime = recordInfo.lastAccessTime;
         this.lastUpdateTime = recordInfo.lastUpdateTime;
@@ -77,6 +79,14 @@ public class RecordInfo implements IdentifiedDataSerializable {
 
     public void setTtl(long ttl) {
         this.ttl = ttl;
+    }
+
+    public long getMaxIdle() {
+        return maxIdle;
+    }
+
+    public void setMaxIdle(long maxIdle) {
+        this.maxIdle = maxIdle;
     }
 
     public long getCreationTime() {
@@ -127,6 +137,7 @@ public class RecordInfo implements IdentifiedDataSerializable {
         out.writeLong(creationTime);
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
+        out.writeLong(maxIdle);
 
         boolean statsEnabled = !(lastStoredTime == NOT_AVAILABLE && expirationTime == NOT_AVAILABLE);
         out.writeBoolean(statsEnabled);
@@ -144,6 +155,7 @@ public class RecordInfo implements IdentifiedDataSerializable {
         creationTime = in.readLong();
         lastAccessTime = in.readLong();
         lastUpdateTime = in.readLong();
+        maxIdle = in.readLong();
 
         boolean statsEnabled = in.readBoolean();
         lastStoredTime = statsEnabled ? in.readLong() : NOT_AVAILABLE;
@@ -157,6 +169,7 @@ public class RecordInfo implements IdentifiedDataSerializable {
                 + "creationTime=" + creationTime
                 + ", version=" + version
                 + ", ttl=" + ttl
+                + ", maxIdle=" + maxIdle
                 + ", lastAccessTime=" + lastAccessTime
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", hits=" + hits

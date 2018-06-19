@@ -123,11 +123,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
+        return put(key, value, ttl, timeunit, -1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public V put(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        Data result = putInternal(key, valueData, ttl, timeunit);
+        Data result = putInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
         return toObject(result);
     }
 
@@ -147,21 +152,31 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
+        return putIfAbsent(key, value, ttl, timeunit, -1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit);
+        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit, maxIdle, maxIdleUnit);
         return toObject(result);
     }
 
     @Override
     public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
+        putTransient(key, value, ttl, timeunit, -1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void putTransient(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        putTransientInternal(key, valueData, ttl, timeunit);
+        putTransientInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
     }
 
     @Override
@@ -190,12 +205,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public void set(K key, V value, long ttl, TimeUnit timeunit) {
+    public void set(K key, V value, long ttl, TimeUnit ttlUnit) {
+        set(key, value, ttl, ttlUnit, -1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void set(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        setInternal(key, valueData, ttl, timeunit);
+        setInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
     }
 
     @Override
@@ -299,11 +319,18 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        return putAsync(key, value, ttl, timeunit, -1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        return new DelegatingFuture<V>(putAsyncInternal(key, valueData, ttl, timeunit), serializationService);
+        return new DelegatingFuture<V>(
+                putAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit),
+                serializationService);
     }
 
     @Override
@@ -313,11 +340,18 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        return setAsync(key, value, ttl, timeunit, -1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        return new DelegatingFuture<Void>(setAsyncInternal(key, valueData, ttl, timeunit), serializationService);
+        return new DelegatingFuture<Void>(
+                setAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit),
+                serializationService);
     }
 
     @Override

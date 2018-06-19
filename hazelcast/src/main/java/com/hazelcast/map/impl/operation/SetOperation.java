@@ -30,13 +30,13 @@ public class SetOperation extends BasePutOperation implements MutatingOperation 
     public SetOperation() {
     }
 
-    public SetOperation(String name, Data dataKey, Data value, long ttl) {
-        super(name, dataKey, value, ttl);
+    public SetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
+        super(name, dataKey, value, ttl, maxIdle);
     }
 
     @Override
     public void run() {
-        Object oldValue = recordStore.set(dataKey, dataValue, ttl);
+        Object oldValue = recordStore.set(dataKey, dataValue, ttl, maxIdle);
         newRecord = oldValue == null;
 
         if (recordStore.hasQueryCache()) {

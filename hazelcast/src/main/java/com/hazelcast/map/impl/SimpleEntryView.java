@@ -47,6 +47,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     private long lastUpdateTime;
     private long version;
     private long ttl;
+    private long maxIdle;
 
     public SimpleEntryView(K key, V value) {
         this.key = key;
@@ -210,6 +211,20 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         return this;
     }
 
+    @Override
+    public long getMaxIdle() {
+        return maxIdle;
+    }
+
+    public void setMaxIdle(long maxIdle) {
+        this.maxIdle = maxIdle;
+    }
+
+    public SimpleEntryView<K, V> withMaxIdle(long maxIdle) {
+        this.maxIdle = maxIdle;
+        return this;
+    }
+
     /**
      * Needed for client protocol compatibility.
      */
@@ -240,6 +255,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         // writes the deprecated evictionCriteriaNumber to the data output (client protocol compatibility)
         out.writeLong(0);
         out.writeLong(ttl);
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -257,6 +273,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         // reads the deprecated evictionCriteriaNumber from the data input (client protocol compatibility)
         in.readLong();
         ttl = in.readLong();
+        maxIdle = in.readLong();
     }
 
     @Override
@@ -306,6 +323,9 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         if (ttl != that.ttl) {
             return false;
         }
+        if (maxIdle != that.maxIdle) {
+            return false;
+        }
         if (key != null ? !key.equals(that.key) : that.key != null) {
             return false;
         }
@@ -325,6 +345,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
         result = 31 * result + (int) (version ^ (version >>> 32));
         result = 31 * result + (int) (ttl ^ (ttl >>> 32));
+        result = 31 * result + (int) (maxIdle ^ (maxIdle >>> 32));
         return result;
     }
 
@@ -342,6 +363,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", version=" + version
                 + ", ttl=" + ttl
+                + ", maxIdle=" + maxIdle
                 + '}';
     }
 }

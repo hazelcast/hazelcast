@@ -36,6 +36,7 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
     private long lastAccessTime;
     private long lastUpdateTime;
     private long ttl;
+    private long maxIdle;
 
     public ReplicatedMapEntryView() {
     }
@@ -125,6 +126,11 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         return ttl;
     }
 
+    @Override
+    public long getMaxIdle() {
+        return maxIdle;
+    }
+
     public ReplicatedMapEntryView<K, V> setTtl(long ttl) {
         this.ttl = ttl;
         return this;
@@ -139,6 +145,7 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(ttl);
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -150,6 +157,7 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         lastAccessTime = in.readLong();
         lastUpdateTime = in.readLong();
         ttl = in.readLong();
+        maxIdle = in.readLong();
     }
 
     @Override

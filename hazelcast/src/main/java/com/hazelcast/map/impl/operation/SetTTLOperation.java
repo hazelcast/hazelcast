@@ -23,6 +23,8 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+
 public class SetTTLOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
 
     public SetTTLOperation() {
@@ -30,7 +32,7 @@ public class SetTTLOperation extends LockAwareOperation implements BackupAwareOp
     }
 
     public SetTTLOperation(String name, Data dataKey, long ttl) {
-        super(name, dataKey, ttl);
+        super(name, dataKey, ttl, DEFAULT_MAX_IDLE);
     }
 
     @Override

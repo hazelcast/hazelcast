@@ -46,6 +46,7 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
     private long lastUpdateTime = -1;
     private long version = -1;
     private long ttl = -1;
+    private long maxIdle = -1;
 
     private transient SerializationService serializationService;
 
@@ -177,6 +178,11 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
     }
 
     @Override
+    public long getMaxIdle() {
+        return maxIdle;
+    }
+
+    @Override
     public void setSerializationService(SerializationService serializationService) {
         this.serializationService = serializationService;
     }
@@ -194,6 +200,7 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
         out.writeLong(ttl);
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -209,6 +216,7 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         lastUpdateTime = in.readLong();
         version = in.readLong();
         ttl = in.readLong();
+        maxIdle = in.readLong();
     }
 
     @Override
@@ -259,6 +267,9 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         if (ttl != that.ttl) {
             return false;
         }
+        if (maxIdle != that.maxIdle) {
+            return false;
+        }
         if (key != null ? !key.equals(that.key) : that.key != null) {
             return false;
         }
@@ -278,6 +289,7 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
         result = 31 * result + (int) (version ^ (version >>> 32));
         result = 31 * result + (int) (ttl ^ (ttl >>> 32));
+        result = 31 * result + (int) (maxIdle ^ (maxIdle >>> 32));
         return result;
     }
 
@@ -295,6 +307,7 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", version=" + version
                 + ", ttl=" + ttl
+                + ", maxIdle=" + maxIdle
                 + '}';
     }
 }

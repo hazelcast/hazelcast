@@ -163,7 +163,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
             RecordStore recordStore = mapServiceContext.getRecordStore(0, MAP_NAME);
 
             Data dataKey = ss.toData(1);
-            recordStore.put(dataKey, "value", 100);
+            recordStore.put(dataKey, "value", 100, -1);
             sleepSeconds(1);
             recordStore.get(dataKey, false, null);
 

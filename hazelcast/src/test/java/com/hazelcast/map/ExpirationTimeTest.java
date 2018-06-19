@@ -155,7 +155,6 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
         long lastAccessTime = entryView.getLastAccessTime();
-
         long expectedExpirationTime = lastAccessTime + TimeUnit.SECONDS.toMillis(10);
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
@@ -172,6 +171,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         // lastAccessTime is zero after put, we can find expiration by this calculation
         long expectedExpirationTime = delayToExpiration + entryView.getCreationTime();
+        System.out.println(lastAccessTime + " " + delayToExpiration);
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
 
@@ -220,7 +220,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         map.put(1, 1, 100, SECONDS);
         long expirationTimeAfterPut = getExpirationTime(map, 1);
-        sleepAtLeastMillis(3);
+        sleepAtLeastMillis(1000);
 
         map.replace(1, 1, 2);
 
