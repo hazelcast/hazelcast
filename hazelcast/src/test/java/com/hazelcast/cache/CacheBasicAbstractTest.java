@@ -792,18 +792,18 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         }
     }
 
-    private static abstract class AbstractCacheWorker {
+    private abstract static class AbstractCacheWorker {
 
         private final Random random = new Random();
         private final CountDownLatch firstIterationDone = new CountDownLatch(1);
         private final AtomicBoolean isRunning = new AtomicBoolean(true);
         private final CacheWorkerThread thread = new CacheWorkerThread();
 
-        public AbstractCacheWorker() {
+        AbstractCacheWorker() {
             thread.start();
         }
 
-        public void awaitFirstIteration() {
+        void awaitFirstIteration() {
             try {
                 firstIterationDone.await();
             } catch (InterruptedException e) {

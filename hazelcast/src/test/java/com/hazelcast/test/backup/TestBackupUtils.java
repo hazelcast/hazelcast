@@ -52,10 +52,10 @@ import static org.junit.Assert.assertNull;
  * Convenience for accessing and asserting backup records.
  */
 public final class TestBackupUtils {
+
     private static final int DEFAULT_REPLICA_INDEX = 1;
 
     private TestBackupUtils() {
-
     }
 
     /**
@@ -132,7 +132,8 @@ public final class TestBackupUtils {
             @Override
             public void run() {
                 V actualValue = accessor.get(key);
-                assertNull("Backup entry with key '" + key + "' was '" + actualValue + "', but it was expected to be NULL.", actualValue);
+                assertNull("Backup entry with key '" + key + "' was '" + actualValue
+                        + "', but it was expected to be NULL.", actualValue);
             }
         });
     }
@@ -169,7 +170,6 @@ public final class TestBackupUtils {
             this.cacheName = cacheName;
             this.replicaIndex = replicaIndex;
         }
-
 
         @Override
         public int size() {
@@ -244,6 +244,7 @@ public final class TestBackupUtils {
     }
 
     private static class MapBackupAccessor<K, V> extends BackupAccessorSupport<K, V> implements BackupAccessor<K, V> {
+
         private final String mapName;
         private final int replicaIndex;
 
@@ -291,7 +292,6 @@ public final class TestBackupUtils {
             return count;
         }
 
-
         public V get(final K key) {
             final InternalPartition partition = getPartitionForKey(key);
             Address replicaAddress = partition.getReplicaAddress(replicaIndex);
@@ -331,6 +331,7 @@ public final class TestBackupUtils {
     }
 
     private abstract static class BackupAccessorSupport<K, V> implements BackupAccessor<K, V> {
+
         protected final HazelcastInstance[] cluster;
 
         protected BackupAccessorSupport(HazelcastInstance[] cluster) {
@@ -342,8 +343,7 @@ public final class TestBackupUtils {
             HazelcastInstance instance = cluster[0];
             InternalPartitionService partitionService = getNode(instance).getPartitionService();
             int partitionId = partitionService.getPartitionId(key);
-            InternalPartition partition = partitionService.getPartition(partitionId);
-            return partition;
+            return partitionService.getPartition(partitionId);
         }
 
         protected HazelcastInstance getInstanceWithAddress(Address address) {

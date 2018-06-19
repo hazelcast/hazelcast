@@ -43,11 +43,10 @@ import static org.junit.Assert.assertTrue;
 public class Invocation_OffloadedTest extends HazelcastTestSupport {
 
     private OperationServiceImpl localOperationService;
-    private TestHazelcastInstanceFactory instanceFactory;
 
     @Before
     public void setup() {
-        instanceFactory = createHazelcastInstanceFactory();
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory();
         Config config = new Config();
         config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
 

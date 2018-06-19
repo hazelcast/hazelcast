@@ -22,12 +22,13 @@ import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.util.UuidUtil;
 import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 
 import java.util.Map;
-import java.util.UUID;
 
 import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,7 +37,10 @@ import static org.mockito.Mockito.withSettings;
 /**
  * Convenient utility methods to create mock predicates
  */
-public class PredicateTestUtils {
+public final class PredicateTestUtils {
+
+    private PredicateTestUtils() {
+    }
 
     /**
      * Create a negatable mock predicate. The created mock predicate returns passed the predicate
@@ -81,16 +85,19 @@ public class PredicateTestUtils {
         return visitor;
     }
 
-    public static String getAttributeName(AbstractPredicate predicate) {
-        return predicate.attributeName;
+    public static String getAttributeName(Predicate predicate) {
+        checkInstanceOf(AbstractPredicate.class, predicate);
+        return ((AbstractPredicate) predicate).attributeName;
     }
 
-    public static String setAttributeName(AbstractPredicate predicate, String attributeName) {
-        return predicate.attributeName = attributeName;
+    public static String setAttributeName(Predicate predicate, String attributeName) {
+        checkInstanceOf(AbstractPredicate.class, predicate);
+        ((AbstractPredicate) predicate).attributeName = attributeName;
+        return attributeName;
     }
 
     public static Map.Entry entry(Object value) {
-        return new QueryEntry(new DefaultSerializationServiceBuilder().build(), toData(UUID.randomUUID().toString()),
+        return new QueryEntry(new DefaultSerializationServiceBuilder().build(), toData(UuidUtil.newUnsecureUUID()),
                 value, Extractors.empty());
     }
 

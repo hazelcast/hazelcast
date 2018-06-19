@@ -682,7 +682,7 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
         public void get() {
             while (true) {
                 try {
-                    if (finished.tryAcquire(5, TimeUnit.SECONDS) == false) {
+                    if (!finished.tryAcquire(5, TimeUnit.SECONDS)) {
                         sneakyThrow(new TimeoutException());
                     }
                     if (throwable != null) {

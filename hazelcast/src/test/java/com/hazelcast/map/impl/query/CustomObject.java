@@ -55,7 +55,6 @@ public class CustomObject implements Serializable {
         }
 
         CustomObject that = (CustomObject) o;
-
         if (attribute != null ? !attribute.equals(that.attribute) : that.attribute != null) {
             return false;
         }
@@ -65,7 +64,6 @@ public class CustomObject implements Serializable {
         if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) {
             return false;
         }
-
         return true;
     }
 

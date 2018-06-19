@@ -61,7 +61,7 @@ public class ClientDeserializationProtectionTest extends HazelcastTestSupport {
     @Before
     public void killAllHazelcastInstances() throws IOException {
         hazelcastFactory.terminateAll();
-        TestDeserialized.IS_DESERIALIZED = false;
+        TestDeserialized.isDeserialized = false;
     }
 
     /**
@@ -85,7 +85,7 @@ public class ClientDeserializationProtectionTest extends HazelcastTestSupport {
             member.getMap("test").get("key");
             fail("Deserialization should have failed");
         } catch (HazelcastSerializationException e) {
-            assertFalse(TestDeserialized.IS_DESERIALIZED);
+            assertFalse(TestDeserialized.isDeserialized);
         }
     }
 
@@ -110,7 +110,7 @@ public class ClientDeserializationProtectionTest extends HazelcastTestSupport {
             client.getMap("test").get("key");
             fail("Deserialization should have failed");
         } catch (HazelcastSerializationException e) {
-            assertFalse(TestDeserialized.IS_DESERIALIZED);
+            assertFalse(TestDeserialized.isDeserialized);
         }
     }
 
@@ -138,7 +138,7 @@ public class ClientDeserializationProtectionTest extends HazelcastTestSupport {
             client.getMap("test").get("key");
             fail("Deserialization should have failed");
         } catch (HazelcastSerializationException e) {
-            assertFalse(TestDeserialized.IS_DESERIALIZED);
+            assertFalse(TestDeserialized.isDeserialized);
         }
     }
 
@@ -157,7 +157,7 @@ public class ClientDeserializationProtectionTest extends HazelcastTestSupport {
 
         member.getMap("test").put("key", new TestDeserialized());
         assertNotNull(client.getMap("test").get("key"));
-        assertTrue(TestDeserialized.IS_DESERIALIZED);
+        assertTrue(TestDeserialized.isDeserialized);
     }
 
     /**
@@ -179,6 +179,6 @@ public class ClientDeserializationProtectionTest extends HazelcastTestSupport {
 
         member.getMap("test").put("key", new TestDeserialized());
         assertNotNull(client.getMap("test").get("key"));
-        assertTrue(TestDeserialized.IS_DESERIALIZED);
+        assertTrue(TestDeserialized.isDeserialized);
     }
 }

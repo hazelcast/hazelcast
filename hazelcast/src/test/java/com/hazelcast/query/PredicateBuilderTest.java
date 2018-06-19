@@ -104,7 +104,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
         assertContains(result, new Id("10"));
     }
 
-    private static class Id implements Serializable {
+    private static final class Id implements Serializable {
 
         private String id;
 
@@ -138,7 +138,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
         }
     }
 
-    private static class Value implements Serializable {
+    private static final class Value implements Serializable {
 
         private String name;
 

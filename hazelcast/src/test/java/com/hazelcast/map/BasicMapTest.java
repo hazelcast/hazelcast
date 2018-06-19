@@ -88,12 +88,12 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings({"UnnecessaryBoxing", "BooleanConstructorCall"})
+    @SuppressWarnings("UnnecessaryBoxing")
     public void testBoxedPrimitives() {
         IMap<String, Object> map = getInstance().getMap("testPrimitives");
 
-        assertPutGet(map, new Boolean(true));
-        assertPutGet(map, new Boolean(false));
+        assertPutGet(map, Boolean.TRUE);
+        assertPutGet(map, Boolean.FALSE);
 
         assertPutGet(map, new Integer(10));
 

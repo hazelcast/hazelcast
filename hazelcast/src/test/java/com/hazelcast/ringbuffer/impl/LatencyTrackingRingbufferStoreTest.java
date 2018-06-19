@@ -37,17 +37,17 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class LatencyTrackingRingbufferStoreTest extends HazelcastTestSupport {
-    private static final String NAME = "somerb";
+
+    private static final String NAME = "LatencyTrackingRingbufferStoreTest";
     private static final ObjectNamespace NAMESPACE = RingbufferService.getRingbufferNamespace(NAME);
 
-    private HazelcastInstance hz;
     private StoreLatencyPlugin plugin;
     private RingbufferStore<String> delegate;
     private LatencyTrackingRingbufferStore<String> ringbufferStore;
 
     @Before
     public void setup() {
-        hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(RingbufferStore.class);
         ringbufferStore = new LatencyTrackingRingbufferStore<String>(delegate, plugin,
@@ -57,7 +57,7 @@ public class LatencyTrackingRingbufferStoreTest extends HazelcastTestSupport {
     @Test
     public void load() {
         long sequence = 1L;
-        String value = "somevalue";
+        String value = "someValue";
 
         when(delegate.load(sequence)).thenReturn(value);
 

@@ -46,11 +46,10 @@ public class AJavaSerialiazable implements Serializable {
             return false;
         }
         return Float.compare(that.f, f) == 0;
-
     }
 
     @Override
     public String toString() {
-        return "AJavaSerialiazable";
+        return "AJavaSerializable";
     }
 }

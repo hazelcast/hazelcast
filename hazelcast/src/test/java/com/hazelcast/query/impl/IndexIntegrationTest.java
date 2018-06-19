@@ -230,7 +230,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         }
     }
 
-    static class Nail implements Serializable {
+    static final class Nail implements Serializable {
         String colour;
 
         private Nail(String colour) {

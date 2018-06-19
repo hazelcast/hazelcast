@@ -37,7 +37,7 @@ public class CustomStreamSerializer implements StreamSerializer<CustomStreamSeri
 
     @Override
     public int getTypeId() {
-        return ReferenceObjects.CUSTOM_STREAM_SERILAZABLE_ID;
+        return ReferenceObjects.CUSTOM_STREAM_SERIALIZABLE_ID;
     }
 
     @Override

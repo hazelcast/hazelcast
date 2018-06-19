@@ -72,6 +72,10 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
             limb(null, new ArrayList<String>(), new Finger[]{})
     );
 
+    public ExtractionInSingleValueSpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
+        super(inMemoryFormat, index, multivalue);
+    }
+
     protected Configurator getInstanceConfigurator() {
         return new Configurator() {
             @Override
@@ -79,10 +83,6 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
                 config.getSerializationConfig().addPortableFactory(ComplexTestDataStructure.PersonPortableFactory.ID, new ComplexTestDataStructure.PersonPortableFactory());
             }
         };
-    }
-
-    public ExtractionInSingleValueSpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
-        super(inMemoryFormat, index, multivalue);
     }
 
     @Test

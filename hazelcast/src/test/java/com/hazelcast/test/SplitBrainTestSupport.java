@@ -534,8 +534,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     protected static class ReturnPiCollectionMergePolicy
             implements SplitBrainMergePolicy<Collection<Object>, MergingValue<Collection<Object>>> {
 
-        private static Collection<Object> PI_COLLECTION;
-        private static Set<Object> PI_SET;
+        private static final Collection<Object> PI_COLLECTION;
+        private static final Set<Object> PI_SET;
 
         static {
             PI_COLLECTION = new ArrayList<Object>(5);

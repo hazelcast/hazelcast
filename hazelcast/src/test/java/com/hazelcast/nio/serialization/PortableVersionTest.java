@@ -52,7 +52,6 @@ public class PortableVersionTest {
         });
         SerializationService ss1 = builder1.build();
 
-
         SerializationServiceBuilder builder2 = new DefaultSerializationServiceBuilder();
         builder2.setPortableVersion(6);
         builder2.addPortableFactory(1, new PortableFactory() {

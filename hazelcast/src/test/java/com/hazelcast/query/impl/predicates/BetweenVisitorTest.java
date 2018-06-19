@@ -145,7 +145,7 @@ public class BetweenVisitorTest {
     }
 
     @Test
-    public void whenGreatesOrEqualsThanXandLessOrEqualsThanYAndSomeOtherPredicate_thenRewriteToBetweenXandYAndSomeOtherPredicate() {
+    public void whenGreaterOrEqualsThanXandLessOrEqualsThanYAndSomeOtherPredicate_thenRewriteToBetweenXandYAndSomeOtherPredicate() {
         Predicate left = greaterEqual("attribute", 5);
         Predicate right = lessEqual("attribute", 6);
         Predicate other = lessEqual("otherAttribute", 6);

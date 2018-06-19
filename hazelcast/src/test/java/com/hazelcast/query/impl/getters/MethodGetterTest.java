@@ -182,7 +182,8 @@ public class MethodGetterTest {
     }
 
     @Test
-    public void getValue_whenModifierOnCollectionIsPositionAndElementAtGivenPositionDoesNotExist_thenReturnNull() throws Exception {
+    public void getValue_whenModifierOnCollectionIsPositionAndElementAtGivenPositionDoesNotExist_thenReturnNull()
+            throws Exception {
         MethodGetter getter = new MethodGetter(null, limbCollectionMethod, "[3]", Limb.class);
         Limb result = (Limb) getter.getValue(body);
 
@@ -319,7 +320,7 @@ public class MethodGetterTest {
         }
     }
 
-    static class Nail {
+    static final class Nail {
         String colour;
 
         private Nail(String colour) {

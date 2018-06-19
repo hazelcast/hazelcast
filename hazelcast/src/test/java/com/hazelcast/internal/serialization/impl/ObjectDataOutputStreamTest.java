@@ -17,7 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.SerializationV1Dataserializable;
+import com.hazelcast.nio.serialization.SerializationV1DataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -61,7 +61,7 @@ public class ObjectDataOutputStreamTest {
 
     @Test
     public void testSampleEncodeDecode() throws IOException {
-        SerializationV1Dataserializable testData = SerializationV1Dataserializable.createInstanceWithNonNullFields();
+        SerializationV1DataSerializable testData = SerializationV1DataSerializable.createInstanceWithNonNullFields();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1000);
         ObjectDataOutputStream output = SerializationUtil.createObjectDataOutputStream(outputStream, serializationService);
@@ -73,7 +73,7 @@ public class ObjectDataOutputStreamTest {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(buf);
         ObjectDataInputStream input = SerializationUtil.createObjectDataInputStream(inputStream, serializationService);
 
-        SerializationV1Dataserializable testDataFromSerializer = new SerializationV1Dataserializable();
+        SerializationV1DataSerializable testDataFromSerializer = new SerializationV1DataSerializable();
         testDataFromSerializer.readData(input);
 
         assertTrue(testData.equals(testDataFromSerializer));
@@ -81,7 +81,7 @@ public class ObjectDataOutputStreamTest {
 
     @Test
     public void testSampleEncodeDecode_with_null_arrays() throws IOException {
-        SerializationV1Dataserializable testData = new SerializationV1Dataserializable();
+        SerializationV1DataSerializable testData = new SerializationV1DataSerializable();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1000);
         ObjectDataOutputStream output = SerializationUtil.createObjectDataOutputStream(outputStream, serializationService);
 
@@ -92,7 +92,7 @@ public class ObjectDataOutputStreamTest {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(buf);
         ObjectDataInputStream input = SerializationUtil.createObjectDataInputStream(inputStream, serializationService);
 
-        SerializationV1Dataserializable testDataFromSerializer = new SerializationV1Dataserializable();
+        SerializationV1DataSerializable testDataFromSerializer = new SerializationV1DataSerializable();
         testDataFromSerializer.readData(input);
 
         assertTrue(testData.equals(testDataFromSerializer));

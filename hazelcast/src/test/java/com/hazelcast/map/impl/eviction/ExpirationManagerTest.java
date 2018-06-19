@@ -222,7 +222,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
 
         final AtomicInteger expirationCounter = new AtomicInteger();
 
-        IMap map = node.getMap("test");
+        IMap<Integer, Integer> map = node.getMap("test");
         map.addEntryListener(new EntryExpiredListener() {
             @Override
             public void entryExpired(EntryEvent event) {
@@ -249,7 +249,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
 
         final AtomicInteger expirationCounter = new AtomicInteger();
 
-        IMap map = node.getMap("test");
+        IMap<Integer, Integer> map = node.getMap("test");
         map.addEntryListener(new EntryExpiredListener() {
             @Override
             public void entryExpired(EntryEvent event) {
@@ -423,6 +423,9 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     }
 
     private PartitionContainer[] getPartitionContainers(HazelcastInstance instance) {
-        return ((MapService) getNodeEngineImpl(instance).getService(SERVICE_NAME)).getMapServiceContext().getPartitionContainers();
+        return ((MapService) getNodeEngineImpl(instance)
+                .getService(SERVICE_NAME))
+                .getMapServiceContext()
+                .getPartitionContainers();
     }
 }

@@ -626,10 +626,10 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
         String name;
         ChipPortable chip;
-        Portable chips[];
-        Portable emptyChips[];
-        Portable nullChips[];
-        int serial[];
+        Portable[] chips;
+        Portable[] emptyChips;
+        Portable[] nullChips;
+        int[] serial;
 
         public WheelPortable() {
         }

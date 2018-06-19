@@ -45,14 +45,14 @@ class Employee implements Portable {
     String str = "Hello world";
     String utfStr = "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム";
 
-    byte byteArray[] = {50, 100, (byte) 150, (byte) 200};
-    char charArray[] = {'c', 'h', 'a', 'r'};
-    boolean boolArray[] = {true, false, false, true};
-    short shortArray[] = {3, 4, 5};
-    int integerArray[] = {9, 8, 7, 6};
-    long longArray[] = {0, 1, 5, 7, 9, 11};
-    float floatArray[] = {0.6543f, -3.56f, 45.67f};
-    double doubleArray[] = {456.456, 789.789, 321.321};
+    byte[] byteArray = {50, 100, (byte) 150, (byte) 200};
+    char[] charArray = {'c', 'h', 'a', 'r'};
+    boolean[] boolArray = {true, false, false, true};
+    short[] shortArray = {3, 4, 5};
+    int[] integerArray = {9, 8, 7, 6};
+    long[] longArray = {0, 1, 5, 7, 9, 11};
+    float[] floatArray = {0.6543f, -3.56f, 45.67f};
+    double[] doubleArray = {456.456, 789.789, 321.321};
 
     public Employee() {
     }

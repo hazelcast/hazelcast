@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
-import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.client.impl.MemberImpl;
@@ -57,8 +57,7 @@ import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.BigEndianSerializationServieBuilder;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.BigEndianSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
@@ -708,7 +707,7 @@ public class ReferenceObjects {
         props = new Properties();
         props.setProperty("a", "b");
 
-        BigEndianSerializationServieBuilder defaultSerializationServiceBuilder = new BigEndianSerializationServieBuilder();
+        BigEndianSerializationServiceBuilder defaultSerializationServiceBuilder = new BigEndianSerializationServiceBuilder();
         SerializationService serializationService = defaultSerializationServiceBuilder
                 .setVersion(InternalSerializationService.VERSION_1).build();
 

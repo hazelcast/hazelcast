@@ -40,11 +40,11 @@ public abstract class AbstractCacheEvictionPolicyComparatorTest extends Hazelcas
 
     protected static final String CACHE_NAME = "MyCache";
 
-    abstract protected CachingProvider createCachingProvider(HazelcastInstance instance);
+    protected abstract CachingProvider createCachingProvider(HazelcastInstance instance);
 
-    abstract protected HazelcastInstance createInstance(Config config);
+    protected abstract HazelcastInstance createInstance(Config config);
 
-    abstract protected ConcurrentMap getUserContext(HazelcastInstance hazelcastInstance);
+    protected abstract ConcurrentMap getUserContext(HazelcastInstance hazelcastInstance);
 
     protected Config createConfig() {
         return new Config();

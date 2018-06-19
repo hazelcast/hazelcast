@@ -16,22 +16,6 @@
 
 package com.hazelcast.cluster;
 
-import static org.junit.Assert.assertFalse;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.nio.ByteBuffer;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.JoinConfig;
@@ -43,8 +27,21 @@ import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.annotation.QuickTest;
-
 import example.serialization.TestDeserialized;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.nio.ByteBuffer;
+
+import static org.junit.Assert.assertFalse;
 
 /**
  * Tests if deserialization blacklisting works for MutlicastService.
@@ -60,7 +57,7 @@ public class MulticastDeserializationTest {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        TestDeserialized.IS_DESERIALIZED = false;
+        TestDeserialized.isDeserialized = false;
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -90,7 +87,7 @@ public class MulticastDeserializationTest {
         Hazelcast.newHazelcastInstance(config);
         sendJoinDatagram(new TestDeserialized());
         Thread.sleep(500L);
-        assertFalse("Untrusted deserialization is possible", TestDeserialized.IS_DESERIALIZED);
+        assertFalse("Untrusted deserialization is possible", TestDeserialized.isDeserialized);
     }
 
     private void sendJoinDatagram(Object object) throws IOException {

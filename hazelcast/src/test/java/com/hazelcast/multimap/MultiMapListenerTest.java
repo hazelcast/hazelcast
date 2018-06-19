@@ -457,7 +457,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         });
     }
 
-    private static abstract class MyEntryListener extends EntryAdapter<Object, Object> {
+    private abstract static class MyEntryListener extends EntryAdapter<Object, Object> {
 
         final CountDownLatch addLatch;
         final CountDownLatch removeLatch;

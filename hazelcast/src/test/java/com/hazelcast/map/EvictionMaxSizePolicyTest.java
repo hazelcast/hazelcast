@@ -279,7 +279,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         }
     }
 
-    static public void setTestSizeEstimator(IMap map, final long oneEntryHeapCostInBytes) {
+    public static void setTestSizeEstimator(IMap map, final long oneEntryHeapCostInBytes) {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();

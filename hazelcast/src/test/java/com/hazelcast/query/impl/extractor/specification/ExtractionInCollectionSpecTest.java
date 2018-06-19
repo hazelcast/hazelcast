@@ -22,13 +22,13 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collection;
-import java.util.UUID;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -112,7 +112,7 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
     protected void doWithMap() {
         // init fully populated object to handle nulls properly
         if (mv == PORTABLE) {
-            String key = UUID.randomUUID().toString();
+            String key = UuidUtil.newUnsecureUuidString();
             map.put(key, KRUEGER.getPortable());
             map.remove(key);
         }

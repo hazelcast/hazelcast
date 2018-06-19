@@ -26,6 +26,7 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,7 +37,6 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.quorum.QuorumType.READ_WRITE;
@@ -78,52 +78,52 @@ public class MultiMapQuorumWriteTest extends AbstractQuorumTest {
 
     @Test
     public void lock_successful_whenQuorumSize_met() {
-        map(0).lock(UUID.randomUUID().toString());
+        map(0).lock(UuidUtil.newUnsecureUuidString());
     }
 
     @Test(expected = QuorumException.class)
     public void lock_failing_whenQuorumSize_notMet() {
-        map(3).lock(UUID.randomUUID().toString());
+        map(3).lock(UuidUtil.newUnsecureUuidString());
     }
 
     @Test
     public void lockWithTime_successful_whenQuorumSize_met() {
-        map(0).lock(UUID.randomUUID().toString(), 5, TimeUnit.SECONDS);
+        map(0).lock(UuidUtil.newUnsecureUuidString(), 5, TimeUnit.SECONDS);
     }
 
     @Test(expected = QuorumException.class)
     public void lockWithTime_failing_whenQuorumSize_notMet() {
-        map(3).lock(UUID.randomUUID().toString(), 5, TimeUnit.SECONDS);
+        map(3).lock(UuidUtil.newUnsecureUuidString(), 5, TimeUnit.SECONDS);
     }
 
     @Test
     public void tryLock_successful_whenQuorumSize_met() {
-        map(0).tryLock(UUID.randomUUID().toString());
+        map(0).tryLock(UuidUtil.newUnsecureUuidString());
     }
 
     @Test(expected = QuorumException.class)
     public void tryLock_failing_whenQuorumSize_notMet() {
-        map(3).tryLock(UUID.randomUUID().toString());
+        map(3).tryLock(UuidUtil.newUnsecureUuidString());
     }
 
     @Test
     public void tryLockWithTime_successful_whenQuorumSize_met() throws InterruptedException {
-        map(0).tryLock(UUID.randomUUID().toString(), 5, TimeUnit.SECONDS);
+        map(0).tryLock(UuidUtil.newUnsecureUuidString(), 5, TimeUnit.SECONDS);
     }
 
     @Test(expected = QuorumException.class)
     public void tryLockWithTime_failing_whenQuorumSize_notMet() throws InterruptedException {
-        map(3).tryLock(UUID.randomUUID().toString(), 5, TimeUnit.SECONDS);
+        map(3).tryLock(UuidUtil.newUnsecureUuidString(), 5, TimeUnit.SECONDS);
     }
 
     @Test
     public void tryLockWithLease_successful_whenQuorumSize_met() throws InterruptedException {
-        map(0).tryLock(UUID.randomUUID().toString(), 5, TimeUnit.SECONDS, 5, TimeUnit.SECONDS);
+        map(0).tryLock(UuidUtil.newUnsecureUuidString(), 5, TimeUnit.SECONDS, 5, TimeUnit.SECONDS);
     }
 
     @Test(expected = QuorumException.class)
     public void tryLockWithLease_failing_whenQuorumSize_notMet() throws InterruptedException {
-        map(3).tryLock(UUID.randomUUID().toString(), 5, TimeUnit.SECONDS, 5, TimeUnit.SECONDS);
+        map(3).tryLock(UuidUtil.newUnsecureUuidString(), 5, TimeUnit.SECONDS, 5, TimeUnit.SECONDS);
     }
 
     @Test

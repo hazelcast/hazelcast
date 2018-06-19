@@ -50,7 +50,7 @@ public class ByteArrayObjectDataOutputTest {
     private InternalSerializationService mockSerializationService;
     private ByteArrayObjectDataOutput out;
 
-    private static byte[] TEST_DATA = new byte[]{1, 2, 3};
+    private static final byte[] TEST_DATA = new byte[]{1, 2, 3};
 
     @Before
     public void before() {

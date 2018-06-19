@@ -233,9 +233,9 @@ public class DistributedObjectTest extends HazelcastTestSupport {
 
         private final AtomicBoolean init = new AtomicBoolean(false);
         private final String name;
-        private volatile boolean error = false;
+        private volatile boolean error;
 
-        protected TestInitializingObject(final String name) {
+        TestInitializingObject(final String name) {
             this.name = name;
         }
 
@@ -319,6 +319,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
     }
 
     private static class FailingInitializingObjectService implements RemoteService {
+
         static final String NAME = "FailingInitializingObjectService";
 
         @Override

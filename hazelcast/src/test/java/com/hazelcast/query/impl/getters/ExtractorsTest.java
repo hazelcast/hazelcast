@@ -60,7 +60,7 @@ public class ExtractorsTest {
 
     private Bond bond = new Bond();
 
-    private InternalSerializationService UNUSED = null;
+    private InternalSerializationService UNUSED;
 
     @Test
     public void getGetter_reflection_cachingWorks() {

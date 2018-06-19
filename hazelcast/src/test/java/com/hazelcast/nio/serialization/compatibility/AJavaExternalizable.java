@@ -61,7 +61,6 @@ public class AJavaExternalizable implements Externalizable {
             return false;
         }
         return Float.compare(that.f, f) == 0;
-
     }
 
     @Override

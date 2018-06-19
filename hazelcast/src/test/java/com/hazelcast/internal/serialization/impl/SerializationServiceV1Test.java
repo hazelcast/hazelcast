@@ -39,10 +39,10 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class SerializationServiceV1Test {
 
-    private SerializationServiceV1 serializationService;
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    private SerializationServiceV1 serializationService;
 
     @Before
     public void setup() {

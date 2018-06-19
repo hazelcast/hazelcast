@@ -222,8 +222,9 @@ public class IndexTest {
             switch (classId) {
                 case MainPortable.CLASS_ID:
                     return new MainPortable();
+                default:
+                    return null;
             }
-            return null;
         }
 
         public int getFactoryId() {
@@ -231,7 +232,7 @@ public class IndexTest {
         }
     }
 
-    private static class SerializableWithEnum implements DataSerializable {
+    private static final class SerializableWithEnum implements DataSerializable {
 
         enum City {
             ISTANBUL,
@@ -260,7 +261,7 @@ public class IndexTest {
         }
     }
 
-    private static class MainPortable implements Portable {
+    private static final class MainPortable implements Portable {
 
         public static final int CLASS_ID = 1;
 

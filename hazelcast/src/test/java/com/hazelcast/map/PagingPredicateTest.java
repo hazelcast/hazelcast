@@ -268,10 +268,20 @@ public class PagingPredicateTest extends HazelcastTestSupport {
     @Test
     public void testLargePageSizeIsNotCausingIndexOutBoundsExceptions() {
         final int[] pageSizesToCheck = new int[]{
-                Integer.MAX_VALUE / 2, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE - 1, Integer.MAX_VALUE};
+                Integer.MAX_VALUE / 2,
+                Integer.MAX_VALUE - 1000,
+                Integer.MAX_VALUE - 1,
+                Integer.MAX_VALUE,
+        };
 
-        final int[] pagesToCheck = {1, 1000,
-                                    Integer.MAX_VALUE / 2, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE - 1, Integer.MAX_VALUE};
+        final int[] pagesToCheck = new int[]{
+                1,
+                1000,
+                Integer.MAX_VALUE / 2,
+                Integer.MAX_VALUE - 1000,
+                Integer.MAX_VALUE - 1,
+                Integer.MAX_VALUE,
+        };
 
         for (int pageSize : pageSizesToCheck) {
             final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);

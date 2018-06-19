@@ -209,15 +209,13 @@ public abstract class AbstractCacheListenerTest extends org.jsr107.tck.event.Cac
 
     private static class MyCacheEntryEventFilter implements CacheEntryEventFilter<Long, String>, Serializable {
         @Override
-        public boolean evaluate(
-                CacheEntryEvent<? extends Long, ? extends String> event)
-                throws CacheEntryListenerException {
-            return event.getValue() == null ||
-                    event.getValue().contains("a") ||
-                    event.getValue().contains("e") ||
-                    event.getValue().contains("i") ||
-                    event.getValue().contains("o") ||
-                    event.getValue().contains("u");
+        public boolean evaluate(CacheEntryEvent<? extends Long, ? extends String> event) throws CacheEntryListenerException {
+            return event.getValue() == null
+                    || event.getValue().contains("a")
+                    || event.getValue().contains("e")
+                    || event.getValue().contains("i")
+                    || event.getValue().contains("o")
+                    || event.getValue().contains("u");
         }
     }
 }

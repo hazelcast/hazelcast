@@ -45,6 +45,7 @@ import static org.mockito.Mockito.mock;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DiscoveryServicePropertiesUtilTest {
+
     private static final String PROPERTY_KEY_1 = "property1";
     private static final String PROPERTY_VALUE_1 = "propertyValue1";
     private static final PropertyDefinition PROPERTY_DEFINITION_1 = new SimplePropertyDefinition(PROPERTY_KEY_1, STRING);
@@ -119,8 +120,7 @@ public class DiscoveryServicePropertiesUtilTest {
         // throw exception
     }
 
-    private static class DummyValidator
-            implements ValueValidator<String> {
+    private static class DummyValidator implements ValueValidator<String> {
 
         @Override
         public void validate(String value)
