@@ -91,10 +91,10 @@ import static java.net.URLEncoder.encode;
  */
 public class ManagementCenterService {
 
-    static final int HTTP_SUCCESS = 200;
-    static final int CONNECTION_TIMEOUT_MILLIS = 5000;
-    static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
-    static final long DEFAULT_UPDATE_INTERVAL = 3000;
+    private static final int HTTP_SUCCESS = 200;
+    private static final int CONNECTION_TIMEOUT_MILLIS = 5000;
+    private static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
+    private static final long DEFAULT_UPDATE_INTERVAL = 3000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
@@ -108,12 +108,11 @@ public class ManagementCenterService {
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
     private final ManagementCenterConnectionFactory connectionFactory;
-
+    private final AtomicReference<TimedMemberState> timedMemberState = new AtomicReference<TimedMemberState>();
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
     private volatile boolean manCenterConnectionLost;
     private volatile boolean taskPollFailed;
-    private AtomicReference<TimedMemberState> timedMemberState = new AtomicReference<TimedMemberState>();
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -370,7 +369,7 @@ public class ManagementCenterService {
             }
         }
 
-        private void sendState() throws InterruptedException, MalformedURLException {
+        private void sendState() throws MalformedURLException {
             URL url = newCollectorUrl();
             OutputStream outputStream = null;
             OutputStreamWriter writer = null;
@@ -553,7 +552,7 @@ public class ManagementCenterService {
             }
         }
 
-        public boolean processTaskAndSendResponse(int taskId, ConsoleRequest task) throws Exception {
+        private boolean processTaskAndSendResponse(int taskId, ConsoleRequest task) throws Exception {
             HttpURLConnection connection = openPostResponseConnection();
             OutputStream outputStream = connection.getOutputStream();
             final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
