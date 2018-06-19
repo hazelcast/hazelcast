@@ -16,9 +16,12 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeBuilder;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.Logger;
 import org.junit.Test;
 
@@ -26,30 +29,83 @@ import java.util.HashSet;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ProbeBuilderImplTest {
 
     @Probe
-    private long probe1;
+    private int probe1 = 1;
 
     @Probe(name = "secondProbe", level = ProbeLevel.MANDATORY, unit = ProbeUnit.BYTES)
-    private long probe2;
+    private int probe2 = 2;
+
+    @Probe(level = ProbeLevel.DEBUG)
+    private int probe3 = 3;
 
     @Test
     public void test_scanAndRegister() {
-        MetricsRegistryImpl mr = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        mr.newProbeBuilder()
+        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
+        registry.newProbeBuilder()
           .withTag("tag1", "value1")
           .scanAndRegister(this);
 
-        assertEquals(new HashSet<String>(asList(
-                "[tag1=value1,unit=count,metric=probe1]",
-                "[tag1=value1,unit=bytes,metric=secondProbe]"
-        )), mr.getNames());
+        assertProbes(registry);
     }
 
     @Test
     public void test_register() {
+        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
+        ProbeBuilder builder = registry.newProbeBuilder()
+                                       .withTag("tag1", "value1");
+        builder.register(this, "probe1", ProbeLevel.INFO, ProbeUnit.COUNT,
+                new LongProbeFunction<ProbeBuilderImplTest>() {
+                    @Override
+                    public long get(ProbeBuilderImplTest source) throws Exception {
+                        return source.probe1;
+                    }
+                });
+        builder.register(this, "secondProbe", ProbeLevel.INFO, ProbeUnit.BYTES,
+                new LongProbeFunction<ProbeBuilderImplTest>() {
+                    @Override
+                    public long get(ProbeBuilderImplTest source) throws Exception {
+                        return source.probe2;
+                    }
+                });
 
+        assertProbes(registry);
+    }
+
+    private void assertProbes(MetricsRegistryImpl registry) {
+        final String p1Name = "[tag1=value1,unit=count,metric=probe1]";
+        final String p2Name = "[tag1=value1,unit=bytes,metric=secondProbe]";
+        assertEquals(new HashSet<String>(asList(p1Name, p2Name)), registry.getNames());
+
+        registry.render(new ProbeRenderer() {
+            @Override
+            public void renderLong(String name, long value) {
+                if (p1Name.equals(name)) {
+                    assertEquals(probe1, value);
+                } else if (p2Name.equals(name)) {
+                    assertEquals(probe2, value);
+                } else {
+                    fail("Unknown metric: " + name);
+                }
+            }
+
+            @Override
+            public void renderDouble(String name, double value) {
+                fail("Unknown metric: " + name);
+            }
+
+            @Override
+            public void renderException(String name, Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            @Override
+            public void renderNoValue(String name) {
+                fail("Unknown metric: " + name);
+            }
+        });
     }
 }
