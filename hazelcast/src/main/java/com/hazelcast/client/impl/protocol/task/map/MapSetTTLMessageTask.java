@@ -23,6 +23,8 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -65,7 +67,7 @@ public class MapSetTTLMessageTask extends AbstractMapPartitionMessageTask<MapSet
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new MapPermission(parameters.name, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
