@@ -27,8 +27,10 @@ import org.junit.runners.model.Statement;
  *
  * <pre>
  * @ClassRule
- * public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-info.xml");
+ * public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
  * </pre>
+ *
+ * See log4j2-debug.xml in test resources for example.
  *
  */
 public class ChangeLoggingRule implements TestRule {
