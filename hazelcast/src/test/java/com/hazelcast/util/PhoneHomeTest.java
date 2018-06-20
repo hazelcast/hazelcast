@@ -34,12 +34,14 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.util.Map;
 
+import static java.lang.System.getenv;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -129,6 +131,8 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testShutdown() {
+        assumeFalse("Skipping. The PhoneHome is disabled by the Environment variable",
+                "false".equals(getenv("HZ_PHONE_HOME_ENABLED")));
         Config config = new Config()
                 .setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "true");
 
