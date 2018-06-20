@@ -106,11 +106,11 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
         final String mapName = randomMapName();
         HazelcastInstance instance = instances[0];
 
-        putKeys(instance, mapName, 1, 0, 100);
-        setTTL(instance, mapName, 0, 100, 0, TimeUnit.SECONDS);
-        sleepAtLeastMillis(1100);
+        putKeys(instance, mapName, 10, 0, 20);
+        setTTL(instance, mapName, 0, 20, 0, TimeUnit.SECONDS);
+        sleepAtLeastMillis(10100);
         for (int i = 0; i < NINSTANCE; i++) {
-            assertKeys(instances[i], mapName, 0, 100);
+            assertKeys(instances[i], mapName, 0, 20);
         }
     }
 
