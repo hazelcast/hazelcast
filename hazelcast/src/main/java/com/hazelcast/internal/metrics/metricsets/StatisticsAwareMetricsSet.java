@@ -48,7 +48,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class StatisticsAwareMetricsSet {
 
-    private static final int SCAN_PERIOD_SECONDS = 10;
+    private static final int SCAN_PERIOD_SECONDS = 1;
 
     private final ServiceManager serviceManager;
     private final ILogger logger;

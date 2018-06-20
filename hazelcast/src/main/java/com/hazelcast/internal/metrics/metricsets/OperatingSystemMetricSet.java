@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeBuilder;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -62,6 +63,9 @@ public final class OperatingSystemMetricSet {
 
         // value will between 0.0 and 1.0
         registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad", PERCENTAGE_MULTIPLIER);
+
+        ProbeBuilder probeBuilder = metricsRegistry.newProbeBuilder()
+                .register();
 
         metricsRegistry.register(mxBean, "os.systemLoadAverage", MANDATORY,
                 new DoubleProbeFunction<OperatingSystemMXBean>() {

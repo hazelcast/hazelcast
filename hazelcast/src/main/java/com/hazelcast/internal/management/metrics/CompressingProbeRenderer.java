@@ -70,6 +70,7 @@ public class CompressingProbeRenderer implements ProbeRenderer {
 
     @Override
     public void renderLong(String name, long value) {
+        System.out.println(name+"="+value);
         try {
             writeName(name);
             dos.writeLong(value);
@@ -80,6 +81,7 @@ public class CompressingProbeRenderer implements ProbeRenderer {
 
     @Override
     public void renderDouble(String name, double value) {
+        System.out.println(name+"="+value);
         try {
             writeName(name);
             // convert to long with specified precision
