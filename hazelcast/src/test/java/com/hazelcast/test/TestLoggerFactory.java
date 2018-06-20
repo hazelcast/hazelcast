@@ -26,39 +26,48 @@ import org.apache.logging.log4j.spi.LoggerContext;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * The factory uses log4j2 internally, however loggers always
- * return true to guards such as `isFinestEnabled()` etc.
+ * The factory uses Log4j2 internally, but its loggers always return
+ * {@code true} to guards such as {@code isFinestEnabled()} etc.
  * <p>
- * The real filtering is happening in the log4js once again.
- * Thus it covers branches guarded by is-level-enabled checks
- * yet the real logging is configurable via log4j2.xml
- *
- * It also supports changing logging configuration on-the-fly, see {@link TestLoggerFactory#changeConfigFile}
- * and
+ * The real filtering is happening in the log4js once again. Thus it
+ * covers branches guarded by is-level-enabled checks yet the real
+ * logging is configurable via {@code log4j2.xml}.
+ * <p>
+ * It also supports changing logging configuration on-the-fly, see
+ * {@link TestLoggerFactory#changeConfigFile}.
  */
 public class TestLoggerFactory extends LoggerFactorySupport {
 
     /**
-     * Log4j XML configuration being currently used. Null indicated the default Log4j behavior.
+     * Log4j XML configuration being currently used, {@code null}
+     * indicates the Log4j default behavior.
      */
     private URI configFile = null;
 
     /**
-     * Store all the logging context being created, because we need to clear them in order to change the configuration
-     * to reload it.
+     * Store all the logging context being created, because we need to
+     * clear them in order to change the configuration to reload it.
      */
     private final List<LoggerContext> loggerContexts = new ArrayList<LoggerContext>();
 
     /**
+     * Reference to a {@link Log4j2Factory}, which is used to create
+     * loggers for older Hazelcast versions.
+     */
+    private final AtomicReference<Log4j2Factory> legacyLog4j2Factory = new AtomicReference<Log4j2Factory>();
+
+    /**
      * Changes the configuration to be used.
      *
-     * @param configName The Log4j XML configuration to be used, null for default behavior.
+     * @param configName the Log4j XML configuration to be used,
+     *                   {@code null} for default behavior
      */
     public void changeConfigFile(String configName) {
         for (LoggerContext context: loggerContexts) {
@@ -74,7 +83,26 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         LoggerContext loggerContext = LogManager.getContext(null, false, configFile);
         loggerContexts.add(loggerContext);
 
-        return new DelegatingTestLogger(new Log4j2Factory.Log4j2Logger(loggerContext.getLogger(name)));
+        ILogger delegate;
+        try {
+            delegate = new Log4j2Factory.Log4j2Logger(loggerContext.getLogger(name));
+        } catch (IllegalAccessError e) {
+            // older Hazelcast versions cannot access Log4j2Logger, so we fallback to the legacy code
+            delegate = getOrCreateLegacyLog4j2Factory().getLogger(name);
+        }
+        return new DelegatingTestLogger(delegate);
+    }
+
+    private Log4j2Factory getOrCreateLegacyLog4j2Factory() {
+        Log4j2Factory factory = legacyLog4j2Factory.get();
+        if (factory != null) {
+            return factory;
+        }
+        Log4j2Factory candidate = new Log4j2Factory();
+        if (legacyLog4j2Factory.compareAndSet(null, candidate)) {
+            return candidate;
+        }
+        return legacyLog4j2Factory.get();
     }
 
     private static class DelegatingTestLogger implements ILogger {
