@@ -87,13 +87,12 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     }
 
     private long initInvocationRetryPauseMillis() {
-        long pauseTime = client.getProperties().getMillis(INVOCATION_RETRY_PAUSE_MILLIS);
-        return pauseTime > 0 ? pauseTime : Long.parseLong(INVOCATION_RETRY_PAUSE_MILLIS.getDefaultValue());
+        return client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
+
     }
 
     private long initInvocationTimeoutMillis() {
-        long waitTime = client.getProperties().getMillis(INVOCATION_TIMEOUT_SECONDS);
-        return waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
+        return client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
     }
 
     @Probe(level = MANDATORY)
@@ -124,11 +123,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         partitionService = client.getClientPartitionService();
         responseHandlerSupplier.start();
         ClientExecutionService executionService = client.getClientExecutionService();
-        long cleanResourcesMillis = client.getProperties().getMillis(CLEAN_RESOURCES_MILLIS);
-        if (cleanResourcesMillis <= 0) {
-            cleanResourcesMillis = Integer.parseInt(CLEAN_RESOURCES_MILLIS.getDefaultValue());
-
-        }
+        long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);
         executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
                 cleanResourcesMillis, MILLISECONDS);
     }

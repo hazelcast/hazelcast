@@ -184,6 +184,29 @@ public class HazelcastPropertiesTest {
     }
 
     @Test
+    public void getPositiveMillisOrDefault() {
+        String name = GroupProperty.PARTITION_TABLE_SEND_INTERVAL.getName();
+        config.setProperty(name, "-300");
+        HazelcastProperty property = new HazelcastProperty(name, "20", TimeUnit.MILLISECONDS);
+
+        long millis = defaultProperties.getPositiveMillisOrDefault(property);
+
+        assertEquals(20, millis);
+    }
+
+    @Test
+    public void getPositiveMillisOrDefaultWithManualDefault() {
+        String name = GroupProperty.PARTITION_TABLE_SEND_INTERVAL.getName();
+        config.setProperty(name, "-300");
+        HazelcastProperties properties = new HazelcastProperties(config);
+        HazelcastProperty property = new HazelcastProperty(name, "20", TimeUnit.MILLISECONDS);
+
+        long millis = properties.getPositiveMillisOrDefault(property, 50);
+
+        assertEquals(50, millis);
+    }
+
+    @Test
     public void getTimeUnit() {
         config.setProperty(GroupProperty.PARTITION_TABLE_SEND_INTERVAL.getName(), "300");
         HazelcastProperties properties = new HazelcastProperties(config);

@@ -48,11 +48,8 @@ public class HeartbeatManager implements Runnable {
         this.clientConnectionManager = clientConnectionManager;
         this.client = client;
         HazelcastProperties hazelcastProperties = client.getProperties();
-        long timeout = hazelcastProperties.getMillis(HEARTBEAT_TIMEOUT);
-        this.heartbeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
-
-        long interval = hazelcastProperties.getMillis(HEARTBEAT_INTERVAL);
-        this.heartbeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
+        this.heartbeatTimeout = hazelcastProperties.getPositiveMillisOrDefault(HEARTBEAT_TIMEOUT);
+        this.heartbeatInterval = hazelcastProperties.getPositiveMillisOrDefault(HEARTBEAT_INTERVAL);
         this.logger = client.getLoggingService().getLogger(HeartbeatManager.class);
         ClientIcmpPingConfig icmpPingConfig = client.getClientConfig().getNetworkConfig().getClientIcmpPingConfig();
         this.clientICMPManager = new ClientICMPManager(icmpPingConfig,
