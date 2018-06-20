@@ -43,7 +43,7 @@ public class JetReadMetricsMessageTask extends AbstractInvocationMessageTask<Req
     protected Operation prepareOperation() {
         // readMetrics requests are sent to member identified by address, but we want it by member UUID.
         // After a member restart, the address remains, but UUID changes. If the local member has different
-        // UUID than then intended one, fail.
+        // UUID from the intended one, fail.
         if (!parameters.uuid.equals(nodeEngine.getLocalMember().getUuid())) {
             // do not throw RetryableException here
             throw new IllegalArgumentException(

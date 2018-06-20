@@ -117,7 +117,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         when_nodeDown_then_jobRestartsFromSnapshot(true);
     }
 
-    public void when_nodeDown_then_jobRestartsFromSnapshot(boolean twoStage) throws Exception {
+    private void when_nodeDown_then_jobRestartsFromSnapshot(boolean twoStage) throws Exception {
         /* Design of this test:
 
         It uses random partitioned generator of source events. The events are Map.Entry(partitionId, timestamp).
@@ -203,11 +203,8 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         SnapshotRepository snapshotRepository = new SnapshotRepository(instance1);
         int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 2);
 
-        // wait until we have at least one snapshot
-        IMapJet<Long, Object> snapshotsMap = snapshotRepository.getSnapshotMap(job.getId());
-
-        waitForFirstSnapshot(snapshotsMap, timeout);
-        waitForNextSnapshot(snapshotsMap, timeout);
+        waitForFirstSnapshot(snapshotRepository, job.getId(), timeout);
+        waitForNextSnapshot(snapshotRepository, job.getId(), timeout);
         // wait a little more to emit something, so that it will be overwritten in the sink map
         Thread.sleep(300);
 
@@ -215,8 +212,9 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         // Now the job should detect member shutdown and restart from snapshot.
         // Let's wait until the next snapshot appears.
-        waitForNextSnapshot(snapshotsMap, (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 10));
-        waitForNextSnapshot(snapshotsMap, timeout);
+        waitForNextSnapshot(snapshotRepository, job.getId(),
+                (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 10));
+        waitForNextSnapshot(snapshotRepository, job.getId(), timeout);
 
         job.join();
 
@@ -264,7 +262,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             assertEquals(expectedMap, new HashMap<>(result));
         }
 
-        assertTrue("Snapshots map not empty after job finished", snapshotsMap.isEmpty());
+        assertTrue("Snapshots map not empty after job finished", snapshotRepository.getSnapshotMap(job.getId()).isEmpty());
     }
 
     @Test
@@ -319,19 +317,15 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(0);
         Job job = instance1.newJob(dag, config);
+        SnapshotRepository repository = new SnapshotRepository(instance1);
 
         // the first snapshot should succeed
         assertTrueEventually(() -> {
-            IMapJet<Long, SnapshotRecord> records = getSnapshotsMap(job);
+            IMap<Long, SnapshotRecord> records = repository.getSnapshotMap(job.getId());
             SnapshotRecord record = records.get(0L);
             assertNotNull("no record found for snapshot 0", record);
             assertTrue("snapshot was not successful", record.isSuccessful());
         }, 30);
-    }
-
-    private IMapJet<Long, SnapshotRecord> getSnapshotsMap(Job job) {
-        SnapshotRepository snapshotRepository = new SnapshotRepository(instance1);
-        return snapshotRepository.getSnapshotMap(job.getId());
     }
 
     private SnapshotContext getSnapshotContext(Job job) {
@@ -350,32 +344,29 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         return executionContext.snapshotContext();
     }
 
-    private void waitForFirstSnapshot(IMapJet<Long, Object> snapshotsMap, int timeout) {
+    private void waitForFirstSnapshot(SnapshotRepository sr, long jobId, int timeout) {
         assertTrueEventually(() -> assertTrue("No snapshot produced",
-                snapshotsMap.entrySet().stream()
-                            .anyMatch(en -> en.getValue() instanceof SnapshotRecord
-                                    && ((SnapshotRecord) en.getValue()).isSuccessful())), timeout);
+                sr.getAllSnapshotRecords(jobId)
+                  .stream().anyMatch(SnapshotRecord::isSuccessful)), timeout);
     }
 
-    private void waitForNextSnapshot(IMapJet<Long, Object> snapshotsMap, int timeoutSeconds) {
-        SnapshotRecord maxRecord = findMaxRecord(snapshotsMap);
+    private void waitForNextSnapshot(SnapshotRepository sr, long jobId, int timeoutSeconds) {
+        SnapshotRecord maxRecord = findMaxSuccessfulRecord(sr, jobId);
         assertNotNull("no snapshot found", maxRecord);
         // wait until there is at least one more snapshot
         assertTrueEventually(() -> {
-            SnapshotRecord currentMaxRecord = findMaxRecord(snapshotsMap);
+            SnapshotRecord currentMaxRecord = findMaxSuccessfulRecord(sr, jobId);
             assertNotNull("No snapshot record found - job likely finished", currentMaxRecord);
             assertTrue("No more snapshots produced after restart",
                     currentMaxRecord.snapshotId() > maxRecord.snapshotId());
         }, timeoutSeconds);
     }
 
-    private SnapshotRecord findMaxRecord(IMapJet<Long, Object> snapshotsMap) {
-        return snapshotsMap.entrySet().stream()
-                           .filter(en -> en.getValue() instanceof SnapshotRecord)
-                           .map(en -> (SnapshotRecord) en.getValue())
-                           .filter(SnapshotRecord::isSuccessful)
-                           .max(comparing(SnapshotRecord::snapshotId))
-                           .orElse(null);
+    private SnapshotRecord findMaxSuccessfulRecord(SnapshotRepository sr, long jobId) {
+        return sr.getAllSnapshotRecords(jobId).stream()
+                 .filter(SnapshotRecord::isSuccessful)
+                 .max(comparing(SnapshotRecord::snapshotId))
+                 .orElse(null);
     }
 
     @Test
@@ -418,13 +409,12 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                 new JobConfig().setSnapshotIntervalMillis(10)
                                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
-        IMapJet<Long, Object> snapshotsMap = snapshotRepository.getSnapshotMap(job.getId());
-        waitForFirstSnapshot(snapshotsMap, 5);
+        waitForFirstSnapshot(snapshotRepository, job.getId(), 5);
         spawn(() -> {
             for (int i = 0; i < 10; i++) {
                 job.restart();
-                waitForFirstSnapshot(snapshotsMap, 3);
-                waitForNextSnapshot(snapshotsMap, 5);
+                waitForFirstSnapshot(snapshotRepository, job.getId(), 3);
+                waitForNextSnapshot(snapshotRepository, job.getId(), 5);
                 Thread.sleep(500);
             }
             return null;

@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.aggregation.impl.MaxByAggregator;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
@@ -27,7 +26,10 @@ import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
@@ -51,6 +53,9 @@ public class SnapshotRepository {
     // key for the entry that points to the latest snapshot
     private static final long LATEST_STARTED_SNAPSHOT_ID_KEY = -1;
 
+    private static final Comparator<SnapshotRecord> SNAPSHOT_RECORD_COMPARATOR =
+            Comparator.comparing(SnapshotRecord::getId).reversed();
+
     private final JetInstance instance;
     private final ILogger logger;
 
@@ -63,7 +68,7 @@ public class SnapshotRepository {
      * Registers a new snapshot. Returns the ID for the registered snapshot
      */
     long registerSnapshot(long jobId, Collection<String> vertexNames) {
-        IMapJet<Long, Object> snapshots = getSnapshotMap(jobId);
+        IMap<Long, Object> snapshots = getSnapshotMap(jobId);
 
         SnapshotRecord record;
         do {
@@ -73,7 +78,7 @@ public class SnapshotRepository {
         return record.snapshotId();
     }
 
-    private long generateNextSnapshotId(IMapJet<Long, Object> snapshots) {
+    private long generateNextSnapshotId(IMap<Long, Object> snapshots) {
         Long snapshotId;
         long nextSnapshotId;
         do {
@@ -99,7 +104,7 @@ public class SnapshotRepository {
      * Updates status of the given snapshot. Returns the elapsed time for the snapshot.
      */
     long setSnapshotStatus(long jobId, long snapshotId, SnapshotStatus status) {
-        IMapJet<Long, SnapshotRecord> snapshots = getSnapshotMap(jobId);
+        IMap<Long, SnapshotRecord> snapshots = getSnapshotMap(jobId);
         SnapshotRecord record = compute(snapshots, snapshotId, (k, r) -> {
             r.setStatus(status);
             return r;
@@ -112,7 +117,7 @@ public class SnapshotRepository {
      */
     long setSnapshotComplete(long jobId, long snapshotId, SnapshotStatus status,
                                long numBytes, long numKeys, long numChunks) {
-        IMapJet<Long, SnapshotRecord> snapshots = getSnapshotMap(jobId);
+        IMap<Long, SnapshotRecord> snapshots = getSnapshotMap(jobId);
         SnapshotRecord record = compute(snapshots, snapshotId, (k, r) -> {
             r.snapshotComplete(status, numBytes, numKeys, numChunks);
             return r;
@@ -125,7 +130,7 @@ public class SnapshotRepository {
      */
     @Nullable
     Long latestCompleteSnapshot(long jobId) {
-        IMapJet<Long, Object> snapshotMap = getSnapshotMap(jobId);
+        IMap<Long, Object> snapshotMap = getSnapshotMap(jobId);
         MaxByAggregator<Entry<Long, Object>> entryMaxByAggregator = maxByAggregator();
         Predicate<Long, Object> completedSnapshots = (Predicate<Long, Object>) e -> {
             Object value = e.getValue();
@@ -144,8 +149,26 @@ public class SnapshotRepository {
         return map.get(LATEST_STARTED_SNAPSHOT_ID_KEY);
     }
 
-    public <T> IMapJet<Long, T> getSnapshotMap(long jobId) {
-        return instance.getMap(snapshotsMapName(jobId));
+    public <T> IMap<Long, T> getSnapshotMap(long jobId) {
+        return instance.getHazelcastInstance().getMap(snapshotsMapName(jobId));
+    }
+
+    /**
+     * Returns all {@link SnapshotRecord}s pertaining to the job.
+     * Typically there are up to 2 records:<ol>
+     *     <li>one completed snapshot
+     *     <li>zero or one snapshot in progress
+     * </ol>
+     *
+     * @param jobId the job ID
+     * @return list of SnapshotRecords, sorted by ID descendingly
+     */
+    public List<SnapshotRecord> getAllSnapshotRecords(long jobId) {
+        return getSnapshotMap(jobId).values().stream()
+                             .filter(v -> v instanceof SnapshotRecord)
+                             .map(v -> (SnapshotRecord) v)
+                             .sorted(SNAPSHOT_RECORD_COMPARATOR)
+                             .collect(Collectors.toList());
     }
 
     private MaxByAggregator<Entry<Long, Object>> maxByAggregator() {
@@ -170,7 +193,7 @@ public class SnapshotRepository {
      * @param snapshotToKeep the current snapshot to keep
      */
     void deleteAllSnapshotsExceptOne(long jobId, Long snapshotToKeep) {
-        final IMapJet<Long, SnapshotRecord> snapshotMap = getSnapshotMap(jobId);
+        final IMap<Long, SnapshotRecord> snapshotMap = getSnapshotMap(jobId);
         Predicate<Long, SnapshotRecord> predicate =
                 e -> !e.getKey().equals(LATEST_STARTED_SNAPSHOT_ID_KEY) && !e.getKey().equals(snapshotToKeep);
 
@@ -180,10 +203,10 @@ public class SnapshotRepository {
     }
 
     /**
-     * Delete a single snapshot for a given job if it exists
+     * Delete a single snapshot for a given job if it exists.
      */
     void deleteSingleSnapshot(long jobId, Long snapshotId) {
-        final IMapJet<Long, SnapshotRecord> snapshotMap = getSnapshotMap(jobId);
+        final IMap<Long, SnapshotRecord> snapshotMap = getSnapshotMap(jobId);
         SnapshotRecord record = snapshotMap.get(snapshotId);
         if (record != null) {
             deleteSnapshot(snapshotMap, record);
@@ -191,10 +214,10 @@ public class SnapshotRepository {
     }
 
     /**
-     * Delete all snapshots for a given job
+     * Delete all snapshots for a given job.
      */
     void deleteAllSnapshots(long jobId) {
-        final IMapJet<Long, SnapshotRecord> snapshotMap = getSnapshotMap(jobId);
+        final IMap<Long, SnapshotRecord> snapshotMap = getSnapshotMap(jobId);
         Predicate predicate = e -> !e.getKey().equals(LATEST_STARTED_SNAPSHOT_ID_KEY);
         for (Entry<Long, SnapshotRecord> entry : snapshotMap.entrySet(predicate)) {
             deleteSnapshotData(entry.getValue());
@@ -203,7 +226,7 @@ public class SnapshotRepository {
         snapshotMap.destroy();
     }
 
-    private void deleteSnapshot(IMapJet<Long, SnapshotRecord> map, SnapshotRecord record) {
+    private void deleteSnapshot(IMap<Long, SnapshotRecord> map, SnapshotRecord record) {
         setSnapshotStatus(record.jobId(), record.snapshotId(), SnapshotStatus.TO_DELETE);
         deleteSnapshotData(record);
         map.remove(record.snapshotId());

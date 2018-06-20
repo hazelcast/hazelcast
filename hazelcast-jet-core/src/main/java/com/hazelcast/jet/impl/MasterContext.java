@@ -180,7 +180,7 @@ public class MasterContext {
         dag.iterator().forEachRemaining(vertices::add);
         executionId = executionIdSupplier.apply(jobId);
 
-        // last started snapshot complete or not complete. The next started snapshot must be greater than this number
+        // last started snapshot, completed or not. The next started snapshot must be greater than this number
         long lastSnapshotId = NO_SNAPSHOT;
         if (isSnapshottingEnabled()) {
             Long snapshotIdToRestore = snapshotRepository.latestCompleteSnapshot(jobId);
