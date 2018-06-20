@@ -447,6 +447,8 @@ public class ManagementCenterService {
     private final class SendMetricsTask implements Callable {
         @Override
         public Object call() throws Exception {
+            logger.info("Sending metrics");
+
             URL url = newCollectorUrl();
             OutputStream outputStream = null;
             try {
