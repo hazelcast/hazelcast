@@ -15,8 +15,12 @@ public class Main extends HazelcastTestSupport {
     public static void main(String[] args) throws Exception{
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
 
-        for(int k=0;k<5;k++){
+        for(int k=0;k<3;k++){
             hz.getMap("foobar"+k).put("1","1");
+        }
+
+        for(int k=0;k<3;k++){
+            hz.getMultiMap("multimap"+k).put("1","a");
         }
 
         Node node = getNode(hz);
