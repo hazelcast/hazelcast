@@ -60,9 +60,6 @@ public final class OperatingSystemMetricSet {
         registerMethod(metricsRegistry, mxBean, "getProcessCpuLoad", "os.processCpuLoad", PERCENTAGE_MULTIPLIER);
         registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad", PERCENTAGE_MULTIPLIER);
 
-        ProbeBuilder probeBuilder = metricsRegistry.newProbeBuilder()
-                .register();
-
         metricsRegistry.register(mxBean, "os.systemLoadAverage", MANDATORY,
                 new DoubleProbeFunction<OperatingSystemMXBean>() {
                     @Override
