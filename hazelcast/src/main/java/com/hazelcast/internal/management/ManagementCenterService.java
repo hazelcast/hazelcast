@@ -72,9 +72,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -85,35 +83,32 @@ import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.net.URLEncoder.encode;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * ManagementCenterService is responsible for sending statistics data to the Management Center.
  */
 public class ManagementCenterService {
 
-    static final int HTTP_SUCCESS = 200;
-    static final int CONNECTION_TIMEOUT_MILLIS = 5000;
-    static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
-    static final long DEFAULT_UPDATE_INTERVAL = 3000;
+    private static final int HTTP_SUCCESS = 200;
+    private static final int CONNECTION_TIMEOUT_MILLIS = 5000;
+    private static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
     private final StateSendThread stateSendThread;
-    private final PrepareStateThread prepareStateThread;
     private final ILogger logger;
 
     private final ConsoleCommandHandler commandHandler;
     private final ManagementCenterConfig managementCenterConfig;
     private final ManagementCenterIdentifier identifier;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
-    private final TimedMemberStateFactory timedMemberStateFactory;
     private final ManagementCenterConnectionFactory connectionFactory;
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
     private volatile boolean manCenterConnectionLost;
     private volatile boolean taskPollFailed;
-    private AtomicReference<TimedMemberState> timedMemberState = new AtomicReference<TimedMemberState>();
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -123,8 +118,6 @@ public class ManagementCenterService {
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.taskPollThread = new TaskPollThread();
         this.stateSendThread = new StateSendThread();
-        this.prepareStateThread = new PrepareStateThread();
-        this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         this.connectionFactory = instance.node.getNodeExtension().getManagementCenterConnectionFactory();
 
         this.identifier = newManagementCenterIdentifier();
@@ -172,7 +165,6 @@ public class ManagementCenterService {
             return;
         }
 
-        timedMemberStateFactory.init();
         try {
             if (connectionFactory != null) {
                 connectionFactory.init(managementCenterConfig.getMutualAuthConfig());
@@ -182,7 +174,6 @@ public class ManagementCenterService {
         }
 
         taskPollThread.start();
-        prepareStateThread.start();
         stateSendThread.start();
         logger.info("Hazelcast will connect to Hazelcast Management Center on address: \n" + managementCenterUrl);
     }
@@ -197,7 +188,6 @@ public class ManagementCenterService {
         try {
             interruptThread(stateSendThread);
             interruptThread(taskPollThread);
-            interruptThread(prepareStateThread);
         } catch (Throwable ignored) {
             ignore(ignored);
         }
@@ -294,61 +284,30 @@ public class ManagementCenterService {
         return responseCode == HTTP_SUCCESS;
     }
 
-    private final class PrepareStateThread extends Thread {
-
-        private final long updateIntervalMs;
-
-        private PrepareStateThread() {
-            super(createThreadName(instance.getName(), "MC.State.Sender"));
-            updateIntervalMs = calcUpdateInterval();
-        }
-
-        private long calcUpdateInterval() {
-            long updateInterval = managementCenterConfig.getUpdateInterval();
-            return (updateInterval > 0) ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (isRunning()) {
-                    timedMemberState.set(timedMemberStateFactory.createTimedMemberState());
-                    sleep();
-                }
-            } catch (Throwable throwable) {
-                inspectOutOfMemoryError(throwable);
-                if (!(throwable instanceof InterruptedException)) {
-                    logger.warning("Hazelcast Management Center Service will be shutdown due to exception.", throwable);
-                    shutdown();
-                }
-            }
-        }
-
-        private void sleep() throws InterruptedException {
-            Thread.sleep(updateIntervalMs);
-        }
-    }
-
     /**
-     * Thread for sending cluster state to the Management Center.
+     * Thread for sending cluster TimedMemberState to the Management Center.
      */
     private final class StateSendThread extends Thread {
 
         private final long updateIntervalMs;
+        private final TimedMemberStateFactory timedMemberStateFactory;
 
         private StateSendThread() {
             super(createThreadName(instance.getName(), "MC.State.Sender"));
-            updateIntervalMs = calcUpdateInterval();
+            this.updateIntervalMs = calcUpdateInterval();
+            this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         }
 
         private long calcUpdateInterval() {
             long updateInterval = managementCenterConfig.getUpdateInterval();
-            return (updateInterval > 0) ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
+            return updateInterval > 0 ? SECONDS.toMillis(updateInterval) : ManagementCenterConfig.UPDATE_INTERVAL_SECONDS;
         }
 
         @Override
         public void run() {
             try {
+                timedMemberStateFactory.init();
+
                 while (isRunning()) {
                     long startMs = Clock.currentTimeMillis();
                     sendState();
@@ -370,7 +329,7 @@ public class ManagementCenterService {
             }
         }
 
-        private void sendState() throws InterruptedException, MalformedURLException {
+        private void sendState() throws MalformedURLException {
             URL url = newCollectorUrl();
             OutputStream outputStream = null;
             OutputStreamWriter writer = null;
@@ -381,20 +340,18 @@ public class ManagementCenterService {
 
                 JsonObject root = new JsonObject();
                 root.add("identifier", identifier.toJson());
-                TimedMemberState memberState = timedMemberState.get();
-                if (memberState != null) {
-                    root.add("timedMemberState", memberState.toJson());
-                    root.writeTo(writer);
+                TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
+                root.add("timedMemberState", timedMemberState.toJson());
+                root.writeTo(writer);
 
-                    writer.flush();
-                    outputStream.flush();
-                    boolean success = post(connection);
-                    if (manCenterConnectionLost && success) {
-                        logger.info("Connection to management center restored.");
-                        manCenterConnectionLost = false;
-                    } else if (!success) {
-                        manCenterConnectionLost = true;
-                    }
+                writer.flush();
+                outputStream.flush();
+                boolean success = post(connection);
+                if (manCenterConnectionLost && success) {
+                    logger.info("Connection to management center restored.");
+                    manCenterConnectionLost = false;
+                } else if (!success) {
+                    manCenterConnectionLost = true;
                 }
             } catch (Exception e) {
                 if (!manCenterConnectionLost) {
@@ -413,8 +370,8 @@ public class ManagementCenterService {
             }
 
             HttpURLConnection connection = (HttpURLConnection) (connectionFactory != null
-                ? connectionFactory.openConnection(url)
-                : url.openConnection());
+                    ? connectionFactory.openConnection(url)
+                    : url.openConnection());
 
             connection.setDoOutput(true);
             connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
@@ -584,8 +541,8 @@ public class ManagementCenterService {
                 logger.finest("Opening getTask connection:" + url);
             }
             URLConnection connection = connectionFactory != null
-                                        ? connectionFactory.openConnection(url)
-                                        : url.openConnection();
+                    ? connectionFactory.openConnection(url)
+                    : url.openConnection();
 
             connection.setRequestProperty("Connection", "keep-alive");
             return connection;
