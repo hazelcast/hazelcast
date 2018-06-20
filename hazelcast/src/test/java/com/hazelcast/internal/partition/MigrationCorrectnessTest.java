@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.ClassRule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -34,6 +36,9 @@ import static java.util.Arrays.asList;
 @Category({QuickTest.class, ParallelTest.class})
 // related issue https://github.com/hazelcast/hazelcast/issues/5444
 public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
 
     @Parameters(name = "backups:{0},nodes:{1},fragmented:{2}")
     public static Collection<Object[]> parameters() {
