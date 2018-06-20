@@ -1036,7 +1036,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         Config config = new Config();
-        long callTimeoutMillis = 3000;
+        long callTimeoutMillis = 4000;
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
