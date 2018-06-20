@@ -19,6 +19,8 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -174,4 +176,14 @@ public class GreaterLessPredicateTest {
         assertFalse(-Float.NaN < -100.0);
         assertFalse(-Float.NaN < -100.0d);
     }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(GreaterLessPredicate.class)
+            .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
+            .withRedefinedSuperclass()
+            .allFieldsShouldBeUsed()
+            .verify();
+    }
+
 }

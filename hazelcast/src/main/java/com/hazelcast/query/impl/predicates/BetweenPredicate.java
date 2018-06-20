@@ -96,11 +96,17 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof BetweenPredicate)) {
             return false;
         }
 
         BetweenPredicate that = (BetweenPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
 
         if (to != null ? !to.equals(that.to) : that.to != null) {
             return false;
@@ -109,8 +115,14 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
     }
 
     @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof BetweenPredicate);
+    }
+
+    @Override
     public int hashCode() {
-        int result = to != null ? to.hashCode() : 0;
+        int result = super.hashCode();
+        result = 31 * result + (to != null ? to.hashCode() : 0);
         result = 31 * result + (from != null ? from.hashCode() : 0);
         return result;
     }

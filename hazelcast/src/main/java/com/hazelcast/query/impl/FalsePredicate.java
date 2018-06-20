@@ -78,4 +78,17 @@ public class FalsePredicate<K, V> implements IdentifiedDataSerializable, Predica
     public int getId() {
         return PredicateDataSerializerHook.FALSE_PREDICATE;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof FalsePredicate)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

@@ -18,11 +18,14 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.predicates.BetweenPredicate;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -85,5 +88,13 @@ public class FalsePredicateTest extends HazelcastTestSupport {
     public void testToString() {
         String result = falsePredicate.toString();
         assertEquals("FalsePredicate{}", result);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(FalsePredicate.class)
+            .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
+            .allFieldsShouldBeUsed()
+            .verify();
     }
 }

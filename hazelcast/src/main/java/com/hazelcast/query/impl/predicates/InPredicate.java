@@ -121,17 +121,30 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof InPredicate)) {
             return false;
         }
 
         InPredicate that = (InPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
 
         return Arrays.equals(values, that.values);
     }
 
     @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof InPredicate);
+    }
+
+    @Override
     public int hashCode() {
-        return Arrays.hashCode(values);
+        int result = super.hashCode();
+        result = 31 * result + (Arrays.hashCode(values));
+        return result;
     }
 }

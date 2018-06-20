@@ -85,17 +85,30 @@ public class RegexPredicate extends AbstractPredicate {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof RegexPredicate)) {
             return false;
         }
 
         RegexPredicate that = (RegexPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
 
         return regex != null ? regex.equals(that.regex) : that.regex == null;
     }
 
     @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof RegexPredicate);
+    }
+
+    @Override
     public int hashCode() {
-        return regex != null ? regex.hashCode() : 0;
+        int result = super.hashCode();
+        result = 31 * result + (regex != null ? regex.hashCode() : 0);
+        return result;
     }
 }

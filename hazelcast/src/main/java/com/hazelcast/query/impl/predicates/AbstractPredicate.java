@@ -154,4 +154,26 @@ public abstract class AbstractPredicate<K, V>
     public int getFactoryId() {
         return PREDICATE_DS_FACTORY_ID;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof AbstractPredicate)) {
+            return false;
+        }
+
+        AbstractPredicate<?, ?> that = (AbstractPredicate<?, ?>) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
+        return attributeName != null ? attributeName.equals(that.attributeName) : that.attributeName == null;
+    }
+
+    public boolean canEqual(Object other) {
+        return (other instanceof AbstractPredicate);
+    }
+
+    @Override
+    public int hashCode() {
+        return attributeName != null ? attributeName.hashCode() : 0;
+    }
 }

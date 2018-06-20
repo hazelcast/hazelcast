@@ -71,4 +71,18 @@ public class TruePredicate<K, V> implements IdentifiedDataSerializable, Predicat
     public int getId() {
         return PredicateDataSerializerHook.TRUE_PREDICATE;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof TruePredicate)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
 }

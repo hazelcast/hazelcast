@@ -104,17 +104,30 @@ public class LikePredicate extends AbstractPredicate {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof LikePredicate)) {
             return false;
         }
 
         LikePredicate that = (LikePredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
 
         return expression != null ? expression.equals(that.expression) : that.expression == null;
     }
 
     @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof LikePredicate);
+    }
+
+    @Override
     public int hashCode() {
-        return expression != null ? expression.hashCode() : 0;
+        int result = super.hashCode();
+        result = 31 * result + (expression != null ? expression.hashCode() : 0);
+        return result;
     }
 }

@@ -95,17 +95,30 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof EqualPredicate)) {
             return false;
         }
 
         EqualPredicate that = (EqualPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
 
         return value != null ? value.equals(that.value) : that.value == null;
     }
 
     @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof EqualPredicate);
+    }
+
+    @Override
     public int hashCode() {
-        return value != null ? value.hashCode() : 0;
+        int result = super.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
     }
 }

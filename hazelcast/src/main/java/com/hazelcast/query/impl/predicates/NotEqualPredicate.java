@@ -65,4 +65,29 @@ public final class NotEqualPredicate extends EqualPredicate {
     public int getId() {
         return PredicateDataSerializerHook.NOTEQUAL_PREDICATE;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof NotEqualPredicate)) {
+            return false;
+        }
+
+        NotEqualPredicate that = (NotEqualPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof NotEqualPredicate);
+    }
 }

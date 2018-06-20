@@ -101,12 +101,11 @@ public final class NotPredicate
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !(o instanceof NotPredicate)) {
             return false;
         }
 
         NotPredicate that = (NotPredicate) o;
-
         return predicate != null ? predicate.equals(that.predicate) : that.predicate == null;
     }
 

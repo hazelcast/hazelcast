@@ -119,11 +119,17 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof GreaterLessPredicate)) {
             return false;
         }
 
         GreaterLessPredicate that = (GreaterLessPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
 
         if (equal != that.equal) {
             return false;
@@ -135,8 +141,14 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
     }
 
     @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof GreaterLessPredicate);
+    }
+
+    @Override
     public int hashCode() {
-        int result = value != null ? value.hashCode() : 0;
+        int result = super.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
         result = 31 * result + (equal ? 1 : 0);
         result = 31 * result + (less ? 1 : 0);
         return result;

@@ -89,12 +89,11 @@ public class InstanceOfPredicate
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !(o instanceof InstanceOfPredicate)) {
             return false;
         }
 
         InstanceOfPredicate that = (InstanceOfPredicate) o;
-
         return klass != null ? klass.equals(that.klass) : that.klass == null;
     }
 

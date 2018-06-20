@@ -199,12 +199,11 @@ public final class OrPredicate
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !(o instanceof OrPredicate)) {
             return false;
         }
 
         OrPredicate that = (OrPredicate) o;
-
         return Arrays.equals(predicates, that.predicates);
     }
 
