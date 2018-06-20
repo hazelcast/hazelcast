@@ -24,8 +24,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.spi.LoggerContext;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
@@ -55,7 +55,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
      * Store all the logging context being created, because we need to
      * clear them in order to change the configuration to reload it.
      */
-    private final List<LoggerContext> loggerContexts = new ArrayList<LoggerContext>();
+    private final Collection<LoggerContext> loggerContexts = new ConcurrentLinkedQueue<LoggerContext>();
 
     /**
      * Reference to a {@link Log4j2Factory}, which is used to create
@@ -70,7 +70,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
      *                   {@code null} for default behavior
      */
     public void changeConfigFile(String configName) {
-        for (LoggerContext context: loggerContexts) {
+        for (LoggerContext context : loggerContexts) {
             LogManager.getFactory().removeContext(context);
         }
 
