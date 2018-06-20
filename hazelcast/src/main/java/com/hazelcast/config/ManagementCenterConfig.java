@@ -23,7 +23,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class ManagementCenterConfig {
 
-    static final int UPDATE_INTERVAL = 3;
+    static final int UPDATE_INTERVAL = 1;
 
     private boolean enabled;
 
