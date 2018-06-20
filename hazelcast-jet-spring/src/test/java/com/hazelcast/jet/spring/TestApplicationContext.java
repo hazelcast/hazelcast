@@ -107,7 +107,7 @@ public class TestApplicationContext {
         assertFalse(metricsConfig.isEnabled());
         assertEquals(123, metricsConfig.getRetentionSeconds());
         assertEquals(10, metricsConfig.getCollectionIntervalSeconds());
-        assertTrue(metricsConfig.isEnabledForDataStructures());
+        assertTrue(metricsConfig.isMetricsForDataStructures());
     }
 
     private void assertHazelcastConfig(Config cfg) {

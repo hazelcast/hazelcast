@@ -34,7 +34,6 @@
     </edge-defaults>
 
     <metrics>
-
         <!-- the number of seconds the metrics will be retained on the instance -->
         <retention-seconds>5</retention-seconds>
 
@@ -44,6 +43,6 @@
         <!-- whether metrics should be collected for data structures. Metrics
             collection can have some overhead if there is a large number of data
             structures -->
-        <enabled-for-data-structures>false</enabled-for-data-structures>
+        <metrics-for-data-structures>false</metrics-for-data-structures>
     </metrics>
 </hazelcast-jet>

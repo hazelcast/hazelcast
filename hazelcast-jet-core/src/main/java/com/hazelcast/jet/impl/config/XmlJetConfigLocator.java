@@ -34,10 +34,10 @@ import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 /**
- * A support class for the {@link XmlJetConfigBuilder} to locate the client
+ * A support class for the {@link XmlJetConfigBuilder} to locate the
  * xml configuration.
  */
-final class XmlJetConfigLocator {
+public final class XmlJetConfigLocator {
 
     public static final String HAZELCAST_MEMBER_CONFIG_PROPERTY = "hazelcast.config";
     public static final String HAZELCAST_JET_CONFIG_PROPERTY = "hazelcast.jet.config";

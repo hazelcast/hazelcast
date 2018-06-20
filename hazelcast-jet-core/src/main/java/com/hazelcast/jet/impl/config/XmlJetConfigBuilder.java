@@ -40,6 +40,7 @@ import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
+import java.util.Optional;
 import java.util.Properties;
 
 import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getClientConfigStream;
@@ -219,13 +220,13 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
         }
     }
 
-    private void parseMetrics(Node edgeNode) {
+    private void parseMetrics(Node metricsNode) {
         MetricsConfig config = jetConfig.getMetricsConfig();
-        Node enabled = edgeNode.getAttributes().getNamedItem("enabled");
-        if (enabled != null) {
-            config.setEnabled(Boolean.parseBoolean(getTextContent(enabled)));
-        }
-        for (Node child : childElements(edgeNode)) {
+
+        getBooleanAttribute(metricsNode, "enabled").ifPresent(config::setEnabled);
+        getBooleanAttribute(metricsNode, "jmxEnabled").ifPresent(config::setJmxEnabled);
+
+        for (Node child : childElements(metricsNode)) {
             String name = cleanNodeName(child);
             switch (name) {
                 case "retention-seconds":
@@ -234,8 +235,8 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
                 case "collection-interval-seconds":
                     config.setCollectionIntervalSeconds(intValue(child));
                     break;
-                case "enabled-for-data-structures":
-                    config.setEnabledForDataStructures(booleanValue(child));
+                case "metrics-for-data-structures":
+                    config.setMetricsForDataStructures(booleanValue(child));
                     break;
                 default:
                     throw new AssertionError("Unrecognized XML element: " + name);
@@ -253,5 +254,9 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
 
     private boolean booleanValue(Node node) {
         return Boolean.parseBoolean(getTextContent(node));
+    }
+
+    private Optional<Boolean> getBooleanAttribute(Node node, String name) {
+        return Optional.ofNullable(node.getAttributes().getNamedItem(name)).map(this::booleanValue);
     }
 }

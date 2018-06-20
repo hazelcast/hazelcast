@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.metrics;
+package com.hazelcast.jet.impl.metrics.mancenter;
 
 public class Metric {
 

@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.metrics;
+package com.hazelcast.jet.impl.metrics.mancenter;
 
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.jet.impl.metrics.MetricsPublisher;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Bits;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -26,17 +29,24 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.function.ObjLongConsumer;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import static com.hazelcast.internal.metrics.MetricsUtil.escapeMetricNamePart;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static java.lang.Math.multiplyExact;
 
 /**
- * Probe renderer to serialize metrics to byte[] to be sent to ManCenter.
+ * Renderer to serialize metrics to byte[] to be read by ManCenter.
  * Additionally, it converts legacy metric names to {@code [metric=<oldName>]}.
  */
-public class CompressingProbeRenderer implements ProbeRenderer {
+public class ManCenterPublisher implements MetricsPublisher {
+
+    private static final int INITIAL_BUFFER_SIZE = 2 << 11; // 2kB
+    private static final int SIZE_FACTOR_NUMERATOR = 11;
+    private static final int SIZE_FACTOR_DENOMINATOR = 10;
 
     private static final int BITS_IN_BYTE = 8;
     private static final int BYTE_MASK = 0xff;
@@ -49,22 +59,45 @@ public class CompressingProbeRenderer implements ProbeRenderer {
 
     private static final short BINARY_FORMAT_VERSION = 1;
 
+    private final ILogger logger;
+    private final ObjLongConsumer<byte[]> consumer;
+
     private DataOutputStream dos;
-    private ByteArrayOutputStream baos;
-    private String lastName = "";
+    private MorePublicByteArrayOutputStream baos = new MorePublicByteArrayOutputStream(INITIAL_BUFFER_SIZE);
+    private String lastName;
     private int count;
 
-    public CompressingProbeRenderer(int estimatedBytes) {
-        Deflater compressor = new Deflater();
-        compressor.setLevel(Deflater.BEST_SPEED);
-        baos = new ByteArrayOutputStream(estimatedBytes);
-        baos.write((BINARY_FORMAT_VERSION >>> BITS_IN_BYTE) & BYTE_MASK);
-        baos.write(BINARY_FORMAT_VERSION & BYTE_MASK);
-        dos = new DataOutputStream(new DeflaterOutputStream(baos, compressor));
+    public ManCenterPublisher(
+            @Nonnull LoggingService loggingService,
+            @Nonnull ObjLongConsumer<byte[]> writeFn
+    ) {
+        this.consumer = writeFn;
+        logger = loggingService.getLogger(getClass());
+        reset(INITIAL_BUFFER_SIZE);
     }
 
     @Override
-    public void renderLong(String name, long value) {
+    public String name() {
+        return "ManCenter Collector";
+    }
+
+    private void reset(int estimatedBytes) {
+        Deflater compressor = new Deflater();
+        compressor.setLevel(Deflater.BEST_SPEED);
+        // shrink the `baos` if capacity is more than 50% larger than estimated size
+        if (baos.capacity() > multiplyExact(estimatedBytes, 3) / 2) {
+            baos = new MorePublicByteArrayOutputStream(estimatedBytes);
+        }
+        baos.reset();
+        baos.write((BINARY_FORMAT_VERSION >>> BITS_IN_BYTE) & BYTE_MASK);
+        baos.write(BINARY_FORMAT_VERSION & BYTE_MASK);
+        dos = new DataOutputStream(new DeflaterOutputStream(baos, compressor));
+        count = 0;
+        lastName = "";
+    }
+
+    @Override
+    public void publishLong(String name, long value) {
         try {
             writeName(name);
             dos.writeLong(value);
@@ -74,7 +107,7 @@ public class CompressingProbeRenderer implements ProbeRenderer {
     }
 
     @Override
-    public void renderDouble(String name, double value) {
+    public void publishDouble(String name, double value) {
         try {
             writeName(name);
             // convert to long with specified precision
@@ -108,29 +141,24 @@ public class CompressingProbeRenderer implements ProbeRenderer {
     }
 
     @Override
-    public void renderException(String name, Exception e) {
-        // ignore
-    }
-
-    @Override
-    public void renderNoValue(String name) {
-        // ignore
+    public void whenComplete() {
+        byte[] blob = getRenderedBlob();
+        consumer.accept(blob, System.currentTimeMillis());
+        logFine(logger, "Collected %,d metrics, %,d bytes", getCount(), blob.length);
+        reset(blob.length * SIZE_FACTOR_NUMERATOR / SIZE_FACTOR_DENOMINATOR);
     }
 
     public int getCount() {
         return count;
     }
 
-    public byte[] getRenderedBlob() {
+    private byte[] getRenderedBlob() {
         try {
             dos.close();
-            return baos.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e); // should never be thrown
-        } finally {
-            dos = null;
-            baos = null;
         }
+        return baos.toByteArray();
     }
 
     static Iterator<Metric> decompressingIterator(byte[] bytes) {
@@ -181,5 +209,15 @@ public class CompressingProbeRenderer implements ProbeRenderer {
                 }
             }
         };
+    }
+
+    private static class MorePublicByteArrayOutputStream extends ByteArrayOutputStream {
+        MorePublicByteArrayOutputStream(int size) {
+            super(size);
+        }
+
+        int capacity() {
+            return buf.length;
+        }
     }
 }

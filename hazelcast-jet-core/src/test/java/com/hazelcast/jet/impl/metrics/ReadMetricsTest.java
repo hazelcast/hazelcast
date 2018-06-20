@@ -22,6 +22,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
+import com.hazelcast.jet.impl.metrics.mancenter.MetricsResultSet;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.util.UuidUtil;
@@ -45,22 +46,24 @@ public class ReadMetricsTest extends JetTestSupport {
     public ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void when_readMetricsAsync() {
-        JetInstance inst = createJetMember();
+    public void when_readMetricsAsync() throws Exception {
+        JetConfig conf = new JetConfig();
+        conf.getMetricsConfig().setCollectionIntervalSeconds(1);
+        JetInstance inst = createJetMember(conf);
         JetClientInstanceImpl client = (JetClientInstanceImpl) createJetClient();
-        assertTrueEventually(() -> {
-            Member member = inst.getHazelcastInstance().getCluster().getLocalMember();
-            MetricsResultSet result = client.readMetricsAsync(member, 0).get();
-            assertFalse(result.collections().isEmpty());
+        Member member = inst.getHazelcastInstance().getCluster().getLocalMember();
+
+        long nextSequence = 0;
+        for (int i = 0; i < 3; i++) {
+            MetricsResultSet result = client.readMetricsAsync(member, nextSequence).get();
+            nextSequence = result.nextSequence();
+            // call should not return empty result - it should wait until a result is available
+            assertFalse("empty result", result.collections().isEmpty());
             assertTrue(
                     StreamSupport.stream(result.collections().get(0).spliterator(), false)
-                            .anyMatch(m -> m.key().equals("[metric=cluster.size]"))
+                                 .anyMatch(m -> m.key().equals("[metric=cluster.size]"))
             );
-
-            // immediate next call should not return empty result
-            result = client.readMetricsAsync(member, result.nextSequence()).get();
-            assertFalse(result.collections().isEmpty());
-        }, 30);
+        }
     }
 
     @Test

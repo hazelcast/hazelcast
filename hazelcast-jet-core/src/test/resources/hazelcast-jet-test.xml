@@ -35,9 +35,9 @@
        <receive-window-multiplier>996</receive-window-multiplier>
     </edge-defaults>
 
-    <metrics enabled="false">
+    <metrics enabled="false" jmxEnabled="false">
         <collection-interval-seconds>123</collection-interval-seconds>
         <retention-seconds>124</retention-seconds>
-        <enabled-for-data-structures>true</enabled-for-data-structures>
+        <metrics-for-data-structures>true</metrics-for-data-structures>
     </metrics>
 </hazelcast-jet>

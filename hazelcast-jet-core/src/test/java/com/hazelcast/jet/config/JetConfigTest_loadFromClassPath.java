@@ -54,6 +54,7 @@ public class JetConfigTest_loadFromClassPath {
         properties.setProperty("backup.count", "6");
 
         properties.setProperty("metrics.enabled", "false");
+        properties.setProperty("metrics.jmxEnabled", "false");
         properties.setProperty("metrics.retention", "124");
         properties.setProperty("metrics.collection-interval", "123");
         properties.setProperty("metrics.enabled-for-data-structures", "true");
@@ -65,8 +66,9 @@ public class JetConfigTest_loadFromClassPath {
 
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.isJmxEnabled());
         assertEquals(123, metricsConfig.getCollectionIntervalSeconds());
         assertEquals(124, metricsConfig.getRetentionSeconds());
-        assertTrue(metricsConfig.isEnabledForDataStructures());
+        assertTrue(metricsConfig.isMetricsForDataStructures());
     }
 }

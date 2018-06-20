@@ -30,9 +30,9 @@
        <property name="property2">value2</property>
     </properties>
 
-    <metrics enabled="${metrics.enabled}">
+    <metrics enabled="${metrics.enabled}" jmxEnabled="${metrics.jmxEnabled}">
         <retention-seconds>${metrics.retention}</retention-seconds>
         <collection-interval-seconds>${metrics.collection-interval}</collection-interval-seconds>
-        <enabled-for-data-structures>${metrics.enabled-for-data-structures}</enabled-for-data-structures>
+        <metrics-for-data-structures>${metrics.enabled-for-data-structures}</metrics-for-data-structures>
     </metrics>
 </hazelcast-jet>

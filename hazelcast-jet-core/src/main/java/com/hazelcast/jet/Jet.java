@@ -37,6 +37,8 @@ import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 
+import java.util.Properties;
+
 import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
 import static com.hazelcast.jet.impl.metrics.JetMetricsService.applyMetricsConfig;
 
@@ -128,6 +130,11 @@ public final class Jet {
 
         MetricsConfig metricsConfig = jetConfig.getMetricsConfig();
         applyMetricsConfig(hzConfig, metricsConfig);
+
+        Properties jetProps = jetConfig.getProperties();
+        for (String prop : jetProps.stringPropertyNames()) {
+            hzConfig.getProperties().setProperty(prop, jetProps.getProperty(prop));
+        }
     }
 
 }

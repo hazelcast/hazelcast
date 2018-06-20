@@ -19,7 +19,11 @@ package com.hazelcast.jet.impl.metrics;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.jet.config.MetricsConfig;
+import com.hazelcast.jet.impl.metrics.jmx.JmxPublisher;
+import com.hazelcast.jet.impl.metrics.mancenter.ConcurrentArrayRingbuffer;
+import com.hazelcast.jet.impl.metrics.mancenter.ManCenterPublisher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
@@ -29,20 +33,23 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static java.util.stream.Collectors.joining;
 
+/**
+ * A service to render metrics at regular intervals and store them in a
+ * ringbuffer from which the clients can read.
+ */
 public class JetMetricsService implements ManagedService, ConfigurableService<MetricsConfig> {
 
     public static final String SERVICE_NAME = "hz:impl:jetMetricsService";
-
-    private static final int INITIAL_BUFFER_SIZE = 2 << 16;
-    private static final int SIZE_FACTOR_NUMERATOR = 11;
-    private static final int SIZE_FACTOR_DENOMINATOR = 10;
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -58,6 +65,9 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
      */
     private ConcurrentArrayRingbuffer<Map.Entry<Long, byte[]>> metricsJournal;
     private MetricsConfig config;
+    private volatile ScheduledFuture<?> scheduledFuture;
+
+    private List<MetricsPublisher> publishers;
 
     public JetMetricsService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -71,29 +81,29 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        if (config.isEnabled()) {
-            int journalSize = Math.max(
-                    1, (int) Math.ceil((double) config.getRetentionSeconds() / config.getCollectionIntervalSeconds())
-            );
-            metricsJournal = new ConcurrentArrayRingbuffer<>(journalSize);
-            logger.info("Configuring metrics collection, collection interval=" + config.getCollectionIntervalSeconds()
-                    + " seconds and retention=" + config.getRetentionSeconds() + " seconds");
-            int[] lastSize = {INITIAL_BUFFER_SIZE};
-            nodeEngine.getExecutionService().scheduleWithRepetition("MetricsForManCenterCollection", () -> {
-                CompressingProbeRenderer renderer = new CompressingProbeRenderer(
-                        lastSize[0] * SIZE_FACTOR_NUMERATOR / SIZE_FACTOR_DENOMINATOR);
-                this.nodeEngine.getMetricsRegistry().render(renderer);
-                byte[] blob = renderer.getRenderedBlob();
-                lastSize[0] = blob.length;
-                metricsJournal.add(entry(System.currentTimeMillis(), blob));
-                logFine(logger, "Collected %,d metrics, %,d bytes", renderer.getCount(), blob.length);
-                OperationParker parker = nodeEngine.getService(OperationParker.SERVICE_NAME);
-                parker.unpark(notifier);
-            }, 1, config.getCollectionIntervalSeconds(), TimeUnit.SECONDS);
+        this.publishers = getPublishers();
+
+        if (publishers.isEmpty()) {
+            return;
         }
+
+        logger.info("Configuring metrics collection, collection interval=" + config.getCollectionIntervalSeconds()
+                + " seconds, retention=" + config.getRetentionSeconds() + " seconds, publishers="
+                + publishers.stream().map(MetricsPublisher::name).collect(joining(", ", "[", "]")));
+
+        ProbeRenderer renderer = new PublisherProbeRenderer();
+        scheduledFuture = nodeEngine.getExecutionService().scheduleWithRepetition("MetricsPublisher", () -> {
+            this.nodeEngine.getMetricsRegistry().render(renderer);
+            for (MetricsPublisher publisher : publishers) {
+                publisher.whenComplete();
+            }
+        }, 1, config.getCollectionIntervalSeconds(), TimeUnit.SECONDS);
     }
 
-    ConcurrentArrayRingbuffer.RingbufferSlice<Map.Entry<Long, byte[]>> readMetrics(long startSequence) {
+    /**
+     * Read metrics from the journal from the given sequence
+     */
+    public ConcurrentArrayRingbuffer.RingbufferSlice<Map.Entry<Long, byte[]>> readMetrics(long startSequence) {
         if (!config.isEnabled()) {
             throw new IllegalArgumentException("Metrics collection is not enabled");
         }
@@ -103,7 +113,7 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
     /**
      * key used for signalling pending read operations
      */
-    WaitNotifyKey waitNotifyKey() {
+    public WaitNotifyKey waitNotifyKey() {
         return notifyKey;
     }
 
@@ -113,6 +123,17 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
 
     @Override
     public void shutdown(boolean terminate) {
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
+        }
+
+        for (MetricsPublisher publisher : publishers) {
+            try {
+                publisher.shutdown();
+            } catch (Exception e) {
+                logger.warning("Error shutting down metrics publisher " + publisher.name(), e);
+            }
+        }
     }
 
     // apply MetricsConfig to HZ properties
@@ -120,14 +141,76 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
     public static void applyMetricsConfig(Config hzConfig, MetricsConfig metricsConfig) {
         if (metricsConfig.isEnabled()) {
             hzConfig.setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
-            if (metricsConfig.isEnabledForDataStructures()) {
+            if (metricsConfig.isMetricsForDataStructures()) {
                 hzConfig.setProperty(Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES.getName(), "true");
             }
         }
     }
 
-    private class MetricsNotifier implements Notifier {
+    private List<MetricsPublisher> getPublishers() {
+        List<MetricsPublisher> publishers = new ArrayList<>();
+        if (config.isEnabled()) {
+            int journalSize = Math.max(
+                    1, (int) Math.ceil((double) config.getRetentionSeconds() / config.getCollectionIntervalSeconds())
+            );
+            metricsJournal = new ConcurrentArrayRingbuffer<>(journalSize);
+            ManCenterPublisher publisher = new ManCenterPublisher(this.nodeEngine.getLoggingService(),
+                    (blob, ts) -> {
+                        metricsJournal.add(entry(ts, blob));
+                        OperationParker parker = nodeEngine.getService(OperationParker.SERVICE_NAME);
+                        parker.unpark(notifier);
+                    }
+            );
+            publishers.add(publisher);
+        }
+        if (config.isJmxEnabled()) {
+            publishers.add(new JmxPublisher(nodeEngine.getHazelcastInstance().getName(), "com.hazelcast"));
+        }
+        return publishers;
+    }
 
+    /**
+     * A probe renderer which renders the metrics to all the given publishers.
+     */
+    private class PublisherProbeRenderer implements ProbeRenderer {
+        @Override
+        public void renderLong(String name, long value) {
+            for (MetricsPublisher publisher : publishers) {
+                try {
+                    publisher.publishLong(name, value);
+                } catch (Exception e) {
+                    logError(name, value, publisher, e);
+                }
+            }
+        }
+
+        @Override
+        public void renderDouble(String name, double value) {
+            for (MetricsPublisher publisher : publishers) {
+                try {
+                    publisher.publishDouble(name, value);
+                } catch (Exception e) {
+                    logError(name, value, publisher, e);
+                }
+            }
+        }
+
+        @Override
+        public void renderException(String name, Exception e) {
+            logger.warning("Error when rendering '" + name + '\'', e);
+        }
+
+        @Override
+        public void renderNoValue(String name) {
+            // noop
+        }
+
+        private void logError(String name, Object value, MetricsPublisher publisher, Exception e) {
+            logger.fine("Error publishing metric to: " + publisher.name() + ", metric=" + name + ", value=" + value, e);
+        }
+    }
+
+    private class MetricsNotifier implements Notifier {
         @Override
         public boolean shouldNotify() {
             return true;
@@ -140,7 +223,6 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
     }
 
     private static class MetricsNotifyKey implements WaitNotifyKey {
-
         @Override
         public String getServiceName() {
             return JetMetricsService.SERVICE_NAME;
@@ -151,6 +233,4 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
             return "metricsJournal";
         }
     }
-
-
 }
