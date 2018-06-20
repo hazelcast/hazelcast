@@ -374,7 +374,7 @@ public class ManagementCenterService {
         }
 
         private void sleepIfPossible(long elapsedMs) throws InterruptedException {
-            long sleepTimeMs = updateIntervalMs - elapsedMs;
+            long sleepTimeMs = 1000 - elapsedMs;
             if (sleepTimeMs > 0) {
                 Thread.sleep(sleepTimeMs);
             }
