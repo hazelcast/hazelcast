@@ -618,8 +618,8 @@ class MapServiceContextImpl implements MapServiceContext {
         InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
         List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
         if (!interceptors.isEmpty()) {
+            value = toObject(value);
             for (MapInterceptor interceptor : interceptors) {
-                value = toObject(value);
                 interceptor.afterRemove(value);
             }
         }
