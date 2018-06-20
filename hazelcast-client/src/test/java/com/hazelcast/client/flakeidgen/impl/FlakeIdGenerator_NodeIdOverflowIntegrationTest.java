@@ -92,8 +92,8 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
         gen.newId();
     }
 
-    private void assignOverflowedNodeId(HazelcastInstance instance2) {
-        MemberImpl member = (MemberImpl) instance2.getCluster().getLocalMember();
+    private void assignOverflowedNodeId(HazelcastInstance instance) {
+        MemberImpl member = (MemberImpl) instance.getCluster().getLocalMember();
         member.setMemberListJoinVersion(100000);
     }
 }

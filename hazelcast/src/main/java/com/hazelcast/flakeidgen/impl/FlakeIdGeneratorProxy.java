@@ -224,12 +224,7 @@ public class FlakeIdGeneratorProxy
             newNodeId += nodeIdOffset;
             nextNodeIdUpdate = nanoTime + NODE_ID_UPDATE_INTERVAL_NS;
             if (newNodeId != nodeId) {
-                // we ignore possible double initialization
                 nodeId = newNodeId;
-                this.nodeId = newNodeId;
-                if (logger.isFineEnabled()) {
-                    logger.fine("Node ID assigned to '" + name + "': " + nodeId);
-                }
 
                 // If our node ID is out of range, assign NODE_ID_OUT_OF_RANGE to nodeId
                 if ((nodeId & -1 << BITS_NODE_ID) != 0) {
@@ -237,6 +232,12 @@ public class FlakeIdGeneratorProxy
                     logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
                             + "Cluster restart is recommended.");
                     nodeId = NODE_ID_OUT_OF_RANGE;
+                }
+
+                // we ignore possible double initialization
+                this.nodeId = nodeId;
+                if (logger.isFineEnabled()) {
+                    logger.fine("Node ID assigned to '" + name + "': " + nodeId);
                 }
             }
         }
