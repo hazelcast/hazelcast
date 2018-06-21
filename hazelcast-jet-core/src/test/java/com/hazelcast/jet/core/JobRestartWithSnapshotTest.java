@@ -384,14 +384,14 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         Processor p2 = processors2.next();
         assertFalse(processors2.hasNext());
 
-        TestSupport.verifyProcessor(p1).expectOutput(asList(
+        TestSupport.verifyProcessor(() -> p1).expectOutput(asList(
                 entry(0, 0),
                 entry(2, 0),
                 entry(0, 1),
                 entry(2, 1)
         ));
 
-        TestSupport.verifyProcessor(p2).expectOutput(asList(
+        TestSupport.verifyProcessor(() -> p2).expectOutput(asList(
                 entry(1, 0),
                 entry(1, 1)
         ));

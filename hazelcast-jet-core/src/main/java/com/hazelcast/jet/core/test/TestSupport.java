@@ -36,7 +36,6 @@ import java.net.UnknownHostException;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -69,8 +68,10 @@ import static java.util.stream.Collectors.toMap;
  *
  *     <li>does snapshot or snapshot+restore (optional, see below)
  *
- *     <li>calls {@link Processor#process}. The inbox always contains one item
- *     from {@code input} parameter
+ *     <li>calls {@link Processor#process}, in two scenarios:<ul>
+ *         <li>the inbox contains one input item</li>
+ *         <li>the inbox contains all input items (if snapshots are not restored)</li>
+ *     </ul>
  *
  *     <li>every time the inbox gets empty does snapshot or snapshot+restore
  *
@@ -214,16 +215,6 @@ public final class TestSupport {
     }
 
     /**
-     * @param processor a processor instance to test. {@link #disableSnapshots()}
-     *                  will be set to {@code false}, because can't have new instance after each
-     *                  restore.
-     */
-    public static TestSupport verifyProcessor(Processor processor) {
-        return new TestSupport(ProcessorSupplier.of(singletonSupplier(processor)))
-                .disableSnapshots();
-    }
-
-    /**
      * @param supplier a processor supplier create processor instances
      */
     public static TestSupport verifyProcessor(@Nonnull DistributedSupplier<Processor> supplier) {
@@ -330,7 +321,16 @@ public final class TestSupport {
         try {
             supplier.init(new TestProcessorSupplierContext());
             this.expectedOutputs = expectedOutputs;
-            runTest(doSnapshots, doSnapshots ? 1 : 0);
+            runTest(false, 0, 1);
+            if (inputs.stream().mapToInt(List::size).sum() > 0) {
+                // only run this version if there is an input
+                runTest(false, 0, Integer.MAX_VALUE);
+            }
+            if (doSnapshots) {
+                runTest(true, 1, 1);
+                runTest(true, 2, 1);
+                runTest(true, Integer.MAX_VALUE, 1);
+            }
             supplier.close(null);
         } catch (Exception e) {
             throw sneakyThrow(e);
@@ -450,34 +450,30 @@ public final class TestSupport {
         return this;
     }
 
-    private static String modeDescription(boolean doSnapshots, int doRestoreEvery) {
+    private static String modeDescription(boolean doSnapshots, int doRestoreEvery, int inboxLimit) {
+        String sInboxSize = inboxLimit == Integer.MAX_VALUE ? "unlimited" : String.valueOf(inboxLimit);
         if (!doSnapshots && doRestoreEvery == 0) {
-            return "snapshots disabled";
+            return "snapshots disabled, inboxLimit=" + sInboxSize;
         } else if (doSnapshots && doRestoreEvery == 1) {
+            assert inboxLimit == 1;
             return "snapshots enabled, restoring every snapshot";
         } else if (doSnapshots && doRestoreEvery == 2) {
+            assert inboxLimit == 1;
             return "snapshots enabled, restoring every other snapshot";
         } else if (doSnapshots && doRestoreEvery == Integer.MAX_VALUE) {
-            return "snapshots enabled, never restoring them";
+            return "snapshots enabled, never restoring them, inboxLimit=" + sInboxSize;
         } else {
             throw new IllegalArgumentException("Unknown mode, doSnapshots=" + doSnapshots + ", doRestoreEvery="
                     + doRestoreEvery);
         }
     }
 
-    private void runTest(boolean doSnapshots, int doRestoreEvery) throws Exception {
+    private void runTest(boolean doSnapshots, int doRestoreEvery, int inboxLimit) throws Exception {
         assert doSnapshots || doRestoreEvery == 0 : "Illegal combination: don't do snapshots, but do restore";
         IdleStrategy idler = new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1),
                 MILLISECONDS.toNanos(1));
         int idleCount = 0;
-        if (doSnapshots && doRestoreEvery == 1) {
-            // we do all 3 possible combinations: no snapshot, only snapshots and snapshots+restore
-            runTest(false, 0);
-            runTest(true, Integer.MAX_VALUE);
-            runTest(true, 2);
-        }
-
-        System.out.println("### Running the test, mode=" + modeDescription(doSnapshots, doRestoreEvery));
+        System.out.println("### Running the test, mode=" + modeDescription(doSnapshots, doRestoreEvery, inboxLimit));
 
         TestInbox inbox = new TestInbox();
         int inboxOrdinal = -1;
@@ -501,17 +497,27 @@ public final class TestSupport {
 
         // call the process() method
         List<ObjectWithOrdinal> input = mixInputs(inputs, priorities);
-        Iterator<ObjectWithOrdinal> inputIterator = input.iterator();
+        int inputPosition = 0;
         Watermark[] wmToProcess = {null};
-        while (inputIterator.hasNext() || !inbox.isEmpty() || wmToProcess[0] != null) {
-            if (inbox.isEmpty() && wmToProcess[0] == null && inputIterator.hasNext()) {
-                ObjectWithOrdinal objectWithOrdinal = inputIterator.next();
-                inbox.queue().add(objectWithOrdinal.item);
-                inboxOrdinal = objectWithOrdinal.ordinal;
+        while (inputPosition < input.size() || !inbox.isEmpty() || wmToProcess[0] != null) {
+            if (inbox.isEmpty() && wmToProcess[0] == null && inputPosition < input.size()) {
+                inboxOrdinal = input.get(inputPosition).ordinal;
+                for (int added = 0;
+                        inputPosition < input.size()
+                                && added < inboxLimit
+                                && inboxOrdinal == input.get(inputPosition).ordinal
+                                && (added == 0 || !(input.get(inputPosition).item instanceof Watermark));
+                        added++
+                ) {
+                    ObjectWithOrdinal objectWithOrdinal = input.get(inputPosition++);
+                    inbox.queue().add(objectWithOrdinal.item);
+                    inboxOrdinal = objectWithOrdinal.ordinal;
+                }
                 if (logInputOutput) {
-                    System.out.println(LocalTime.now() + " Input-" + objectWithOrdinal.ordinal + ": " + inbox.peek());
+                    System.out.println(LocalTime.now() + " Input-" + inboxOrdinal + ": " + inbox);
                 }
             }
+            int lastInboxSize = inbox.size();
             String methodName;
             if (wmToProcess[0] != null) {
                 methodName = "offer";
@@ -521,7 +527,7 @@ public final class TestSupport {
             } else {
                 methodName = processInbox(inbox, inboxOrdinal, isCooperative, processor, wmToProcess);
             }
-            boolean madeProgress = inbox.isEmpty() || !outbox[0].queue(0).isEmpty();
+            boolean madeProgress = inbox.size() < lastInboxSize || !outbox[0].queue(0).isEmpty();
             assertTrue(methodName + "() call without progress", !assertProgress || madeProgress);
             idleCount = idle(idler, idleCount, madeProgress);
             if (outbox[0].queue(0).size() == 1 && !inbox.isEmpty()) {
@@ -571,7 +577,7 @@ public final class TestSupport {
             List<?> expectedOutput = expectedOutputs.get(i);
             List<?> actualOutput = actualOutputs.get(i);
             if (!outputChecker.test(expectedOutput, actualOutput)) {
-                assertEquals("processor output in mode \"" + modeDescription(doSnapshots, doRestoreEvery)
+                assertEquals("processor output in mode \"" + modeDescription(doSnapshots, doRestoreEvery, inboxLimit)
                         + "\" doesn't match", listToString(expectedOutput), listToString(actualOutput));
             }
         }
@@ -790,20 +796,6 @@ public final class TestSupport {
         return list.stream()
                    .map(String::valueOf)
                    .collect(Collectors.joining("\n"));
-    }
-
-    private static DistributedSupplier<Processor> singletonSupplier(Processor processor) {
-        Processor[] processor1 = {processor};
-        return () -> {
-            if (processor1[0] == null) {
-                throw new RuntimeException("More than one instance requested");
-            }
-            try {
-                return processor1[0];
-            } finally {
-                processor1[0] = null;
-            }
-        };
     }
 
     private static class ObjectWithOrdinal {

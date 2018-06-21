@@ -83,4 +83,9 @@ public final class TestInbox implements Inbox {
     public int size() {
        return queue.size();
     }
+
+    @Override
+    public String toString() {
+        return queue.toString();
+    }
 }

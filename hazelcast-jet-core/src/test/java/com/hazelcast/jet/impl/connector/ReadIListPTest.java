@@ -55,7 +55,7 @@ public class ReadIListPTest extends JetTestSupport {
         List<Object> data = IntStream.range(0, listLength).boxed().collect(toList());
         list.addAll(data);
         TestSupport
-                .verifyProcessor(new ReadIListP(list.getName(), null))
+                .verifyProcessor(() -> new ReadIListP(list.getName(), null))
                 .jetInstance(instance)
                 .disableSnapshots()
                 .disableLogging()
