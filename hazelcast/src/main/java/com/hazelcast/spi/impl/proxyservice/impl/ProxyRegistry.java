@@ -17,12 +17,14 @@
 package com.hazelcast.spi.impl.proxyservice.impl;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.EmptyStatement;
 
@@ -50,7 +52,29 @@ public final class ProxyRegistry {
     ProxyRegistry(ProxyServiceImpl proxyService, String serviceName) {
         this.proxyService = proxyService;
         this.serviceName = serviceName;
-        this.service = proxyService.nodeEngine.getService(serviceName);
+        this.service = getService(proxyService.nodeEngine, serviceName);
+    }
+
+    /**
+     * Returns the service for the given {@code serviceName} or throws an
+     * exception. This method never returns {@code null}.
+     *
+     * @param nodeEngine  the node engine
+     * @param serviceName the remote service name
+     * @return the service instance
+     * @throws HazelcastException                  if there is no service with the given name
+     * @throws HazelcastInstanceNotActiveException if this instance is shutting down
+     */
+    private RemoteService getService(NodeEngineImpl nodeEngine, String serviceName) {
+        try {
+            return nodeEngine.getService(serviceName);
+        } catch (HazelcastException e) {
+            if (!nodeEngine.isRunning()) {
+                throw new HazelcastInstanceNotActiveException(e.getMessage());
+            } else {
+                throw e;
+            }
+        }
     }
 
     /**
