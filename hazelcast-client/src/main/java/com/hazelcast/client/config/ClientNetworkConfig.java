@@ -46,6 +46,7 @@ public class ClientNetworkConfig {
     private SocketOptions socketOptions = new SocketOptions();
     private SSLConfig sslConfig;
     private ClientAwsConfig clientAwsConfig;
+    private ClientCloudConfig cloudConfig = new ClientCloudConfig();
     private DiscoveryConfig discoveryConfig;
     private Collection<String> outboundPortDefinitions;
     private Collection<Integer> outboundPorts;
@@ -318,6 +319,13 @@ public class ClientNetworkConfig {
         return clientAwsConfig;
     }
 
+    public ClientCloudConfig getCloudConfig() {
+        return cloudConfig;
+    }
+
+    public void setCloudConfig(ClientCloudConfig cloudConfig) {
+        this.cloudConfig = cloudConfig;
+    }
 
     /**
      * Returns the outbound port definitions. It is possible that null is returned if not defined.

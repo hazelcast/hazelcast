@@ -18,6 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
+import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
@@ -216,7 +217,11 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("icmp-ping".equals(nodeName)) {
                     createAndFillBeanBuilder(child, ClientIcmpPingConfig.class,
                             "clientIcmpPingConfig", clientNetworkConfig);
+                } else if ("hazelcast-cloud".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, ClientCloudConfig.class,
+                            "cloudConfig", clientNetworkConfig);
                 }
+
             }
             clientNetworkConfig.addPropertyValue("addresses", members);
 

@@ -112,6 +112,9 @@
             <max-attempts>5</max-attempts>
             <echo-fail-fast-on-startup>false</echo-fail-fast-on-startup>
         </icmp-ping>
+        <hazelcast-cloud enabled="false">
+            <discovery-token>EXAMPLE_TOKEN</discovery-token>
+        </hazelcast-cloud>
     </network>
 
     <executor-pool-size>40</executor-pool-size>

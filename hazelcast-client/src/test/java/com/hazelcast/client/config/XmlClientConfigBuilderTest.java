@@ -490,6 +490,20 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(true, icmpPingConfig.isEchoFailFastOnStartup());
     }
 
+    @Test
+    public void testCloudConfig() {
+        ClientCloudConfig cloudConfig = fullClientConfig.getNetworkConfig().getCloudConfig();
+        assertEquals(false, cloudConfig.isEnabled());
+        assertEquals("EXAMPLE_TOKEN", cloudConfig.getDiscoveryToken());
+    }
+
+    @Test
+    public void testCloudConfig_defaults() {
+        ClientCloudConfig cloudConfig = defaultClientConfig.getNetworkConfig().getCloudConfig();
+        assertEquals(false, cloudConfig.isEnabled());
+        assertEquals(null, cloudConfig.getDiscoveryToken());
+    }
+
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, ClientConfig clientConfig) {
         return clientConfig.getNearCacheConfig(mapName).getEvictionConfig().getEvictionPolicy();
     }
