@@ -288,6 +288,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         ThreadMetricSet.register(metricsRegistry);
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
+        metricsRegistry.scanAndRegister(clientExtension.getMemoryStats(), "memory");
         return metricsRegistry;
     }
 
