@@ -32,10 +32,13 @@ public interface MapEventPublisher {
     /**
      * Notifies the WAN subsystem of a map update on a replica owner.
      *
-     * @param mapName   the map name
-     * @param entryView the updated entry
+     * @param mapName           the map name
+     * @param entryView         the updated entry
+     * @param hasLoadProvenance {@code true} to indicate the provenance of
+     *                          update is a load from map-loader, otherwise
+     *                          set {@code false}
      */
-    void publishWanUpdate(String mapName, EntryView<Data, Data> entryView);
+    void publishWanUpdate(String mapName, EntryView<Data, Data> entryView, boolean hasLoadProvenance);
 
     /**
      * Notifies the WAN subsystem of a map entry removal on a replica owner.

@@ -37,7 +37,6 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Clock;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationPublisher;
 
@@ -49,6 +48,7 @@ import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.event.AbstractFilteringStrategy.FILTER_DOES_NOT_MATCH;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
 public class MapEventPublisherImpl implements MapEventPublisher {
@@ -90,13 +90,15 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     @Override
-    public void publishWanUpdate(String mapName, EntryView<Data, Data> entryView) {
+    public void publishWanUpdate(String mapName,
+                                 EntryView<Data, Data> entryView, boolean hasLoadProvenance) {
         if (!isOwnedPartition(entryView.getKey())) {
             return;
         }
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        MapReplicationUpdate event = new MapReplicationUpdate(mapName, mapContainer.getWanMergePolicy(), entryView);
+        Object wanMergePolicy = mapContainer.getWanMergePolicy();
+        MapReplicationUpdate event = new MapReplicationUpdate(mapName, wanMergePolicy, entryView);
         publishWanEvent(mapName, event);
     }
 
@@ -106,7 +108,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
             return;
         }
 
-        MapReplicationRemove event = new MapReplicationRemove(mapName, key, Clock.currentTimeMillis());
+        MapReplicationRemove event = new MapReplicationRemove(mapName, key, currentTimeMillis());
         publishWanEvent(mapName, event);
     }
 

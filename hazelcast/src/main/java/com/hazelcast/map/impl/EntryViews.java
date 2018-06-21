@@ -87,9 +87,9 @@ public final class EntryViews {
                 .setLastStoredTime(record.getLastStoredTime());
     }
 
-    public static <K, V> EntryView<K, V> convertToLazyEntryView(EntryView<K, V> entryView,
-                                                                SerializationService serializationService,
-                                                                MapMergePolicy mergePolicy) {
+    public static <K, V> EntryView<K, V> toLazyEntryView(EntryView<K, V> entryView,
+                                                         SerializationService serializationService,
+                                                         MapMergePolicy mergePolicy) {
         return new LazyEntryView<K, V>(entryView.getKey(), entryView.getValue(), serializationService, mergePolicy)
                 .setCost(entryView.getCost())
                 .setVersion(entryView.getVersion())
