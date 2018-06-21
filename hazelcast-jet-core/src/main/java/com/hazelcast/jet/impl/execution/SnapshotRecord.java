@@ -106,6 +106,10 @@ public class SnapshotRecord implements IdentifiedDataSerializable {
         return startTime;
     }
 
+    public long endTime() {
+        return endTime;
+    }
+
     public boolean isSuccessful() {
         return status == SUCCESSFUL;
     }
