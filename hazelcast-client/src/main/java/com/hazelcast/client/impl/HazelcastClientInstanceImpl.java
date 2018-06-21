@@ -27,6 +27,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressProvider;
+import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
@@ -46,6 +47,7 @@ import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
+import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -53,9 +55,13 @@ import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
+import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.spi.impl.NonSmartClientInvocationService;
 import com.hazelcast.client.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
+import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
+import com.hazelcast.client.spi.impl.discovery.HazelcastCloudAddressProvider;
+import com.hazelcast.client.spi.impl.discovery.HazelcastCloudAddressTranslator;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.spi.impl.listener.NonSmartClientListenerService;
 import com.hazelcast.client.spi.impl.listener.SmartClientListenerService;
@@ -67,7 +73,6 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -79,7 +84,6 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -102,6 +106,8 @@ import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
@@ -162,6 +168,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -169,6 +176,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
+import static com.hazelcast.client.spi.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -243,8 +251,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         partitionService = new ClientPartitionServiceImpl(this);
         discoveryService = initDiscoveryService(config);
         Collection<AddressProvider> addressProviders = createAddressProviders(externalAddressProvider);
+        AddressTranslator addressTranslator = createAddressTranslator();
         connectionManager = (ClientConnectionManagerImpl) clientConnectionManagerFactory
-                .createConnectionManager(config, this, discoveryService, addressProviders);
+                .createConnectionManager(this, addressTranslator, addressProviders);
         clusterService = new ClientClusterServiceImpl(this);
 
         int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
@@ -265,6 +274,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExceptionFactory = initClientExceptionFactory();
         statistics = new Statistics(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
+    }
+
+    private int getConnectionTimeoutMillis() {
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        int connTimeout = networkConfig.getConnectionTimeout();
+        return connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
     }
 
     private Diagnostics initDiagnostics() {
@@ -288,7 +303,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private Collection<AddressProvider> createAddressProviders(AddressProvider externalAddressProvider) {
         ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
-        final ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
         Collection<AddressProvider> addressProviders = new LinkedList<AddressProvider>();
 
         if (externalAddressProvider != null) {
@@ -299,18 +313,96 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             addressProviders.add(new DiscoveryAddressProvider(discoveryService, loggingService));
         }
 
+        ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
+        AwsAddressProvider awsAddressProvider = initAwsAddressProvider(awsConfig);
+        if (awsAddressProvider != null) {
+            addressProviders.add(awsAddressProvider);
+        }
+
+        HazelcastCloudAddressProvider cloudAddressProvider = initCloudAddressProvider();
+        if (cloudAddressProvider != null) {
+            addressProviders.add(cloudAddressProvider);
+        }
+
+        addressProviders.add(new DefaultAddressProvider(networkConfig, addressProviders.isEmpty()));
+        return addressProviders;
+    }
+
+    private HazelcastCloudAddressProvider initCloudAddressProvider() {
+        String cloudDiscoveryToken = properties.getString(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN);
+        if (cloudDiscoveryToken != null) {
+            return new HazelcastCloudAddressProvider(cloudDiscoveryToken, getConnectionTimeoutMillis(), loggingService);
+        }
+        return null;
+    }
+
+    private AwsAddressProvider initAwsAddressProvider(ClientAwsConfig awsConfig) {
         if (awsConfig != null && awsConfig.isEnabled()) {
             try {
-                addressProviders.add(new AwsAddressProvider(awsConfig, loggingService));
+                return new AwsAddressProvider(awsConfig, loggingService);
             } catch (NoClassDefFoundError e) {
                 ILogger logger = loggingService.getLogger(HazelcastClient.class);
                 logger.warning("hazelcast-aws.jar might be missing!");
                 throw e;
             }
         }
+        return null;
+    }
 
-        addressProviders.add(new DefaultAddressProvider(networkConfig, addressProviders.isEmpty()));
-        return addressProviders;
+    private AddressTranslator createAddressTranslator() {
+        ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
+        ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
+
+        List<String> addresses = networkConfig.getAddresses();
+        boolean addressListProvided = addresses.size() != 0;
+        boolean awsDiscoveryEnabled = awsConfig != null && awsConfig.isEnabled();
+        boolean discoverySpiEnabled = discoveryService != null;
+        String cloudToken = properties.getString(HAZELCAST_CLOUD_DISCOVERY_TOKEN);
+        boolean hazelcastCloudEnabled = cloudToken != null;
+        isDiscoveryConfigurationConsistent(addressListProvided, awsDiscoveryEnabled,
+                discoverySpiEnabled, hazelcastCloudEnabled);
+
+        if (awsDiscoveryEnabled) {
+            try {
+                return new AwsAddressTranslator(awsConfig, loggingService);
+            } catch (NoClassDefFoundError e) {
+                ILogger logger = loggingService.getLogger(HazelcastClient.class);
+                logger.warning("hazelcast-aws.jar might be missing!");
+                throw e;
+            }
+        } else if (discoverySpiEnabled) {
+            return new DiscoveryAddressTranslator(discoveryService,
+                    getProperties().getBoolean(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
+        } else if (hazelcastCloudEnabled) {
+            return new HazelcastCloudAddressTranslator(cloudToken, getConnectionTimeoutMillis(), loggingService);
+        }
+
+        return new DefaultAddressTranslator();
+    }
+
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+    private void isDiscoveryConfigurationConsistent(boolean addressListProvided, boolean awsDiscoveryEnabled,
+                                                    boolean discoverySpiEnabled, boolean hazelcastCloudEnabled) {
+        int count = 0;
+        if (addressListProvided) {
+            count++;
+        }
+        if (awsDiscoveryEnabled) {
+            count++;
+        }
+        if (discoverySpiEnabled) {
+            count++;
+        }
+        if (hazelcastCloudEnabled) {
+            count++;
+        }
+        if (count > 1) {
+            throw new IllegalStateException("Only one discovery method can be enabled at a time. "
+                    + "cluster members given explicitly : " + addressListProvided
+                    + ", aws discovery enabled : " + awsDiscoveryEnabled
+                    + ", discovery spi enabled : " + discoverySpiEnabled
+                    + ", hazelcast.cloud enabled : " + hazelcastCloudEnabled);
+        }
     }
 
     private DiscoveryService initDiscoveryService(ClientConfig config) {

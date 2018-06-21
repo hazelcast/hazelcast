@@ -183,6 +183,13 @@ public final class ClientProperty {
     public static final HazelcastProperty RESPONSE_THREAD_COUNT
             = new HazelcastProperty("hazelcast.client.response.thread.count", 2);
 
+
+    /**
+     * Token to use when discovering cluster via hazelcast.cloud
+     */
+    public static final HazelcastProperty HAZELCAST_CLOUD_DISCOVERY_TOKEN =
+            new HazelcastProperty("hazelcast.client.cloud.discovery.token");
+
     private ClientProperty() {
     }
 }
