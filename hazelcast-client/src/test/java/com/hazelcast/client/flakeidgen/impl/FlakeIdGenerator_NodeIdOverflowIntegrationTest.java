@@ -18,6 +18,7 @@ package com.hazelcast.client.flakeidgen.impl;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -28,6 +29,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,6 +46,16 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
     public ExpectedException exception = ExpectedException.none();
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private HazelcastInstance instance2;
+    private HazelcastInstance instance1;
+
+    @Before
+    public void before() {
+        Config cfg = new Config();
+        cfg.getFlakeIdGeneratorConfig("gen").setPrefetchCount(1);
+        instance1 = factory.newHazelcastInstance(cfg);
+        instance2 = factory.newHazelcastInstance(cfg);
+    }
 
     @After
     public void after() {
@@ -51,7 +63,7 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
     }
 
     @Test
-    public void when_memberOutOfRangeNodeId_then_theOtherMemberUsed() throws Exception {
+    public void when_memberOutOfRangeNodeId_then_theOtherMemberUsed() {
         // Design of this test: we create two members. To one of them, out-of-range memberListJoinVersion
         // is assigned. This causes the client message to fail and the client will retry with another member
         // and will never again try the failed member.
@@ -59,8 +71,6 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
         // Probability of initially choosing a good member and not going through the process of choosing another
         // one is 50%. To avoid false success, we retry 10 times, which gives the probability of false success
         // of 0.1%.
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
         assignOverflowedNodeId(instance2);
 
         ClientConfig clientConfig = new ClientConfig();
@@ -79,8 +89,6 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
 
     @Test
     public void when_allMembersOutOfRangeNodeId_then_error() {
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
         assignOverflowedNodeId(instance1);
         assignOverflowedNodeId(instance2);
 
@@ -92,7 +100,7 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
         gen.newId();
     }
 
-    private void assignOverflowedNodeId(HazelcastInstance instance2) {
+    private static void assignOverflowedNodeId(HazelcastInstance instance2) {
         MemberImpl member = (MemberImpl) instance2.getCluster().getLocalMember();
         member.setMemberListJoinVersion(100000);
     }
