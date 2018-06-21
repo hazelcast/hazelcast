@@ -202,7 +202,7 @@ public class NodeEngineImpl implements NodeEngine {
         if (node.getProperties().getBoolean(METRICS_DISTRIBUTED_DATASTRUCTURES)) {
             new StatisticsAwareMetricsSet(serviceManager, this).register(metricsRegistry);
         }
-
+        metricsRegistry.scanAndRegister(node.getNodeExtension().getMemoryStats(), "memory");
         metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
 
         serviceManager.start();
@@ -505,7 +505,7 @@ public class NodeEngineImpl implements NodeEngine {
     private class ConnectionManagerPacketConsumer implements Consumer<Packet> {
 
         @Override
-        public void accept(Packet packet)  {
+        public void accept(Packet packet) {
             // ConnectionManager is only available after the NodeEngineImpl is available
             Consumer<Packet> packetConsumer = (Consumer<Packet>) node.getConnectionManager();
             packetConsumer.accept(packet);
@@ -517,7 +517,7 @@ public class NodeEngineImpl implements NodeEngine {
         private volatile Consumer<Packet> packetConsumer;
 
         @Override
-        public void accept(Packet packet)  {
+        public void accept(Packet packet) {
             // currently service registration is done after the creation of the packet dispatcher,
             // hence we need to lazily initialize the JetPacketConsumer
             if (packetConsumer == null) {
