@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -39,8 +40,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -169,7 +171,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
             }
         });
 
-        verify(errorHandler).onError(any(NioChannel.class), any(OutOfMemoryError.class));
+        verify(errorHandler).onError((Channel) isNull(), any(OutOfMemoryError.class));
     }
 
     @Test
