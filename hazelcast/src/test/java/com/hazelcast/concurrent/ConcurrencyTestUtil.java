@@ -17,10 +17,8 @@
 package com.hazelcast.concurrent;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
-import com.hazelcast.concurrent.atomiclong.AtomicLongProxy;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceProxy;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -33,15 +31,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.test.HazelcastTestSupport.getFirstBackupInstance;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.test.HazelcastTestSupport.getPartitionIdViaReflection;
 
-@SuppressWarnings("WeakerAccess")
 public final class ConcurrencyTestUtil {
 
     private ConcurrencyTestUtil() {
     }
 
     /**
-     * Returns the backup instance of an {@link IAtomicLong} by a given atomic long name.
+     * Returns the backup instance of an {@link IAtomicLong} by a given atomic long instance.
      * <p>
      * Note: Returns the backups from the first replica index.
      *
@@ -50,7 +48,7 @@ public final class ConcurrencyTestUtil {
      * @return the backup {@link AtomicLong}
      */
     public static AtomicLong getAtomicLongBackup(HazelcastInstance[] instances, IAtomicLong atomicLong) {
-        int partitionId = ((AtomicLongProxy) atomicLong).getPartitionId();
+        int partitionId = getPartitionIdViaReflection(atomicLong);
         HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
         return getAtomicLongBackup(backupInstance, atomicLong.getName());
     }
@@ -82,7 +80,7 @@ public final class ConcurrencyTestUtil {
      */
     public static <E> AtomicReference<E> getAtomicReferenceBackup(HazelcastInstance[] instances,
                                                                   IAtomicReference<E> atomicReference) {
-        int partitionId = ((AtomicReferenceProxy) atomicReference).getPartitionId();
+        int partitionId = getPartitionIdViaReflection(atomicReference);
         HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
         return getAtomicReferenceBackup(backupInstance, atomicReference.getName());
     }

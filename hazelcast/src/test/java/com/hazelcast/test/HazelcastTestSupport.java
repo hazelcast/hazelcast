@@ -56,6 +56,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.jitter.JitterRule;
+import com.hazelcast.test.starter.HazelcastStarter;
 import com.hazelcast.util.UuidUtil;
 import org.junit.After;
 import org.junit.AssumptionViolatedException;
@@ -88,6 +89,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -288,6 +290,26 @@ public abstract class HazelcastTestSupport {
         return new Packet(serializationService.toBytes(operation), operation.getPartitionId())
                 .setPacketType(Packet.Type.OPERATION)
                 .setConn(connectionManager.getConnection(getAddress(remote)));
+    }
+
+    /**
+     * Returns the partition ID from a non-partitioned Hazelcast data
+     * structures like {@link com.hazelcast.core.ISet}.
+     * <p>
+     * The partition ID is read via reflection from the internal
+     * {@code partitionId} field. This is needed to support proxied
+     * Hazelcast instances from {@link HazelcastStarter}.
+     *
+     * @param hazelcastDataStructure the Hazelcast data structure instance
+     * @return the partition ID of that data structure
+     */
+    public static int getPartitionIdViaReflection(Object hazelcastDataStructure) {
+        try {
+            return (Integer) getFieldValueReflectively(hazelcastDataStructure, "partitionId");
+        } catch (IllegalAccessException e) {
+            throw new AssertionError("Cannot retrieve partitionId field from class "
+                    + hazelcastDataStructure.getClass().getName());
+        }
     }
 
     public static HazelcastInstance getFirstBackupInstance(HazelcastInstance[] instances, int partitionId) {
