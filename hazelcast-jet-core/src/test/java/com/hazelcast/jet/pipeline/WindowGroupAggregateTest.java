@@ -19,10 +19,12 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedTriFunction;
@@ -30,6 +32,7 @@ import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.pipeline.BatchAggregateTest.QuadFunction;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -51,6 +54,8 @@ import static com.hazelcast.jet.pipeline.WindowDefinition.session;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static java.lang.Math.min;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 import static org.junit.Assert.assertEquals;
@@ -177,6 +182,38 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         List<String> expected = concat(headOfStream, restOfStream).collect(toList());
         Map<String, Integer> expectedBag = toBag(expected);
         assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()));
+    }
+
+    @Test
+    public void slidingWindow_twoAggregations() {
+        // Given
+        for (int i = 0; i < 3; i++) {
+            srcMap.put("key", i);
+        }
+        addToSrcMapJournal(closingItems);
+        // When
+        mapJournalSrcStage
+                .addTimestamps(i -> i, 0)
+                .flatMap(i -> Traverser.over(entry("a", "a" + i), entry("b", "b" + i)))
+                .groupingKey(Entry::getKey)
+                .window(sliding(2, 1))
+                .aggregate(AggregateOperations.mapping(Entry::getValue, AggregateOperations.toList()))
+                .map(TimestampedEntry::getValue)
+                .window(tumbling(1))
+                .aggregate(AggregateOperations.toSet())
+                .drainTo(sink);
+
+        // Then
+        jet().newJob(p);
+        assertTrueEventually(() -> assertEquals(
+                asList(
+                        new TimestampedItem<>(1, new HashSet<>(asList(singletonList("a0"), singletonList("b0")))),
+                        new TimestampedItem<>(2, new HashSet<>(asList(asList("a0", "a1"), asList("b0", "b1")))),
+                        new TimestampedItem<>(3, new HashSet<>(asList(asList("a1", "a2"), asList("b1", "b2")))),
+                        new TimestampedItem<>(4, new HashSet<>(asList(singletonList("a2"), singletonList("b2"))))
+                ),
+                asList(sinkList.toArray())
+        ), 5);
     }
 
     @Test
@@ -579,10 +616,5 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 .collect(toList());
         Map<String, Integer> expectedBag = toBag(expected);
         assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()));
-    }
-
-    static <T> T log(String msg, T item) {
-        System.out.println(msg + ": " + item);
-        return item;
     }
 }

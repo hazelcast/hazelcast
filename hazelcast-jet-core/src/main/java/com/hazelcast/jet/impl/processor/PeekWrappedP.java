@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
+import com.hazelcast.jet.impl.pipeline.JetEvent;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 
@@ -34,6 +35,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlan.createLoggerName;
+import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
  * Internal API, see {@link DiagnosticProcessors}.
@@ -97,10 +99,12 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
         }
     }
 
-    private void log(String prefix, T object) {
-        // null object can come from poll()
-        if (object != null && shouldLogFn.test(object)) {
-            logger.info(prefix + ": " + toStringFn.apply(object));
+    private void log(String prefix, @Nonnull T object) {
+        if (shouldLogFn.test(object)) {
+            logger.info(prefix + ": " + toStringFn.apply(object)
+                    + (object instanceof JetEvent
+                            ? " (eventTime=" + toLocalTime(((JetEvent) object).timestamp()) + ")"
+                            : ""));
         }
     }
 
@@ -152,7 +156,7 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
             return res;
         }
 
-        private void log(T res) {
+        private void log(@Nonnull T res) {
             PeekWrappedP.this.log("Input from ordinal " + ordinal, res);
         }
 

@@ -287,16 +287,18 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     <R, OUT> WindowResultFunction<? super R, JetEvent<OUT>> adaptWindowResultFn(
             WindowResultFunction<? super R, ? extends OUT> windowResultFn
     ) {
+        // use `winEnd - 1` for jetEvent, see https://github.com/hazelcast/hazelcast-jet/issues/898
         return (long winStart, long winEnd, R windowResult) ->
-                jetEvent(windowResultFn.apply(winStart, winEnd, windowResult), winEnd);
+                jetEvent(windowResultFn.apply(winStart, winEnd, windowResult), winEnd - 1);
     }
 
     @Override
     <K, R, OUT> KeyedWindowResultFunction<? super K, ? super R, JetEvent<OUT>> adaptKeyedWindowResultFn(
             KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> keyedWindowResultFn
     ) {
+        // use `winEnd - 1` for jetEvent, see https://github.com/hazelcast/hazelcast-jet/issues/898
         return (long winStart, long winEnd, K key, R windowResult) ->
-                jetEvent(keyedWindowResultFn.apply(winStart, winEnd, key, windowResult), winEnd);
+                jetEvent(keyedWindowResultFn.apply(winStart, winEnd, key, windowResult), winEnd - 1);
     }
 
     @Nonnull

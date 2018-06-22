@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.impl.pipeline.JetEvent;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import org.junit.Before;
@@ -41,6 +42,8 @@ import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekInputP;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutputP;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekSnapshotP;
 import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
+import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
+import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -55,6 +58,8 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class PeekingWrapperTest {
 
+    private static final JetEvent<Integer> TEST_JET_EVENT = jetEvent(2, 123);
+
     @Parameter
     public String mode;
 
@@ -67,6 +72,7 @@ public class PeekingWrapperTest {
 
     private DistributedFunction<Entry<Integer, Integer>, String> snapshotToStringFn;
     private DistributedPredicate<Entry<Integer, Integer>> snapshotShouldLogFn;
+    private String testJetEventString;
 
     @Parameters(name = "toStringFn={0}, shouldLogFn={1}")
     public static Collection<Object> parameters() {
@@ -88,6 +94,8 @@ public class PeekingWrapperTest {
             shouldLogFn = null;
             snapshotShouldLogFn = null;
         }
+        testJetEventString = format(TEST_JET_EVENT)
+                + " (eventTime=" + toLocalTime(TEST_JET_EVENT.timestamp()) + ")";
     }
 
     @Test
@@ -144,7 +152,7 @@ public class PeekingWrapperTest {
     }
 
     private DistributedSupplier<Processor> peekOutputProcessorSupplier() {
-        return () -> new ListSource(0, 1, new Watermark(2));
+        return () -> new ListSource(0, 1, new Watermark(2), TEST_JET_EVENT);
     }
 
     @Test
@@ -252,6 +260,10 @@ public class PeekingWrapperTest {
         Watermark wm = new Watermark(1);
         peekP.tryProcessWatermark(wm);
         verify(logger).info("Input: " + wm);
+
+        inbox.add(TEST_JET_EVENT);
+        peekP.process(0, inbox);
+        verify(logger).info("Input from ordinal 0: " + testJetEventString);
     }
 
     private void assertPeekOutput() {
@@ -281,10 +293,19 @@ public class PeekingWrapperTest {
         Watermark wm = new Watermark(2);
         verify(logger).info("Output to ordinal 0: " + wm);
         verify(logger).info("Output to ordinal 1: " + wm);
+        verifyZeroInteractions(logger);
 
         wm = new Watermark(3);
         peekP.tryProcessWatermark(wm);
         verify(logger).info("Output forwarded: " + wm);
+        outbox.queue(0).clear();
+        outbox.queue(1).clear();
+        outbox.reset();
+        verifyZeroInteractions(logger);
+
+        peekP.complete();
+        verify(logger).info("Output to ordinal 0: " + testJetEventString);
+        verify(logger).info("Output to ordinal 1: " + testJetEventString);
         verifyZeroInteractions(logger);
     }
 
@@ -330,7 +351,6 @@ public class PeekingWrapperTest {
      * A processor that will pass through inbox to outbox using inbox.peek() + inbox.remove()
      */
     static class TestPeekRemoveProcessor extends TestProcessor {
-
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
             for (Object o; (o = inbox.peek()) != null; ) {
