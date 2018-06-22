@@ -90,4 +90,9 @@ public final class NotEqualPredicate extends EqualPredicate {
     public boolean canEqual(Object other) {
         return (other instanceof NotEqualPredicate);
     }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

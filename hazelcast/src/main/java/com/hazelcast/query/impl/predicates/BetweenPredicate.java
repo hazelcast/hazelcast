@@ -91,6 +91,7 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
         return PredicateDataSerializerHook.BETWEEN_PREDICATE;
     }
 
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
     @Override
     public boolean equals(Object o) {
         if (this == o) {
