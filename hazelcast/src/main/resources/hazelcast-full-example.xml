@@ -1922,6 +1922,9 @@
         * <security-interceptor>
             Specifies the security interceptor class that you developed by implementing Hazelcast's SecurityInterceptor
             interface to intercept every remote operation executed by a client.
+        * <client-block-unmapped-actions>
+            Specifies whether to block (true) or allow (false) actions, submitted as tasks in an Executor from
+            the clients and have no permission mappings.
     -->
     <security enabled="false">
         <member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
