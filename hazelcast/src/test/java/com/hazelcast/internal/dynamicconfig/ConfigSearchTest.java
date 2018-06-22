@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AtomicLongConfig;
@@ -40,6 +56,7 @@ import static org.hamcrest.Matchers.equalTo;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ConfigSearchTest extends HazelcastTestSupport {
+
     private static final String STATIC_NAME = "my.custom.data.*";
     private static final String DYNAMIC_NAME = "my.custom.data.cache";
 
@@ -54,19 +71,19 @@ public class ConfigSearchTest extends HazelcastTestSupport {
         staticHazelcastConfig.setInstanceName(uuid);
         staticHazelcastConfig.setGroupConfig(staticHazelcastConfig.getGroupConfig().setName(uuid));
         testCase.addStaticConfig(staticHazelcastConfig);
+
         hazelcastInstance = createHazelcastInstance(staticHazelcastConfig);
         testCase.addDynamicConfig(hazelcastInstance);
+
         testCase.asserts();
     }
 
     @Test
     public void testMapConfig_Static() {
-        TestCase<MapConfig> testCase = new TestCase<MapConfig>(new MapConfig(STATIC_NAME),
-                new MapConfig(DYNAMIC_NAME), false) {
+        TestCase<MapConfig> testCase = new TestCase<MapConfig>(new MapConfig(STATIC_NAME), new MapConfig(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
                 config.addMapConfig(this.staticConfig);
-
             }
 
             @Override
@@ -85,12 +102,10 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testMapConfig_Dynamic() {
-        TestCase<MapConfig> testCase = new TestCase<MapConfig>(new MapConfig(STATIC_NAME),
-                new MapConfig(DYNAMIC_NAME), true) {
+        TestCase<MapConfig> testCase = new TestCase<MapConfig>(new MapConfig(STATIC_NAME), new MapConfig(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
                 config.addMapConfig(this.staticConfig);
-
             }
 
             @Override
@@ -114,7 +129,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addCacheConfig(this.staticConfig);
-
             }
 
             @Override
@@ -138,7 +152,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addCacheConfig(this.staticConfig);
-
             }
 
             @Override
@@ -162,7 +175,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addQueueConfig(this.staticConfig);
-
             }
 
             @Override
@@ -186,7 +198,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addQueueConfig(this.staticConfig);
-
             }
 
             @Override
@@ -210,7 +221,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addLockConfig(this.staticConfig);
-
             }
 
             @Override
@@ -234,7 +244,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addLockConfig(this.staticConfig);
-
             }
 
             @Override
@@ -258,7 +267,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addListConfig(this.staticConfig);
-
             }
 
             @Override
@@ -282,7 +290,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addListConfig(this.staticConfig);
-
             }
 
             @Override
@@ -306,7 +313,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addSetConfig(this.staticConfig);
-
             }
 
             @Override
@@ -330,7 +336,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addSetConfig(this.staticConfig);
-
             }
 
             @Override
@@ -354,7 +359,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addMultiMapConfig(this.staticConfig);
-
             }
 
             @Override
@@ -378,7 +382,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addMultiMapConfig(this.staticConfig);
-
             }
 
             @Override
@@ -402,7 +405,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addReplicatedMapConfig(this.staticConfig);
-
             }
 
             @Override
@@ -426,7 +428,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addReplicatedMapConfig(this.staticConfig);
-
             }
 
             @Override
@@ -450,7 +451,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addRingBufferConfig(this.staticConfig);
-
             }
 
             @Override
@@ -474,7 +474,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addRingBufferConfig(this.staticConfig);
-
             }
 
             @Override
@@ -498,7 +497,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addAtomicLongConfig(this.staticConfig);
-
             }
 
             @Override
@@ -522,7 +520,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addAtomicLongConfig(this.staticConfig);
-
             }
 
             @Override
@@ -546,7 +543,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addAtomicReferenceConfig(this.staticConfig);
-
             }
 
             @Override
@@ -570,7 +566,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addAtomicReferenceConfig(this.staticConfig);
-
             }
 
             @Override
@@ -589,12 +584,12 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testCountDownLatchConfig_Static() {
-        TestCase<CountDownLatchConfig> testCase = new TestCase<CountDownLatchConfig>(new CountDownLatchConfig().setName(STATIC_NAME),
+        TestCase<CountDownLatchConfig> testCase = new TestCase<CountDownLatchConfig>(
+                new CountDownLatchConfig().setName(STATIC_NAME),
                 new CountDownLatchConfig().setName(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
                 config.addCountDownLatchConfig(this.staticConfig);
-
             }
 
             @Override
@@ -618,7 +613,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addCountDownLatchConfig(this.staticConfig);
-
             }
 
             @Override
@@ -642,7 +636,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addTopicConfig(this.staticConfig);
-
             }
 
             @Override
@@ -666,7 +659,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addTopicConfig(this.staticConfig);
-
             }
 
             @Override
@@ -690,7 +682,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addReliableTopicConfig(this.staticConfig);
-
             }
 
             @Override
@@ -714,7 +705,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addReliableTopicConfig(this.staticConfig);
-
             }
 
             @Override
@@ -738,7 +728,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addExecutorConfig(this.staticConfig);
-
             }
 
             @Override
@@ -762,7 +751,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addExecutorConfig(this.staticConfig);
-
             }
 
             @Override
@@ -781,12 +769,12 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testDurableExecutorConfig_Static() {
-        TestCase<DurableExecutorConfig> testCase = new TestCase<DurableExecutorConfig>(new DurableExecutorConfig().setName(STATIC_NAME),
+        TestCase<DurableExecutorConfig> testCase = new TestCase<DurableExecutorConfig>(
+                new DurableExecutorConfig().setName(STATIC_NAME),
                 new DurableExecutorConfig().setName(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
                 config.addDurableExecutorConfig(this.staticConfig);
-
             }
 
             @Override
@@ -805,12 +793,11 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testDurableExecutorConfig_Dynamic() {
-        TestCase<DurableExecutorConfig> testCase = new TestCase<DurableExecutorConfig>(new DurableExecutorConfig().setName(STATIC_NAME),
-                new DurableExecutorConfig().setName(DYNAMIC_NAME), true) {
+        TestCase<DurableExecutorConfig> testCase = new TestCase<DurableExecutorConfig>(
+                new DurableExecutorConfig().setName(STATIC_NAME), new DurableExecutorConfig().setName(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
                 config.addDurableExecutorConfig(this.staticConfig);
-
             }
 
             @Override
@@ -829,12 +816,11 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testScheduledExecutorConfig_Static() {
-        TestCase<ScheduledExecutorConfig> testCase = new TestCase<ScheduledExecutorConfig>(new ScheduledExecutorConfig(STATIC_NAME),
-                new ScheduledExecutorConfig(DYNAMIC_NAME), false) {
+        TestCase<ScheduledExecutorConfig> testCase = new TestCase<ScheduledExecutorConfig>(
+                new ScheduledExecutorConfig(STATIC_NAME), new ScheduledExecutorConfig(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
                 config.addScheduledExecutorConfig(this.staticConfig);
-
             }
 
             @Override
@@ -853,12 +839,11 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testScheduledExecutorConfig_Dynamic() {
-        TestCase<ScheduledExecutorConfig> testCase = new TestCase<ScheduledExecutorConfig>(new ScheduledExecutorConfig(STATIC_NAME),
-                new ScheduledExecutorConfig(DYNAMIC_NAME), true) {
+        TestCase<ScheduledExecutorConfig> testCase = new TestCase<ScheduledExecutorConfig>(
+                new ScheduledExecutorConfig(STATIC_NAME), new ScheduledExecutorConfig(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
                 config.addScheduledExecutorConfig(this.staticConfig);
-
             }
 
             @Override
@@ -877,12 +862,12 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testCardinalityEstimatorConfig_Static() {
-        TestCase<CardinalityEstimatorConfig> testCase = new TestCase<CardinalityEstimatorConfig>(new CardinalityEstimatorConfig().setName(STATIC_NAME),
+        TestCase<CardinalityEstimatorConfig> testCase = new TestCase<CardinalityEstimatorConfig>(
+                new CardinalityEstimatorConfig().setName(STATIC_NAME),
                 new CardinalityEstimatorConfig().setName(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
                 config.addCardinalityEstimatorConfig(this.staticConfig);
-
             }
 
             @Override
@@ -892,7 +877,8 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
             @Override
             void asserts() {
-                CardinalityEstimatorConfig dataConfig = hazelcastInstance.getConfig().findCardinalityEstimatorConfig(DYNAMIC_NAME);
+                CardinalityEstimatorConfig dataConfig
+                        = hazelcastInstance.getConfig().findCardinalityEstimatorConfig(DYNAMIC_NAME);
                 assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
             }
         };
@@ -901,12 +887,12 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testCardinalityEstimatorConfig_Dynamic() {
-        TestCase<CardinalityEstimatorConfig> testCase = new TestCase<CardinalityEstimatorConfig>(new CardinalityEstimatorConfig().setName(STATIC_NAME),
+        TestCase<CardinalityEstimatorConfig> testCase = new TestCase<CardinalityEstimatorConfig>(
+                new CardinalityEstimatorConfig().setName(STATIC_NAME),
                 new CardinalityEstimatorConfig().setName(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
                 config.addCardinalityEstimatorConfig(this.staticConfig);
-
             }
 
             @Override
@@ -916,7 +902,8 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
             @Override
             void asserts() {
-                CardinalityEstimatorConfig dataConfig = hazelcastInstance.getConfig().findCardinalityEstimatorConfig(DYNAMIC_NAME);
+                CardinalityEstimatorConfig dataConfig
+                        = hazelcastInstance.getConfig().findCardinalityEstimatorConfig(DYNAMIC_NAME);
                 assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
             }
         };
@@ -930,7 +917,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addSemaphoreConfig(this.staticConfig);
-
             }
 
             @Override
@@ -954,7 +940,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addSemaphoreConfig(this.staticConfig);
-
             }
 
             @Override
@@ -978,7 +963,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addFlakeIdGeneratorConfig(this.staticConfig);
-
             }
 
             @Override
@@ -1002,7 +986,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addFlakeIdGeneratorConfig(this.staticConfig);
-
             }
 
             @Override
@@ -1018,8 +1001,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
         };
         testTemplate(testCase);
     }
-
-
 
     @Test
     public void testPNCounterConfig_Static() {
@@ -1052,7 +1033,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void addStaticConfig(Config config) {
                 config.addPNCounterConfig(this.staticConfig);
-
             }
 
             @Override
@@ -1068,26 +1048,28 @@ public class ConfigSearchTest extends HazelcastTestSupport {
         };
         testTemplate(testCase);
     }
-}
 
-abstract class TestCase<T> {
-    final T staticConfig;
-    final T dynamicConfig;
-    private final boolean isDynamicFirst;
+    abstract class TestCase<T> {
 
-    TestCase(T staticConfig, T dynamicConfig, boolean isDynamicFirst) {
-        this.staticConfig = staticConfig;
-        this.dynamicConfig = dynamicConfig;
-        this.isDynamicFirst = isDynamicFirst;
+        final T staticConfig;
+        final T dynamicConfig;
+
+        private final boolean isDynamicFirst;
+
+        TestCase(T staticConfig, T dynamicConfig, boolean isDynamicFirst) {
+            this.staticConfig = staticConfig;
+            this.dynamicConfig = dynamicConfig;
+            this.isDynamicFirst = isDynamicFirst;
+        }
+
+        boolean isDynamicFirst() {
+            return isDynamicFirst;
+        }
+
+        abstract void addStaticConfig(Config config);
+
+        abstract void addDynamicConfig(HazelcastInstance hazelcastInstance);
+
+        abstract void asserts();
     }
-
-    boolean isDynamicFirst() {
-        return isDynamicFirst;
-    }
-
-    abstract void addStaticConfig(Config config);
-
-    abstract void addDynamicConfig(HazelcastInstance hazelcastInstance);
-
-    abstract void asserts();
 }

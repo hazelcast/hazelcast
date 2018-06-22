@@ -81,6 +81,11 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
+    public MapOperation createSetTTLOperation(String name, Data key, long ttl) {
+        return new SetTTLOperation(name, key, ttl);
+    }
+
+    @Override
     public MapOperation createTryRemoveOperation(String name, Data dataKey, long timeout) {
         return new TryRemoveOperation(name, dataKey, timeout);
     }

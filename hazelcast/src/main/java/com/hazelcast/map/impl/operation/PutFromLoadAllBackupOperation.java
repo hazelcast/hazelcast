@@ -16,10 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -65,7 +62,7 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
                 continue;
             }
 
-            publishWanReplicationEvent(key, value, recordStore.getRecord(key));
+            publishWanUpdate(key, value);
         }
     }
 
@@ -74,17 +71,6 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
         evict(null);
 
         super.afterRun();
-    }
-
-    private void publishWanReplicationEvent(Data key, Data value, Record record) {
-        if (record == null) {
-            return;
-        }
-
-        if (mapContainer.isWanReplicationEnabled()) {
-            EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
-            mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
-        }
     }
 
     @Override

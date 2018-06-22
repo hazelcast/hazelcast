@@ -89,6 +89,8 @@ public interface RecordStore<R extends Record> {
 
     boolean remove(Data dataKey, Object testValue);
 
+    void setTTL(Data key, long ttl);
+
     /**
      * Similar to {@link RecordStore#remove(com.hazelcast.nio.serialization.Data)}
      * except removeBackup doesn't touch mapstore since it does not return previous value.

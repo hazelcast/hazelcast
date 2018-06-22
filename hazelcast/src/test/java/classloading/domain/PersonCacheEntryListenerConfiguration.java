@@ -35,6 +35,7 @@ public class PersonCacheEntryListenerConfiguration implements CacheEntryListener
                 return new CacheEntryListener<String, Person>() {
                 };
             }
+
             private static final long serialVersionUID = 1L;
         };
     }
@@ -57,6 +58,7 @@ public class PersonCacheEntryListenerConfiguration implements CacheEntryListener
                     }
                 };
             }
+
             private static final long serialVersionUID = 1L;
         };
     }

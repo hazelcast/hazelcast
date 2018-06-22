@@ -249,7 +249,7 @@ public class MultiMapSumAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<String, T> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<String, T> map = hazelcastInstance.getMultiMap(mapName);
 
         for (int i = 0; i < values.length; i++) {
             map.put("key-" + i, values[i]);
@@ -263,7 +263,7 @@ public class MultiMapSumAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<String, Value<T>> map = hazelcastInstance.getMultiMap(mapName);
 
         for (int i = 0; i < values.length; i++) {
             map.put("key-" + i, values[i]);

@@ -45,7 +45,6 @@ public class CustomAttribute implements Serializable, Comparable<CustomAttribute
         }
 
         CustomAttribute that = (CustomAttribute) o;
-
         if (age != that.age) {
             return false;
         }

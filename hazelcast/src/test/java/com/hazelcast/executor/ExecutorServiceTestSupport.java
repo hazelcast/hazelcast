@@ -81,7 +81,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
     public static class CountDownLatchAwaitingCallable implements Callable<String> {
 
-        public static String RESULT = "Success";
+        static final String RESULT = "Success";
 
         private final CountDownLatch latch;
 
@@ -137,7 +137,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
     public static class BasicTestCallable implements Callable<String>, Serializable, PartitionAware {
 
-        public static String RESULT = "Task completed";
+        public static final String RESULT = "Task completed";
 
         @Override
         public String call() {

@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEndpointManager;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEndpointImpl;
+import com.hazelcast.client.impl.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.StubAuthenticationException;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
+import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
@@ -129,7 +129,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
             logger.severe(message);
-            exception = new RetryableHazelcastException(new AuthenticationException(message));
+            exception = new RetryableHazelcastException(new StubAuthenticationException(message));
         } else {
             exception = new HazelcastInstanceNotActiveException();
         }
@@ -207,7 +207,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     }
 
     protected void sendClientMessage(Throwable throwable) {
-        ClientExceptionFactory exceptionFactory = clientEngine.getClientExceptionFactory();
+        ClientExceptions exceptionFactory = clientEngine.getClientExceptions();
         ClientMessage exception = exceptionFactory.createExceptionMessage(peelIfNeeded(throwable));
         sendClientMessage(exception);
     }

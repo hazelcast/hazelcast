@@ -60,11 +60,9 @@ public class ClientCachingProviderTest extends CachingProviderTest {
         instance1 = createHazelcastInstance(INSTANCE_1_NAME);
         instance2 = createHazelcastInstance(INSTANCE_2_NAME);
         try {
-            instance3 = HazelcastClient.newHazelcastClient(
-                    new XmlClientConfigBuilder(CONFIG_CLASSPATH_LOCATION).build());
+            instance3 = HazelcastClient.newHazelcastClient(new XmlClientConfigBuilder(CONFIG_CLASSPATH_LOCATION).build());
         } catch (IOException e) {
-            throw new AssertionError("Could not construct named hazelcast client instance: " +
-                    e.getMessage());
+            throw new AssertionError("Could not construct named hazelcast client instance: " + e.getMessage());
         }
         instances.add(instance3);
         cachingProvider = createCachingProvider(instance1);

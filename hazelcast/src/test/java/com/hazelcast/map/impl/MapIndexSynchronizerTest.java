@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.spi.NodeEngine;
@@ -41,18 +40,16 @@ import static java.util.Arrays.asList;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapIndexSynchronizerTest extends HazelcastTestSupport {
 
-    private static String MAP_NAME = "MapIndexSynchronizerTest";
+    private static final String MAP_NAME = "MapIndexSynchronizerTest";
 
-    private HazelcastInstanceImpl hazelcastInstance;
     private MapServiceContext mapServiceContext;
-    private NodeEngine nodeEngine;
 
     private MapIndexSynchronizer synchronizer;
 
     @Before
     public void before() {
-        hazelcastInstance = ((HazelcastInstanceProxy) createHazelcastInstance(getConfig())).getOriginal();
-        nodeEngine = hazelcastInstance.node.getNodeEngine();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
+        NodeEngine nodeEngine = getNodeEngineImpl(hazelcastInstance);
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         mapServiceContext = mapService.getMapServiceContext();
 
@@ -60,7 +57,7 @@ public class MapIndexSynchronizerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void noIndexes_properTransition_syncNotFired() throws Exception {
+    public void noIndexes_properTransition_syncNotFired() {
         synchronizer.onClusterVersionChange(Versions.V3_9);
         assertNoIndexesEventually();
 
@@ -70,7 +67,7 @@ public class MapIndexSynchronizerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void indexes_properTransition_syncFired() throws Exception {
+    public void indexes_properTransition_syncFired() {
         synchronizer.onClusterVersionChange(Versions.V3_9);
         assertNoIndexesEventually();
 
@@ -84,7 +81,7 @@ public class MapIndexSynchronizerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void indexes_improperTransition_syncNotFired() throws Exception {
+    public void indexes_improperTransition_syncNotFired() {
         synchronizer.onClusterVersionChange(Version.of(3, 8));
         assertNoIndexesEventually();
 
@@ -100,21 +97,20 @@ public class MapIndexSynchronizerTest extends HazelcastTestSupport {
     private void assertNoIndexesEventually() {
         Callable assertion = new Callable<Integer>() {
             @Override
-            public Integer call() throws Exception {
+            public Integer call() {
                 return getIndexDefinitions().size();
             }
         };
         assertEqualsEventually(assertion, 0);
         sleepMillis(500);
         assertEqualsEventually(assertion, 0);
-
     }
 
     private void assertIndexesEqualEventually(IndexInfo... indexInfos) {
         final Map<String, Boolean> indexes = indexes(indexInfos);
         assertEqualsEventually(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 return getIndexDefinitions().equals(indexes);
             }
         }, true);

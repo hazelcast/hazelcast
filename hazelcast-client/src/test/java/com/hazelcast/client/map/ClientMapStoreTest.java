@@ -369,36 +369,36 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         String mapNameWithStore = "MapStore*";
         String mapNameWithStoreAndSize = "MapStoreMaxSize*";
 
-        String xml = "<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n" +
-                "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd\"\n" +
-                "                             xmlns=\"http://www.hazelcast.com/schema/config\"\n" +
-                "                             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
-                "\n" +
-                "    <map name=\"" + mapNameWithStore + "\">\n" +
-                "        <map-store enabled=\"true\">\n" +
-                "            <class-name>com.will.cause.problem.if.used</class-name>\n" +
-                "            <write-delay-seconds>5</write-delay-seconds>\n" +
-                "        </map-store>\n" +
-                "    </map>\n" +
-                "\n" +
-                "    <map name=\"" + mapNameWithStoreAndSize + "\">\n" +
-                "        <in-memory-format>BINARY</in-memory-format>\n" +
-                "        <backup-count>1</backup-count>\n" +
-                "        <async-backup-count>0</async-backup-count>\n" +
-                "        <max-idle-seconds>0</max-idle-seconds>\n" +
-                "        <eviction-policy>LRU</eviction-policy>\n" +
-                "        <max-size policy=\"PER_NODE\">10</max-size>\n" +
-                "        <eviction-percentage>50</eviction-percentage>\n" +
-                "\n" +
-                "        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n" +
-                "\n" +
-                "        <map-store enabled=\"true\">\n" +
-                "            <class-name>com.hazelcast.client.map.helpers.AMapStore</class-name>\n" +
-                "            <write-delay-seconds>5</write-delay-seconds>\n" +
-                "        </map-store>\n" +
-                "    </map>\n" +
-                "\n" +
-                "</hazelcast>";
+        String xml = "<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n"
+                + "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd\"\n"
+                + "                             xmlns=\"http://www.hazelcast.com/schema/config\"\n"
+                + "                             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                + "\n"
+                + "    <map name=\"" + mapNameWithStore + "\">\n"
+                + "        <map-store enabled=\"true\">\n"
+                + "            <class-name>com.will.cause.problem.if.used</class-name>\n"
+                + "            <write-delay-seconds>5</write-delay-seconds>\n"
+                + "        </map-store>\n"
+                + "    </map>\n"
+                + "\n"
+                + "    <map name=\"" + mapNameWithStoreAndSize + "\">\n"
+                + "        <in-memory-format>BINARY</in-memory-format>\n"
+                + "        <backup-count>1</backup-count>\n"
+                + "        <async-backup-count>0</async-backup-count>\n"
+                + "        <max-idle-seconds>0</max-idle-seconds>\n"
+                + "        <eviction-policy>LRU</eviction-policy>\n"
+                + "        <max-size policy=\"PER_NODE\">10</max-size>\n"
+                + "        <eviction-percentage>50</eviction-percentage>\n"
+                + "\n"
+                + "        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n"
+                + "\n"
+                + "        <map-store enabled=\"true\">\n"
+                + "            <class-name>com.hazelcast.client.map.helpers.AMapStore</class-name>\n"
+                + "            <write-delay-seconds>5</write-delay-seconds>\n"
+                + "        </map-store>\n"
+                + "    </map>\n"
+                + "\n"
+                + "</hazelcast>";
 
         Config config = buildConfig(xml);
         HazelcastInstance hz = hazelcastFactory.newHazelcastInstance(config);

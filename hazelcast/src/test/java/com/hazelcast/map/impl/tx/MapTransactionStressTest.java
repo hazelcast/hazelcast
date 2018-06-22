@@ -61,7 +61,7 @@ import static org.junit.Assert.assertTrue;
 @Category(NightlyTest.class)
 public class MapTransactionStressTest extends HazelcastTestSupport {
 
-    private static String DUMMY_TX_SERVICE = "dummy-tx-service";
+    private static final String DUMMY_TX_SERVICE = "dummy-tx-service";
 
     @Test
     public void testTransactionAtomicity_whenMapGetIsUsed_withTransaction() throws InterruptedException {

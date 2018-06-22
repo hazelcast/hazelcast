@@ -33,13 +33,13 @@ public class JCacheExpiryPolicy implements ExpiryPolicy, HazelcastInstanceAware,
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();
 
-    public static JCacheExpiryPolicy INSTANCE;
+    public static JCacheExpiryPolicy instance;
 
     @Resource(name = "dummy")
     private IJCacheDummyBean dummyBean;
 
     public JCacheExpiryPolicy() {
-        INSTANCE = this;
+        instance = this;
     }
 
     @Override

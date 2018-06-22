@@ -117,16 +117,16 @@ public class QueryPerformanceBenchmark extends HazelcastTestSupport {
         objectMapWithExtractor = hz.getMap("objectMapWithExtractor");
         portableMapWithExtractor = hz.getMap("portableMapWithExtractor");
 
-        Person BOND = person("Bond",
+        Person bond = person("Bond",
                 limb("left-hand", tattoos(), finger("thumb"), finger(null)),
                 limb("right-hand", tattoos("knife"), finger("middle"), finger("index"))
         );
 
         for (int i = 0; i <= 1000; i++) {
-            portableMap.put(String.valueOf(i), BOND.getPortable());
-            portableMapWithExtractor.put(String.valueOf(i), BOND.getPortable());
-            objectMap.put(String.valueOf(i), BOND);
-            objectMapWithExtractor.put(String.valueOf(i), BOND);
+            portableMap.put(String.valueOf(i), bond.getPortable());
+            portableMapWithExtractor.put(String.valueOf(i), bond.getPortable());
+            objectMap.put(String.valueOf(i), bond);
+            objectMapWithExtractor.put(String.valueOf(i), bond);
         }
     }
 

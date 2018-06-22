@@ -75,6 +75,10 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
 
     private static final Person HUNT_NULL_LIMB = person("Hunt");
 
+    public ExtractionInArraySpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
+        super(inMemoryFormat, index, multivalue);
+    }
+
     protected Configurator getInstanceConfigurator() {
         return new Configurator() {
             @Override
@@ -82,10 +86,6 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
                 config.getSerializationConfig().addPortableFactory(ComplexTestDataStructure.PersonPortableFactory.ID, new ComplexTestDataStructure.PersonPortableFactory());
             }
         };
-    }
-
-    public ExtractionInArraySpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
-        super(inMemoryFormat, index, multivalue);
     }
 
     @Test

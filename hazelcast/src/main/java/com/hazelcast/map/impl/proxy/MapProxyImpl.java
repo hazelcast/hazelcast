@@ -348,6 +348,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
+    public void setTTL(K key, long ttl, TimeUnit timeunit) {
+        checkNotNull(key);
+        checkNotNull(timeunit);
+        setTTLInternal(key, ttl, timeunit);
+    }
+
+    @Override
     public void putAll(Map<? extends K, ? extends V> map) {
         checkNotNull(map, "Null argument map is not allowed");
         putAllInternal(map);

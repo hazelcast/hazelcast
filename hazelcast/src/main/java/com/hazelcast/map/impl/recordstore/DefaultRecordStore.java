@@ -721,6 +721,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    public void setTTL(Data key, long ttl) {
+        if (mapServiceContext.getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
+            throw new UnsupportedOperationException("Modifying TTL is available when cluster version is 3.11 or higher");
+        }
+        long now = getNow();
+        markRecordStoreExpirable(ttl);
+        Record record = getRecordOrNull(key, now, false);
+        if (record != null) {
+            setTTLAndUpdateExpiryTime(ttl, record, mapContainer.getMapConfig(), true);
+        }
+    }
+
+    @Override
     public Object set(Data dataKey, Object value, long ttl) {
         return putInternal(dataKey, value, ttl, false, true);
     }

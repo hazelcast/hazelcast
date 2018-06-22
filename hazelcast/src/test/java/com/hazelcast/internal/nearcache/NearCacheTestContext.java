@@ -103,6 +103,7 @@ public class NearCacheTestContext<K, V, NK, NV> {
      */
     public final RepairingTask repairingTask;
 
+    @SuppressWarnings("checkstyle:parameternumber")
     NearCacheTestContext(NearCacheConfig nearCacheConfig,
                          SerializationService serializationService,
                          HazelcastInstance nearCacheInstance,

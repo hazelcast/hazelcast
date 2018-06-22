@@ -34,14 +34,17 @@ import java.nio.ByteOrder;
  * This class is used for generating the binary file to be committed at the beginning of
  * introducing a new serialization service. Change version field and run this class once.
  * Then move the created files to resources directory.
- * <p/>
+ *
  * mv *binary src/test/resources/
  */
-public class BinaryCompatibilityFileGenerator {
+public final class BinaryCompatibilityFileGenerator {
 
-    //DONT FORGET TO CHANGE VERSION ACCORDINGLY
+    // DON'T FORGET TO CHANGE VERSION ACCORDINGLY
     public static final byte VERSION = 1;
     private static final int NULL_OBJECT = -1;
+
+    private BinaryCompatibilityFileGenerator() {
+    }
 
     public static void main(String[] args) throws IOException {
         Object[] objects = ReferenceObjects.allTestObjects;
@@ -62,11 +65,11 @@ public class BinaryCompatibilityFileGenerator {
         return VERSION + "-" + (object == null ? "NULL" : object.getClass().getSimpleName()) + "-" + byteOrder;
     }
 
-
     private static String createFileName() {
         return VERSION + ".serialization.compatibility.binary";
     }
 
+    @SuppressWarnings("checkstyle:avoidnestedblocks")
     private static SerializationService createSerializationService(ByteOrder byteOrder) {
         SerializationConfig config = new SerializationConfig();
         {

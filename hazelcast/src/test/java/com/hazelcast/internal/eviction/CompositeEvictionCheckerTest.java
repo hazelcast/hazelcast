@@ -148,5 +148,4 @@ public class CompositeEvictionCheckerTest {
 
         assertTrue(compositeEvictionChecker.isEvictionRequired());
     }
-
 }

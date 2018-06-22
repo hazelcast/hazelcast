@@ -86,5 +86,4 @@ public class ClientIndeterminateOperationStateExceptionTest extends HazelcastTes
 
         assertEquals(key, map.get(key));
     }
-
 }

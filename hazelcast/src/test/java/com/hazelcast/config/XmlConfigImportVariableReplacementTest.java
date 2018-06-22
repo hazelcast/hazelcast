@@ -415,7 +415,7 @@ public class XmlConfigImportVariableReplacementTest {
                 + "    </group>\n"
                 + HAZELCAST_END_TAG;
         GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
-        assertEquals(System.getProperty("java.version")+ " dev", groupConfig.getName());
+        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getName());
         assertEquals("My very secret secret", groupConfig.getPassword());
     }
 
@@ -555,7 +555,7 @@ public class XmlConfigImportVariableReplacementTest {
         public void init(Properties properties) {
         }
     }
-    
+
     public static class TestReplacer extends PropertyReplacer {
         @Override
         public String getPrefix() {

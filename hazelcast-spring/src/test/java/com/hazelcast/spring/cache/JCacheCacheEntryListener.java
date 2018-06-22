@@ -33,13 +33,13 @@ public class JCacheCacheEntryListener implements CacheEntryCreatedListener, Haze
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();
 
-    public static JCacheCacheEntryListener INSTANCE;
+    public static JCacheCacheEntryListener instance;
 
     @Resource(name = "dummy")
     private IJCacheDummyBean dummyBean;
 
     public JCacheCacheEntryListener() {
-        INSTANCE = this;
+        instance = this;
     }
 
     @Override

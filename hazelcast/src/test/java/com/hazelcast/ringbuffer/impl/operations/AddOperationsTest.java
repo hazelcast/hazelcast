@@ -44,7 +44,6 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class AddOperationsTest extends HazelcastTestSupport {
 
-    private HazelcastInstance hz;
     private NodeEngineImpl nodeEngine;
     private SerializationService serializationService;
     private Ringbuffer<Object> ringbuffer;
@@ -56,7 +55,7 @@ public class AddOperationsTest extends HazelcastTestSupport {
 
         Config config = new Config().addRingBufferConfig(rbConfig);
 
-        hz = createHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
         nodeEngine = getNodeEngineImpl(hz);
         ringbufferService = nodeEngine.getService(RingbufferService.SERVICE_NAME);
         serializationService = getSerializationService(hz);

@@ -58,6 +58,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeThat;
 import static org.junit.Assume.assumeTrue;
@@ -324,6 +325,8 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
                         format("Value of NearCacheRecord for key %d should be Data, but was %s", key, recordValueClass),
                         Data.class.isAssignableFrom(recordValueClass));
                 break;
+            default:
+                fail("Unsupported in-memory format");
         }
     }
 

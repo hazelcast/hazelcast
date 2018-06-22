@@ -19,9 +19,13 @@ package com.hazelcast.test;
 /**
  * Constants in milliseconds for use in test annotations such as {@code @Test(timeout = 5 * SECOND)}.
  */
-public interface TimeConstants {
+@SuppressWarnings("WeakerAccess")
+public final class TimeConstants {
 
-    long SECOND = 1000;
+    private TimeConstants() {
+    }
 
-    long MINUTE = 60 * SECOND;
+    public static final long SECOND = 1000;
+
+    public static final long MINUTE = 60 * SECOND;
 }

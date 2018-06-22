@@ -17,21 +17,12 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
-import com.hazelcast.cache.impl.ICacheRecordStore;
-import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -43,16 +34,13 @@ import java.util.Map;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 
-public class CachePutAllOperation
-        extends AbstractNamedOperation
-        implements PartitionAwareOperation, IdentifiedDataSerializable, BackupAwareOperation, ServiceNamespaceAware,
-                   MutableOperation, MutatingOperation {
+public class CachePutAllOperation extends CacheOperation
+        implements BackupAwareOperation, MutableOperation, MutatingOperation {
 
     private List<Map.Entry<Data, Data>> entries;
     private ExpiryPolicy expiryPolicy;
     private int completionId;
 
-    private transient ICacheRecordStore cache;
     private transient Map<Data, CacheRecord> backupRecords;
 
     public CachePutAllOperation() {
@@ -77,31 +65,21 @@ public class CachePutAllOperation
     }
 
     @Override
-    public void run()
-            throws Exception {
-        int partitionId = getPartitionId();
+    public void run() throws Exception {
         String callerUuid = getCallerUuid();
-        ICacheService service = getService();
-        cache = service.getOrCreateRecordStore(name, partitionId);
         backupRecords = createHashMap(entries.size());
+
         for (Map.Entry<Data, Data> entry : entries) {
             Data key = entry.getKey();
             Data value = entry.getValue();
-            CacheRecord backupRecord = cache.put(key, value, expiryPolicy, callerUuid, completionId);
+
+            CacheRecord backupRecord = recordStore.put(key, value, expiryPolicy, callerUuid, completionId);
+
             // backupRecord may be null (eg expired on put)
             if (backupRecord != null) {
                 backupRecords.put(key, backupRecord);
+                publishWanUpdate(key, backupRecord);
             }
-
-            publishWanEvent(key, value, backupRecord);
-        }
-    }
-
-    private void publishWanEvent(Data key, Data value, CacheRecord backupRecord) {
-        if (cache.isWanReplicationEnabled()) {
-            ICacheService service = getService();
-            CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
-            publisher.publishWanReplicationUpdate(name, CacheEntryViews.createDefaultEntryView(key, value, backupRecord));
         }
     }
 
@@ -118,31 +96,6 @@ public class CachePutAllOperation
     @Override
     public int getId() {
         return CacheDataSerializerHook.PUT_ALL;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CacheDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public final int getSyncBackupCount() {
-        return cache != null ? cache.getConfig().getBackupCount() : 0;
-    }
-
-    @Override
-    public final int getAsyncBackupCount() {
-        return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
-    }
-
-    @Override
-    public ObjectNamespace getServiceNamespace() {
-        ICacheRecordStore recordStore = cache;
-        if (recordStore == null) {
-            ICacheService service = getService();
-            recordStore = service.getOrCreateRecordStore(name, getPartitionId());
-        }
-        return recordStore.getObjectNamespace();
     }
 
     @Override

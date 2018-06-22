@@ -195,14 +195,14 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "EventCountingListener{" +
-                    "addCount=" + addCount +
-                    ", removeCount=" + removeCount +
-                    ", updateCount=" + updateCount +
-                    ", evictCount=" + evictCount +
-                    ", mapClearCount=" + mapClearCount +
-                    ", mapEvictCount=" + mapEvictCount +
-                    '}';
+            return "EventCountingListener{"
+                    + "addCount=" + addCount
+                    + ", removeCount=" + removeCount
+                    + ", updateCount=" + updateCount
+                    + ", evictCount=" + evictCount
+                    + ", mapClearCount=" + mapClearCount
+                    + ", mapEvictCount=" + mapEvictCount
+                    + '}';
         }
     }
 }

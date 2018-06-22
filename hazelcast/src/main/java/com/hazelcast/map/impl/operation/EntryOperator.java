@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
@@ -42,7 +41,6 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.Clock;
 
 import java.util.Map;
 
@@ -51,7 +49,6 @@ import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
@@ -329,25 +326,10 @@ public final class EntryOperator {
     private void publishWanReplicationEvent() {
         assert entryWasModified();
 
-        Data dataKey = toHeapData(this.dataKey);
-
         if (eventType == REMOVED) {
-            if (backup) {
-                mapEventPublisher.publishWanReplicationRemoveBackup(mapName, dataKey, Clock.currentTimeMillis());
-            } else {
-                mapEventPublisher.publishWanReplicationRemove(mapName, dataKey, Clock.currentTimeMillis());
-            }
-
-            return;
-        }
-
-        Record record = recordStore.getRecord(dataKey);
-        Data dataNewValue = toHeapData(ss.toData(newValue));
-        EntryView entryView = createSimpleEntryView(dataKey, dataNewValue, record);
-        if (backup) {
-            mapEventPublisher.publishWanReplicationUpdateBackup(mapName, entryView);
+            mapOperation.publishWanRemove(dataKey);
         } else {
-            mapEventPublisher.publishWanReplicationUpdate(mapName, entryView);
+            mapOperation.publishWanUpdate(dataKey, newValue);
         }
     }
 

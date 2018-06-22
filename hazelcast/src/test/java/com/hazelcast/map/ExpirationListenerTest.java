@@ -76,6 +76,32 @@ public class ExpirationListenerTest extends HazelcastTestSupport {
         assertOpenEventually(expirationEventArrivalCount);
     }
 
+    @Test
+    public void test_whenTTLisModified_ExpirationListenernotified_afterExpirationOfEntries() throws Exception {
+        int numberOfPutOperations = 1000;
+        CountDownLatch expirationEventArrivalCount = new CountDownLatch(numberOfPutOperations);
+
+        map.addEntryListener(new ExpirationListener(expirationEventArrivalCount), true);
+
+        for (int i = 0; i < numberOfPutOperations; i++) {
+            map.put(i, i);
+        }
+
+        for (int i = 0; i < numberOfPutOperations; i++) {
+            map.setTTL(i, 100, TimeUnit.MILLISECONDS);
+        }
+
+        // wait expiration of entries
+        sleepAtLeastMillis(200);
+
+        // trigger immediate fire of expiration events by touching them
+        for (int i = 0; i < numberOfPutOperations; i++) {
+            map.get(i);
+        }
+
+        assertOpenEventually(expirationEventArrivalCount);
+    }
+
     private static class ExpirationListener implements EntryExpiredListener {
 
         private final CountDownLatch expirationEventCount;

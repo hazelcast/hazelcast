@@ -36,13 +36,13 @@ public class JCacheCacheLoader
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();
 
-    public static JCacheCacheLoader INSTANCE;
+    public static JCacheCacheLoader instance;
 
     @Resource(name = "dummy")
     private IJCacheDummyBean dummyBean;
 
     public JCacheCacheLoader() {
-        INSTANCE = this;
+        instance = this;
     }
 
     @Override

@@ -116,7 +116,7 @@ public interface InternalOperationService extends OperationService {
     /**
      * Executes a PartitionSpecificRunnable.
      * <p/>
-     * This method is typically used by the {@link com.hazelcast.client.ClientEngine}
+     * This method is typically used by the {@link com.hazelcast.client.impl.ClientEngine}
      * when it has received a Packet containing a request that needs to be processed.
      *
      * @param task the task to execute

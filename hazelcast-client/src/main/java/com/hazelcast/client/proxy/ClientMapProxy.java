@@ -17,8 +17,8 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.client.impl.ClientLockReferenceIdGenerator;
-import com.hazelcast.client.impl.ClientMessageDecoder;
+import com.hazelcast.client.impl.clientside.ClientLockReferenceIdGenerator;
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -73,6 +73,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCo
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSetTTLCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSubmitToKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryLockCodec;
@@ -1288,6 +1289,20 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public LocalMapStats getLocalMapStats() {
         return new LocalMapStatsImpl();
+    }
+
+    @Override
+    public void setTTL(K key, long ttl, TimeUnit timeunit) {
+        checkNotNull(key);
+        checkNotNull(timeunit);
+        setTTLInternal(key, ttl, timeunit);
+    }
+
+    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+        long ttlMillis = timeUnit.toMillis(ttl);
+        Data keyData = toData(key);
+        ClientMessage request = MapSetTTLCodec.encodeRequest(getName(), keyData, ttlMillis);
+        invoke(request, keyData);
     }
 
     @Override

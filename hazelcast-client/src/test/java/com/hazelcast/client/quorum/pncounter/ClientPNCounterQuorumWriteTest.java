@@ -57,5 +57,4 @@ public class ClientPNCounterQuorumWriteTest extends PNCounterQuorumWriteTest {
     protected PNCounter pnCounter(int index) {
         return clients.client(index).getPNCounter(PN_COUNTER_NAME + quorumType.name());
     }
-
 }

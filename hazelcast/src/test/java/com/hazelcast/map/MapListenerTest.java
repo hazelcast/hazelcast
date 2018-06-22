@@ -232,6 +232,8 @@ public class MapListenerTest extends HazelcastTestSupport {
                 case ACTION_REMOVE:
                     removePerson();
                     break;
+                default:
+                    throw new UnsupportedOperationException("Unsupported action: " + action);
             }
         }
 

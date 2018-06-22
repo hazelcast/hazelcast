@@ -48,6 +48,8 @@ public interface MapOperationProvider {
 
     MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent);
 
+    MapOperation createSetTTLOperation(String name, Data key, long ttl);
+
     MapOperation createTryRemoveOperation(String name, Data dataKey, long timeout);
 
     MapOperation createReplaceOperation(String name, Data dataKey, Data value);

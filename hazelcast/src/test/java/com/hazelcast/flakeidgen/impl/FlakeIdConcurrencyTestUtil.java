@@ -29,9 +29,13 @@ import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 
-public class FlakeIdConcurrencyTestUtil {
+public final class FlakeIdConcurrencyTestUtil {
+
     public static final int NUM_THREADS = 4;
     public static final int IDS_IN_THREAD = 100000;
+
+    private FlakeIdConcurrencyTestUtil() {
+    }
 
     public static Set<Long> concurrentlyGenerateIds(final Supplier<Long> generator) throws Exception {
         List<Future<Set<Long>>> futures = new ArrayList<Future<Set<Long>>>();

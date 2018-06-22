@@ -391,7 +391,7 @@ public class FieldGetterTest {
         }
     }
 
-    static class Body {
+    static final class Body {
 
         String name;
         Limb[] limbArray;
@@ -404,7 +404,7 @@ public class FieldGetterTest {
         }
     }
 
-    static class Limb {
+    static final class Limb {
 
         String name;
         Nail[] nailArray;
@@ -417,7 +417,7 @@ public class FieldGetterTest {
         }
     }
 
-    static class Nail {
+    static final class Nail {
 
         String colour;
 
@@ -426,7 +426,7 @@ public class FieldGetterTest {
         }
     }
 
-    static class PrimitiveBloke {
+    static final class PrimitiveBloke {
 
         public byte[] bytes = new byte[]{1};
         public short[] shorts = new short[]{1};

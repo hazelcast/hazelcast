@@ -26,6 +26,7 @@
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
     <!-- Suppress checking of copyright notice -->
+    <suppress checks="Header" files="classloading[\\/]ThreadLocalLeakTestUtils"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]buildutils[\\/]ElementParser"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]logging[\\/]Log4j2Factory"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]util[\\/]HashUtil"/>
@@ -121,11 +122,10 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]proxy[\\/]ClientReplicatedMapProxy"/>
     <suppress checks="ClassFanOutComplexity" files="com[\\/]hazelcast[\\/]client[\\/]proxy[\\/]ClientReplicatedMapProxy"/>
     <suppress checks="MethodCount|ClassFanOutComplexity|ClassDataAbstractionCoupling|ExecutableStatementCount"
-              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]HazelcastClientInstance"/>
-    <suppress checks="VisibilityModifier" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]HazelcastClientProxy"/>
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]clientside[\\/]HazelcastClientInstanceImpl"/>
+    <suppress checks="MethodCount|VisibilityModifier" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]clientside[\\/]HazelcastClientProxy"/>
     <suppress checks="MethodCount|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]client[\\/]proxy[\\/]ClientExecutorServiceProxy"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]HazelcastClientProxy"/>
     <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]client[\\/]ClientPortableFactory"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]ClientConfig"/>
@@ -143,7 +143,9 @@
     <suppress checks="Header|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity|Whitespace|MethodParamPad"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]DefaultMessageTaskFactoryProvider"/>
     <suppress checks="ExecutableStatementCount|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity"
-              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientExceptionFactory.java"/>
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]clientside[\\/]ClientExceptionFactory.java"/>
+    <suppress checks="ExecutableStatementCount|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientExceptions.java"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientMessage"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]util[\\/]MessageFlyweight"/>
 
@@ -306,4 +308,26 @@
 
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="[\\/]src-instrumented[\\/]"/>
+
+    <!-- Test suppressions -->
+    <suppress
+            checks="FileLength|MethodLength|LineLength|AnonInnerLength|MethodCount|ReturnCount|ExecutableStatementCount"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress
+            checks="Javadoc|MagicNumber|ClassDataAbstractionCoupling|ClassFanOutComplexityCheck|IllegalImport|IllegalType"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress
+            checks="NPathComplexity|CyclomaticComplexity|BooleanExpressionComplexity|RegexpSinglelineJava"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress
+            checks="TypeName|MemberName|ConstantName|LocalVariableName|LocalFinalVariableName|MethodName"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress
+            checks="FinalClass|HideUtilityClassConstructor|InnerAssignment|EmptyBlock|DeclarationOrder|VisibilityModifier"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress
+            checks="ExplicitInitialization|EqualsHashCode|MissingSwitchDefault|TrailingComment"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]protocol[\\/]compatibility[\\/]"/>
+    <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
 </suppressions>

@@ -17,6 +17,14 @@
 package com.hazelcast.test.starter;
 
 import com.hazelcast.core.IFunction;
+import com.hazelcast.test.starter.constructor.AddressConstructor;
+import com.hazelcast.test.starter.constructor.ConfigConstructor;
+import com.hazelcast.test.starter.constructor.DataAwareEntryEventConstructor;
+import com.hazelcast.test.starter.constructor.EnumConstructor;
+import com.hazelcast.test.starter.constructor.GreaterLessPredicateConstructor;
+import com.hazelcast.test.starter.constructor.LifecycleEventConstructor;
+import com.hazelcast.test.starter.constructor.MapEventConstructor;
+import com.hazelcast.test.starter.constructor.VersionConstructor;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.ConstructorFunction;
 import net.bytebuddy.ByteBuddy;
@@ -109,6 +117,31 @@ public class HazelcastProxyFactory {
     }
 
     /**
+     * Decide whether given {@code delegateClass} should be proxied by subclassing, dynamic JDK proxy or not
+     * proxied at all.
+     *
+     * @param delegateClass class of object to be proxied
+     * @param ifaces        interfaces implemented by delegateClass
+     */
+    public static ProxyPolicy shouldProxy(Class<?> delegateClass, Class<?>[] ifaces) {
+        if (delegateClass.isPrimitive() || isJDKClass(delegateClass)) {
+            return ProxyPolicy.RETURN_SAME;
+        }
+
+        String className = delegateClass.getName();
+        if (DELEGATION_WHITE_LIST.contains(className)) {
+            return RETURN_SAME;
+        }
+        if (NO_PROXYING_WHITELIST.contains(className) || delegateClass.isEnum()) {
+            return ProxyPolicy.NO_PROXY;
+        }
+        if (SUBCLASS_PROXYING_WHITELIST.contains(className) || ifaces.length == 0) {
+            return ProxyPolicy.SUBCLASS_PROXY;
+        }
+        return ProxyPolicy.JDK_PROXY;
+    }
+
+    /**
      * This is the main entry point to obtain proxies for a target class loader.
      * Create an Object valid for the Hazelcast version started with {@code targetClassLoader} that proxies
      * the given {@code arg} which is valid in the current Hazelcast version.
@@ -191,7 +224,7 @@ public class HazelcastProxyFactory {
         }
     }
 
-    static boolean isJDKClass(Class clazz) {
+    private static boolean isJDKClass(Class clazz) {
         return clazz.getClassLoader() == String.class.getClassLoader();
     }
 
@@ -250,31 +283,6 @@ public class HazelcastProxyFactory {
             }
         });
         return construct(targetClass, arg);
-    }
-
-    /**
-     * Decide whether given {@code delegateClass} should be proxied by subclassing, dynamic JDK proxy or not
-     * proxied at all.
-     *
-     * @param delegateClass class of object to be proxied
-     * @param ifaces        interfaces implemented by delegateClass
-     */
-    private static ProxyPolicy shouldProxy(Class<?> delegateClass, Class<?>[] ifaces) {
-        if (delegateClass.isPrimitive() || isJDKClass(delegateClass)) {
-            return ProxyPolicy.RETURN_SAME;
-        }
-
-        String className = delegateClass.getName();
-        if (DELEGATION_WHITE_LIST.contains(className)) {
-            return RETURN_SAME;
-        }
-        if (NO_PROXYING_WHITELIST.contains(className) || delegateClass.isEnum()) {
-            return ProxyPolicy.NO_PROXY;
-        }
-        if (SUBCLASS_PROXYING_WHITELIST.contains(className) || ifaces.length == 0) {
-            return ProxyPolicy.SUBCLASS_PROXY;
-        }
-        return ProxyPolicy.JDK_PROXY;
     }
 
     private static Object construct(Class<?> klass, Object delegate) {

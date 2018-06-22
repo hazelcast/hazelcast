@@ -17,7 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;

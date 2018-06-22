@@ -39,9 +39,9 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class TopicDestroyTest extends HazelcastTestSupport {
 
-    HazelcastInstance instance;
-    ITopic<Object> topic;
-    String topicName;
+    private HazelcastInstance instance;
+    private ITopic<Object> topic;
+    private String topicName;
 
     @Before
     public void setup() {

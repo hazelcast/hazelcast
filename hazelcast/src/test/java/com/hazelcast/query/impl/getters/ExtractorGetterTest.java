@@ -35,10 +35,10 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelTest.class})
 public class ExtractorGetterTest {
 
+    private static final InternalSerializationService UNUSED = null;
+
     @Rule
     public ExpectedException expected = ExpectedException.none();
-
-    public InternalSerializationService UNUSED = null;
 
     @Test
     public void isCacheable() {
