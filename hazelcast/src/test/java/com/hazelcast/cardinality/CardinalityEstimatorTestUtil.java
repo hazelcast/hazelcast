@@ -22,11 +22,28 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import static com.hazelcast.test.HazelcastTestSupport.getFirstBackupInstance;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.test.HazelcastTestSupport.getPartitionIdViaReflection;
 
 final class CardinalityEstimatorTestUtil {
 
     private CardinalityEstimatorTestUtil() {
+    }
+
+    /**
+     * Returns the backup instance of an {@link CardinalityEstimator} by a given cardinality estimator instance.
+     * <p>
+     * Note: Returns the backups from the first replica index.
+     *
+     * @param instances            the {@link HazelcastInstance} array to gather the data from
+     * @param cardinalityEstimator the {@link CardinalityEstimator} to retrieve the backup from
+     * @return the backup estimation
+     */
+    static long getBackupEstimate(HazelcastInstance[] instances, CardinalityEstimator cardinalityEstimator) {
+        int partitionId = getPartitionIdViaReflection(cardinalityEstimator);
+        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
+        return getBackupEstimate(backupInstance, cardinalityEstimator.getName());
     }
 
     /**

@@ -154,9 +154,7 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
         queueStoreA.purgeValuesWithPrefix("lostItem");
         queueStoreB.purgeValuesWithPrefix("lostItem");
 
-        int partitionId = ((QueueProxySupport) queueA1).getPartitionId();
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        backupQueue = getBackupQueue(backupInstance, queueNameA);
+        backupQueue = getBackupQueue(instances, queueA1);
 
         queueB1 = instances[0].getQueue(queueNameB);
 

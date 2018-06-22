@@ -18,8 +18,8 @@ package com.hazelcast.ringbuffer;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.ringbuffer.impl.RingbufferProxy;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -30,6 +30,7 @@ import java.util.List;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.getRingbufferNamespace;
 import static com.hazelcast.test.HazelcastTestSupport.getFirstBackupInstance;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.test.HazelcastTestSupport.getPartitionIdViaReflection;
 import static java.util.Collections.emptyList;
 
 final class RingbufferTestUtil {
@@ -47,7 +48,7 @@ final class RingbufferTestUtil {
      * @return a {@link Collection} with the backup items
      */
     static Collection<Object> getBackupRingbuffer(HazelcastInstance[] instances, Ringbuffer ringbuffer) {
-        int partitionId = ((RingbufferProxy) ringbuffer).getPartitionId();
+        int partitionId = getPartitionIdViaReflection(ringbuffer);
         HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
         return getBackupRingbuffer(backupInstance, partitionId, ringbuffer.getName());
     }
@@ -64,14 +65,15 @@ final class RingbufferTestUtil {
      * @return a {@link Collection} with the backup items
      */
     static Collection<Object> getBackupRingbuffer(HazelcastInstance backupInstance, int partitionId, String ringbufferName) {
-        RingbufferService service = getNodeEngineImpl(backupInstance).getService(RingbufferService.SERVICE_NAME);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(backupInstance);
+        RingbufferService service = nodeEngine.getService(RingbufferService.SERVICE_NAME);
         RingbufferContainer container = service.getContainerOrNull(partitionId, getRingbufferNamespace(ringbufferName));
         if (container == null) {
             return emptyList();
         }
 
+        SerializationService serializationService = nodeEngine.getSerializationService();
         List<Object> backupRingbuffer = new ArrayList<Object>((int) container.size());
-        SerializationService serializationService = getNodeEngineImpl(backupInstance).getSerializationService();
         for (long sequence = container.headSequence(); sequence <= container.tailSequence(); sequence++) {
             backupRingbuffer.add(serializationService.toObject(container.readAsData(sequence)));
         }

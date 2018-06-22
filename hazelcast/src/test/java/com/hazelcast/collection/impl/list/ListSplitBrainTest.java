@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection.impl.list;
 
-import com.hazelcast.collection.impl.collection.AbstractCollectionProxyImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -135,9 +134,7 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
         // wait until merge completes
         mergeLifecycleListener.await();
 
-        int partitionId = ((AbstractCollectionProxyImpl) listA1).getPartitionId();
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        backupList = getBackupList(backupInstance, listNameA);
+        backupList = getBackupList(instances, listA1);
 
         listB1 = instances[0].getList(listNameB);
 

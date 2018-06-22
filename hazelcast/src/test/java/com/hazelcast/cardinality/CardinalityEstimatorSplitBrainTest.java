@@ -16,7 +16,6 @@
 
 package com.hazelcast.cardinality;
 
-import com.hazelcast.cardinality.impl.CardinalityEstimatorProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -142,10 +141,8 @@ public class CardinalityEstimatorSplitBrainTest extends SplitBrainTestSupport {
 
         estimatorB1 = instances[0].getCardinalityEstimator(estimatorNameB);
 
-        int partitionId = ((CardinalityEstimatorProxy) estimatorA1).getPartitionId();
-        backupEstimateA = getBackupEstimate(getFirstBackupInstance(instances, partitionId), estimatorNameA);
-        partitionId = ((CardinalityEstimatorProxy) estimatorB1).getPartitionId();
-        backupEstimateB = getBackupEstimate(getFirstBackupInstance(instances, partitionId), estimatorNameB);
+        backupEstimateA = getBackupEstimate(instances, estimatorA1);
+        backupEstimateB = getBackupEstimate(instances, estimatorB1);
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             onAfterMergeDiscardMergePolicy();
