@@ -393,7 +393,9 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
         DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
             public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
-                return mock(DiscoveryService.class);
+                DiscoveryService mocked = mock(DiscoveryService.class);
+                when(mocked.discoverNodes()).thenReturn(null);
+                return mocked;
             }
         };
         config.getNetworkConfig().getJoin().getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);

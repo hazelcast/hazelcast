@@ -355,6 +355,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         final DiscoveryService discoveryService = mock(DiscoveryService.class);
+        when(discoveryService.discoverNodes()).thenReturn(null);
         DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
             public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
                 return discoveryService;
