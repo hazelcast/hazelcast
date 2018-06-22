@@ -225,7 +225,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     public Data txnCommitPoll(long itemId) {
-        final Data result = txnCommitPollBackup(itemId);
+        Data result = txnCommitPollBackup(itemId);
         scheduleEvictionIfEmpty();
         return result;
     }
@@ -283,9 +283,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     @SuppressWarnings("unchecked")
     private void addTxItemOrdered(TxQueueItem txQueueItem) {
-        final ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
+        ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
         while (iterator.hasNext()) {
-            final QueueItem queueItem = iterator.next();
+            QueueItem queueItem = iterator.next();
             if (txQueueItem.itemId < queueItem.itemId) {
                 iterator.previous();
                 break;
@@ -304,7 +304,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return the ID of the reserved item
      */
     public long txnOfferReserve(String transactionId) {
-        final long itemId = nextId();
+        long itemId = nextId();
         txnOfferReserveInternal(itemId, transactionId);
         return itemId;
     }
@@ -317,7 +317,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @param itemId        the ID of the item being reserved
      */
     public void txnOfferBackupReserve(long itemId, String transactionId) {
-        final TxQueueItem o = txnOfferReserveInternal(itemId, transactionId);
+        TxQueueItem o = txnOfferReserveInternal(itemId, transactionId);
         if (o != null) {
             logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
         }
@@ -327,7 +327,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * Add a reservation for an item with {@code itemId} offered in transaction with {@code transactionId}
      */
     private TxQueueItem txnOfferReserveInternal(long itemId, String transactionId) {
-        final TxQueueItem item = new TxQueueItem(this, itemId, null)
+        TxQueueItem item = new TxQueueItem(this, itemId, null)
                 .setTransactionId(transactionId)
                 .setPollOperation(false);
         return txMap.put(itemId, item);
@@ -379,7 +379,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return if an item was reserved with the given {@code itemId}
      */
     public boolean txnRollbackOffer(long itemId) {
-        final boolean result = txnRollbackOfferBackup(itemId);
+        boolean result = txnRollbackOfferBackup(itemId);
         scheduleEvictionIfEmpty();
         return result;
     }
@@ -477,10 +477,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return map of item ID and items added
      */
     public Map<Long, Data> addAll(Collection<Data> dataList) {
-        final Map<Long, Data> map = createHashMap(dataList.size());
-        final List<QueueItem> list = new ArrayList<QueueItem>(dataList.size());
+        Map<Long, Data> map = createHashMap(dataList.size());
+        List<QueueItem> list = new ArrayList<QueueItem>(dataList.size());
         for (Data data : dataList) {
-            final QueueItem item = new QueueItem(this, nextId(), null);
+            QueueItem item = new QueueItem(this, nextId(), null);
             if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
                 item.setData(data);
             }
@@ -526,7 +526,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return the first item in the queue
      */
     public QueueItem peek() {
-        final QueueItem item = getItemQueue().peek();
+        QueueItem item = getItemQueue().peek();
         if (item == null) {
             return null;
         }
@@ -547,7 +547,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return the first item in the queue
      */
     public QueueItem poll() {
-        final QueueItem item = peek();
+        QueueItem item = peek();
         if (item == null) {
             return null;
         }
@@ -592,7 +592,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (maxSizeParam < 0 || maxSizeParam > getItemQueue().size()) {
             maxSizeParam = getItemQueue().size();
         }
-        final Map<Long, Data> map = createLinkedHashMap(maxSizeParam);
+        Map<Long, Data> map = createLinkedHashMap(maxSizeParam);
         mapDrainIterator(maxSizeParam, map);
         if (store.isEnabled() && maxSizeParam != 0) {
             try {
@@ -603,7 +603,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
         long current = Clock.currentTimeMillis();
         for (int i = 0; i < maxSizeParam; i++) {
-            final QueueItem item = getItemQueue().poll();
+            QueueItem item = getItemQueue().poll();
             // for stats
             age(item, current);
         }
@@ -658,7 +658,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public Map<Long, Data> clear() {
         long current = Clock.currentTimeMillis();
-        final Map<Long, Data> map = createLinkedHashMap(getItemQueue().size());
+        Map<Long, Data> map = createLinkedHashMap(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             map.put(item.getItemId(), item.getData());
             // for stats
@@ -745,7 +745,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return the item data in the queue.
      */
     public List<Data> getAsDataList() {
-        final List<Data> dataList = new ArrayList<Data>(getItemQueue().size());
+        List<Data> dataList = new ArrayList<Data>(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             if (store.isEnabled() && item.getData() == null) {
                 try {
@@ -772,7 +772,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return map of removed items by ID
      */
     public Map<Long, Data> compareAndRemove(Collection<Data> dataList, boolean retain) {
-        final LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>();
+        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>();
         for (QueueItem item : getItemQueue()) {
             if (item.getData() == null && store.isEnabled()) {
                 try {
@@ -810,9 +810,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        final Iterator<QueueItem> iterator = getItemQueue().iterator();
+        Iterator<QueueItem> iterator = getItemQueue().iterator();
         while (iterator.hasNext()) {
-            final QueueItem item = iterator.next();
+            QueueItem item = iterator.next();
             if (map.containsKey(item.getItemId())) {
                 iterator.remove();
                 // for stats
@@ -845,19 +845,19 @@ public class QueueContainer implements IdentifiedDataSerializable {
             item.setData(store.load(item.getItemId()));
         } else if (bulkLoad > 1) {
             long maxIdToLoad = -1;
-            final Iterator<QueueItem> iterator = getItemQueue().iterator();
-            final Set<Long> keySet = createHashSet(bulkLoad);
+            Iterator<QueueItem> iterator = getItemQueue().iterator();
+            Set<Long> keySet = createHashSet(bulkLoad);
 
             keySet.add(item.getItemId());
             while (keySet.size() < bulkLoad && iterator.hasNext()) {
-                final long itemId = iterator.next().getItemId();
+                long itemId = iterator.next().getItemId();
                 if (itemId > lastIdLoaded) {
                     keySet.add(itemId);
                     maxIdToLoad = Math.max(itemId, maxIdToLoad);
                 }
             }
 
-            final Map<Long, Data> values = store.loadAll(keySet);
+            Map<Long, Data> values = store.loadAll(keySet);
             lastIdLoaded = maxIdToLoad;
             dataMap.putAll(values);
             item.setData(getDataFromMap(item.getItemId()));
@@ -898,7 +898,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 List<QueueItem> values = new ArrayList<QueueItem>(backupMap.values());
                 Collections.sort(values);
                 itemQueue.addAll(values);
-                final QueueItem lastItem = itemQueue.peekLast();
+                QueueItem lastItem = itemQueue.peekLast();
                 if (lastItem != null) {
                     setId(lastItem.itemId + ID_PROMOTION_OFFSET);
                 }
@@ -944,8 +944,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
         this.logger = nodeEngine.getLogger(QueueContainer.class);
         this.config = new QueueConfig(config);
         // init QueueStore
-        final QueueStoreConfig storeConfig = config.getQueueStoreConfig();
-        final SerializationService serializationService = nodeEngine.getSerializationService();
+        QueueStoreConfig storeConfig = config.getQueueStoreConfig();
+        SerializationService serializationService = nodeEngine.getSerializationService();
         ClassLoader classLoader = nodeEngine.getConfigClassLoader();
         this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
     }
@@ -998,7 +998,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * {@link QueueConfig#getEmptyQueueTtl()} is 0. Upon scheduled execution, the queue will be checked if it is still empty.
      */
     private void scheduleEvictionIfEmpty() {
-        final int emptyQueueTtl = config.getEmptyQueueTtl();
+        int emptyQueueTtl = config.getEmptyQueueTtl();
         if (emptyQueueTtl < 0) {
             return;
         }
@@ -1024,10 +1024,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     public void rollbackTransaction(String transactionId) {
-        final Iterator<TxQueueItem> iterator = txMap.values().iterator();
+        Iterator<TxQueueItem> iterator = txMap.values().iterator();
 
         while (iterator.hasNext()) {
-            final TxQueueItem item = iterator.next();
+            TxQueueItem item = iterator.next();
             if (transactionId.equals(item.getTransactionId())) {
                 iterator.remove();
                 if (item.isPollOperation()) {
