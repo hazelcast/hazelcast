@@ -1974,6 +1974,7 @@
                 </actions>
             </map-permission>
         </client-permissions>
+        <client-block-unmapped-actions>true</client-block-unmapped-actions>
         <security-interceptors>
             <interceptor class-name="com.your-package.YourSecurityInterceptorImplementation"/>
         </security-interceptors>
