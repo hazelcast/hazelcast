@@ -22,9 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.util.Objects;
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Represents the key of an item being sent to the snapshot in a

@@ -33,7 +33,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperati
 /**
  * Offers a step-by-step API to build a pipeline stage that co-groups and
  * aggregates the data from several input stages. To obtain it, call {@link
- * StageWithGrouping#aggregateBuilder()} on one of the stages to co-group
+ * BatchStageWithKey#aggregateBuilder()} on one of the stages to co-group
  * and refer to that method's Javadoc for further details.
  *
  * @param <K> type of the grouping key
@@ -44,7 +44,7 @@ public class GroupAggregateBuilder<K, R0> {
     private final CoAggregateOperationBuilder aggrOpBuilder = coAggregateOperationBuilder();
 
     <T0> GroupAggregateBuilder(
-            @Nonnull StageWithGrouping<T0, K> stage0,
+            @Nonnull BatchStageWithKey<T0, K> stage0,
             @Nonnull AggregateOperation1<? super T0, ?, ? extends R0> aggrOp0
     ) {
         grAggBuilder = new GrAggBuilder<>(stage0);
@@ -70,7 +70,7 @@ public class GroupAggregateBuilder<K, R0> {
      */
     @Nonnull
     public <T, R> Tag<R> add(
-            @Nonnull StageWithGrouping<T, K> stage,
+            @Nonnull BatchStageWithKey<T, K> stage,
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     ) {
         Tag<T> tag = grAggBuilder.add(stage);

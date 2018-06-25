@@ -20,14 +20,15 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.pipeline.transform.DistinctTransform;
 import com.hazelcast.jet.impl.pipeline.transform.GroupTransform;
 import com.hazelcast.jet.pipeline.BatchStage;
+import com.hazelcast.jet.pipeline.BatchStageWithKey;
 import com.hazelcast.jet.pipeline.ContextFactory;
-import com.hazelcast.jet.pipeline.StageWithGrouping;
 
 import javax.annotation.Nonnull;
 
@@ -36,9 +37,9 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
-public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> implements StageWithGrouping<T, K> {
+public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> implements BatchStageWithKey<T, K> {
 
-    StageWithGroupingImpl(
+    BatchStageWithKeyImpl(
             @Nonnull BatchStageImpl<T> computeStage,
             @Nonnull DistributedFunction<? super T, ? extends K> keyFn
     ) {
@@ -55,7 +56,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
     ) {
-        return computeStage.attachMapUsingKeyedContext(contextFactory, keyFn(), mapFn);
+        return computeStage.attachMapUsingPartitionedContext(contextFactory, mapFn, keyFn());
     }
 
     @Nonnull @Override
@@ -63,7 +64,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
     ) {
-        return computeStage.attachFilterUsingKeyedContext(contextFactory, keyFn(), filterFn);
+        return computeStage.attachFilterUsingPartitionedContext(contextFactory, filterFn, keyFn());
     }
 
     @Nonnull @Override
@@ -71,12 +72,25 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
-        return computeStage.attachFlatMapUsingKeyedContext(contextFactory, keyFn(), flatMapFn);
+        return computeStage.attachFlatMapUsingPartitionedContext(contextFactory, flatMapFn, keyFn());
     }
 
-    @Nonnull
-    public <A, R, OUT> BatchStage<OUT> aggregate(
-            @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp,
+    @Nonnull @Override
+    public <R, OUT> BatchStage<OUT> rollingAggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
+            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+    ) {
+        return computeStage.attachRollingAggregate(keyFn(), aggrOp, mapToOutputFn);
+    }
+
+    @Nonnull @Override
+    public <R> BatchStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorSupplier procSupplier) {
+        return computeStage.attachPartitionedCustomTransform(stageName, procSupplier, keyFn());
+    }
+
+    @Nonnull @Override
+    public <R, OUT> BatchStage<OUT> aggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         checkSerializable(mapToOutputFn, "mapToOutputFn");
@@ -88,10 +102,10 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
                 DO_NOT_ADAPT);
     }
 
-    @Nonnull
-    public <T1, A, R, OUT> BatchStage<OUT> aggregate2(
-            @Nonnull StageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, A, ? extends R> aggrOp,
+    @Nonnull @Override
+    public <T1, R, OUT> BatchStage<OUT> aggregate2(
+            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         checkSerializable(mapToOutputFn, "mapToOutputFn");
@@ -104,11 +118,11 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
                 ), DO_NOT_ADAPT);
     }
 
-    @Nonnull
-    public <T1, T2, A, R, OUT> BatchStage<OUT> aggregate3(
-            @Nonnull StageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull StageWithGrouping<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp,
+    @Nonnull @Override
+    public <T1, T2, R, OUT> BatchStage<OUT> aggregate3(
+            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
+            @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
+            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         checkSerializable(mapToOutputFn, "mapToOutputFn");
@@ -119,10 +133,5 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
                         aggrOp,
                         mapToOutputFn),
                 DO_NOT_ADAPT);
-    }
-
-    @SuppressWarnings("unchecked")
-    private BatchStage<T> batchStage() {
-        return (BatchStage<T>) computeStage;
     }
 }

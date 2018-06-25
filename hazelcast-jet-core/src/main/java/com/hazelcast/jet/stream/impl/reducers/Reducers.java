@@ -33,7 +33,6 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 

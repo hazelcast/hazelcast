@@ -69,13 +69,12 @@ public class AggregateBuilder1<T0> {
      * BatchStage#aggregateBuilder()} for more details.
      *
      * @param aggrOp the aggregate operation to perform
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the output item
      * @return a new stage representing the co-aggregation
      */
     @Nonnull
     @SuppressWarnings("unchecked")
-    public <A, R> BatchStage<R> build(@Nonnull AggregateOperation<A, R> aggrOp) {
+    public <R> BatchStage<R> build(@Nonnull AggregateOperation<?, R> aggrOp) {
         CreateOutStageFn<R, BatchStage<R>> createOutStageFn = BatchStageImpl::new;
         return aggBuilder.build(aggrOp, createOutStageFn, null);
     }

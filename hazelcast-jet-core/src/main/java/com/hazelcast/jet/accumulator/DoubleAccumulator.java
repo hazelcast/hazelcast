@@ -71,7 +71,7 @@ public class DoubleAccumulator {
     /**
      * Returns the current value.
      */
-    public double finish() {
+    public double export() {
         return value;
     }
 

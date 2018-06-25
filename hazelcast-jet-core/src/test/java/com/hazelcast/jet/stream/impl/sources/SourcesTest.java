@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.stream.impl.sources;
 
+import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -25,7 +26,6 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.stream.AbstractStreamTest;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.IListJet;
 import org.junit.Test;
 
 import javax.annotation.Nonnull;

@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
@@ -66,7 +65,7 @@ public final class AggregateOperationBuilder<A> {
      * @return a new builder object that captures the {@code T0} type parameter
      */
     @Nonnull
-    public <T> Arity1<T, A> andAccumulate(@Nonnull DistributedBiConsumer<? super A, T> accumulateFn) {
+    public <T> Arity1<T, A, Void> andAccumulate(@Nonnull DistributedBiConsumer<? super A, ? super T> accumulateFn) {
         checkSerializable(accumulateFn, "accumulateFn");
         return new Arity1<>(createFn, accumulateFn);
     }
@@ -80,7 +79,7 @@ public final class AggregateOperationBuilder<A> {
      * @return a new builder object that captures the {@code T0} type parameter
      */
     @Nonnull
-    public <T0> Arity1<T0, A> andAccumulate0(@Nonnull DistributedBiConsumer<? super A, T0> accumulateFn0) {
+    public <T0> Arity1<T0, A, Void> andAccumulate0(@Nonnull DistributedBiConsumer<? super A, ? super T0> accumulateFn0) {
         checkSerializable(accumulateFn0, "accumulateFn0");
         return new Arity1<>(createFn, accumulateFn0);
     }
@@ -91,7 +90,7 @@ public final class AggregateOperationBuilder<A> {
      * @return a new builder object for variable-arity aggregate operations which has
      *         the {@code createFn} of the current builder
      */
-    public VarArity<A> varArity() {
+    public VarArity<A, Void> varArity() {
         return new VarArity<>(createFn);
     }
 
@@ -107,8 +106,8 @@ public final class AggregateOperationBuilder<A> {
      *         the {@code createFn} of the current builder
      */
     @Nonnull
-    public <T> VarArity<A> andAccumulate(
-            @Nonnull Tag<T> tag, @Nonnull DistributedBiConsumer<? super A, T> accumulateFn
+    public <T> VarArity<A, Void> andAccumulate(
+            @Nonnull Tag<T> tag, @Nonnull DistributedBiConsumer<? super A, ? super T> accumulateFn
     ) {
         checkSerializable(accumulateFn, "accumulateFn");
         return new VarArity<>(createFn, tag, accumulateFn);
@@ -119,18 +118,23 @@ public final class AggregateOperationBuilder<A> {
      * raised to arity-2 by calling {@link #andAccumulate1(
      * DistributedBiConsumer) andAccumulate1()}.
      *
-     * @param <T0> the type of item in stream-0
-     * @param <A> the type of the accumulator
+     * @param <T0> type of item in stream-0
+     * @param <A> type of the accumulator
+     * @param <R> type of the aggregation result
      */
-    public static class Arity1<T0, A> {
+    public static class Arity1<T0, A, R> {
         @Nonnull
         private final DistributedSupplier<A> createFn;
         @Nonnull
-        private final DistributedBiConsumer<? super A, T0> accumulateFn0;
+        private final DistributedBiConsumer<? super A, ? super T0> accumulateFn0;
         private DistributedBiConsumer<? super A, ? super A> combineFn;
         private DistributedBiConsumer<? super A, ? super A> deductFn;
+        private DistributedFunction<? super A, ? extends R> exportFn;
 
-        Arity1(@Nonnull DistributedSupplier<A> createFn, @Nonnull DistributedBiConsumer<? super A, T0> accumulateFn0) {
+        Arity1(
+                @Nonnull DistributedSupplier<A> createFn,
+                @Nonnull DistributedBiConsumer<? super A, ? super T0> accumulateFn0
+        ) {
             this.createFn = createFn;
             this.accumulateFn0 = accumulateFn0;
         }
@@ -144,7 +148,9 @@ public final class AggregateOperationBuilder<A> {
          * @return a new builder object that captures the {@code T1} type parameter
          */
         @Nonnull
-        public <T1> Arity2<T0, T1, A> andAccumulate1(@Nonnull DistributedBiConsumer<? super A, T1> accumulateFn1) {
+        public <T1> Arity2<T0, T1, A, R> andAccumulate1(
+                @Nonnull DistributedBiConsumer<? super A, ? super T1> accumulateFn1
+        ) {
             checkSerializable(accumulateFn1, "accumulateFn1");
             return new Arity2<>(this, accumulateFn1);
         }
@@ -153,7 +159,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public Arity1<T0, A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public Arity1<T0, A, R> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
             checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
@@ -163,31 +169,68 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public Arity1<T0, A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public Arity1<T0, A, R> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
             checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
         }
 
         /**
-         * Constructs and returns an {@link AggregateOperation1} from the
-         * current state of the builder and the supplied {@code finish} primitive.
+         * Registers the {@code export} primitive.
          */
         @Nonnull
-        public <R> AggregateOperation1<T0, A, R> andFinish(@Nonnull DistributedFunction<? super A, R> finishFn) {
-            checkSerializable(finishFn, "finishFn");
-            return new AggregateOperation1Impl<>(createFn, accumulateFn0, combineFn, deductFn, finishFn);
+        public <R_NEW> Arity1<T0, A, R_NEW> andExport(
+                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFn
+        ) {
+            checkSerializable(exportFn, "exportFn");
+            @SuppressWarnings("unchecked")
+            Arity1<T0, A, R_NEW> newThis = (Arity1<T0, A, R_NEW>) this;
+            newThis.exportFn = exportFn;
+            return newThis;
         }
 
         /**
-         * Constructs and returns an {@link AggregateOperation1} from the current
-         * state of the builder, with the identity function as the {@code finish}
-         * primitive.
+         * Registers the supplied function as the {@code finish} primitive. Constructs
+         * and returns an {@link AggregateOperation1} from the current state of the
+         * builder.
+         *
+         * @throws IllegalStateException if the {@code export} primitive was
+         * not registered
          */
         @Nonnull
-        public AggregateOperation1<T0, A, A> andIdentityFinish() {
-            return new AggregateOperation1Impl<>(createFn, accumulateFn0, combineFn, deductFn,
-                    DistributedFunction.identity());
+        public AggregateOperation1<T0, A, R> andFinish(
+                @Nonnull DistributedFunction<? super A, ? extends R> finishFn
+        ) {
+            if (exportFn == null) {
+                throw new IllegalStateException(
+                        "The export primitive is not registered. Either add the missing andExport() call" +
+                        " or use andExportFinish() to register the same function as both the export and" +
+                        " finish primitive");
+            }
+            checkSerializable(finishFn, "finishFn");
+            return new AggregateOperation1Impl<>(
+                    createFn, accumulateFn0, combineFn, deductFn, exportFn, finishFn);
+        }
+
+        /**
+         * Registers the supplied function as both the {@code export} and {@code
+         * finish} primitive. Constructs and returns an {@link AggregateOperation1}
+         * from the current state of the builder.
+         *
+         * @throws IllegalStateException if the {@code export} primitive is
+         * already registered
+         */
+        @Nonnull
+        public <R_NEW> AggregateOperation1<T0, A, R_NEW> andExportFinish(
+                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFinishFn
+        ) {
+            if (exportFn != null) {
+                throw new IllegalStateException("The export primitive is already registered. Call" +
+                        " andFinish() if you want to register a separate finish primitive.");
+            }
+            checkSerializable(exportFinishFn, "exportFinishFn");
+            return new AggregateOperation1Impl<>(
+                    createFn, accumulateFn0, combineFn, deductFn, exportFinishFn, exportFinishFn);
         }
     }
 
@@ -199,18 +242,20 @@ public final class AggregateOperationBuilder<A> {
      * @param <T0> the type of item in stream-0
      * @param <T1> the type of item in stream-1
      * @param <A> the type of the accumulator
+     * @param <R> type of the aggregation result
      */
-    public static class Arity2<T0, T1, A> {
+    public static class Arity2<T0, T1, A, R> {
         @Nonnull
         private final DistributedSupplier<A> createFn;
         @Nonnull
-        private final DistributedBiConsumer<? super A, T0> accumulateFn0;
+        private final DistributedBiConsumer<? super A, ? super T0> accumulateFn0;
         @Nonnull
-        private final DistributedBiConsumer<? super A, T1> accumulateFn1;
+        private final DistributedBiConsumer<? super A, ? super T1> accumulateFn1;
         private DistributedBiConsumer<? super A, ? super A> combineFn;
         private DistributedBiConsumer<? super A, ? super A> deductFn;
+        private DistributedFunction<? super A, ? extends R> exportFn;
 
-        Arity2(@Nonnull Arity1<T0, A> step1, @Nonnull DistributedBiConsumer<? super A, T1> accumulateFn1) {
+        Arity2(@Nonnull Arity1<T0, A, R> step1, @Nonnull DistributedBiConsumer<? super A, ? super T1> accumulateFn1) {
             this.createFn = step1.createFn;
             this.accumulateFn0 = step1.accumulateFn0;
             this.accumulateFn1 = accumulateFn1;
@@ -225,7 +270,9 @@ public final class AggregateOperationBuilder<A> {
          * @return a new builder object that captures the {@code T2} type parameter
          */
         @Nonnull
-        public <T2> Arity3<T0, T1, T2, A> andAccumulate2(@Nonnull DistributedBiConsumer<? super A, T2> accumulateFn2) {
+        public <T2> Arity3<T0, T1, T2, A, R> andAccumulate2(
+                @Nonnull DistributedBiConsumer<? super A, ? super T2> accumulateFn2
+        ) {
             checkSerializable(accumulateFn2, "accumulateFn2");
             return new Arity3<>(this, accumulateFn2);
         }
@@ -234,7 +281,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public Arity2<T0, T1, A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public Arity2<T0, T1, A, R> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
             checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
@@ -244,34 +291,63 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public Arity2<T0, T1, A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public Arity2<T0, T1, A, R> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
             checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
         }
 
         /**
-         * Constructs and returns an {@link AggregateOperation2} from the
-         * current state of the builder and the supplied {@code finish} primitive.
+         * Registers the {@code export} primitive.
          */
         @Nonnull
-        public <R> AggregateOperation2<T0, T1, A, R> andFinish(@Nonnull DistributedFunction<? super A, R> finishFn) {
-            checkSerializable(finishFn, "finishFn");
-            return new AggregateOperation2Impl<>(createFn,
-                    accumulateFn0, accumulateFn1,
-                    combineFn, deductFn, finishFn);
+        public <R_NEW> Arity2<T0, T1, A, R_NEW> andExport(
+                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFn
+        ) {
+            checkSerializable(exportFn, "exportFn");
+            @SuppressWarnings("unchecked")
+            Arity2<T0, T1, A, R_NEW> newThis = (Arity2<T0, T1, A, R_NEW>) this;
+            newThis.exportFn = exportFn;
+            return newThis;
         }
 
         /**
-         * Constructs and returns an {@link AggregateOperation2} from the current
-         * state of the builder, with the identity function as the {@code
-         * finish} primitive.
+         * Registers the supplied function as the {@code finish} primitive. Constructs
+         * and returns an {@link AggregateOperation1} from the current state of the
+         * builder.
+         *
+         * @throws IllegalStateException if the {@code export} primitive was
+         * not registered
          */
         @Nonnull
-        public AggregateOperation2<T0, T1, A, A> andIdentityFinish() {
-            return new AggregateOperation2Impl<>(createFn,
-                    accumulateFn0, accumulateFn1,
-                    combineFn, deductFn, DistributedFunction.identity());
+        public AggregateOperation2<T0, T1, A, R> andFinish(
+                @Nonnull DistributedFunction<? super A, ? extends R> finishFn
+        ) {
+            checkSerializable(finishFn, "finishFn");
+            if (exportFn == null) {
+                throw new IllegalStateException(
+                        "The export primitive is not registered. Either add the missing andExport() call" +
+                        " or use andExportFinish() to register the same function as both the export and" +
+                        " finish primitive");
+            }
+            return new AggregateOperation2Impl<>(
+                    createFn, accumulateFn0, accumulateFn1, combineFn, deductFn, exportFn, finishFn);
+        }
+
+        /**
+         * Registers the supplied function as both the {@code export} and {@code
+         * finish} primitive. Constructs and returns an {@link AggregateOperation2}
+         * from the current state of the builder.
+         *
+         * @throws IllegalStateException if the {@code export} primitive is
+         * already registered
+         */
+        @Nonnull
+        public <R_NEW> AggregateOperation2<T0, T1, A, R_NEW> andExportFinish(
+                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFinishFn
+        ) {
+            return new AggregateOperation2Impl<>(createFn, accumulateFn0, accumulateFn1,
+                    combineFn, deductFn, exportFinishFn, exportFinishFn);
         }
     }
 
@@ -282,25 +358,25 @@ public final class AggregateOperationBuilder<A> {
      * @param <T1> the type of item in stream-1
      * @param <T2> the type of item in stream-2
      * @param <A> the type of the accumulator
+     * @param <R> type of the aggregation result
      */
-    public static class Arity3<T0, T1, T2, A> {
+    public static class Arity3<T0, T1, T2, A, R> {
         @Nonnull
         private final DistributedSupplier<A> createFn;
         @Nonnull
-        private final DistributedBiConsumer<? super A, T0> accumulateFn0;
+        private final DistributedBiConsumer<? super A, ? super T0> accumulateFn0;
         @Nonnull
-        private final DistributedBiConsumer<? super A, T1> accumulateFn1;
+        private final DistributedBiConsumer<? super A, ? super T1> accumulateFn1;
         @Nonnull
-        private final DistributedBiConsumer<? super A, T2> accumulateFn2;
+        private final DistributedBiConsumer<? super A, ? super T2> accumulateFn2;
         private DistributedBiConsumer<? super A, ? super A> combineFn;
         private DistributedBiConsumer<? super A, ? super A> deductFn;
+        private DistributedFunction<? super A, ? extends R> exportFn;
 
-        Arity3(Arity2<T0, T1, A> step2,
-               DistributedBiConsumer<? super A, T2> accumulateFn2
-        ) {
-            this.createFn = step2.createFn;
-            this.accumulateFn0 = step2.accumulateFn0;
-            this.accumulateFn1 = step2.accumulateFn1;
+        Arity3(Arity2<T0, T1, A, R> arity2, DistributedBiConsumer<? super A, ? super T2> accumulateFn2) {
+            this.createFn = arity2.createFn;
+            this.accumulateFn0 = arity2.accumulateFn0;
+            this.accumulateFn1 = arity2.accumulateFn1;
             this.accumulateFn2 = accumulateFn2;
         }
 
@@ -308,7 +384,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public Arity3<T0, T1, T2, A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public Arity3<T0, T1, T2, A, R> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
             checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
@@ -318,36 +394,65 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public Arity3<T0, T1, T2, A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public Arity3<T0, T1, T2, A, R> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
             checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
         }
 
         /**
-         * Constructs and returns an {@link AggregateOperation3} from the
-         * current state of the builder and the supplied {@code finish} primitive.
+         * Registers the {@code export} primitive.
          */
         @Nonnull
-        public <R> AggregateOperation3<T0, T1, T2, A, R> andFinish(
-                @Nonnull DistributedFunction<? super A, R> finishFn
+        public <R_NEW> Arity3<T0, T1, T2, A, R_NEW> andExport(
+                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFn
         ) {
-            checkSerializable(finishFn, "finishFn");
-            return new AggregateOperation3Impl<>(createFn,
-                    accumulateFn0, accumulateFn1, accumulateFn2,
-                    combineFn, deductFn, finishFn);
+            checkSerializable(exportFn, "exportFn");
+            @SuppressWarnings("unchecked")
+            Arity3<T0, T1, T2, A, R_NEW> newThis = (Arity3<T0, T1, T2, A, R_NEW>) this;
+            newThis.exportFn = exportFn;
+            return newThis;
         }
 
         /**
-         * Constructs and returns an {@link AggregateOperation3} from the current
-         * state of the builder, with the identity function as the {@code
-         * finish} primitive.
+         * Registers the supplied function as the {@code finish} primitive. Constructs
+         * and returns an {@link AggregateOperation1} from the current state of the
+         * builder.
+         *
+         * @throws IllegalStateException if the {@code export} primitive was
+         * not registered
          */
         @Nonnull
-        public AggregateOperation3<T0, T1, T2, A, A> andIdentityFinish() {
+        public AggregateOperation3<T0, T1, T2, A, R> andFinish(
+                @Nonnull DistributedFunction<? super A, ? extends R> finishFn
+        ) {
+            if (exportFn == null) {
+                throw new IllegalStateException(
+                        "The export primitive is not registered. Either add the missing andExport() call" +
+                                " or use andExportFinish() to register the same function as both the export and" +
+                                " finish primitive");
+            }
+            checkSerializable(finishFn, "finishFn");
             return new AggregateOperation3Impl<>(createFn,
                     accumulateFn0, accumulateFn1, accumulateFn2,
-                    combineFn, deductFn, DistributedFunction.identity());
+                    combineFn, deductFn, exportFn, finishFn);
+        }
+
+        /**
+         * Registers the supplied function as both the {@code export} and {@code
+         * finish} primitive. Constructs and returns an {@link AggregateOperation3}
+         * from the current state of the builder.
+         *
+         * @throws IllegalStateException if the {@code export} primitive is
+         * already registered
+         */
+        @Nonnull
+        public <R_NEW> AggregateOperation3<T0, T1, T2, A, R_NEW> andExportFinish(
+                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFinishFn
+        ) {
+            checkSerializable(exportFinishFn, "exportFinishFn");
+            return new AggregateOperation3Impl<>(createFn, accumulateFn0, accumulateFn1, accumulateFn2,
+                    combineFn, deductFn, exportFinishFn, exportFinishFn);
         }
     }
 
@@ -358,13 +463,15 @@ public final class AggregateOperationBuilder<A> {
      * stream items.
      *
      * @param <A> the type of the accumulator
+     * @param <R> type of the aggregation result
      */
-    public static class VarArity<A> {
+    public static class VarArity<A, R> {
         @Nonnull
         private final DistributedSupplier<A> createFn;
         private final Map<Integer, DistributedBiConsumer<? super A, ?>> accumulateFnsByTag = new HashMap<>();
         private DistributedBiConsumer<? super A, ? super A> combineFn;
         private DistributedBiConsumer<? super A, ? super A> deductFn;
+        private DistributedFunction<? super A, ? extends R> exportFn;
 
         VarArity(@Nonnull DistributedSupplier<A> createFn) {
             this.createFn = createFn;
@@ -373,7 +480,7 @@ public final class AggregateOperationBuilder<A> {
         <T> VarArity(
                 @Nonnull DistributedSupplier<A> createFn,
                 @Nonnull Tag<T> tag,
-                @Nonnull DistributedBiConsumer<? super A, T> accumulateFn
+                @Nonnull DistributedBiConsumer<? super A, ? super T> accumulateFn
         ) {
             this(createFn);
             accumulateFnsByTag.put(tag.index(), accumulateFn);
@@ -389,7 +496,7 @@ public final class AggregateOperationBuilder<A> {
          * @return this
          */
         @Nonnull
-        public <T> VarArity<A> andAccumulate(
+        public <T> VarArity<A, R> andAccumulate(
                 @Nonnull Tag<T> tag, @Nonnull DistributedBiConsumer<? super A, T> accumulateFn
         ) {
             checkSerializable(accumulateFn, "accumulateFn");
@@ -403,7 +510,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public VarArity<A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public VarArity<A, R> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
             checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
@@ -413,32 +520,68 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public VarArity<A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public VarArity<A, R> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
             checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
         }
 
         /**
-         * Constructs and returns an {@link AggregateOperation} from the
-         * current state of the builder and the supplied {@code finish} primitive.
+         * Registers the {@code export} primitive.
          */
         @Nonnull
-        public <R> AggregateOperation<A, R> andFinish(@Nonnull DistributedFunction<? super A, R> finishFn) {
-            checkNotNull(finishFn, "finishFn");
-            return new AggregateOperationImpl<>(createFn, packAccumulateFns(),
-                    combineFn, deductFn, finishFn);
+        public <R_NEW> VarArity<A, R_NEW> andExport(
+                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFn
+        ) {
+            checkSerializable(exportFn, "exportFn");
+            @SuppressWarnings("unchecked")
+            VarArity<A, R_NEW> newThis = (VarArity<A, R_NEW>) this;
+            newThis.exportFn = exportFn;
+            return newThis;
         }
 
         /**
-         * Constructs and returns an {@link AggregateOperation} from the current
-         * state of the builder, with the identity function as the {@code
-         * finish} primitive.
+         * Registers the supplied function as the {@code finish} primitive. Constructs
+         * and returns an {@link AggregateOperation1} from the current state of the
+         * builder.
+         *
+         * @throws IllegalStateException if the {@code export} primitive was
+         * not registered
          */
         @Nonnull
-        public AggregateOperation<A, A> andIdentityFinish() {
-            return new AggregateOperationImpl<>(createFn, packAccumulateFns(),
-                    combineFn, deductFn, DistributedFunction.identity());
+        public AggregateOperation<A, R> andFinish(
+                @Nonnull DistributedFunction<? super A, ? extends R> finishFn
+        ) {
+            if (exportFn == null) {
+                throw new IllegalStateException(
+                        "The export primitive is not registered. Either add the missing andExport() call" +
+                                " or use andExportFinish() to register the same function as both the export and" +
+                                " finish primitive");
+            }
+            checkSerializable(finishFn, "finishFn");
+            return new AggregateOperationImpl<>(
+                    createFn, packAccumulateFns(), combineFn, deductFn, exportFn, finishFn);
+        }
+
+        /**
+         * Registers the supplied function as both the {@code export} and {@code
+         * finish} primitive. Constructs and returns an {@link AggregateOperation1}
+         * from the current state of the builder.
+         *
+         * @throws IllegalStateException if the {@code export} primitive is
+         * already registered
+         */
+        @Nonnull
+        public <R_NEW> AggregateOperation<A, R_NEW> andExportFinish(
+                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFinishFn
+        ) {
+            if (exportFn != null) {
+                throw new IllegalStateException("The export primitive is already registered. Call" +
+                        " andFinish() if you want to register a separate finish primitive.");
+            }
+            checkSerializable(exportFinishFn, "exportFinishFn");
+            return new AggregateOperationImpl<>(
+                    createFn, packAccumulateFns(), combineFn, deductFn, exportFinishFn, exportFinishFn);
         }
 
         private DistributedBiConsumer<? super A, ?>[] packAccumulateFns() {

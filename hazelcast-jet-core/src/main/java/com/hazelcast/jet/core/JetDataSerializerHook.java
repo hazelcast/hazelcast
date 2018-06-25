@@ -22,9 +22,9 @@ import com.hazelcast.jet.impl.connector.HazelcastWriters.ApplyFnEntryProcessor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import static com.hazelcast.jet.impl.SerializationConstants.APPLY_FN_ENTRY_PROCESSOR;
 import static com.hazelcast.jet.impl.SerializationConstants.DAG;
 import static com.hazelcast.jet.impl.SerializationConstants.EDGE;
-import static com.hazelcast.jet.impl.SerializationConstants.APPLY_FN_ENTRY_PROCESSOR;
 import static com.hazelcast.jet.impl.SerializationConstants.VERTEX;
 
 /**

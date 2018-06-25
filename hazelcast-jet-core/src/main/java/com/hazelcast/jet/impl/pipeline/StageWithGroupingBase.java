@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
-import com.hazelcast.jet.pipeline.GeneralStageWithGrouping;
+import com.hazelcast.jet.pipeline.GeneralStageWithKey;
 
 import javax.annotation.Nonnull;
 
@@ -45,7 +45,7 @@ class StageWithGroupingBase<T, K> {
         return keyFn;
     }
 
-    static Transform transformOf(GeneralStageWithGrouping stage) {
+    static Transform transformOf(GeneralStageWithKey stage) {
         return ((StageWithGroupingBase) stage).computeStage.transform;
     }
 }

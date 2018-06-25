@@ -33,8 +33,8 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetInstanceImpl;
-import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 
 import java.util.Properties;

@@ -138,6 +138,7 @@
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
         <module name="LineLength">
             <property name="max" value="123"/>
+            <property name="ignorePattern" value="(package|import) .*"/>
         </module>
         <module name="MethodLength">
             <property name="tokens" value="METHOD_DEF"/>

@@ -16,33 +16,37 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
-import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.core.processor.Processors.mapUsingContextP;
+import static com.hazelcast.jet.core.processor.Processors.rollingAggregateP;
 
-public class MapUsingContextTransform<C, T, R> extends AbstractTransform {
-    private final ContextFactory<C> contextFactory;
-    private final DistributedBiFunction<? super C, ? super T, ? extends R> mapFn;
+public class RollingAggregateTransform<T, K, R, OUT> extends AbstractTransform {
+    private final DistributedFunction<? super T, ? extends K> keyFn;
+    @Nonnull private final AggregateOperation1<? super T, ?, ? extends R> aggrOp;
+    @Nonnull private final DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn;
 
-    public MapUsingContextTransform(
+    public RollingAggregateTransform(
             @Nonnull Transform upstream,
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> keyFn,
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
+            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
-        super("map", upstream);
-        this.contextFactory = contextFactory;
-        this.mapFn = mapFn;
+        super("rolling-aggregate", upstream);
+        this.keyFn = keyFn;
+        this.aggrOp = aggrOp;
+        this.mapToOutputFn = mapToOutputFn;
     }
 
     @Override
     public void addToDag(Planner p) {
         PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name(), ""), localParallelism(),
-                mapUsingContextP(contextFactory, mapFn));
-        p.addEdges(this, pv.v);
+                rollingAggregateP(keyFn, aggrOp, mapToOutputFn));
+        p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }
 }

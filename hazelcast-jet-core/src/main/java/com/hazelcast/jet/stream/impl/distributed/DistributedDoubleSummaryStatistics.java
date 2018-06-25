@@ -22,8 +22,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.setPrivateField;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.stream.impl.StreamUtil.setPrivateField;
 
 public class DistributedDoubleSummaryStatistics extends java.util.DoubleSummaryStatistics implements DataSerializable {
 

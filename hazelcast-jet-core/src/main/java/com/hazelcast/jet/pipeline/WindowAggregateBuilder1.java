@@ -73,14 +73,13 @@ public class WindowAggregateBuilder1<T0> {
      *
      * @param aggrOp        the aggregate operation to perform
      * @param mapToOutputFn a function that creates the output item from the aggregation result
-     * @param <A>           the type of items in the pipeline stage this builder was obtained from
      * @param <R>           the type of the aggregation result
      * @param <OUT>         the type of the output item
      * @return a new stage representing the co-aggregation
      */
     @Nonnull
-    public <A, R, OUT> StreamStage<OUT> build(
-            @Nonnull AggregateOperation<A, R> aggrOp,
+    public <R, OUT> StreamStage<OUT> build(
+            @Nonnull AggregateOperation<?, R> aggrOp,
             @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
     ) {
         CreateOutStageFn<OUT, StreamStage<OUT>> createOutStageFn = StreamStageImpl::new;

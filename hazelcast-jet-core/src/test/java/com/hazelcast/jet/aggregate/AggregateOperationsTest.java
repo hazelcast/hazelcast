@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.aggregate;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.accumulator.DoubleAccumulator;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
 import com.hazelcast.jet.accumulator.LongAccumulator;
@@ -74,12 +76,16 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class AggregateOperationsTest {
+
+    private static final InternalSerializationService SERIALIZATION_SERVICE =
+            new DefaultSerializationServiceBuilder().build();
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -103,7 +109,7 @@ public class AggregateOperationsTest {
 
     @Test
     public void when_summingToDouble() {
-        validateOp(summingDouble(Double::doubleValue), DoubleAccumulator::finish,
+        validateOp(summingDouble(Double::doubleValue), DoubleAccumulator::export,
                 0.5, 1.5, 0.5, 2.0, 2.0);
     }
 
@@ -207,7 +213,7 @@ public class AggregateOperationsTest {
                 allOf(AggregateOperation
                                 .withCreate(LongAccumulator::new)
                                 .<Long>andAccumulate(LongAccumulator::addAllowingOverflow)
-                                .andFinish(LongAccumulator::get),
+                                .andExportFinish(LongAccumulator::get),
                         summingLong(x -> x));
         assertNull(composite.combineFn());
     }
@@ -221,7 +227,7 @@ public class AggregateOperationsTest {
         BiConsumer<? super LinTrendAccumulator, ? super Entry<Long, Long>> accFn = op.accumulateFn();
         BiConsumer<? super LinTrendAccumulator, ? super LinTrendAccumulator> combineFn = op.combineFn();
         BiConsumer<? super LinTrendAccumulator, ? super LinTrendAccumulator> deductFn = op.deductFn();
-        Function<? super LinTrendAccumulator, Double> finishFn = op.finishFn();
+        Function<? super LinTrendAccumulator, ? extends Double> finishFn = op.finishFn();
         assertNotNull(deductFn);
 
         // When
@@ -548,10 +554,23 @@ public class AggregateOperationsTest {
         // Then
         assertEqualsOrArrayEquals("accumulated", expectAcced1, getAccValFn.apply(acc1));
 
+        R acc1Exported = op.exportFn().apply(acc1);
+        byte[] acc1ExportedSerialized = serialize(acc1Exported);
+
         // When
         op.combineFn().accept(acc1, acc2);
         // Then
         assertEqualsOrArrayEquals("combined", expectCombined, getAccValFn.apply(acc1));
+
+        // When - acc1 was mutated
+        // Then - it's exported version must stay unchanged
+        assertArrayEquals(acc1ExportedSerialized, serialize(acc1Exported));
+
+        // When
+        R exported = op.exportFn().apply(acc1);
+        // Then
+        assertEquals("exported", expectFinished, exported);
+        assertNotSame(exported, acc1);
 
         // When
         R finished = op.finishFn().apply(acc1);
@@ -604,10 +623,23 @@ public class AggregateOperationsTest {
         // Then
         assertEquals("accumulated", expectAcced, getAccValFn.apply(acc1));
 
+        R acc1Exported = op.exportFn().apply(acc1);
+        byte[] acc1ExportedSerialized = serialize(acc1Exported);
+
         // When
         op.combineFn().accept(acc1, acc2);
         // Then
         assertEquals("combined", expectCombined, getAccValFn.apply(acc1));
+
+        // When - acc1 was mutated
+        // Then - it's exported version must stay unchanged
+        assertArrayEquals(acc1ExportedSerialized, serialize(acc1Exported));
+
+        // When
+        R exported = op.exportFn().apply(acc1);
+        // Then
+        assertEquals("exported", expectFinished, exported);
+        assertNotSame(exported, acc1);
 
         // When
         R finished = op.finishFn().apply(acc1);
@@ -620,6 +652,10 @@ public class AggregateOperationsTest {
         op.accumulateFn().accept(acc1, item2);
         // Then
         assertEquals("accumulated", expectCombined, getAccValFn.apply(acc1));
+    }
+
+    private static byte[] serialize(Object o) {
+        return SERIALIZATION_SERVICE.toBytes(o);
     }
 
     @SuppressWarnings("unchecked")

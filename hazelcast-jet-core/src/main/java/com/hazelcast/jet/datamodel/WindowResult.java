@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.datamodel;
 
-import java.util.Objects;
 import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 

@@ -23,8 +23,8 @@ import com.hazelcast.jet.stream.impl.processor.DistinctP;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
+import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 class DistinctPipe<T> extends AbstractIntermediatePipe<T, T> {

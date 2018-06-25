@@ -21,12 +21,13 @@ import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
-import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * Offers a step-by-step API to create a composite of multiple aggregate
@@ -34,7 +35,7 @@ import static com.hazelcast.jet.function.DistributedFunction.identity;
  *
  * @param <T> the type of the input items
  */
-public final class AllOfAggregationBuilder<T> implements Serializable {
+public final class AllOfAggregationBuilder<T> {
 
     private final List<Tag> tags = new ArrayList<>();
     private final List<AggregateOperation1> operations = new ArrayList<>();
@@ -68,21 +69,24 @@ public final class AllOfAggregationBuilder<T> implements Serializable {
 
     /**
      * Builds and returns the composite {@link AggregateOperation1}. It will
-     * call the supplied {@code finishFn} to transform the {@link ItemsByTag}
+     * call the supplied {@code exportFinishFn} to transform the {@link ItemsByTag}
      * it creates to the result type it emits as the actual result.
      *
-     * @param finishFn function to convert {@link ItemsByTag} to the target
-     *                result type
+     * @param exportFinishFn function that converts the {@link ItemsByTag} to the target result type
      */
     @Nonnull
     @SuppressWarnings({"unchecked", "ConstantConditions"})
-    public <R> AggregateOperation1<T, Object[], R> build(@Nonnull DistributedFunction<ItemsByTag, R> finishFn) {
+    public <R> AggregateOperation1<T, Object[], R> build(@Nonnull DistributedFunction<ItemsByTag, R> exportFinishFn) {
+        checkSerializable(exportFinishFn, "exportFinishFn");
+
+        // Avoid capturing this builder in the lambdas:
+        List<Tag> tags = this.tags;
+        List<AggregateOperation1> operations = this.operations;
+
         return (AggregateOperation1<T, Object[], R>) AggregateOperation
                 .withCreate(() -> {
                     Object[] acc = new Object[tags.size()];
-                    for (int i = 0; i < acc.length; i++) {
-                        acc[i] = operations.get(i).createFn().get();
-                    }
+                    Arrays.setAll(acc, i -> operations.get(i).createFn().get());
                     return acc;
                 })
                 .andAccumulate((acc, item) -> {
@@ -104,13 +108,21 @@ public final class AllOfAggregationBuilder<T> implements Serializable {
                             }
                         }
                 )
+                .andExport(acc -> {
+                    ItemsByTag result = new ItemsByTag();
+                    for (int i = 0; i < tags.size(); i++) {
+                        Object exportedVal = operations.get(i).exportFn().apply(acc[i]);
+                        result.put(tags.get(i), exportedVal);
+                    }
+                    return exportFinishFn.apply(result);
+                })
                 .andFinish(acc -> {
                     ItemsByTag result = new ItemsByTag();
                     for (int i = 0; i < tags.size(); i++) {
                         Object finishedVal = operations.get(i).finishFn().apply(acc[i]);
                         result.put(tags.get(i), finishedVal);
                     }
-                    return finishFn.apply(result);
+                    return exportFinishFn.apply(result);
                 });
     }
 }

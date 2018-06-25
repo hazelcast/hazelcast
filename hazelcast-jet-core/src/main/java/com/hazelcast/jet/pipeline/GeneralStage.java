@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
@@ -46,11 +46,10 @@ import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 public interface GeneralStage<T> extends Stage {
 
     /**
-     * Attaches to this stage a mapping stage, one which applies the supplied
-     * function to each input item independently and emits the function's
-     * result as the output item. If the result is {@code null}, it emits
-     * nothing. Therefore this stage can be used to implement filtering
-     * semantics as well.
+     * Attaches a mapping stage which applies the supplied function to each
+     * input item independently and emits the function's result as the output
+     * item. If the result is {@code null}, it emits nothing. Therefore this
+     * stage can be used to implement filtering semantics as well.
      *
      * @param mapFn a stateless mapping function
      * @param <R> the result type of the mapping function
@@ -60,9 +59,9 @@ public interface GeneralStage<T> extends Stage {
     <R> GeneralStage<R> map(@Nonnull DistributedFunction<? super T, ? extends R> mapFn);
 
     /**
-     * Attaches to this stage a filtering stage, one which applies the provided
-     * predicate function to each input item to decide whether to pass the item
-     * to the output or to discard it. Returns the newly attached stage.
+     * Attaches a filtering stage which applies the provided predicate function
+     * to each input item to decide whether to pass the item to the output or
+     * to discard it. Returns the newly attached stage.
      *
      * @param filterFn a stateless filter predicate function
      * @return the newly attached stage
@@ -71,10 +70,9 @@ public interface GeneralStage<T> extends Stage {
     GeneralStage<T> filter(@Nonnull DistributedPredicate<T> filterFn);
 
     /**
-     * Attaches to this stage a flat-mapping stage, one which applies the
-     * supplied function to each input item independently and emits all the
-     * items from the {@link Traverser} it returns. The traverser must be
-     * <em>null-terminated</em>.
+     * Attaches a flat-mapping stage which applies the supplied function to
+     * each input item independently and emits all the items from the {@link
+     * Traverser} it returns. The traverser must be <em>null-terminated</em>.
      *
      * @param flatMapFn a stateless flatmapping function, whose result type is
      *                  Jet's {@link Traverser}
@@ -87,11 +85,10 @@ public interface GeneralStage<T> extends Stage {
     );
 
     /**
-     * Attaches to this stage a mapping stage, one which applies the supplied
-     * function to each input item independently and emits the function's result
-     * as the output item. The mapping function receives another parameter, the
-     * context object which Jet will create using the supplied {@code
-     * contextFactory}.
+     * Attaches a mapping stage which applies the supplied function to each
+     * input item independently and emits the function's result as the output
+     * item. The mapping function receives another parameter, the context
+     * object which Jet will create using the supplied {@code contextFactory}.
      * <p>
      * If the mapping result is {@code null}, it emits nothing. Therefore this
      * stage can be used to implement filtering semantics as well.
@@ -124,11 +121,11 @@ public interface GeneralStage<T> extends Stage {
     );
 
     /**
-     * Attaches to this stage a filtering stage, one which applies the provided
-     * predicate function to each input item to decide whether to pass the item
-     * to the output or to discard it. The predicate function receives another
-     * parameter, the context object which Jet will create using the supplied
-     * {@code contextFactory}.
+     * Attaches a filtering stage which applies the provided predicate function
+     * to each input item to decide whether to pass the item to the output or
+     * to discard it. The predicate function receives another parameter, the
+     * context object which Jet will create using the supplied {@code
+     * contextFactory}.
      *
      * <h3>Note on state saving</h3>
      * Any state you maintain in the context object does not automatically
@@ -149,10 +146,10 @@ public interface GeneralStage<T> extends Stage {
     );
 
     /**
-     * Attaches to this stage a flat-mapping stage, one which applies the
-     * supplied function to each input item independently and emits all items
-     * from the {@link Traverser} it returns as the output items. The traverser
-     * must be <em>null-terminated</em>. The mapping function receives another
+     * Attaches a flat-mapping stage which applies the supplied function to
+     * each input item independently and emits all items from the {@link
+     * Traverser} it returns as the output items. The traverser must be
+     * <em>null-terminated</em>. The mapping function receives another
      * parameter, the context object which Jet will create using the supplied
      * {@code contextFactory}.
      *
@@ -185,34 +182,106 @@ public interface GeneralStage<T> extends Stage {
     );
 
     /**
-     * Attaches a rolling aggregation stage. Every input item will be
-     * accumulated using the given {@code aggrOp} and a finished result will be
-     * emitted.
-     * <p>
-     * For example, if the input is {@code {2, 7, 8, -5}} and the aggregate
-     * operation is <em>summing</em>, the output will be {@code {2, 9, 17,
-     * 12}}. The number of input and output items is equal.
-     * <p>
-     * The accumulator is saved to state snapshot; after a restart, the
-     * computation is resumed.
-     * <p>
-     * <strong>NOTE:</strong> Take caution when using ever-growing accumulators
-     * in streaming jobs such as {@code toList()}: they will grow for the
-     * lifetime of the job, even after restart.
+     * Attaches a {@link #mapUsingContext} stage where the context is a
+     * Hazelcast {@code ReplicatedMap} with the supplied name. The mapping
+     * function will receive it as the first argument.
      *
-     * <h3>Limitation on aggregate operations</h3>
-     * The used aggregate operation must not return the accumulator in its
-     * {@linkplain AggregateOperation#finishFn() finish function}. An aggregate
-     * operation is normally allowed to do so, but unlike other stages, this
-     * stage continues to accumulate to the accumulator after finishing
-     * function was called. This stage throws an exception if the finish
-     * function returns the same instance for any accumulator at runtime.
+     * @param mapName name of the {@code ReplicatedMap}
+     * @param mapFn the mapping function
+     * @param <K> type of the key in the {@code ReplicatedMap}
+     * @param <V> type of the value in the {@code ReplicatedMap}
+     * @param <R> type of the output item
+     * @return the newly attached stage
+     */
+    @Nonnull
+    default <K, V, R> GeneralStage<R> mapUsingReplicatedMap(
+            @Nonnull String mapName,
+            @Nonnull DistributedBiFunction<? super ReplicatedMap<K, V>, ? super T, ? extends R> mapFn
+    ) {
+        return mapUsingContext(ContextFactories.replicatedMapContext(mapName), mapFn);
+    }
+
+    /**
+     * Attaches a {@link #mapUsingContext} stage where the context is a
+     * Hazelcast {@code ReplicatedMap}. <strong>It is not necessarily the
+     * map you provide here</strong>, but a replicated map with the same name
+     * in the Jet cluster that executes the pipeline. The mapping function
+     * will receive the replicated map as the first argument.
+     *
+     * @param replicatedMap the {@code ReplicatedMap} to use as context
+     * @param mapFn the mapping function
+     * @param <K> type of the key in the {@code ReplicatedMap}
+     * @param <V> type of the value in the {@code ReplicatedMap}
+     * @param <R> type of the output item
+     * @return the newly attached stage
+     */
+    @Nonnull
+    default <K, V, R> GeneralStage<R> mapUsingReplicatedMap(
+            @Nonnull ReplicatedMap<K, V> replicatedMap,
+            @Nonnull DistributedBiFunction<? super ReplicatedMap<K, V>, ? super T, ? extends R> mapFn
+    ) {
+        return mapUsingReplicatedMap(replicatedMap.getName(), mapFn);
+    }
+
+    /**
+     * Attaches a {@link #mapUsingContext} stage where the context is a
+     * Hazelcast {@code IMap} with the supplied name. The mapping function
+     * will receive it as the first argument.
+     *
+     * @param mapName name of the {@code IMap}
+     * @param mapFn the mapping function
+     * @param <K> type of the key in the {@code IMap}
+     * @param <V> type of the value in the {@code IMap}
+     * @param <R> type of the output item
+     * @return the newly attached stage
+     */
+    @Nonnull
+    default <K, V, R> GeneralStage<R> mapUsingIMap(
+            @Nonnull String mapName,
+            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends R> mapFn
+    ) {
+        return mapUsingContext(ContextFactories.iMapContext(mapName), mapFn);
+    }
+
+    /**
+     * Attaches a {@link #mapUsingContext} stage where the context is a
+     * Hazelcast {@code IMap}. <strong>It is not necessarily the map you
+     * provide here</strong>, but a map with the same name in the Jet cluster
+     * that executes the pipeline. The mapping function will receive the
+     * replicated map as the first argument.
+     *
+     * @param iMap the {@code IMap} to use as the context
+     * @param mapFn the mapping function
+     * @param <K> type of the key in the {@code IMap}
+     * @param <V> type of the value in the {@code IMap}
+     * @param <R> type of the output item
+     * @return the newly attached stage
+     */
+    @Nonnull
+    default <K, V, R> GeneralStage<R> mapUsingIMap(
+            @Nonnull IMap<K, V> iMap,
+            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends R> mapFn
+    ) {
+        return mapUsingIMap(iMap.getName(), mapFn);
+    }
+
+    /**
+     * Attaches a rolling aggregation stage. As opposed to regular aggregation,
+     * this stage emits the current aggregation result after receiving each
+     * item. For example, if your aggregation is <em>summing</em> and the input
+     * is {@code {2, 7, 8, -5}}, the output will be {@code {2, 9, 17, 12}}. The
+     * number of input and output items is equal.
      * <p>
-     * For example, {@link AggregateOperations#summingLong
-     * summingLong()} is OK because its result is an immutable {@code Long}.
-     * {@link AggregateOperations#toSet() toSet()}
-     * is not because its result is the same {@code Set} instance to which it
-     * accumulates.
+     * This stage is fault-tolerant and saves its state to the snapshot.
+     * <p>
+     * <strong>NOTE 1:</strong> since the output for each item depends on all
+     * the previous items, this operation cannot be parallelized. Jet will
+     * perform it on a single member, single-threaded.
+     * <p>
+     * <strong>NOTE 2:</strong> if you plan to use an aggregate operation whose
+     * result size grows with input size (such as {@code toList} and your data
+     * source is unbounded, you must carefully consider the memory demands this
+     * implies. The result will keep growing forever.
      *
      * @param aggrOp the aggregate operation to do the aggregation
      * @param <R> result type of the aggregate operation
@@ -220,7 +289,7 @@ public interface GeneralStage<T> extends Stage {
      * @return the newly attached stage
      */
     @Nonnull
-    <R> GeneralStage<R> aggregateRolling(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp);
+    <R> GeneralStage<R> rollingAggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp);
 
     /**
      * Attaches to both this and the supplied stage a hash-joining stage and
@@ -296,7 +365,7 @@ public interface GeneralStage<T> extends Stage {
      * @param <K> type of the key
      */
     @Nonnull
-    <K> GeneralStageWithGrouping<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
+    <K> GeneralStageWithKey<T, K> addKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
 
     /**
      * Adds a timestamp to each item in the stream using the current system
@@ -361,7 +430,7 @@ public interface GeneralStage<T> extends Stage {
     StreamStage<T> addTimestamps(@Nonnull DistributedToLongFunction<? super T> timestampFn, long allowedLag);
 
     /**
-     * Attaches to this stage a sink stage, one that accepts data but doesn't
+     * Attaches a sink stage, one that accepts data but doesn't
      * emit any. The supplied argument specifies what to do with the received
      * data (typically push it to some outside resource).
      *
@@ -457,5 +526,4 @@ public interface GeneralStage<T> extends Stage {
     @Nonnull
     <R> GeneralStage<R> customTransform(
             @Nonnull String stageName, @Nonnull DistributedSupplier<Processor> procSupplier);
-
 }

@@ -72,7 +72,6 @@ import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
-import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
@@ -120,22 +119,27 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     private void when_nodeDown_then_jobRestartsFromSnapshot(boolean twoStage) throws Exception {
         /* Design of this test:
 
-        It uses random partitioned generator of source events. The events are Map.Entry(partitionId, timestamp).
-        For each partition timestamps from 0..elementsInPartition are generated.
+        It uses a random partitioned generator of source events. The events are
+        Map.Entry(partitionId, timestamp). For each partition timestamps from
+        0..elementsInPartition are generated.
 
-        We start the test with two nodes and localParallelism(1) for source. Source instances generate items at
-        the same rate of 10 per second: this causes one instance to be twice as fast as the other in terms of
-        timestamp. The source processor saves partition offsets similarly to how streamKafka() and streamMap()
-        do.
+        We start the test with two nodes and localParallelism(1) for source.
+        Source instances generate items at the same rate of 10 per second: this
+        causes one instance to be twice as fast as the other in terms of
+        timestamp. The source processor saves partition offsets similarly to how
+        streamKafka() and streamMap() do.
 
-        After some time we shut down one instance. The job restarts from snapshot and all partitions are restored
-        to single source processor instance. Partition offsets are very different, so the source is written in a way
-        that it emits from the most-behind partition in order to not emit late events from more ahead partitions.
+        After some time we shut down one instance. The job restarts from the
+        snapshot and all partitions are restored to single source processor
+        instance. Partition offsets are very different, so the source is written
+        in a way that it emits from the most-behind partition in order to not
+        emit late events from more ahead partitions.
 
-        Local parallelism of InsertWatermarkP is also 1 to avoid the edge case when different instances of
-        InsertWatermarkP might initialize with first event in different frame and make them start the no-gap
-        emission from different WM, which might cause the SlidingWindowP downstream to miss some of the
-        first windows.
+        Local parallelism of InsertWatermarkP is also 1 to avoid the edge case
+        when different instances of InsertWatermarkP might initialize with first
+        event in different frame and make them start the no-gap emission from
+        different WM, which might cause the SlidingWindowP downstream to miss
+        some of the first windows.
 
         The sink writes to an IMap which is an idempotent sink.
 
@@ -166,7 +170,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                     singletonList(t1 -> ((Entry<Integer, Integer>) t1).getValue()),
                     TimestampKind.EVENT,
                     wDef,
-                    aggrOp.withFinishFn(identity())
+                    aggrOp.withIdentityFinish()
             ));
             Vertex aggregateStage2 = dag.newVertex("aggregateStage2",
                     combineToSlidingWindowP(wDef, aggrOp, TimestampedEntry::fromWindowResult));
@@ -270,13 +274,14 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         /*
         Design of this test
 
-        The DAG is "source -> sink". Source completes immediately on  non-coordinator (worker)
-        and is infinite on coordinator. Edge between source and sink is distributed. This
-        situation will cause that after the source completes on member, the sink on worker
-        will only have the remote source. This will allow that we can receive the barrier
-        from remote coordinator before worker even starts the snapshot. This is the very
-        purpose of this test. To ensure that this happens, we postpone handling of SnapshotOperation
-        on the worker.
+        The DAG is "source -> sink". Source completes immediately on
+        non-coordinator (worker) and is infinite on coordinator. Edge between
+        source and sink is distributed. This situation will cause that after the
+        source completes on member, the sink on worker will only have the remote
+        source. This will allow that we can receive the barrier from remote
+        coordinator before worker even starts the snapshot. This is the purpose
+        of this test. To ensure that this happens, we postpone handling of
+        SnapshotOperation on the worker.
         */
 
         // instance1 is always coordinator

@@ -18,11 +18,12 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetCacheManager;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.stream.impl.IListDecorator;
 import com.hazelcast.jet.stream.impl.IMapDecorator;
@@ -59,6 +60,11 @@ abstract class AbstractJetInstance implements JetInstance {
     @Nonnull @Override
     public <K, V> IMapJet<K, V> getMap(@Nonnull String name) {
         return new IMapDecorator<>(hazelcastInstance.getMap(name), this);
+    }
+
+    @Nonnull @Override
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
+        return hazelcastInstance.getReplicatedMap(name);
     }
 
     @Nonnull @Override

@@ -20,15 +20,18 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.function.WindowResultFunction;
-import com.hazelcast.jet.impl.pipeline.transform.WindowAggregateTransform;
+import com.hazelcast.jet.impl.pipeline.transform.Transform;
+import com.hazelcast.jet.impl.pipeline.transform.WindowGroupTransform;
 import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
-import com.hazelcast.jet.pipeline.StageWithWindow;
 import com.hazelcast.jet.pipeline.StreamStage;
+import com.hazelcast.jet.pipeline.StreamStageWithKey;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.aggregate.AggregateOperations.pickAny;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEvents;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation1;
@@ -38,13 +41,19 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
-public class StageWithWindowImpl<T> implements StageWithWindow<T> {
+public class StageWithKeyAndWindowImpl<T, K>
+        extends StageWithGroupingBase<T, K>
+        implements StageWithKeyAndWindow<T, K> {
 
-    private final StreamStageImpl<T> streamStage;
+    @Nonnull
     private final WindowDefinition wDef;
 
-    StageWithWindowImpl(@Nonnull StreamStageImpl<T> streamStage, @Nonnull WindowDefinition wDef) {
-        this.streamStage = streamStage;
+    StageWithKeyAndWindowImpl(
+            @Nonnull StreamStageImpl<T> computeStage,
+            @Nonnull DistributedFunction<? super T, ? extends K> keyFn,
+            @Nonnull WindowDefinition wDef
+    ) {
+        super(computeStage, keyFn);
         this.wDef = wDef;
     }
 
@@ -53,25 +62,17 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
         return wDef;
     }
 
-    @Nonnull @Override
-    public StreamStage<T> streamStage() {
-        return streamStage;
+    @Nonnull
+    public <R> StreamStage<R> distinct(@Nonnull WindowResultFunction<? super T, ? extends R> mapToOutputFn) {
+        return aggregate(pickAny(), mapToOutputFn.toKeyedWindowResultFn());
     }
 
     @Nonnull @Override
-    public <K> StageWithKeyAndWindow<T, K> addKey(
-            @Nonnull DistributedFunction<? super T, ? extends K> keyFn
-    ) {
-        return new StageWithKeyAndWindowImpl<>(streamStage, keyFn, wDef);
-    }
-
-    @Nonnull @Override
-    @SuppressWarnings("unchecked")
     public <R, OUT> StreamStage<OUT> aggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
-        ensureJetEvents(streamStage, "This pipeline stage");
+        ensureJetEvents(computeStage, "This pipeline stage");
         checkSerializable(mapToOutputFn, "mapToOutputFn");
         return attachAggregate(aggrOp, mapToOutputFn);
     }
@@ -80,27 +81,27 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     @SuppressWarnings("unchecked")
     private <A, R, OUT> StreamStage<OUT> attachAggregate(
             @Nonnull AggregateOperation1<? super T, A, R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
-        return streamStage.attach(new WindowAggregateTransform<A, R, JetEvent<OUT>>(
-                        singletonList(streamStage.transform),
+        return computeStage.attach(new WindowGroupTransform<K, R, JetEvent<OUT>>(
+                        singletonList(computeStage.transform),
                         wDef,
+                        singletonList(fnAdapter.adaptKeyFn(keyFn())),
                         adaptAggregateOperation1(aggrOp),
-                        fnAdapter.adaptWindowResultFn(mapToOutputFn)
+                        fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
                 ),
                 fnAdapter);
     }
 
     @Nonnull @Override
-    @SuppressWarnings("unchecked")
     public <T1, R, OUT> StreamStage<OUT> aggregate2(
-            @Nonnull StreamStage<T1> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, ?, R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
-        ensureJetEvents(streamStage, "This pipeline stage");
-        ensureJetEvents((ComputeStageImplBase) stage1, "stage1");
+        ensureJetEvents(computeStage, "This pipeline stage");
+        ensureJetEvents(((StageWithGroupingBase) stage1).computeStage, "stage1");
         checkSerializable(mapToOutputFn, "mapToOutputFn");
         return attachAggregate2(stage1, aggrOp, mapToOutputFn);
     }
@@ -108,16 +109,19 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     // This method was extracted in order to capture the wildcard parameter A.
     @SuppressWarnings("unchecked")
     private <T1, A, R, OUT> StreamStage<OUT> attachAggregate2(
-            @Nonnull StreamStage<T1> stage1,
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
+        Transform upstream1 = ((StageWithGroupingBase) stage1).computeStage.transform;
         JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
-        return streamStage.attach(new WindowAggregateTransform<A, R, JetEvent<OUT>>(
-                        asList(streamStage.transform, ((StreamStageImpl) stage1).transform),
+        return computeStage.attach(new WindowGroupTransform<K, R, JetEvent<OUT>>(
+                        asList(computeStage.transform, upstream1),
                         wDef,
+                        asList(fnAdapter.adaptKeyFn(keyFn()),
+                                fnAdapter.adaptKeyFn(stage1.keyFn())),
                         adaptAggregateOperation2(aggrOp),
-                        fnAdapter.adaptWindowResultFn(mapToOutputFn)
+                        fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
                 ),
                 fnAdapter);
     }
@@ -125,14 +129,14 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     @Nonnull @Override
     @SuppressWarnings("unchecked")
     public <T1, T2, R, OUT> StreamStage<OUT> aggregate3(
-            @Nonnull StreamStage<T1> stage1,
-            @Nonnull StreamStage<T2> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
+            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
-        ComputeStageImplBase stageImpl1 = (ComputeStageImplBase) stage1;
-        ComputeStageImplBase stageImpl2 = (ComputeStageImplBase) stage2;
-        ensureJetEvents(streamStage, "This pipeline stage");
+        ComputeStageImplBase stageImpl1 = ((StageWithGroupingBase) stage1).computeStage;
+        ComputeStageImplBase stageImpl2 = ((StageWithGroupingBase) stage2).computeStage;
+        ensureJetEvents(computeStage, "This pipeline stage");
         ensureJetEvents(stageImpl1, "stage1");
         ensureJetEvents(stageImpl2, "stage2");
         checkSerializable(mapToOutputFn, "mapToOutputFn");
@@ -142,19 +146,22 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     // This method was extracted in order to capture the wildcard parameter A.
     @SuppressWarnings("unchecked")
     private <T1, T2, A, R, OUT> StreamStage<OUT> attachAggregate3(
-            @Nonnull StreamStage<T1> stage1,
-            @Nonnull StreamStage<T2> stage2,
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
+        Transform transform1 = ((StageWithGroupingBase) stage1).computeStage.transform;
+        Transform transform2 = ((StageWithGroupingBase) stage2).computeStage.transform;
         JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
-        return streamStage.attach(new WindowAggregateTransform<A, R, JetEvent<OUT>>(
-                        asList(streamStage.transform,
-                                ((StreamStageImpl) stage1).transform,
-                                ((StreamStageImpl) stage2).transform),
+        return computeStage.attach(new WindowGroupTransform<K, R, JetEvent<OUT>>(
+                        asList(computeStage.transform, transform1, transform2),
                         wDef,
+                        asList(fnAdapter.adaptKeyFn(keyFn()),
+                                fnAdapter.adaptKeyFn(stage1.keyFn()),
+                                fnAdapter.adaptKeyFn(stage2.keyFn())),
                         adaptAggregateOperation3(aggrOp),
-                        fnAdapter.adaptWindowResultFn(mapToOutputFn)
+                        fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
                 ),
                 fnAdapter);
     }

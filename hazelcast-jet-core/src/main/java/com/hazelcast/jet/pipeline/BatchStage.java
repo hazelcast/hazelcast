@@ -51,7 +51,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * {@inheritDoc}
      */
     @Nonnull
-    <K> StageWithGrouping<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
+    <K> BatchStageWithKey<T, K> addKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
 
     @Nonnull @Override
     <R> BatchStage<R> map(@Nonnull DistributedFunction<? super T, ? extends R> mapFn);
@@ -81,7 +81,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
     );
 
     @Nonnull @Override
-    <R> BatchStage<R> aggregateRolling(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp);
+    <R> BatchStage<R> rollingAggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp);
 
     /**
      * Attaches a stage that emits just the items that are distinct according
@@ -92,7 +92,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      */
     @Nonnull
     default BatchStage<T> distinct() {
-        return groupingKey(wholeItem()).distinct();
+        return addKey(wholeItem()).distinct();
     }
 
     /**
@@ -133,12 +133,11 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
-     * @param <A> the type of the accumulator used by the aggregate operation
      * @param <R> the type of the result
      */
     @Nonnull
-    <A, R> BatchStage<R> aggregate(
-            @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp
+    <R> BatchStage<R> aggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     );
 
     /**
@@ -160,13 +159,12 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the result
      */
     @Nonnull
-    <T1, A, R> BatchStage<R> aggregate2(
+    <T1, R> BatchStage<R> aggregate2(
             @Nonnull BatchStage<T1> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, A, ? extends R> aggrOp);
+            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp);
 
     /**
      * Attaches a stage that co-aggregates the data from this and the supplied
@@ -239,14 +237,13 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the result
      */
     @Nonnull
-    <T1, T2, A, R> BatchStage<R> aggregate3(
+    <T1, T2, R> BatchStage<R> aggregate3(
             @Nonnull BatchStage<T1> stage1,
             @Nonnull BatchStage<T2> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, ? extends R> aggrOp);
+            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp);
 
     /**
      * Attaches a stage that co-aggregates the data from this and the two

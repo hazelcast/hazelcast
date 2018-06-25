@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.stream.impl.reducers;
 
+import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
-import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 

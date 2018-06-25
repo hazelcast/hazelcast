@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 /**
  * Offers a step-by-step API to build a pipeline stage that performs a
  * windowed co-grouping and aggregation of the data from several input
- * stages. To obtain it, call {@link StageWithGroupingAndWindow#aggregateBuilder()}
+ * stages. To obtain it, call {@link StageWithKeyAndWindow#aggregateBuilder()}
  * on one of the stages to co-aggregate and refer to that method's Javadoc
  * for further details.
  * <p>
@@ -41,7 +41,7 @@ import javax.annotation.Nonnull;
 public class WindowGroupAggregateBuilder1<T0, K> {
     private final GrAggBuilder<K> grAggBuilder;
 
-    WindowGroupAggregateBuilder1(@Nonnull StageWithGroupingAndWindow<T0, K> s) {
+    WindowGroupAggregateBuilder1(@Nonnull StageWithKeyAndWindow<T0, K> s) {
         grAggBuilder = new GrAggBuilder<>(s);
     }
 
@@ -63,7 +63,7 @@ public class WindowGroupAggregateBuilder1<T0, K> {
      * you'll pass to {@link #build build()}.
      */
     @Nonnull
-    public <T> Tag<T> add(@Nonnull StreamStageWithGrouping<T, K> stage) {
+    public <T> Tag<T> add(@Nonnull StreamStageWithKey<T, K> stage) {
         return grAggBuilder.add(stage);
     }
 
@@ -76,14 +76,13 @@ public class WindowGroupAggregateBuilder1<T0, K> {
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp        the aggregate operation to perform
      * @param mapToOutputFn a function that creates the output item from the aggregation result
-     * @param <A>           the type of items in the pipeline stage this builder was obtained from
      * @param <R>           the type of the aggregation result
      * @param <OUT>         the type of the output item
      * @return a new stage representing the co-aggregation
      */
     @Nonnull
-    public <A, R, OUT> StreamStage<OUT> build(
-            @Nonnull AggregateOperation<A, R> aggrOp,
+    public <R, OUT> StreamStage<OUT> build(
+            @Nonnull AggregateOperation<?, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
     ) {
         return grAggBuilder.buildStream(aggrOp, mapToOutputFn);
@@ -95,8 +94,8 @@ public class WindowGroupAggregateBuilder1<T0, K> {
      * of the entry corresponds to the timestamp of the window's end.
      */
     @Nonnull
-    public <A, R> StreamStage<TimestampedEntry<K, R>> build(
-            @Nonnull AggregateOperation<A, R> aggrOp
+    public <R> StreamStage<TimestampedEntry<K, R>> build(
+            @Nonnull AggregateOperation<?, R> aggrOp
     ) {
         return grAggBuilder.buildStream(aggrOp, TimestampedEntry::fromWindowResult);
     }

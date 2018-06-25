@@ -44,22 +44,22 @@ import static com.hazelcast.jet.impl.pipeline.transform.AbstractTransform.Optimi
 import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SESSION;
 import static java.util.Collections.nCopies;
 
-public class WindowGroupTransform<K, A, R, OUT> extends AbstractTransform {
+public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
     @Nonnull
     private final WindowDefinition wDef;
     @Nonnull
     private final List<DistributedFunction<?, ? extends K>> keyFns;
     @Nonnull
-    private final AggregateOperation<A, R> aggrOp;
+    private final AggregateOperation<?, ? extends R> aggrOp;
     @Nonnull
-    private final KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn;
+    private final KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn;
 
     public WindowGroupTransform(
             @Nonnull List<Transform> upstream,
             @Nonnull WindowDefinition wDef,
             @Nonnull List<DistributedFunction<?, ? extends K>> keyFns,
-            @Nonnull AggregateOperation<A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull AggregateOperation<?, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         super(createName(wDef), upstream);
         this.wDef = wDef;

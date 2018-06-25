@@ -91,7 +91,7 @@ class AccumulatorSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, DoubleAccumulator object) throws IOException {
-                    out.writeDouble(object.finish());
+                    out.writeDouble(object.export());
                 }
 
                 @Override

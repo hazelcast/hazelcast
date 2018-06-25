@@ -18,6 +18,7 @@ package com.hazelcast.jet.accumulator;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.nio.ObjectDataOutput;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Objects;
@@ -101,7 +102,7 @@ public final class LinTrendAccumulator {
      * Computes the linear coefficient of the linear regression of the
      * accumulated samples.
      */
-    public double finish() {
+    public double export() {
         BigInteger bigN = BigInteger.valueOf(n);
         return bigN.multiply(sumXY).subtract(sumX.multiply(sumY)).doubleValue() /
                 bigN.multiply(sumX2).subtract(sumX.multiply(sumX)).doubleValue();

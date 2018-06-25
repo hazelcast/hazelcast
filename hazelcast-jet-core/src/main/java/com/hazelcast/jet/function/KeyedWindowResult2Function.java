@@ -16,13 +16,15 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
+
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 
 /**
  * Represents the function you pass to a windowed group-and-aggregate
- * method in the Pipeline API, such as {@link
- * com.hazelcast.jet.pipeline.StageWithGroupingAndWindow#aggregate2 stage.aggregate2()}.
+ * method in the Pipeline API, such as {@link StageWithKeyAndWindow#aggregate2
+ * stage.aggregate2()}.
  * It creates the item to emit based on the results of a single aggregate
  * operation performed for a particular window and a particular grouping
  * key.

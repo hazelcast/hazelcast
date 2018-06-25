@@ -31,13 +31,15 @@ public class AggregateOperation1Impl<T0, A, R>
         extends AggregateOperationImpl<A, R>
         implements AggregateOperation1<T0, A, R> {
 
-    public AggregateOperation1Impl(@Nonnull DistributedSupplier<A> createFn,
-                                   @Nonnull DistributedBiConsumer<? super A, ? super T0> accumulateFn,
-                                   @Nullable DistributedBiConsumer<? super A, ? super A> combineFn,
-                                   @Nullable DistributedBiConsumer<? super A, ? super A> deductFn,
-                                   @Nonnull DistributedFunction<? super A, R> finishFn
+    public AggregateOperation1Impl(
+            @Nonnull DistributedSupplier<A> createFn,
+            @Nonnull DistributedBiConsumer<? super A, ? super T0> accumulateFn,
+            @Nullable DistributedBiConsumer<? super A, ? super A> combineFn,
+            @Nullable DistributedBiConsumer<? super A, ? super A> deductFn,
+            @Nonnull DistributedFunction<? super A, ? extends R> exportFn,
+            @Nonnull DistributedFunction<? super A, ? extends R> finishFn
     ) {
-        super(createFn, accumulateFns(accumulateFn), combineFn, deductFn, finishFn);
+        super(createFn, accumulateFns(accumulateFn), combineFn, deductFn, exportFn, finishFn);
     }
 
     @Nonnull
@@ -48,9 +50,11 @@ public class AggregateOperation1Impl<T0, A, R>
 
     @Nonnull @Override
     public <NEW_T> AggregateOperation1<NEW_T, A, R> withAccumulateFn(
-            DistributedBiConsumer<? super A, ? super NEW_T> newAccFn) {
-        checkSerializable(newAccFn, "newAccFn");
-        return new AggregateOperation1Impl<>(createFn(), newAccFn, combineFn(), deductFn(), finishFn());
+            DistributedBiConsumer<? super A, ? super NEW_T> accumulateFn
+    ) {
+        checkSerializable(accumulateFn, "accumulateFn");
+        return new AggregateOperation1Impl<>(
+                createFn(), accumulateFn, combineFn(), deductFn(), exportFn(), finishFn());
     }
 
     @Nonnull @Override
@@ -63,14 +67,10 @@ public class AggregateOperation1Impl<T0, A, R>
         return (DistributedBiConsumer<? super A, ? super T>) accumulateFns[0];
     }
 
-    @Nonnull
-    @Override
-    public <R1> AggregateOperation1<T0, A, R1> withFinishFn(
-            @Nonnull DistributedFunction<? super A, R1> finishFn
-    ) {
-        checkSerializable(finishFn, "finishFn");
+    @Nonnull @Override
+    public AggregateOperation1<T0, A, A> withIdentityFinish() {
         return new AggregateOperation1Impl<>(
-                createFn(), accumulateFn(),
-                combineFn(), deductFn(), finishFn);
+                createFn(), accumulateFn(), combineFn(), deductFn(),
+                unsupportedExportFn(), DistributedFunction.identity());
     }
 }

@@ -18,9 +18,12 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 
 import javax.annotation.Nonnull;
@@ -131,6 +134,19 @@ public interface JetInstance {
      */
     @Nonnull
     <K, V> IMapJet<K, V> getMap(@Nonnull String name);
+
+    /**
+     * Returns the replicated map instance with the specified name.
+     *
+     * A replicated map can be used for enriching a stream, see
+     * {@link GeneralStage#mapUsingReplicatedMap(String, DistributedBiFunction)}
+     *
+     * @param name name of the distributed map
+     * @return distributed map instance with the specified name
+     *
+     */
+    @Nonnull
+    <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name);
 
     /**
      * Returns the distributed list instance with the specified name.

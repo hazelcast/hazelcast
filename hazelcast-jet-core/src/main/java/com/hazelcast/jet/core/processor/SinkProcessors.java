@@ -223,7 +223,9 @@ public final class SinkProcessors {
                                 new Socket(host, port).getOutputStream(), charsetName))),
                 (bufferedWriter, item) -> {
                     try {
-                        bufferedWriter.write(toStringFn.apply((T) item));
+                        @SuppressWarnings("unchecked")
+                        T t = (T) item;
+                        bufferedWriter.write(toStringFn.apply(t));
                         bufferedWriter.write('\n');
                     } catch (IOException e) {
                         throw sneakyThrow(e);

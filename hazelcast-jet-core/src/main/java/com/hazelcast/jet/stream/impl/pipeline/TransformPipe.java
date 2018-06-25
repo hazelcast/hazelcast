@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.processor.TransformP;
 
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 class TransformPipe<E_IN, E_OUT> extends AbstractIntermediatePipe<E_IN, E_OUT> {

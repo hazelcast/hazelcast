@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
@@ -42,7 +43,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation
  * @param <T> type of the input item
  * @param <K> type of the key
  */
-public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> {
+public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
 
     /**
      * Attaches a stage that emits just the items that are distinct according
@@ -54,6 +55,22 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      */
     @Nonnull
     BatchStage<T> distinct();
+
+    @Nonnull @Override
+    default <V, R> BatchStage<R> mapUsingIMap(
+            @Nonnull String mapName,
+            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
+    ) {
+        return (BatchStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMap(mapName, mapFn);
+    }
+
+    @Nonnull @Override
+    default <V, R> BatchStage<R> mapUsingIMap(
+            @Nonnull IMap<K, V> iMap,
+            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
+    ) {
+        return (BatchStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMap(iMap, mapFn);
+    }
 
     @Nonnull @Override
     <C, R> BatchStage<R> mapUsingContext(
@@ -74,18 +91,16 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
     );
 
     @Nonnull @Override
-    default <R> BatchStage<Entry<K, R>> aggregateRolling(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
-    ) {
-        return (BatchStage<Entry<K, R>>) (BatchStage) GeneralStageWithGrouping.super.aggregateRolling(aggrOp);
-    }
+    <R, OUT> BatchStage<OUT> rollingAggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
+            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+    );
 
     @Nonnull @Override
-    default <R, OUT> BatchStage<OUT> aggregateRolling(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull DistributedBiFunction<K, R, OUT> mapToOutputFn
+    default <R> BatchStage<Entry<K, R>> rollingAggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     ) {
-        return (BatchStage<OUT>) GeneralStageWithGrouping.super.aggregateRolling(aggrOp, mapToOutputFn);
+        return (BatchStage<Entry<K, R>>) GeneralStageWithKey.super.<R>rollingAggregate(aggrOp);
     }
 
     /**
@@ -99,13 +114,12 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param mapToOutputFn the function that creates the output item
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      * @param <OUT> type of the output item
      */
     @Nonnull
-    <A, R, OUT> BatchStage<OUT> aggregate(
-            @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp,
+    <R, OUT> BatchStage<OUT> aggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn);
 
     /**
@@ -116,12 +130,11 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      */
     @Nonnull
-    default <A, R> BatchStage<Entry<K, R>> aggregate(
-            @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp
+    default <R> BatchStage<Entry<K, R>> aggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     ) {
         return aggregate(aggrOp, Util::entry);
     }
@@ -139,7 +152,7 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * (refer to its {@linkplain AggregateOperation2 Javadoc} for a simple
      * example). If you can express your logic in terms of two single-input
      * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate2(AggregateOperation1, StageWithGrouping, AggregateOperation1)
+     * {@link #aggregate2(AggregateOperation1, BatchStageWithKey, AggregateOperation1)
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1)} because it offers a simpler
      * API and you can use the already defined single-input operations. Use
      * this variant only when you have the need to implement an aggregate
@@ -149,14 +162,13 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * @param aggrOp the aggregate operation to perform
      * @param mapToOutputFn the function that creates the output item
      * @param <T1> type of items in {@code stage1}
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      * @param <OUT> type of the output item
      */
     @Nonnull
-    <T1, A, R, OUT> BatchStage<OUT> aggregate2(
-            @Nonnull StageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, A, ? extends R> aggrOp,
+    <T1, R, OUT> BatchStage<OUT> aggregate2(
+            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn);
 
     /**
@@ -170,7 +182,7 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * (refer to its {@linkplain AggregateOperation2 Javadoc} for a simple
      * example). If you can express your logic in terms of two single-input
      * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate2(AggregateOperation1, StageWithGrouping, AggregateOperation1)
+     * {@link #aggregate2(AggregateOperation1, BatchStageWithKey, AggregateOperation1)
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1)} because it offers a simpler
      * API and you can use the already defined single-input operations. Use
      * this variant only when you have the need to implement an aggregate
@@ -179,13 +191,12 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      */
     @Nonnull
-    default <T1, A, R> BatchStage<Entry<K, R>> aggregate2(
-            @Nonnull StageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp
+    default <T1, R> BatchStage<Entry<K, R>> aggregate2(
+            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation2<? super T, ? super T1, ?, R> aggrOp
     ) {
         return aggregate2(stage1, aggrOp, Util::entry);
     }
@@ -215,7 +226,7 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
     @Nonnull
     default <T1, R0, R1, OUT> BatchStage<OUT> aggregate2(
             @Nonnull AggregateOperation1<? super T, ?, R0> aggrOp0,
-            @Nonnull StageWithGrouping<T1, ? extends K> stage1,
+            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation1<? super T1, ?, R1> aggrOp1,
             @Nonnull DistributedBiFunction<? super K, ? super Tuple2<R0, R1>, OUT> mapToOutputFn
     ) {
@@ -244,7 +255,7 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
     @Nonnull
     default <T1, R0, R1> BatchStage<Entry<K, Tuple2<R0, R1>>> aggregate2(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
-            @Nonnull StageWithGrouping<? extends T1, ? extends K> stage1,
+            @Nonnull BatchStageWithKey<? extends T1, ? extends K> stage1,
             @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1
     ) {
         AggregateOperation2<? super T, ? super T1, ?, Tuple2<R0, R1>> aggrOp =
@@ -266,8 +277,8 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * (refer to its {@linkplain AggregateOperation3 Javadoc} for a simple
      * example). If you can express your logic in terms of three single-input
      * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate3(AggregateOperation1, StageWithGrouping,
-     *      AggregateOperation1, StageWithGrouping, AggregateOperation1)
+     * {@link #aggregate3(AggregateOperation1, BatchStageWithKey,
+     *      AggregateOperation1, BatchStageWithKey, AggregateOperation1)
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1, stage2, aggrOp2)} because it
      * offers a simpler API and you can use the already defined single-input
      * operations. Use this variant only when you have the need to implement an
@@ -279,15 +290,14 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * @param mapToOutputFn the function that creates the output item
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      * @param <OUT> type of the output item
      */
     @Nonnull
-    <T1, T2, A, R, OUT> BatchStage<OUT> aggregate3(
-            @Nonnull StageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull StageWithGrouping<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp,
+    <T1, T2, R, OUT> BatchStage<OUT> aggregate3(
+            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
+            @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
+            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn);
 
     /**
@@ -302,8 +312,8 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * (refer to its {@linkplain AggregateOperation3 Javadoc} for a simple
      * example). If you can express your logic in terms of three single-input
      * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate3(AggregateOperation1, StageWithGrouping,
-     *      AggregateOperation1, StageWithGrouping, AggregateOperation1)
+     * {@link #aggregate3(AggregateOperation1, BatchStageWithKey,
+     *      AggregateOperation1, BatchStageWithKey, AggregateOperation1)
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1, stage2, aggrOp2)} because it
      * offers a simpler API and you can use the already defined single-input
      * operations. Use this variant only when you have the need to implement an
@@ -314,14 +324,13 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      */
     @Nonnull
-    default <T1, T2, A, R> BatchStage<Entry<K, R>> aggregate3(
-            @Nonnull StageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull StageWithGrouping<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, ? extends R> aggrOp
+    default <T1, T2, R> BatchStage<Entry<K, R>> aggregate3(
+            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
+            @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
+            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp
     ) {
         return aggregate3(stage1, stage2, aggrOp, Util::entry);
     }
@@ -356,9 +365,9 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
     @Nonnull
     default <T1, T2, R0, R1, R2, OUT> BatchStage<OUT> aggregate3(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
-            @Nonnull StageWithGrouping<T1, ? extends K> stage1,
+            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
-            @Nonnull StageWithGrouping<T2, ? extends K> stage2,
+            @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
             @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2,
             @Nonnull DistributedBiFunction<? super K, ? super Tuple3<R0, R1, R2>, ? extends OUT> mapToOutputFn
     ) {
@@ -394,9 +403,9 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
     @Nonnull
     default <T1, T2, R0, R1, R2> BatchStage<Entry<K, Tuple3<R0, R1, R2>>> aggregate3(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
-            @Nonnull StageWithGrouping<T1, ? extends K> stage1,
+            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
-            @Nonnull StageWithGrouping<T2, ? extends K> stage2,
+            @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
             @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2
     ) {
         AggregateOperation3<T, T1, T2, ?, Tuple3<R0, R1, R2>> aggrOp =

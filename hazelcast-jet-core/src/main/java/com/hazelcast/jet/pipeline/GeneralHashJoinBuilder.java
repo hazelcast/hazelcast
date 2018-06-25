@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
@@ -85,6 +86,7 @@ public abstract class GeneralHashJoinBuilder<T0> {
 
     @SuppressWarnings("unchecked")
     <R> GeneralStage<R> build0(DistributedBiFunction<T0, ItemsByTag, R> mapToOutputFn) {
+        checkSerializable(mapToOutputFn, "mapToOutputFn");
         List<Entry<Tag<?>, TransformAndClause>> orderedClauses = clauses.entrySet().stream()
                                                                         .sorted(comparing(Entry::getKey))
                                                                         .collect(toList());

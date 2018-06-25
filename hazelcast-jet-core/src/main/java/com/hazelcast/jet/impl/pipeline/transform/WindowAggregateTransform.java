@@ -43,7 +43,7 @@ import static java.util.Collections.nCopies;
 
 public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     @Nonnull
-    private final AggregateOperation<A, R> aggrOp;
+    private final AggregateOperation<A, ? extends R> aggrOp;
     @Nonnull
     private final WindowDefinition wDef;
     @Nonnull
@@ -52,7 +52,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     public WindowAggregateTransform(
             @Nonnull List<Transform> upstream,
             @Nonnull WindowDefinition wDef,
-            @Nonnull AggregateOperation<A, R> aggrOp,
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
             @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
     ) {
         super(createName(wDef), upstream);

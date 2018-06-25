@@ -96,7 +96,7 @@ public class SlidingWindowPTest {
                 .andAccumulate((LongAccumulator acc, Entry<?, Long> item) -> acc.add(item.getValue()))
                 .andCombine(LongAccumulator::add)
                 .andDeduct(hasDeduct ? LongAccumulator::subtract : null)
-                .andFinish(LongAccumulator::get);
+                .andExportFinish(LongAccumulator::get);
 
         DistributedFunction<?, Long> keyFn = t -> KEY;
         DistributedToLongFunction<Entry<Long, Long>> timestampFn = Entry::getKey;

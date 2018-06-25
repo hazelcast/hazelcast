@@ -52,7 +52,7 @@ public class AggregateOperationTest {
                 .andAccumulate(tag1(), accFn1)
                 .andCombine(combineFn)
                 .andDeduct(deductFn)
-                .andFinish(finishFn);
+                .andExportFinish(finishFn);
 
         // Then
         assertSame(createFn, aggrOp.createFn());
@@ -66,30 +66,30 @@ public class AggregateOperationTest {
     @Test(expected = IllegalArgumentException.class)
     public void when_askForNonexistentTag_then_exception() {
         // Given
-        AggregateOperation<LongAccumulator, LongAccumulator> aggrOp = AggregateOperation
+        AggregateOperation<LongAccumulator, Long> aggrOp = AggregateOperation
                 .withCreate(LongAccumulator::new)
                 .andAccumulate(tag0(), (acc, item) -> acc.addAllowingOverflow(1))
                 .andAccumulate(tag1(), (acc, item) -> acc.addAllowingOverflow(10))
-                .andIdentityFinish();
+                .andExportFinish(LongAccumulator::get);
 
         // When - then exception
         aggrOp.accumulateFn(tag2());
     }
 
     @Test
-    public void when_withFinishFn_then_newFinishFn() {
+    public void when_withIdentityFinish() {
         // Given
         AggregateOperation<LongAccumulator, Long> aggrOp = AggregateOperation
                 .withCreate(LongAccumulator::new)
                 .andAccumulate(tag0(), (x, y) -> { })
-                .andFinish(LongAccumulator::get);
+                .andExportFinish(LongAccumulator::get);
 
         // When
-        DistributedFunction<LongAccumulator, String> newFinishFn = Object::toString;
-        AggregateOperation<LongAccumulator, ? extends String> newAggrOp = aggrOp.withFinishFn(newFinishFn);
+        AggregateOperation<LongAccumulator, LongAccumulator> newAggrOp = aggrOp.withIdentityFinish();
 
         // Then
-        assertSame(newFinishFn, newAggrOp.finishFn());
+        LongAccumulator acc = newAggrOp.createFn().get();
+        assertSame(acc, newAggrOp.finishFn().apply(acc));
     }
 
     @Test
@@ -100,7 +100,7 @@ public class AggregateOperationTest {
                 .andAccumulate(tag0(), (acc, item) -> acc.addAllowingOverflow(1))
                 .andAccumulate(tag1(), (acc, item) -> acc.addAllowingOverflow(10))
                 .andCombine(LongAccumulator::addAllowingOverflow)
-                .andFinish(LongAccumulator::get);
+                .andExportFinish(LongAccumulator::get);
         AggregateOperation1<LongAccumulator, LongAccumulator, Long> combiningAggrOp =
                 aggrOp.withCombiningAccumulateFn(wholeItem());
         DistributedBiConsumer<? super LongAccumulator, ? super Object> accFn = combiningAggrOp.accumulateFn(tag0());
@@ -132,6 +132,6 @@ public class AggregateOperationTest {
                 .withCreate(LongAccumulator::new)
                 .andAccumulate(tag0(), (acc, item) -> acc.addAllowingOverflow(1))
                 .andAccumulate(tag2(), (acc, item) -> acc.addAllowingOverflow(10))
-                .andIdentityFinish();
+                .andExportFinish(LongAccumulator::get);
     }
 }

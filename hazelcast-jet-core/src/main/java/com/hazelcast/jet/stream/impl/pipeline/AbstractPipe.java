@@ -51,8 +51,8 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseStream;
-import static com.hazelcast.jet.stream.DistributedCollectors.toIList;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.stream.DistributedCollectors.toIList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static com.hazelcast.util.Preconditions.checkTrue;
 

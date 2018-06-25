@@ -57,13 +57,13 @@ public class DotTest {
         BatchStage<Entry> source = p.drawFrom(Sources.map("source1"));
 
         source
-                .groupingKey(Entry::getKey)
+                .addKey(Entry::getKey)
                 .aggregate(AggregateOperations.counting())
                 .setName("aggregateToCount")
                 .drainTo(Sinks.logger());
 
         source
-                .groupingKey(Entry::getKey)
+                .addKey(Entry::getKey)
                 .aggregate(AggregateOperations.toSet())
                 .setName("aggregateToSet")
                 .drainTo(Sinks.logger());
@@ -81,7 +81,7 @@ public class DotTest {
         Pipeline p = Pipeline.create();
         // " in vertex name should be escaped
         p.drawFrom(Sources.map("source1\""))
-         .groupingKey(Entry::getKey)
+         .addKey(Entry::getKey)
          .aggregate(AggregateOperations.counting())
          .setName("aggregateToCount")
          .drainTo(Sinks.logger());

@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.function.DistributedFunction.identity;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -84,16 +85,17 @@ public class CoAggregateOperationBuilder {
 
     /**
      * Builds and returns the multi-input {@link AggregateOperation}. It will
-     * call the supplied {@code finishFn} to transform the {@link ItemsByTag}
+     * call the supplied {@code exportFinishFn} to transform the {@link ItemsByTag}
      * it creates to the result type it emits as the actual result.
      *
-     * @param finishFn function to convert {@link ItemsByTag} to the target result type
+     * @param exportFinishFn function to convert {@link ItemsByTag} to the target result type
      */
     @Nonnull
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     public <R> AggregateOperation<Object[], R> build(
-            @Nonnull DistributedFunction<? super ItemsByTag, ? extends R> finishFn
+            @Nonnull DistributedFunction<? super ItemsByTag, ? extends R> exportFinishFn
     ) {
+        checkSerializable(exportFinishFn, "exportFinishFn");
         Tag[] tags = opsByTag.keySet().stream().sorted().toArray(Tag[]::new);
         for (int i = 0; i < tags.length; i++) {
             Preconditions.checkTrue(tags[i].index() == i, "Registered tags' indices are "
@@ -108,10 +110,12 @@ public class CoAggregateOperationBuilder {
                 ops.stream().map(AggregateOperation::combineFn).toArray(DistributedBiConsumer[]::new);
         DistributedBiConsumer[] deductFns =
                 ops.stream().map(AggregateOperation::deductFn).toArray(DistributedBiConsumer[]::new);
+        DistributedFunction[] exportFns =
+                ops.stream().map(AggregateOperation::exportFn).toArray(DistributedFunction[]::new);
         DistributedFunction[] finishFns =
                 ops.stream().map(AggregateOperation::finishFn).toArray(DistributedFunction[]::new);
 
-        AggregateOperationBuilder.VarArity<Object[]> b = AggregateOperation
+        AggregateOperationBuilder.VarArity<Object[], Void> b = AggregateOperation
                 .withCreate(() -> ops.stream().map(op -> op.createFn().get()).toArray())
                 .varArity();
         opsByTag.forEach((tag, op) -> {
@@ -130,12 +134,19 @@ public class CoAggregateOperationBuilder {
                                 deductFns[i].accept(acc1[i], acc2[i]);
                             }
                         })
+                .<R>andExport(acc -> {
+                    ItemsByTag result = new ItemsByTag();
+                    for (int i = 0; i < exportFns.length; i++) {
+                        result.put(tags[i], exportFns[i].apply(acc[i]));
+                    }
+                    return exportFinishFn.apply(result);
+                })
                 .andFinish(acc -> {
                     ItemsByTag result = new ItemsByTag();
                     for (int i = 0; i < finishFns.length; i++) {
                         result.put(tags[i], finishFns[i].apply(acc[i]));
                     }
-                    return finishFn.apply(result);
+                    return exportFinishFn.apply(result);
                 });
     }
 }

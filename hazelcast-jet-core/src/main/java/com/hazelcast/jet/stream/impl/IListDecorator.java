@@ -18,8 +18,8 @@ package com.hazelcast.jet.stream.impl;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.JetInstance;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

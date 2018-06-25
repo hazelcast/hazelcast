@@ -43,7 +43,6 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
-import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
@@ -71,7 +70,7 @@ public class SlidingWindowP_stage1Test {
                     singletonList(timestampFn),
                     TimestampKind.EVENT,
                     slidingWinPolicy(16, 4),
-                    summingLong(Entry<Long, Long>::getValue).withFinishFn(identity())
+                    summingLong(Entry<Long, Long>::getValue).withIdentityFinish()
             ).get();
             suppliedProcessors.add(res);
             return res;

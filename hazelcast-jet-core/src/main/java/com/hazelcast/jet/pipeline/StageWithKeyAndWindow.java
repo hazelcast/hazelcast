@@ -44,7 +44,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation
  * @param <T> type of the input item
  * @param <K> type of the key
  */
-public interface StageWithGroupingAndWindow<T, K> {
+public interface StageWithKeyAndWindow<T, K> {
 
     /**
      * Returns the function that extracts the grouping key from stream items.
@@ -103,15 +103,14 @@ public interface StageWithGroupingAndWindow<T, K> {
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param mapToOutputFn function that returns the output items
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      * @param <OUT> type of the output item
      */
     @Nonnull
     @SuppressWarnings("unchecked")
-    <A, R, OUT> StreamStage<OUT> aggregate(
-            @Nonnull AggregateOperation1<? super T, A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
+    <R, OUT> StreamStage<OUT> aggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     );
 
     /**
@@ -123,11 +122,10 @@ public interface StageWithGroupingAndWindow<T, K> {
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      */
     @Nonnull
-    default <A, R> StreamStage<TimestampedEntry<K, R>> aggregate(@Nonnull AggregateOperation1<? super T, A, R> aggrOp) {
+    default <R> StreamStage<TimestampedEntry<K, R>> aggregate(@Nonnull AggregateOperation1<? super T, ?, R> aggrOp) {
         return aggregate(aggrOp, TimestampedEntry::fromWindowResult);
     }
 
@@ -144,7 +142,7 @@ public interface StageWithGroupingAndWindow<T, K> {
      * (refer to its {@linkplain AggregateOperation2 Javadoc} for a simple
      * example). If you can express your logic in terms of two single-input
      * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate2(AggregateOperation1, StreamStageWithGrouping, AggregateOperation1)
+     * {@link #aggregate2(AggregateOperation1, StreamStageWithKey, AggregateOperation1)
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1)} because it offers a simpler
      * API and you can use the already defined single-input operations. Use
      * this variant only when you have the need to implement an aggregate
@@ -154,15 +152,14 @@ public interface StageWithGroupingAndWindow<T, K> {
      * @param aggrOp the aggregate operation to perform
      * @param mapToOutputFn the function that creates the output item
      * @param <T1> type of items in {@code stage1}
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      * @param <OUT> type of the output item
      */
     @Nonnull
-    <T1, A, R, OUT> StreamStage<OUT> aggregate2(
-            @Nonnull StreamStageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
+    <T1, R, OUT> StreamStage<OUT> aggregate2(
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     );
 
     /**
@@ -177,7 +174,7 @@ public interface StageWithGroupingAndWindow<T, K> {
      * (refer to its {@linkplain AggregateOperation2 Javadoc} for a simple
      * example). If you can express your logic in terms of two single-input
      * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate2(AggregateOperation1, StreamStageWithGrouping, AggregateOperation1)
+     * {@link #aggregate2(AggregateOperation1, StreamStageWithKey, AggregateOperation1)
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1)} because it offers a simpler
      * API and you can use the already defined single-input operations. Use
      * this variant only when you have the need to implement an aggregate
@@ -186,13 +183,12 @@ public interface StageWithGroupingAndWindow<T, K> {
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      */
     @Nonnull
-    default <T1, A, R> StreamStage<TimestampedEntry<K, R>> aggregate2(
-            @Nonnull StreamStageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp
+    default <T1, R> StreamStage<TimestampedEntry<K, R>> aggregate2(
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp
     ) {
         return aggregate2(stage1, aggrOp, TimestampedEntry::fromWindowResult);
     }
@@ -220,10 +216,10 @@ public interface StageWithGroupingAndWindow<T, K> {
      */
     @Nonnull
     default <T1, R0, R1, OUT> StreamStage<OUT> aggregate2(
-            @Nonnull AggregateOperation1<? super T, ?, R0> aggrOp0,
-            @Nonnull StreamStageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation1<? super T1, ?, R1> aggrOp1,
-            @Nonnull KeyedWindowResult2Function<? super K, ? super R0, ? super R1, OUT> mapToOutputFn
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
+            @Nonnull KeyedWindowResult2Function<? super K, ? super R0, ? super R1, ? extends OUT> mapToOutputFn
     ) {
         AggregateOperation2<T, T1, ?, Tuple2<R0, R1>> aggrOp = aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2);
         return aggregate2(stage1, aggrOp,
@@ -251,12 +247,13 @@ public interface StageWithGroupingAndWindow<T, K> {
      */
     @Nonnull
     default <T1, R0, R1> StreamStage<TimestampedEntry<K, Tuple2<R0, R1>>> aggregate2(
-            @Nonnull AggregateOperation1<? super T, ?, R0> aggrOp0,
-            @Nonnull StreamStageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation1<? super T1, ?, R1> aggrOp1
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1
     ) {
-        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2),
-                TimestampedEntry::fromWindowResult);
+        KeyedWindowResultFunction<K, Tuple2<R0, R1>, TimestampedEntry<K, Tuple2<R0, R1>>> outputFn =
+                TimestampedEntry::fromWindowResult;
+        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2), outputFn);
     }
 
     /**
@@ -273,8 +270,8 @@ public interface StageWithGroupingAndWindow<T, K> {
      * (refer to its {@linkplain AggregateOperation3 Javadoc} for a simple
      * example). If you can express your logic in terms of three single-input
      * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate3(AggregateOperation1, StreamStageWithGrouping,
-     *      AggregateOperation1, StreamStageWithGrouping, AggregateOperation1)
+     * {@link #aggregate3(AggregateOperation1, StreamStageWithKey,
+     *      AggregateOperation1, StreamStageWithKey, AggregateOperation1)
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1, stage2, aggrOp2)} because it
      * offers a simpler API and you can use the already defined single-input
      * operations. Use this variant only when you have the need to implement an
@@ -286,16 +283,15 @@ public interface StageWithGroupingAndWindow<T, K> {
      * @param mapToOutputFn the function that creates the output item
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      * @param <OUT> type of the output item
      */
     @Nonnull
-    <T1, T2, A, R, OUT> StreamStage<OUT> aggregate3(
-            @Nonnull StreamStageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull StreamStageWithGrouping<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn);
+    <T1, T2, R, OUT> StreamStage<OUT> aggregate3(
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
+            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn);
 
     /**
      * Attaches a stage that performs the given cogroup-and-aggregate operation
@@ -310,8 +306,8 @@ public interface StageWithGroupingAndWindow<T, K> {
      * (refer to its {@linkplain AggregateOperation3 Javadoc} for a simple
      * example). If you can express your logic in terms of three single-input
      * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate3(AggregateOperation1, StreamStageWithGrouping,
-     *      AggregateOperation1, StreamStageWithGrouping, AggregateOperation1)
+     * {@link #aggregate3(AggregateOperation1, StreamStageWithKey,
+     *      AggregateOperation1, StreamStageWithKey, AggregateOperation1)
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1, stage2, aggrOp2)} because it
      * offers a simpler API and you can use the already defined single-input
      * operations. Use this variant only when you have the need to implement an
@@ -322,15 +318,14 @@ public interface StageWithGroupingAndWindow<T, K> {
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}
-     * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
      */
     @Nonnull
     @SuppressWarnings("unchecked")
-    default <T1, T2, A, R> StreamStage<TimestampedEntry<K, R>> aggregate3(
-            @Nonnull StreamStageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull StreamStageWithGrouping<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp
+    default <T1, T2, R> StreamStage<TimestampedEntry<K, R>> aggregate3(
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
+            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp
     ) {
         return aggregate3(stage1, stage2, aggrOp, TimestampedEntry::fromWindowResult);
     }
@@ -362,12 +357,13 @@ public interface StageWithGroupingAndWindow<T, K> {
      */
     @Nonnull
     default <T1, T2, R0, R1, R2, OUT> StreamStage<OUT> aggregate3(
-            @Nonnull AggregateOperation1<? super T, ?, R0> aggrOp0,
-            @Nonnull StreamStageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation1<? super T1, ?, R1> aggrOp1,
-            @Nonnull StreamStageWithGrouping<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation1<? super T2, ?, R2> aggrOp2,
-            @Nonnull KeyedWindowResult3Function<? super K, ? super R0, ? super R1, ? super R2, OUT> mapToOutputFn
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
+            @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
+            @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2,
+            @Nonnull KeyedWindowResult3Function<? super K, ? super R0, ? super R1, ? super R2, ? extends OUT>
+                    mapToOutputFn
     ) {
         AggregateOperation3<T, T1, T2, ?, Tuple3<R0, R1, R2>> aggrOp =
                 aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3);
@@ -400,14 +396,15 @@ public interface StageWithGroupingAndWindow<T, K> {
      */
     @Nonnull
     default <T1, T2, R0, R1, R2> StreamStage<TimestampedEntry<K, Tuple3<R0, R1, R2>>> aggregate3(
-            @Nonnull AggregateOperation1<? super T, ?, R0> aggrOp0,
-            @Nonnull StreamStageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation1<? super T1, ?, R1> aggrOp1,
-            @Nonnull StreamStageWithGrouping<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation1<? super T2, ?, R2> aggrOp2
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
+            @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
+            @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2
     ) {
-        return aggregate3(stage1, stage2, aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3),
-                TimestampedEntry::fromWindowResult);
+        KeyedWindowResultFunction<K, Tuple3<R0, R1, R2>, TimestampedEntry<K, Tuple3<R0, R1, R2>>> outputFn =
+                TimestampedEntry::fromWindowResult;
+        return aggregate3(stage1, stage2, aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3), outputFn);
     }
 
     /**

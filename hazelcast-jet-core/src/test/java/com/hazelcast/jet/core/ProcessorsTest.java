@@ -259,6 +259,6 @@ public class ProcessorsTest {
                 .<List<T>>withCreate(ArrayList::new)
                 .<T>andAccumulate(List::add)
                 .andCombine(List::addAll)
-                .andFinish(Object::toString);
+                .andExportFinish(Object::toString);
     }
 }

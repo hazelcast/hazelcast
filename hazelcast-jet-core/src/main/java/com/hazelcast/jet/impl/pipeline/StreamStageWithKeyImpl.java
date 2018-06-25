@@ -17,20 +17,22 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.StreamStage;
-import com.hazelcast.jet.pipeline.StreamStageWithGrouping;
+import com.hazelcast.jet.pipeline.StreamStageWithKey;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
 
-public class StreamStageWithGroupingImpl<T, K>
-        extends StageWithGroupingBase<T, K>
-        implements StreamStageWithGrouping<T, K> {
-    StreamStageWithGroupingImpl(
+public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> implements StreamStageWithKey<T, K> {
+
+    StreamStageWithKeyImpl(
             @Nonnull StreamStageImpl<T> computeStage,
             @Nonnull DistributedFunction<? super T, ? extends K> keyFn
     ) {
@@ -38,8 +40,8 @@ public class StreamStageWithGroupingImpl<T, K>
     }
 
     @Nonnull @Override
-    public StageWithGroupingAndWindowImpl<T, K> window(@Nonnull WindowDefinition wDef) {
-        return new StageWithGroupingAndWindowImpl<>((StreamStageImpl<T>) computeStage, keyFn(), wDef);
+    public StageWithKeyAndWindowImpl<T, K> window(@Nonnull WindowDefinition wDef) {
+        return new StageWithKeyAndWindowImpl<>((StreamStageImpl<T>) computeStage, keyFn(), wDef);
     }
 
     @Nonnull @Override
@@ -47,7 +49,7 @@ public class StreamStageWithGroupingImpl<T, K>
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
     ) {
-        return computeStage.attachMapUsingKeyedContext(contextFactory, keyFn(), mapFn);
+        return computeStage.attachMapUsingContext(contextFactory, mapFn);
     }
 
     @Nonnull @Override
@@ -55,7 +57,7 @@ public class StreamStageWithGroupingImpl<T, K>
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
     ) {
-        return computeStage.attachFilterUsingKeyedContext(contextFactory, keyFn(), filterFn);
+        return computeStage.attachFilterUsingContext(contextFactory, filterFn);
     }
 
     @Nonnull @Override
@@ -63,6 +65,19 @@ public class StreamStageWithGroupingImpl<T, K>
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
-        return computeStage.attachFlatMapUsingKeyedContext(contextFactory, keyFn(), flatMapFn);
+        return computeStage.attachFlatMapUsingContext(contextFactory, flatMapFn);
+    }
+
+    @Nonnull @Override
+    public <R, OUT> StreamStage<OUT> rollingAggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
+            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+    ) {
+        return computeStage.attachRollingAggregate(keyFn(), aggrOp, mapToOutputFn);
+    }
+
+    @Nonnull @Override
+    public <R> GeneralStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorSupplier procSupplier) {
+        return computeStage.attachPartitionedCustomTransform(stageName, procSupplier, keyFn());
     }
 }

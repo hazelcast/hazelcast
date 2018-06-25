@@ -52,7 +52,6 @@ import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
-import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -131,7 +130,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                             singletonList(timestampFn),
                             TimestampKind.EVENT,
                             wDef,
-                            counting.withFinishFn(identity())
+                            counting.withIdentityFinish()
                     ));
             Vertex slidingWin = dag.newVertex("slidingWin",
                     combineToSlidingWindowP(wDef, counting, TimestampedEntry::fromWindowResult));
