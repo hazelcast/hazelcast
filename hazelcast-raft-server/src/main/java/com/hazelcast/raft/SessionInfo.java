@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,37 @@ package com.hazelcast.raft;
 import com.hazelcast.nio.Address;
 
 /**
- * TODO: Javadoc Pending...
+ * Represents state of a Raft session.
  */
 public interface SessionInfo {
 
+    /**
+     * Returns id of the session
+     */
     long id();
 
+    /**
+     * Returns the timestamp of when the session was created
+     */
     long creationTime();
 
+    /**
+     * Returns the timestamp of when the session will expire
+     */
     long expirationTime();
 
+    /**
+     * Returns version of the session. A session's version is incremented on each heartbeat.
+     */
     long version();
 
+    /**
+     * Returns true if the session expires before the given timestamp.
+     */
     boolean isExpired(long timestamp);
 
+    /**
+     * Returns the endpoint that has created this session
+     */
     Address endpoint();
 }

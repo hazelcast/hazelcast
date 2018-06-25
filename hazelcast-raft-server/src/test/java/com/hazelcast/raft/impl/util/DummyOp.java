@@ -8,7 +8,7 @@ import com.hazelcast.raft.impl.service.RaftService;
 
 public class DummyOp extends RaftOp {
     @Override
-    public Object run(RaftGroupId groupId, long commitIndex) throws Exception {
+    public Object run(RaftGroupId groupId, long commitIndex) {
         return null;
     }
 
@@ -19,11 +19,9 @@ public class DummyOp extends RaftOp {
 
     @Override
     public void writeData(ObjectDataOutput out) {
-
     }
 
     @Override
     public void readData(ObjectDataInput in) {
-
     }
 }

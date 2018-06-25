@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,26 @@ package com.hazelcast.raft.impl.session;
 
 import com.hazelcast.raft.RaftGroupId;
 
+import java.util.Collection;
+
 /**
- * TODO: Javadoc Pending...
+ * Services that attach their resources to Raft sessions implement this service
  */
 public interface SessionAwareService {
 
+    /**
+     * Injects {@link SessionAccessor} in order to enable the custom service to validate and trigger session activity
+     */
     void setSessionAccessor(SessionAccessor accessor);
 
-    void onSessionInvalidated(RaftGroupId groupId, long sessionId);
+    /**
+     * Called when a session is closed.
+     */
+    void onSessionClose(RaftGroupId groupId, long sessionId);
+
+    /**
+     * Returns a collection of session ids that this service has attached some resources.
+     */
+    Collection<Long> getAttachedSessions(RaftGroupId groupId);
 
 }

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.service.lock.proxy;
 
 import com.hazelcast.core.ICondition;
@@ -6,45 +22,50 @@ import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftOp;
 import com.hazelcast.raft.impl.service.RaftInvocationManager;
 import com.hazelcast.raft.impl.session.SessionExpiredException;
-import com.hazelcast.raft.service.lock.operation.GetLockCountOp;
+import com.hazelcast.raft.service.exception.WaitKeyCancelledException;
+import com.hazelcast.raft.service.lock.RaftLockOwnershipState;
+import com.hazelcast.raft.service.lock.operation.ForceUnlockOp;
+import com.hazelcast.raft.service.lock.operation.GetLockOwnershipStateOp;
 import com.hazelcast.raft.service.lock.operation.LockOp;
 import com.hazelcast.raft.service.lock.operation.TryLockOp;
 import com.hazelcast.raft.service.lock.operation.UnlockOp;
 import com.hazelcast.raft.service.session.SessionAwareProxy;
 import com.hazelcast.raft.service.session.SessionManagerService;
 import com.hazelcast.raft.service.spi.operation.DestroyRaftObjectOp;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.ThreadUtil;
-import com.hazelcast.util.UuidUtil;
 
 import java.util.UUID;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
 import static com.hazelcast.raft.service.lock.RaftLockService.SERVICE_NAME;
+import static com.hazelcast.raft.service.session.AbstractSessionManager.NO_SESSION_ID;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 
+/**
+ * Server-side proxy of Raft-based {@link ILock} API
+ */
 public class RaftLockProxy extends SessionAwareProxy implements ILock {
 
     private final String name;
-    private final RaftInvocationManager raftInvocationManager;
+    private final RaftInvocationManager invocationManager;
 
-    public RaftLockProxy(String name, RaftGroupId groupId, SessionManagerService sessionManager,
-            RaftInvocationManager invocationManager) {
+    public RaftLockProxy(RaftInvocationManager invocationManager, SessionManagerService sessionManager, RaftGroupId groupId,
+                         String name) {
         super(sessionManager, groupId);
         this.name = name;
-        this.raftInvocationManager = invocationManager;
+        this.invocationManager = invocationManager;
     }
 
     @Override
     public void lock() {
-        UUID invUid = UuidUtil.newUnsecureUUID();
+        long threadId = getThreadId();
+        UUID invUid = newUnsecureUUID();
         for (;;) {
             long sessionId = acquireSession();
-            RaftOp op = new LockOp(name, sessionId, ThreadUtil.getThreadId(), invUid);
-            Future<Object> f = raftInvocationManager.invoke(groupId, op);
             try {
-                join(f);
+                invocationManager.invoke(groupId, new LockOp(name, sessionId, threadId, invUid)).join();
                 break;
             } catch (SessionExpiredException e) {
                 invalidateSession(sessionId);
@@ -59,14 +80,21 @@ public class RaftLockProxy extends SessionAwareProxy implements ILock {
 
     @Override
     public boolean tryLock(long time, TimeUnit unit) {
-        UUID invUid = UuidUtil.newUnsecureUUID();
+        checkNotNull(unit);
+        long threadId = getThreadId();
+        UUID invUid = newUnsecureUUID();
         long timeoutMs = Math.max(0, unit.toMillis(time));
         for (;;) {
             long sessionId = acquireSession();
-            RaftOp op = new TryLockOp(name, sessionId, ThreadUtil.getThreadId(), invUid, timeoutMs);
-            Future<Long> f = raftInvocationManager.invoke(groupId, op);
+            RaftOp op = new TryLockOp(name, sessionId, threadId, invUid, timeoutMs);
             try {
-                return join(f) > 0L;
+                RaftLockOwnershipState ownership = invocationManager.<RaftLockOwnershipState>invoke(groupId, op).join();
+                if (!ownership.isLocked()) {
+                    releaseSession(sessionId);
+                }
+                return ownership.isLocked();
+            } catch (WaitKeyCancelledException e) {
+                return false;
             } catch (SessionExpiredException e) {
                 invalidateSession(sessionId);
             }
@@ -75,21 +103,22 @@ public class RaftLockProxy extends SessionAwareProxy implements ILock {
 
     @Override
     public void unlock() {
-        final long sessionId = getSession();
-        if (sessionId < 0) {
+        long sessionId = getSession();
+        if (sessionId == NO_SESSION_ID) {
             throw new IllegalMonitorStateException();
         }
-        UUID invUid = UuidUtil.newUnsecureUUID();
-        Future f = raftInvocationManager.invoke(groupId, new UnlockOp(name, sessionId, ThreadUtil.getThreadId(), invUid));
         try {
-            join(f);
+            invocationManager.invoke(groupId, new UnlockOp(name, sessionId, getThreadId(), newUnsecureUUID(), 1)).join();
+        } catch (SessionExpiredException e) {
+            invalidateSession(sessionId);
+            throw new IllegalMonitorStateException("Current thread is not owner of the lock!");
         } finally {
             releaseSession(sessionId);
         }
     }
 
     @Override
-    public boolean tryLock(long time, TimeUnit unit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException {
+    public boolean tryLock(long time, TimeUnit unit, long leaseTime, TimeUnit leaseUnit) {
         throw new UnsupportedOperationException();
     }
 
@@ -100,7 +129,13 @@ public class RaftLockProxy extends SessionAwareProxy implements ILock {
 
     @Override
     public void forceUnlock() {
-        throw new UnsupportedOperationException();
+        RaftOp op = new GetLockOwnershipStateOp(name);
+        RaftLockOwnershipState ownership = invocationManager.<RaftLockOwnershipState>invoke(groupId, op).join();
+        if (!ownership.isLocked()) {
+            throw new IllegalMonitorStateException("Lock[" + name + "] has no owner!");
+        }
+
+        invocationManager.invoke(groupId, new ForceUnlockOp(name, ownership.getFence(), newUnsecureUUID())).join();
     }
 
     @Override
@@ -121,18 +156,20 @@ public class RaftLockProxy extends SessionAwareProxy implements ILock {
     @Override
     public boolean isLockedByCurrentThread() {
         long sessionId = getSession();
-        if (sessionId < 0) {
+        if (sessionId == NO_SESSION_ID) {
             return false;
         }
 
-        Future<Integer> f = raftInvocationManager.invoke(groupId, new GetLockCountOp(name, sessionId, ThreadUtil.getThreadId()));
-        return join(f) > 0;
+        RaftOp op = new GetLockOwnershipStateOp(name);
+        RaftLockOwnershipState ownership = invocationManager.<RaftLockOwnershipState>invoke(groupId, op).join();
+        return (ownership.getSessionId() == sessionId && ownership.getThreadId() == getThreadId());
     }
 
     @Override
     public int getLockCount() {
-        Future<Integer> f = raftInvocationManager.invoke(groupId, new GetLockCountOp(name));
-        return join(f);
+        RaftOp op = new GetLockOwnershipStateOp(name);
+        RaftLockOwnershipState ownership = invocationManager.<RaftLockOwnershipState>invoke(groupId, op).join();
+        return ownership.getLockCount();
     }
 
     @Override
@@ -141,16 +178,8 @@ public class RaftLockProxy extends SessionAwareProxy implements ILock {
     }
 
     @Override
-    public void lockInterruptibly() throws InterruptedException {
+    public void lockInterruptibly() {
         throw new UnsupportedOperationException();
-    }
-
-    private <T> T join(Future<T> future) {
-        try {
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
     }
 
     @Override
@@ -175,10 +204,6 @@ public class RaftLockProxy extends SessionAwareProxy implements ILock {
 
     @Override
     public void destroy() {
-        join(raftInvocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), name)));
-    }
-
-    public RaftGroupId getGroupId() {
-        return groupId;
+        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), name)).join();
     }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@ package com.hazelcast.raft.service.session;
 import com.hazelcast.raft.RaftGroupId;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Base class for server and client proxies that make use of Raft sessions
  */
 public abstract class SessionAwareProxy {
 
@@ -32,19 +31,55 @@ public abstract class SessionAwareProxy {
         this.groupId = groupId;
     }
 
-    protected long getSession() {
-        return sessionManager.getSession(groupId);
+    public final RaftGroupId getGroupId() {
+        return groupId;
     }
 
-    protected long acquireSession() {
+    /**
+     * Increments acquire count of the session.
+     * Creates a new session if there is no session yet.
+     */
+    protected final long acquireSession() {
         return sessionManager.acquireSession(groupId);
     }
 
-    protected void releaseSession(long sessionId) {
+    /**
+     * Increments acquire count of the session.
+     * Creates a new session if there is no session yet.
+     */
+    protected final long acquireSession(int count) {
+        return sessionManager.acquireSession(groupId, count);
+    }
+
+    /**
+     * Decrements acquire count of the session.
+     * Returns silently if no session exists for the given id.
+     */
+    protected final void releaseSession(long sessionId) {
         sessionManager.releaseSession(groupId, sessionId);
     }
 
-    protected void invalidateSession(long sessionId) {
+    /**
+     * Decrements acquire count of the session.
+     * Returns silently if no session exists for the given id.
+     */
+    protected final void releaseSession(long sessionId, int count) {
+        sessionManager.releaseSession(groupId, sessionId, count);
+    }
+
+    /**
+     * Invalidates the given session.
+     * No more heartbeats will be sent for the given session.
+     */
+    protected final void invalidateSession(long sessionId) {
         sessionManager.invalidateSession(groupId, sessionId);
+    }
+
+    /**
+     * Returns id of the session opened for the given Raft group.
+     * Returns {@link AbstractSessionManager#NO_SESSION_ID} if no session exists.
+     */
+    protected final long getSession() {
+        return sessionManager.getSession(groupId);
     }
 }

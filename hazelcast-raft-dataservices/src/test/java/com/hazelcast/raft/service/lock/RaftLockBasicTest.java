@@ -1,14 +1,13 @@
 package com.hazelcast.raft.service.lock;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.raft.RaftGroupConfig;
-import com.hazelcast.config.raft.RaftLockConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.exception.RaftGroupDestroyedException;
 import com.hazelcast.raft.impl.service.HazelcastRaftTestSupport;
+import com.hazelcast.raft.impl.session.operation.CloseSessionOp;
 import com.hazelcast.raft.service.lock.proxy.RaftLockProxy;
+import com.hazelcast.raft.service.session.AbstractSessionManager;
 import com.hazelcast.raft.service.session.SessionManagerService;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.AssertTask;
@@ -33,8 +32,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.concurrent.lock.LockTestUtils.lockByOtherThread;
+import static com.hazelcast.config.raft.RaftConfig.DEFAULT_RAFT_GROUP_NAME;
 import static com.hazelcast.raft.service.lock.RaftLockService.SERVICE_NAME;
-import static com.hazelcast.raft.service.lock.RaftLockService.TRY_LOCK_TIMEOUT_TASK_UPPER_BOUND_MILLIS;
+import static com.hazelcast.raft.service.lock.RaftLockService.WAIT_TIMEOUT_TASK_UPPER_BOUND_MILLIS;
+import static com.hazelcast.raft.service.session.AbstractSessionManager.NO_SESSION_ID;
 import static com.hazelcast.raft.service.spi.RaftProxyFactory.create;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -51,25 +52,24 @@ public class RaftLockBasicTest extends HazelcastRaftTestSupport {
     public ExpectedException exception = ExpectedException.none();
 
     private HazelcastInstance[] instances;
+    private HazelcastInstance lockInstance;
     private ILock lock;
     private String name = "lock";
-    private String groupName = "lock";
-    private int groupSize = 3;
 
     @Before
     public void setup() {
         instances = createInstances();
-
         lock = createLock(name);
         assertNotNull(lock);
     }
 
     protected HazelcastInstance[] createInstances() {
-        return newInstances(groupSize);
+        return newInstances(3);
     }
 
     protected ILock createLock(String name) {
-        return create(instances[RandomPicker.getInt(instances.length)], RaftLockService.SERVICE_NAME, name);
+        lockInstance = instances[RandomPicker.getInt(instances.length)];
+        return create(lockInstance, RaftLockService.SERVICE_NAME, name);
     }
 
     @Test
@@ -185,6 +185,39 @@ public class RaftLockBasicTest extends HazelcastRaftTestSupport {
         assertEquals(1, lock.getLockCount());
     }
 
+    @Test
+    public void testUnlock_whenSessionExpired() throws ExecutionException, InterruptedException {
+        lock.lock();
+
+        AbstractSessionManager sessionManager = getSessionManager();
+        RaftGroupId groupId = getGroupId(lock);
+        long sessionId = sessionManager.getSession(groupId);
+        assertNotEquals(sessionId, NO_SESSION_ID);
+
+        getRaftInvocationManager(instances[0]).invoke(groupId, new CloseSessionOp(sessionId)).get();
+
+        exception.expect(IllegalMonitorStateException.class);
+        lock.unlock();
+    }
+
+    @Test
+    public void testReentrantUnlock_whenSessionExpired() throws ExecutionException, InterruptedException {
+        lock.lock();
+
+        AbstractSessionManager sessionManager = getSessionManager();
+        RaftGroupId groupId = getGroupId(lock);
+        long sessionId = sessionManager.getSession(groupId);
+        assertNotEquals(sessionId, NO_SESSION_ID);
+
+        getRaftInvocationManager(instances[0]).invoke(groupId, new CloseSessionOp(sessionId)).get();
+
+        lock.lock();
+        lock.unlock();
+
+        exception.expect(IllegalMonitorStateException.class);
+        lock.unlock();
+    }
+
     @Test(timeout = 60000)
     public void testTryLock_whenNotLocked() {
         boolean result = lock.tryLock();
@@ -253,7 +286,7 @@ public class RaftLockBasicTest extends HazelcastRaftTestSupport {
     public void testTryLockLongTimeout_whenLockedByOther() throws InterruptedException {
         lockByOtherThread(lock);
 
-        boolean result = lock.tryLock(TRY_LOCK_TIMEOUT_TASK_UPPER_BOUND_MILLIS + 1, TimeUnit.MILLISECONDS);
+        boolean result = lock.tryLock(WAIT_TIMEOUT_TASK_UPPER_BOUND_MILLIS + 1, TimeUnit.MILLISECONDS);
 
         assertFalse(result);
         assertFalse(lock.isLockedByCurrentThread());
@@ -264,7 +297,7 @@ public class RaftLockBasicTest extends HazelcastRaftTestSupport {
     @Test
     public void testCreate_withDefaultGroup() {
         ILock lock = createLock(randomName());
-        assertEquals(RaftGroupConfig.DEFAULT_GROUP, getGroupId(lock).name());
+        assertEquals(DEFAULT_RAFT_GROUP_NAME, getGroupId(lock).name());
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)
@@ -298,6 +331,21 @@ public class RaftLockBasicTest extends HazelcastRaftTestSupport {
         lock.lock();
     }
 
+    @Test(timeout = 60000)
+    public void test_failedTryLock_doesNotAcquireSession() {
+        lockByOtherThread(lock);
+
+        final AbstractSessionManager sessionManager = getSessionManager();
+        final RaftGroupId groupId = getGroupId(lock);
+        final long sessionId = sessionManager.getSession(groupId);
+        assertNotEquals(NO_SESSION_ID, sessionId);
+        assertEquals(1, sessionManager.getSessionAcquireCount(groupId, sessionId));
+
+        boolean locked = lock.tryLock();
+        assertFalse(locked);
+        assertEquals(1, sessionManager.getSessionAcquireCount(groupId, sessionId));
+    }
+
     @Test(expected = DistributedObjectDestroyedException.class)
     public void testCreate_afterDestroy() {
         lock.destroy();
@@ -313,7 +361,7 @@ public class RaftLockBasicTest extends HazelcastRaftTestSupport {
     }
 
     @Test
-    public void testWaitEntries_afterDestroy() throws Exception {
+    public void testWaitKeys_afterDestroy() throws Exception {
         lock.lock();
 
         Collection<Future> futures = new ArrayList<Future>();
@@ -355,7 +403,7 @@ public class RaftLockBasicTest extends HazelcastRaftTestSupport {
         lock.destroy();
 
         final RaftGroupId groupId = getGroupId(lock);
-        getRaftInvocationManager(instances[0]).triggerDestroyRaftGroup(groupId).get();
+        getRaftInvocationManager(instances[0]).triggerDestroy(groupId).get();
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -370,7 +418,7 @@ public class RaftLockBasicTest extends HazelcastRaftTestSupport {
     }
 
     @Test
-    public void testWaitEntries_afterGroupDestroy() throws Exception {
+    public void testWaitKeys_afterGroupDestroy() throws Exception {
         lock.lock();
 
         Collection<Future> futures = new ArrayList<Future>();
@@ -388,7 +436,7 @@ public class RaftLockBasicTest extends HazelcastRaftTestSupport {
         sleepSeconds(1);
 
         final RaftGroupId groupId = getGroupId(lock);
-        getRaftInvocationManager(instances[0]).triggerDestroyRaftGroup(groupId).get();
+        getRaftInvocationManager(instances[0]).triggerDestroy(groupId).get();
 
         for (Future future : futures) {
             try {
@@ -409,17 +457,24 @@ public class RaftLockBasicTest extends HazelcastRaftTestSupport {
         }
     }
 
+    @Test
+    public void testForceUnlock_when_locked() {
+        lock.lock();
+        lock.forceUnlock();
+        assertFalse(lock.isLocked());
+    }
+
+    @Test
+    public void testForceUnlock_when_notLocked() {
+        exception.expect(IllegalMonitorStateException.class);
+        lock.forceUnlock();
+    }
+
     protected RaftGroupId getGroupId(ILock lock) {
         return ((RaftLockProxy) lock).getGroupId();
     }
 
-    @Override
-    protected Config createConfig(int groupSize, int metadataGroupSize) {
-        Config config = super.createConfig(groupSize, metadataGroupSize);
-        config.getRaftConfig().addGroupConfig(new RaftGroupConfig(groupName, groupSize));
-
-        RaftLockConfig lockConfig = new RaftLockConfig(name, groupName);
-        config.addRaftLockConfig(lockConfig);
-        return config;
+    protected AbstractSessionManager getSessionManager() {
+        return getNodeEngineImpl(lockInstance).getService(SessionManagerService.SERVICE_NAME);
     }
 }

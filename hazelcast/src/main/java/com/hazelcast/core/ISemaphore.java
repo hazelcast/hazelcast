@@ -168,7 +168,8 @@ public interface ISemaphore extends DistributedObject {
      * <p>
      * There is no requirement that a thread that releases a permit must
      * have acquired that permit by calling one of the {@link #acquire() acquire}
-     * methods. Correct usage of a semaphore is established by programming
+     * methods, but permit has to be acquired using the same {@code HazelcastInstance}.
+     * Correct usage of a semaphore is established by programming
      * convention in the application.
      */
     void release();
@@ -178,7 +179,8 @@ public interface ISemaphore extends DistributedObject {
      * permits by that amount.
      * <p>
      * There is no requirement that a thread that releases a permit must have
-     * acquired that permit by calling one of the {@link #acquire() acquire} methods.
+     * acquired that permit by calling one of the {@link #acquire() acquire} methods,
+     * but permit has to be acquired using the same {@code HazelcastInstance}.
      * Correct usage of a semaphore is established by programming convention
      * in the application.
      *

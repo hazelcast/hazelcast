@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,41 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.IndeterminateOperationState;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.exception.LeaderDemotedException;
 import com.hazelcast.raft.exception.NotLeaderException;
+import com.hazelcast.raft.exception.StaleAppendRequestException;
+import com.hazelcast.raft.impl.IndeterminateOperationStateAware;
 import com.hazelcast.raft.impl.RaftMemberImpl;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext.MemberCursor;
 
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 
 /**
- * TODO: Javadoc Pending...
+ * A {@link Invocation} implementation that realizes an operation invocation on the leader node of the given Raft group.
+ * Internally handles Raft-related exceptions.
  */
 public class RaftInvocation extends Invocation {
 
     private final RaftInvocationContext raftInvocationContext;
     private final RaftGroupId groupId;
-    private final boolean canFailOnIndeterminateOperationState;
     private volatile MemberCursor memberCursor;
     private volatile RaftMemberImpl lastInvocationEndpoint;
+    private volatile Throwable indeterminateException;
 
-    public RaftInvocation(Context context, RaftInvocationContext raftInvocationContext, RaftGroupId groupId,
-            Operation op, boolean canFailOnIndeterminateOperationState) {
-        super(context, op, null, DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS, DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT);
+    public RaftInvocation(Context context, RaftInvocationContext raftInvocationContext, RaftGroupId groupId, Operation op,
+                          int retryCount, long retryPauseMillis, long callTimeoutMillis) {
+        super(context, op, null, retryCount, retryPauseMillis, callTimeoutMillis, DEFAULT_DESERIALIZE_RESULT);
         this.raftInvocationContext = raftInvocationContext;
         this.groupId = groupId;
-        this.canFailOnIndeterminateOperationState = canFailOnIndeterminateOperationState;
 
         int partitionId = context.partitionService.getPartitionId(groupId);
         op.setPartitionId(partitionId);
@@ -66,7 +65,12 @@ public class RaftInvocation extends Invocation {
 
     @Override
     void notifyNormalResponse(Object value, int expectedBackups) {
+        if (!(value instanceof IndeterminateOperationState) && indeterminateException != null && isRetryable(value)) {
+            value = indeterminateException;
+        }
+
         super.notifyNormalResponse(value, expectedBackups);
+        // TODO [basri] maybe we should update known leader only if the result is not an exception?
         raftInvocationContext.setKnownLeader(groupId, lastInvocationEndpoint);
     }
 
@@ -74,15 +78,26 @@ public class RaftInvocation extends Invocation {
     protected ExceptionAction onException(Throwable t) {
         raftInvocationContext.updateKnownLeaderOnFailure(groupId, t);
 
-        if (shouldFailOnIndeterminateOperationState() && (t instanceof MemberLeftException)) {
-            return THROW_EXCEPTION;
+        if (t instanceof IndeterminateOperationState) {
+            if (isRetryableOnIndeterminateOperationState()) {
+                if (indeterminateException == null) {
+                    indeterminateException = t;
+                }
+                return RETRY_INVOCATION;
+            } else if (shouldFailOnIndeterminateOperationState()) {
+                return THROW_EXCEPTION;
+            } else if (indeterminateException == null) {
+                indeterminateException = t;
+            }
         }
+
         return isRetryable(t) ? RETRY_INVOCATION : op.onInvocationException(t);
     }
 
-    private boolean isRetryable(Throwable cause) {
+    private boolean isRetryable(Object cause) {
         return cause instanceof NotLeaderException
                 || cause instanceof LeaderDemotedException
+                || cause instanceof StaleAppendRequestException
                 || cause instanceof MemberLeftException
                 || cause instanceof CallerNotMemberException
                 || cause instanceof TargetNotMemberException;
@@ -105,8 +120,16 @@ public class RaftInvocation extends Invocation {
         return cursor.get();
     }
 
+    private boolean isRetryableOnIndeterminateOperationState() {
+        if (op instanceof IndeterminateOperationStateAware) {
+            return ((IndeterminateOperationStateAware) op).isRetryableOnIndeterminateOperationState();
+        }
+
+        return false;
+    }
+
     @Override
     protected boolean shouldFailOnIndeterminateOperationState() {
-        return canFailOnIndeterminateOperationState && raftInvocationContext.failOnIndeterminateOperationState;
+        return raftInvocationContext.shouldFailOnIndeterminateOperationState();
     }
 }

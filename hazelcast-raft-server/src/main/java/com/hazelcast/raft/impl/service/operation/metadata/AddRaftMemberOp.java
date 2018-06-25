@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,18 @@ import com.hazelcast.raft.impl.RaftMemberImpl;
 import com.hazelcast.raft.impl.RaftOp;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
+import com.hazelcast.raft.impl.IndeterminateOperationStateAware;
 
 import java.io.IOException;
 
-import static com.hazelcast.raft.impl.service.RaftMetadataManager.METADATA_GROUP_ID;
+import static com.hazelcast.raft.impl.service.MetadataRaftGroupManager.METADATA_GROUP_ID;
 
-public class AddRaftMemberOp extends RaftOp implements IdentifiedDataSerializable {
+/**
+ * A {@link RaftOp} that adds a new CP member to the CP sub-system.
+ * Committed to the Metadata Raft group.
+ * Fails with {@link IllegalArgumentException} if the member to be added is already a CP member that is currently being removed.
+ */
+public class AddRaftMemberOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
 
     private RaftMemberImpl member;
 
@@ -44,13 +50,28 @@ public class AddRaftMemberOp extends RaftOp implements IdentifiedDataSerializabl
     public Object run(RaftGroupId groupId, long commitIndex) {
         assert METADATA_GROUP_ID.equals(groupId);
         RaftService service = getService();
-        service.getMetadataManager().addActiveMember(member);
+        service.getMetadataGroupManager().addActiveMember(member);
         return null;
+    }
+
+    @Override
+    public boolean isRetryableOnIndeterminateOperationState() {
+        return true;
     }
 
     @Override
     public String getServiceName() {
         return RaftService.SERVICE_NAME;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return RaftServiceDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return RaftServiceDataSerializerHook.ADD_RAFT_MEMBER_OP;
     }
 
     @Override
@@ -64,13 +85,7 @@ public class AddRaftMemberOp extends RaftOp implements IdentifiedDataSerializabl
     }
 
     @Override
-    public int getFactoryId() {
-        return RaftServiceDataSerializerHook.F_ID;
+    protected void toString(StringBuilder sb) {
+        sb.append(", member=").append(member);
     }
-
-    @Override
-    public int getId() {
-        return RaftServiceDataSerializerHook.ADD_RAFT_MEMBER_OP;
-    }
-
 }

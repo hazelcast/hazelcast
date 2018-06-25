@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,13 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Provider for Raft session client message task factories
  */
 public class SessionMessageTaskFactoryProvider implements MessageTaskFactoryProvider {
 
-    public static final int CREATE = 30000;
-    public static final int HEARTBEAT = 30001;
-    public static final int CLOSE_SESSION = 30002;
+    public static final int CREATE_TYPE = 14000;
+    public static final int HEARTBEAT_TYPE = 14001;
+    public static final int CLOSE_SESSION_TYPE = 14002;
 
     private final Node node;
 
@@ -45,20 +44,20 @@ public class SessionMessageTaskFactoryProvider implements MessageTaskFactoryProv
     public MessageTaskFactory[] getFactories() {
         MessageTaskFactory[] factories = new MessageTaskFactory[Short.MAX_VALUE];
 
-        factories[CREATE] = new MessageTaskFactory() {
+        factories[CREATE_TYPE] = new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new CreateSessionMessageTask(clientMessage, node, connection);
             }
         };
 
-        factories[HEARTBEAT] = new MessageTaskFactory() {
+        factories[HEARTBEAT_TYPE] = new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new HeartbeatSessionMessageTask(clientMessage, node, connection);
             }
         };
-        factories[CLOSE_SESSION] = new MessageTaskFactory() {
+        factories[CLOSE_SESSION_TYPE] = new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new CloseSessionMessageTask(clientMessage, node, connection);

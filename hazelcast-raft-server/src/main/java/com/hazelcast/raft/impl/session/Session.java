@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,35 @@
 package com.hazelcast.raft.impl.session;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.SessionInfo;
 import com.hazelcast.util.Clock;
+
+import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.Math.max;
 
 /**
- * TODO: Javadoc Pending...
+ * Represents state of a Raft session.
  */
-public class Session implements SessionInfo {
+public class Session implements SessionInfo, IdentifiedDataSerializable {
 
-    private final long id;
+    private long id;
 
-    private final long creationTime;
+    private long creationTime;
 
-    private final long expirationTime;
+    private long expirationTime;
 
-    private final long version;
+    private long version;
 
     // used for diagnostics
-    private final Address endpoint;
+    private Address endpoint;
+
+    public Session() {
+    }
 
     Session(long id, long creationTime, long expirationTime, Address endpoint) {
         this(id, creationTime, expirationTime, 0, endpoint);
@@ -82,6 +90,34 @@ public class Session implements SessionInfo {
         return endpoint;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        Session session = (Session) o;
+
+        if (id != session.id) {
+            return false;
+        }
+        if (version != session.version) {
+            return false;
+        }
+        return endpoint != null ? endpoint.equals(session.endpoint) : session.endpoint == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (id ^ (id >>> 32));
+        result = 31 * result + (int) (version ^ (version >>> 32));
+        result = 31 * result + (endpoint != null ? endpoint.hashCode() : 0);
+        return result;
+    }
+
     Session heartbeat(long ttlMs) {
         long newExpirationTime = max(expirationTime, toExpirationTime(Clock.currentTimeMillis(), ttlMs));
         return newSession(newExpirationTime);
@@ -105,5 +141,33 @@ public class Session implements SessionInfo {
     public String toString() {
         return "Session{" + "id=" + id + ", creationTime=" + creationTime + ", expirationTime=" + expirationTime
                 + ", version=" + version + ", endpoint=" + endpoint + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return RaftSessionServiceDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return RaftSessionServiceDataSerializerHook.SESSION;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(id);
+        out.writeLong(creationTime);
+        out.writeLong(expirationTime);
+        out.writeLong(version);
+        out.writeObject(endpoint);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        id = in.readLong();
+        creationTime = in.readLong();
+        expirationTime = in.readLong();
+        version = in.readLong();
+        endpoint = in.readObject();
     }
 }

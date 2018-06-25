@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,18 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.raft.RaftGroupId;
 
 /**
- * TODO:
+ * Defines methods to create and destroy Raft data structure instances and their proxies
  */
 public interface RaftRemoteService {
 
-    // Called outside of Raft state machine
+    /**
+     * Creates a proxy for the given Raft data structure.
+     * This method is executed outside of the Raft layer.
+     */
     <T extends DistributedObject> T createRaftObjectProxy(String objectName);
 
-    // Called inside of Raft
+    /**
+     * Destroys the given Raft data structure on the Raft group.
+     */
     boolean destroyRaftObject(RaftGroupId groupId, String objectName);
 }

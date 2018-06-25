@@ -44,7 +44,7 @@ public class RaftAtomicLongClientBasicTest extends RaftAtomicLongBasicTest {
         factory.terminateAll();
     }
 
-
+    @Override
     protected RaftGroupId getGroupId(IAtomicLong atomicLong) {
         return ((RaftAtomicLongProxy) atomicLong).getGroupId();
     }

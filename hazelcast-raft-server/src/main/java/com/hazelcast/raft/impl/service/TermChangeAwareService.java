@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,17 @@ package com.hazelcast.raft.impl.service;
 import com.hazelcast.raft.RaftGroupId;
 
 /**
- * TODO: Javadoc Pending...
+ * Services can implement this interface to get notified when there is a leader change in a Raft group.
+ * After a new leader is elected, a special commit is made first to notify services via this interface.
  */
 public interface TermChangeAwareService {
 
-    void onNewTermCommit(RaftGroupId groupId);
+    /**
+     * Invokes as part of the first commit after a new leader is elected.
+     *
+     * @param groupId id of the Raft group in which a new leader is elected
+     * @param commitIndex index of the commit in the Raft log
+     */
+    void onNewTermCommit(RaftGroupId groupId, long commitIndex);
 
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,23 @@ package com.hazelcast.raft.service.lock.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.raft.RaftGroupId;
+import com.hazelcast.raft.impl.IndeterminateOperationStateAware;
 import com.hazelcast.raft.impl.util.PostponedResponse;
+import com.hazelcast.raft.service.lock.FencedLock;
+import com.hazelcast.raft.service.lock.LockEndpoint;
 import com.hazelcast.raft.service.lock.RaftLockDataSerializerHook;
+import com.hazelcast.raft.service.lock.RaftLockOwnershipState;
 import com.hazelcast.raft.service.lock.RaftLockService;
 
 import java.io.IOException;
 import java.util.UUID;
 
 /**
- * TODO: Javadoc Pending...
+ * Operation for {@link FencedLock#lock()}
+ *
+ * @see com.hazelcast.raft.service.lock.RaftLock#acquire(LockEndpoint, long, UUID, boolean)
  */
-public class TryLockOp extends AbstractLockOp {
+public class TryLockOp extends AbstractLockOp implements IndeterminateOperationStateAware {
 
     private long timeoutMs;
 
@@ -44,11 +50,20 @@ public class TryLockOp extends AbstractLockOp {
     @Override
     public Object run(RaftGroupId groupId, long commitIndex) {
         RaftLockService service = getService();
-        if (service.tryAcquire(groupId, name, getLockEndpoint(), commitIndex, invocationUid, timeoutMs)) {
-            return commitIndex;
+        LockEndpoint endpoint = getLockEndpoint();
+        RaftLockOwnershipState ownership = service.tryAcquire(groupId, name, endpoint, commitIndex, invocationUid, timeoutMs);
+        if (ownership.isLocked()) {
+            return ownership;
+        } else if (timeoutMs  > 0) {
+            return PostponedResponse.INSTANCE;
         }
 
-        return timeoutMs > 0 ? PostponedResponse.INSTANCE : RaftLockService.INVALID_FENCE;
+        return ownership;
+    }
+
+    @Override
+    public boolean isRetryableOnIndeterminateOperationState() {
+        return true;
     }
 
     @Override

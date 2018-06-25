@@ -2,10 +2,10 @@ package com.hazelcast.raft.impl.session;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.raft.RaftConfig;
-import com.hazelcast.config.raft.RaftGroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.raft.RaftGroupId;
+import com.hazelcast.raft.SessionInfo;
 import com.hazelcast.raft.impl.RaftMemberImpl;
 import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.service.HazelcastRaftTestSupport;
@@ -27,6 +27,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.raft.impl.RaftUtil.getLeaderMember;
@@ -34,10 +35,13 @@ import static com.hazelcast.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Arrays.asList;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -56,24 +60,28 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
 
     @Before
     public void setup() throws ExecutionException, InterruptedException {
-        int raftGroupSize = 3;
-        instances = newInstances(raftGroupSize);
+        int groupSize = 3;
+        instances = newInstances(groupSize);
         invocationManager = getRaftInvocationManager(instances[0]);
-        groupId = invocationManager.createRaftGroup(RAFT_GROUP_NAME, raftGroupSize).get();
+        groupId = invocationManager.createRaftGroup(RAFT_GROUP_NAME, groupSize).get();
     }
 
     @Test
     public void testSessionCreate() throws ExecutionException, InterruptedException {
         final SessionResponse response = invocationManager.<SessionResponse>invoke(groupId, new CreateSessionOp()).get();
-        System.out.println(response);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                    SessionService service = getNodeEngineImpl(instance).getService(SessionService.SERVICE_NAME);
                     SessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                     assertNotNull(registry);
-                    assertNotNull(registry.getSession(response.getSessionId()));
+
+                    Session session = registry.getSession(response.getSessionId());
+                    assertNotNull(session);
+
+                    Collection<SessionInfo> sessions = service.getAllSessions(groupId);
+                    assertThat(sessions, hasItem(session));
                 }
             }
         });
@@ -87,7 +95,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 for (int i = 0; i < instances.length; i++) {
-                    RaftSessionService service = getNodeEngineImpl(instances[i]).getService(RaftSessionService.SERVICE_NAME);
+                    SessionService service = getNodeEngineImpl(instances[i]).getService(SessionService.SERVICE_NAME);
                     SessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                     assertNotNull(registry);
                     Session session = registry.getSession(response.getSessionId());
@@ -103,7 +111,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 for (int i = 0; i < instances.length; i++) {
-                    RaftSessionService service = getNodeEngineImpl(instances[i]).getService(RaftSessionService.SERVICE_NAME);
+                    SessionService service = getNodeEngineImpl(instances[i]).getService(SessionService.SERVICE_NAME);
                     SessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                     assertNotNull(registry);
                     Session session = registry.getSession(response.getSessionId());
@@ -121,7 +129,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                    SessionService service = getNodeEngineImpl(instance).getService(SessionService.SERVICE_NAME);
                     SessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                     assertNotNull(registry);
                     assertNotNull(registry.getSession(response.getSessionId()));
@@ -135,10 +143,11 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                    SessionService service = getNodeEngineImpl(instance).getService(SessionService.SERVICE_NAME);
                     SessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                     assertNotNull(registry);
                     assertNull(registry.getSession(response.getSessionId()));
+                    assertThat(service.getAllSessions(groupId), empty());
                 }
             }
         });
@@ -151,7 +160,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                    SessionService service = getNodeEngineImpl(instance).getService(SessionService.SERVICE_NAME);
                     SessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                     assertNotNull(registry);
                     assertNotNull(registry.getSession(response.getSessionId()));
@@ -174,7 +183,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 for (int i = 0; i < instances.length; i++) {
-                    RaftSessionService service = getNodeEngineImpl(instances[i]).getService(RaftSessionService.SERVICE_NAME);
+                    SessionService service = getNodeEngineImpl(instances[i]).getService(SessionService.SERVICE_NAME);
                     SessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                     assertNotNull(registry);
                     Session session = registry.getSession(response.getSessionId());
@@ -197,7 +206,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
                         continue;
                     }
 
-                    RaftSessionService service = node.nodeEngine.getService(RaftSessionService.SERVICE_NAME);
+                    SessionService service = node.nodeEngine.getService(SessionService.SERVICE_NAME);
                     SessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                     assertNotNull(registry);
                     Session session = registry.getSession(response.getSessionId());
@@ -215,7 +224,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                    SessionService service = getNodeEngineImpl(instance).getService(SessionService.SERVICE_NAME);
                     SessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                     assertNotNull(registry);
                     Session session = registry.getSession(response.getSessionId());
@@ -228,7 +237,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                    SessionService service = getNodeEngineImpl(instance).getService(SessionService.SERVICE_NAME);
                     SessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                     assertNotNull(registry);
                     Session session = registry.getSession(response.getSessionId());
@@ -287,7 +296,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                RaftSessionService sessionService = getNodeEngineImpl(follower).getService(RaftSessionService.SERVICE_NAME);
+                SessionService sessionService = getNodeEngineImpl(follower).getService(SessionService.SERVICE_NAME);
                 SessionRegistry registry = sessionService.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry.getSession(response.getSessionId()));
             }
@@ -326,16 +335,16 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
     }
 
     @Override
-    protected Config createConfig(int groupSize, int metadataGroupSize) {
-        Config config = super.createConfig(groupSize, metadataGroupSize);
+    protected Config createConfig(int cpNodeCount, int groupSize) {
+        Config config = super.createConfig(cpNodeCount, groupSize);
         RaftConfig raftConfig = config.getRaftConfig();
         raftConfig.getRaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(LOG_ENTRY_COUNT_TO_SNAPSHOT);
-        raftConfig.addGroupConfig(new RaftGroupConfig(RAFT_GROUP_NAME, 3));
+
         return config;
     }
 
     private Session getSession(HazelcastInstance instance, RaftGroupId groupId, long sessionId) {
-        RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+        SessionService sessionService = getNodeEngineImpl(instance).getService(SessionService.SERVICE_NAME);
         SessionRegistry registry = sessionService.getSessionRegistryOrNull(groupId);
         if (registry == null) {
             return null;

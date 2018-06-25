@@ -58,7 +58,7 @@ public class LeaderStateTest {
     public void test_nextIndex() throws Exception {
         Map<RaftMember, Integer> indices = new HashMap<RaftMember, Integer>();
         for (RaftMember endpoint : remoteEndpoints) {
-            int index = RandomPicker.getInt(100);
+            int index = 1 + RandomPicker.getInt(100);
             state.setNextIndex(endpoint, index);
             indices.put(endpoint, index);
         }
@@ -73,7 +73,7 @@ public class LeaderStateTest {
     public void test_matchIndex() throws Exception {
         Map<RaftMember, Long> indices = new HashMap<RaftMember, Long>();
         for (RaftMember endpoint : remoteEndpoints) {
-            long index = RandomPicker.getInt(100);
+            long index = 1 + RandomPicker.getInt(100);
             state.setMatchIndex(endpoint, index);
             indices.put(endpoint, index);
         }

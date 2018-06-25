@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftOp;
-import com.hazelcast.raft.impl.session.RaftSessionService;
+import com.hazelcast.raft.impl.IndeterminateOperationStateAware;
+import com.hazelcast.raft.impl.session.SessionService;
 import com.hazelcast.raft.impl.session.RaftSessionServiceDataSerializerHook;
+import com.hazelcast.raft.impl.session.SessionAwareService;
 
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
+ * Closes the given session on the Raft group and notifies services via the {@link SessionAwareService} interface.
+ * Returns silently if an active session is not found for the given session id.
  */
-public class CloseSessionOp extends RaftOp implements IdentifiedDataSerializable {
+public class CloseSessionOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
 
     private long sessionId;
 
@@ -42,13 +45,18 @@ public class CloseSessionOp extends RaftOp implements IdentifiedDataSerializable
 
     @Override
     public Object run(RaftGroupId groupId, long commitIndex) {
-        RaftSessionService service = getService();
+        SessionService service = getService();
         return service.closeSession(groupId, sessionId);
     }
 
     @Override
+    public boolean isRetryableOnIndeterminateOperationState() {
+        return true;
+    }
+
+    @Override
     public String getServiceName() {
-        return RaftSessionService.SERVICE_NAME;
+        return SessionService.SERVICE_NAME;
     }
 
     @Override

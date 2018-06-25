@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,14 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * TODO: Javadoc Pending...
+ * Base class for operations of Raft-based lock
  */
+@SuppressWarnings("checkstyle:declarationorder")
 abstract class AbstractLockOp extends RaftOp implements IdentifiedDataSerializable {
 
     String name;
-    long sessionId;
-    long threadId;
+    private long sessionId;
+    private long threadId;
     UUID invocationUid;
 
     AbstractLockOp() {

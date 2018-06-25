@@ -1,2 +1,6 @@
-com.hazelcast.raft.service.atomiclong.AtomicLongDataSerializerHook
+com.hazelcast.raft.service.atomiclong.RaftAtomicLongDataSerializerHook
+com.hazelcast.raft.service.atomicref.RaftAtomicReferenceDataSerializerHook
 com.hazelcast.raft.service.lock.RaftLockDataSerializerHook
+com.hazelcast.raft.service.semaphore.RaftSemaphoreDataSerializerHook
+com.hazelcast.raft.service.RaftDataServiceDataSerializerHook
+com.hazelcast.raft.service.countdownlatch.RaftCountDownLatchDataSerializerHook

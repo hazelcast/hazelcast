@@ -1,14 +1,31 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.impl.handler;
 
 import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.RaftNodeImpl;
-import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.raft.impl.dto.VoteRequest;
 import com.hazelcast.raft.impl.dto.VoteResponse;
 import com.hazelcast.raft.impl.log.RaftLog;
 import com.hazelcast.raft.impl.state.RaftState;
 import com.hazelcast.raft.impl.task.RaftNodeStatusAwareTask;
 import com.hazelcast.util.Clock;
+
+import static com.hazelcast.raft.impl.RaftRole.FOLLOWER;
 
 /**
  * Handles {@link VoteRequest} sent by a candidate. Responds with a {@link VoteResponse} to the sender.
@@ -30,6 +47,8 @@ public class VoteRequestHandlerTask extends RaftNodeStatusAwareTask implements R
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    // Justification: It is easier to follow the RequestVoteRPC logic in a single method
     protected void innerRun() {
         RaftState state = raftNode.state();
         RaftMember localEndpoint = raftNode.getLocalMember();
@@ -50,7 +69,7 @@ public class VoteRequestHandlerTask extends RaftNodeStatusAwareTask implements R
 
         if (state.term() < req.term()) {
             // If RPC request or response contains term T > currentTerm: set currentTerm = T, convert to follower (§5.1)
-            if (state.role() != RaftRole.FOLLOWER) {
+            if (state.role() != FOLLOWER) {
                 logger.info("Demoting to FOLLOWER after " + req + " since current term: " + state.term() + " is smaller");
             } else {
                 logger.info("Moving to new term: " + req.term() + " from current term: " + state.term() + " after " + req);

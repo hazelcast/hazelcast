@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.impl;
 
 import com.hazelcast.config.raft.RaftAlgorithmConfig;
@@ -56,15 +72,20 @@ import static com.hazelcast.raft.impl.RaftNodeStatus.CHANGING_MEMBERSHIP;
 import static com.hazelcast.raft.impl.RaftNodeStatus.STEPPED_DOWN;
 import static com.hazelcast.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.raft.impl.RaftNodeStatus.TERMINATING;
+import static com.hazelcast.raft.impl.RaftRole.FOLLOWER;
+import static com.hazelcast.raft.impl.RaftRole.LEADER;
 import static java.lang.Math.min;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Implementation of {@link RaftNode}.
  */
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class RaftNodeImpl implements RaftNode {
 
     private static final long SNAPSHOT_TASK_PERIOD_IN_SECONDS = 1;
     private static final int LEADER_ELECTION_TIMEOUT_RANGE = 1000;
+    private static final long RAFT_NODE_INIT_DELAY_MILLIS = 500;
 
     private final RaftGroupId groupId;
     private final ILogger logger;
@@ -139,7 +160,7 @@ public class RaftNodeImpl implements RaftNode {
             @Override
             public void run() {
                 if (!isTerminatedOrSteppedDown()) {
-                    setStatus(RaftNodeStatus.TERMINATED);
+                    setStatus(TERMINATED);
                     if (localMember.equals(state.leader())) {
                         invalidateFuturesFrom(state.commitIndex() + 1);
                     }
@@ -158,7 +179,7 @@ public class RaftNodeImpl implements RaftNode {
                 public void run() {
                     start();
                 }
-            }, 500, TimeUnit.MILLISECONDS);
+            }, RAFT_NODE_INIT_DELAY_MILLIS, MILLISECONDS);
             return;
         }
 
@@ -394,6 +415,7 @@ public class RaftNodeImpl implements RaftNode {
      * If log entries contains multiple membership change entries, then entries batch is split to send only a single
      * membership change in single append-entries request.
      */
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public void sendAppendRequest(RaftMember follower) {
         RaftLog raftLog = state.log();
         LeaderState leaderState = state.leaderState();
@@ -498,7 +520,8 @@ public class RaftNodeImpl implements RaftNode {
         }
 
         // If commitIndex > lastApplied: increment lastApplied, apply log[lastApplied] to state machine (§5.3)
-        assert commitIndex > lastApplied : "commit index: " + commitIndex + " cannot be smaller than last applied: " + lastApplied;
+        assert commitIndex > lastApplied
+                : "commit index: " + commitIndex + " cannot be smaller than last applied: " + lastApplied;
 
         // Apply all the preceding logs
         RaftLog raftLog = state.log();
@@ -516,8 +539,8 @@ public class RaftNodeImpl implements RaftNode {
             state.lastApplied(idx);
         }
 
-        assert status != TERMINATED || commitIndex == raftLog.lastLogOrSnapshotIndex() :
-                "commit index: " + commitIndex + " must be equal to " + raftLog.lastLogOrSnapshotIndex() + " on termination.";
+        assert status != TERMINATED || commitIndex == raftLog.lastLogOrSnapshotIndex()
+                : "commit index: " + commitIndex + " must be equal to " + raftLog.lastLogOrSnapshotIndex() + " on termination.";
     }
 
     /**
@@ -595,7 +618,7 @@ public class RaftNodeImpl implements RaftNode {
             return;
         }
 
-        raftIntegration.schedule(task, delayInMillis, TimeUnit.MILLISECONDS);
+        raftIntegration.schedule(task, delayInMillis, MILLISECONDS);
     }
 
     /**
@@ -742,7 +765,7 @@ public class RaftNodeImpl implements RaftNode {
             if (localMember.equals(member)) {
                 sb.append(" - ").append(state.role()).append(" this");
             } else if (member.equals(state.leader())) {
-                sb.append(" - ").append(RaftRole.LEADER);
+                sb.append(" - ").append(LEADER);
             }
         }
         sb.append("\n]\n");
@@ -781,7 +804,7 @@ public class RaftNodeImpl implements RaftNode {
 
         @Override
         protected void innerRun() {
-            if (state.role() == RaftRole.LEADER) {
+            if (state.role() == LEADER) {
                 if (lastAppendEntriesTimestamp < Clock.currentTimeMillis() - heartbeatPeriodInMillis) {
                     broadcastAppendRequest();
                 }
@@ -805,7 +828,7 @@ public class RaftNodeImpl implements RaftNode {
             try {
                 RaftMember leader = state.leader();
                 if (leader == null) {
-                    if (state.role() == RaftRole.FOLLOWER) {
+                    if (state.role() == FOLLOWER) {
                         logger.warning("We are FOLLOWER and there is no current leader. Will start new election round...");
                         runPreVoteTask();
                     }
@@ -842,7 +865,7 @@ public class RaftNodeImpl implements RaftNode {
         @Override
         protected void innerRun() {
             try {
-                if (state.role() == RaftRole.LEADER || state.role() == RaftRole.FOLLOWER) {
+                if (state.role() == LEADER || state.role() == FOLLOWER) {
                     takeSnapshotIfCommitIndexAdvanced();
                 }
             } finally {

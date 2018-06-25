@@ -57,7 +57,7 @@ public class RaftInvocationManagerTest extends HazelcastRaftTestSupport {
 
         invocationService.invoke(groupId, new RaftTestApplyOp("val")).get();
 
-        invocationService.triggerDestroyRaftGroup(groupId).get();
+        invocationService.triggerDestroy(groupId).get();
 
         assertTrueEventually(new AssertTask() {
             @Override

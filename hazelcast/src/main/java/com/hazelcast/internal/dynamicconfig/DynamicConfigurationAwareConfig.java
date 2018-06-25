@@ -59,9 +59,8 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.raft.RaftAtomicLongConfig;
-import com.hazelcast.config.raft.RaftLockConfig;
 import com.hazelcast.config.raft.RaftConfig;
+import com.hazelcast.config.raft.RaftSemaphoreConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
@@ -1468,22 +1467,12 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public RaftAtomicLongConfig findRaftAtomicLongConfig(String name) {
-        return staticConfig.findRaftAtomicLongConfig(name);
+    public RaftSemaphoreConfig findRaftSemaphoreConfig(String name) {
+        return staticConfig.findRaftSemaphoreConfig(name);
     }
 
     @Override
-    public Config addRaftAtomicLongConfig(RaftAtomicLongConfig config) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
-    public RaftLockConfig findRaftLockConfig(String name) {
-        return staticConfig.findRaftLockConfig(name);
-    }
-
-    @Override
-    public Config addRaftLockConfig(RaftLockConfig config) {
+    public Config addRaftSemaphoreConfig(RaftSemaphoreConfig config) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

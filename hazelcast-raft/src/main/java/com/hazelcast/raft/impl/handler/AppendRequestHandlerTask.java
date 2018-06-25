@@ -1,21 +1,37 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.impl.handler;
 
+import com.hazelcast.raft.command.DestroyRaftGroupCmd;
 import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.RaftNodeStatus;
-import com.hazelcast.raft.impl.RaftRole;
+import com.hazelcast.raft.impl.command.ApplyRaftGroupMembersCmd;
 import com.hazelcast.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.raft.impl.dto.AppendRequest;
 import com.hazelcast.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.raft.impl.log.LogEntry;
 import com.hazelcast.raft.impl.log.RaftLog;
-import com.hazelcast.raft.impl.command.ApplyRaftGroupMembersCmd;
 import com.hazelcast.raft.impl.state.RaftState;
 import com.hazelcast.raft.impl.task.RaftNodeStatusAwareTask;
-import com.hazelcast.raft.command.DestroyRaftGroupCmd;
 
 import java.util.Arrays;
 import java.util.List;
 
+import static com.hazelcast.raft.impl.RaftRole.FOLLOWER;
 import static java.lang.Math.min;
 import static java.util.Arrays.asList;
 
@@ -39,6 +55,8 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
+    // Justification: It is easier to follow the AppendEntriesRPC logic in a single method
     protected void innerRun() {
         if (logger.isFineEnabled()) {
             logger.fine("Received " + req);
@@ -56,7 +74,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
         RaftLog raftLog = state.log();
 
         // Transform into follower if a newer term is seen or another node wins the election of the current term
-        if (req.term() > state.term() || state.role() != RaftRole.FOLLOWER) {
+        if (req.term() > state.term() || state.role() != FOLLOWER) {
             // If RPC request or response contains term T > currentTerm: set currentTerm = T, convert to follower (§5.1)
             logger.info("Demoting to FOLLOWER from current role: " + state.role() + ", term: " + state.term()
                     + " to new term: " + req.term() + " and leader: " + req.leader());

@@ -29,7 +29,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * A {@link ExecutionException} thrown when a member left during an invocation or execution.
  */
-public class MemberLeftException extends ExecutionException implements RetryableException {
+public class MemberLeftException extends ExecutionException implements RetryableException, IndeterminateOperationState {
 
     private transient Member member;
 

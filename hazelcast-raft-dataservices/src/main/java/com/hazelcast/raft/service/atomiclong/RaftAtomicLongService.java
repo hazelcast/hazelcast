@@ -1,16 +1,28 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.service.atomiclong;
 
-import com.hazelcast.config.raft.RaftAtomicLongConfig;
-import com.hazelcast.config.raft.RaftGroupConfig;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.SnapshotAwareService;
-import com.hazelcast.raft.impl.service.RaftInvocationManager;
+import com.hazelcast.raft.impl.RaftGroupLifecycleAwareService;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.util.Tuple2;
 import com.hazelcast.raft.service.atomiclong.proxy.RaftAtomicLongProxy;
-import com.hazelcast.raft.impl.RaftGroupLifecycleAwareService;
 import com.hazelcast.raft.service.spi.RaftRemoteService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -25,19 +37,25 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.raft.impl.service.RaftService.getObjectNameForProxy;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.newSetFromMap;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Contains Raft-based atomic long instances, implements snapshotting, and creates proxies
  */
-public class RaftAtomicLongService implements ManagedService, RaftRemoteService, RaftGroupLifecycleAwareService, SnapshotAwareService<RaftAtomicLongSnapshot> {
+public class RaftAtomicLongService implements ManagedService, RaftRemoteService, RaftGroupLifecycleAwareService,
+                                              SnapshotAwareService<RaftAtomicLongSnapshot> {
 
+    /**
+     * Name of the service
+     */
     public static final String SERVICE_NAME = "hz:raft:atomicLongService";
 
-    private final Map<Tuple2<RaftGroupId, String>, RaftAtomicLong> atomicLongs = new ConcurrentHashMap<Tuple2<RaftGroupId, String>, RaftAtomicLong>();
-    private final Set<Tuple2<RaftGroupId, String>> destroyedLongs = newSetFromMap(new ConcurrentHashMap<Tuple2<RaftGroupId, String>, Boolean>());
+    private final Map<Tuple2<RaftGroupId, String>, RaftAtomicLong> atomicLongs =
+            new ConcurrentHashMap<Tuple2<RaftGroupId, String>, RaftAtomicLong>();
+    private final Set<Tuple2<RaftGroupId, String>> destroyedLongs =
+            newSetFromMap(new ConcurrentHashMap<Tuple2<RaftGroupId, String>, Boolean>());
     private final NodeEngine nodeEngine;
     private volatile RaftService raftService;
 
@@ -96,8 +114,8 @@ public class RaftAtomicLongService implements ManagedService, RaftRemoteService,
     @Override
     public IAtomicLong createRaftObjectProxy(String name) {
         try {
-            RaftGroupId groupId = createRaftGroup(name).get();
-            return new RaftAtomicLongProxy(name, groupId, raftService.getInvocationManager());
+            RaftGroupId groupId = raftService.createRaftGroupForProxy(name);
+            return new RaftAtomicLongProxy(raftService.getInvocationManager(), groupId, getObjectNameForProxy(name));
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -120,22 +138,6 @@ public class RaftAtomicLongService implements ManagedService, RaftRemoteService,
                 iter.remove();
             }
         }
-    }
-
-    public ICompletableFuture<RaftGroupId> createRaftGroup(String name) {
-        String raftGroupRef = getRaftGroupRef(name);
-
-        RaftInvocationManager invocationManager = raftService.getInvocationManager();
-        return invocationManager.createRaftGroup(raftGroupRef);
-    }
-
-    private String getRaftGroupRef(String name) {
-        RaftAtomicLongConfig config = getConfig(name);
-        return config != null ? config.getRaftGroupRef() : RaftGroupConfig.DEFAULT_GROUP;
-    }
-
-    private RaftAtomicLongConfig getConfig(String name) {
-        return nodeEngine.getConfig().findRaftAtomicLongConfig(name);
     }
 
     public RaftAtomicLong getAtomicLong(RaftGroupId groupId, String name) {

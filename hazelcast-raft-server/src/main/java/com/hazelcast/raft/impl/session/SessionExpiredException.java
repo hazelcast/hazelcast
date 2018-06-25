@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,13 @@ import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * TODO: Javadoc Pending...
+ * Thrown when an operation is attached to a Raft session that is no longer active.
  */
 public class SessionExpiredException extends HazelcastException {
 
     // TODO [basri] fixit
     public static final int ERROR_CODE = 6767;
 
-    public static void register(ClientExceptionFactory factory) {
-        factory.register(ERROR_CODE, SessionExpiredException.class, new ClientExceptionFactory.ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new SessionExpiredException(message, cause);
-            }
-        });
-    }
 
     public SessionExpiredException() {
     }
@@ -45,5 +37,14 @@ public class SessionExpiredException extends HazelcastException {
 
     public SessionExpiredException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    public static void register(ClientExceptionFactory factory) {
+        factory.register(ERROR_CODE, SessionExpiredException.class, new ClientExceptionFactory.ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new SessionExpiredException(message, cause);
+            }
+        });
     }
 }

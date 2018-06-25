@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ import com.hazelcast.raft.impl.service.TermChangeAwareService;
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
+ * When leader of a Raft group changes, this operation is automatically committed to the Raft group
+ * so that related services can perform some actions.
  */
 public class NotifyTermChangeOp extends RaftOp implements IdentifiedDataSerializable {
 
@@ -37,13 +38,18 @@ public class NotifyTermChangeOp extends RaftOp implements IdentifiedDataSerializ
         ILogger logger = getLogger();
         for (TermChangeAwareService service : getNodeEngine().getServices(TermChangeAwareService.class)) {
             try {
-                service.onNewTermCommit(groupId);
+                service.onNewTermCommit(groupId, commitIndex);
             } catch (Exception e) {
                 logger.severe("onNewTermCommit() failed for service: " + service.getClass().getSimpleName()
                         + " and raft group: " + groupId, e);
             }
         }
 
+        return null;
+    }
+
+    @Override
+    protected String getServiceName() {
         return null;
     }
 
@@ -55,11 +61,6 @@ public class NotifyTermChangeOp extends RaftOp implements IdentifiedDataSerializ
     @Override
     public int getId() {
         return RaftServiceDataSerializerHook.NOTIFY_TERM_CHANGE_OP;
-    }
-
-    @Override
-    protected String getServiceName() {
-        return null;
     }
 
     @Override

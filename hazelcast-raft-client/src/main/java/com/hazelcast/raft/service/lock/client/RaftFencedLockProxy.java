@@ -1,3 +1,19 @@
+/*
+ *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.service.lock.client;
 
 import com.hazelcast.client.impl.ClientMessageDecoder;
@@ -7,29 +23,30 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftGroupIdImpl;
 import com.hazelcast.raft.service.lock.FencedLock;
+import com.hazelcast.raft.service.lock.RaftLockOwnershipState;
 import com.hazelcast.raft.service.lock.proxy.AbstractRaftFencedLockProxy;
 import com.hazelcast.raft.service.session.SessionManagerProvider;
+import com.hazelcast.raft.service.spi.client.RaftGroupTaskFactoryProvider;
+import com.hazelcast.spi.InternalCompletableFuture;
 
 import java.util.UUID;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.client.impl.protocol.util.ParameterUtil.calculateDataSize;
-import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.CREATE_TYPE;
-import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.FORCE_UNLOCK;
-import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.LOCK;
-import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.LOCK_COUNT;
-import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.LOCK_FENCE;
-import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.TRY_LOCK;
-import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.UNLOCK;
+import static com.hazelcast.raft.impl.service.RaftService.getObjectNameForProxy;
+import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.DESTROY_TYPE;
+import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.FORCE_UNLOCK_TYPE;
+import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.LOCK_OWNERSHIP_STATE;
+import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.LOCK_TYPE;
+import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.TRY_LOCK_TYPE;
+import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.UNLOCK_TYPE;
 import static com.hazelcast.raft.service.lock.client.RaftLockProxy.BOOLEAN_RESPONSE_DECODER;
-import static com.hazelcast.raft.service.lock.client.RaftLockProxy.INT_RESPONSE_DECODER;
-import static com.hazelcast.raft.service.lock.client.RaftLockProxy.LONG_RESPONSE_DECODER;
+import static com.hazelcast.raft.service.lock.client.RaftLockProxy.LOCK_OWNERSHIP_STATE_RESPONSE_DECODER;
 import static com.hazelcast.raft.service.lock.client.RaftLockProxy.encodeRequest;
 import static com.hazelcast.raft.service.lock.client.RaftLockProxy.invoke;
+import static com.hazelcast.raft.service.lock.client.RaftLockProxy.prepareClientMessage;
 import static com.hazelcast.raft.service.util.ClientAccessor.getClient;
 
 /**
@@ -39,69 +56,81 @@ public class RaftFencedLockProxy extends AbstractRaftFencedLockProxy {
 
     public static FencedLock create(HazelcastInstance instance, String name) {
         int dataSize = ClientMessage.HEADER_SIZE + calculateDataSize(name);
-        ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-        clientMessage.setMessageType(CREATE_TYPE);
-        clientMessage.setRetryable(false);
-        clientMessage.setOperationName("");
-        clientMessage.set(name);
-        clientMessage.updateFrameLength();
+        ClientMessage msg = ClientMessage.createForEncode(dataSize);
+        msg.setMessageType(RaftGroupTaskFactoryProvider.CREATE_TYPE);
+        msg.setRetryable(false);
+        msg.setOperationName("");
+        msg.set(name);
+        msg.updateFrameLength();
 
+        String objectName = getObjectNameForProxy(name);
         HazelcastClientInstanceImpl client = getClient(instance);
-        ClientInvocationFuture f = new ClientInvocation(client, clientMessage, name).invoke();
+        ClientInvocationFuture f = new ClientInvocation(client, msg, objectName).invoke();
 
-        ICompletableFuture<RaftGroupId> future = new ClientDelegatingFuture<RaftGroupId>(f, client.getSerializationService(),
+        InternalCompletableFuture<RaftGroupId> future = new ClientDelegatingFuture<RaftGroupId>(f, client.getSerializationService(),
                 new ClientMessageDecoder() {
                     @Override
-                    public RaftGroupId decodeClientMessage(ClientMessage clientMessage) {
-                        return RaftGroupIdImpl.readFrom(clientMessage);
+                    public RaftGroupId decodeClientMessage(ClientMessage msg) {
+                        return RaftGroupIdImpl.readFrom(msg);
                     }
                 });
 
-        RaftGroupId groupId = RaftLockProxy.join(future);
-        return new RaftFencedLockProxy(instance, groupId, name);
+        RaftGroupId groupId = future.join();
+        return new RaftFencedLockProxy(instance, groupId, objectName);
     }
 
     private final HazelcastClientInstanceImpl client;
 
-    public RaftFencedLockProxy(HazelcastInstance instance, RaftGroupId groupId, String name) {
+    private RaftFencedLockProxy(HazelcastInstance instance, RaftGroupId groupId, String name) {
         super(SessionManagerProvider.get(getClient(instance)), groupId, name);
         this.client = getClient(instance);
     }
 
     @Override
-    protected Future<Long> doLock(RaftGroupId groupId, String name, long sessionId, long threadId, UUID invocationUid) {
-        ClientMessage message = encodeRequest(LOCK, groupId, name, sessionId, threadId, invocationUid);
-        return invoke(client, LONG_RESPONSE_DECODER, name, message);
+    protected final InternalCompletableFuture<RaftLockOwnershipState> doLock(RaftGroupId groupId, String name,
+                                                                       long sessionId, long threadId,
+                                                                       UUID invocationUid) {
+        ClientMessage msg = encodeRequest(LOCK_TYPE, groupId, name, sessionId, threadId, invocationUid);
+        return invoke(client, name, msg, LOCK_OWNERSHIP_STATE_RESPONSE_DECODER);
     }
 
     @Override
-    protected Future<Long> doTryLock(RaftGroupId groupId, String name, long sessionId, long threadId, UUID invocationUid,
-                                     long timeoutMillis) {
-        ClientMessage message = encodeRequest(TRY_LOCK, groupId, name, sessionId, threadId, invocationUid, timeoutMillis);
-        return invoke(client, LONG_RESPONSE_DECODER, name, message);
+    protected final InternalCompletableFuture<RaftLockOwnershipState> doTryLock(RaftGroupId groupId, String name,
+                                                                                long sessionId, long threadId,
+                                                                                UUID invocationUid, long timeoutMillis) {
+        ClientMessage msg = encodeRequest(TRY_LOCK_TYPE, groupId, name, sessionId, threadId, invocationUid, timeoutMillis);
+        return invoke(client, name, msg, LOCK_OWNERSHIP_STATE_RESPONSE_DECODER);
     }
 
     @Override
-    protected Future<Object> doUnlock(RaftGroupId groupId, String name, long sessionId, long threadId, UUID invocationUid) {
-        ClientMessage message = encodeRequest(UNLOCK, groupId, name, sessionId, threadId, invocationUid);
-        return invoke(client, BOOLEAN_RESPONSE_DECODER, name, message);
+    protected final InternalCompletableFuture<Object> doUnlock(RaftGroupId groupId, String name,
+                                                               long sessionId, long threadId,
+                                                               UUID invocationUid, int releaseCount) {
+        ClientMessage msg = encodeRequest(UNLOCK_TYPE, groupId, name, sessionId, threadId, invocationUid, releaseCount);
+        return invoke(client, name, msg, BOOLEAN_RESPONSE_DECODER);
     }
 
     @Override
-    protected Future<Object> doForceUnlock(RaftGroupId groupId, String name, long expectedFence, UUID invocationUid) {
-        ClientMessage message = encodeRequest(FORCE_UNLOCK, groupId, name, -1, -1, invocationUid, expectedFence);
-        return invoke(client, BOOLEAN_RESPONSE_DECODER, name, message);
+    protected final InternalCompletableFuture<Object> doForceUnlock(RaftGroupId groupId, String name,
+                                                                    UUID invocationUid, long expectedFence) {
+        ClientMessage msg = encodeRequest(FORCE_UNLOCK_TYPE, groupId, name, -1, -1, invocationUid, expectedFence);
+        return invoke(client, name, msg, BOOLEAN_RESPONSE_DECODER);
     }
 
     @Override
-    protected Future<Long> doGetLockFence(RaftGroupId groupId, String name) {
-        ClientMessage message = encodeRequest(LOCK_FENCE, groupId, name, -1, -1);
-        return invoke(client, LONG_RESPONSE_DECODER, name, message);
+    protected final InternalCompletableFuture<RaftLockOwnershipState> doGetLockOwnershipState(RaftGroupId groupId,
+                                                                                              String name) {
+        ClientMessage msg = encodeRequest(LOCK_OWNERSHIP_STATE, groupId, name, -1, -1);
+        return invoke(client, name, msg, LOCK_OWNERSHIP_STATE_RESPONSE_DECODER);
     }
 
     @Override
-    protected Future<Integer> doGetLockCount(RaftGroupId groupId, String name) {
-        ClientMessage message = encodeRequest(LOCK_COUNT, groupId, name, -1, -1);
-        return invoke(client, INT_RESPONSE_DECODER, name, message);
+    public void destroy() {
+        int dataSize = ClientMessage.HEADER_SIZE + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name);
+        ClientMessage msg = prepareClientMessage(groupId, name, dataSize, DESTROY_TYPE);
+        msg.updateFrameLength();
+
+        invoke(client, name, msg, BOOLEAN_RESPONSE_DECODER).join();
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,12 @@ package com.hazelcast.raft.impl;
 import com.hazelcast.raft.RaftGroupId;
 
 /**
- * TODO: Javadoc Pending...
+ * Contains methods that are invoked on life cycle changes of a Raft group
  */
 public interface RaftGroupLifecycleAwareService {
 
-    // will be called on the thread where Raft commits are done, but can be called without a Raft commit...
+    /**
+     * Called on the thread of the Raft group when the given Raft group is destroyed, either gracefully or forcefully.
+     */
     void onGroupDestroy(RaftGroupId groupId);
 }

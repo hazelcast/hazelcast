@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,22 @@ package com.hazelcast.raft.impl.session;
 import com.hazelcast.raft.RaftGroupId;
 
 /**
- * TODO: Javadoc Pending...
+ * Used by services to validate and trigger session activity
  */
 public interface SessionAccessor {
 
-    boolean isValid(RaftGroupId groupId, long sessionId);
+    /**
+     * Checks if there is an active session with the given id in the Raft group
+     *
+     * @return true if the session is found, false otherwise
+     */
+    boolean isActive(RaftGroupId groupId, long sessionId);
 
+    /**
+     * Performs a heartbeat for the given session id in the Raft group.
+     *
+     * @throws IllegalStateException if there is no {@link SessionRegistry} initialized for the Raft group
+     * @throws SessionExpiredException if there is no active session with the given id in the Raft group
+     */
     void heartbeat(RaftGroupId groupId, long sessionId);
 }

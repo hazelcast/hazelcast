@@ -34,6 +34,6 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
             public Object getService(NodeEngine nodeEngine) {
                 return new RaftDataService();
             }
-        }};
+        },};
     }
 }

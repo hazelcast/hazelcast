@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,22 @@
 package com.hazelcast.raft.service.lock.operation;
 
 import com.hazelcast.raft.RaftGroupId;
+import com.hazelcast.raft.impl.IndeterminateOperationStateAware;
 import com.hazelcast.raft.impl.util.PostponedResponse;
+import com.hazelcast.raft.service.lock.FencedLock;
 import com.hazelcast.raft.service.lock.LockEndpoint;
 import com.hazelcast.raft.service.lock.RaftLockDataSerializerHook;
+import com.hazelcast.raft.service.lock.RaftLockOwnershipState;
 import com.hazelcast.raft.service.lock.RaftLockService;
 
 import java.util.UUID;
 
 /**
- * TODO: Javadoc Pending...
+ * Operation for {@link FencedLock#lock()}
+ *
+ * @see com.hazelcast.raft.service.lock.RaftLock#acquire(LockEndpoint, long, UUID, boolean)
  */
-public class LockOp extends AbstractLockOp {
+public class LockOp extends AbstractLockOp implements IndeterminateOperationStateAware {
 
     public LockOp() {
     }
@@ -40,10 +45,13 @@ public class LockOp extends AbstractLockOp {
     public Object run(RaftGroupId groupId, long commitIndex) {
         RaftLockService service = getService();
         LockEndpoint endpoint = getLockEndpoint();
-        if (service.acquire(groupId, name, endpoint, commitIndex, invocationUid)) {
-            return commitIndex;
-        }
-        return PostponedResponse.INSTANCE;
+        RaftLockOwnershipState ownership = service.acquire(groupId, name, endpoint, commitIndex, invocationUid);
+        return ownership.isLocked() ? ownership : PostponedResponse.INSTANCE;
+    }
+
+    @Override
+    public boolean isRetryableOnIndeterminateOperationState() {
+        return true;
     }
 
     @Override

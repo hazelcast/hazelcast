@@ -28,7 +28,7 @@ import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftGroupIdImpl;
 import com.hazelcast.raft.impl.session.SessionResponse;
 import com.hazelcast.raft.service.session.client.SessionMessageTaskFactoryProvider;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.InternalCompletableFuture;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -52,15 +52,15 @@ public class ClientSessionManager extends AbstractSessionManager {
     @Override
     protected SessionResponse requestNewSession(RaftGroupId groupId) {
         int dataSize = ClientMessage.HEADER_SIZE + RaftGroupIdImpl.dataSize(groupId);
-        ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-        clientMessage.setMessageType(SessionMessageTaskFactoryProvider.CREATE);
-        clientMessage.setRetryable(false);
-        clientMessage.setOperationName("");
-        RaftGroupIdImpl.writeTo(groupId, clientMessage);
-        clientMessage.updateFrameLength();
+        ClientMessage msg = ClientMessage.createForEncode(dataSize);
+        msg.setMessageType(SessionMessageTaskFactoryProvider.CREATE_TYPE);
+        msg.setRetryable(false);
+        msg.setOperationName("");
+        RaftGroupIdImpl.writeTo(groupId, msg);
+        msg.updateFrameLength();
 
-        ICompletableFuture<SessionResponse> future = invoke(clientMessage, SESSION_RESPONSE_DECODER);
-        return join(future);
+        InternalCompletableFuture<SessionResponse> future = invoke(msg, SESSION_RESPONSE_DECODER);
+        return future.join();
     }
 
     @Override
@@ -71,57 +71,49 @@ public class ClientSessionManager extends AbstractSessionManager {
     @Override
     protected ICompletableFuture<Object> heartbeat(RaftGroupId groupId, long sessionId) {
         int dataSize = ClientMessage.HEADER_SIZE + RaftGroupIdImpl.dataSize(groupId) + Bits.LONG_SIZE_IN_BYTES;
-        ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-        clientMessage.setMessageType(SessionMessageTaskFactoryProvider.HEARTBEAT);
-        clientMessage.setRetryable(false);
-        clientMessage.setOperationName("");
-        RaftGroupIdImpl.writeTo(groupId, clientMessage);
-        clientMessage.set(sessionId);
-        clientMessage.updateFrameLength();
+        ClientMessage msg = ClientMessage.createForEncode(dataSize);
+        msg.setMessageType(SessionMessageTaskFactoryProvider.HEARTBEAT_TYPE);
+        msg.setRetryable(false);
+        msg.setOperationName("");
+        RaftGroupIdImpl.writeTo(groupId, msg);
+        msg.set(sessionId);
+        msg.updateFrameLength();
 
-        return invoke(clientMessage, BOOLEAN_RESPONSE_DECODER);
+        return invoke(msg, BOOLEAN_RESPONSE_DECODER);
     }
 
     @Override
     protected ICompletableFuture<Object> closeSession(RaftGroupId groupId, Long sessionId) {
         int dataSize = ClientMessage.HEADER_SIZE + RaftGroupIdImpl.dataSize(groupId) + Bits.LONG_SIZE_IN_BYTES;
-        ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-        clientMessage.setMessageType(SessionMessageTaskFactoryProvider.CLOSE_SESSION);
-        clientMessage.setRetryable(false);
-        clientMessage.setOperationName("");
-        RaftGroupIdImpl.writeTo(groupId, clientMessage);
-        clientMessage.set(sessionId);
-        clientMessage.updateFrameLength();
+        ClientMessage msg = ClientMessage.createForEncode(dataSize);
+        msg.setMessageType(SessionMessageTaskFactoryProvider.CLOSE_SESSION_TYPE);
+        msg.setRetryable(false);
+        msg.setOperationName("");
+        RaftGroupIdImpl.writeTo(groupId, msg);
+        msg.set(sessionId);
+        msg.updateFrameLength();
 
-        return invoke(clientMessage, BOOLEAN_RESPONSE_DECODER);
+        return invoke(msg, BOOLEAN_RESPONSE_DECODER);
     }
 
-    private <T> ICompletableFuture<T> invoke(ClientMessage clientMessage, ClientMessageDecoder decoder) {
-        ClientInvocationFuture future = new ClientInvocation(client, clientMessage, "session").invoke();
+    private <T> InternalCompletableFuture<T> invoke(ClientMessage msg, ClientMessageDecoder decoder) {
+        ClientInvocationFuture future = new ClientInvocation(client, msg, "session").invoke();
         return new ClientDelegatingFuture<T>(future, client.getSerializationService(), decoder);
-    }
-
-    private static <T> T join(ICompletableFuture<T> future) {
-        try {
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
     }
 
     private static class BooleanResponseDecoder implements ClientMessageDecoder {
         @Override
-        public Boolean decodeClientMessage(ClientMessage clientMessage) {
-            return clientMessage.getBoolean();
+        public Boolean decodeClientMessage(ClientMessage msg) {
+            return msg.getBoolean();
         }
     }
 
     private static class SessionResponseDecoder implements ClientMessageDecoder {
         @Override
-        public SessionResponse decodeClientMessage(ClientMessage clientMessage) {
-            long sessionId = clientMessage.getLong();
-            long sessionTTL = clientMessage.getLong();
-            long heartbeatInterval = clientMessage.getLong();
+        public SessionResponse decodeClientMessage(ClientMessage msg) {
+            long sessionId = msg.getLong();
+            long sessionTTL = msg.getLong();
+            long heartbeatInterval = msg.getLong();
             return new SessionResponse(sessionId, sessionTTL, heartbeatInterval);
         }
     }

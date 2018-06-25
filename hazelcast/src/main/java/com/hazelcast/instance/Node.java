@@ -32,8 +32,6 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
-import com.hazelcast.config.raft.RaftMetadataGroupConfig;
-import com.hazelcast.config.raft.RaftConfig;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastException;
@@ -541,6 +539,7 @@ public class Node {
         }
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private void shutdownServices(boolean terminate) {
         if (nodeExtension != null) {
             nodeExtension.beforeShutdown();
@@ -922,13 +921,6 @@ public class Node {
                 attributes.put(shortKey, value);
             }
         }
-
-        RaftConfig raftConfig = config.getRaftConfig();
-        if (raftConfig != null && raftConfig.getMetadataGroupConfig() != null) {
-            boolean initialRaftMember = raftConfig.getMetadataGroupConfig().isInitialRaftMember();
-            attributes.put(RaftMetadataGroupConfig.RAFT_MEMBER_ATTRIBUTE_NAME, initialRaftMember);
-        }
-
         return attributes;
     }
 

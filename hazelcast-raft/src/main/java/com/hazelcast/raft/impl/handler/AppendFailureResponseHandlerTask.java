@@ -1,11 +1,28 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.impl.handler;
 
 import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.RaftNodeImpl;
-import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.raft.impl.state.LeaderState;
 import com.hazelcast.raft.impl.state.RaftState;
+
+import static com.hazelcast.raft.impl.RaftRole.LEADER;
 
 /**
  * Handles {@link AppendFailureResponse} sent by {@link AppendRequestHandlerTask} after an append-entries request
@@ -33,7 +50,7 @@ public class AppendFailureResponseHandlerTask extends AbstractResponseHandlerTas
     protected void handleResponse() {
         RaftState state = raftNode.state();
 
-        if (state.role() != RaftRole.LEADER) {
+        if (state.role() != LEADER) {
             logger.warning(resp + " is ignored since we are not LEADER.");
             return;
         }

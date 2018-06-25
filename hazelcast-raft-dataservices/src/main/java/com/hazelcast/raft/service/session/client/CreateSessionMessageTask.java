@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.raft.service.session.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Connection;
@@ -33,14 +32,13 @@ import com.hazelcast.raft.impl.session.operation.CreateSessionOp;
 import java.security.Permission;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Client message task for {@link CreateSessionOp}
  */
 public class CreateSessionMessageTask extends AbstractMessageTask implements ExecutionCallback {
 
     protected RaftGroupId groupId;
 
-    public CreateSessionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    CreateSessionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -48,9 +46,7 @@ public class CreateSessionMessageTask extends AbstractMessageTask implements Exe
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftInvocationManager invocationManager = service.getInvocationManager();
-        CreateSessionOp op = new CreateSessionOp(connection.getEndPoint());
-        ICompletableFuture<SessionResponse> future = invocationManager.invoke(groupId, op);
-        future.andThen(this);
+        invocationManager.invoke(groupId, new CreateSessionOp(connection.getEndPoint())).andThen(this);
     }
 
     @Override
@@ -65,7 +61,6 @@ public class CreateSessionMessageTask extends AbstractMessageTask implements Exe
             SessionResponse session = (SessionResponse) response;
             int dataSize = ClientMessage.HEADER_SIZE + Bits.LONG_SIZE_IN_BYTES * 3;
             ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-            clientMessage.setMessageType(1111);
             clientMessage.set(session.getSessionId());
             clientMessage.set(session.getTtlMillis());
             clientMessage.set(session.getHeartbeatMillis());

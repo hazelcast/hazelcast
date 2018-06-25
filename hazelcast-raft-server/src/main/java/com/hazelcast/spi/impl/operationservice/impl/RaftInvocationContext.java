@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,37 +28,34 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * TODO: Javadoc Pending...
- *
- * @author mdogan 30.05.2018
+ *  Contains all static dependencies for a {@link RaftInvocation} along with the CP node list.
  */
 public class RaftInvocationContext {
-    private final ILogger logger;
 
+    private final ILogger logger;
     private final RaftService raftService;
     private final ConcurrentMap<RaftGroupId, RaftMemberImpl> knownLeaders =
             new ConcurrentHashMap<RaftGroupId, RaftMemberImpl>();
-    final boolean failOnIndeterminateOperationState;
+    private final boolean failOnIndeterminateOperationState;
 
-    private volatile RaftMemberImpl[] allMembers = {};
+    private volatile RaftMemberImpl[] members = {};
 
     public RaftInvocationContext(ILogger logger, RaftService raftService) {
         this.logger = logger;
         this.raftService = raftService;
-        this.failOnIndeterminateOperationState = raftService.getConfig()
-                .getRaftAlgorithmConfig().isFailOnIndeterminateOperationState();
+        this.failOnIndeterminateOperationState = raftService.getConfig().isFailOnIndeterminateOperationState();
     }
 
     public void reset() {
-        allMembers = new RaftMemberImpl[0];
+        members = new RaftMemberImpl[0];
         knownLeaders.clear();
     }
 
-    public void setAllMembers(Collection<RaftMemberImpl> endpoints) {
-        allMembers = endpoints.toArray(new RaftMemberImpl[0]);
+    public void setMembers(Collection<RaftMemberImpl> members) {
+        this.members = members.toArray(new RaftMemberImpl[0]);
     }
 
-    public RaftMemberImpl getKnownLeader(RaftGroupId groupId) {
+    RaftMemberImpl getKnownLeader(RaftGroupId groupId) {
         return knownLeaders.get(groupId);
     }
 
@@ -84,6 +81,10 @@ public class RaftInvocationContext {
         }
     }
 
+    boolean shouldFailOnIndeterminateOperationState() {
+        return failOnIndeterminateOperationState;
+    }
+
     private void resetKnownLeader(RaftGroupId groupId) {
         logger.fine("Resetting known leader for raft: " + groupId);
         knownLeaders.remove(groupId);
@@ -91,24 +92,7 @@ public class RaftInvocationContext {
 
     MemberCursor newMemberCursor(RaftGroupId groupId) {
         RaftGroupInfo group = raftService.getRaftGroup(groupId);
-        RaftMemberImpl[] endpoints = group != null ? group.membersArray() : allMembers;
+        RaftMemberImpl[] endpoints = group != null ? group.membersArray() : members;
         return new MemberCursor(endpoints);
-    }
-
-    static class MemberCursor {
-        private final RaftMemberImpl[] members;
-        private int index = -1;
-
-        private MemberCursor(RaftMemberImpl[] members) {
-            this.members = members;
-        }
-
-        boolean advance() {
-            return ++index < members.length;
-        }
-
-        RaftMemberImpl get() {
-            return members[index];
-        }
     }
 }

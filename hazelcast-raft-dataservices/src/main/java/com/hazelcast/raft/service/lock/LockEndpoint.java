@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.service.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
@@ -6,9 +22,15 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+import static com.hazelcast.raft.service.session.AbstractSessionManager.NO_SESSION_ID;
+import static com.hazelcast.util.Preconditions.checkTrue;
+
 /**
- * TODO: Javadoc Pending...
- *
+ * LockEndpoint represents a thread in a Raft client.
+ * It is a combination of a session id and a thread id.
+ * A LockEndpoint is a single-threaded unique entity.
+ * When it sends a request X, it can either retry this request X, or send a new request Y.
+ * After it sends request Y, it will not retry request X anymore.
  */
 public class LockEndpoint implements IdentifiedDataSerializable {
     private long sessionId;
@@ -18,6 +40,7 @@ public class LockEndpoint implements IdentifiedDataSerializable {
     }
 
     public LockEndpoint(long sessionId, long threadId) {
+        checkTrue(sessionId != NO_SESSION_ID, "a session id must be provided");
         this.sessionId = sessionId;
         this.threadId = threadId;
     }

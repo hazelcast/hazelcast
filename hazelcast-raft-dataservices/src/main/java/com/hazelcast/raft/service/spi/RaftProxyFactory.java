@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,11 @@ import com.hazelcast.util.ExceptionUtil;
 
 /**
  * TODO: Javadoc Pending...
- *
  */
-public class RaftProxyFactory {
+public final class RaftProxyFactory {
+
+    private RaftProxyFactory() {
+    }
 
     public static <T extends DistributedObject> T create(HazelcastInstance instance, String serviceName, String name) {
         NodeEngine nodeEngine = getNodeEngine(instance);

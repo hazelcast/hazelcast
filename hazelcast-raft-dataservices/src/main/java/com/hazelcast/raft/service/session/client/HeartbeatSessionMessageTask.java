@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.raft.service.session.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Connection;
@@ -27,21 +26,19 @@ import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftGroupIdImpl;
 import com.hazelcast.raft.impl.service.RaftInvocationManager;
 import com.hazelcast.raft.impl.service.RaftService;
-import com.hazelcast.raft.impl.session.SessionResponse;
 import com.hazelcast.raft.impl.session.operation.HeartbeatSessionOp;
 
 import java.security.Permission;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Client message task for {@link HeartbeatSessionOp}
  */
 public class HeartbeatSessionMessageTask extends AbstractMessageTask implements ExecutionCallback {
 
     private RaftGroupId groupId;
     private long sessionId;
 
-    public HeartbeatSessionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    HeartbeatSessionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -49,8 +46,7 @@ public class HeartbeatSessionMessageTask extends AbstractMessageTask implements 
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftInvocationManager invocationManager = service.getInvocationManager();
-        ICompletableFuture<SessionResponse> future = invocationManager.invoke(groupId, new HeartbeatSessionOp(sessionId));
-        future.andThen(this);
+        invocationManager.invoke(groupId, new HeartbeatSessionOp(sessionId)).andThen(this);
     }
 
     @Override
@@ -64,7 +60,6 @@ public class HeartbeatSessionMessageTask extends AbstractMessageTask implements 
     protected ClientMessage encodeResponse(Object response) {
         int dataSize = ClientMessage.HEADER_SIZE + Bits.BOOLEAN_SIZE_IN_BYTES;
         ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-        clientMessage.setMessageType(1111);
         clientMessage.set(true);
         clientMessage.updateFrameLength();
         return clientMessage;

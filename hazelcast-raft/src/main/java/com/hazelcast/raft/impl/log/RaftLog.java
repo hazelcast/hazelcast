@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.impl.log;
 
 import java.util.ArrayList;
@@ -114,8 +130,8 @@ public class RaftLog {
                         + lastTerm);
             }
             if (entry.index() != lastIndex + 1) {
-                throw new IllegalArgumentException("Cannot append " + entry + " since its index is bigger than (lastLogIndex + 1): "
-                        + (lastIndex + 1));
+                throw new IllegalArgumentException("Cannot append " + entry
+                        + " since its index is bigger than (lastLogIndex + 1): " + (lastIndex + 1));
             }
             logs.add(entry);
             lastIndex++;
@@ -133,16 +149,20 @@ public class RaftLog {
      */
     public LogEntry[] getEntriesBetween(long fromEntryIndex, long toEntryIndex) {
         if (fromEntryIndex > toEntryIndex) {
-            throw new IllegalArgumentException("Illegal from entry index: " + fromEntryIndex + ", to entry index: " + toEntryIndex);
+            throw new IllegalArgumentException("Illegal from entry index: " + fromEntryIndex + ", to entry index: "
+                    + toEntryIndex);
         }
         if (fromEntryIndex <= snapshotIndex()) {
-            throw new IllegalArgumentException("Illegal from entry index: " + fromEntryIndex + ", snapshot index: " + snapshotIndex());
+            throw new IllegalArgumentException("Illegal from entry index: " + fromEntryIndex + ", snapshot index: "
+                    + snapshotIndex());
         }
         if (fromEntryIndex > lastLogOrSnapshotIndex()) {
-            throw new IllegalArgumentException("Illegal from entry index: " + fromEntryIndex + ", last log index: " + lastLogOrSnapshotIndex());
+            throw new IllegalArgumentException("Illegal from entry index: " + fromEntryIndex + ", last log index: "
+                    + lastLogOrSnapshotIndex());
         }
         if (toEntryIndex > lastLogOrSnapshotIndex()) {
-            throw new IllegalArgumentException("Illegal to entry index: " + toEntryIndex + ", last log index: " + lastLogOrSnapshotIndex());
+            throw new IllegalArgumentException("Illegal to entry index: " + toEntryIndex + ", last log index: "
+                    + lastLogOrSnapshotIndex());
         }
 
         return logs.subList(toArrayIndex(fromEntryIndex), toArrayIndex(toEntryIndex + 1)).toArray(new LogEntry[0]);
@@ -157,7 +177,8 @@ public class RaftLog {
      */
     public List<LogEntry> setSnapshot(SnapshotEntry snapshot) {
         if (snapshot.index() <= snapshotIndex()) {
-            throw new IllegalArgumentException("Illegal index: " + snapshot.index() + ", current snapshot index: " + snapshotIndex());
+            throw new IllegalArgumentException("Illegal index: " + snapshot.index() + ", current snapshot index: "
+                    + snapshotIndex());
         }
 
         List<LogEntry> truncated = new ArrayList<LogEntry>();
@@ -193,6 +214,6 @@ public class RaftLog {
     }
 
     private int toArrayIndex(long entryIndex) {
-        return (int)(entryIndex - snapshotIndex()) - 1;
+        return (int) (entryIndex - snapshotIndex()) - 1;
     }
 }

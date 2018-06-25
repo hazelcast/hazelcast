@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.service.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -15,15 +31,14 @@ import com.hazelcast.raft.service.atomiclong.RaftAtomicLongService;
 import java.security.Permission;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Base class for client message tasks of Raft-based atomic long
  */
 public abstract class AbstractAtomicLongMessageTask extends AbstractMessageTask implements ExecutionCallback {
 
     protected RaftGroupId groupId;
     protected String name;
 
-    protected AbstractAtomicLongMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    AbstractAtomicLongMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -53,7 +68,6 @@ public abstract class AbstractAtomicLongMessageTask extends AbstractMessageTask 
     private ClientMessage encodeLongResponse(long response) {
         int dataSize = ClientMessage.HEADER_SIZE + Bits.LONG_SIZE_IN_BYTES;
         ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-        clientMessage.setMessageType(1111);
         clientMessage.set(response);
         clientMessage.updateFrameLength();
         return clientMessage;
@@ -62,7 +76,6 @@ public abstract class AbstractAtomicLongMessageTask extends AbstractMessageTask 
     private ClientMessage encodeBooleanResponse(boolean response) {
         int dataSize = ClientMessage.HEADER_SIZE + Bits.BOOLEAN_SIZE_IN_BYTES;
         ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-        clientMessage.setMessageType(1111);
         clientMessage.set(response);
         clientMessage.updateFrameLength();
         return clientMessage;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,28 +41,123 @@ import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.Preconditions.checkState;
 
 /**
- * TODO: Javadoc Pending...
+ * Implements session management APIs for Raft-based server and client proxies
  */
 public abstract class AbstractSessionManager {
 
-    public static final int NO_SESSION_ID = -1;
+    /**
+     * Represents absence of a Raft session
+     */
+    public static final long NO_SESSION_ID = -1;
 
     private final ConcurrentMap<RaftGroupId, Object> mutexes = new ConcurrentHashMap<RaftGroupId, Object>();
-    private final ConcurrentMap<RaftGroupId, ClientSession> sessions = new ConcurrentHashMap<RaftGroupId, ClientSession>();
+    private final ConcurrentMap<RaftGroupId, SessionState> sessions = new ConcurrentHashMap<RaftGroupId, SessionState>();
     private final AtomicBoolean scheduleHeartbeat = new AtomicBoolean(false);
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private boolean running = true;
 
-    public final long acquireSession(RaftGroupId groupId) {
-        return getOrCreateSession(groupId).acquire();
+    /**
+     * Creates a new session on the Raft group
+     */
+    protected abstract SessionResponse requestNewSession(RaftGroupId groupId);
+
+    /**
+     * Commits a heartbeat for the session on the Raft group
+     */
+    protected abstract ICompletableFuture<Object> heartbeat(RaftGroupId groupId, long sessionId);
+
+    /**
+     * Closes the given session on the Raft group
+     */
+    protected abstract ICompletableFuture<Object> closeSession(RaftGroupId groupId, Long sessionId);
+
+    /**
+     * Schedules the given task for repeating execution
+     */
+    protected abstract ScheduledFuture<?> scheduleWithRepetition(Runnable task, long period, TimeUnit unit);
+
+    /**
+     * Increments acquire count of the session.
+     * Creates a new session if there is no session yet.
+     */
+    final long acquireSession(RaftGroupId groupId) {
+        return getOrCreateSession(groupId).acquire(1);
     }
 
-    private ClientSession getOrCreateSession(RaftGroupId groupId) {
+    /**
+     * Increments acquire count of the session.
+     * Creates a new session if there is no session yet.
+     */
+    final long acquireSession(RaftGroupId groupId, int count) {
+        return getOrCreateSession(groupId).acquire(count);
+    }
+
+    /**
+     * Decrements acquire count of the session.
+     * Returns silently if no session exists for the given id.
+     */
+    final void releaseSession(RaftGroupId groupId, long id) {
+        releaseSession(groupId, id, 1);
+    }
+
+    /**
+     * Decrements acquire count of the session.
+     * Returns silently if no session exists for the given id.
+     */
+    final void releaseSession(RaftGroupId groupId, long id, int count) {
+        SessionState session = sessions.get(groupId);
+        if (session != null && session.id == id) {
+            session.release(count);
+        }
+    }
+
+    /**
+     * Invalidates the given session.
+     * No more heartbeats will be sent for the given session.
+     */
+    final void invalidateSession(RaftGroupId groupId, long id) {
+        SessionState session = sessions.get(groupId);
+        if (session != null && session.id == id) {
+            sessions.remove(groupId, session);
+        }
+    }
+
+    /**
+     * Returns id of the session opened for the given Raft group.
+     * Returns {@link #NO_SESSION_ID} if no session exists.
+     */
+    public final long getSession(RaftGroupId groupId) {
+        SessionState session = sessions.get(groupId);
+        return session != null ? session.id : NO_SESSION_ID;
+    }
+
+    /**
+     * Invokes a shutdown call on server to close all existing sessions.
+     */
+    public final Map<RaftGroupId, ICompletableFuture<Object>> shutdown() {
+        lock.writeLock().lock();
+        try {
+            Map<RaftGroupId, ICompletableFuture<Object>> futures = new HashMap<RaftGroupId, ICompletableFuture<Object>>();
+            for (Entry<RaftGroupId, SessionState> e : sessions.entrySet()) {
+                RaftGroupId groupId = e.getKey();
+                long sessionId = e.getValue().id;
+                ICompletableFuture<Object> f = closeSession(groupId, sessionId);
+                futures.put(groupId, f);
+            }
+            sessions.clear();
+            running = false;
+            return futures;
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    private SessionState getOrCreateSession(RaftGroupId groupId) {
         lock.readLock().lock();
         try {
             checkState(running, "Session manager is already shut down!");
 
-            ClientSession session = sessions.get(groupId);
+            SessionState session = sessions.get(groupId);
             if (session == null || !session.isValid()) {
                 synchronized (mutex(groupId)) {
                     session = sessions.get(groupId);
@@ -77,6 +172,16 @@ public abstract class AbstractSessionManager {
         }
     }
 
+    private SessionState createNewSession(RaftGroupId groupId) {
+        synchronized (mutex(groupId)) {
+            SessionResponse response = requestNewSession(groupId);
+            SessionState session = new SessionState(response.getSessionId(), response.getTtlMillis());
+            sessions.put(groupId, session);
+            scheduleHeartbeatTask(response.getHeartbeatMillis());
+            return session;
+        }
+    }
+
     private Object mutex(RaftGroupId groupId) {
         Object mutex = mutexes.get(groupId);
         if (mutex != null) {
@@ -87,83 +192,27 @@ public abstract class AbstractSessionManager {
         return current != null ? current : mutex;
     }
 
-    // Creates new session on server
-    private ClientSession createNewSession(RaftGroupId groupId) {
-        synchronized (mutex(groupId)) {
-            SessionResponse response = requestNewSession(groupId);
-            ClientSession session = new ClientSession(response.getSessionId(), response.getTtlMillis());
-            sessions.put(groupId, session);
-            scheduleHeartbeatTask(response.getHeartbeatMillis());
-            return session;
-        }
-    }
-
     private void scheduleHeartbeatTask(long heartbeatMillis) {
         if (scheduleHeartbeat.compareAndSet(false, true)) {
             scheduleWithRepetition(new HeartbeatTask(), heartbeatMillis, TimeUnit.MILLISECONDS);
         }
     }
 
-    public final void releaseSession(RaftGroupId groupId, long id) {
-        ClientSession session = sessions.get(groupId);
-        if (session != null && session.id == id) {
-            session.release();
-        }
-    }
-
-    public final void invalidateSession(RaftGroupId groupId, long id) {
-        ClientSession session = sessions.get(groupId);
-        if (session != null && session.id == id) {
-            sessions.remove(groupId, session);
-        }
-    }
-
-    public final long getSession(RaftGroupId groupId) {
-        ClientSession session = sessions.get(groupId);
-        return session != null ? session.id : NO_SESSION_ID;
-    }
-
     // For testing
-    public final long getSessionUsageCount(RaftGroupId groupId, long sessionId) {
-        ClientSession session = sessions.get(groupId);
-        return session != null && session.id == sessionId ? session.operationsCount.get() : 0;
+    public final long getSessionAcquireCount(RaftGroupId groupId, long sessionId) {
+        SessionState session = sessions.get(groupId);
+        return session != null && session.id == sessionId ? session.acquireCount.get() : 0;
     }
 
-    public final Map<RaftGroupId, ICompletableFuture<Object>> shutdown() {
-        lock.writeLock().lock();
-        try {
-            Map<RaftGroupId, ICompletableFuture<Object>> futures = new HashMap<RaftGroupId, ICompletableFuture<Object>>();
-            for (Entry<RaftGroupId, ClientSession> e : sessions.entrySet()) {
-                RaftGroupId groupId = e.getKey();
-                long sessionId = e.getValue().id;
-                ICompletableFuture<Object> f = closeSession(groupId, sessionId);
-                futures.put(groupId, f);
-            }
-            sessions.clear();
-            running = false;
-            return futures;
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
 
-    protected abstract SessionResponse requestNewSession(RaftGroupId groupId);
-
-    protected abstract ScheduledFuture<?> scheduleWithRepetition(Runnable task, long period, TimeUnit unit);
-
-    protected abstract ICompletableFuture<Object> heartbeat(RaftGroupId groupId, long sessionId);
-
-    protected abstract ICompletableFuture<Object> closeSession(RaftGroupId groupId, Long sessionId);
-
-
-    private static class ClientSession {
+    private static class SessionState {
         private final long id;
-        private final AtomicInteger operationsCount = new AtomicInteger();
+        private final AtomicInteger acquireCount = new AtomicInteger();
 
         private final long ttlMillis;
         private volatile long accessTime;
 
-        ClientSession(long id, long ttlMillis) {
+        SessionState(long id, long ttlMillis) {
             this.id = id;
             this.accessTime = Clock.currentTimeMillis();
             this.ttlMillis = ttlMillis;
@@ -174,7 +223,7 @@ public abstract class AbstractSessionManager {
         }
 
         boolean isInUse() {
-            return operationsCount.get() > 0;
+            return acquireCount.get() > 0;
         }
 
         private boolean isExpired(long timestamp) {
@@ -185,13 +234,13 @@ public abstract class AbstractSessionManager {
             return timestamp > expirationTime;
         }
 
-        long acquire() {
-            operationsCount.incrementAndGet();
+        long acquire(int count) {
+            acquireCount.addAndGet(count);
             return id;
         }
 
-        void release() {
-            operationsCount.decrementAndGet();
+        void release(int count) {
+            acquireCount.addAndGet(-count);
         }
 
         @Override
@@ -199,11 +248,11 @@ public abstract class AbstractSessionManager {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof ClientSession)) {
+            if (!(o instanceof SessionState)) {
                 return false;
             }
 
-            ClientSession that = (ClientSession) o;
+            SessionState that = (SessionState) o;
             return id == that.id;
         }
 
@@ -224,9 +273,9 @@ public abstract class AbstractSessionManager {
             }
             prevHeartbeats.clear();
 
-            for (Entry<RaftGroupId, ClientSession> entry : sessions.entrySet()) {
+            for (Entry<RaftGroupId, SessionState> entry : sessions.entrySet()) {
                 final RaftGroupId groupId = entry.getKey();
-                final ClientSession session = entry.getValue();
+                final SessionState session = entry.getValue();
                 if (session.isInUse()) {
                     ICompletableFuture<Object> f = heartbeat(groupId, session.id);
                     f.andThen(new ExecutionCallback<Object>() {

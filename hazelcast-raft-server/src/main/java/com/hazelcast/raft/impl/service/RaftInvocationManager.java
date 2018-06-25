@@ -1,6 +1,21 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.impl.service;
 
-import com.hazelcast.config.raft.RaftGroupConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -16,9 +31,10 @@ import com.hazelcast.raft.impl.service.operation.metadata.GetActiveRaftMembersOp
 import com.hazelcast.raft.impl.service.operation.metadata.TriggerDestroyRaftGroupOp;
 import com.hazelcast.raft.impl.service.proxy.ChangeRaftGroupMembershipOp;
 import com.hazelcast.raft.impl.service.proxy.DefaultRaftReplicateOp;
-import com.hazelcast.raft.impl.service.proxy.RaftQueryOp;
 import com.hazelcast.raft.impl.service.proxy.DestroyRaftGroupOp;
+import com.hazelcast.raft.impl.service.proxy.RaftQueryOp;
 import com.hazelcast.raft.impl.util.SimpleCompletableFuture;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -26,17 +42,21 @@ import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.RaftInvocation;
 import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Executor;
 
-import static com.hazelcast.raft.impl.service.RaftMetadataManager.METADATA_GROUP_ID;
+import static com.hazelcast.raft.QueryPolicy.LEADER_LOCAL;
+import static com.hazelcast.raft.impl.service.MetadataRaftGroupManager.METADATA_GROUP_ID;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 
+/**
+ * Performs invocations to create & destroy Raft groups, commit {@link RaftOp} to Raft groups, and run queries on Raft groups.
+ */
 @SuppressWarnings("unchecked")
 public class RaftInvocationManager {
 
@@ -45,6 +65,9 @@ public class RaftInvocationManager {
     private final RaftService raftService;
     private final ILogger logger;
     private final RaftInvocationContext raftInvocationContext;
+    private final long operationCallTimeout;
+    private final int invocationMaxRetryCount;
+    private final long invocationRetryPauseMillis;
 
     RaftInvocationManager(NodeEngine nodeEngine, RaftService raftService) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -52,22 +75,17 @@ public class RaftInvocationManager {
         this.logger = nodeEngine.getLogger(getClass());
         this.raftService = raftService;
         this.raftInvocationContext = new RaftInvocationContext(logger, raftService);
+        this.invocationMaxRetryCount = nodeEngine.getProperties().getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
+        this.invocationRetryPauseMillis = nodeEngine.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
+        this.operationCallTimeout = nodeEngine.getProperties().getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
     }
 
     void reset() {
         raftInvocationContext.reset();
     }
 
-    public ICompletableFuture<RaftGroupId> createRaftGroup(String groupNameRef) {
-        RaftGroupConfig groupConfig = raftService.getConfig().getGroupConfig(groupNameRef);
-        if (groupConfig == null) {
-            if (!RaftGroupConfig.DEFAULT_GROUP.equals(groupNameRef)) {
-                throw new IllegalArgumentException("No RaftGroupConfig found with name '" + groupNameRef + "'.");
-            }
-            int groupSize = raftService.getConfig().getMetadataGroupConfig().getGroupSize();
-            groupConfig = new RaftGroupConfig(RaftGroupConfig.DEFAULT_GROUP, groupSize);
-        }
-        return createRaftGroup(groupConfig.getName(), groupConfig.getSize());
+    public ICompletableFuture<RaftGroupId> createRaftGroup(String groupName) {
+        return createRaftGroup(groupName, raftService.getConfig().getGroupSize());
     }
 
     public ICompletableFuture<RaftGroupId> createRaftGroup(String groupName, int groupSize) {
@@ -80,7 +98,7 @@ public class RaftInvocationManager {
 
     private void invokeGetMembersToCreateRaftGroup(final String groupName, final int groupSize,
                                                    final SimpleCompletableFuture<RaftGroupId> resultFuture) {
-        ICompletableFuture<List<RaftMemberImpl>> f = query(METADATA_GROUP_ID, new GetActiveRaftMembersOp(), QueryPolicy.LEADER_LOCAL);
+        ICompletableFuture<List<RaftMemberImpl>> f = query(METADATA_GROUP_ID, new GetActiveRaftMembersOp(), LEADER_LOCAL);
 
         f.andThen(new ExecutionCallback<List<RaftMemberImpl>>() {
             @Override
@@ -132,46 +150,47 @@ public class RaftInvocationManager {
         });
     }
 
-    public ICompletableFuture<RaftGroupId> triggerDestroyRaftGroup(final RaftGroupId groupId) {
+    // TODO [basri] this operation should be here or somewhere else?
+    public InternalCompletableFuture<RaftGroupId> triggerDestroy(RaftGroupId groupId) {
         return invoke(METADATA_GROUP_ID, new TriggerDestroyRaftGroupOp(groupId));
     }
 
-    <T> ICompletableFuture<T> changeRaftGroupMembership(RaftGroupId groupId, long membersCommitIndex, RaftMemberImpl member,
-                                                        MembershipChangeType changeType) {
+    <T> InternalCompletableFuture<T> changeMembership(RaftGroupId groupId, long membersCommitIndex,
+                                                      RaftMemberImpl member, MembershipChangeType changeType) {
         Operation operation = new ChangeRaftGroupMembershipOp(groupId, membersCommitIndex, member, changeType);
-        Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
-                groupId, operation, true);
+        Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext, groupId,
+                operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
         return invocation.invoke();
     }
 
-    public <T> ICompletableFuture<T> invoke(RaftGroupId groupId, RaftOp raftOp) {
+    public <T> InternalCompletableFuture<T> invoke(RaftGroupId groupId, RaftOp raftOp) {
         Operation operation = new DefaultRaftReplicateOp(groupId, raftOp);
         Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
-                groupId, operation, true);
+                groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
         return invocation.invoke();
     }
 
-    public <T> ICompletableFuture<T> query(RaftGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
+    public <T> InternalCompletableFuture<T> query(RaftGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
         RaftQueryOp operation = new RaftQueryOp(groupId, raftOp, queryPolicy);
         Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
-                groupId, operation, false);
+                groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
         return invocation.invoke();
     }
 
-    public <T> ICompletableFuture<T> queryOnLocal(RaftGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
+    public <T> InternalCompletableFuture<T> queryOnLocal(RaftGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
         RaftQueryOp operation = new RaftQueryOp(groupId, raftOp, queryPolicy);
         return nodeEngine.getOperationService().invokeOnTarget(RaftService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
     }
 
-    public ICompletableFuture<Object> destroy(RaftGroupId groupId) {
+    public InternalCompletableFuture<Object> destroy(RaftGroupId groupId) {
         Operation operation = new DestroyRaftGroupOp(groupId);
         Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
-                groupId, operation, true);
+                groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
         return invocation.invoke();
     }
 
-    void setAllMembers(Collection<RaftMemberImpl> members) {
-        raftInvocationContext.setAllMembers(members);
+    public RaftInvocationContext getRaftInvocationContext() {
+        return raftInvocationContext;
     }
 
     private class RaftMemberReachabilityComparator implements Comparator<RaftMemberImpl> {

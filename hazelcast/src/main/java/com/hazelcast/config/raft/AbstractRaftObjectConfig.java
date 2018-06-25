@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,33 +22,17 @@ package com.hazelcast.config.raft;
  */
 public abstract class AbstractRaftObjectConfig {
 
-    private String name;
-
-    private String raftGroupRef;
+    protected String name;
 
     public AbstractRaftObjectConfig() {
     }
 
-    public AbstractRaftObjectConfig(String name, String raftGroupRef) {
+    public AbstractRaftObjectConfig(String name) {
         this.name = name;
-        this.raftGroupRef = raftGroupRef;
     }
 
     public String getName() {
         return name;
     }
 
-    public AbstractRaftObjectConfig setName(String name) {
-        this.name = name;
-        return this;
-    }
-
-    public String getRaftGroupRef() {
-        return raftGroupRef;
-    }
-
-    public AbstractRaftObjectConfig setRaftGroupRef(String raftGroupRef) {
-        this.raftGroupRef = raftGroupRef;
-        return this;
-    }
 }

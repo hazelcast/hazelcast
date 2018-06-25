@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,13 +74,6 @@ public class RaftAlgorithmConfig {
      */
     private int uncommittedEntryCountToRejectNewAppends = DEFAULT_UNCOMMITTED_ENTRY_COUNT_TO_REJECT_NEW_APPENDS;
 
-    /**
-     * When enabled, an append request fails if the target member (leader) leaves the cluster.
-     * At this point result of append request is indeterminate, it may have been replicated by the leader
-     * to some of the followers.
-     */
-    private boolean failOnIndeterminateOperationState;
-
     public RaftAlgorithmConfig() {
     }
 
@@ -90,7 +83,6 @@ public class RaftAlgorithmConfig {
         this.appendRequestMaxEntryCount = config.appendRequestMaxEntryCount;
         this.commitIndexAdvanceCountToSnapshot = config.commitIndexAdvanceCountToSnapshot;
         this.uncommittedEntryCountToRejectNewAppends = config.uncommittedEntryCountToRejectNewAppends;
-        this.failOnIndeterminateOperationState = config.failOnIndeterminateOperationState;
     }
 
     public long getLeaderElectionTimeoutInMillis() {
@@ -148,12 +140,4 @@ public class RaftAlgorithmConfig {
         return this;
     }
 
-    public boolean isFailOnIndeterminateOperationState() {
-        return failOnIndeterminateOperationState;
-    }
-
-    public RaftAlgorithmConfig setFailOnIndeterminateOperationState(boolean failOnIndeterminateOperationState) {
-        this.failOnIndeterminateOperationState = failOnIndeterminateOperationState;
-        return this;
-    }
 }

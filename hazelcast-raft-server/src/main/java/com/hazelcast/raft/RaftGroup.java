@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,48 @@ package com.hazelcast.raft;
 import java.util.Collection;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Contains information about a Raft group
  */
 public interface RaftGroup {
 
+    /**
+     * Represents status of a Raft group
+     */
     enum RaftGroupStatus {
-        ACTIVE, DESTROYING, DESTROYED
+        /**
+         * A Raft group is active after it is initialized with the first request it has received,
+         * and before its destroy process is initialized.
+         */
+        ACTIVE,
+
+        /**
+         * A Raft group moves into this state after its destroy process is initialized but not completed yet.
+         */
+        DESTROYING,
+
+        /**
+         * A Raft group moves into this state after its destroy process is completed.
+         */
+        DESTROYED
     }
 
+    /**
+     * Returns unique id of the Raft group
+     */
     RaftGroupId id();
 
+    /**
+     * Returns status of the Raft group
+     */
+    RaftGroupStatus status();
+
+    /**
+     * Returns members that the Raft group is initialized with.
+     */
     Collection<RaftMember> initialMembers();
 
+    /**
+     * Returns current members of the Raft group
+     */
     Collection<RaftMember> members();
-
-    RaftGroupStatus status();
 }

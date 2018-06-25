@@ -1,16 +1,31 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.impl.task;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.raft.MembershipChangeType;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.exception.MemberAlreadyExistsException;
 import com.hazelcast.raft.exception.MemberDoesNotExistException;
 import com.hazelcast.raft.exception.MismatchingGroupMembersCommitIndexException;
 import com.hazelcast.raft.exception.NotLeaderException;
 import com.hazelcast.raft.exception.RaftGroupDestroyedException;
-import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.RaftNodeStatus;
-import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.raft.impl.command.ApplyRaftGroupMembersCmd;
 import com.hazelcast.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.raft.impl.state.RaftState;
@@ -18,6 +33,8 @@ import com.hazelcast.raft.impl.util.SimpleCompletableFuture;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+
+import static com.hazelcast.raft.impl.RaftRole.LEADER;
 
 /**
  * MembershipChangeTask is executed to add/remove a member to the Raft group.
@@ -66,7 +83,7 @@ public class MembershipChangeTask implements Runnable {
         }
 
         RaftState state = raftNode.state();
-        if (state.role() != RaftRole.LEADER) {
+        if (state.role() != LEADER) {
             resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), state.leader()));
             return;
         }

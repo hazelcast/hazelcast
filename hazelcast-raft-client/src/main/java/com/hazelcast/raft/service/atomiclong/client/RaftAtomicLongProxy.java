@@ -1,3 +1,19 @@
+/*
+ *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.service.atomiclong.client;
 
 import com.hazelcast.client.impl.ClientMessageDecoder;
@@ -8,26 +24,25 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftGroupIdImpl;
 import com.hazelcast.raft.service.atomiclong.RaftAtomicLongService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.InternalCompletableFuture;
 
 import static com.hazelcast.client.impl.protocol.util.ParameterUtil.calculateDataSize;
+import static com.hazelcast.raft.impl.service.RaftService.getObjectNameForProxy;
 import static com.hazelcast.raft.service.atomiclong.client.AtomicLongMessageTaskFactoryProvider.ADD_AND_GET_TYPE;
 import static com.hazelcast.raft.service.atomiclong.client.AtomicLongMessageTaskFactoryProvider.COMPARE_AND_SET_TYPE;
-import static com.hazelcast.raft.service.atomiclong.client.AtomicLongMessageTaskFactoryProvider.CREATE_TYPE;
 import static com.hazelcast.raft.service.atomiclong.client.AtomicLongMessageTaskFactoryProvider.DESTROY_TYPE;
 import static com.hazelcast.raft.service.atomiclong.client.AtomicLongMessageTaskFactoryProvider.GET_AND_ADD_TYPE;
 import static com.hazelcast.raft.service.atomiclong.client.AtomicLongMessageTaskFactoryProvider.GET_AND_SET_TYPE;
+import static com.hazelcast.raft.service.spi.client.RaftGroupTaskFactoryProvider.CREATE_TYPE;
 import static com.hazelcast.raft.service.util.ClientAccessor.getClient;
 
 /**
  * TODO: Javadoc Pending...
- *
  */
 public class RaftAtomicLongProxy implements IAtomicLong {
 
@@ -36,26 +51,26 @@ public class RaftAtomicLongProxy implements IAtomicLong {
 
     public static IAtomicLong create(HazelcastInstance instance, String name) {
         int dataSize = ClientMessage.HEADER_SIZE + calculateDataSize(name);
-        ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-        clientMessage.setMessageType(CREATE_TYPE);
-        clientMessage.setRetryable(false);
-        clientMessage.setOperationName("");
-        clientMessage.set(name);
-        clientMessage.updateFrameLength();
+        ClientMessage msg = ClientMessage.createForEncode(dataSize);
+        msg.setMessageType(CREATE_TYPE);
+        msg.setRetryable(false);
+        msg.setOperationName("");
+        msg.set(name);
+        msg.updateFrameLength();
 
+        String objectName = getObjectNameForProxy(name);
         HazelcastClientInstanceImpl client = getClient(instance);
-        ClientInvocationFuture f = new ClientInvocation(client, clientMessage, name).invoke();
+        ClientInvocationFuture f = new ClientInvocation(client, msg, objectName).invoke();
 
-        ICompletableFuture<RaftGroupId> future = new ClientDelegatingFuture<RaftGroupId>(f, client.getSerializationService(),
+        InternalCompletableFuture<RaftGroupId> future = new ClientDelegatingFuture<RaftGroupId>(f, client.getSerializationService(),
                 new ClientMessageDecoder() {
             @Override
-            public RaftGroupId decodeClientMessage(ClientMessage clientMessage) {
-                return RaftGroupIdImpl.readFrom(clientMessage);
+            public RaftGroupId decodeClientMessage(ClientMessage msg) {
+                return RaftGroupIdImpl.readFrom(msg);
             }
         });
-
-        RaftGroupId groupId = join(future);
-        return new RaftAtomicLongProxy(instance, groupId, name);
+        RaftGroupId groupId = future.join();
+        return new RaftAtomicLongProxy(instance, groupId, objectName);
     }
 
     private final HazelcastClientInstanceImpl client;
@@ -70,136 +85,136 @@ public class RaftAtomicLongProxy implements IAtomicLong {
 
     @Override
     public long addAndGet(long delta) {
-        return join(addAndGetAsync(delta));
+        return addAndGetAsync(delta).join();
     }
 
     @Override
     public boolean compareAndSet(long expect, long update) {
-        return join(compareAndSetAsync(expect, update));
+        return compareAndSetAsync(expect, update).join();
     }
 
     @Override
     public long decrementAndGet() {
-        return join(decrementAndGetAsync());
+        return decrementAndGetAsync().join();
     }
 
     @Override
     public long get() {
-        return join(getAsync());
+        return getAsync().join();
     }
 
     @Override
     public long getAndAdd(long delta) {
-        return join(getAndAddAsync(delta));
+        return getAndAddAsync(delta).join();
     }
 
     @Override
     public long getAndSet(long newValue) {
-        return join(getAndSetAsync(newValue));
+        return getAndSetAsync(newValue).join();
     }
 
     @Override
     public long incrementAndGet() {
-        return join(incrementAndGetAsync());
+        return incrementAndGetAsync().join();
     }
 
     @Override
     public long getAndIncrement() {
-        return join(getAndIncrementAsync());
+        return getAndIncrementAsync().join();
     }
 
     @Override
     public void set(long newValue) {
-        join(setAsync(newValue));
+        setAsync(newValue).join();
     }
 
     @Override
     public void alter(IFunction<Long, Long> function) {
-        join(alterAsync(function));
+        alterAsync(function).join();
     }
 
     @Override
     public long alterAndGet(IFunction<Long, Long> function) {
-        return join(alterAndGetAsync(function));
+        return alterAndGetAsync(function).join();
     }
 
     @Override
     public long getAndAlter(IFunction<Long, Long> function) {
-        return join(getAndAlterAsync(function));
+        return getAndAlterAsync(function).join();
     }
 
     @Override
     public <R> R apply(IFunction<Long, R> function) {
-        return join(applyAsync(function));
+        return applyAsync(function).join();
     }
 
     @Override
-    public ICompletableFuture<Long> addAndGetAsync(long delta) {
-        ClientMessage clientMessage = encodeRequest(groupId, name, delta, ADD_AND_GET_TYPE);
-        return invoke(clientMessage, LONG_RESPONSE_DECODER);
+    public InternalCompletableFuture<Long> addAndGetAsync(long delta) {
+        ClientMessage msg = encodeRequest(groupId, name, delta, ADD_AND_GET_TYPE);
+        return invoke(msg, LONG_RESPONSE_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Boolean> compareAndSetAsync(long expect, long update) {
-        ClientMessage clientMessage = encodeRequest(groupId, name, expect, update, COMPARE_AND_SET_TYPE);
-        return invoke(clientMessage, BOOLEAN_RESPONSE_DECODER);
+    public InternalCompletableFuture<Boolean> compareAndSetAsync(long expect, long update) {
+        ClientMessage msg = encodeRequest(groupId, name, expect, update, COMPARE_AND_SET_TYPE);
+        return invoke(msg, BOOLEAN_RESPONSE_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> decrementAndGetAsync() {
+    public InternalCompletableFuture<Long> decrementAndGetAsync() {
         return addAndGetAsync(-1);
     }
 
     @Override
-    public ICompletableFuture<Long> getAsync() {
+    public InternalCompletableFuture<Long> getAsync() {
         return getAndAddAsync(0);
     }
 
     @Override
-    public ICompletableFuture<Long> getAndAddAsync(long delta) {
-        ClientMessage clientMessage = encodeRequest(groupId, name, delta, GET_AND_ADD_TYPE);
-        return invoke(clientMessage, LONG_RESPONSE_DECODER);
+    public InternalCompletableFuture<Long> getAndAddAsync(long delta) {
+        ClientMessage msg = encodeRequest(groupId, name, delta, GET_AND_ADD_TYPE);
+        return invoke(msg, LONG_RESPONSE_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> getAndSetAsync(long newValue) {
-        ClientMessage clientMessage = encodeRequest(groupId, name, newValue, GET_AND_SET_TYPE);
-        return invoke(clientMessage, LONG_RESPONSE_DECODER);
+    public InternalCompletableFuture<Long> getAndSetAsync(long newValue) {
+        ClientMessage msg = encodeRequest(groupId, name, newValue, GET_AND_SET_TYPE);
+        return invoke(msg, LONG_RESPONSE_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> incrementAndGetAsync() {
+    public InternalCompletableFuture<Long> incrementAndGetAsync() {
         return addAndGetAsync(1);
     }
 
     @Override
-    public ICompletableFuture<Long> getAndIncrementAsync() {
+    public InternalCompletableFuture<Long> getAndIncrementAsync() {
         return getAndAddAsync(1);
     }
 
     @Override
-    public ICompletableFuture<Void> setAsync(long newValue) {
-        ICompletableFuture future = getAndSetAsync(newValue);
+    public InternalCompletableFuture<Void> setAsync(long newValue) {
+        InternalCompletableFuture future = getAndSetAsync(newValue);
         return future;
     }
 
     @Override
-    public ICompletableFuture<Void> alterAsync(IFunction<Long, Long> function) {
+    public InternalCompletableFuture<Void> alterAsync(IFunction<Long, Long> function) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ICompletableFuture<Long> alterAndGetAsync(IFunction<Long, Long> function) {
+    public InternalCompletableFuture<Long> alterAndGetAsync(IFunction<Long, Long> function) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ICompletableFuture<Long> getAndAlterAsync(IFunction<Long, Long> function) {
+    public InternalCompletableFuture<Long> getAndAlterAsync(IFunction<Long, Long> function) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public <R> ICompletableFuture<R> applyAsync(IFunction<Long, R> function) {
+    public <R> InternalCompletableFuture<R> applyAsync(IFunction<Long, R> function) {
         throw new UnsupportedOperationException();
     }
 
@@ -220,54 +235,45 @@ public class RaftAtomicLongProxy implements IAtomicLong {
 
     @Override
     public void destroy() {
-        int dataSize = ClientMessage.HEADER_SIZE
-                + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name);
-        ClientMessage clientMessage = prepareClientMessage(groupId, name, dataSize, DESTROY_TYPE);
-        clientMessage.updateFrameLength();
+        int dataSize = ClientMessage.HEADER_SIZE + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name);
+        ClientMessage msg = prepareClientMessage(groupId, name, dataSize, DESTROY_TYPE);
+        msg.updateFrameLength();
 
-        join(invoke(clientMessage, BOOLEAN_RESPONSE_DECODER));
+        invoke(msg, BOOLEAN_RESPONSE_DECODER).join();
     }
 
-    private <T> ICompletableFuture<T> invoke(ClientMessage clientMessage, ClientMessageDecoder decoder) {
-        ClientInvocationFuture future = new ClientInvocation(client, clientMessage, getName()).invoke();
+    private <T> InternalCompletableFuture<T> invoke(ClientMessage msg, ClientMessageDecoder decoder) {
+        ClientInvocationFuture future = new ClientInvocation(client, msg, getName()).invoke();
         return new ClientDelegatingFuture<T>(future, client.getSerializationService(), decoder);
-    }
-
-    private static <T> T join(ICompletableFuture<T> future) {
-        try {
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
     }
 
     private static ClientMessage encodeRequest(RaftGroupId groupId, String name, long value, int messageTypeId) {
         int dataSize = ClientMessage.HEADER_SIZE
                 + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name) + Bits.LONG_SIZE_IN_BYTES;
-        ClientMessage clientMessage = prepareClientMessage(groupId, name, dataSize, messageTypeId);
-        clientMessage.set(value);
-        clientMessage.updateFrameLength();
-        return clientMessage;
+        ClientMessage msg = prepareClientMessage(groupId, name, dataSize, messageTypeId);
+        msg.set(value);
+        msg.updateFrameLength();
+        return msg;
     }
 
     private static ClientMessage encodeRequest(RaftGroupId groupId, String name, long value1, long value2, int messageTypeId) {
         int dataSize = ClientMessage.HEADER_SIZE
                 + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name) + 2 * Bits.LONG_SIZE_IN_BYTES;
-        ClientMessage clientMessage = prepareClientMessage(groupId, name, dataSize, messageTypeId);
-        clientMessage.set(value1);
-        clientMessage.set(value2);
-        clientMessage.updateFrameLength();
-        return clientMessage;
+        ClientMessage msg = prepareClientMessage(groupId, name, dataSize, messageTypeId);
+        msg.set(value1);
+        msg.set(value2);
+        msg.updateFrameLength();
+        return msg;
     }
 
     private static ClientMessage prepareClientMessage(RaftGroupId groupId, String name, int dataSize, int messageTypeId) {
-        ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-        clientMessage.setMessageType(messageTypeId);
-        clientMessage.setRetryable(false);
-        clientMessage.setOperationName("");
-        RaftGroupIdImpl.writeTo(groupId, clientMessage);
-        clientMessage.set(name);
-        return clientMessage;
+        ClientMessage msg = ClientMessage.createForEncode(dataSize);
+        msg.setMessageType(messageTypeId);
+        msg.setRetryable(false);
+        msg.setOperationName("");
+        RaftGroupIdImpl.writeTo(groupId, msg);
+        msg.set(name);
+        return msg;
     }
 
     public RaftGroupId getGroupId() {
@@ -276,15 +282,15 @@ public class RaftAtomicLongProxy implements IAtomicLong {
 
     private static class LongResponseDecoder implements ClientMessageDecoder {
         @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return clientMessage.getLong();
+        public Long decodeClientMessage(ClientMessage msg) {
+            return msg.getLong();
         }
     }
 
     private static class BooleanResponseDecoder implements ClientMessageDecoder {
         @Override
-        public Boolean decodeClientMessage(ClientMessage clientMessage) {
-            return clientMessage.getBoolean();
+        public Boolean decodeClientMessage(ClientMessage msg) {
+            return msg.getBoolean();
         }
     }
 }

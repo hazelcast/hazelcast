@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * TODO: Javadoc Pending...
+ * Snapshot of {@link SessionRegistry} state
  */
 public class SessionRegistrySnapshot implements IdentifiedDataSerializable {
 
     private long nextSessionId;
     private Set<Session> sessions;
 
-    public SessionRegistrySnapshot() {
+    SessionRegistrySnapshot() {
     }
 
     SessionRegistrySnapshot(long nextSessionId, Collection<Session> sessions) {

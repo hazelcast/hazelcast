@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.raft.impl.service;
 
 import com.hazelcast.nio.ObjectDataInput;
@@ -20,7 +36,8 @@ import static com.hazelcast.raft.RaftGroup.RaftGroupStatus.DESTROYING;
 import static com.hazelcast.util.Preconditions.checkState;
 
 /**
- * TODO: Javadoc Pending...
+ * Contains metadata information for Raft groups, such as group id, group members, etc.
+ * Maintained within the Metadata Raft group.
  */
 public final class RaftGroupInfo implements RaftGroup, IdentifiedDataSerializable {
 
@@ -80,6 +97,10 @@ public final class RaftGroupInfo implements RaftGroup, IdentifiedDataSerializabl
 
     public boolean containsMember(RaftMemberImpl member) {
         return members.contains(member);
+    }
+
+    public boolean containsInitialMember(RaftMemberImpl member) {
+        return initialMembers.contains(member);
     }
 
     public int memberCount() {

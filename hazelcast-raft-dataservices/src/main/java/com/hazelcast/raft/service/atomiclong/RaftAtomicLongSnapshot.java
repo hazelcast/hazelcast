@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * TODO: Javadoc Pending...
+ * Snapshot of a {@link RaftAtomicLongService} state for a Raft group
  */
 public class RaftAtomicLongSnapshot implements IdentifiedDataSerializable {
 
@@ -85,11 +85,11 @@ public class RaftAtomicLongSnapshot implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return AtomicLongDataSerializerHook.F_ID;
+        return RaftAtomicLongDataSerializerHook.F_ID;
     }
 
     @Override
     public int getId() {
-        return AtomicLongDataSerializerHook.SNAPSHOT;
+        return RaftAtomicLongDataSerializerHook.SNAPSHOT;
     }
 }

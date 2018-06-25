@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftOp;
-import com.hazelcast.raft.impl.session.RaftSessionService;
+import com.hazelcast.raft.impl.IndeterminateOperationStateAware;
+import com.hazelcast.raft.impl.session.SessionService;
 import com.hazelcast.raft.impl.session.RaftSessionServiceDataSerializerHook;
+import com.hazelcast.raft.impl.session.SessionExpiredException;
 
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
+ * Pushes given session's heartbeat timeout forward.
+ * Fails with {@link SessionExpiredException} if the given session is already closed.
  */
-public class HeartbeatSessionOp extends RaftOp implements IdentifiedDataSerializable {
+public class HeartbeatSessionOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
 
     private long sessionId;
 
@@ -42,14 +45,19 @@ public class HeartbeatSessionOp extends RaftOp implements IdentifiedDataSerializ
 
     @Override
     public Object run(RaftGroupId groupId, long commitIndex) {
-        RaftSessionService service = getService();
+        SessionService service = getService();
         service.heartbeat(groupId, sessionId);
         return null;
     }
 
     @Override
+    public boolean isRetryableOnIndeterminateOperationState() {
+        return true;
+    }
+
+    @Override
     public String getServiceName() {
-        return RaftSessionService.SERVICE_NAME;
+        return SessionService.SERVICE_NAME;
     }
 
     @Override

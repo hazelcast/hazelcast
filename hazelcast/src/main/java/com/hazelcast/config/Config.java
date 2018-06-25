@@ -17,9 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
-import com.hazelcast.config.raft.RaftAtomicLongConfig;
-import com.hazelcast.config.raft.RaftLockConfig;
 import com.hazelcast.config.raft.RaftConfig;
+import com.hazelcast.config.raft.RaftSemaphoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -172,8 +171,8 @@ public class Config {
     private boolean liteMember;
 
     private RaftConfig raftConfig;
-    private final Map<String, RaftAtomicLongConfig> raftAtomicLongConfigs = new ConcurrentHashMap<String, RaftAtomicLongConfig>();
-    private final Map<String, RaftLockConfig> raftLockConfigs = new ConcurrentHashMap<String, RaftLockConfig>();
+
+    private final Map<String, RaftSemaphoreConfig> raftSemaphoreConfigs = new ConcurrentHashMap<String, RaftSemaphoreConfig>();
 
     public Config() {
     }
@@ -3470,23 +3469,12 @@ public class Config {
         return this;
     }
 
-    public RaftAtomicLongConfig findRaftAtomicLongConfig(String name) {
-        String baseName = getBaseName(name);
-        return lookupByPattern(configPatternMatcher, raftAtomicLongConfigs, baseName);
+    public RaftSemaphoreConfig findRaftSemaphoreConfig(String name) {
+        return lookupByPattern(configPatternMatcher, raftSemaphoreConfigs, getBaseName(name));
     }
 
-    public Config addRaftAtomicLongConfig(RaftAtomicLongConfig config) {
-        raftAtomicLongConfigs.put(config.getName(), config);
-        return this;
-    }
-
-    public RaftLockConfig findRaftLockConfig(String name) {
-        String baseName = getBaseName(name);
-        return lookupByPattern(configPatternMatcher, raftLockConfigs, baseName);
-    }
-
-    public Config addRaftLockConfig(RaftLockConfig config) {
-        raftLockConfigs.put(config.getName(), config);
+    public Config addRaftSemaphoreConfig(RaftSemaphoreConfig config) {
+        raftSemaphoreConfigs.put(config.getName(), config);
         return this;
     }
 

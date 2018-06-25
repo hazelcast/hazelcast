@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
+ * Represents information of a session that is just created.
+ * {@link #ttlMillis} and {@link #heartbeatMillis} must be respected by the caller.
  */
 public class SessionResponse implements IdentifiedDataSerializable {
 
@@ -33,7 +34,7 @@ public class SessionResponse implements IdentifiedDataSerializable {
 
     private long heartbeatMillis;
 
-    public SessionResponse() {
+    SessionResponse() {
     }
 
     public SessionResponse(long sessionId, long ttlMillis, long heartbeatMillis) {

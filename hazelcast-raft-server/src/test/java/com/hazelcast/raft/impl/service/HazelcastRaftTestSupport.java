@@ -2,7 +2,6 @@ package com.hazelcast.raft.impl.service;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.raft.RaftConfig;
-import com.hazelcast.config.raft.RaftMetadataGroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.raft.RaftGroupId;
@@ -22,6 +21,7 @@ import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_S
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
@@ -71,24 +71,35 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         throw new AssertionError("Cannot find non-leader instance!");
     }
 
-    protected HazelcastInstance[] newInstances(int raftGroupSize) {
-        return newInstances(raftGroupSize, raftGroupSize, 0);
+    protected void waitUntilCPDiscoveryCompleted(final HazelcastInstance[] instances) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (HazelcastInstance instance : instances) {
+                    RaftService service = getRaftService(instance);
+                    assertTrue(service.getMetadataGroupManager().isDiscoveryCompleted());
+                }
+            }
+        });
     }
 
-    protected HazelcastInstance[] newInstances(int raftGroupSize, int metadataGroupSize, int nonCpNodeCount) {
+    protected HazelcastInstance[] newInstances(int cpNodeCount) {
+        return newInstances(cpNodeCount, cpNodeCount, 0);
+    }
+
+    protected HazelcastInstance[] newInstances(int cpNodeCount, int groupSize, int nonCpNodeCount) {
         if (nonCpNodeCount < 0) {
             throw new IllegalArgumentException("non-cp node count: " + nonCpNodeCount + " must be non-negative");
         }
-        if (raftGroupSize < metadataGroupSize) {
-            throw new IllegalArgumentException("Metadata group size cannot be bigger than raft group size");
+        if (cpNodeCount < groupSize) {
+            throw new IllegalArgumentException("Group size cannot be bigger than cp node count");
         }
 
-        int nodeCount = raftGroupSize + nonCpNodeCount;
+        int nodeCount = cpNodeCount + nonCpNodeCount;
         HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
-            Config config = createConfig(raftGroupSize, metadataGroupSize);
-            if (i < raftGroupSize) {
-                config.getRaftConfig().getMetadataGroupConfig().setInitialRaftMember(true);
+            Config config = createConfig(cpNodeCount, groupSize);
+            if (i < cpNodeCount) {
                 instances[i] = factory.newHazelcastInstance(config);
             } else {
                 instances[i] = factory.newHazelcastInstance(config);
@@ -100,15 +111,17 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         return instances;
     }
 
-    protected Config createConfig(int groupSize, int metadataGroupSize) {
+    protected Config createConfig(int cpNodeCount, int groupSize) {
         Config config = new Config();
         configureSplitBrainDelay(config);
 
-        RaftMetadataGroupConfig metadataGroupConfig = new RaftMetadataGroupConfig()
-                .setGroupSize(groupSize)
-                .setMetadataGroupSize(metadataGroupSize);
-        RaftConfig raftConfig = new RaftConfig().setMetadataGroupConfig(metadataGroupConfig);
+        RaftConfig raftConfig = new RaftConfig();
         config.setRaftConfig(raftConfig);
+
+        if (cpNodeCount > 0) {
+            raftConfig.setCpNodeCount(cpNodeCount).setGroupSize(groupSize);
+        }
+
         return config;
     }
 
@@ -194,6 +207,6 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
     }
 
     public static RaftGroupInfo getRaftGroupLocally(HazelcastInstance instance, RaftGroupId groupId) {
-        return getRaftService(instance).getMetadataManager().getRaftGroup(groupId);
+        return getRaftService(instance).getMetadataGroupManager().getRaftGroup(groupId);
     }
 }

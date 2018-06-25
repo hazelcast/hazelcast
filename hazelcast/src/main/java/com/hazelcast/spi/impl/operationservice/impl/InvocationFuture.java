@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.IndeterminateOperationState;
 import com.hazelcast.core.IndeterminateOperationStateException;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
@@ -117,9 +117,8 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
             }
         }
 
-        if (invocation.shouldFailOnIndeterminateOperationState() && (value instanceof MemberLeftException)) {
-            String message = invocation + " failed because the target has left the cluster before response is received";
-            value = new IndeterminateOperationStateException(message, (MemberLeftException) value);
+        if (invocation.shouldFailOnIndeterminateOperationState() && (value instanceof IndeterminateOperationState)) {
+            value = new IndeterminateOperationStateException("indeterminate operation state", (Throwable) value);
         }
 
         if (value instanceof Throwable) {

@@ -179,7 +179,7 @@ final class MemberMap {
         MemberImpl member1 = addressToMemberMap.get(address);
         MemberImpl member2 = uuidToMemberMap.get(uuid);
 
-        if (member1 != null && member2 != null && member1.equals(member2)) {
+        if (member1 != null && member1.equals(member2)) {
             return member1;
         }
         return null;

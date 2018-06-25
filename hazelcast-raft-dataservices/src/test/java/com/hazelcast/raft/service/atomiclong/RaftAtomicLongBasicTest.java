@@ -1,8 +1,5 @@
 package com.hazelcast.raft.service.atomiclong;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.raft.RaftAtomicLongConfig;
-import com.hazelcast.config.raft.RaftGroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICompletableFuture;
@@ -25,6 +22,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.config.raft.RaftConfig.DEFAULT_RAFT_GROUP_NAME;
 import static com.hazelcast.raft.service.spi.RaftProxyFactory.create;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,19 +37,16 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
     private HazelcastInstance[] instances;
     private IAtomicLong atomicLong;
     private String name = "id";
-    private String groupName = "id";
-    private final int raftGroupSize = 3;
 
     @Before
     public void setup() {
         instances = createInstances();
-
         atomicLong = createAtomicLong(name);
         assertNotNull(atomicLong);
     }
 
     protected HazelcastInstance[] createInstances() {
-        return newInstances(raftGroupSize + 2, raftGroupSize, 2);
+        return newInstances(5, 3, 2);
     }
 
     protected IAtomicLong createAtomicLong(String name) {
@@ -213,7 +208,7 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
     @Test
     public void testCreate_withDefaultGroup() {
         IAtomicLong atomicLong = createAtomicLong(randomName());
-        assertEquals(RaftGroupConfig.DEFAULT_GROUP, getGroupId(atomicLong).name());
+        assertEquals(DEFAULT_RAFT_GROUP_NAME, getGroupId(atomicLong).name());
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)
@@ -241,7 +236,7 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
         atomicLong.destroy();
 
         final RaftGroupId groupId = getGroupId(atomicLong);
-        getRaftInvocationManager(instances[0]).triggerDestroyRaftGroup(groupId).get();
+        getRaftInvocationManager(instances[0]).triggerDestroy(groupId).get();
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -255,18 +250,7 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
         atomicLong.incrementAndGet();
     }
 
-    @Override
-    protected Config createConfig(int groupSize, int metadataGroupSize) {
-        Config config = super.createConfig(groupSize, metadataGroupSize);
-        config.getRaftConfig().addGroupConfig(new RaftGroupConfig(groupName, raftGroupSize));
-
-        RaftAtomicLongConfig atomicLongConfig = new RaftAtomicLongConfig(name, groupName);
-        config.addRaftAtomicLongConfig(atomicLongConfig);
-
-        return config;
-    }
-
-    private RaftGroupId getGroupId(IAtomicLong atomicLong) {
+    protected RaftGroupId getGroupId(IAtomicLong atomicLong) {
         return ((RaftAtomicLongProxy) atomicLong).getGroupId();
     }
 

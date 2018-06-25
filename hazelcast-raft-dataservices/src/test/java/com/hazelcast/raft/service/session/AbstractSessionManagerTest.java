@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.service.HazelcastRaftTestSupport;
 import com.hazelcast.raft.impl.service.RaftInvocationManager;
-import com.hazelcast.raft.impl.session.RaftSessionService;
+import com.hazelcast.raft.impl.session.SessionService;
 import com.hazelcast.raft.impl.session.SessionAccessor;
 import com.hazelcast.raft.impl.util.SimpleCompletableFuture;
 import com.hazelcast.test.AssertTask;
@@ -52,11 +52,9 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
 
     @Before
     public void setup() throws ExecutionException, InterruptedException {
-        int raftGroupSize = 3;
-        members = newInstances(raftGroupSize);
-
+        members = newInstances(3);
         RaftInvocationManager invocationManager = getRaftInvocationManager(members[0]);
-        groupId = invocationManager.createRaftGroup("group", raftGroupSize).get();
+        groupId = invocationManager.createRaftGroup("group").get();
     }
 
     @Test
@@ -71,10 +69,10 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
         long sessionId = sessionManager.acquireSession(groupId);
         assertNotEquals(AbstractSessionManager.NO_SESSION_ID, sessionId);
         assertEquals(sessionId, sessionManager.getSession(groupId));
-        assertEquals(1, sessionManager.getSessionUsageCount(groupId, sessionId));
+        assertEquals(1, sessionManager.getSessionAcquireCount(groupId, sessionId));
 
         SessionAccessor sessionAccessor = getSessionAccessor();
-        assertTrue(sessionAccessor.isValid(groupId, sessionId));
+        assertTrue(sessionAccessor.isActive(groupId, sessionId));
     }
 
     @Test
@@ -84,7 +82,7 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
         long sessionId = sessionManager.acquireSession(groupId);
         assertEquals(newSessionId, sessionId);
         assertEquals(sessionId, sessionManager.getSession(groupId));
-        assertEquals(2, sessionManager.getSessionUsageCount(groupId, sessionId));
+        assertEquals(2, sessionManager.getSessionAcquireCount(groupId, sessionId));
     }
 
     @Test
@@ -112,7 +110,7 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
         for (long sessionId : sessions) {
             assertEquals(expectedSessionId, sessionId);
         }
-        assertEquals(sessions.length, sessionManager.getSessionUsageCount(groupId, expectedSessionId));
+        assertEquals(sessions.length, sessionManager.getSessionAcquireCount(groupId, expectedSessionId));
     }
 
     @Test
@@ -126,7 +124,7 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
         AbstractSessionManager sessionManager = getSessionManager();
         long sessionId = sessionManager.acquireSession(groupId);
         sessionManager.releaseSession(groupId, sessionId);
-        assertEquals(0, sessionManager.getSessionUsageCount(groupId, sessionId));
+        assertEquals(0, sessionManager.getSessionAcquireCount(groupId, sessionId));
     }
 
     @Test
@@ -158,7 +156,7 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(sessionAccessor.isValid(groupId, sessionId));
+                assertTrue(sessionAccessor.isActive(groupId, sessionId));
             }
         }, sessionTTLSeconds);
     }
@@ -181,7 +179,7 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertFalse(sessionAccessor.isValid(groupId, sessionId));
+                assertFalse(sessionAccessor.isActive(groupId, sessionId));
             }
         });
     }
@@ -198,7 +196,7 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertFalse(sessionAccessor.isValid(groupId, sessionId));
+                assertFalse(sessionAccessor.isActive(groupId, sessionId));
             }
         });
 
@@ -222,7 +220,7 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertFalse(sessionAccessor.isValid(groupId, sessionId));
+                assertFalse(sessionAccessor.isActive(groupId, sessionId));
             }
         });
 
@@ -245,7 +243,7 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
     }
 
     private SessionAccessor getSessionAccessor() {
-        return getNodeEngineImpl(members[0]).getService(RaftSessionService.SERVICE_NAME);
+        return getNodeEngineImpl(members[0]).getService(SessionService.SERVICE_NAME);
     }
 
     private static class CallerRunsExecutor implements Executor {
@@ -256,10 +254,10 @@ public abstract class AbstractSessionManagerTest extends HazelcastRaftTestSuppor
     }
 
     @Override
-    protected Config createConfig(int groupSize, int metadataGroupSize) {
-        Config config = super.createConfig(groupSize, metadataGroupSize);
+    protected Config createConfig(int cpNodeCount, int groupSize) {
+        Config config = super.createConfig(cpNodeCount, groupSize);
         RaftConfig raftConfig = config.getRaftConfig();
-        raftConfig.setSessionHeartbeatIntervalMillis(500);
+        raftConfig.setSessionHeartbeatIntervalSeconds(1);
         raftConfig.setSessionTimeToLiveSeconds(sessionTTLSeconds);
         return config;
     }

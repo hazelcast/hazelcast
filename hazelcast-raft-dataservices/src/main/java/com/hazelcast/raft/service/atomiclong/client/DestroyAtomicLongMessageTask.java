@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,23 @@
 package com.hazelcast.raft.service.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.raft.impl.service.RaftInvocationManager;
 import com.hazelcast.raft.service.spi.operation.DestroyRaftObjectOp;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Client message task for destroying a Raft-based atomic long with {@link DestroyRaftObjectOp}
  */
 public class DestroyAtomicLongMessageTask extends AbstractAtomicLongMessageTask {
 
-    protected DestroyAtomicLongMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    DestroyAtomicLongMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected void processMessage() {
-        RaftInvocationManager raftInvocationManager = getRaftInvocationManager();
-        ICompletableFuture<Object> future = raftInvocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), name));
-        future.andThen(this);
+        RaftInvocationManager invocationManager = getRaftInvocationManager();
+        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), name)).andThen(this);
     }
 }

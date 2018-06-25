@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,18 @@ package com.hazelcast.raft.service.spi.operation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftOp;
+import com.hazelcast.raft.service.RaftDataServiceDataSerializerHook;
 import com.hazelcast.raft.service.spi.RaftRemoteService;
 
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Destroys the distributed object with the given name on the requested Raft group
  */
-public class DestroyRaftObjectOp extends RaftOp {
+public class DestroyRaftObjectOp extends RaftOp implements IdentifiedDataSerializable {
 
     private String serviceName;
     private String objectName;
@@ -53,6 +54,16 @@ public class DestroyRaftObjectOp extends RaftOp {
     }
 
     @Override
+    public int getFactoryId() {
+        return RaftDataServiceDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return RaftDataServiceDataSerializerHook.DESTROY_RAFT_OBJECT_OP;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(serviceName);
         out.writeUTF(objectName);
@@ -64,5 +75,9 @@ public class DestroyRaftObjectOp extends RaftOp {
         objectName = in.readUTF();
     }
 
-    // TODO: convert to IdentifiedDataSerializable
+    @Override
+    protected void toString(StringBuilder sb) {
+        sb.append(", serviceName=").append(serviceName)
+          .append(", objectName=").append(objectName);
+    }
 }

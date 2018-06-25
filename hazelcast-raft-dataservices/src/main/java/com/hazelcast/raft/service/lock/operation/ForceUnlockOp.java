@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftOp;
+import com.hazelcast.raft.impl.IndeterminateOperationStateAware;
+import com.hazelcast.raft.service.lock.FencedLock;
 import com.hazelcast.raft.service.lock.RaftLockDataSerializerHook;
 import com.hazelcast.raft.service.lock.RaftLockService;
 
@@ -28,9 +30,11 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * TODO: Javadoc Pending...
+ * Operation for {@link FencedLock#forceUnlock()}
+ *
+ * @see com.hazelcast.raft.service.lock.RaftLock#forceRelease(long, UUID)
  */
-public class ForceUnlockOp extends RaftOp implements IdentifiedDataSerializable {
+public class ForceUnlockOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
 
     private String name;
     private long expectedFence;
@@ -49,6 +53,11 @@ public class ForceUnlockOp extends RaftOp implements IdentifiedDataSerializable 
     public Object run(RaftGroupId groupId, long commitIndex) {
         RaftLockService service = getService();
         service.forceRelease(groupId, name, expectedFence, invocationUid);
+        return true;
+    }
+
+    @Override
+    public boolean isRetryableOnIndeterminateOperationState() {
         return true;
     }
 
@@ -82,5 +91,13 @@ public class ForceUnlockOp extends RaftOp implements IdentifiedDataSerializable 
         long least = in.readLong();
         long most = in.readLong();
         invocationUid = new UUID(most, least);
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        sb.append(", name=").append(name)
+          .append(", expectedFence=").append(expectedFence)
+          .append(", invocationUid=").append(invocationUid);
+
     }
 }
