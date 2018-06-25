@@ -393,6 +393,15 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     public void updateIndexStats(Map<String, OnDemandIndexStats> freshIndexStats) {
+        // A new index can be added, but already existing indexes can't be
+        // removed, that matches the current implementation properties of the
+        // index management.
+
+        if (freshIndexStats == null) {
+            // no indexes yet
+            return;
+        }
+
         for (Map.Entry<String, OnDemandIndexStats> freshIndexEntry : freshIndexStats.entrySet()) {
             String indexName = freshIndexEntry.getKey();
             LocalIndexStatsImpl indexStats = mutableIndexStats.get(indexName);
