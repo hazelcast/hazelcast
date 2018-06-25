@@ -55,7 +55,7 @@ public class Diagnostics {
      * By default only mandatory probes are being tracked
      */
     public static final HazelcastProperty METRICS_LEVEL
-            = new HazelcastProperty(PREFIX + ".metric.level", ProbeLevel.MANDATORY.name())
+            = new HazelcastProperty(PREFIX + ".metric.level", ProbeLevel.INFO.name())
             .setDeprecatedName("hazelcast.performance.metric.level");
 
     /**
@@ -66,7 +66,7 @@ public class Diagnostics {
      * this will probably be changed to {@code true}.
      */
     public static final HazelcastProperty METRICS_DISTRIBUTED_DATASTRUCTURES
-            = new HazelcastProperty(PREFIX + ".metric.distributed.datastructures", false);
+            = new HazelcastProperty(PREFIX + ".metric.distributed.datastructures", true);
 
 
     /**
