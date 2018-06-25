@@ -363,7 +363,7 @@ public class MigrationManager {
 
         MemberImpl member = node.getClusterService().getMember(destination);
         if (member == null) {
-            logger.warning("Destination " + destination + " is not member anymore");
+            logger.warning("Destination " + destination + " is not a member anymore");
             return false;
         }
 
@@ -952,13 +952,13 @@ public class MigrationManager {
             }
             if (migrationInfo.getSource() != null) {
                 if (node.getClusterService().getMember(migrationInfo.getSource()) == null) {
-                    logger.fine("Source is not member anymore. Ignoring " + migrationInfo);
+                    logger.fine("Source is not a member anymore. Ignoring " + migrationInfo);
                     triggerRepartitioningAfterMigrationFailure();
                     return null;
                 }
             }
             if (node.getClusterService().getMember(migrationInfo.getDestination()) == null) {
-                logger.fine("Destination is not member anymore. Ignoring " + migrationInfo);
+                logger.fine("Destination is not a member anymore. Ignoring " + migrationInfo);
                 triggerRepartitioningAfterMigrationFailure();
                 return null;
             }
@@ -1325,7 +1325,7 @@ public class MigrationManager {
 
             MemberImpl member = node.getClusterService().getMember(destination);
             if (member == null) {
-                logger.warning("Destination " + destination + " is not member anymore");
+                logger.warning("Destination " + destination + " is not a member anymore");
                 return false;
             }
             // RU_COMPAT_39
