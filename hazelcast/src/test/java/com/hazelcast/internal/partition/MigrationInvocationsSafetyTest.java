@@ -26,10 +26,12 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,6 +64,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupport {
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
 
     @Before
     public void setupParams() {
