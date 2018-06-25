@@ -18,7 +18,9 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -48,11 +50,12 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
     private static final int NODE_COUNT = 3;
 
     private HazelcastInstance member;
+    private HazelcastInstance[] instances;
 
     @Before
     public void setUp() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances();
+        instances = factory.newInstances(getConfig());
         member = instances[1];
     }
 
@@ -99,6 +102,34 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
         map.removeAll(new OddFinderPredicate());
 
         assertEquals(500, map.size());
+    }
+
+    @Test
+    public void removes_same_number_of_entries_from_owner_and_backup() {
+        String mapName = "test";
+        IMap<Integer, Integer> map = member.getMap(mapName);
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+        }
+
+        map.removeAll(new SqlPredicate("__key >= 100"));
+
+        waitAllForSafeState(instances);
+
+        long totalOwnedEntryCount = 0;
+        for (HazelcastInstance instance : instances) {
+            LocalMapStats localMapStats = instance.getMap(mapName).getLocalMapStats();
+            totalOwnedEntryCount += localMapStats.getOwnedEntryCount();
+        }
+
+        long totalBackupEntryCount = 0;
+        for (HazelcastInstance instance : instances) {
+            LocalMapStats localMapStats = instance.getMap(mapName).getLocalMapStats();
+            totalBackupEntryCount += localMapStats.getBackupEntryCount();
+        }
+
+        assertEquals(100, totalOwnedEntryCount);
+        assertEquals(100, totalBackupEntryCount);
     }
 
     private static final class OddFinderPredicate implements Predicate<Integer, Integer> {
