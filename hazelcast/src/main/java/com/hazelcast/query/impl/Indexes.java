@@ -41,7 +41,8 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Contains all indexes for a data-structure, e.g. an IMap.
  */
-public final class Indexes {
+@SuppressWarnings("checkstyle:finalclass")
+public class Indexes {
     private static final InternalIndex[] EMPTY_INDEX = {};
 
     private final InternalSerializationService serializationService;
