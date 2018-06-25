@@ -21,17 +21,13 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.backup.BackupAccessor;
+import com.hazelcast.test.backup.TestBackupUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,9 +37,8 @@ import org.junit.runners.Parameterized;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryEqualsEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryNullEventually;
 
 @Category({QuickTest.class, ParallelTest.class})
 @RunWith(Parameterized.class)
@@ -97,7 +92,7 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
 
         sleepAtLeastMillis(1001);
         for (int i = 0; i < NINSTANCE; i++) {
-            assertKeysNotPresent(instances[i], mapName, 0, 1000);
+            assertKeysNotPresent(instances, mapName, 0, 1000);
         }
     }
 
@@ -110,7 +105,7 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
         setTTL(instance, mapName, 0, 20, 0, TimeUnit.SECONDS);
         sleepAtLeastMillis(10100);
         for (int i = 0; i < NINSTANCE; i++) {
-            assertKeys(instances[i], mapName, 0, 20);
+            assertKeys(instances, mapName, 0, 20);
         }
     }
 
@@ -132,32 +127,21 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertKeysNotPresent(HazelcastInstance instance, String mapName, int from, int to) {
-        InternalPartitionService partitionService = getNode(instance).getPartitionService();
-        SerializationService serializationService = getNode(instance).getSerializationService();
-        MapService mapService = getNode(instance).nodeEngine.getService(MapService.SERVICE_NAME);
-        MapServiceContext context = mapService.getMapServiceContext();
-
-        for (int i = from; i < to; i++) {
-            Data dataKey = serializationService.toData(i);
-            int partitionId = partitionService.getPartitionId(dataKey);
-            RecordStore recordStore = context.getPartitionContainer(partitionId).getRecordStore(mapName);
-            assertNull(recordStore.getRecordOrNull(dataKey));
+    private void assertKeysNotPresent(HazelcastInstance[] instances, String mapName, int from, int to) {
+        for (int replicaIndex = 1; replicaIndex < NINSTANCE; replicaIndex++) {
+            BackupAccessor backupAccessor = TestBackupUtils.newMapAccessor(instances, mapName, replicaIndex);
+            for (int i = from; i < to; i++) {
+                assertBackupEntryNullEventually(i, backupAccessor);
+            }
         }
     }
 
-    private void assertKeys(HazelcastInstance instance, String mapName, int from, int to) {
-        InternalPartitionService partitionService = getNode(instance).getPartitionService();
-        SerializationService serializationService = getNode(instance).getSerializationService();
-        MapService mapService = getNode(instance).nodeEngine.getService(MapService.SERVICE_NAME);
-        MapServiceContext context = mapService.getMapServiceContext();
-
-        for (int i = from; i < to; i++) {
-            Data dataKey = serializationService.toData(i);
-            int partitionId = partitionService.getPartitionId(dataKey);
-            RecordStore recordStore = context.getPartitionContainer(partitionId).getRecordStore(mapName);
-            assertNotNull(recordStore);
-            assertEquals(i, serializationService.toObject(recordStore.getRecordOrNull(dataKey).getValue()));
+    private void assertKeys(HazelcastInstance[] instances, String mapName, int from, int to) {
+        for (int replicaIndex = 1; replicaIndex < NINSTANCE; replicaIndex++) {
+            BackupAccessor backupAccessor = TestBackupUtils.newMapAccessor(instances, mapName, replicaIndex);
+            for (int i = from; i < to; i++) {
+                assertBackupEntryEqualsEventually(i, i, backupAccessor);
+            }
         }
     }
 }
