@@ -190,6 +190,22 @@ public final class ClientProperty {
     public static final HazelcastProperty HAZELCAST_CLOUD_DISCOVERY_TOKEN =
             new HazelcastProperty("hazelcast.client.cloud.discovery.token");
 
+    /**
+     * Use to enable the client statistics collection.
+     * <p>
+     * The default is false.
+     */
+    public static final HazelcastProperty STATISTICS_ENABLED = new
+            HazelcastProperty("hazelcast.client.statistics.enabled", false);
+
+    /**
+     * The period in seconds the statistics run.
+     */
+    public static final HazelcastProperty STATISTICS_PERIOD_SECONDS = new
+            HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
+            SECONDS);
+
+
     private ClientProperty() {
     }
 }

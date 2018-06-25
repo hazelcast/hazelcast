@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -34,7 +35,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,19 +48,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * it will be scheduled for periodic statistics collection and sent.
  */
 public class Statistics {
-    /**
-     * Use to enable the client statistics collection.
-     * <p>
-     * The default is false.
-     */
-    public static final HazelcastProperty ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled", false);
-
-    /**
-     * The period in seconds the statistics run.
-     */
-    public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
-            SECONDS);
-
     private static final String NEAR_CACHE_CATEGORY_PREFIX = "nc.";
     private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.9";
     private static final int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
@@ -83,7 +70,7 @@ public class Statistics {
 
     public Statistics(final HazelcastClientInstanceImpl clientInstance) {
         this.properties = clientInstance.getProperties();
-        this.enabled = properties.getBoolean(ENABLED);
+        this.enabled = properties.getBoolean(ClientProperty.STATISTICS_ENABLED);
         this.client = clientInstance;
         this.enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
         this.metricsRegistry = clientInstance.getMetricsRegistry();
@@ -97,10 +84,10 @@ public class Statistics {
             return;
         }
 
-        long periodSeconds = properties.getSeconds(PERIOD_SECONDS);
+        long periodSeconds = properties.getSeconds(ClientProperty.STATISTICS_PERIOD_SECONDS);
         if (periodSeconds <= 0) {
-            long defaultValue = Long.parseLong(PERIOD_SECONDS.getDefaultValue());
-            logger.warning("Provided client statistics " + PERIOD_SECONDS.getName()
+            long defaultValue = Long.parseLong(ClientProperty.STATISTICS_PERIOD_SECONDS.getDefaultValue());
+            logger.warning("Provided client statistics " + ClientProperty.STATISTICS_PERIOD_SECONDS.getName()
                     + " can not be less than or equal to 0. You provided " + periodSeconds
                     + " seconds as the configuration. Client will use the default value of " + defaultValue + " instead.");
             periodSeconds = defaultValue;

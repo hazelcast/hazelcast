@@ -23,6 +23,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.statistics.Statistics;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
@@ -33,6 +34,9 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+
+
+
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -240,8 +244,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
         final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(Statistics.ENABLED.getName(), "false");
-        clientConfig.setProperty(Statistics.PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS));
+        clientConfig.setProperty(ClientProperty.STATISTICS_ENABLED.getName(), "false");
+        clientConfig.setProperty(ClientProperty.STATISTICS_PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS));
 
         hazelcastFactory.newHazelcastClient(clientConfig);
 
@@ -274,8 +278,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
     private HazelcastClientInstanceImpl createHazelcastClient() {
         ClientConfig clientConfig = new ClientConfig()
-                .setProperty(Statistics.ENABLED.getName(), "true")
-                .setProperty(Statistics.PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS))
+                .setProperty(ClientProperty.STATISTICS_ENABLED.getName(), "true")
+                .setProperty(ClientProperty.STATISTICS_PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS))
                 // add IMap and ICache with Near Cache config
                 .addNearCacheConfig(new NearCacheConfig(MAP_NAME))
                 .addNearCacheConfig(new NearCacheConfig(CACHE_NAME));
