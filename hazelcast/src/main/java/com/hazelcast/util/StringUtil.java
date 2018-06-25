@@ -139,13 +139,6 @@ public final class StringUtil {
         return s.toUpperCase(LOCALE_INTERNAL);
     }
 
-    public static String lowerCaseFirstChar(String s){
-        if(s.isEmpty()){
-            return s;
-        }
-        return Character.toLowerCase(s.charAt(0)) + s.substring(1);
-    }
-
     /**
      * Converts the first character to lower case.
      *
