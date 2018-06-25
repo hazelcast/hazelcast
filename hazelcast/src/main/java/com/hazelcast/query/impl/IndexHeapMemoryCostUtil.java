@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.query.impl;
 
 import java.math.BigDecimal;
@@ -11,7 +27,8 @@ import java.util.UUID;
 /**
  * Provides utilities useful for on-heap memory cost estimation.
  */
-public class IndexHeapMemoryCostUtil {
+@SuppressWarnings("checkstyle:magicnumber")
+public final class IndexHeapMemoryCostUtil {
 
     // The costs below are obtained using JOL (Java Object Layout tool), they
     // include the cost of the padding induced by 8-byte alignment of objects
@@ -53,19 +70,23 @@ public class IndexHeapMemoryCostUtil {
     private static final int ROUGH_BIG_DECIMAL_COST = BASE_BIG_DECIMAL_COST + ROUGH_BIG_INTEGER_COST;
     private static final int ROUGH_UNKNOWN_CLASS_COST = 24;
 
+    private IndexHeapMemoryCostUtil() {
+    }
+
     /**
      * Estimates the on-heap of the given value.
      *
      * @param value the value to estimate the cost of.
      * @return the estimated value cost.
      */
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:returncount"})
     public static long estimateValueCost(Object value) {
         if (value == null) {
             return 0;
         }
-        Class<?> class_ = value.getClass();
+        Class<?> clazz = value.getClass();
 
-        Integer cost = KNOWN_FINAL_CLASSES_COSTS.get(class_);
+        Integer cost = KNOWN_FINAL_CLASSES_COSTS.get(clazz);
         if (cost != null) {
             return cost;
         }
@@ -82,7 +103,7 @@ public class IndexHeapMemoryCostUtil {
             return DATE_COST;
         }
 
-        if (class_.isEnum()) {
+        if (clazz.isEnum()) {
             // enum values are shared, so they don't cost anything
             return 0;
         }
@@ -127,9 +148,6 @@ public class IndexHeapMemoryCostUtil {
         }
 
         return mapCost + queryableEntriesCost;
-    }
-
-    private IndexHeapMemoryCostUtil() {
     }
 
 }

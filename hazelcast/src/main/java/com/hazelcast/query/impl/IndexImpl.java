@@ -44,7 +44,7 @@ public class IndexImpl implements InternalIndex {
     private final boolean ordered;
     private final Extractors extractors;
     private final IndexCopyBehavior copyBehavior;
-    protected final InternalIndexStats stats;
+    private final InternalIndexStats stats;
 
     private volatile TypeConverter converter;
 

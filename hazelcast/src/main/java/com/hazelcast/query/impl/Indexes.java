@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Contains all indexes for a data-structure, e.g. an IMap.
  */
-public class Indexes {
+public final class Indexes {
     private static final InternalIndex[] EMPTY_INDEX = {};
 
     private final InternalSerializationService serializationService;
@@ -57,6 +57,32 @@ public class Indexes {
     private final AtomicReference<InternalIndex[]> indexes = new AtomicReference<InternalIndex[]>(EMPTY_INDEX);
 
     private volatile boolean hasIndex;
+
+    private Indexes(MapContainer mapContainer, boolean global) {
+        MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
+        this.indexProvider = mapServiceContext.getIndexProvider(mapConfig);
+        this.extractors = mapContainer.getExtractors();
+        this.global = global;
+        this.copyBehavior = mapServiceContext.getIndexCopyBehavior();
+        this.queryableEntriesAreCached = mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER;
+        this.queryContextProvider = createQueryContextProvider(mapConfig, global);
+        this.stats = createStats(mapConfig, global);
+    }
+
+    private Indexes(InternalSerializationService serializationService, IndexCopyBehavior copyBehavior) {
+        this.serializationService = serializationService;
+        this.indexProvider = new DefaultIndexProvider();
+        this.extractors = Extractors.empty();
+        this.global = true;
+        this.copyBehavior = copyBehavior;
+        this.queryableEntriesAreCached = false;
+        this.queryContextProvider = new GlobalQueryContextProvider();
+        this.stats = InternalIndexesStats.EMPTY;
+    }
 
     /**
      * Creates a new indexes instance for use as a global indexes for the given
@@ -93,32 +119,6 @@ public class Indexes {
     public static Indexes createStandaloneIndexes(InternalSerializationService serializationService,
                                                   IndexCopyBehavior copyBehavior) {
         return new Indexes(serializationService, copyBehavior);
-    }
-
-    private Indexes(MapContainer mapContainer, boolean global) {
-        MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-        MapConfig mapConfig = mapContainer.getMapConfig();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-
-        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.indexProvider = mapServiceContext.getIndexProvider(mapConfig);
-        this.extractors = mapContainer.getExtractors();
-        this.global = global;
-        this.copyBehavior = mapServiceContext.getIndexCopyBehavior();
-        this.queryableEntriesAreCached = mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER;
-        this.queryContextProvider = createQueryContextProvider(mapConfig, global);
-        this.stats = createStats(mapConfig, global);
-    }
-
-    private Indexes(InternalSerializationService serializationService, IndexCopyBehavior copyBehavior) {
-        this.serializationService = serializationService;
-        this.indexProvider = new DefaultIndexProvider();
-        this.extractors = Extractors.empty();
-        this.global = true;
-        this.copyBehavior = copyBehavior;
-        this.queryableEntriesAreCached = false;
-        this.queryContextProvider = new GlobalQueryContextProvider();
-        this.stats = InternalIndexesStats.EMPTY;
     }
 
     /**

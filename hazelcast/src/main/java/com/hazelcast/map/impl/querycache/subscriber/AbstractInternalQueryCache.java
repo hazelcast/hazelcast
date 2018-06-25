@@ -23,7 +23,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.impl.query.DefaultIndexProvider;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;

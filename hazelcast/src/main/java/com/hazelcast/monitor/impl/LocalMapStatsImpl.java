@@ -74,7 +74,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_REMOVE_LATENCY =
             newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
 
-    private final ConcurrentMap<String, LocalIndexStatsImpl> mutableIndexStats = new ConcurrentHashMap<String, LocalIndexStatsImpl>();
+    private final ConcurrentMap<String, LocalIndexStatsImpl> mutableIndexStats =
+            new ConcurrentHashMap<String, LocalIndexStatsImpl>();
     private final Map<String, LocalIndexStats> indexStats = Collections.<String, LocalIndexStats>unmodifiableMap(
             mutableIndexStats);
 

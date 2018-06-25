@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
@@ -8,49 +24,50 @@ import com.hazelcast.monitor.LocalIndexStats;
  * Implementation of local index stats that backs the stats exposed through the
  * public API.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class LocalIndexStatsImpl implements LocalIndexStats {
 
     @Probe
-    private volatile long creationTime = 0;
+    private volatile long creationTime;
 
     @Probe
-    private volatile long entryCount = 0;
+    private volatile long entryCount;
 
     @Probe
-    private volatile long queryCount = 0;
+    private volatile long queryCount;
 
     @Probe
-    private volatile long hitCount = 0;
+    private volatile long hitCount;
 
     @Probe
-    private volatile long averageHitLatency = 0;
+    private volatile long averageHitLatency;
 
     @Probe
-    private volatile double averageHitSelectivity = 0.0;
+    private volatile double averageHitSelectivity;
 
     @Probe
-    private volatile long insertCount = 0;
+    private volatile long insertCount;
 
     @Probe
-    private volatile long totalInsertLatency = 0;
+    private volatile long totalInsertLatency;
 
     @Probe
-    private volatile long updateCount = 0;
+    private volatile long updateCount;
 
     @Probe
-    private volatile long totalUpdateLatency = 0;
+    private volatile long totalUpdateLatency;
 
     @Probe
-    private volatile long removeCount = 0;
+    private volatile long removeCount;
 
     @Probe
-    private volatile long totalRemoveLatency = 0;
+    private volatile long totalRemoveLatency;
 
     @Probe
-    private volatile long onHeapMemoryCost = 0;
+    private volatile long onHeapMemoryCost;
 
     @Probe
-    private volatile long offHeapMemoryCost = 0;
+    private volatile long offHeapMemoryCost;
 
     @Override
     public long getCreationTime() {

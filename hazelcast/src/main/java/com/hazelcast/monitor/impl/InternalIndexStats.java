@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
@@ -6,7 +22,130 @@ import com.hazelcast.internal.memory.MemoryAllocator;
  * Provides internal per-index statistics for {@link com.hazelcast.query.impl.Index
  * Index}.
  */
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:anoninnerlength"})
 public interface InternalIndexStats {
+
+    /**
+     * Empty no-op internal index stats instance.
+     */
+    InternalIndexStats EMPTY = new InternalIndexStats() {
+
+        @Override
+        public long makeTimestamp() {
+            return 0;
+        }
+
+        @Override
+        public long getCreationTime() {
+            return 0;
+        }
+
+        @Override
+        public long getEntryCount() {
+            return 0;
+        }
+
+        @Override
+        public long getQueryCount() {
+            return 0;
+        }
+
+        @Override
+        public void incrementQueryCount() {
+            // do nothing
+        }
+
+        @Override
+        public long getHitCount() {
+            return 0;
+        }
+
+        @Override
+        public long getTotalHitLatency() {
+            return 0;
+        }
+
+        @Override
+        public double getTotalNormalizedHitCardinality() {
+            return 0.0;
+        }
+
+        @Override
+        public long getInsertCount() {
+            return 0;
+        }
+
+        @Override
+        public long getTotalInsertLatency() {
+            return 0;
+        }
+
+        @Override
+        public long getUpdateCount() {
+            return 0;
+        }
+
+        @Override
+        public long getTotalUpdateLatency() {
+            return 0;
+        }
+
+        @Override
+        public long getRemoveCount() {
+            return 0;
+        }
+
+        @Override
+        public long getTotalRemoveLatency() {
+            return 0;
+        }
+
+        @Override
+        public long getOnHeapMemoryCost() {
+            return 0;
+        }
+
+        @Override
+        public long getOffHeapMemoryCost() {
+            return 0;
+        }
+
+        @Override
+        public void onEntryInserted(long timestamp, Object value) {
+            // do nothing
+        }
+
+        @Override
+        public void onEntryUpdated(long timestamp, Object oldValue, Object newValue) {
+            // do nothing
+        }
+
+        @Override
+        public void onEntryRemoved(long timestamp, Object value) {
+            // do nothing
+        }
+
+        @Override
+        public void onEntriesCleared() {
+            // do nothing
+        }
+
+        @Override
+        public void onIndexHit(long timestamp, long hitCardinality) {
+            // do nothing
+        }
+
+        @Override
+        public void resetPerQueryStats() {
+            // do nothing
+        }
+
+        @Override
+        public MemoryAllocator wrapMemoryAllocator(MemoryAllocator memoryAllocator) {
+            return memoryAllocator;
+        }
+
+    };
 
     /**
      * Returns a new timestamp.
@@ -192,127 +331,5 @@ public interface InternalIndexStats {
      * @return the wrapped memory allocator.
      */
     MemoryAllocator wrapMemoryAllocator(MemoryAllocator memoryAllocator);
-
-    /**
-     * Empty no-op internal index stats instance.
-     */
-    InternalIndexStats EMPTY = new InternalIndexStats() {
-
-        @Override
-        public long makeTimestamp() {
-            return 0;
-        }
-
-        @Override
-        public long getCreationTime() {
-            return 0;
-        }
-
-        @Override
-        public long getEntryCount() {
-            return 0;
-        }
-
-        @Override
-        public long getQueryCount() {
-            return 0;
-        }
-
-        @Override
-        public void incrementQueryCount() {
-            // do nothing
-        }
-
-        @Override
-        public long getHitCount() {
-            return 0;
-        }
-
-        @Override
-        public long getTotalHitLatency() {
-            return 0;
-        }
-
-        @Override
-        public double getTotalNormalizedHitCardinality() {
-            return 0.0;
-        }
-
-        @Override
-        public long getInsertCount() {
-            return 0;
-        }
-
-        @Override
-        public long getTotalInsertLatency() {
-            return 0;
-        }
-
-        @Override
-        public long getUpdateCount() {
-            return 0;
-        }
-
-        @Override
-        public long getTotalUpdateLatency() {
-            return 0;
-        }
-
-        @Override
-        public long getRemoveCount() {
-            return 0;
-        }
-
-        @Override
-        public long getTotalRemoveLatency() {
-            return 0;
-        }
-
-        @Override
-        public long getOnHeapMemoryCost() {
-            return 0;
-        }
-
-        @Override
-        public long getOffHeapMemoryCost() {
-            return 0;
-        }
-
-        @Override
-        public void onEntryInserted(long timestamp, Object value) {
-            // do nothing
-        }
-
-        @Override
-        public void onEntryUpdated(long timestamp, Object oldValue, Object newValue) {
-            // do nothing
-        }
-
-        @Override
-        public void onEntryRemoved(long timestamp, Object value) {
-            // do nothing
-        }
-
-        @Override
-        public void onEntriesCleared() {
-            // do nothing
-        }
-
-        @Override
-        public void onIndexHit(long timestamp, long hitCardinality) {
-            // do nothing
-        }
-
-        @Override
-        public void resetPerQueryStats() {
-            // do nothing
-        }
-
-        @Override
-        public MemoryAllocator wrapMemoryAllocator(MemoryAllocator memoryAllocator) {
-            return memoryAllocator;
-        }
-
-    };
 
 }

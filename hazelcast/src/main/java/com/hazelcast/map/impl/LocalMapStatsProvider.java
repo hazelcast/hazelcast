@@ -69,11 +69,12 @@ public class LocalMapStatsProvider {
     private final MapNearCacheManager mapNearCacheManager;
     private final IPartitionService partitionService;
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
-    private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction = new ConstructorFunction<String, LocalMapStatsImpl>() {
-        public LocalMapStatsImpl createNew(String key) {
-            return new LocalMapStatsImpl();
-        }
-    };
+    private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction =
+            new ConstructorFunction<String, LocalMapStatsImpl>() {
+                public LocalMapStatsImpl createNew(String key) {
+                    return new LocalMapStatsImpl();
+                }
+            };
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;

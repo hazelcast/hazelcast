@@ -1,40 +1,57 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.monitor.impl;
 
 /**
  * Holds the intermediate results while combining the partitioned index stats
  * to produce the final per-index stats.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class OnDemandIndexStats {
 
-    private long creationTime = 0;
+    private long creationTime;
 
-    private long entryCount = 0;
+    private long entryCount;
 
-    private long queryCount = 0;
+    private long queryCount;
 
-    private long hitCount = 0;
+    private long hitCount;
 
-    private long averageHitLatency = 0;
+    private long averageHitLatency;
 
-    private double averageHitSelectivity = 0.0;
+    private double averageHitSelectivity;
 
-    private long insertCount = 0;
+    private long insertCount;
 
-    private long totalInsertLatency = 0;
+    private long totalInsertLatency;
 
-    private long updateCount = 0;
+    private long updateCount;
 
-    private long totalUpdateLatency = 0;
+    private long totalUpdateLatency;
 
-    private long removeCount = 0;
+    private long removeCount;
 
-    private long totalRemoveLatency = 0;
+    private long totalRemoveLatency;
 
-    private long onHeapMemoryCost = 0;
+    private long onHeapMemoryCost;
 
-    private long offHeapMemoryCost = 0;
+    private long offHeapMemoryCost;
 
-    private long totalHitCount = 0;
+    private long totalHitCount;
 
     /**
      * Returns the creation time.
