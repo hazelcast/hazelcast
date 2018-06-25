@@ -21,6 +21,10 @@ import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.ProbeBuilder;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.ProbeUnit;
+
+import javax.annotation.CheckReturnValue;
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.metrics.MetricsUtil.containsSpecialCharacters;
 import static com.hazelcast.internal.metrics.MetricsUtil.escapeMetricNamePart;
@@ -41,6 +45,7 @@ public class ProbeBuilderImpl implements ProbeBuilder {
     }
 
     @Override
+    @CheckReturnValue
     public ProbeBuilderImpl withTag(String tag, String value) {
         assert containsSpecialCharacters(tag) : "tag contains special characters";
         return new ProbeBuilderImpl(
@@ -49,18 +54,39 @@ public class ProbeBuilderImpl implements ProbeBuilder {
                         + tag + '=' + escapeMetricNamePart(value));
     }
 
-    private String metricName() {
+    @Override
+    public String metricName() {
         return keyPrefix + ']';
     }
 
     @Override
-    public <S> void register(S source, String metricName, ProbeLevel level, DoubleProbeFunction<S> probe) {
-        metricsRegistry.register(source, withTag("metric", metricName).metricName(), level, probe);
+    public <S> void register(
+            @Nonnull S source,
+            @Nonnull String metricName,
+            @Nonnull ProbeLevel level,
+            @Nonnull ProbeUnit unit,
+            @Nonnull DoubleProbeFunction<S> probe
+    ) {
+        String name = this
+                .withTag("unit", unit.name().toLowerCase())
+                .withTag("metric", metricName)
+                .metricName();
+        metricsRegistry.register(source, name, level, probe);
     }
 
     @Override
-    public <S> void register(S source, String metricName, ProbeLevel level, LongProbeFunction<S> probe) {
-        metricsRegistry.register(source, withTag("metric", metricName).metricName(), level, probe);
+    public <S> void register(
+            @Nonnull S source,
+            @Nonnull String metricName,
+            @Nonnull ProbeLevel level,
+            @Nonnull ProbeUnit unit,
+            @Nonnull LongProbeFunction<S> probe
+    ) {
+        String name = this
+                .withTag("unit", unit.name().toLowerCase())
+                .withTag("metric", metricName)
+                .metricName();
+        metricsRegistry.register(source, name, level, probe);
     }
 
     <S> void register(S source, String metricName, ProbeLevel level, ProbeFunction probe) {
