@@ -73,7 +73,7 @@ import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurre
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
-import static com.hazelcast.jet.impl.util.Util.idToString;
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.jet.impl.util.Util.readList;
 import static com.hazelcast.jet.impl.util.Util.writeList;
@@ -133,7 +133,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     public void initialize(NodeEngine nodeEngine, long jobId, long executionId, SnapshotContext snapshotContext) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.executionId = executionId;
-        initProcSuppliers();
+        initProcSuppliers(jobId, executionId);
         initDag();
 
         this.ptionArrgmt = new PartitionArrangement(partitionOwners, nodeEngine.getThisAddress());
@@ -154,12 +154,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             tasklets.add(ssTasklet);
 
             int localProcessorIdx = 0;
-            for (Processor p : processors) {
+            for (Processor processor : processors) {
                 int globalProcessorIndex = memberIndex * vertex.localParallelism() + localProcessorIdx;
-                String loggerName = createLoggerName(p.getClass().getName(), vertex.name(), globalProcessorIndex);
+                String loggerName = createLoggerName(processor.getClass().getName(), vertex.name(), globalProcessorIndex);
                 ProcCtx context = new ProcCtx(
                         instance,
-                        nodeEngine.getSerializationService(),
+                        jobId,
+                        executionId,
+                        getJobConfig(),
                         nodeEngine.getLogger(loggerName),
                         vertex.name(),
                         localProcessorIdx,
@@ -184,8 +186,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 ProbeBuilder processorProbeBuilder = probeBuilder
                         .withTag("proc", String.valueOf(globalProcessorIndex));
                 processorProbeBuilder
-                        .withTag("procType", p.getClass().getSimpleName())
-                        .scanAndRegister(p);
+                        .withTag("procType", processor.getClass().getSimpleName())
+                        .scanAndRegister(processor);
 
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
                 // Also populates instance fields: senderMap, receiverMap, tasklets.
@@ -198,11 +200,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
                 OutboundCollector snapshotCollector = new ConveyorCollector(ssConveyor, localProcessorIdx, null);
 
-                ProcessorTasklet processorTasklet = new ProcessorTasklet(context, p, inboundStreams, outboundStreams,
-                        snapshotContext, snapshotCollector, jobConfig.getMaxWatermarkRetainMillis());
+                ProcessorTasklet processorTasklet = new ProcessorTasklet(context, nodeEngine.getSerializationService(),
+                        processor, inboundStreams, outboundStreams, snapshotContext, snapshotCollector,
+                        jobConfig.getMaxWatermarkRetainMillis());
                 processorTasklet.registerMetrics(processorProbeBuilder);
                 tasklets.add(processorTasklet);
-                this.processors.add(p);
+                this.processors.add(processor);
                 localProcessorIdx++;
             }
         }
@@ -283,7 +286,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     // End implementation of IdentifiedDataSerializable
 
-    private void initProcSuppliers() {
+    private void initProcSuppliers(long jobId, long executionId) {
         JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
 
         for (VertexDef vertex : vertices) {
@@ -292,6 +295,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     + vertex.name() + "#ProcessorSupplier");
             supplier.init(new ProcSupplierCtx(
                     service.getJetInstance(),
+                    jobId,
+                    executionId,
+                    jobConfig,
                     logger,
                     vertex.name(),
                     vertex.localParallelism(),

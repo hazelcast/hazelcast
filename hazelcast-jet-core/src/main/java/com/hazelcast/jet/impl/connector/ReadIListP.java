@@ -25,7 +25,6 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.Traversers.traverseIterable;
@@ -76,7 +75,7 @@ public final class ReadIListP extends AbstractProcessor {
     }
 
     @Override
-    public void close(@Nullable Throwable error) {
+    public void close() {
         if (client != null) {
             client.shutdown();
         }

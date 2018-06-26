@@ -29,7 +29,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
-import static com.hazelcast.jet.impl.util.Util.idToString;
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
 public class CompleteExecutionOperation extends Operation implements IdentifiedDataSerializable {

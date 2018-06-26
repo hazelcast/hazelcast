@@ -54,7 +54,8 @@ public final class ExecutionPlanBuilder {
     }
 
     public static Map<MemberInfo, ExecutionPlan> createExecutionPlans(
-            NodeEngine nodeEngine, MembersView membersView, DAG dag, JobConfig jobConfig, long lastSnapshotId
+            NodeEngine nodeEngine, MembersView membersView, DAG dag, long jobId, long executionId,
+            JobConfig jobConfig, long lastSnapshotId
     ) {
         final JetInstance instance = getJetInstance(nodeEngine);
         final int defaultParallelism = instance.getConfig().getInstanceConfig().getCooperativeThreadCount();
@@ -85,8 +86,8 @@ public final class ExecutionPlanBuilder {
                     e -> vertexIdMap.get(e.getDestName()), isJobDistributed);
             final ILogger logger = nodeEngine.getLogger(String.format("%s.%s#ProcessorMetaSupplier",
                     metaSupplier.getClass().getName(), vertex.getName()));
-            metaSupplier.init(new MetaSupplierCtx(instance, logger, vertex.getName(),
-                    localParallelism, totalParallelism, clusterSize));
+            metaSupplier.init(new MetaSupplierCtx(instance, jobId, executionId, jobConfig, logger,
+                    vertex.getName(), localParallelism, totalParallelism, clusterSize));
 
             Function<Address, ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
             for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {

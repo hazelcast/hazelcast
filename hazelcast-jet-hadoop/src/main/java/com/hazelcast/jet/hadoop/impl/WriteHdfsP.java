@@ -35,7 +35,6 @@ import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.hadoop.mapred.TaskAttemptID;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 
@@ -79,7 +78,7 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
     }
 
     @Override
-    public void close(@Nullable Throwable error) {
+    public void close() {
         uncheckRun(() -> {
             recordWriter.close(Reporter.NULL);
             if (outputCommitter.needsTaskCommit(taskAttemptContext)) {

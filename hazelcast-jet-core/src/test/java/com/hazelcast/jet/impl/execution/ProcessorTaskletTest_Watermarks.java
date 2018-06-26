@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -54,16 +54,13 @@ public class ProcessorTaskletTest_Watermarks {
     private List<MockInboundStream> instreams;
     private List<OutboundEdgeStream> outstreams;
     private ProcessorWithWatermarks processor;
-    private ProcCtx context;
+    private Processor.Context context;
     private MockOutboundCollector snapshotCollector;
 
     @Before
     public void setUp() {
         this.processor = new ProcessorWithWatermarks();
-        this.context = new ProcCtx(
-                null, new DefaultSerializationServiceBuilder().build(), null, null,
-                0, 0, EXACTLY_ONCE, 1, 0, 1
-        );
+        this.context = new TestProcessorContext();
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();
         this.snapshotCollector = new MockOutboundCollector(0);
@@ -289,8 +286,8 @@ public class ProcessorTaskletTest_Watermarks {
         }
         SnapshotContext snapshotContext = new SnapshotContext(mock(ILogger.class), 0, 0, -1, EXACTLY_ONCE);
         snapshotContext.initTaskletCount(1, 0);
-        final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
-                snapshotContext, snapshotCollector, maxWatermarkRetainMillis);
+        final ProcessorTasklet t = new ProcessorTasklet(context, new DefaultSerializationServiceBuilder().build(),
+                processor, instreams, outstreams, snapshotContext, snapshotCollector, maxWatermarkRetainMillis);
         t.init();
         return t;
     }

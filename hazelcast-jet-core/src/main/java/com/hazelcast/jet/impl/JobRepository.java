@@ -53,7 +53,7 @@ import java.util.jar.JarInputStream;
 import java.util.zip.DeflaterOutputStream;
 
 import static com.hazelcast.jet.Jet.INTERNAL_JET_OBJECTS_PREFIX;
-import static com.hazelcast.jet.impl.util.Util.idToString;
+import static com.hazelcast.jet.Util.idToString;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.HOURS;

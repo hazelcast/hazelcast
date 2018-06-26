@@ -21,7 +21,6 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -60,7 +59,6 @@ public final class TestProcessors {
 
         MockP.initCount.set(0);
         MockP.closeCount.set(0);
-        MockP.receivedCloseErrors.clear();
 
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(totalParallelism);
@@ -251,7 +249,6 @@ public final class TestProcessors {
 
         static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger closeCount = new AtomicInteger();
-        static List<Throwable> receivedCloseErrors = new CopyOnWriteArrayList<>();
 
         private Exception initError;
         private Exception processError;
@@ -308,11 +305,8 @@ public final class TestProcessors {
         }
 
         @Override
-        public void close(@Nullable Throwable error) throws Exception {
+        public void close() throws Exception {
             closeCount.incrementAndGet();
-            if (error != null) {
-                receivedCloseErrors.add(error);
-            }
             if (closeError != null) {
                 throw closeError;
             }

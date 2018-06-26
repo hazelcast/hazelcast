@@ -81,9 +81,9 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
             NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
             ILogger newLogger = nodeEngine.getLogger(
                     createLoggerName(wrapped.getClass().getName(), c.vertexName(), c.globalProcessorIndex()));
-            context = new ProcCtx(c.jetInstance(), c.getSerializationService(), newLogger, c.vertexName(),
-                    c.localProcessorIndex(), c.globalProcessorIndex(), c.processingGuarantee(), c.localParallelism(),
-                    c.memberIndex(), c.memberCount());
+            context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+                    newLogger, c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(), c.processingGuarantee(),
+                    c.localParallelism(), c.memberIndex(), c.memberCount());
         }
         super.init(outbox, context);
     }

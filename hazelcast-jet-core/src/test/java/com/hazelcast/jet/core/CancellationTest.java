@@ -28,7 +28,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -336,7 +335,7 @@ public class CancellationTest extends JetTestSupport {
         }
 
         @Override
-        public void close(@Nullable Throwable error) {
+        public void close() {
             isDone = true;
         }
     }

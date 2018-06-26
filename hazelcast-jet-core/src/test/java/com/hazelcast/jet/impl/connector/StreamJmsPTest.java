@@ -57,7 +57,7 @@ public class StreamJmsPTest extends JetTestSupport {
 
     @After
     public void stopProcessor() throws Exception {
-        processor.close(null);
+        processor.close();
         processorConnection.close();
     }
 

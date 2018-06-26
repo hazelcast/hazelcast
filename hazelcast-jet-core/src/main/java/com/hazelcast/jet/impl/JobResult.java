@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.impl.util.Util.exceptionallyCompletedFuture;
-import static com.hazelcast.jet.impl.util.Util.idToString;
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 

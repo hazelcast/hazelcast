@@ -21,9 +21,10 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
@@ -63,7 +64,8 @@ public class ProcessorTaskletTest_Snapshots {
     private List<MockInboundStream> instreams;
     private List<OutboundEdgeStream> outstreams;
     private SnapshottableProcessor processor;
-    private ProcCtx context;
+    private Processor.Context context;
+    private SerializationService serializationService;
     private SnapshotContext snapshotContext;
     private MockOutboundCollector snapshotCollector;
 
@@ -71,10 +73,8 @@ public class ProcessorTaskletTest_Snapshots {
     public void setUp() {
         this.mockInput = IntStream.range(0, MOCK_INPUT_SIZE).boxed().collect(toList());
         this.processor = new SnapshottableProcessor();
-        this.context = new ProcCtx(
-                null, new DefaultSerializationServiceBuilder().build(), null, null,
-                0, 0, EXACTLY_ONCE, 1, 0, 1
-        );
+        this.serializationService = new DefaultSerializationServiceBuilder().build();
+        this.context = new TestProcessorContext().setProcessingGuarantee(EXACTLY_ONCE);
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();
         this.snapshotCollector = new MockOutboundCollector(1024);
@@ -125,7 +125,7 @@ public class ProcessorTaskletTest_Snapshots {
         instreams.add(instream2);
         outstreams.add(outstream1);
 
-        Tasklet tasklet = createTasklet(ProcessingGuarantee.EXACTLY_ONCE);
+        Tasklet tasklet = createTasklet(EXACTLY_ONCE);
 
         // When
         callUntil(tasklet, NO_PROGRESS);
@@ -146,7 +146,7 @@ public class ProcessorTaskletTest_Snapshots {
         // Given
         MockOutboundStream outstream1 = new MockOutboundStream(0, 2);
         outstreams.add(outstream1);
-        Tasklet tasklet = createTasklet(ProcessingGuarantee.EXACTLY_ONCE);
+        Tasklet tasklet = createTasklet(EXACTLY_ONCE);
         processor.itemsToEmitInComplete = 4;
 
         // When
@@ -180,7 +180,7 @@ public class ProcessorTaskletTest_Snapshots {
         instreams.add(instream2);
         outstreams.add(outstream1);
 
-        Tasklet tasklet = createTasklet(ProcessingGuarantee.EXACTLY_ONCE);
+        Tasklet tasklet = createTasklet(EXACTLY_ONCE);
 
         // When
         callUntil(tasklet, DONE);
@@ -196,7 +196,7 @@ public class ProcessorTaskletTest_Snapshots {
         }
         snapshotContext = new SnapshotContext(mock(ILogger.class), 0, 0, -1, guarantee);
         snapshotContext.initTaskletCount(1, 0);
-        final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
+        final ProcessorTasklet t = new ProcessorTasklet(context, serializationService, processor, instreams, outstreams,
                 snapshotContext, snapshotCollector, -1);
         t.init();
         return t;
@@ -209,7 +209,7 @@ public class ProcessorTaskletTest_Snapshots {
     }
 
     private Object deserializeEntryValue(Entry e) {
-        return context.getSerializationService().toObject(e.getValue());
+        return serializationService.toObject(e.getValue());
     }
 
     private static void callUntil(Tasklet tasklet, ProgressState expectedState) {

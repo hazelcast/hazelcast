@@ -136,9 +136,9 @@ public class ExecutionContext {
         assert executionFuture == null || executionFuture.isDone()
                 : "If execution was begun, then completeExecution() should not be called before execution is done.";
 
-        for (Processor processor : processors) {
+        for (Tasklet tasklet : tasklets) {
             try {
-                processor.close(error);
+                tasklet.close();
             } catch (Throwable e) {
                 logger.severe(jobAndExecutionId(jobId, executionId)
                         + " encountered an exception in Processor.close(), ignoring it", e);

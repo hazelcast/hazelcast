@@ -21,7 +21,6 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * When Jet executes a DAG, it creates one or more instances of {@code
@@ -236,24 +235,19 @@ public interface Processor {
     }
 
     /**
-     * Called after the execution has finished on all members - successfully or
-     * not, before {@link ProcessorSupplier#close} is called. If the execution
-     * was <em>aborted</em> due to a member leaving the cluster it is called
-     * immediately. Int this case, it can happen that the job is still running
-     * on some other member (but not on this member).
+     * Called as the last method in the processor lifecycle. It is called
+     * whether the job was successful or not, and strictly before {@link
+     * ProcessorSupplier#close} is called on this member. The method might get
+     * called even if {@link #init} method was not yet called.
      * <p>
-     * After this method no other methods are called.
+     * The method will be called right after {@link #complete()} returns {@code
+     * true}, that is before the job is finished. The job might still be
+     * running other processors.
      * <p>
-     * If this method throws an exception, it will be logged and ignored; it
-     * won't be reported as a job failure.
-     * <p>
-     * Note: this method can be called even if {@link #init} method was not
-     * called yet in case the job fails during the init phase.
-
-     * @param error the exception (if any) that caused the job to fail;
-     *              {@code null} in the case of successful job completion
+     * If this method throws an exception, it is logged but it won't be
+     * reported as a job failure or cause the job to fail.
      */
-    default void close(@Nullable Throwable error) throws Exception {
+    default void close() throws Exception {
     }
 
     /**

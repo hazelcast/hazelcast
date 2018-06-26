@@ -56,7 +56,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +70,7 @@ import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.util.Collections.emptyList;
@@ -82,7 +82,6 @@ import static java.util.stream.IntStream.range;
 public final class Util {
 
     private static final int BUFFER_SIZE = 1 << 15;
-    private static final char[] ID_TEMPLATE = "0000-0000-0000-0000".toCharArray();
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
 
     private Util() {
@@ -327,21 +326,8 @@ public final class Util {
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public static String idToString(long id) {
-        char[] buf = Arrays.copyOf(ID_TEMPLATE, ID_TEMPLATE.length);
-        String hexStr = Long.toHexString(id);
-        for (int i = hexStr.length() - 1, j = 18; i >= 0; i--, j--) {
-            buf[j] = hexStr.charAt(i);
-            if (j == 15 || j == 10 || j == 5) {
-                j--;
-            }
-        }
-        return new String(buf);
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
     public static long idFromString(String str) {
-        if (str == null || str.length() != ID_TEMPLATE.length) {
+        if (str == null || str.length() != 19) {
             return -1;
         }
         str = str.replaceAll("-", "");

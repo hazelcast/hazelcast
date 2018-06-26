@@ -24,7 +24,6 @@ import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -138,7 +137,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
     }
 
     @Override
-    public void close(@Nullable Throwable error) {
+    public void close() {
         try {
             closeCurrentFile();
             getLogger().fine("Closing StreamFilesP");

@@ -25,7 +25,6 @@ import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -111,7 +110,7 @@ public final class ReadFilesP<T, R> extends AbstractProcessor {
     }
 
     @Override
-    public void close(@Nullable Throwable error) throws IOException {
+    public void close() throws IOException {
         IOException ex = null;
         if (directoryStream != null) {
             try {

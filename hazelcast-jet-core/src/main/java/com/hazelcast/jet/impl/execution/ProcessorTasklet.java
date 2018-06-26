@@ -22,13 +22,17 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Preconditions;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
@@ -55,6 +59,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.SAVE_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
+import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.sum;
@@ -69,7 +74,7 @@ public class ProcessorTasklet implements Tasklet {
     private final ProgressTracker progTracker = new ProgressTracker();
     private final OutboundEdgeStream[] outstreams;
     private final OutboxImpl outbox;
-    private final ProcCtx context;
+    private final Processor.Context context;
 
     private final Processor processor;
     private final SnapshotContext ssContext;
@@ -78,6 +83,8 @@ public class ProcessorTasklet implements Tasklet {
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(progTracker);
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
     private final WatermarkCoalescer watermarkCoalescer;
+    private final ILogger logger;
+    private final SerializationService serializationService;
 
     private int numActiveOrdinals; // counter for remaining active ordinals
     private CircularListCursor<InboundEdgeStream> instreamCursor;
@@ -85,6 +92,7 @@ public class ProcessorTasklet implements Tasklet {
     private ProcessorState state;
     private long pendingSnapshotId;
     private Watermark pendingWatermark;
+    private boolean processorClosed;
 
     private final AtomicLongArray receivedCounts;
     private final AtomicLongArray receivedBatches;
@@ -92,7 +100,8 @@ public class ProcessorTasklet implements Tasklet {
     private final AtomicLong queuesSize = new AtomicLong();
     private final AtomicLong queuesCapacity = new AtomicLong();
 
-    public ProcessorTasklet(@Nonnull ProcCtx context,
+    public ProcessorTasklet(@Nonnull Processor.Context context,
+                            @Nonnull SerializationService serializationService,
                             @Nonnull Processor processor,
                             @Nonnull List<? extends InboundEdgeStream> instreams,
                             @Nonnull List<? extends OutboundEdgeStream> outstreams,
@@ -101,6 +110,7 @@ public class ProcessorTasklet implements Tasklet {
                             int maxWatermarkRetainMillis) {
         Preconditions.checkNotNull(processor, "processor");
         this.context = context;
+        this.serializationService = serializationService;
         this.processor = processor;
         this.numActiveOrdinals = instreams.size();
         this.instreamGroupQueue = instreams
@@ -114,6 +124,7 @@ public class ProcessorTasklet implements Tasklet {
                                     .sorted(comparing(OutboundEdgeStream::ordinal))
                                     .toArray(OutboundEdgeStream[]::new);
         this.ssContext = ssContext;
+        this.logger = getLogger(context);
 
         instreamCursor = popInstreamGroup();
         currInstream = instreamCursor != null ? instreamCursor.value() : null;
@@ -126,6 +137,14 @@ public class ProcessorTasklet implements Tasklet {
         pendingSnapshotId = ssContext.lastSnapshotId() + 1;
 
         watermarkCoalescer = WatermarkCoalescer.create(maxWatermarkRetainMillis, instreams.size());
+    }
+
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
+            justification = "jetInstance() can be null in TestProcessorContext")
+    private ILogger getLogger(@Nonnull Context context) {
+        return context.jetInstance() != null
+                ? context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(getClass())
+                : Logger.getLogger(getClass());
     }
 
     public void registerMetrics(final ProbeBuilder probeBuilder) {
@@ -163,13 +182,13 @@ public class ProcessorTasklet implements Tasklet {
         }
         collectors[outstreams.length] = ssCollector;
         return new OutboxImpl(collectors, true, progTracker,
-                context.getSerializationService(), OUTBOX_BATCH_SIZE, emittedCounts);
+                serializationService, OUTBOX_BATCH_SIZE, emittedCounts);
     }
 
     @Override
     public void init() {
-        if (context.getSerializationService().getManagedContext() != null) {
-            Object processor2 = context.getSerializationService().getManagedContext().initialize(processor);
+        if (serializationService.getManagedContext() != null) {
+            Object processor2 = serializationService.getManagedContext().initialize(processor);
             assert processor2 == processor : "different object returned";
         }
         processor.init(outbox, context);
@@ -177,6 +196,7 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override @Nonnull
     public ProgressState call() {
+        assert !processorClosed : "processor closed";
         return call(watermarkCoalescer.getTime());
     }
 
@@ -185,7 +205,22 @@ public class ProcessorTasklet implements Tasklet {
         progTracker.reset();
         outbox.reset();
         stateMachineStep(now);
-        return progTracker.toProgressState();
+        ProgressState progressState = progTracker.toProgressState();
+        if (progressState.isDone()) {
+            closeProcessor();
+            processorClosed = true;
+        }
+        return progressState;
+    }
+
+    private void closeProcessor() {
+        assert !processorClosed : "processor already closed";
+        try {
+            processor.close();
+        } catch (Exception e) {
+            logger.severe(jobAndExecutionId(context.jobId(), context.executionId())
+                    + " encountered an exception in Processor.close(), ignoring it", e);
+        }
     }
 
     @SuppressWarnings("checkstyle:returncount")
@@ -419,5 +454,13 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public boolean isCooperative() {
         return processor.isCooperative();
+    }
+
+    @Override
+    public void close() {
+        if (!processorClosed) {
+            closeProcessor();
+            processorClosed = true;
+        }
     }
 }

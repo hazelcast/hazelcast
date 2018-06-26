@@ -27,14 +27,13 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public final class WriteBufferedP<B, T> implements Processor {
 
     private final DistributedFunction<? super Context, B> createFn;
     private final DistributedBiConsumer<? super B, ? super T> onReceiveFn;
     private final DistributedConsumer<? super B> flushFn;
-    private DistributedConsumer<? super B> destroyFn;
+    private final DistributedConsumer<? super B> destroyFn;
 
     private B buffer;
 
@@ -66,17 +65,13 @@ public final class WriteBufferedP<B, T> implements Processor {
 
     @Override
     public boolean complete() {
-        close(null);
         return true;
     }
 
     @Override
-    public void close(@Nullable Throwable error) {
-        // avoid double destroyFn call: close() method is called from complete(), as well as by
-        // the Jet engine
-        if (destroyFn != null && buffer != null) {
+    public void close() {
+        if (buffer != null) {
             destroyFn.accept(buffer);
-            destroyFn = null;
         }
     }
 

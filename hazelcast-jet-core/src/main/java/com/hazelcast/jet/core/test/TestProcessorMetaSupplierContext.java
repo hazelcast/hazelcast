@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core.test;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -32,6 +33,9 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     protected ILogger logger;
 
     private JetInstance jetInstance;
+    private long jobId = 1;
+    private long executionId = 1;
+    private JobConfig jobConfig = new JobConfig();
     private int totalParallelism = 1;
     private int localParallelism = 1;
     private String vertexName = "testVertex";
@@ -42,11 +46,50 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     }
 
     /**
-     * Set the jet instance.
+     * Sets the jet instance.
      */
     @Nonnull
     public TestProcessorMetaSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
         this.jetInstance = jetInstance;
+        return this;
+    }
+
+    @Override
+    public long jobId() {
+        return jobId;
+    }
+
+    /**
+     * Sets the job ID.
+     */
+    public TestProcessorMetaSupplierContext setJobId(long jobId) {
+        this.jobId = jobId;
+        return this;
+    }
+
+    @Override
+    public long executionId() {
+        return executionId;
+    }
+
+    /**
+     * Sets the execution ID.
+     */
+    public TestProcessorMetaSupplierContext setExecutionId(long executionId) {
+        this.executionId = executionId;
+        return this;
+    }
+
+    @Override @Nonnull
+    public JobConfig jobConfig() {
+        return jobConfig;
+    }
+
+    /**
+     * Sets the job name.
+     */
+    public TestProcessorMetaSupplierContext setJobConfig(@Nonnull JobConfig jobConfig) {
+        this.jobConfig = jobConfig;
         return this;
     }
 
@@ -56,11 +99,27 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     }
 
     /**
-     * Set total parallelism.
+     * Sets the total parallelism.
      */
     @Nonnull
     public TestProcessorMetaSupplierContext setTotalParallelism(int totalParallelism) {
         this.totalParallelism = totalParallelism;
+        return this;
+    }
+
+    @Override
+    public int localParallelism() {
+        assert totalParallelism % localParallelism == 0 :
+                "totalParallelism=" + totalParallelism + " not divisible with localParallelism=" + localParallelism;
+        return localParallelism;
+    }
+
+    /**
+     * Sets local parallelism.
+     */
+    @Nonnull
+    public TestProcessorMetaSupplierContext setLocalParallelism(int localParallelism) {
+        this.localParallelism = localParallelism;
         return this;
     }
 
@@ -73,26 +132,10 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     }
 
     /**
-     * Set the logger.
+     * Sets the logger.
      */
     public TestProcessorMetaSupplierContext setLogger(@Nonnull ILogger logger) {
         this.logger = logger;
-        return this;
-    }
-
-    @Override
-    public int localParallelism() {
-        assert totalParallelism % localParallelism == 0 :
-                "totalParallelism=" + totalParallelism + " not divisible with localParallelism=" + localParallelism;
-        return localParallelism;
-    }
-
-    /**
-     * Set local parallelism.
-     */
-    @Nonnull
-    public TestProcessorMetaSupplierContext setLocalParallelism(int localParallelism) {
-        this.localParallelism = localParallelism;
         return this;
     }
 
@@ -107,7 +150,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     }
 
     /**
-     * Set the vertex name.
+     * Sets the vertex name.
      */
     @Nonnull
     public TestProcessorMetaSupplierContext setVertexName(@Nonnull String vertexName) {

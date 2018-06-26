@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
@@ -52,7 +51,7 @@ public class ProcessorTaskletTest_Blocking {
 
     private static final int MOCK_INPUT_SIZE = 10;
     private static final int CALL_COUNT_LIMIT = 10;
-    private ProcCtx context;
+    private Processor.Context context;
     private List<Object> mockInput;
     private List<MockInboundStream> instreams;
     private List<OutboundEdgeStream> outstreams;
@@ -62,10 +61,7 @@ public class ProcessorTaskletTest_Blocking {
     @Before
     public void setUp() {
         this.processor = new PassThroughProcessor();
-        this.context = new ProcCtx(
-                null, new DefaultSerializationServiceBuilder().build(), null, null,
-                0, 0, NONE, 1,  0, 1
-        );
+        this.context = new TestProcessorContext();
         this.mockInput = IntStream.range(0, MOCK_INPUT_SIZE).boxed().collect(toList());
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();
@@ -294,8 +290,8 @@ public class ProcessorTaskletTest_Blocking {
         for (int i = 0; i < instreams.size(); i++) {
             instreams.get(i).setOrdinal(i);
         }
-        final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
-                mock(SnapshotContext.class), new MockOutboundCollector(10), -1);
+        final ProcessorTasklet t = new ProcessorTasklet(context, new DefaultSerializationServiceBuilder().build(),
+                processor, instreams, outstreams, mock(SnapshotContext.class), new MockOutboundCollector(10), -1);
         t.init();
         return t;
     }

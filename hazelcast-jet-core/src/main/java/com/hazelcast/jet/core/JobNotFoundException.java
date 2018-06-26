@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.Util;
 
 /**
  * Thrown when a job could not be found on the master node

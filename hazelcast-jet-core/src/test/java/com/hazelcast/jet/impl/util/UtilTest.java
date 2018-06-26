@@ -102,17 +102,6 @@ public class UtilTest {
     }
 
     @Test
-    public void test_idToString() {
-        assertEquals("0000-0000-0000-0000", Util.idToString(0));
-        assertEquals("0000-0000-0000-0001", Util.idToString(1));
-        assertEquals("7fff-ffff-ffff-ffff", Util.idToString(Long.MAX_VALUE));
-        assertEquals("8000-0000-0000-0000", Util.idToString(Long.MIN_VALUE));
-        assertEquals("ffff-ffff-ffff-ffff", Util.idToString(-1));
-        assertEquals("1122-10f4-7de9-8115", Util.idToString(1234567890123456789L));
-        assertEquals("eedd-ef0b-8216-7eeb", Util.idToString(-1234567890123456789L));
-    }
-
-    @Test
     public void test_idFromString() {
         assertEquals(0, Util.idFromString("0000-0000-0000-0000"));
         assertEquals(1, Util.idFromString("0000-0000-0000-0001"));

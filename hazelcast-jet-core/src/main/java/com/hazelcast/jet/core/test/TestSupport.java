@@ -570,7 +570,7 @@ public final class TestSupport {
             assertTrue("complete returned true", !done[0] || runUntilCompletedTimeout <= 0);
         }
 
-        processor[0].close(null);
+        processor[0].close();
 
         // assert the outbox
         for (int i = 0; i < expectedOutputs.size(); i++) {
@@ -695,7 +695,7 @@ public final class TestSupport {
         // restore state to new processor
         assert outbox[0].queue(0).isEmpty();
         assert outbox[0].snapshotQueue().isEmpty();
-        processor[0].close(null);
+        processor[0].close();
         processor[0] = newProcessorFromSupplier();
         outbox[0] = createOutbox();
         initProcessor(processor[0], outbox[0]);

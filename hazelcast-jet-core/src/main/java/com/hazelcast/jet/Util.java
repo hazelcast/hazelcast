@@ -25,12 +25,15 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Arrays;
 import java.util.Map.Entry;
 
 /**
  * Miscellaneous utility methods useful in DAG building logic.
  */
 public final class Util {
+    private static final char[] ID_TEMPLATE = "0000-0000-0000-0000".toCharArray();
+
     private Util() {
     }
 
@@ -92,5 +95,22 @@ public final class Util {
      */
     public static <K, V> DistributedFunction<EventJournalCacheEvent<K, V>, Entry<K, V>> cacheEventToEntry() {
         return e -> entry(e.getKey(), e.getNewValue());
+    }
+
+    /**
+     * Converts a {@code long} job or execution ID to a string representation.
+     * Currently it is an unsigned 16-digit hex number.
+     */
+    @SuppressWarnings("checkstyle:magicnumber")
+    public static String idToString(long id) {
+        char[] buf = Arrays.copyOf(ID_TEMPLATE, ID_TEMPLATE.length);
+        String hexStr = Long.toHexString(id);
+        for (int i = hexStr.length() - 1, j = 18; i >= 0; i--, j--) {
+            buf[j] = hexStr.charAt(i);
+            if (j == 15 || j == 10 || j == 5) {
+                j--;
+            }
+        }
+        return new String(buf);
     }
 }

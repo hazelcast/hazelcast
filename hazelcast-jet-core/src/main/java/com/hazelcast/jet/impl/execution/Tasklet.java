@@ -19,17 +19,19 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.Callable;
 
-public interface Tasklet extends Callable<ProgressState> {
+public interface Tasklet {
 
     default void init() {
     }
 
-    @Override @Nonnull
+    @Nonnull
     ProgressState call();
 
     default boolean isCooperative() {
         return true;
+    }
+
+    default void close() {
     }
 }

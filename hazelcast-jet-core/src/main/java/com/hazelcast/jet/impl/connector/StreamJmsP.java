@@ -103,7 +103,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
     }
 
     @Override
-    public void close(@Nullable Throwable error) {
+    public void close() {
         if (consumer != null) {
             uncheckRun(() -> consumer.close());
         }

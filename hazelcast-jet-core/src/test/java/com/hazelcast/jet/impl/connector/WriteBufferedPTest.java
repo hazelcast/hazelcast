@@ -55,7 +55,7 @@ public class WriteBufferedPTest extends JetTestSupport {
     }
 
     @Test
-    public void writeBuffered_smokeTest() {
+    public void writeBuffered_smokeTest() throws Exception {
         DistributedSupplier<Processor> supplier = getLoggingBufferedWriter();
         Processor p = supplier.get();
         Outbox outbox = mock(Outbox.class);
@@ -70,6 +70,7 @@ public class WriteBufferedPTest extends JetTestSupport {
         p.tryProcessWatermark(new Watermark(0)); // watermark should not be written
         p.process(0, inbox); // empty flush
         p.complete();
+        p.close();
 
         assertEquals(asList(
                 "new",

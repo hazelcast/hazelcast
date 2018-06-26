@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.logging.ILogger;
@@ -305,6 +306,25 @@ public interface ProcessorMetaSupplier extends Serializable {
          */
         @Nonnull
         JetInstance jetInstance();
+
+        /**
+         * Returns the job ID. Job id is unique for job submission and doesn't
+         * change when the job restarts. It's also unique for all running and
+         * archived jobs.
+         */
+        long jobId();
+
+        /**
+         * Returns the job execution ID. It's unique for one execution, but
+         * changes when the job restarts.
+         */
+        long executionId();
+
+        /**
+         * Returns the {@link JobConfig}.
+         */
+        @Nonnull
+        JobConfig jobConfig();
 
         /**
          * Returns the total number of {@code Processor}s that will be created

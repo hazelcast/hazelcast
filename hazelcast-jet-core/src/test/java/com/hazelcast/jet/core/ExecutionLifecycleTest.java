@@ -107,6 +107,21 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     }
 
     @Test
+    public void when_processorCompletesSuccessfully_then_closeCalledImmediately() {
+        DAG dag = new DAG();
+        Vertex v1 = dag.newVertex("v1", MockP::new);
+        Vertex v2 = dag.newVertex("v2", () -> new StuckProcessor());
+        dag.edge(between(v1, v2));
+
+        Job job = instance.newJob(dag);
+        assertTrueEventually(this::assertPClosedWithoutError);
+        assertEquals(JobStatus.RUNNING, job.getStatus());
+        StuckProcessor.proceedLatch.countDown();
+        job.join();
+        assertJobSucceeded(job);
+    }
+
+    @Test
     public void when_pmsInitThrows_then_jobFails() {
         // Given
         RuntimeException e = new RuntimeException("mock error");
@@ -258,7 +273,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         Job job = runJobExpectFailure(dag, e);
 
         // Then
-        assertPClosedWithError(e);
+        assertPClosedWithError();
         assertPsClosedWithError(e);
         assertPmsClosedWithError(e);
         assertJobFailed(job, e);
@@ -278,7 +293,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         Job job = runJobExpectFailure(dag, e);
 
         // Then
-        assertPClosedWithError(e);
+        assertPClosedWithError();
         assertPsClosedWithError(e);
         assertPmsClosedWithError(e);
         assertJobFailed(job, e);
@@ -296,7 +311,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         Job job = runJobExpectFailure(dag, e);
 
         // Then
-        assertPClosedWithError(e);
+        assertPClosedWithError();
         assertPsClosedWithError(e);
         assertPmsClosedWithError(e);
         assertJobFailed(job, e);
@@ -314,7 +329,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         Job job = runJobExpectFailure(dag, e);
 
         // Then
-        assertPClosedWithError(e);
+        assertPClosedWithError();
         assertPsClosedWithError(e);
         assertPmsClosedWithError(e);
         assertJobFailed(job, e);
@@ -376,7 +391,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
 
         JetService jetService = getJetService(instance);
         final Map<MemberInfo, ExecutionPlan> executionPlans =
-                ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView, dag, new JobConfig(),
+                ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView, dag, 1, 1, new JobConfig(),
                         NO_SNAPSHOT);
         ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
         long jobId = 0;
@@ -526,16 +541,10 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     private void assertPClosedWithoutError() {
         assertEquals(TOTAL_PARALLELISM, MockP.initCount.get());
         assertEquals(TOTAL_PARALLELISM, MockP.closeCount.get());
-        assertEquals(0, MockP.receivedCloseErrors.size());
     }
 
-    private void assertPClosedWithError(Throwable e) {
+    private void assertPClosedWithError() {
         assertEquals(TOTAL_PARALLELISM, MockP.closeCount.get());
-        assertEquals(TOTAL_PARALLELISM, MockP.receivedCloseErrors.size());
-
-        for (int i = 0; i < NODE_COUNT; i++) {
-            assertExceptionInCauses(e, MockP.receivedCloseErrors.get(i));
-        }
     }
 
     private void assertJobSucceeded(Job job) {
