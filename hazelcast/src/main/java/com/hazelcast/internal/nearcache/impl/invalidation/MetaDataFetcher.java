@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
 
@@ -65,9 +66,12 @@ public abstract class MetaDataFetcher {
             extractAndPopulateResult(future, resultHolder);
             repairUuids(resultHolder.partitionUuidList, handlers);
             repairSequences(resultHolder.namePartitionSequenceList, handlers);
+        } catch (HazelcastInstanceNotActiveException e) {
+            logger.finest(e);
         } catch (Exception e) {
             if (logger.isWarningEnabled()) {
-                logger.warning("Can't fetch invalidation meta-data [" + e.getClass().getSimpleName() + "] " + e.getMessage());
+                logger.warning("Can't fetch invalidation meta-data ["
+                        + e.getClass().getSimpleName() + "] " + e.getMessage(), e);
             }
         }
     }

@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.MapFetchNearCacheInvalidationMet
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
 import com.hazelcast.nio.Address;
@@ -70,9 +71,12 @@ public class ClientMapMetaDataFetcher extends MetaDataFetcher {
             ClientInvocation invocation = new ClientInvocation(clientImpl, message, null, address);
             try {
                 futures.add(invocation.invoke());
+            } catch (HazelcastInstanceNotActiveException e) {
+                logger.finest(e);
             } catch (Exception e) {
                 if (logger.isWarningEnabled()) {
-                    logger.warning("Cant fetch invalidation meta-data from address + " + address + " + [" + e.getMessage() + "]");
+                    logger.warning("Cant fetch invalidation meta-data from address + "
+                            + address + " + [" + e.getMessage() + "]", e);
                 }
             }
         }
