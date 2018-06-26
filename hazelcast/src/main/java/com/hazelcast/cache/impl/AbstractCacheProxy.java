@@ -27,6 +27,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.FutureUtil;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
@@ -349,19 +350,10 @@ abstract class AbstractCacheProxy<K, V>
             }
         }
 
-        Throwable error = null;
-        for (Future future: futures) {
-            try {
-                future.get();
-            } catch (Throwable t) {
-                logger.finest("Error occured while batch operation!", t);
-                if (error == null) {
-                    error = t;
-                }
-            }
-        }
-        if (error != null) {
-            throw rethrow(error);
+        List<Throwable> throwables = FutureUtil.waitUntilAllResponded(futures);
+
+        if (throwables.size() > 0) {
+            throw rethrow(throwables.get(0));
         }
     }
 

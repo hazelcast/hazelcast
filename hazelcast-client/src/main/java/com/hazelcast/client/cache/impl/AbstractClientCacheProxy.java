@@ -34,6 +34,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.util.FutureUtil;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
@@ -406,7 +407,10 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             }
         }
 
-        waitResponseFromAllPartitionsForSetTTL(futures);
+        List<Throwable> throwables = FutureUtil.waitUntilAllResponded(futures);
+        if (throwables.size() > 0) {
+            throw rethrow(throwables.get(0));
+        }
     }
 
     private void waitResponseFromAllPartitionsForPutAll(List<FutureEntriesTuple> futureEntriesTuples, long startNanos) {
@@ -449,23 +453,6 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
              *        In this test exception is thrown at `CacheWriter` and caller side expects this exception.
              * So as a result, we only throw the first exception and others are suppressed by only logging.
              */
-            throw rethrow(error);
-        }
-    }
-
-    private void waitResponseFromAllPartitionsForSetTTL(List<Future> futures) {
-        Throwable error = null;
-        for (Future future: futures) {
-            try {
-                future.get();
-            } catch (Throwable t) {
-                logger.finest("Error occured during batch setTTL operation!", t);
-                if (error == null) {
-                    error = t;
-                }
-            }
-        }
-        if (error != null) {
             throw rethrow(error);
         }
     }

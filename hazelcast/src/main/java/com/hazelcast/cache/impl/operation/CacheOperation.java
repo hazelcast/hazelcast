@@ -182,12 +182,18 @@ public abstract class CacheOperation extends AbstractNamedOperation
         NodeEngine nodeEngine = getNodeEngine();
         SerializationService serializationService = nodeEngine.getSerializationService();
         Data dataValue = toHeapData(serializationService.toData(record.getValue()));
-        Data dataExpiryPolicy = toHeapData(serializationService.toData(record.getExpiryPolicy()));
-        publishWanUpdate(dataKey, dataValue, dataExpiryPolicy, record);
+        publishWanUpdate(dataKey, dataValue, record);
     }
 
     protected final void publishWanUpdate(Data dataKey, Data dataValue, CacheRecord record) {
-        publishWanUpdate(dataKey, dataValue, null, record);
+        if (!recordStore.isWanReplicationEnabled() || record == null) {
+            return;
+        }
+        NodeEngine nodeEngine = getNodeEngine();
+        SerializationService serializationService = nodeEngine.getSerializationService();
+
+        Data dataExpiryPolicy = toHeapData(serializationService.toData(record.getExpiryPolicy()));
+        publishWanUpdate(dataKey, dataValue, dataExpiryPolicy, record);
     }
 
     protected final void publishWanUpdate(Data dataKey, Data dataValue, Data dataExpiryPolicy, CacheRecord record) {

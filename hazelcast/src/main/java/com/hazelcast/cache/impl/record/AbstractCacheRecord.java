@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
@@ -35,7 +36,11 @@ import java.io.IOException;
  */
 public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, IdentifiedDataSerializable {
 
-    protected static final Version EXPIRY_POLICY_VERSION = Versions.V3_11;
+    /**
+     * Represents when {@link com.hazelcast.cache.ICache#setExpiryPolicy(Object, ExpiryPolicy)} is added.
+     * The constant is used in selective serialization of {@link CacheRecord}s.
+     */
+    public static final Version EXPIRY_POLICY_VERSION = Versions.V3_11;
 
     protected long creationTime = TIME_NOT_AVAILABLE;
     protected volatile long expirationTime = TIME_NOT_AVAILABLE;
