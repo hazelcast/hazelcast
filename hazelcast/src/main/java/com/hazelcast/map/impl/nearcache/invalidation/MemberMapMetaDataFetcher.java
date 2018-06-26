@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
@@ -64,9 +65,12 @@ public class MemberMapMetaDataFetcher extends MetaDataFetcher {
             Address address = member.getAddress();
             try {
                 futures.add(operationService.invokeOnTarget(SERVICE_NAME, operation, address));
+            } catch (HazelcastInstanceNotActiveException e) {
+                logger.finest(e);
             } catch (Exception e) {
                 if (logger.isWarningEnabled()) {
-                    logger.warning("Cant fetch invalidation meta-data from address + " + address + " + [" + e.getMessage() + "]");
+                    logger.warning("Cant fetch invalidation meta-data from address + "
+                            + address + " + [" + e.getMessage() + "]", e);
                 }
             }
         }
