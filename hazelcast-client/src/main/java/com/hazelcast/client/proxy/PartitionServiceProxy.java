@@ -147,7 +147,7 @@ public final class PartitionServiceProxy implements PartitionService {
         }
 
         @Override
-        public void handle(int partitionId, int lostBackupCount, Address source) {
+        public void handlePartitionLostEventV10(int partitionId, int lostBackupCount, Address source) {
             listener.partitionLost(new PartitionLostEvent(partitionId, lostBackupCount, source));
         }
 

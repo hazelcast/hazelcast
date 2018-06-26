@@ -1756,7 +1756,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         @Override
-        public void handle(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid,
+        public void handleEntryEventV10(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid,
                            int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             listenerAdapter.onEvent(createIMapEvent(key, value, oldValue, mergingValue, eventType, numberOfAffectedEntries,
@@ -1821,7 +1821,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         @Override
-        public void handle(int partitionId, String uuid) {
+        public void handleMapPartitionLostEventV10(int partitionId, String uuid) {
             Member member = getContext().getClusterService().getMember(uuid);
             listener.partitionLost(new MapPartitionLostEvent(name, member, -1, partitionId));
         }

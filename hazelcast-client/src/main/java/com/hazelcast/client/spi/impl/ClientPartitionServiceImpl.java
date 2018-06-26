@@ -99,7 +99,7 @@ public final class ClientPartitionServiceImpl
     }
 
     @Override
-    public void handle(Collection<Map.Entry<Address, List<Integer>>> collection, int partitionStateVersion) {
+    public void handlePartitionsEventV15(Collection<Map.Entry<Address, List<Integer>>> collection, int partitionStateVersion) {
         processPartitionResponse(collection, partitionStateVersion, true);
     }
 

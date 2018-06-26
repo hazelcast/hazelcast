@@ -68,7 +68,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handle(Member member, int eventType) {
+    public void handleMemberEventV10(Member member, int eventType) {
         switch (eventType) {
             case MembershipEvent.MEMBER_ADDED:
                 memberAdded(member);
@@ -83,7 +83,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handle(Collection<Member> initialMembers) {
+    public void handleMemberListEventV10(Collection<Member> initialMembers) {
         Map<String, Member> prevMembers = Collections.emptyMap();
         if (!members.isEmpty()) {
             prevMembers = new HashMap<String, Member>(members.size());
@@ -113,7 +113,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handle(String uuid, String key, int opType, String value) {
+    public void handleMemberAttributeChangeEventV10(String uuid, String key, int opType, String value) {
         Collection<Member> members = clusterService.getMemberList();
         for (Member target : members) {
             if (target.getUuid().equals(uuid)) {

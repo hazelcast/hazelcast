@@ -539,7 +539,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             return;
         }
 
-        EventHandler eventHandler = new ConnectedServerVersionAwareNearCacheEventHandler();
+        EventHandler eventHandler = new NearCacheInvalidationEventHandler();
         nearCacheMembershipRegistrationId = addNearCacheInvalidationListener(eventHandler);
     }
 
@@ -764,107 +764,49 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     /**
-     * Deals with client compatibility.
-     * <p>
-     * Eventual consistency for Near Cache can be used with server versions >= 3.8,
-     * other connected server versions must use {@link Pre38NearCacheEventHandler}.
+     * Eventual consistency for Near Cache can be used with server versions >= 3.8
+     * For repairing functionality please see {@link RepairingHandler}
+     * handleCacheInvalidationEventV14 and handleCacheBatchInvalidationEventV14
+     *
+     * If server version is < 3.8 and client version is >= 3.8, eventual consistency is not supported
+     * Following methods handle the old behaviour:
+     * handleCacheBatchInvalidationEventV10 and handleCacheInvalidationEventV10
      */
-    private final class ConnectedServerVersionAwareNearCacheEventHandler implements EventHandler<ClientMessage> {
+    private final class NearCacheInvalidationEventHandler
+            extends CacheAddInvalidationListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
 
-        private final Pre38NearCacheEventHandler pre38EventHandler = new Pre38NearCacheEventHandler();
-        private final RepairableNearCacheEventHandler repairingEventHandler = new RepairableNearCacheEventHandler();
-
+        private String clientUuid;
+        private volatile RepairingHandler repairingHandler;
         private volatile boolean supportsRepairableNearCache;
+
+        private NearCacheInvalidationEventHandler() {
+            this.clientUuid = getContext().getClusterService().getLocalClient().getUuid();
+        }
 
         @Override
         public void beforeListenerRegister() {
-            repairingEventHandler.beforeListenerRegister();
-
             supportsRepairableNearCache = supportsRepairableNearCache();
 
-            if (!supportsRepairableNearCache) {
-                pre38EventHandler.beforeListenerRegister();
-
+            if (supportsRepairableNearCache) {
+                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
+                repairingHandler = repairingTask.registerAndGetHandler(nameWithPrefix, nearCache);
+            } else {
+                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
+                repairingTask.deregisterHandler(nameWithPrefix);
                 logger.warning(format("Near Cache for '%s' cache is started in legacy mode", name));
             }
         }
 
         @Override
         public void onListenerRegister() {
-            if (supportsRepairableNearCache) {
-                repairingEventHandler.onListenerRegister();
-            } else {
-                pre38EventHandler.onListenerRegister();
+            if (!supportsRepairableNearCache) {
+                nearCache.clear();
             }
         }
 
         @Override
-        public void handle(ClientMessage clientMessage) {
-            if (supportsRepairableNearCache) {
-                repairingEventHandler.handle(clientMessage);
-            } else {
-                pre38EventHandler.handle(clientMessage);
-            }
-        }
-    }
-
-    /**
-     * This event handler can only be used with server versions >= 3.8 and supports Near Cache eventual consistency improvements.
-     * For repairing functionality please see {@link RepairingHandler}
-     */
-    private final class RepairableNearCacheEventHandler
-            extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler
-            implements EventHandler<ClientMessage> {
-
-        private volatile RepairingHandler repairingHandler;
-
-        @Override
-        public void beforeListenerRegister() {
-            if (supportsRepairableNearCache()) {
-                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
-                repairingHandler = repairingTask.registerAndGetHandler(nameWithPrefix, nearCache);
-            } else {
-                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
-                repairingTask.deregisterHandler(nameWithPrefix);
-            }
-        }
-
-        @Override
-        public void onListenerRegister() {
-            // NOP
-        }
-
-        @Override
-        public void handle(String name, Data key, String sourceUuid, UUID partitionUuid, long sequence) {
-            repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
-        }
-
-        @Override
-        public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids,
-                           Collection<UUID> partitionUuids, Collection<Long> sequences) {
-            repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);
-        }
-    }
-
-    /**
-     * This event handler is here to be used with server versions < 3.8.
-     * <p>
-     * If server version is < 3.8 and client version is >= 3.8, this event handler must be used to
-     * listen Near Cache invalidations. Because new improvements for Near Cache eventual consistency
-     * cannot work with server versions < 3.8.
-     */
-    private final class Pre38NearCacheEventHandler
-            extends CacheAddInvalidationListenerCodec.AbstractEventHandler
-            implements EventHandler<ClientMessage> {
-
-        private String clientUuid;
-
-        private Pre38NearCacheEventHandler() {
-            this.clientUuid = getContext().getClusterService().getLocalClient().getUuid();
-        }
-
-        @Override
-        public void handle(String name, Data key, String sourceUuid, UUID partitionUuid, long sequence) {
+        public void handleCacheInvalidationEventV10(String name, Data key, String sourceUuid) {
             if (clientUuid.equals(sourceUuid)) {
                 return;
             }
@@ -876,8 +818,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids,
-                           Collection<UUID> partitionUuids, Collection<Long> sequences) {
+        public void handleCacheInvalidationEventV14(String name, Data key, String sourceUuid,
+                                                    UUID partitionUuid, long sequence) {
+            repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
+        }
+
+        @Override
+        public void handleCacheBatchInvalidationEventV10(String name, Collection<Data> keys,
+                                                         Collection<String> sourceUuids) {
             if (sourceUuids != null && !sourceUuids.isEmpty()) {
                 Iterator<Data> keysIt = keys.iterator();
                 Iterator<String> sourceUuidsIt = sourceUuids.iterator();
@@ -896,12 +844,11 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-            nearCache.clear();
+        public void handleCacheBatchInvalidationEventV14(String name, Collection<Data> keys,
+                                                         Collection<String> sourceUuids,
+                                                         Collection<UUID> partitionUuids,
+                                                         Collection<Long> sequences) {
+            repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);
         }
     }
 }

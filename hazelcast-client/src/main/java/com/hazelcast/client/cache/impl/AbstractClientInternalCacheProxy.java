@@ -729,7 +729,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
 
         @Override
-        public void handle(int type, Collection<CacheEventData> keys, int completionId) {
+        public void handleCacheEventV10(int type, Collection<CacheEventData> keys, int completionId) {
             adaptor.handle(type, keys, completionId);
         }
 
