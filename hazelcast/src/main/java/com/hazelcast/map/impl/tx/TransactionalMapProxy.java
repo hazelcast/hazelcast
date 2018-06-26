@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.Query;
@@ -73,6 +74,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     @Override
     public boolean containsValue(Object value) {
+        if (getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            throw new UnsupportedOperationException("Value existence check is available when cluster version is 3.10 or higher");
+        }
+
         checkTransactionState();
         checkNotNull(value, "value can't be null");
 

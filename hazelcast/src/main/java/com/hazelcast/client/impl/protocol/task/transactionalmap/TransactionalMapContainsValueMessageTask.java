@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalMapContainsValueCod
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -38,7 +39,11 @@ public class TransactionalMapContainsValueMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            throw new UnsupportedOperationException("Value existence check is available when cluster version is 3.10 or higher");
+        }
+
+        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         return map.containsValue(parameters.value);
     }
