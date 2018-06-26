@@ -75,7 +75,7 @@ public final class RepairingTask implements Runnable {
     private final String localUuid;
     private final ILogger logger;
     private final TaskScheduler scheduler;
-    private final MetaDataFetcher metaDataFetcher;
+    private final InvalidationMetaDataFetcher invalidationMetaDataFetcher;
     private final SerializationService serializationService;
     private final MinimalPartitionService partitionService;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -83,12 +83,12 @@ public final class RepairingTask implements Runnable {
 
     private volatile long lastAntiEntropyRunNanos;
 
-    public RepairingTask(HazelcastProperties properties, MetaDataFetcher metaDataFetcher, TaskScheduler scheduler,
-                         SerializationService serializationService, MinimalPartitionService partitionService, String localUuid,
-                         ILogger logger) {
+    public RepairingTask(HazelcastProperties properties, InvalidationMetaDataFetcher invalidationMetaDataFetcher,
+                         TaskScheduler scheduler, SerializationService serializationService,
+                         MinimalPartitionService partitionService, String localUuid, ILogger logger) {
         this.reconciliationIntervalNanos = SECONDS.toNanos(getReconciliationIntervalSeconds(properties));
         this.maxToleratedMissCount = getMaxToleratedMissCount(properties);
-        this.metaDataFetcher = metaDataFetcher;
+        this.invalidationMetaDataFetcher = invalidationMetaDataFetcher;
         this.scheduler = scheduler;
         this.serializationService = serializationService;
         this.partitionService = partitionService;
@@ -151,7 +151,7 @@ public final class RepairingTask implements Runnable {
 
         long sinceLastRun = nanoTime() - lastAntiEntropyRunNanos;
         if (sinceLastRun >= reconciliationIntervalNanos) {
-            metaDataFetcher.fetchMetadata(handlers);
+            invalidationMetaDataFetcher.fetchMetadata(handlers);
             lastAntiEntropyRunNanos = nanoTime();
         }
     }
@@ -212,7 +212,7 @@ public final class RepairingTask implements Runnable {
 
         boolean initialized = false;
         try {
-            metaDataFetcher.init(handler);
+            invalidationMetaDataFetcher.init(handler);
             initialized = true;
         } catch (Exception e) {
             logger.warning(e);
@@ -305,8 +305,8 @@ public final class RepairingTask implements Runnable {
     }
 
     // used in tests
-    public MetaDataFetcher getMetaDataFetcher() {
-        return metaDataFetcher;
+    public InvalidationMetaDataFetcher getInvalidationMetaDataFetcher() {
+        return invalidationMetaDataFetcher;
     }
 
     // used in tests

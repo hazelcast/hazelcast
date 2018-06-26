@@ -24,11 +24,10 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.Member;
-import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -38,46 +37,39 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
- * {@code MetaDataFetcher} for client side usage
+ * {@code InvalidationMetaDataFetcher} for client side usage
  */
-public class ClientCacheMetaDataFetcher extends MetaDataFetcher {
+public class ClientCacheInvalidationMetaDataFetcher extends InvalidationMetaDataFetcher {
 
     private final ClientClusterService clusterService;
     private final HazelcastClientInstanceImpl clientImpl;
 
-    public ClientCacheMetaDataFetcher(ClientContext clientContext) {
-        super(clientContext.getLoggingService().getLogger(ClientCacheMetaDataFetcher.class));
+    public ClientCacheInvalidationMetaDataFetcher(ClientContext clientContext) {
+        super(clientContext.getLoggingService().getLogger(ClientCacheInvalidationMetaDataFetcher.class));
         this.clusterService = clientContext.getClusterService();
         this.clientImpl = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
     }
 
     @Override
-    protected void extractAndPopulateResult(InternalCompletableFuture future, ResultHolder resultHolder) throws Exception {
-        ClientMessage message = ((ClientMessage) future.get(ASYNC_RESULT_WAIT_TIMEOUT_MINUTES, MINUTES));
-        ResponseParameters response = decodeResponse(message);
-
-        resultHolder.populate(response.partitionUuidList, response.namePartitionSequenceList);
+    protected Collection<Member> getDataMembers() {
+        return clusterService.getMembers(DATA_MEMBER_SELECTOR);
     }
 
     @Override
-    protected List<InternalCompletableFuture> scanMembers(List<String> names) {
-        Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
-        List<InternalCompletableFuture> futures = new ArrayList<InternalCompletableFuture>(members.size());
+    protected InternalCompletableFuture fetchMetadataOf(Address address, List<String> names) {
+        ClientMessage message = encodeRequest(names, address);
+        ClientInvocation invocation = new ClientInvocation(clientImpl, message, null, address);
+        return invocation.invoke();
+    }
 
-        for (Member member : members) {
-            Address address = member.getAddress();
-            ClientMessage message = encodeRequest(names, address);
-            ClientInvocation invocation = new ClientInvocation(clientImpl, message, null, address);
-            try {
-                futures.add(invocation.invoke());
-            } catch (Exception e) {
-                if (logger.isWarningEnabled()) {
-                    logger.warning("Can't fetch invalidation meta-data from address "
-                            + address + " [" + e.getMessage() + "]", e);
-                }
-            }
-        }
+    @Override
+    protected void extractMemberMetadata(Member member,
+                                         InternalCompletableFuture future,
+                                         MetadataHolder metadataHolder) throws Exception {
 
-        return futures;
+        ClientMessage message = ((ClientMessage) future.get(ASYNC_RESULT_WAIT_TIMEOUT_MINUTES, MINUTES));
+        ResponseParameters response = decodeResponse(message);
+
+        metadataHolder.setMetadata(response.partitionUuidList, response.namePartitionSequenceList);
     }
 }

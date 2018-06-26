@@ -92,14 +92,14 @@ public class RepairingTaskTest extends HazelcastTestSupport {
 
     private static RepairingTask newRepairingTask(Config config) {
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
-        MetaDataFetcher metaDataFetcher = mock(MetaDataFetcher.class);
+        InvalidationMetaDataFetcher invalidationMetaDataFetcher = mock(InvalidationMetaDataFetcher.class);
         ExecutionService executionService = mock(ExecutionService.class);
         SerializationService serializationService = mock(SerializationService.class);
         MinimalPartitionService minimalPartitionService = mock(MinimalPartitionService.class);
         String uuid = UuidUtil.newUnsecureUUID().toString();
         ILogger logger = Logger.getLogger(RepairingTask.class);
 
-        return new RepairingTask(hazelcastProperties, metaDataFetcher, executionService.getGlobalTaskScheduler(),
+        return new RepairingTask(hazelcastProperties, invalidationMetaDataFetcher, executionService.getGlobalTaskScheduler(),
                 serializationService, minimalPartitionService, uuid, logger);
     }
 }

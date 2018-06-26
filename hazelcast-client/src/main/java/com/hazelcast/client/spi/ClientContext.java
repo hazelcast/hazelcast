@@ -17,16 +17,16 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.client.cache.impl.nearcache.invalidation.ClientCacheMetaDataFetcher;
+import com.hazelcast.client.cache.impl.nearcache.invalidation.ClientCacheInvalidationMetaDataFetcher;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
-import com.hazelcast.client.map.impl.nearcache.invalidation.ClientMapMetaDataFetcher;
+import com.hazelcast.client.map.impl.nearcache.invalidation.ClientMapInvalidationMetaDataFetcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.logging.ILogger;
@@ -112,19 +112,20 @@ public final class ClientContext {
     }
 
     private RepairingTask newRepairingTask(String serviceName) {
-        MetaDataFetcher metaDataFetcher = newMetaDataFetcher(serviceName);
+        InvalidationMetaDataFetcher invalidationMetaDataFetcher = newMetaDataFetcher(serviceName);
         ILogger logger = loggingService.getLogger(RepairingTask.class);
-        return new RepairingTask(properties, metaDataFetcher, executionService, serializationService, minimalPartitionService,
+        return new RepairingTask(properties, invalidationMetaDataFetcher,
+                executionService, serializationService, minimalPartitionService,
                 getLocalUuid(), logger);
     }
 
-    private MetaDataFetcher newMetaDataFetcher(String serviceName) {
+    private InvalidationMetaDataFetcher newMetaDataFetcher(String serviceName) {
         if (MapService.SERVICE_NAME.equals(serviceName)) {
-            return new ClientMapMetaDataFetcher(this);
+            return new ClientMapInvalidationMetaDataFetcher(this);
         }
 
         if (CacheService.SERVICE_NAME.equals(serviceName)) {
-            return new ClientCacheMetaDataFetcher(this);
+            return new ClientCacheInvalidationMetaDataFetcher(this);
         }
 
         throw new IllegalArgumentException(format("%s is not a known service-name to fetch metadata for", serviceName));
