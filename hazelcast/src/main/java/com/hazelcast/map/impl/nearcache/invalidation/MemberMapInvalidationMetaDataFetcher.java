@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation.MetaDataResponse;
@@ -27,7 +27,6 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -36,40 +35,38 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
- * {@code MetaDataFetcher} for member side usage
+ * {@code InvalidationMetaDataFetcher} for member side usage
  */
-public class MemberMapMetaDataFetcher extends MetaDataFetcher {
+public class MemberMapInvalidationMetaDataFetcher extends InvalidationMetaDataFetcher {
 
     private final ClusterService clusterService;
     private final OperationService operationService;
 
-    public MemberMapMetaDataFetcher(ClusterService clusterService, OperationService operationService, ILogger logger) {
+    public MemberMapInvalidationMetaDataFetcher(ClusterService clusterService,
+                                                OperationService operationService, ILogger logger) {
         super(logger);
         this.clusterService = clusterService;
         this.operationService = operationService;
     }
 
     @Override
-    protected void extractAndPopulateResult(InternalCompletableFuture future, ResultHolder resultHolder) throws Exception {
-        MetaDataResponse response = (MetaDataResponse) future.get(ASYNC_RESULT_WAIT_TIMEOUT_MINUTES, MINUTES);
-        resultHolder.populate(response.getPartitionUuidList().entrySet(), response.getNamePartitionSequenceList().entrySet());
+    protected Collection<Member> getDataMembers() {
+        return clusterService.getMembers(DATA_MEMBER_SELECTOR);
     }
 
     @Override
-    protected List<InternalCompletableFuture> scanMembers(List<String> names) {
-        Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
-        List<InternalCompletableFuture> futures = new ArrayList<InternalCompletableFuture>(members.size());
-        for (Member member : members) {
-            Operation operation = new MapGetInvalidationMetaDataOperation(names);
-            Address address = member.getAddress();
-            try {
-                futures.add(operationService.invokeOnTarget(SERVICE_NAME, operation, address));
-            } catch (Exception e) {
-                if (logger.isWarningEnabled()) {
-                    logger.warning("Cant fetch invalidation meta-data from address + " + address + " + [" + e.getMessage() + "]");
-                }
-            }
-        }
-        return futures;
+    protected InternalCompletableFuture fetchMetadataOf(Address address, List<String> names) {
+        Operation operation = new MapGetInvalidationMetaDataOperation(names);
+        return operationService.invokeOnTarget(SERVICE_NAME, operation, address);
+    }
+
+    @Override
+    protected void extractMemberMetadata(Member member,
+                                         InternalCompletableFuture future,
+                                         MetadataHolder metadataHolder) throws Exception {
+
+        MetaDataResponse response = (MetaDataResponse) future.get(ASYNC_RESULT_WAIT_TIMEOUT_MINUTES, MINUTES);
+        metadataHolder.setMetadata(response.getPartitionUuidList().entrySet(),
+                response.getNamePartitionSequenceList().entrySet());
     }
 }

@@ -29,7 +29,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
-import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
@@ -57,7 +57,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientCacheMetaDataFetcherTest extends HazelcastTestSupport {
+public class ClientCacheInvalidationMetaDataFetcherTest extends HazelcastTestSupport {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
@@ -74,9 +74,9 @@ public class ClientCacheMetaDataFetcherTest extends HazelcastTestSupport {
         UUID givenUuid = UuidUtil.newUnsecureUUID();
 
         RepairingTask repairingTask = getRepairingTask(cacheName, partition, givenSequence, givenUuid);
-        MetaDataFetcher metaDataFetcher = repairingTask.getMetaDataFetcher();
+        InvalidationMetaDataFetcher invalidationMetaDataFetcher = repairingTask.getInvalidationMetaDataFetcher();
         ConcurrentMap<String, RepairingHandler> handlers = repairingTask.getHandlers();
-        metaDataFetcher.fetchMetadata(handlers);
+        invalidationMetaDataFetcher.fetchMetadata(handlers);
 
         RepairingHandler repairingHandler = handlers.get(getPrefixedName(cacheName));
         MetaDataContainer metaDataContainer = repairingHandler.getMetaDataContainer(partition);
