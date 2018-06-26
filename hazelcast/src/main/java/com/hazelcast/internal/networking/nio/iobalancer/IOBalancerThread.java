@@ -23,7 +23,7 @@ import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 class IOBalancerThread extends Thread {
-    private static final String THREAD_NAME_PREFIX = "IOBalancerThread";
+    private static final String THREAD_NAME_PREFIX = "IO.BalancerThread";
 
     private final IOBalancer ioBalancer;
     private final ILogger log;
@@ -42,6 +42,8 @@ class IOBalancerThread extends Thread {
         interrupt();
     }
 
+    // squid:S2142 is suppressed since Sonar analysis gives false positive for an already handled or known case.
+    @SuppressWarnings("squid:S2142")
     @Override
     public void run() {
         try {

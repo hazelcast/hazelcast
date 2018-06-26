@@ -200,9 +200,6 @@ public class ListContainer extends CollectionContainer {
         if (itemList != null) {
             itemList.clear();
         }
-        if (itemMap != null) {
-            itemMap.clear();
-        }
     }
 
     @Override

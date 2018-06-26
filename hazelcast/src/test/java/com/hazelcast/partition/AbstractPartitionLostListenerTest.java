@@ -76,12 +76,11 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         return 20;
     }
 
-    final protected void stopInstances(List<HazelcastInstance> instances, NodeLeaveType nodeLeaveType) {
+    protected final void stopInstances(List<HazelcastInstance> instances, NodeLeaveType nodeLeaveType) {
         stopInstances(instances, nodeLeaveType, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    final protected void stopInstances(List<HazelcastInstance> instances, final NodeLeaveType nodeLeaveType,
-                                       int timeoutSeconds) {
+    protected final void stopInstances(List<HazelcastInstance> instances, final NodeLeaveType nodeLeaveType, int timeoutSeconds) {
         assertNotNull(nodeLeaveType);
 
         final List<Thread> threads = new ArrayList<Thread>();
@@ -110,18 +109,18 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         assertOpenEventually(latch, timeoutSeconds);
     }
 
-    final protected List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp() {
+    protected final List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp() {
         return getCreatedInstancesShuffledAfterWarmedUp(getNodeCount());
     }
 
-    final protected List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp(int nodeCount) {
+    protected final List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp(int nodeCount) {
         List<HazelcastInstance> instances = createInstances(nodeCount);
         warmUpPartitions(instances);
         Collections.shuffle(instances);
         return instances;
     }
 
-    final protected List<HazelcastInstance> createInstances(int nodeCount) {
+    protected final List<HazelcastInstance> createInstances(int nodeCount) {
         List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
         Config config = createConfig(nodeCount);
         for (int i = 0; i < nodeCount; i++) {
@@ -139,7 +138,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         return config;
     }
 
-    final protected void populateMaps(HazelcastInstance instance) {
+    protected final void populateMaps(HazelcastInstance instance) {
         for (int i = 0; i < getNodeCount(); i++) {
             Map<Integer, Integer> map = instance.getMap(getIthMapName(i));
             for (int j = 0; j < getMapEntryCount(); j++) {
@@ -148,15 +147,15 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         }
     }
 
-    final protected String getIthMapName(int i) {
+    protected final String getIthMapName(int i) {
         return "map-" + i;
     }
 
-    final protected String getIthCacheName(int i) {
+    protected final String getIthCacheName(int i) {
         return "cache-" + i;
     }
 
-    final protected Map<Integer, Integer> getMinReplicaIndicesByPartitionId(List<HazelcastInstance> instances) {
+    protected final Map<Integer, Integer> getMinReplicaIndicesByPartitionId(List<HazelcastInstance> instances) {
         Map<Integer, Integer> survivingPartitions = new HashMap<Integer, Integer>();
         for (HazelcastInstance instance : instances) {
             Node survivingNode = getNode(instance);
@@ -183,7 +182,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
     }
 
     @SuppressWarnings("SameParameterValue")
-    final protected void waitAllForSafeStateAndDumpPartitionServiceOnFailure(List<HazelcastInstance> instances,
+    protected final void waitAllForSafeStateAndDumpPartitionServiceOnFailure(List<HazelcastInstance> instances,
                                                                              int timeoutInSeconds) {
         try {
             waitAllForSafeState(instances, timeoutInSeconds);

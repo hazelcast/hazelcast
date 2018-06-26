@@ -17,11 +17,11 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A Gauge is {@link Metric} where a particular value is read instantaneous. E.g. the current size of the
- * pending operations queue.
+ * A Gauge is a {@link Metric} where a particular value is read instantaneously.
+ * E.g. the current size of the pending operations queue.
  *
- * The Gauge interface has not methods for retrieving the actual value, because it depends on the type of
- * value to read.
+ * The Gauge interface has no methods for retrieving the actual value,
+ * because it depends on the type of value to read.
  *
  * @see LongGauge
  * @see DoubleGauge

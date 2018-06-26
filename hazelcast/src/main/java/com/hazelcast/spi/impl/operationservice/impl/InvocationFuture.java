@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.IndeterminateOperationStateException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;

@@ -44,6 +44,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptyList;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -337,13 +338,12 @@ public class ClientQueueTest extends HazelcastTestSupport {
         }
 
         Object[] result = q.toArray();
-        assertEquals(offered, result);
+        assertArrayEquals(offered, result);
     }
 
     @Test
-    public void testToPartialArray() {
-        final int maxItems = 74;
-        final int arraySZ = maxItems / 2;
+    public void testToEmptyArray() {
+        final int maxItems = 23;
         IQueue<Integer> q = client.getQueue(randomString());
 
         Object[] offered = new Object[maxItems];
@@ -352,8 +352,23 @@ public class ClientQueueTest extends HazelcastTestSupport {
             offered[i] = i;
         }
 
-        Object[] result = q.toArray(new Object[arraySZ]);
-        assertEquals(offered, result);
+        Object[] result = q.toArray(new Object[0]);
+        assertArrayEquals(offered, result);
+    }
+
+    @Test
+    public void testToPreSizedArray() {
+        final int maxItems = 74;
+        IQueue<Integer> q = client.getQueue(randomString());
+
+        Object[] offered = new Object[maxItems];
+        for (int i = 0; i < maxItems; i++) {
+            q.offer(i);
+            offered[i] = i;
+        }
+
+        Object[] result = q.toArray(new Object[maxItems / 2]);
+        assertArrayEquals(offered, result);
     }
 
     @Test

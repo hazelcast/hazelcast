@@ -28,9 +28,6 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -551,13 +548,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     }
 
     private ICacheService getCacheService(HazelcastInstance instance) {
-        Node node = TestUtil.getNode(instance);
-        return node.getNodeEngine().getService(ICacheService.SERVICE_NAME);
-    }
-
-    private NodeEngine getNodeEngine(HazelcastInstance instance) {
-        Node node = TestUtil.getNode(instance);
-        return node.getNodeEngine();
+        return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
     }
 
     @Test

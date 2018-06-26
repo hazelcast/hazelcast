@@ -16,7 +16,7 @@
 
 package com.hazelcast.crdt.pncounter;
 
-import com.hazelcast.crdt.BaseCRDTPropertyTest;
+import com.hazelcast.crdt.AbstractCRDTPropertyTest;
 import com.hazelcast.crdt.Operation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -31,7 +31,7 @@ import java.util.Random;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class PNCounterImplPropertyTest extends BaseCRDTPropertyTest<PNCounterImpl, MutableLong, Long> {
+public class PNCounterImplPropertyTest extends AbstractCRDTPropertyTest<PNCounterImpl, MutableLong, Long> {
 
     @Override
     protected MutableLong getStateHolder() {

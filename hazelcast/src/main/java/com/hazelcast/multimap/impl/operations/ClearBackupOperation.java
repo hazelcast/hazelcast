@@ -31,7 +31,7 @@ public class ClearBackupOperation extends AbstractMultiMapOperation implements B
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         container.clear();
         response = true;
     }

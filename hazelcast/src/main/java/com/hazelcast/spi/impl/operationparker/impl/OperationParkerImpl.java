@@ -76,7 +76,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation-parker");
+        registry.scanAndRegister(this, "operation-parker");
     }
 
     @Override

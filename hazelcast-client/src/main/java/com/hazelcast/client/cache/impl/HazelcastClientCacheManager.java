@@ -20,9 +20,9 @@ import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.client.impl.ClientICacheManager;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.ClientICacheManager;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCacheManager;
@@ -120,6 +120,9 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected <K, V> CacheConfig<K, V> findCacheConfig(String cacheName, String simpleCacheName) {
+        if (simpleCacheName == null) {
+            return null;
+        }
         CacheConfig<K, V> config = clientCacheProxyFactory.getCacheConfig(cacheName);
         if (config == null) {
             // if cache config not found, try to find it from partition

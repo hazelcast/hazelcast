@@ -16,12 +16,15 @@
 
 package com.hazelcast.monitor;
 
+/**
+ * Near Cache statistics to be used by {@link MemberState} implementations.
+ */
 public interface NearCacheStats extends LocalInstanceStats {
 
     /**
      * Returns the creation time of this Near Cache on this member.
      *
-     * @return creation time of this Near Cache on this member.
+     * @return creation time of this Near Cache on this member
      */
     @Override
     long getCreationTime();
@@ -29,51 +32,58 @@ public interface NearCacheStats extends LocalInstanceStats {
     /**
      * Returns the number of Near Cache entries owned by this member.
      *
-     * @return number of Near Cache entries owned by this member.
+     * @return number of Near Cache entries owned by this member
      */
     long getOwnedEntryCount();
 
     /**
      * Returns memory cost (number of bytes) of Near Cache entries owned by this member.
      *
-     * @return memory cost (number of bytes) of Near Cache entries owned by this member.
+     * @return memory cost (number of bytes) of Near Cache entries owned by this member
      */
     long getOwnedEntryMemoryCost();
 
     /**
      * Returns the number of hits (reads) of Near Cache entries owned by this member.
      *
-     * @return number of hits (reads) of Near Cache entries owned by this member.
+     * @return number of hits (reads) of Near Cache entries owned by this member
      */
     long getHits();
 
     /**
      * Returns the number of misses of Near Cache entries owned by this member.
      *
-     * @return number of misses of Near Cache entries owned by this member.
+     * @return number of misses of Near Cache entries owned by this member
      */
     long getMisses();
 
     /**
      * Returns the hit/miss ratio of Near Cache entries owned by this member.
      *
-     * @return hit/miss ratio of Near Cache entries owned by this member.
+     * @return hit/miss ratio of Near Cache entries owned by this member
      */
     double getRatio();
 
     /**
      * Returns the number of evictions of Near Cache entries owned by this member.
      *
-     * @return number of evictions of Near Cache entries owned by this member.
+     * @return number of evictions of Near Cache entries owned by this member
      */
     long getEvictions();
 
     /**
      * Returns the number of TTL and max-idle expirations of Near Cache entries owned by this member.
      *
-     * @return number of TTL and max-idle expirations of Near Cache entries owned by this member.
+     * @return number of TTL and max-idle expirations of Near Cache entries owned by this member
      */
     long getExpirations();
+
+    /**
+     * Returns the number of invalidations of Near Cache entries owned by this member.
+     *
+     * @return number of invalidations of Near Cache entries owned by this member
+     */
+    long getInvalidations();
 
     /**
      * Returns the number of Near Cache key persistences (when the pre-load feature is enabled).

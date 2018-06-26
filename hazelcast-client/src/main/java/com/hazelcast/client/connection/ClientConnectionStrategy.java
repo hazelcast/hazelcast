@@ -103,18 +103,6 @@ public abstract class ClientConnectionStrategy {
     public abstract void onDisconnect(ClientConnection connection);
 
     /**
-     * The {@link ClientConnectionManager} will inform this method that the provided connection's heartbeat stopped
-     * @param connection the connection that heartbeat failed
-     */
-    public abstract void onHeartbeatStopped(ClientConnection connection);
-
-    /**
-     * The {@link ClientConnectionManager} will inform this method that the provided connection's heartbeat resumed
-     * @param connection the connection that heartbeat resumed
-     */
-    public abstract void onHeartbeatResumed(ClientConnection connection);
-
-    /**
      * The {@link ClientConnectionManager} will call this method as a last step of its shutdown.
      */
     public abstract void shutdown();

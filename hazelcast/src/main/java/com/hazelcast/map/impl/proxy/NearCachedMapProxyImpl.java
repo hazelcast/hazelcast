@@ -168,6 +168,16 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
+    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+        key = toNearCacheKeyWithStrategy(key);
+        try {
+            super.setTTLInternal(key, ttl, timeUnit);
+        } finally {
+            invalidateNearCache(key);
+        }
+    }
+
+    @Override
     protected boolean tryPutInternal(Object key, Data value, long timeout, TimeUnit timeunit) {
         key = toNearCacheKeyWithStrategy(key);
         try {
@@ -560,7 +570,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         if (key == null) {
             return;
         }
-        nearCache.remove(key);
+        nearCache.invalidate(key);
     }
 
     private Object tryPublishReserved(Object key, Object value, long reservationId) {

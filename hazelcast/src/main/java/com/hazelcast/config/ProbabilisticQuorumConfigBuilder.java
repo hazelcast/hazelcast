@@ -16,12 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector;
 import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 
-import static com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector
-        .HEARTBEAT_PHI_FAILURE_DETECTOR_MIN_STD_DEV_MILLIS;
-import static com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector.HEARTBEAT_PHI_FAILURE_DETECTOR_SAMPLE_SIZE;
-import static com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector.HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD;
 import static com.hazelcast.spi.properties.GroupProperty.HEARTBEAT_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_NO_HEARTBEAT_SECONDS;
 import static java.lang.Double.parseDouble;
@@ -38,28 +35,30 @@ public class ProbabilisticQuorumConfigBuilder extends QuorumConfigBuilder {
     /**
      * Default threshold for suspicion (φ) level.
      */
-    public static final double DEFAULT_PHI_THRESHOLD = parseDouble(HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD.getDefaultValue());
+    public static final double DEFAULT_PHI_THRESHOLD
+            = parseDouble(PhiAccrualClusterFailureDetector.HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD.getDefaultValue());
     /**
      * Default number of samples to use for calculation of mean and standard deviation of inter-arrival times.
      */
-    public static final int DEFAULT_SAMPLE_SIZE = parseInt(HEARTBEAT_PHI_FAILURE_DETECTOR_SAMPLE_SIZE.getDefaultValue());
+    public static final int DEFAULT_SAMPLE_SIZE
+            = parseInt(PhiAccrualClusterFailureDetector.HEARTBEAT_PHI_FAILURE_DETECTOR_SAMPLE_SIZE.getDefaultValue());
     /**
      * Default minimum standard deviation (in milliseconds) to use for the normal distribution used when
      * calculating phi.
      */
     public static final long DEFAULT_MIN_STD_DEVIATION =
-                parseLong(HEARTBEAT_PHI_FAILURE_DETECTOR_MIN_STD_DEV_MILLIS.getDefaultValue());
+            parseLong(PhiAccrualClusterFailureDetector.HEARTBEAT_PHI_FAILURE_DETECTOR_MIN_STD_DEV_MILLIS.getDefaultValue());
     /**
      * Default duration in milliseconds corresponding to number of potentially lost/delayed heartbeats that will
      * be accepted before considering it to be an anomaly.
      */
     public static final long DEFAULT_HEARTBEAT_PAUSE_MILLIS =
-                SECONDS.toMillis(parseInt(MAX_NO_HEARTBEAT_SECONDS.getDefaultValue()));
+            SECONDS.toMillis(parseInt(MAX_NO_HEARTBEAT_SECONDS.getDefaultValue()));
     /**
      * Default value of heartbeat interval (in milliseconds).
      */
     public static final long DEFAULT_HEARTBEAT_INTERVAL_MILLIS =
-                SECONDS.toMillis(parseInt(HEARTBEAT_INTERVAL_SECONDS.getDefaultValue()));
+            SECONDS.toMillis(parseInt(HEARTBEAT_INTERVAL_SECONDS.getDefaultValue()));
 
     private final String name;
     private double phiThreshold = DEFAULT_PHI_THRESHOLD;

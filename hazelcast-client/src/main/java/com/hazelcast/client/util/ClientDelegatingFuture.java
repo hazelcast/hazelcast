@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.client.impl.ClientMessageDecoder;
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
@@ -31,10 +31,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
- * Client Delegating Future is used to delegate ClientInvocationFuture to user to be used with
- * andThen or get. It converts ClientMessage coming from ClientInvocationFuture to user object
+ * The Client Delegating Future is used to delegate {@link
+ * ClientInvocationFuture} to a user type to be used with {@code andThen()} or
+ * {@code get()}. It converts {@link ClientMessage} coming from {@link
+ * ClientInvocationFuture} to a user object.
  *
- * @param <V> Value type that user expecting
+ * @param <V> Value type that the user expects
  */
 public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
 

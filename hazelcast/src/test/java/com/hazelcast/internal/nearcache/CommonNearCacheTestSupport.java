@@ -35,11 +35,11 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
 
-    protected static final int DEFAULT_RECORD_COUNT = 100;
-    protected static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
+    static final int DEFAULT_RECORD_COUNT = 100;
+    static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
 
-    protected List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
-    protected SerializationService ss = new DefaultSerializationServiceBuilder()
+    private List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
+    private SerializationService ss = new DefaultSerializationServiceBuilder()
             .setVersion(InternalSerializationService.VERSION_1).build();
 
     @After
@@ -50,15 +50,14 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         scheduledExecutorServices.clear();
     }
 
-    protected NearCacheConfig createNearCacheConfig(String name, InMemoryFormat inMemoryFormat) {
+    NearCacheConfig createNearCacheConfig(String name, InMemoryFormat inMemoryFormat) {
         return new NearCacheConfig()
                 .setName(name)
                 .setInMemoryFormat(inMemoryFormat);
     }
 
-    protected <K, V> NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig,
-                                                                           InMemoryFormat inMemoryFormat) {
-        NearCacheRecordStore<K, V> recordStore = null;
+    <K, V> NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig, InMemoryFormat inMemoryFormat) {
+        NearCacheRecordStore<K, V> recordStore;
         switch (inMemoryFormat) {
             case BINARY:
                 recordStore = new NearCacheDataRecordStore<K, V>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null);
@@ -70,11 +69,11 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
                 throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);
         }
         recordStore.initialize();
-
         return recordStore;
     }
 
-    protected TaskScheduler createTaskScheduler() {
+    @SuppressWarnings("unused")
+    TaskScheduler createTaskScheduler() {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
         scheduledExecutorServices.add(scheduledExecutorService);
         return new DelegatingTaskScheduler(scheduledExecutorService, scheduledExecutorService);

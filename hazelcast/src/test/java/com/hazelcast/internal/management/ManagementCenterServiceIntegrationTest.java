@@ -16,10 +16,11 @@
 
 package com.hazelcast.internal.management;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.ParseException;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,12 +40,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.net.ServerSocket;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -53,9 +54,12 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
     private static final String clusterName = "Session Integration (AWS discovery)";
     private int portNum;
     private Server jettyServer;
+    private CloseableHttpClient client;
 
     @Before
     public void setUp() throws Exception {
+        client = HttpClientBuilder.create().disableRedirectHandling().build();
+
         portNum = availablePort();
         jettyServer = new Server(portNum);
         ServletHandler handler = new ServletHandler();
@@ -70,6 +74,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
     public void tearDown() throws Exception {
         Hazelcast.shutdownAll();
         jettyServer.stop();
+        client.close();
     }
 
     @Test
@@ -77,14 +82,19 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                CloseableHttpClient client = HttpClientBuilder.create().disableRedirectHandling().build();
                 HttpUriRequest request = new HttpGet("http://localhost:" + portNum + "/mancen/memberStateCheck");
                 HttpResponse response = client.execute(request);
                 HttpEntity entity = response.getEntity();
                 String responseString = EntityUtils.toString(entity);
+                assertNotNull(responseString);
                 assertNotEquals("", responseString);
 
-                JsonObject object = JsonObject.readFrom(responseString);
+                JsonObject object;
+                try {
+                    object = Json.parse(responseString).asObject();
+                } catch (ParseException e) {
+                    throw new AssertionError("Failed to parse JSON: " + responseString);
+                }
                 TimedMemberState memberState = new TimedMemberState();
                 memberState.fromJson(object);
                 assertEquals(clusterName, memberState.getClusterName());
@@ -97,7 +107,6 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                CloseableHttpClient client = HttpClientBuilder.create().disableRedirectHandling().build();
                 HttpUriRequest request = new HttpGet("http://localhost:" + portNum + "/mancen/getClusterName");
                 HttpResponse response = client.execute(request);
                 HttpEntity entity = response.getEntity();
@@ -107,7 +116,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         });
     }
 
-    private int availablePort() throws IOException {
+    private int availablePort() {
         while (true) {
             int port = (int) (65536 * Math.random());
             try {

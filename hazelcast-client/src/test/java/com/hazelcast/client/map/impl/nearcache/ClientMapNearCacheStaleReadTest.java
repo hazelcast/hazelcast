@@ -26,11 +26,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,52 +41,53 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static java.lang.Integer.parseInt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * A test to ensure no lost invalidations on the Near Cache.
+ * Tests that the Near Cache doesn't lose invalidations.
  * <p>
  * Issue: https://github.com/hazelcast/hazelcast/issues/4671
  * <p>
- * Thanks Lukas Blunschi for this test (https://github.com/lukasblu).
+ * Thanks Lukas Blunschi for the original test (https://github.com/lukasblu).
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelTest.class})
 public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
 
     private static final int NUM_GETTERS = 7;
     private static final int MAX_RUNTIME = 30;
-    private static final String MAP_NAME = "test";
     private static final String KEY = "key123";
+
     private static final ILogger LOGGER = Logger.getLogger(ClientMapNearCacheStaleReadTest.class);
 
-    private AtomicInteger valuePut;
-    private AtomicBoolean stop;
-    private AtomicInteger assertionViolationCount;
-    private AtomicBoolean failed;
-    private IMap<String, String> map;
+    private AtomicInteger valuePut = new AtomicInteger(0);
+    private AtomicBoolean stop = new AtomicBoolean(false);
+    private AtomicInteger assertionViolationCount = new AtomicInteger(0);
+    private AtomicBoolean failed = new AtomicBoolean(false);
+
     private HazelcastInstance member;
     private HazelcastInstance client;
+    private IMap<String, String> map;
 
     @Before
     public void setUp() {
+        String mapName = randomMapName();
         TestHazelcastFactory factory = new TestHazelcastFactory();
-        valuePut = new AtomicInteger(0);
-        stop = new AtomicBoolean(false);
-        failed = new AtomicBoolean(false);
-        assertionViolationCount = new AtomicInteger(0);
 
-        Config config = getConfig();
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "2");
+        Config config = getBaseConfig()
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "2");
+
+        ClientConfig clientConfig = getClientConfig(mapName)
+                .setProperty(MAX_TOLERATED_MISS_COUNT.getName(), "0");
+
         member = factory.newHazelcastInstance(config);
-
-        ClientConfig clientConfig = getClientConfig(MAP_NAME);
-        clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
         client = factory.newHazelcastClient(clientConfig);
-
-        map = client.getMap(MAP_NAME);
+        map = client.getMap(mapName);
     }
 
     @After
@@ -97,16 +97,16 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNoLostInvalidationsEventually() throws Exception {
+    public void testNoLostInvalidationsEventually() {
         testNoLostInvalidationsStrict(false);
     }
 
     @Test
-    public void testNoLostInvalidationsStrict() throws Exception {
+    public void testNoLostInvalidationsStrict() {
         testNoLostInvalidationsStrict(true);
     }
 
-    private void testNoLostInvalidationsStrict(boolean strict) throws Exception {
+    private void testNoLostInvalidationsStrict(boolean strict) {
         // run test
         runTestInternal();
 
@@ -137,10 +137,10 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
             }
         }
 
-        // stop hazelcast
+        // stop instance
         client.getLifecycleService().terminate();
 
-        // fail after stopping hazelcast instance
+        // fail after stopping instance
         if (msg != null) {
             LOGGER.warning(msg);
             fail(msg);
@@ -154,14 +154,16 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
         }
     }
 
-    // will be overridden
     protected ClientConfig getClientConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig(mapName)
-                .setInMemoryFormat(InMemoryFormat.BINARY);
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
 
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addNearCacheConfig(nearCacheConfig);
-        return clientConfig;
+        return new ClientConfig()
+                .addNearCacheConfig(nearCacheConfig);
+    }
+
+    protected NearCacheConfig getNearCacheConfig(String mapName) {
+        return new NearCacheConfig(mapName)
+                .setInMemoryFormat(InMemoryFormat.BINARY);
     }
 
     /**
@@ -178,7 +180,7 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
         clientMapProxy.getNearCache().clear();
     }
 
-    private void runTestInternal() throws Exception {
+    private void runTestInternal() {
         // start 1 putter thread (put0)
         Thread threadPut = new Thread(new PutRunnable(), "put0");
         threadPut.start();
@@ -205,9 +207,9 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
             LOGGER.info("Problem did not occur within " + MAX_RUNTIME + "s.");
         }
         stop.set(true);
-        threadPut.join();
+        assertJoinable(threadPut);
         for (Thread thread : threads) {
-            thread.join();
+            assertJoinable(thread);
         }
     }
 

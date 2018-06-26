@@ -17,8 +17,8 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;

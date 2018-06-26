@@ -182,6 +182,7 @@ public class MapConfigTest {
         config.getMapConfig("test").setMapStoreConfig(mapStoreConfig);
         config.getMapConfig("default").setMapStoreConfig(null);
         assertNotNull(config.getMapConfig("test").getMapStoreConfig());
+        assertNull(config.getMapConfig("default").getMapStoreConfig());
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -112,12 +112,12 @@ public class SetQuorumReadTest extends AbstractQuorumTest {
 
     @Test
     public void getAllOperation_toArrayT_successful_whenQuorumSize_met() {
-        set(0).toArray(new Object[]{});
+        set(0).toArray(new Object[0]);
     }
 
     @Test(expected = QuorumException.class)
     public void getAllOperation_toArrayT_successful_whenQuorumSize_notMet() {
-        set(3).toArray(new Object[]{});
+        set(3).toArray(new Object[0]);
     }
 
     @Test

@@ -19,25 +19,61 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.LegacyCacheConfig;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.properties.GroupProperty;
+
+import java.security.Permission;
+
+import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 
 /**
- * This client request  specifically calls {@link CacheGetConfigOperation} on the server side.
+ * This client request specifically calls {@link CacheGetConfigOperation} on the server side.
  *
  * @see CacheGetConfigOperation
  */
 public class CacheGetConfigMessageTask
-        extends AbstractCacheMessageTask<CacheGetConfigCodec.RequestParameters> {
+        extends AbstractAddressMessageTask<CacheGetConfigCodec.RequestParameters> {
+
     public CacheGetConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
+    protected Address getAddress() {
+        return nodeEngine.getThisAddress();
+    }
+
+    @Override
     protected Operation prepareOperation() {
         return new CacheGetConfigOperation(parameters.name, parameters.simpleName);
+    }
+
+    @Override
+    public String getServiceName() {
+        return SERVICE_NAME;
+    }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 
     @Override
@@ -55,5 +91,20 @@ public class CacheGetConfigMessageTask
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    private Data serializeCacheConfig(Object response) {
+        Data responseData = null;
+        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == endpoint.getClientVersion()) {
+            boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
+            if (compatibilityEnabled) {
+                responseData = nodeEngine.toData(response == null ? null : new LegacyCacheConfig((CacheConfig) response));
+            }
+        }
+
+        if (null == responseData) {
+            responseData = nodeEngine.toData(response);
+        }
+        return responseData;
     }
 }

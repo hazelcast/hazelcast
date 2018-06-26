@@ -72,6 +72,11 @@ public class DefaultAccumulatorInfoSupplier implements AccumulatorInfoSupplier {
         cacheToInfoMap.remove(cacheId);
     }
 
+    @Override
+    public ConcurrentMap<String, ConcurrentMap<String, AccumulatorInfo>> getAll() {
+        return cacheInfoPerMap;
+    }
+
     // only for testing
     public int accumulatorInfoCountOfMap(String mapName) {
         ConcurrentMap<String, AccumulatorInfo> accumulatorInfo = cacheInfoPerMap.get(mapName);

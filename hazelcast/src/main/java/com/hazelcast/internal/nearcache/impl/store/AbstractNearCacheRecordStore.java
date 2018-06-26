@@ -274,7 +274,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                     return null;
                 }
                 if (staleReadDetector.isStaleRead(key, record)) {
-                    remove(key);
+                    invalidate(key);
                     nearCacheStats.incrementMisses();
                     return null;
                 }
@@ -345,12 +345,28 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
+    public boolean invalidate(K key) {
+        try {
+            boolean removed = remove(key);
+            if (removed) {
+                nearCacheStats.incrementInvalidations();
+            }
+            return removed;
+        } finally {
+            nearCacheStats.incrementInvalidationRequests();
+        }
+    }
+
+    @Override
     public void clear() {
         checkAvailable();
 
+        int size = records.size();
         records.clear();
         nearCacheStats.setOwnedEntryCount(0);
         nearCacheStats.setOwnedEntryMemoryCost(0L);
+        nearCacheStats.incrementInvalidations(size);
+        nearCacheStats.incrementInvalidationRequests();
     }
 
     @Override

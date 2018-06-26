@@ -54,11 +54,12 @@ public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implement
         startTimeNanos = System.nanoTime();
         MultiMapContainer container = getOrCreateContainer();
         MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
-        response = true;
         if (multiMapValue.containsRecordId(recordId)) {
             response = false;
             return;
         }
+        response = true;
+        container.update();
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
         coll.add(record);

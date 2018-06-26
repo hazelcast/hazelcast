@@ -20,7 +20,6 @@ import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.util.concurrent.RejectedExecutionException;
 
@@ -109,17 +108,6 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     @Override
     public void onDisconnect(ClientConnection connection) {
-    }
-
-    @Override
-    public void onHeartbeatStopped(ClientConnection connection) {
-        if (connection.isAuthenticatedAsOwner()) {
-            connection.close(null, new TargetDisconnectedException("Heartbeat timed out to owner connection " + connection));
-        }
-    }
-
-    @Override
-    public void onHeartbeatResumed(ClientConnection connection) {
     }
 
     @Override

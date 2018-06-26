@@ -37,6 +37,7 @@ import java.util.Set;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
+@SuppressWarnings("WeakerAccess")
 public class MockNodeContext implements NodeContext {
 
     private final TestNodeRegistry registry;
@@ -62,14 +63,17 @@ public class MockNodeContext implements NodeContext {
         }
     }
 
+    @Override
     public AddressPicker createAddressPicker(Node node) {
         return new StaticAddressPicker(thisAddress);
     }
 
+    @Override
     public Joiner createJoiner(Node node) {
         return new MockJoiner(node, registry, initiallyBlockedAddresses);
     }
 
+    @Override
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
         ConnectionManager delegate = new MockConnectionManager(ioService, node, registry);
@@ -79,6 +83,7 @@ public class MockNodeContext implements NodeContext {
     /**
      * @return {@code NodeExtension} suitable for sampling serialized objects in OSS or EE environment
      */
+    @SuppressWarnings("unchecked")
     private NodeExtension constructSamplingNodeExtension(Node node) {
         if (BuildInfoProvider.getBuildInfo().isEnterprise()) {
             try {

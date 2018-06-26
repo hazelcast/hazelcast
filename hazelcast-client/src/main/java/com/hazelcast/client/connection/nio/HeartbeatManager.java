@@ -17,19 +17,16 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.config.ClientIcmpPingConfig;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_INTERVAL;
@@ -46,17 +43,13 @@ public class HeartbeatManager implements Runnable {
     private final long heartbeatInterval;
     private final long heartbeatTimeout;
     private final ClientICMPManager clientICMPManager;
-    private final Set<ConnectionHeartbeatListener> heartbeatListeners = new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
 
     HeartbeatManager(ClientConnectionManagerImpl clientConnectionManager, HazelcastClientInstanceImpl client) {
         this.clientConnectionManager = clientConnectionManager;
         this.client = client;
         HazelcastProperties hazelcastProperties = client.getProperties();
-        long timeout = hazelcastProperties.getMillis(HEARTBEAT_TIMEOUT);
-        this.heartbeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
-
-        long interval = hazelcastProperties.getMillis(HEARTBEAT_INTERVAL);
-        this.heartbeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
+        this.heartbeatTimeout = hazelcastProperties.getPositiveMillisOrDefault(HEARTBEAT_TIMEOUT);
+        this.heartbeatInterval = hazelcastProperties.getPositiveMillisOrDefault(HEARTBEAT_INTERVAL);
         this.logger = client.getLoggingService().getLogger(HeartbeatManager.class);
         ClientIcmpPingConfig icmpPingConfig = client.getClientConfig().getNetworkConfig().getClientIcmpPingConfig();
         this.clientICMPManager = new ClientICMPManager(icmpPingConfig,
@@ -68,6 +61,10 @@ public class HeartbeatManager implements Runnable {
         final ClientExecutionServiceImpl es = (ClientExecutionServiceImpl) client.getClientExecutionService();
         es.scheduleWithRepetition(this, heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
         clientICMPManager.start();
+    }
+
+    long getHeartbeatTimeout() {
+        return heartbeatTimeout;
     }
 
     @Override
@@ -88,60 +85,24 @@ public class HeartbeatManager implements Runnable {
         }
 
         if (now - connection.lastReadTimeMillis() > heartbeatTimeout) {
-            if (connection.isHeartBeating()) {
+            if (connection.isAlive()) {
                 logger.warning("Heartbeat failed over the connection: " + connection);
-                connection.onHeartbeatFailed();
-                fireHeartbeatStopped(connection);
+                onHeartbeatStopped(connection, "Heartbeat timed out");
             }
         }
 
         if (now - connection.lastReadTimeMillis() > heartbeatInterval) {
             ClientMessage request = ClientPingCodec.encodeRequest();
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
-            clientInvocation.setBypassHeartbeatCheck(true);
-            connection.onHeartbeatRequested();
-            clientInvocation.invokeUrgent().andThen(new ExecutionCallback<ClientMessage>() {
-                @Override
-                public void onResponse(ClientMessage response) {
-                    if (connection.isAlive()) {
-                        connection.onHeartbeatReceived();
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    if (connection.isAlive()) {
-                        logger.warning("Error receiving ping answer from the connection: " + connection, t);
-                    }
-                }
-            });
-        } else {
-            if (!connection.isHeartBeating()) {
-                logger.warning("Heartbeat is back to healthy for the connection: " + connection);
-                connection.onHeartbeatResumed();
-                fireHeartbeatResumed(connection);
-            }
+            ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
+            clientInvocation.invokeUrgent();
         }
     }
 
-    private void fireHeartbeatResumed(ClientConnection connection) {
-        for (ConnectionHeartbeatListener heartbeatListener : heartbeatListeners) {
-            heartbeatListener.heartbeatResumed(connection);
-        }
-    }
-
-    void fireHeartbeatStopped(ClientConnection connection) {
-        for (ConnectionHeartbeatListener heartbeatListener : heartbeatListeners) {
-            heartbeatListener.heartbeatStopped(connection);
-        }
-    }
-
-    public void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener) {
-        heartbeatListeners.add(connectionHeartbeatListener);
+    void onHeartbeatStopped(ClientConnection connection, String reason) {
+        connection.close(reason, new TargetDisconnectedException("Heartbeat timed out to connection " + connection));
     }
 
     public void shutdown() {
-        heartbeatListeners.clear();
         clientICMPManager.shutdown();
     }
 }

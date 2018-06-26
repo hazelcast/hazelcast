@@ -89,6 +89,12 @@ public class WANAwareOperationProvider extends MapOperationProviderDelegator {
     }
 
     @Override
+    public MapOperation createSetTTLOperation(String name, Data key, long ttl) {
+        checkWanReplicationQueues(name);
+        return getDelegate().createSetTTLOperation(name, key, ttl);
+    }
+
+    @Override
     public MapOperation createTryRemoveOperation(String name, Data dataKey, long timeout) {
         checkWanReplicationQueues(name);
         return getDelegate().createTryRemoveOperation(name, dataKey, timeout);

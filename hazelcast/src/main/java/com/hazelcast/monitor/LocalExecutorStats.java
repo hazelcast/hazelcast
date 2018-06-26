@@ -16,6 +16,10 @@
 
 package com.hazelcast.monitor;
 
+/**
+ * Local executor service statistics to be used by {@link MemberState}
+ * implementations.
+ */
 public interface LocalExecutorStats extends LocalInstanceStats {
 
     /**
@@ -59,6 +63,4 @@ public interface LocalExecutorStats extends LocalInstanceStats {
      * @return the total execution time of operations finished
      */
     long getTotalExecutionLatency();
-
-
 }

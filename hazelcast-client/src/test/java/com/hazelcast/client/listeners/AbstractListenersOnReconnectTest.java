@@ -17,8 +17,8 @@
 package com.hazelcast.client.listeners;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.ClientTestUtil;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.ClientTestUtil;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
 import com.hazelcast.client.spi.properties.ClientProperty;
@@ -38,14 +38,17 @@ import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -214,14 +217,14 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testListenersWhenClientDisconnectedOperationRuns_whenOwnerConnectionRemoved() {
         Config config = new Config();
-        int endpointDelaySeconds = 2;
+        int endpointDelaySeconds = 10;
         config.setProperty(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS.getName(), String.valueOf(endpointDelaySeconds));
-        config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), "4");
+        config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), "20");
         HazelcastInstance ownerServer = factory.newHazelcastInstance(config);
         ClientConfig smartClientConfig = getSmartClientConfig();
-        smartClientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "500");
 
         client = factory.newHazelcastClient(smartClientConfig);
         factory.newHazelcastInstance(config);
@@ -442,6 +445,8 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
             }
         });
 
+        validateRegistrationsOnMembers(factory);
+
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         HazelcastInstance server = getOwnerServer(factory, clientInstanceImpl);
         server.getLifecycleService().terminate();
@@ -481,7 +486,11 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                     EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
                     Member member = instance.getCluster().getLocalMember();
                     assertNotNull(member.toString(), serviceSegment);
-                    assertEquals(member.toString(), 1, serviceSegment.getRegistrationIdMap().size());
+                    ConcurrentMap registrationIdMap = serviceSegment.getRegistrationIdMap();
+                    assertEquals(member.toString() + " Current registrations:" + registrationIdMap, 1,
+                            registrationIdMap.size());
+                    System.out.println("Current registrations at member " + member.toString() + ": "
+                            + registrationIdMap);
                 }
             }
         });

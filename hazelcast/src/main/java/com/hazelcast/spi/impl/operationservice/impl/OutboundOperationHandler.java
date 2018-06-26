@@ -20,7 +20,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 
@@ -48,6 +47,11 @@ public class OutboundOperationHandler {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
 
+        Connection connection = node.getConnectionManager().getOrConnect(target);
+        return send(op, connection);
+    }
+
+    public boolean send(Operation op, Connection connection) {
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
         Packet packet = new Packet(bytes, partitionId).setPacketType(Packet.Type.OPERATION);
@@ -56,8 +60,6 @@ public class OutboundOperationHandler {
             packet.raiseFlags(FLAG_URGENT);
         }
 
-        ConnectionManager connectionManager = node.getConnectionManager();
-        Connection connection = connectionManager.getOrConnect(target);
-        return connectionManager.transmit(packet, connection);
+        return node.getConnectionManager().transmit(packet, connection);
     }
 }

@@ -17,15 +17,10 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.cache.impl.JCacheDetector;
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEndpointManager;
-import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.ClientEvent;
-import com.hazelcast.client.ClientEventType;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.impl.operations.OnJoinClientOperation;
-import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
+import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMessageTask;
@@ -51,7 +46,6 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ManagedService;
@@ -77,6 +71,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -136,7 +131,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
     private final MessageTaskFactory messageTaskFactory;
-    private final ClientExceptionFactory clientExceptionFactory;
+    private final ClientExceptions clientExceptions;
     private final int endpointRemoveDelaySeconds;
     private final ClientPartitionListenerService partitionListenerService;
 
@@ -150,14 +145,14 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         this.queryExecutor = newClientQueryExecutor();
         this.clientManagementExecutor = newClientsManagementExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(nodeEngine);
-        this.clientExceptionFactory = initClientExceptionFactory();
+        this.clientExceptions = initClientExceptionFactory();
         this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
         this.partitionListenerService = new ClientPartitionListenerService(nodeEngine);
     }
 
-    private ClientExceptionFactory initClientExceptionFactory() {
+    private ClientExceptions initClientExceptionFactory() {
         boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(nodeEngine.getConfigClassLoader());
-        return new ClientExceptionFactory(jcacheAvailable);
+        return new ClientExceptions(jcacheAvailable);
     }
 
     private ExecutorService newClientsManagementExecutor() {
@@ -216,8 +211,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     }
 
     @Override
-    public void handle(ClientMessage clientMessage, Connection connection) {
+    public void accept(ClientMessage clientMessage) {
         int partitionId = clientMessage.getPartitionId();
+        Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         InternalOperationService operationService = nodeEngine.getOperationService();
         if (partitionId < 0) {
@@ -300,8 +296,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         return endpointManager;
     }
 
-    public ClientExceptionFactory getClientExceptionFactory() {
-        return clientExceptionFactory;
+    public ClientExceptions getClientExceptions() {
+        return clientExceptions;
     }
 
     @Override
@@ -312,21 +308,13 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     public void bind(final ClientEndpoint endpoint) {
         final Connection conn = endpoint.getConnection();
         if (conn instanceof TcpIpConnection) {
-            Address address = new Address(conn.getRemoteSocketAddress());
-            ((TcpIpConnection) conn).setEndPoint(address);
+            InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
+            //socket address can be null if connection closed before bind
+            if (socketAddress != null) {
+                Address address = new Address(socketAddress);
+                ((TcpIpConnection) conn).setEndPoint(address);
+            }
         }
-        ClientEvent event = new ClientEvent(endpoint.getUuid(),
-                ClientEventType.CONNECTED,
-                endpoint.getSocketAddress(),
-                endpoint.getClientType());
-        sendClientEvent(event);
-    }
-
-    private void sendClientEvent(ClientEvent event) {
-        final EventService eventService = nodeEngine.getEventService();
-        final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        String uuid = event.getUuid();
-        eventService.publishEvent(SERVICE_NAME, regs, event, uuid.hashCode());
     }
 
     @Override
@@ -377,7 +365,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         node.getConnectionManager().addConnectionListener(connectionListener);
 
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
-                endpointManager, this, nodeEngine.getExecutionService(), node.getProperties());
+                endpointManager, getLogger(ClientHeartbeatMonitor.class), nodeEngine.getExecutionService(), node.getProperties());
         heartbeatMonitor.start();
     }
 
@@ -461,13 +449,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             }
 
             endpointManager.removeEndpoint(endpoint);
-            ClientEvent event = new ClientEvent(endpoint.getUuid(),
-                    ClientEventType.DISCONNECTED,
-                    endpoint.getSocketAddress(),
-                    endpoint.getClientType());
-            sendClientEvent(event);
 
-            if (!endpoint.isFirstConnection()) {
+            if (!endpoint.isOwnerConnection()) {
                 logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
                 return;
             }
@@ -549,6 +532,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         return liveMappings.isEmpty() ? null : new OnJoinClientOperation(liveMappings);
     }
 
+    @SuppressWarnings("checkstyle:methodlength")
     @Override
     public Map<ClientType, Integer> getConnectedClientStats() {
         int numberOfCppClients = 0;
@@ -556,6 +540,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         int numberOfJavaClients = 0;
         int numberOfNodeJSClients = 0;
         int numberOfPythonClients = 0;
+        int numberOfGoClients = 0;
         int numberOfOtherClients = 0;
 
         OperationService operationService = node.nodeEngine.getOperationService();
@@ -598,6 +583,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                 case PYTHON:
                     numberOfPythonClients++;
                     break;
+                case GO:
+                    numberOfGoClients++;
+                    break;
                 default:
                     numberOfOtherClients++;
             }
@@ -610,6 +598,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         resultMap.put(ClientType.JAVA, numberOfJavaClients);
         resultMap.put(ClientType.NODEJS, numberOfNodeJSClients);
         resultMap.put(ClientType.PYTHON, numberOfPythonClients);
+        resultMap.put(ClientType.GO, numberOfGoClients);
         resultMap.put(ClientType.OTHER, numberOfOtherClients);
 
         return resultMap;

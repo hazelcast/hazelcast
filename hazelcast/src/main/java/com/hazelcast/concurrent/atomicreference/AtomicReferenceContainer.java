@@ -17,11 +17,6 @@
 package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicReferenceMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
-
-import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
 public class AtomicReferenceContainer {
 
@@ -61,34 +56,5 @@ public class AtomicReferenceContainer {
 
     public boolean isNull() {
         return value == null;
-    }
-
-    /**
-     * Merges the given {@link AtomicReferenceMergeTypes} via the given {@link SplitBrainMergePolicy}.
-     *
-     * @param mergingValue         the {@link AtomicReferenceMergeTypes} instance to merge
-     * @param mergePolicy          the {@link SplitBrainMergePolicy} instance to apply
-     * @param serializationService the {@link SerializationService} to inject dependencies
-     * @return the new value if merge is applied, otherwise {@code null}
-     */
-    public Data merge(AtomicReferenceMergeTypes mergingValue, SplitBrainMergePolicy<Data, AtomicReferenceMergeTypes> mergePolicy,
-                      boolean isExistingContainer, SerializationService serializationService) {
-        serializationService.getManagedContext().initialize(mergePolicy);
-
-        if (isExistingContainer) {
-            AtomicReferenceMergeTypes existingValue = createMergingValue(serializationService, value);
-            Data newValue = mergePolicy.merge(mergingValue, existingValue);
-            if (newValue != null && !newValue.equals(value)) {
-                value = newValue;
-                return newValue;
-            }
-        } else {
-            Data newValue = mergePolicy.merge(mergingValue, null);
-            if (newValue != null) {
-                value = newValue;
-                return newValue;
-            }
-        }
-        return null;
     }
 }

@@ -84,7 +84,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             map.removeAsync(key);
         }
 
-        assertHasStatsEventually("LocalMapStatsImpl[" + MAP_NAME + "]");
+        assertHasStatsEventually("map[" + MAP_NAME + "]");
     }
 
     @Test
@@ -107,7 +107,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         latch.await();
 
-        assertHasStatsEventually("LocalExecutorStatsImpl[" + EXECUTOR_NAME + "]");
+        assertHasStatsEventually("executor[" + EXECUTOR_NAME + "]");
     }
 
     @Test
@@ -119,7 +119,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         q.poll();
 
-        assertHasStatsEventually("LocalQueueStatsImpl[" + QUEUE_NAME + "]");
+        assertHasStatsEventually("queue[" + QUEUE_NAME + "]");
     }
 
     @Test
@@ -131,7 +131,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         replicatedMap.remove(0);
 
-        assertHasStatsEventually("LocalReplicatedMapStatsImpl[" + REPLICATED_MAP_NAME + "]");
+        assertHasStatsEventually("replicatedMap[" + REPLICATED_MAP_NAME + "]");
     }
 
     @Test
@@ -142,7 +142,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             topic.publish(i);
         }
 
-        assertHasStatsEventually("LocalTopicStatsImpl[" + TOPIC_NAME + "]");
+        assertHasStatsEventually("topic[" + TOPIC_NAME + "]");
     }
 
     @Test
@@ -154,7 +154,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        assertHasStatsEventually("LocalMapStatsImpl[" + NEAR_CACHE_MAP_NAME + "].nearcache");
+        assertHasStatsEventually("map[" + NEAR_CACHE_MAP_NAME + "].nearcache");
     }
 
     private void assertHasStatsEventually(final String prefix) {

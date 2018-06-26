@@ -16,6 +16,7 @@
 
 package com.hazelcast.logging;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 
@@ -33,11 +34,12 @@ public class Log4j2Factory extends LoggerFactorySupport {
         return new Log4j2Logger(LogManager.getContext().getLogger(name));
     }
 
-    static class Log4j2Logger extends AbstractLogger {
+    @PrivateApi
+    public static class Log4j2Logger extends AbstractLogger {
 
         private final ExtendedLogger logger;
 
-        Log4j2Logger(ExtendedLogger logger) {
+        public Log4j2Logger(ExtendedLogger logger) {
             this.logger = logger;
         }
 

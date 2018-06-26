@@ -83,9 +83,9 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
         QueueContainer queueContainer = getContainer();
 
         if (CollectionTxnUtil.isRemove(shouldNotify)) {
-            return queueContainer.getOfferWaitNotifyKey();
+            return queueContainer.getPollWaitNotifyKey();
         }
-        return queueContainer.getPollWaitNotifyKey();
+        return queueContainer.getOfferWaitNotifyKey();
     }
 
     @Override

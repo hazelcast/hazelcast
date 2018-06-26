@@ -68,8 +68,8 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
         assertSame(config, container.getConfig());
 
         ArrayRingbuffer ringbuffer = (ArrayRingbuffer) container.getRingbuffer();
-        assertNotNull(ringbuffer.ringItems);
-        assertEquals(config.getCapacity(), ringbuffer.ringItems.length);
+        assertNotNull(ringbuffer.getItems());
+        assertEquals(config.getCapacity(), ringbuffer.getItems().length);
         assertEquals(-1, ringbuffer.tailSequence());
         assertEquals(0, ringbuffer.headSequence());
     }
@@ -216,7 +216,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
         ArrayRingbuffer ringbuffer = (ArrayRingbuffer) container.getRingbuffer();
 
         container.add(toData("foo"));
-        assertInstanceOf(Data.class, ringbuffer.ringItems[0]);
+        assertInstanceOf(Data.class, ringbuffer.getItems()[0]);
     }
 
     @Test
@@ -226,10 +226,10 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
         ArrayRingbuffer ringbuffer = (ArrayRingbuffer) container.getRingbuffer();
 
         container.add("foo");
-        assertInstanceOf(String.class, ringbuffer.ringItems[0]);
+        assertInstanceOf(String.class, ringbuffer.getItems()[0]);
 
         container.add(toData("bar"));
-        assertInstanceOf(String.class, ringbuffer.ringItems[1]);
+        assertInstanceOf(String.class, ringbuffer.getItems()[1]);
     }
 
     private <K, V> RingbufferContainer<K, V> getRingbufferContainer(RingbufferConfig config) {

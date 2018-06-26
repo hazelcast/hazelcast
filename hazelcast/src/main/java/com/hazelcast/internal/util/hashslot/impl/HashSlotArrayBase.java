@@ -75,7 +75,7 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
      * Base address of the memory region containing the hash slots. Preceded by a header that stores metadata
      * ({@code capacity}, {@code size}, and {@code expandAt}).
      */
-    private long baseAddress;
+    private long baseAddress = HEADER_SIZE;
 
     /**
      * The initial capacity of a newly created array.
@@ -325,7 +325,8 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
     }
 
     protected final void assertValid() {
-        assert baseAddress >= HEADER_SIZE : "This instance doesn't point to a valid hashtable";
+        assert baseAddress - HEADER_SIZE != NULL_ADDRESS
+                : "This instance doesn't point to a valid hashtable. Base address = " + baseAddress;
     }
 
     protected final MemoryAllocator malloc() {

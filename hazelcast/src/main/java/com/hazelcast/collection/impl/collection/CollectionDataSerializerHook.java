@@ -26,6 +26,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionCompareAndR
 import com.hazelcast.collection.impl.collection.operations.CollectionContainsOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionGetAllOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionIsEmptyOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionMergeBackupOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionMergeOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveBackupOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveOperation;
@@ -124,6 +125,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int QUEUE_TRANSACTION_LOG_RECORD = 44;
 
     public static final int COLLECTION_MERGE = 45;
+    public static final int COLLECTION_MERGE_BACKUP = 46;
 
     @Override
     public int getFactoryId() {
@@ -133,7 +135,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
-                = new ConstructorFunction[COLLECTION_MERGE + 1];
+                = new ConstructorFunction[COLLECTION_MERGE_BACKUP + 1];
 
         constructors[COLLECTION_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
@@ -360,6 +362,11 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[COLLECTION_MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionMergeOperation();
+            }
+        };
+        constructors[COLLECTION_MERGE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionMergeBackupOperation();
             }
         };
 

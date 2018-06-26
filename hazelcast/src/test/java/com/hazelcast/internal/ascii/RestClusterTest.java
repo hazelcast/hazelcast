@@ -247,6 +247,26 @@ public class RestClusterTest extends HazelcastTestSupport {
                 + "Hazelcast::ClusterSize=1\n", result);
     }
 
+    @Test
+    public void healthCheckWithPathParameters() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+
+        assertEquals("ACTIVE", communicator.getClusterHealth("/node-state"));
+        assertEquals("ACTIVE", communicator.getClusterHealth("/cluster-state"));
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.getClusterHealthResponseCode("/cluster-safe"));
+        assertEquals("0", communicator.getClusterHealth("/migration-queue-size"));
+        assertEquals("1", communicator.getClusterHealth("/cluster-size"));
+    }
+
+    @Test
+    public void healthCheckWithUnknownPathParameter() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+
+        assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, communicator.getClusterHealthResponseCode("/unknown-parameter"));
+    }
+
     @Test(expected = NoHttpResponseException.class)
     public void fail_with_deactivatedHealthCheck() throws Exception {
         // Healthcheck REST URL is deactivated by default - no passed config on purpose

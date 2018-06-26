@@ -16,13 +16,13 @@
 
 package com.hazelcast.crdt.pncounter;
 
+import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PNCounterConfig;
-import com.hazelcast.internal.util.Memoizer;
 import com.hazelcast.crdt.CRDTReplicationAwareService;
 import com.hazelcast.crdt.CRDTReplicationContainer;
 import com.hazelcast.crdt.MutationDisallowedException;
-import com.hazelcast.cluster.impl.VectorClock;
+import com.hazelcast.internal.util.Memoizer;
 import com.hazelcast.monitor.LocalPNCounterStats;
 import com.hazelcast.monitor.impl.LocalPNCounterStatsImpl;
 import com.hazelcast.spi.ManagedService;

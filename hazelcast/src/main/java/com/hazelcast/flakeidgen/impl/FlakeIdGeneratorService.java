@@ -16,13 +16,6 @@
 
 package com.hazelcast.flakeidgen.impl;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
@@ -32,6 +25,13 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class FlakeIdGeneratorService implements ManagedService, RemoteService,
         StatisticsAwareService<LocalFlakeIdGeneratorStats> {

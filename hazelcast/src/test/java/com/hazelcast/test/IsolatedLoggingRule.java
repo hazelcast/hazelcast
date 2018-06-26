@@ -86,8 +86,8 @@ public class IsolatedLoggingRule implements TestRule {
         setOrClearProperty(LOGGING_TYPE_PROPERTY, type);
     }
 
-    public void setLoggingClass(Class<? extends LoggerFactory> class_) {
-        setOrClearProperty(LOGGING_CLASS_PROPERTY, class_ == null ? null : class_.getName());
+    public void setLoggingClass(Class<? extends LoggerFactory> clazz) {
+        setOrClearProperty(LOGGING_CLASS_PROPERTY, clazz == null ? null : clazz.getName());
     }
 
     public LoggerFactory getLoggerFactory() {

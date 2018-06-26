@@ -203,17 +203,16 @@ public class HotRestartPersistenceConfig {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof HotRestartPersistenceConfig)) {
+        if (!(o instanceof HotRestartPersistenceConfig)) {
             return false;
         }
 
         HotRestartPersistenceConfig that = (HotRestartPersistenceConfig) o;
-
         if (enabled != that.enabled) {
             return false;
         }

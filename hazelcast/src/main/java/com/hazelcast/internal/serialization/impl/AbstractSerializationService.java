@@ -88,19 +88,15 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private final byte version;
     private final ILogger logger = Logger.getLogger(InternalSerializationService.class);
 
-    AbstractSerializationService(InputOutputFactory inputOutputFactory, byte version, ClassLoader classLoader,
-                                 ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy,
-                                 int initialOutputBufferSize,
-                                 BufferPoolFactory bufferPoolFactory,
-                                 Supplier<RuntimeException> notActiveExceptionSupplier) {
-        this.inputOutputFactory = inputOutputFactory;
-        this.version = version;
-        this.classLoader = classLoader;
-        this.managedContext = managedContext;
-        this.globalPartitioningStrategy = globalPartitionStrategy;
-        this.outputBufferSize = initialOutputBufferSize;
-        this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, bufferPoolFactory,
-                notActiveExceptionSupplier);
+    AbstractSerializationService(Builder<?> builder) {
+        this.inputOutputFactory = builder.inputOutputFactory;
+        this.version = builder.version;
+        this.classLoader = builder.classLoader;
+        this.managedContext = builder.managedContext;
+        this.globalPartitioningStrategy = builder.globalPartitionStrategy;
+        this.outputBufferSize = builder.initialOutputBufferSize;
+        this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, builder.bufferPoolFactory,
+                builder.notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer(), this);
     }
 
@@ -563,5 +559,65 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return javaSerializerAdapter;
         }
         return null;
+    }
+
+    public abstract static class Builder<T extends Builder<T>> {
+        private InputOutputFactory inputOutputFactory;
+        private byte version;
+        private ClassLoader classLoader;
+        private ManagedContext managedContext;
+        private PartitioningStrategy globalPartitionStrategy;
+        private int initialOutputBufferSize;
+        private BufferPoolFactory bufferPoolFactory;
+        private Supplier<RuntimeException> notActiveExceptionSupplier;
+
+        protected Builder() {
+        }
+
+        protected abstract T self();
+
+        public final T withInputOutputFactory(InputOutputFactory inputOutputFactory) {
+            this.inputOutputFactory = inputOutputFactory;
+            return self();
+        }
+
+        public final T withVersion(byte version) {
+            this.version = version;
+            return self();
+        }
+
+        public final T withClassLoader(ClassLoader classLoader) {
+            this.classLoader = classLoader;
+            return self();
+        }
+
+        public ClassLoader getClassLoader() {
+            return classLoader;
+        }
+
+        public final T withManagedContext(ManagedContext managedContext) {
+            this.managedContext = managedContext;
+            return self();
+        }
+
+        public final T withGlobalPartitionStrategy(PartitioningStrategy globalPartitionStrategy) {
+            this.globalPartitionStrategy = globalPartitionStrategy;
+            return self();
+        }
+
+        public final T withInitialOutputBufferSize(int initialOutputBufferSize) {
+            this.initialOutputBufferSize = initialOutputBufferSize;
+            return self();
+        }
+
+        public final T withBufferPoolFactory(BufferPoolFactory bufferPoolFactory) {
+            this.bufferPoolFactory = bufferPoolFactory;
+            return self();
+        }
+
+        public final T withNotActiveExceptionSupplier(Supplier<RuntimeException> notActiveExceptionSupplier) {
+            this.notActiveExceptionSupplier = notActiveExceptionSupplier;
+            return self();
+        }
     }
 }

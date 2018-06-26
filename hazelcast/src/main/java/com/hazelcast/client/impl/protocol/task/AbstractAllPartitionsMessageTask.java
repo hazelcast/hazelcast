@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.Node;
@@ -34,7 +33,6 @@ public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessag
 
     @Override
     protected void processMessage() throws Exception {
-        ClientEndpoint endpoint = getEndpoint();
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
         final InternalOperationService operationService = nodeEngine.getOperationService();
         Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);

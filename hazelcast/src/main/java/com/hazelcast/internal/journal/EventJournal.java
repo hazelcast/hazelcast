@@ -148,7 +148,7 @@ public interface EventJournal<E> {
 
     /**
      * Cleans up the event journal by removing any expired items. Items are considered
-     * expired as according to the configured expiration policy.
+     * expired according to the configured expiration policy.
      *
      * @param namespace   the object namespace
      * @param partitionId the partition ID of the entries in the journal

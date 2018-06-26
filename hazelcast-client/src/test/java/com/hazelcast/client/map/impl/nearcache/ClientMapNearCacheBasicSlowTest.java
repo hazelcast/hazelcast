@@ -17,12 +17,16 @@
 package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
@@ -30,17 +34,11 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCach
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category(SlowTest.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({SlowTest.class, ParallelTest.class})
 public class ClientMapNearCacheBasicSlowTest extends ClientMapNearCacheBasicTest {
 
-    @Parameterized.Parameter
-    public InMemoryFormat inMemoryFormat;
-
-    @Parameterized.Parameter(value = 1)
-    public boolean serializeKeys;
-
-    @Parameterized.Parameters(name = "format:{0} serializeKeys:{1}")
+    @Parameters(name = "format:{0} serializeKeys:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {InMemoryFormat.BINARY, true},
@@ -50,10 +48,14 @@ public class ClientMapNearCacheBasicSlowTest extends ClientMapNearCacheBasicTest
         });
     }
 
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
+
+    @Parameter(value = 1)
+    public boolean serializeKeys;
+
     @Before
     public void setUp() {
         nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys);
     }
-
-
 }

@@ -23,10 +23,10 @@ import com.hazelcast.core.IFunction;
 import java.util.Collection;
 
 /**
- * A Ringbuffer is a data-structure where the content is stored in a ring
- * like structure. A ringbuffer has a capacity so it won't grow beyond
+ * A Ringbuffer is a data structure where the content is stored in a ring-like
+ * structure. A ringbuffer has a fixed capacity so it won't grow beyond
  * that capacity and endanger the stability of the system. If that capacity
- * is exceeded, than the oldest item in the ringbuffer is overwritten.
+ * is exceeded, the oldest item in the ringbuffer is overwritten.
  * <p>
  * The ringbuffer has 2 always incrementing sequences:
  * <ol>
@@ -36,7 +36,7 @@ import java.util.Collection;
  * </li>
  * <li>
  * {@link #headSequence()}: this is the side where the oldest items are found.
- * So the head is the side where items gets discarded.
+ * So the head is the side where items get discarded.
  * </li>
  * </ol>
  * The items in the ringbuffer can be found by a sequence that is in between
@@ -46,22 +46,23 @@ import java.util.Collection;
  * headSequence, it means that the data is not available anymore and a
  * {@link StaleSequenceException} is thrown.
  * <p>
- * A Ringbuffer currently is a replicated but not partitioned data-structure.
- * So all data is stored in a single partition; comparable to the IQueue
- * implementation.
+ * A Ringbuffer currently is a replicated, but not partitioned data structure.
+ * So all data is stored in a single partition, similarly to the {@link
+ * com.hazelcast.core.IQueue} implementation.
  * <p>
- * A Ringbuffer can be used in a similar way as a queue, but one of the key
- * differences is that a queue.take is destructive, meaning that only 1 thread
- * is able to take an item. A ringbuffer.read is not destructive, so you can
- * have multiple threads reading the same item multiple times.
+ * A Ringbuffer can be used in a way similar to the IQueue, but one of the key
+ * differences is that a {@code queue.take} is destructive, meaning that only 1
+ * thread is able to take an item. A {@code ringbuffer.read} is not
+ * destructive, so you can have multiple threads reading the same item multiple
+ * times.
  * <p>
- * The Ringbuffer is the backing data-structure for the reliable
+ * The Ringbuffer is the backing data structure for the reliable
  * {@link com.hazelcast.core.ITopic} implementation. See
  * {@link com.hazelcast.config.ReliableTopicConfig}.
  * <p>
  * A Ringbuffer can be configured to be backed by a
- * {@link com.hazelcast.core.RingbufferStore}. All writer methods delegate
- * to the store to persist the items, while reader methods try to read
+ * {@link com.hazelcast.core.RingbufferStore}. All write methods will delegate
+ * to the store to persist the items, while reader methods will try to read
  * items from the store if not found in the in-memory Ringbuffer.
  * <p>
  * When a Ringbuffer is constructed with a backing store, head and tail

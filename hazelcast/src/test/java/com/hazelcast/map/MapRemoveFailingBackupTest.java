@@ -19,8 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -28,9 +26,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -67,14 +65,13 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         config.getMapConfig(mapName).setReadBackupData(true);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
-        final HazelcastInstanceImpl hz1Impl = TestUtil.getHazelcastInstanceImpl(hz1);
+        final NodeEngine nodeEngine = getNodeEngineImpl(hz1);
         final IMap<Object, Object> map1 = hz1.getMap(mapName);
         final IMap<Object, Object> map2 = hz2.getMap(mapName);
         MapProxyImpl<Object, Object> mock1 = (MapProxyImpl<Object, Object>) spy(map1);
         when(mock1.remove(anyString())).then(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                NodeEngineImpl nodeEngine = hz1Impl.node.nodeEngine;
                 Object object = invocation.getArguments()[0];
                 final Data key = nodeEngine.toData(object);
                 RemoveOperation operation = new RemoveOperation(mapName, key);

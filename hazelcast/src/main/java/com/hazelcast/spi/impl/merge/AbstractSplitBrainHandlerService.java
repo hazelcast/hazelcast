@@ -18,141 +18,149 @@ package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+
+import static java.lang.Thread.currentThread;
 
 /**
- * Contains common functionality to implement a {@link SplitBrainHandlerService}.
+ * Collects mergeable stores and passes them to merge-runnable.
  *
  * @param <Store> store of a partition
+ * @since 3.10
  */
-@SuppressWarnings("WeakerAccess")
 public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBrainHandlerService {
 
-    private final int partitionCount;
-    private final NodeEngine nodeEngine;
     private final IPartitionService partitionService;
+    private final OperationExecutor operationExecutor;
 
     protected AbstractSplitBrainHandlerService(NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
         this.partitionService = nodeEngine.getPartitionService();
-        this.partitionCount = partitionService.getPartitionCount();
+        this.operationExecutor = ((OperationServiceImpl) nodeEngine.getOperationService()).getOperationExecutor();
     }
 
     @Override
     public final Runnable prepareMergeRunnable() {
-        onPrepareMergeRunnableStart();
+        ConcurrentLinkedQueue<Store> mergingStores = new ConcurrentLinkedQueue<Store>();
 
-        Map<String, Collection<Store>> collectedStores = new HashMap<String, Collection<Store>>();
-        Map<String, Collection<Store>> collectedStoresWithLegacyPolicies = new HashMap<String, Collection<Store>>();
-        List<Store> backupStores = new LinkedList<Store>();
+        collectStores(mergingStores);
 
-        LinkedList<String> mergingDataStructureNames = new LinkedList<String>();
+        return newMergeRunnable(mergingStores);
+    }
 
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            boolean partitionOwner = partitionService.isPartitionOwner(partitionId);
-            Collection<Iterator<Store>> iterators = iteratorsOf(partitionId);
-            for (Iterator<Store> iterator : iterators) {
+    private void collectStores(final ConcurrentLinkedQueue<Store> mergingStores) {
+        int partitionCount = partitionService.getPartitionCount();
+        final CountDownLatch latch = new CountDownLatch(partitionCount);
+
+        for (int i = 0; i < partitionCount; i++) {
+            operationExecutor.execute(new StoreCollector(mergingStores, i, latch));
+        }
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            currentThread().interrupt();
+        }
+    }
+
+    private class StoreCollector implements PartitionSpecificRunnable {
+
+        private final int partitionId;
+        private final CountDownLatch latch;
+        private final ConcurrentLinkedQueue<Store> mergingStores;
+
+        StoreCollector(ConcurrentLinkedQueue<Store> mergingStores,
+                       int partitionId,
+                       CountDownLatch latch) {
+            this.mergingStores = mergingStores;
+            this.partitionId = partitionId;
+            this.latch = latch;
+        }
+
+        @Override
+        public int getPartitionId() {
+            return partitionId;
+        }
+
+        @Override
+        public void run() {
+            LinkedList<Store> storesToDestroy = new LinkedList<Store>();
+            try {
+                Iterator<Store> iterator = storeIterator(partitionId);
                 while (iterator.hasNext()) {
                     Store store = iterator.next();
-
-                    if (partitionOwner) {
-                        String dataStructureName = getDataStructureName(store);
-                        Object mergePolicy = getMergePolicy(dataStructureName);
-
-                        if (!isDiscardPolicy(mergePolicy)) {
-                            if (mergePolicy instanceof SplitBrainMergePolicy) {
-                                copyToCollectedStores(store, collectedStores);
-                            } else {
-                                copyToCollectedStores(store, collectedStoresWithLegacyPolicies);
-                            }
-
-                            mergingDataStructureNames.add(dataStructureName);
-                        }
+                    if (isLocalPartition(partitionId) && hasEntries(store) && hasMergeablePolicy(store)) {
+                        mergingStores.add(store);
                     } else {
-                        backupStores.add(store);
+                        storesToDestroy.add(store);
                     }
-
                     iterator.remove();
                 }
-            }
-        }
-
-        onPrepareMergeRunnableEnd(mergingDataStructureNames);
-
-        return newMergeRunnable(collectedStores, collectedStoresWithLegacyPolicies, backupStores, nodeEngine);
-    }
-
-    protected void onPrepareMergeRunnableStart() {
-        // NOP intentionally, implementations can override this method
-    }
-
-    protected void onPrepareMergeRunnableEnd(Collection<String> dataStructureNames) {
-        // NOP intentionally, implementations can override this method
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    protected boolean isDiscardPolicy(Object mergePolicy) {
-        return mergePolicy instanceof DiscardMergePolicy;
-    }
-
-    // overridden on EE
-    public void destroyStores(Collection<Store> recordStores) {
-        Iterator<Store> iterator = recordStores.iterator();
-        while (iterator.hasNext()) {
-            try {
-                destroyStore(iterator.next());
+                asyncDestroyStores(storesToDestroy, partitionId);
             } finally {
-                iterator.remove();
+                latch.countDown();
             }
         }
     }
 
-    private void copyToCollectedStores(Store store, Map<String, Collection<Store>> collectedStores) {
-        String dataStructureName = getDataStructureName(store);
+    void asyncDestroyStores(final Collection<Store> stores, final int partitionID) {
+        operationExecutor.execute(new PartitionSpecificRunnable() {
+            @Override
+            public void run() {
+                for (Store store : stores) {
+                    destroyStore(store);
+                }
+            }
 
-        Collection<Store> stores = collectedStores.get(dataStructureName);
-        if (stores == null) {
-            stores = new LinkedList<Store>();
-            collectedStores.put(dataStructureName, stores);
-        }
+            @Override
+            public int getPartitionId() {
+                return partitionID;
+            }
+        });
+    }
 
-        stores.add(store);
+    private boolean isLocalPartition(int partitionId) {
+        return partitionService.isPartitionOwner(partitionId);
     }
 
     /**
-     * Destroys the provided store.
+     * Returns a runnable which merges the given {@link Store} instances.
+     *
+     * @return a merge runnable for the given stores
+     */
+    protected abstract Runnable newMergeRunnable(Collection<Store> mergingStores);
+
+    /**
+     * Returns an {@link Iterator} over all {@link Store} instances in the given partition.
+     *
+     * @return an iterator over all stores
+     */
+    protected abstract Iterator<Store> storeIterator(int partitionId);
+
+    /**
+     * Destroys the given {@link Store}.
      */
     protected abstract void destroyStore(Store store);
 
     /**
-     * @return name of the data structure
+     * Checks if the given {@link Store} has entries.
+     *
+     * @return {@code true} if the store has entries, {@code false} otherwise
      */
-    protected abstract String getDataStructureName(Store store);
+    protected abstract boolean hasEntries(Store store);
 
     /**
-     * @return merge policy for the data structure
+     * Checks if the given {@link Store} has a mergeable merge policy.
+     *
+     * @return {@code true} if the store has a mergeable merge policy, {@code false} otherwise
      */
-    protected abstract Object getMergePolicy(String dataStructureName);
-
-    /**
-     * @return collection of iterators to scan data in the partition
-     */
-    protected abstract Collection<Iterator<Store>> iteratorsOf(int partitionId);
-
-    /**
-     * @return new merge runnable
-     */
-    protected abstract Runnable newMergeRunnable(Map<String, Collection<Store>> collectedStores,
-                                                 Map<String, Collection<Store>> collectedStoresWithLegacyPolicies,
-                                                 Collection<Store> backupStores,
-                                                 NodeEngine nodeEngine);
+    protected abstract boolean hasMergeablePolicy(Store store);
 }

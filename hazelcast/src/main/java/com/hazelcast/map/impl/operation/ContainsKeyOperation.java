@@ -37,7 +37,7 @@ public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implement
 
     @Override
     public void run() {
-        containsKey = recordStore.containsKey(dataKey);
+        containsKey = recordStore.containsKey(dataKey, getCallerAddress());
     }
 
     @Override

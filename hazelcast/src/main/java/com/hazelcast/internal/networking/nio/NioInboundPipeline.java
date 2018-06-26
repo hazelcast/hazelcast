@@ -71,7 +71,7 @@ public final class NioInboundPipeline extends NioPipeline {
 
     @Override
     public long load() {
-        switch (LOAD_TYPE) {
+        switch (loadType) {
             case LOAD_BALANCING_HANDLE:
                 return processCount.get();
             case LOAD_BALANCING_BYTE:
@@ -100,23 +100,8 @@ public final class NioInboundPipeline extends NioPipeline {
         return lastReadTime;
     }
 
-    /**
-     * Migrates this Pipeline to a new NioThread.
-     * The migration logic is rather simple:
-     * <p><ul>
-     * <li>Submit a de-registration task to a current NioThread</li>
-     * <li>The de-registration task submits a registration task to the new NioThread</li>
-     * </ul></p>
-     *
-     * @param newOwner target NioThread this pipeline migrates to
-     */
     @Override
-    public void requestMigration(NioThread newOwner) {
-        owner.addTaskAndWakeup(new StartMigrationTask(newOwner));
-    }
-
-    @Override
-    public void process() throws Exception {
+    void process() throws Exception {
         processCount.inc();
         // we are going to set the timestamp even if the channel is going to fail reading. In that case
         // the connection is going to be closed anyway.
@@ -160,11 +145,13 @@ public final class NioInboundPipeline extends NioPipeline {
     }
 
     @Override
-    public void publishMetrics() {
+    void publishMetrics() {
         if (Thread.currentThread() != owner) {
             return;
         }
 
+        // since this is executed by the owner, the owner field can't change while
+        // this method is executed.
         owner.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
         owner.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
         owner.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
@@ -178,17 +165,9 @@ public final class NioInboundPipeline extends NioPipeline {
 
     @Override
     public void close() {
-        owner.addTaskAndWakeup(new Runnable() {
+        addTaskAndWakeup(new NioPipelineTask(this) {
             @Override
-            public void run() {
-                if (owner != Thread.currentThread()) {
-                    // the NioInboundPipeline has migrated to a different IOThread after the close got called.
-                    // so we need to send the task to the right owner. Otherwise multiple ioThreads could be accessing
-                    // the same channel.
-                    owner.addTaskAndWakeup(this);
-                    return;
-                }
-
+            public void run0() {
                 try {
                     channel.closeInbound();
                 } catch (IOException e) {
@@ -203,27 +182,4 @@ public final class NioInboundPipeline extends NioPipeline {
         return channel + ".inboundPipeline";
     }
 
-    private class StartMigrationTask implements Runnable {
-        private final NioThread newOwner;
-
-        StartMigrationTask(NioThread newOwner) {
-            this.newOwner = newOwner;
-        }
-
-        @Override
-        public void run() {
-            // if there is no change, we are done
-            if (owner == newOwner) {
-                return;
-            }
-
-            publishMetrics();
-
-            try {
-                startMigration(newOwner);
-            } catch (Throwable t) {
-                onFailure(t);
-            }
-        }
-    }
 }

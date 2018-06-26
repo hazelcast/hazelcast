@@ -32,7 +32,6 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -51,8 +50,8 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
-import static com.hazelcast.map.impl.nearcache.MapInvalidationListener.createInvalidationEventHandler;
 import static java.util.Arrays.asList;
 
 /**
@@ -98,7 +97,7 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
         IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
         Config config = createConfig(mapStore, false);
 
@@ -108,7 +107,6 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
 
         // wait until the initial load is done
         dataAdapter.waitUntilLoaded();
-        populateDataAdapter(dataAdapter, size);
 
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder(mapStore);
         return builder
@@ -123,10 +121,13 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
         return builder.build();
     }
 
+    @Override
+    protected Config getConfig() {
+        return getBaseConfig();
+    }
+
     protected Config createConfig(IMapMapStore mapStore, boolean withNearCache) {
-        Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT)
-                .setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1");
+        Config config = getConfig();
 
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME);
         addMapStoreConfig(mapStore, mapConfig);
@@ -152,8 +153,7 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setLoader(mapStore)
-                .setHasLocalData(true)
-                .setInvalidationListener(createInvalidationEventHandler(nearCacheMap));
+                .setHasLocalData(true);
     }
 
     public static void addMapStoreConfig(IMapMapStore mapStore, MapConfig mapConfig) {

@@ -44,6 +44,10 @@ public class NearCacheStatsImpl implements NearCacheStats {
             newUpdater(NearCacheStatsImpl.class, "evictions");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> EXPIRATIONS =
             newUpdater(NearCacheStatsImpl.class, "expirations");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> INVALIDATIONS =
+            newUpdater(NearCacheStatsImpl.class, "invalidations");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> INVALIDATION_REQUESTS =
+            newUpdater(NearCacheStatsImpl.class, "invalidationRequests");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> PERSISTENCE_COUNT =
             newUpdater(NearCacheStatsImpl.class, "persistenceCount");
 
@@ -61,6 +65,11 @@ public class NearCacheStatsImpl implements NearCacheStats {
     private volatile long evictions;
     @Probe
     private volatile long expirations;
+
+    @Probe
+    private volatile long invalidations;
+    @Probe
+    private volatile long invalidationRequests;
 
     @Probe
     private volatile long persistenceCount;
@@ -87,6 +96,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
         misses = stats.misses;
         evictions = stats.evictions;
         expirations = stats.expirations;
+        invalidations = stats.invalidations;
+        invalidationRequests = stats.invalidationRequests;
 
         persistenceCount = stats.persistenceCount;
         lastPersistenceTime = stats.lastPersistenceTime;
@@ -195,6 +206,31 @@ public class NearCacheStatsImpl implements NearCacheStats {
     }
 
     @Override
+    public long getInvalidations() {
+        return invalidations;
+    }
+
+    public void incrementInvalidations() {
+        INVALIDATIONS.incrementAndGet(this);
+    }
+
+    public void incrementInvalidations(long delta) {
+        INVALIDATIONS.addAndGet(this, delta);
+    }
+
+    public long getInvalidationRequests() {
+        return invalidationRequests;
+    }
+
+    public void incrementInvalidationRequests() {
+        INVALIDATION_REQUESTS.incrementAndGet(this);
+    }
+
+    public void resetInvalidationEvents() {
+        INVALIDATION_REQUESTS.set(this, 0);
+    }
+
+    @Override
     public long getPersistenceCount() {
         return persistenceCount;
     }
@@ -256,6 +292,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
         root.add("misses", misses);
         root.add("evictions", evictions);
         root.add("expirations", expirations);
+        root.add("invalidations", invalidations);
+        root.add("invalidationEvents", invalidationRequests);
         root.add("persistenceCount", persistenceCount);
         root.add("lastPersistenceTime", lastPersistenceTime);
         root.add("lastPersistenceDuration", lastPersistenceDuration);
@@ -274,6 +312,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
         misses = getLong(json, "misses", -1L);
         evictions = getLong(json, "evictions", -1L);
         expirations = getLong(json, "expirations", -1L);
+        invalidations = getLong(json, "invalidations", -1L);
+        invalidationRequests = getLong(json, "invalidationEvents", -1L);
         persistenceCount = getLong(json, "persistenceCount", -1L);
         lastPersistenceTime = getLong(json, "lastPersistenceTime", -1L);
         lastPersistenceDuration = getLong(json, "lastPersistenceDuration", -1L);
@@ -293,6 +333,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
                 + ", ratio=" + format("%.1f%%", getRatio())
                 + ", evictions=" + evictions
                 + ", expirations=" + expirations
+                + ", invalidations=" + invalidations
                 + ", lastPersistenceTime=" + lastPersistenceTime
                 + ", persistenceCount=" + persistenceCount
                 + ", lastPersistenceDuration=" + lastPersistenceDuration

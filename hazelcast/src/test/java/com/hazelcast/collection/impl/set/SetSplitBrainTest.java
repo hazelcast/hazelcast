@@ -41,8 +41,6 @@ import java.util.Set;
 
 import static com.hazelcast.collection.impl.CollectionTestUtil.getBackupSet;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -59,8 +57,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class SetSplitBrainTest extends SplitBrainTestSupport {
 
-    private static final int INITIAL_COUNT = 10;
-    private static final int NEW_ITEMS = 15;
+    private static final int ITEM_COUNT = 25;
 
     @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
@@ -68,7 +65,9 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
                 DiscardMergePolicy.class,
                 PassThroughMergePolicy.class,
                 PutIfAbsentMergePolicy.class,
-                MergeIntegerValuesMergePolicy.class,
+                RemoveValuesMergePolicy.class,
+                ReturnPiCollectionMergePolicy.class,
+                MergeCollectionOfIntegerValuesMergePolicy.class,
         });
     }
 
@@ -103,24 +102,6 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
-        ISet<Object> set = instances[0].getSet(setNameA);
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            set.add("item" + i);
-        }
-
-        waitAllForSafeState(instances);
-
-        int partitionId = ((AbstractCollectionProxyImpl) set).getPartitionId();
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        backupSet = getBackupSet(backupInstance, setNameA);
-        assertEquals("backupSet should contain " + INITIAL_COUNT + " items", INITIAL_COUNT, backupSet.size());
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            assertTrue("backupSet should contain item" + i + " " + toString(backupSet), backupSet.contains("item" + i));
-        }
-    }
-
-    @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         mergeLifecycleListener = new MergeLifecycleListener(secondBrain.length);
         for (HazelcastInstance instance : secondBrain) {
@@ -131,9 +112,6 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
         setA2 = secondBrain[0].getSet(setNameA);
 
         setB2 = secondBrain[0].getSet(setNameB);
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            setB2.add("item" + i);
-        }
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterSplitDiscardMergePolicy();
@@ -141,7 +119,11 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterSplitReturnPiCollectionMergePolicy();
+        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
             fail();
@@ -165,7 +147,11 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
             afterMergePassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterMergeReturnPiCollectionMergePolicy();
+        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
             fail();
@@ -173,105 +159,122 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterSplitDiscardMergePolicy() {
-        // we should have these items in the merged setA, since they are added in both clusters
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             setA1.add("item" + i);
-            setA2.add("item" + i);
-        }
-
-        // we should not have these items in the merged sets, since they are in the smaller cluster only
-        for (int i = 0; i < NEW_ITEMS; i++) {
             setA2.add("lostItem" + i);
+
             setB2.add("lostItem" + i);
         }
     }
 
     private void afterMergeDiscardMergePolicy() {
-        assertSetContent(setA1, false);
-        assertSetContent(setA2, false);
-        assertSetContent(backupSet, false);
+        assertSetContent(setA1);
+        assertSetContent(setA2);
+        assertSetContent(backupSet);
 
-        assertTrue(setB1.isEmpty());
-        assertTrue(setB2.isEmpty());
+        assertSetContent(setB1, 0);
+        assertSetContent(setB2, 0);
     }
 
     private void afterSplitPassThroughMergePolicy() {
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
-            setA1.add("item" + i);
-        }
-
-        // we should not lose the additional items from setA2 or the new setB2
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS * 2; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            setA1.add("lostItem" + i);
             setA2.add("item" + i);
+
             setB2.add("item" + i);
         }
     }
 
     private void afterMergePassThroughMergePolicy() {
-        assertSetContent(setA1, true);
-        assertSetContent(setA2, true);
-        assertSetContent(backupSet, true);
+        assertSetContent(setA1);
+        assertSetContent(setA2);
+        assertSetContent(backupSet);
 
-        assertSetContent(setB1, true);
-        assertSetContent(setB2, true);
+        assertSetContent(setB1);
+        assertSetContent(setB2);
     }
 
     private void afterSplitPutIfAbsentMergePolicy() {
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             setA1.add("item" + i);
-        }
+            setA2.add("lostItem" + i);
 
-        // we should not lose the additional items from setA2 or the new setB2
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS * 2; i++) {
-            setA2.add("item" + i);
             setB2.add("item" + i);
         }
     }
 
     private void afterMergePutIfAbsentMergePolicy() {
-        assertSetContent(setA1, true);
-        assertSetContent(setA2, true);
-        assertSetContent(backupSet, true);
+        assertSetContent(setA1);
+        assertSetContent(setA2);
+        assertSetContent(backupSet);
 
-        assertSetContent(setB1, true);
-        assertSetContent(setB2, true);
+        assertSetContent(setB1);
+        assertSetContent(setB2);
+    }
+
+    private void afterSplitRemoveValuesMergePolicy() {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            setA1.add("lostItem" + i);
+            setA2.add("lostItem" + i);
+
+            setB2.add("lostItem" + i);
+        }
+    }
+
+    private void afterMergeRemoveValuesMergePolicy() {
+        assertSetContent(setA1, 0);
+        assertSetContent(setA2, 0);
+        assertSetContent(backupSet, 0);
+
+        assertSetContent(setB1, 0);
+        assertSetContent(setB2, 0);
+    }
+
+    private void afterSplitReturnPiCollectionMergePolicy() {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            setA1.add("lostItem" + i);
+            setA2.add("lostItem" + i);
+
+            setB2.add("lostItem" + i);
+        }
+    }
+
+    private void afterMergeReturnPiCollectionMergePolicy() {
+        assertPiSet(setA1);
+        assertPiSet(setA2);
+        assertPiSet(backupSet);
+
+        assertPiSet(setB1);
+        assertPiSet(setB2);
     }
 
     private void afterSplitCustomMergePolicy() {
-        for (int i = 0; i < NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             setA2.add(i);
             setA2.add("lostItem" + i);
         }
     }
 
     private void afterMergeCustomMergePolicy() {
-        int expectedSize = INITIAL_COUNT + NEW_ITEMS;
-        assertEquals("set1 should contain " + expectedSize + " items", expectedSize, setA1.size());
-        assertEquals("set2 should contain " + expectedSize + " items", expectedSize, setA2.size());
-        assertEquals("backupSet should contain " + expectedSize + " items " + backupSet, expectedSize, backupSet.size());
-
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            assertTrue("setA1 should contain 'item" + i + "'", setA1.contains("item" + i));
-            assertTrue("setA2 should contain 'item" + i + "'", setA2.contains("item" + i));
-            assertTrue("backupSet should contain 'item" + i + "' " + backupSet, backupSet.contains("item" + i));
-        }
-        for (int i = 0; i < NEW_ITEMS; i++) {
-            assertTrue("setA1 should contain '" + i + "'", setA1.contains(i));
-            assertTrue("setA2 should contain '" + i + "'", setA2.contains(i));
-            assertTrue("backupSet should contain '" + i + "' " + backupSet, backupSet.contains(i));
-
-            assertFalse("setA1 should not contain 'lostItem" + i + "'", setA1.contains("lostItem" + i));
-            assertFalse("setA2 should not contain 'lostItem" + i + "'", setA2.contains("lostItem" + i));
-            assertFalse("backupSet should not contain 'lostItem" + i + "'", backupSet.contains("lostItem" + i));
-        }
+        assertSetContent(setA1, ITEM_COUNT);
+        assertSetContent(setA2, ITEM_COUNT);
+        assertSetContent(backupSet, ITEM_COUNT);
     }
 
-    private static void assertSetContent(Set<Object> set, boolean hasMergedItems) {
-        int expectedSize = INITIAL_COUNT + NEW_ITEMS * (hasMergedItems ? 2 : 1);
-        assertEquals("set should contain " + expectedSize + " items " + toString(set), expectedSize, set.size());
+    private static void assertSetContent(Set<Object> set) {
+        assertSetContent(set, ITEM_COUNT, "item");
+    }
 
-        for (int i = 0; i < INITIAL_COUNT + NEW_ITEMS * (hasMergedItems ? 2 : 1); i++) {
-            assertTrue("set should contain item" + i + " " + toString(set), set.contains("item" + i));
+    private static void assertSetContent(Set<Object> set, int expectedSize) {
+        assertSetContent(set, expectedSize, null);
+    }
+
+    private static void assertSetContent(Set<Object> set, int expectedSize, String prefix) {
+        assertEqualsStringFormat("set " + toString(set) + " should contain %d items, but was %d", expectedSize, set.size());
+
+        for (int i = 0; i < expectedSize; i++) {
+            Object expectedValue = prefix == null ? i : prefix + i;
+            assertTrue("set " + toString(set) + " should contain " + expectedValue, set.contains(expectedValue));
         }
     }
 }

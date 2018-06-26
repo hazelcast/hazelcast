@@ -17,12 +17,14 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
@@ -35,6 +37,7 @@ import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.beans.factory.support.ManagedMap;
+import org.springframework.beans.factory.support.ManagedSet;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.NamedNodeMap;
@@ -306,6 +309,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     handlePortableFactories(child, serializationConfigBuilder);
                 } else if ("serializers".equals(nodeName)) {
                     handleSerializers(child, serializationConfigBuilder);
+                } else if ("java-serialization-filter".equals(nodeName)) {
+                    handleJavaSerializationFilter(child, serializationConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("serializationConfig", beanDefinition);
@@ -510,6 +515,44 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 }
             }
             discoveryStrategyConfigs.add(discoveryStrategyConfigBuilder.getBeanDefinition());
+        }
+
+        protected void handleJavaSerializationFilter(final Node node, BeanDefinitionBuilder serializationConfigBuilder) {
+            BeanDefinitionBuilder filterConfigBuilder = createBeanBuilder(JavaSerializationFilterConfig.class);
+            for (Node child : childElements(node)) {
+                String name = cleanNodeName(child);
+                if ("blacklist".equals(name)) {
+                    filterConfigBuilder.addPropertyValue("blacklist", createFilterListBean(child));
+                } else if ("whitelist".equals(name)) {
+                    filterConfigBuilder.addPropertyValue("whitelist", createFilterListBean(child));
+                }
+            }
+            Node defaultsDisabledAttr = node.getAttributes().getNamedItem("defaults-disabled");
+            boolean defaultsDisabled = getBooleanValue(getTextContent(defaultsDisabledAttr));
+            filterConfigBuilder.addPropertyValue("defaultsDisabled", defaultsDisabled);
+            serializationConfigBuilder.addPropertyValue("javaSerializationFilterConfig",
+                    filterConfigBuilder.getBeanDefinition());
+        }
+
+        private AbstractBeanDefinition createFilterListBean(Node node) {
+            BeanDefinitionBuilder filterListBuilder = createBeanBuilder(ClassFilter.class);
+            ManagedSet<String> classes = new ManagedSet<String>();
+            ManagedSet<String> packages = new ManagedSet<String>();
+            ManagedSet<String> prefixes = new ManagedSet<String>();
+            for (Node child : childElements(node)) {
+                String name = cleanNodeName(child);
+                if ("class".equals(name)) {
+                    classes.add(getTextContent(child));
+                } else if ("package".equals(name)) {
+                    packages.add(getTextContent(child));
+                } else if ("prefix".equals(name)) {
+                    prefixes.add(getTextContent(child));
+                }
+            }
+            filterListBuilder.addPropertyValue("classes", classes);
+            filterListBuilder.addPropertyValue("packages", packages);
+            filterListBuilder.addPropertyValue("prefixes", prefixes);
+            return filterListBuilder.getBeanDefinition();
         }
     }
 }

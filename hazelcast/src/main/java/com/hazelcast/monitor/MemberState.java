@@ -24,6 +24,9 @@ import com.hazelcast.internal.management.dto.MXBeansDTO;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Local statistics for a Hazelcast member.
+ */
 public interface MemberState extends JsonSerializable {
 
     String getAddress();

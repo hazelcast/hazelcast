@@ -44,21 +44,20 @@ import static com.hazelcast.instance.TestUtil.getNode;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 
+@SuppressWarnings("WeakerAccess")
 public final class TestPartitionUtils {
 
     private TestPartitionUtils() {
     }
 
     public static PartitionServiceState getPartitionServiceState(HazelcastInstance instance) {
-        return getPartitionServiceState(getNode(instance));
-    }
-
-    public static PartitionServiceState getPartitionServiceState(Node node) {
-        if (node == null) {
+        try {
+            Node node = getNode(instance);
+            InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) node.getPartitionService();
+            return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
+        } catch (IllegalArgumentException e) {
             return PartitionServiceState.SAFE;
         }
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) node.getPartitionService();
-        return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
     }
 
     public static Map<Integer, PartitionReplicaVersionsView> getAllReplicaVersions(List<HazelcastInstance> instances) {
@@ -70,8 +69,7 @@ public final class TestPartitionUtils {
     }
 
     public static Map<Integer, PartitionReplicaVersionsView> getOwnedReplicaVersions(Node node) {
-        Map<Integer, PartitionReplicaVersionsView> ownedReplicaVersions =
-                new HashMap<Integer, PartitionReplicaVersionsView>();
+        Map<Integer, PartitionReplicaVersionsView> ownedReplicaVersions = new HashMap<Integer, PartitionReplicaVersionsView>();
         collectOwnedReplicaVersions(node, ownedReplicaVersions);
         return ownedReplicaVersions;
     }
@@ -122,7 +120,7 @@ public final class TestPartitionUtils {
 
         for (HazelcastInstance instance : instances) {
             Node node = getNode(instance);
-            if (node != null && node.isMaster()) {
+            if (node.isMaster()) {
                 return getAllReplicaAddresses(node);
             }
         }

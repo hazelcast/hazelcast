@@ -44,8 +44,9 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 
 /**
- * An operation could be compared to a {@link Runnable}. It contains logic that is going to be executed; this logic
- * will be placed in the {@link Operation#run()} method.
+ * An operation could be compared to a {@link Runnable}. It contains logic that
+ * is going to be executed; this logic will be placed in the
+ * {@link Operation#run()} method.
  */
 public abstract class Operation implements DataSerializable {
 
@@ -103,39 +104,59 @@ public abstract class Operation implements DataSerializable {
         return this instanceof UrgentSystemOperation;
     }
 
-    // runs before wait-support
+    /**
+     * The beforeRun is called before either the {@link #run()} or the {@link #call()} method is called.
+     *
+     *  runs before wait-support
+     */
     public void beforeRun() throws Exception {
     }
 
-    // runs after wait-support, supposed to do actual operation
+    /**
+     * Runs the operation.
+     *
+     * Either the {@link #run()} or {@link #call()} method should be implemented; not both.
+     *
+     * Runs after wait-support, supposed to do actual operation
+     *
+     * @see #call()
+     */
     public void run() throws Exception {
     }
 
     /**
      * Call the operation and returns the CallStatus.
      *
-     * An Operation should either implement call or run; not both. If run is implemented, then the system remains backwards
-     * compatible to prevent making massive code changes while adding this feature.
+     * An Operation should either implement call or run; not both. If run is
+     * implemented, then the system remains backwards compatible to prevent
+     * making massive code changes while adding this feature.
      *
-     * In the future all {@link #run()} methods will be replaced by call methods.
+     * In the future all {@link #run()} methods will be replaced by call
+     * methods.
      *
-     * The call method looks very much like the {@link #run()} method and it is very close to {@link Runnable#run()} and
-     * {@link Callable#call()}.
+     * The call method looks very much like the {@link #run()} method and it is
+     * very close to {@link Runnable#run()} and {@link Callable#call()}.
      *
-     * The main difference between a run and call, is that the returned CallStatus from the call can tell something about the
-     * actual execution. For example it could tell that some waiting is required in case of a {@link BlockingOperation}.
-     * Or that the actual execution the work is offloaded to some executor in case of an {@link com.hazelcast.core.Offloadable}
+     * The main difference between a run and call, is that the returned
+     * CallStatus from the call can tell something about the actual execution.
+     * For example it could tell that some waiting is required in case of a
+     * {@link BlockingOperation}. Or that the actual execution the work is
+     * offloaded to some executor in case of an
+     * {@link com.hazelcast.core.Offloadable}
      * {@link com.hazelcast.map.impl.operation.EntryOperation}.
      *
-     * In the future new types of CallStatus are expected to be added, e.g. for interleaving.
+     * In the future new types of CallStatus are expected to be added, e.g. for
+     * interleaving.
      *
-     * In the future it is very likely that for regular Operation that want to return a concrete response, the
-     * actual response can be returned directly. In this case we'll change the return type to {@link Object} to
-     * prevent forcing the response to be wrapped in a {@link CallStatus#DONE_RESPONSE}  monad since that would force additional
-     * litter to be created.
+     * In the future it is very likely that for regular Operation that want to
+     * return a concrete response, the actual response can be returned directly.
+     * In this case we'll change the return type to {@link Object} to prevent
+     * forcing the response to be wrapped in a {@link CallStatus#DONE_RESPONSE}
+     * monad since that would force additional litter to be created.
      *
      * @return the CallStatus.
      * @throws Exception if something failed while executing 'call'.
+     * @see #run()
      */
     public CallStatus call() throws Exception {
         if (this instanceof BlockingOperation) {
@@ -149,16 +170,23 @@ public abstract class Operation implements DataSerializable {
         return returnsResponse() ? DONE_RESPONSE : DONE_VOID;
     }
 
-    // runs after backups, before wait-notify
+    /**
+     * Is executed called after {@link #run()} or {@link #call()} method completes normally and the operation is not
+     * blocked, see {@link CallStatus#WAIT}.
+     *
+     * Runs after backups, before wait-notify.
+     */
     public void afterRun() throws Exception {
     }
 
     /**
-     * Method is intended to be subclassed. If it returns {@code true}, {@link #getResponse()} will be
-     * called right after {@link #run()} method. If it returns {@code false}, {@link #sendResponse(Object)}
-     * must be called later to finish the operation.
+     * Method is intended to be subclassed. If it returns {@code true},
+     * {@link #getResponse()} will be called right after {@link #run()} method.
+     * If it returns {@code false}, {@link #sendResponse(Object)} must be
+     * called later to finish the operation.
      * <p>
-     * In other words, {@code true} is for synchronous operation and {@code false} is for asynchronous one.
+     * In other words, {@code true} is for synchronous operation and
+     * {@code false} is for asynchronous one.
      * <p>
      * Default implementation is synchronous operation ({@code true}).
      */
@@ -167,8 +195,8 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Called if and only if {@link #returnsResponse()} returned {@code true}, shortly after {@link #run()}
-     * returns.
+     * Called if and only if {@link #returnsResponse()} returned {@code true},
+     * shortly after {@link #run()} returns.
      */
     public Object getResponse() {
         return null;
@@ -200,14 +228,16 @@ public abstract class Operation implements DataSerializable {
     /**
      * Returns the ID of the partition that this Operation will be executed upon.
      *
-     * If the partitionId is equal or larger than 0, it means that it is tied to a specific partition: for example,
-     * a map.get('foo'). If it is smaller than 0, than it means that it isn't bound to a particular partition.
+     * If the partitionId is equal or larger than 0, it means that it is tied to
+     * a specific partition: for example, a map.get('foo'). If it is smaller than
+     * 0, than it means that it isn't bound to a particular partition.
      *
-     * The partitionId should never be equal or larger than the total number of partitions. For example, if there are 271
-     * partitions, the maximum partition ID is 270.
+     * The partitionId should never be equal or larger than the total number of
+     * partitions. For example, if there are 271 partitions, the maximum partition
+     * ID is 270.
      *
-     * The partitionId is used by the OperationService to figure out which member owns a specific partition, and to send
-     * the operation to that member.
+     * The partitionId is used by the OperationService to figure out which member
+     * owns a specific partition, and to send the operation to that member.
      *
      * @return the ID of the partition.
      * @see #setPartitionId(int)
@@ -245,14 +275,17 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Gets the call ID of this operation. The call ID is used to associate the invocation of an operation
-     * on a remote system with the response from the execution of that operation.
+     * Gets the call ID of this operation. The call ID is used to associate the
+     * invocation of an operation on a remote system with the response from the
+     * execution of that operation.
      * <ul>
      * <li>Initially the call ID is zero.</li>
-     * <li>When an Invocation of the operation is created, call ID is assigned a positive value.</li>
-     * <li>When the invocation ends, the operation is {@link #deactivate()}d, but the call ID is preserved.</li>
-     * <li>The same operation may be involved in a further invocation (retrying); this will assign a
-     * new call ID and reactivate the operation.</li>
+     * <li>When an Invocation of the operation is created, call ID is assigned
+     * a positive value.</li>
+     * <li>When the invocation ends, the operation is {@link #deactivate()}d,
+     * but the call ID is preserved.</li>
+     * <li>The same operation may be involved in a further invocation (retrying);
+     * this will assign a new call ID and reactivate the operation.</li>
      * </ul>
      *
      * @return the call ID
@@ -262,10 +295,11 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Tells whether this operation is involved in an ongoing invocation. Such an operation always has a
-     * positive call ID.
+     * Tells whether this operation is involved in an ongoing invocation. Such
+     * an operation always has a positive call ID.
      *
-     * @return {@code true} if the operation's invocation is active; {@code false} otherwise
+     * @return {@code true} if the operation's invocation is active;
+     * {@code false} otherwise
      */
     final boolean isActive() {
         return callId > 0;
@@ -274,7 +308,8 @@ public abstract class Operation implements DataSerializable {
     /**
      * Marks this operation as "not involved in an ongoing invocation".
      *
-     * @return {@code true} if this call deactivated the operation; {@code false} if it was already inactive
+     * @return {@code true} if this call deactivated the operation;
+     * {@code false} if it was already inactive
      */
     final boolean deactivate() {
         long c = callId;
@@ -291,11 +326,13 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Atomically ensures that the operation is not already involved in an invocation and sets the supplied call ID.
+     * Atomically ensures that the operation is not already involved in an
+     * invocation and sets the supplied call ID.
      *
      * @param newId the requested call ID, must be positive
      * @throws IllegalArgumentException if the supplied call ID is non-positive
-     * @throws IllegalStateException    if the operation already has an ongoing invocation
+     * @throws IllegalStateException    if the operation already has an ongoing
+     *                                  invocation
      */
     // Accessed using OperationAccessor
     final void setCallId(long newId) {
@@ -317,14 +354,15 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Called every time a new <tt>callId</tt> is set on the operation.
-     * A new <tt>callId</tt> is set before initial invocation and before every invocation retry.
+     * Called every time a new <tt>callId</tt> is set on the operation. A new
+     * <tt>callId</tt> is set before initial invocation and before every
+     * invocation retry.
      * <p>
      * By default this is a no-op method. Operation implementations which want to
      * get notified on <tt>callId</tt> changes can override it.
      * <p>
-     * For example an operation can distinguish the first invocation and invocation retries by keeping
-     * the initial <tt>callId</tt>.
+     * For example an operation can distinguish the first invocation and
+     * invocation retries by keeping the initial <tt>callId</tt>.
      *
      * @param callId the new call ID that was set on the operation
      */
@@ -384,7 +422,8 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Gets the {@link OperationResponseHandler} tied to this Operation. The returned value can be null.
+     * Gets the {@link OperationResponseHandler} tied to this Operation. The
+     * returned value can be null.
      *
      * @return the {@link OperationResponseHandler}
      */
@@ -435,9 +474,11 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Gets the call timeout in milliseconds. For example, if a call should start execution within 60 seconds otherwise
-     * it should be aborted, then the call-timeout is 60000 milliseconds. Once an operation starts execution and runs for a
-     * long period (e.g. 5 minutes with an IExecutorService execute operation), then the call timeout isn't relevant any longer.
+     * Gets the call timeout in milliseconds. For example, if a call should start
+     * execution within 60 seconds otherwise it should be aborted, then the
+     * call-timeout is 60000 milliseconds. Once an operation starts execution and
+     * runs for a long period (e.g. 5 minutes with an IExecutorService execute
+     * operation), then the call timeout isn't relevant any longer.
      *
      * For more information about the default value, see
      * {@link GroupProperty#OPERATION_CALL_TIMEOUT_MILLIS}
@@ -465,9 +506,11 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Returns the wait timeout in millis. -1 means infinite wait, and 0 means no waiting at all.
+     * Returns the wait timeout in millis. -1 means infinite wait, and 0 means
+     * no waiting at all.
      *
-     * The wait timeout is the amount of time a {@link BlockingOperation} is allowed to parked in the
+     * The wait timeout is the amount of time a {@link BlockingOperation} is
+     * allowed to parked in the
      * {@link com.hazelcast.spi.impl.operationparker.OperationParker}.
      *
      * Examples:
@@ -477,7 +520,8 @@ public abstract class Operation implements DataSerializable {
      * <li>in case of ILock.tryLock(), the wait timeout is 0.</li>
      * </ol>
      *
-     * The waitTimeout only has meaning for blocking operations. For non blocking operations the value is undefined.
+     * The waitTimeout only has meaning for blocking operations. For non
+     * blocking operations the value is undefined.
      *
      * @return the wait timeout.
      */
@@ -503,7 +547,8 @@ public abstract class Operation implements DataSerializable {
      * <p/>
      * This method is called on caller side of the invocation.
      *
-     * @param throwable <tt>Exception</tt>/<tt>Error</tt> thrown during invocation
+     * @param throwable <tt>Exception</tt>/<tt>Error</tt> thrown during
+     *                  invocation
      * @return <tt>ExceptionAction</tt>
      */
     public ExceptionAction onInvocationException(Throwable throwable) {
@@ -543,7 +588,8 @@ public abstract class Operation implements DataSerializable {
 
 
     /**
-     * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown during operation execution.
+     * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown during
+     * operation execution.
      * <p/>
      * By default this method does nothing.
      * Operation implementations can override this behaviour due to their needs.
@@ -676,12 +722,15 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * A template method allows for additional information to be passed into the {@link #toString()} method. So an Operation
-     * subclass can override this method and add additional debugging content. The default implementation does nothing so
-     * one is not forced to provide an empty implementation.
+     * A template method allows for additional information to be passed into
+     * the {@link #toString()} method. So an Operation subclass can override
+     * this method and add additional debugging content. The default
+     * implementation does nothing so one is not forced to provide an empty
+     * implementation.
      *
-     * It is a good practice always to call the super.toString(stringBuffer) when implementing this method to make sure
-     * that the super class can inject content if needed.
+     * It is a good practice always to call the super.toString(stringBuffer)
+     * when implementing this method to make sure that the super class can
+     * inject content if needed.
      *
      * @param sb the StringBuilder to add the debug info to.
      */

@@ -101,6 +101,20 @@ public class BufferBuilder {
         return this;
     }
 
+    /**
+     * Creates ClientProtocolBuffer safe/unsafe according to property with existing byteArray
+     *
+     * @param byteArray existing byteArray
+     * @return ClientProtocolBuffer
+     */
+    public static ClientProtocolBuffer createBuffer(byte[] byteArray) {
+        if (USE_UNSAFE) {
+            return new UnsafeBuffer(byteArray);
+        } else {
+            return new SafeBuffer(byteArray);
+        }
+    }
+
     private void ensureCapacity(int additionalCapacity) {
         int requiredCapacity = position + additionalCapacity;
 

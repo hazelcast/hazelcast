@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.merge;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicReferenceMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -27,7 +26,7 @@ import com.hazelcast.spi.serialization.SerializationService;
  */
 @SuppressWarnings("WeakerAccess")
 public class AtomicReferenceMergingValueImpl
-        extends AbstractMergingValueImpl<Data, AtomicReferenceMergingValueImpl>
+        extends AbstractMergingValueImpl<Object, AtomicReferenceMergingValueImpl>
         implements AtomicReferenceMergeTypes {
 
     public AtomicReferenceMergingValueImpl() {

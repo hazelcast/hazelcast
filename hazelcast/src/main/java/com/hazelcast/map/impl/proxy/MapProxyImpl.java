@@ -70,7 +70,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
@@ -86,7 +85,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
-import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
@@ -346,6 +345,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             result.put(key, value);
         }
         return result;
+    }
+
+    @Override
+    public void setTTL(K key, long ttl, TimeUnit timeunit) {
+        checkNotNull(key);
+        checkNotNull(timeunit);
+        setTTLInternal(key, ttl, timeunit);
     }
 
     @Override
@@ -941,7 +947,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         QueryCacheRequest request = newQueryCacheRequest()
                 .forMap(map)
-                .withCacheId(UuidUtil.newUnsecureUuidString())
                 .withCacheName(name)
                 .withListener(listener)
                 .withPredicate(predicate)
@@ -955,7 +960,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         QueryCacheContext queryCacheContext = request.getContext();
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheId(),
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
                 new NodeQueryCacheEndToEndConstructor(request));
     }
 

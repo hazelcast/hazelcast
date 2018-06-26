@@ -48,8 +48,8 @@ public class CollectionClearOperation extends CollectionBackupAwareOperation imp
 
     @Override
     public void run() throws Exception {
-        CollectionContainer collectionContainer = getOrCreateContainer();
-        itemIdMap = collectionContainer.clear();
+        CollectionContainer container = getOrCreateContainer();
+        itemIdMap = container.clear(true);
     }
 
     @Override

@@ -81,17 +81,20 @@ public interface InternalPartitionService extends IPartitionService {
     /**
      * Causes the partition table to be arranged and published to members if :
      * <ul>
-     * <li>the instance has started</li>
+     * <li>this instance has started</li>
+     * <li>this instance is the master</li>
      * <li>the cluster is {@link ClusterState#ACTIVE}</li>
-     * <li>if it has not already been arranged</li>
+     * <li>if the partition table has not already been arranged</li>
      * <li>if there is no cluster membership change</li>
      * </ul>
-     * If this node is not the master, it will trigger the master to assign the partitions.
+     * If this instance is not the master, it will trigger the master to assign the partitions.
      *
      * @throws HazelcastException if the partition state generator failed to arrange the partitions
+     * @return {@link PartitionRuntimeState} if this node is the master and the partition table is initialized
+     *
      * @see PartitionStateManager#initializePartitionAssignments(java.util.Set)
      */
-    void firstArrangement();
+    PartitionRuntimeState firstArrangement();
 
     /**
      * Creates the current partition runtime state. May return {@code null} if the node should fetch the most recent partition

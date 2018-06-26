@@ -38,7 +38,7 @@ public class TransactionalMapSetMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
+        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         map.set(parameters.key, parameters.value);
         return null;

@@ -42,10 +42,10 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
      */
     public static final int DEFAULT_BATCH_SIZE = 100;
 
-    protected String policy = DEFAULT_MERGE_POLICY;
-    protected int batchSize = DEFAULT_BATCH_SIZE;
+    private String policy = DEFAULT_MERGE_POLICY;
+    private int batchSize = DEFAULT_BATCH_SIZE;
 
-    protected MergePolicyConfig readOnly;
+    private MergePolicyConfig readOnly;
 
     public MergePolicyConfig() {
     }

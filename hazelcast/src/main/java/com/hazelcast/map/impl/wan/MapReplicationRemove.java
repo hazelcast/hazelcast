@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.ReplicationEventObject;
-import com.hazelcast.wan.impl.WanEventCounter;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
+import com.hazelcast.wan.impl.WanEventCounter;
 
 import java.io.IOException;
 

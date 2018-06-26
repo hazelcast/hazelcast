@@ -20,7 +20,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Collections.emptyList;
 
-class JitterMonitor {
+final class JitterMonitor {
+
+    private JitterMonitor() {
+    }
 
     private static AtomicBoolean started = new AtomicBoolean();
 

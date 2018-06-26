@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.client.HazelcastClientManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
@@ -63,6 +64,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
+        HazelcastClientManager.shutdownAll();
     }
 
     @Test

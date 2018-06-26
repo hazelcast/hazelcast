@@ -112,7 +112,6 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
     @Test
     public void testAfter() throws Exception {
         CollectionTxnUtil.after(operationList);
-
         for (Operation operation : operationList) {
             TestOperation op = (TestOperation) operation;
             assertTrue(op.afterCalled);
@@ -131,7 +130,6 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
             assertEquals(operationList.get(i), resultList.get(i));
         }
     }
-
 
     static class TestOperation extends Operation implements BackupAwareOperation {
 
@@ -210,9 +208,7 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
             }
 
             TestOperation that = (TestOperation) o;
-
             return i == that.i;
-
         }
 
         @Override
@@ -220,5 +216,4 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
             return i;
         }
     }
-
 }

@@ -292,7 +292,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
 
         boolean evicted = evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
-        if (isStatisticsEnabled() && evicted) {
+        if (isStatisticsEnabled() && evicted && primary) {
             statistics.increaseCacheEvictions(1);
         }
         return evicted;
@@ -425,14 +425,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void invalidateEntry(Data key) {
         invalidateEntry(key, SOURCE_NOT_AVAILABLE);
-    }
-
-    protected void invalidateAllEntries() {
-        invalidateAllEntries(SOURCE_NOT_AVAILABLE);
-    }
-
-    protected void invalidateAllEntries(String source) {
-        invalidateEntry(null, source);
     }
 
     protected void updateGetAndPutStat(boolean isPutSucceed, boolean getValue, boolean oldValueNull, long start) {
@@ -1646,6 +1638,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void destroy() {
         clear();
+        closeListeners();
+        onDestroy();
+    }
+
+    @Override
+    public void destroyInternals() {
+        reset();
         closeListeners();
         onDestroy();
     }

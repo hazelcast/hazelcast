@@ -16,30 +16,21 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.ICacheRecordStore;
-import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
@@ -47,14 +38,10 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  *
  * @since 3.10
  */
-public class CacheMergeOperation extends AbstractNamedOperation implements BackupAwareOperation, ServiceNamespaceAware {
+public class CacheMergeOperation extends CacheOperation implements BackupAwareOperation {
 
     private List<CacheMergeTypes> mergingEntries;
     private SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy;
-
-    private transient SerializationService serializationService;
-    private transient ICacheRecordStore cache;
-    private transient CacheWanEventPublisher wanEventPublisher;
 
     private transient boolean hasBackups;
     private transient Map<Data, CacheRecord> backupRecords;
@@ -70,13 +57,7 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     }
 
     @Override
-    public void beforeRun() throws Exception {
-        serializationService = getNodeEngine().getSerializationService();
-        ICacheService cacheService = getService();
-        cache = cacheService.getOrCreateRecordStore(name, getPartitionId());
-        if (cache.isWanReplicationEnabled()) {
-            wanEventPublisher = cacheService.getCacheWanEventPublisher();
-        }
+    protected void beforeRunInternal() {
         hasBackups = getSyncBackupCount() + getAsyncBackupCount() > 0;
         if (hasBackups) {
             backupRecords = createHashMap(mergingEntries.size());
@@ -93,17 +74,15 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     private void merge(CacheMergeTypes mergingEntry) {
         Data dataKey = mergingEntry.getKey();
 
-        CacheRecord backupRecord = cache.merge(mergingEntry, mergePolicy);
+        CacheRecord backupRecord = recordStore.merge(mergingEntry, mergePolicy);
         if (backupRecord != null) {
             backupRecords.put(dataKey, backupRecord);
         }
-        if (cache.isWanReplicationEnabled()) {
+        if (recordStore.isWanReplicationEnabled()) {
             if (backupRecord != null) {
-                CacheEntryView<Data, Data> entryView
-                        = createDefaultEntryView(dataKey, serializationService.toData(backupRecord.getValue()), backupRecord);
-                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
+                publishWanUpdate(dataKey, backupRecord);
             } else {
-                wanEventPublisher.publishWanReplicationRemove(name, dataKey);
+                publishWanRemove(dataKey);
             }
         }
     }
@@ -116,16 +95,6 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     @Override
     public boolean shouldBackup() {
         return hasBackups && !backupRecords.isEmpty();
-    }
-
-    @Override
-    public int getSyncBackupCount() {
-        return cache != null ? cache.getConfig().getBackupCount() : 0;
-    }
-
-    @Override
-    public int getAsyncBackupCount() {
-        return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
     }
 
     @Override
@@ -156,22 +125,7 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     }
 
     @Override
-    public int getFactoryId() {
-        return CacheDataSerializerHook.F_ID;
-    }
-
-    @Override
     public int getId() {
         return CacheDataSerializerHook.MERGE;
-    }
-
-    @Override
-    public ServiceNamespace getServiceNamespace() {
-        ICacheRecordStore recordStore = cache;
-        if (recordStore == null) {
-            ICacheService service = getService();
-            recordStore = service.getOrCreateRecordStore(name, getPartitionId());
-        }
-        return recordStore.getObjectNamespace();
     }
 }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.crdt.pncounter.operations;
 
-import com.hazelcast.crdt.CRDTDataSerializerHook;
 import com.hazelcast.cluster.impl.VectorClock;
+import com.hazelcast.crdt.CRDTDataSerializerHook;
 import com.hazelcast.crdt.pncounter.PNCounterImpl;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.monitor.impl.LocalPNCounterStatsImpl;

@@ -16,12 +16,11 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
 /**
  * Responsible for handling responses to invocations.
  */
 public interface ClientResponseHandler {
-    void handle(ClientMessage message, ClientConnection connection);
+    void handle(ClientMessage message);
 }

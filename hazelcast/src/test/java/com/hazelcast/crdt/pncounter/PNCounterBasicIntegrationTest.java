@@ -44,7 +44,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class PNCounterBasicIntegrationTest extends BasePNCounterBasicIntegrationTest {
+public class PNCounterBasicIntegrationTest extends AbstractPNCounterBasicIntegrationTest {
 
     private HazelcastInstance[] instances;
 

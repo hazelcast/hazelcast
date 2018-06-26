@@ -24,7 +24,6 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.impl.mapstore.MapStoreTest.TestMapStore;
 import com.hazelcast.map.impl.mapstore.MapStoreWriteBehindTest.FailAwareMapStore;
 import com.hazelcast.query.SampleTestObjects.Employee;
@@ -78,7 +77,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         testMapStore.assertAwait(1);
         assertEquals(1, testMapStore.getInitCount());
         assertEquals("default", testMapStore.getMapName());
-        assertEquals(TestUtil.getNode(instance), TestUtil.getNode(testMapStore.getHazelcastInstance()));
+        assertEquals(getNode(instance), getNode(testMapStore.getHazelcastInstance()));
     }
 
     @Test(timeout = 120000)

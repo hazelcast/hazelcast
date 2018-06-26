@@ -115,7 +115,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         lock.unlock();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testOperationRedo() {
         final HazelcastInstance hz1 = hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();

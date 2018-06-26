@@ -18,6 +18,7 @@ package com.hazelcast.nio.serialization.compatibility;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -49,6 +50,7 @@ import java.util.Map;
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID;
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.INNER_PORTABLE_CLASS_ID;
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.PORTABLE_FACTORY_ID;
+import static com.hazelcast.test.HazelcastTestSupport.assumeConfiguredByteOrder;
 import static junit.framework.TestCase.assertTrue;
 
 @RunWith(Parameterized.class)
@@ -152,13 +154,17 @@ public class BinaryCompatibilityTest {
                 .addFloatField("f")
                 .build();
 
-        return new DefaultSerializationServiceBuilder()
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setVersion(version)
                 .addPortableFactory(PORTABLE_FACTORY_ID, new APortableFactory())
                 .addDataSerializableFactory(IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID, new ADataSerializableFactory())
                 .setConfig(config)
                 .addClassDefinition(classDefinition)
                 .build();
+
+        assumeConfiguredByteOrder(serializationService, byteOrder);
+
+        return serializationService;
     }
 
     private static boolean equals(Object a, Object b) {

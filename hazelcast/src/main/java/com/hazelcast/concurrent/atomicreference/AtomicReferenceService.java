@@ -199,7 +199,7 @@ public class AtomicReferenceService
         return new Merger(collector);
     }
 
-    private class Merger extends AbstractContainerMerger<AtomicReferenceContainer, Data, AtomicReferenceMergeTypes> {
+    private class Merger extends AbstractContainerMerger<AtomicReferenceContainer, Object, AtomicReferenceMergeTypes> {
 
         Merger(AtomicReferenceContainerCollector collector) {
             super(collector, nodeEngine);
@@ -221,7 +221,7 @@ public class AtomicReferenceService
 
                 for (AtomicReferenceContainer container : containerList) {
                     String name = collector.getContainerName(container);
-                    SplitBrainMergePolicy<Data, AtomicReferenceMergeTypes> mergePolicy
+                    SplitBrainMergePolicy<Object, AtomicReferenceMergeTypes> mergePolicy
                             = getMergePolicy(collector.getMergePolicyConfig(container));
 
                     MergeOperation operation = new MergeOperation(name, mergePolicy, container.get());

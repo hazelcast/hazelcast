@@ -102,7 +102,7 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     static class ShouldExecuteOncePredicate<K, V> implements IndexAwarePredicate<K, V> {
 
-        boolean executed = false;
+        boolean executed;
 
         @Override
         public boolean apply(Map.Entry<K, V> mapEntry) {
@@ -339,7 +339,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
     }
 
-    private class NullDummyEntry extends QueryableEntry {
+    private final class NullDummyEntry extends QueryableEntry {
 
         private Integer nullField;
 

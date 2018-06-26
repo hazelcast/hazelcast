@@ -18,32 +18,33 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.function.Consumer;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 
 /**
- * A {@link PacketHandler} that dispatches the {@link Packet} to the right service. So operations are send to the
+ * A {@link Consumer} that dispatches the {@link Packet} to the right service. So operations are send to the
  * {@link com.hazelcast.spi.OperationService}, events are send to the {@link com.hazelcast.spi.EventService} etc.
  */
-public final class PacketDispatcher implements PacketHandler {
+public final class PacketDispatcher implements Consumer<Packet> {
 
     private final ILogger logger;
-    private final PacketHandler eventService;
-    private final PacketHandler operationExecutor;
-    private final PacketHandler jetService;
-    private final PacketHandler connectionManager;
-    private final PacketHandler responseHandler;
-    private final PacketHandler invocationMonitor;
+    private final Consumer<Packet> eventService;
+    private final Consumer<Packet> operationExecutor;
+    private final Consumer<Packet> jetService;
+    private final Consumer<Packet> connectionManager;
+    private final Consumer<Packet> responseHandler;
+    private final Consumer<Packet> invocationMonitor;
 
     public PacketDispatcher(ILogger logger,
-                            PacketHandler operationExecutor,
-                            PacketHandler responseHandler,
-                            PacketHandler invocationMonitor,
-                            PacketHandler eventService,
-                            PacketHandler connectionManager,
-                            PacketHandler jetService) {
+                            Consumer<Packet> operationExecutor,
+                            Consumer<Packet> responseHandler,
+                            Consumer<Packet> invocationMonitor,
+                            Consumer<Packet> eventService,
+                            Consumer<Packet> connectionManager,
+                            Consumer<Packet> jetService) {
         this.logger = logger;
         this.responseHandler = responseHandler;
         this.eventService = eventService;
@@ -54,33 +55,31 @@ public final class PacketDispatcher implements PacketHandler {
     }
 
     @Override
-    public void handle(Packet packet) throws Exception {
+    public void accept(Packet packet) {
         try {
             switch (packet.getPacketType()) {
                 case OPERATION:
                     if (packet.isFlagRaised(FLAG_OP_RESPONSE)) {
-                        responseHandler.handle(packet);
+                        responseHandler.accept(packet);
                     } else if (packet.isFlagRaised(FLAG_OP_CONTROL)) {
-                        invocationMonitor.handle(packet);
+                        invocationMonitor.accept(packet);
                     } else {
-                        operationExecutor.handle(packet);
+                        operationExecutor.accept(packet);
                     }
                     break;
                 case EVENT:
-                    eventService.handle(packet);
+                    eventService.accept(packet);
                     break;
                 case BIND:
-                    connectionManager.handle(packet);
+                    connectionManager.accept(packet);
                     break;
                 case JET:
-                    jetService.handle(packet);
+                    jetService.accept(packet);
                     break;
                 default:
                     logger.severe("Header flags [" + Integer.toBinaryString(packet.getFlags())
                             + "] specify an undefined packet type " + packet.getPacketType().name());
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         } catch (Throwable t) {
             inspectOutOfMemoryError(t);
             logger.severe("Failed to process: " + packet, t);

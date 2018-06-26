@@ -112,26 +112,8 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTTL_prolongationAfterNonTTLUpdate_Quick() {
-        final IMap<Integer, String> map = createSimpleMap();
-
-        long sleepRef = System.currentTimeMillis();
-        map.put(1, "value0", 3, TimeUnit.SECONDS);
-        // 1 second safety margin before eviction
-        sleepAtMostSeconds(sleepRef, 2);
-        assertTrue(map.containsKey(1));
-
-        sleepRef = System.currentTimeMillis();
-        // this should prolong the life of the entry for another 3 seconds
-        map.put(1, "value1");
-        // 4 seconds of wait time in total, 1 second safety margin after a potential eviction
-        sleepAtMostSeconds(sleepRef, 2);
-        assertTrue(map.containsKey(1));
-    }
-
-    @Test
     @Category(SlowTest.class)
-    public void testTTL_prolongationAfterNonTTLUpdate_Slow() throws ExecutionException, InterruptedException {
+    public void testTTL_prolongationAfterNonTTLUpdate() throws ExecutionException, InterruptedException {
         final IMap<Integer, String> map = createSimpleMap();
 
         long sleepRef = System.currentTimeMillis();

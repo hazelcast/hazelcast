@@ -29,21 +29,21 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.util.executor.StripedRunnable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
-
-public class MockConnectionManager implements ConnectionManager {
+class MockConnectionManager implements ConnectionManager {
 
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
@@ -59,7 +59,7 @@ public class MockConnectionManager implements ConnectionManager {
 
     private volatile boolean live;
 
-    public MockConnectionManager(IOService ioService, Node node, TestNodeRegistry registry) {
+    MockConnectionManager(IOService ioService, Node node, TestNodeRegistry registry) {
         this.ioService = ioService;
         this.registry = registry;
         this.node = node;
@@ -274,11 +274,20 @@ public class MockConnectionManager implements ConnectionManager {
             sendTask = new SendTask(packet, target);
         }
 
-        int retries = sendTask.retries;
+        int retries = sendTask.retries.get();
         if (retries < RETRY_NUMBER && ioService.isActive()) {
             getOrConnect(target, true);
             // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
-            scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
+            try {
+                scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
+            } catch (RejectedExecutionException e) {
+                if (live) {
+                    throw e;
+                }
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Packet send task is rejected. Packet cannot be sent to " + target);
+                }
+            }
             return true;
         }
         return false;
@@ -286,22 +295,21 @@ public class MockConnectionManager implements ConnectionManager {
 
     private final class SendTask implements Runnable {
 
+        private final AtomicInteger retries = new AtomicInteger();
+
         private final Packet packet;
         private final Address target;
-
-        private volatile int retries;
 
         private SendTask(Packet packet, Address target) {
             this.packet = packet;
             this.target = target;
         }
 
-        @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "single-writer, many-reader")
         @Override
         public void run() {
-            retries++;
+            int actualRetries = retries.incrementAndGet();
             if (logger.isFinestEnabled()) {
-                logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
+                logger.finest("Retrying[" + actualRetries + "] packet send operation to: " + target);
             }
             send(packet, target, this);
         }

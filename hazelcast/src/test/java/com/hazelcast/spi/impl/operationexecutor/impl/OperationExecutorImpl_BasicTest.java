@@ -157,36 +157,6 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
     }
 
     @Test
-    public void test_interruptAllPartitionThreads() throws Exception {
-        initExecutor();
-
-        int threadCount = executor.getPartitionThreadCount();
-        final CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
-
-        executor.executeOnPartitionThreads(new Runnable() {
-            @Override
-            public void run() {
-                // current thread must be a PartitionOperationThread
-                if (Thread.currentThread() instanceof PartitionOperationThread) {
-                    try {
-                        Thread.sleep(Long.MAX_VALUE);
-                    } catch (InterruptedException ignored) {
-                    } finally {
-                        try {
-                            awaitBarrier(barrier);
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                }
-            }
-        });
-
-        executor.interruptPartitionThreads();
-        awaitBarrier(barrier);
-    }
-
-    @Test
     public void genericPriorityTaskIsPickedUpEvenWhenAllGenericThreadsBusy() {
         initExecutor();
 

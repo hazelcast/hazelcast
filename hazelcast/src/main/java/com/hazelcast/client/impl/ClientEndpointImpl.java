@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -41,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * The {@link com.hazelcast.client.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
+ * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
  */
 public final class ClientEndpointImpl implements ClientEndpoint {
 
@@ -56,7 +55,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     private LoginContext loginContext;
     private ClientPrincipal principal;
-    private boolean firstConnection;
+    private boolean ownerConnection;
     private Credentials credentials;
     private volatile boolean authenticated;
     private int clientVersion;
@@ -104,15 +103,15 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         return loginContext != null ? loginContext.getSubject() : null;
     }
 
-    public boolean isFirstConnection() {
-        return firstConnection;
+    public boolean isOwnerConnection() {
+        return ownerConnection;
     }
 
     @Override
     public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection,
                               String clientVersion, long authCorrelationId) {
         this.principal = principal;
-        this.firstConnection = firstConnection;
+        this.ownerConnection = firstConnection;
         this.credentials = credentials;
         this.authenticated = true;
         this.authenticationCorrelationId = authCorrelationId;
@@ -279,7 +278,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         return "ClientEndpoint{"
                 + "connection=" + connection
                 + ", principal='" + principal
-                + ", firstConnection=" + firstConnection
+                + ", ownerConnection=" + ownerConnection
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersionString
                 + ", creationTime=" + creationTime

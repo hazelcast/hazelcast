@@ -109,7 +109,7 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
         // now we are going to force the head to move
         final ArrayRingbuffer ringbuffer = (ArrayRingbuffer) rbContainer.getRingbuffer();
         for (int k = 0; k < config.getCapacity() / 2; k++) {
-            ringbuffer.ringItems[k] = null;
+            ringbuffer.getItems()[k] = null;
             if (ttlSeconds != 0) {
                 // we need to set the expiration slot to 0, because it won't be serialized (optimization)
                 // serialization will only dump what is between head and tail
@@ -140,7 +140,7 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
         }
         final ArrayRingbuffer originalRingbuffer = (ArrayRingbuffer) original.getRingbuffer();
         final ArrayRingbuffer cloneRingbuffer = (ArrayRingbuffer) original.getRingbuffer();
-        assertArrayEquals(originalRingbuffer.ringItems, cloneRingbuffer.ringItems);
+        assertArrayEquals(originalRingbuffer.getItems(), cloneRingbuffer.getItems());
 
         // the most complicated part is the expiration
         if (original.getConfig().getTimeToLiveSeconds() == 0) {

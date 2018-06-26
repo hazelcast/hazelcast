@@ -106,7 +106,7 @@ public class UserCodeDeploymentConfig {
      *     Config hazelcastConfig = new Config();
      *
      *     UserCodeDeploymentConfig userCodeDeploymentConfig = hazelcastConfig.getUserCodeDeploymentConfig();
-     *     userCodeDeploymentConfig.setProviderFilter(HAS_ATTRIBUTE:class-provider);
+     *     userCodeDeploymentConfig.setProviderFilter("HAS_ATTRIBUTE:class-provider");
      *
      *     HazecastInstance instance = Hazelcast.newHazelcastInstance(hazelcastConfig);
      * </pre>

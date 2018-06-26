@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Offloadable;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -40,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -121,7 +121,7 @@ public class DistortInvalidationMetadataEntryProcessor extends AbstractEntryProc
     }
 
     private void distortRandomPartitionSequence(String mapName, HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = TestUtil.getNode(member).nodeEngine;
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
         MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
@@ -133,7 +133,7 @@ public class DistortInvalidationMetadataEntryProcessor extends AbstractEntryProc
     }
 
     private void distortRandomPartitionUuid(HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = TestUtil.getNode(member).nodeEngine;
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
         int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
         int partitionId = getInt(partitionCount);
         MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);

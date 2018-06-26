@@ -303,7 +303,6 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
         }
     }
 
-
     @Test
     public void register_staticMethod() {
         StaticMethod object = new StaticMethod();
@@ -353,7 +352,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
         assertEquals(object.field, fieldGauge.read());
     }
 
-    public static abstract class ClassWithGauges {
+    abstract static class ClassWithGauges {
         @Probe
         int method() {
             return 10;
@@ -363,7 +362,6 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
         int field = 10;
     }
 
-    public static class SubclassWithGauges extends ClassWithGauges {
-
+    private static class SubclassWithGauges extends ClassWithGauges {
     }
 }

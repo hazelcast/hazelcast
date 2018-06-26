@@ -24,7 +24,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -35,35 +34,42 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MIN_RECONCILIATION_INTERVAL_SECONDS;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;
 import static com.hazelcast.map.impl.nearcache.invalidation.MemberMapReconciliationTest.assertStats;
-import static java.lang.String.valueOf;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMapReconciliationTest extends HazelcastTestSupport {
 
-    private static final String MAP_NAME = "test";
-    private static final int RECONCILIATION_INTERVAL_SECONDS = 3;
+    private static final String MAP_NAME = "ClientMapReconciliationTest";
+    private static final int RECONCILIATION_INTERVAL_SECS = 3;
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    private final ClientConfig clientConfig = new ClientConfig();
 
-    private IMap serverMap;
-    private IMap clientMap;
+    private ClientConfig clientConfig;
+
+    private IMap<Integer, Integer> serverMap;
+    private IMap<Integer, Integer> clientMap;
 
     @Before
-    public void setUp() throws Exception {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig(MAP_NAME);
-        nearCacheConfig.setInvalidateOnChange(true);
+    public void setUp() {
+        Config config = getBaseConfig()
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE))
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE));
 
-        clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
-        clientConfig.setProperty("hazelcast.invalidation.reconciliation.interval.seconds", valueOf(RECONCILIATION_INTERVAL_SECONDS));
-        clientConfig.setProperty("hazelcast.invalidation.min.reconciliation.interval.seconds", valueOf(RECONCILIATION_INTERVAL_SECONDS));
-        clientConfig.addNearCacheConfig(nearCacheConfig);
+        NearCacheConfig nearCacheConfig = new NearCacheConfig(MAP_NAME)
+                .setInvalidateOnChange(true);
 
-        Config config = new Config();
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), valueOf(Integer.MAX_VALUE));
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), valueOf(Integer.MAX_VALUE));
+        clientConfig = new ClientConfig()
+                .setProperty(MAX_TOLERATED_MISS_COUNT.getName(), "0")
+                .setProperty(RECONCILIATION_INTERVAL_SECONDS.getName(), String.valueOf(RECONCILIATION_INTERVAL_SECS))
+                .setProperty(MIN_RECONCILIATION_INTERVAL_SECONDS.getName(), String.valueOf(RECONCILIATION_INTERVAL_SECS))
+                .addNearCacheConfig(nearCacheConfig);
 
         HazelcastInstance server = factory.newHazelcastInstance(config);
         serverMap = server.getMap(MAP_NAME);
@@ -72,21 +78,12 @@ public class ClientMapReconciliationTest extends HazelcastTestSupport {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 
-    private IMap createMapFromNewClient() {
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        IMap map = client.getMap(MAP_NAME);
-
-        assert map instanceof NearCachedClientMapProxy;
-
-        return map;
-    }
-
     @Test
-    public void test_reconciliation_does_not_cause_premature_removal() throws Exception {
+    public void test_reconciliation_does_not_cause_premature_removal() {
         int total = 100;
         for (int i = 0; i < total; i++) {
             serverMap.put(i, i);
@@ -104,12 +101,21 @@ public class ClientMapReconciliationTest extends HazelcastTestSupport {
         NearCacheStats nearCacheStats = mapFromNewClient.getLocalMapStats().getNearCacheStats();
         assertStats(nearCacheStats, total, 0, total);
 
-        sleepSeconds(2 * RECONCILIATION_INTERVAL_SECONDS);
+        sleepSeconds(2 * RECONCILIATION_INTERVAL_SECS);
 
         for (int i = 0; i < total; i++) {
             mapFromNewClient.get(i);
         }
 
         assertStats(nearCacheStats, total, total, total);
+    }
+
+    private IMap<Integer, Integer> createMapFromNewClient() {
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        IMap<Integer, Integer> map = client.getMap(MAP_NAME);
+
+        assertInstanceOf(NearCachedClientMapProxy.class, map);
+
+        return map;
     }
 }

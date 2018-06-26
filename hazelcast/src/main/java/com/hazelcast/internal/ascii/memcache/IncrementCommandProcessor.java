@@ -46,7 +46,7 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
         String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
+            mapName = MAP_NAME_PREFIX + key.substring(0, index);
             key = key.substring(index + 1);
         }
         try {

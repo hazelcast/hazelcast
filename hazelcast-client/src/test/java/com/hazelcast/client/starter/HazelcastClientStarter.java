@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.client.starter;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader;
 import com.hazelcast.test.starter.HazelcastStarter;
@@ -27,7 +28,7 @@ import java.lang.reflect.Method;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
 import static com.hazelcast.test.starter.HazelcastStarter.getConfig;
 import static com.hazelcast.test.starter.HazelcastStarter.getTargetVersionClassloader;
-import static com.hazelcast.test.starter.Utils.rethrow;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static java.lang.Thread.currentThread;
 
 public class HazelcastClientStarter {
@@ -39,13 +40,15 @@ public class HazelcastClientStarter {
         return newHazelcastClient(version, null, enterprise);
     }
 
+    @SuppressWarnings("unchecked")
     public static HazelcastInstance newHazelcastClient(String version, ClientConfig clientConfig, boolean enterprise) {
         ClassLoader classLoader = clientConfig == null ? null : clientConfig.getClassLoader();
         HazelcastAPIDelegatingClassloader classloader = getTargetVersionClassloader(version, enterprise, classLoader);
         ClassLoader contextClassLoader = currentThread().getContextClassLoader();
         currentThread().setContextClassLoader(null);
         try {
-            Class<Hazelcast> hazelcastClass = (Class<Hazelcast>) classloader.loadClass("com.hazelcast.client.HazelcastClient");
+            Class<HazelcastClient> hazelcastClass
+                    = (Class<HazelcastClient>) classloader.loadClass("com.hazelcast.client.HazelcastClient");
             System.out.println(hazelcastClass + " loaded by " + hazelcastClass.getClassLoader());
             Class<?> configClass = classloader.loadClass("com.hazelcast.client.config.ClientConfig");
             Object config = getConfig(clientConfig, classloader, configClass);
@@ -53,22 +56,20 @@ public class HazelcastClientStarter {
             Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastClient", configClass);
             Object delegate = newHazelcastInstanceMethod.invoke(null, config);
             return (HazelcastInstance) proxyObjectForStarter(HazelcastStarter.class.getClassLoader(), delegate);
-
         } catch (ClassNotFoundException e) {
-            throw rethrow(e);
+            throw rethrowGuardianException(e);
         } catch (NoSuchMethodException e) {
-            throw rethrow(e);
+            throw rethrowGuardianException(e);
         } catch (IllegalAccessException e) {
-            throw rethrow(e);
+            throw rethrowGuardianException(e);
         } catch (InvocationTargetException e) {
-            throw rethrow(e);
+            throw rethrowGuardianException(e);
         } catch (InstantiationException e) {
-            throw rethrow(e);
+            throw rethrowGuardianException(e);
         } finally {
             if (contextClassLoader != null) {
                 currentThread().setContextClassLoader(contextClassLoader);
             }
         }
     }
-
 }

@@ -94,6 +94,38 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
+    public void testAlterTTLOfAnEternalKey() {
+        final IMap<String, String> map = client.getMap(randomString());
+
+        map.put("key", "value");
+        map.setTTL("key", 100, TimeUnit.MILLISECONDS);
+
+        sleepAtLeastMillis(100);
+
+        assertNull(map.get("key"));
+    }
+
+    @Test
+    public void testExtendTTLOfAKeyBeforeItExpires() {
+        final IMap<String, String> map = client.getMap(randomString());
+        map.put("key", "value", 1, TimeUnit.SECONDS);
+        map.setTTL("key", 0, TimeUnit.DAYS);
+
+        sleepAtLeastMillis(1200);
+
+        assertEquals("value", map.get("key"));
+    }
+
+    @Test
+    public void testSetTTLConfiguresMapPolicyIfTTLIsNegative() {
+        final IMap<String, String> map = client.getMap("mapWithTTL");
+        map.put("tempKey", "tempValue", 10, TimeUnit.SECONDS);
+        map.setTTL("tempKey", -1, TimeUnit.SECONDS);
+        sleepAtLeastMillis(1000);
+        assertNull(map.get("tempKey"));
+    }
+
+    @Test
     public void testIsEmpty_whenEmpty() {
         IMap<String, String> map = client.getMap(randomString());
         assertTrue(map.isEmpty());

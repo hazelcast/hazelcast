@@ -348,7 +348,8 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     static class HazelcastInstanceAwareRunnable implements Runnable, HazelcastInstanceAware, Serializable {
-        private transient boolean initializeCalled = false;
+
+        private transient boolean initializeCalled;
 
         @Override
         public void run() {
@@ -447,7 +448,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(NODE_COUNT);
         int sum = 0;
         Set<Member> membersSet = instances[0].getCluster().getMembers();
-        Member[] members = membersSet.toArray(new Member[membersSet.size()]);
+        Member[] members = membersSet.toArray(new Member[0]);
         Random random = new Random();
         for (int i = 0; i < NODE_COUNT; i++) {
             IExecutorService service = instances[i].getExecutorService("testSubmitToMembersRunnable");
@@ -622,7 +623,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         };
         int sum = 0;
         Set<Member> membersSet = instances[0].getCluster().getMembers();
-        Member[] members = membersSet.toArray(new Member[membersSet.size()]);
+        Member[] members = membersSet.toArray(new Member[0]);
         Random random = new Random();
         String name = "testSubmitToMembersCallable";
 
@@ -1035,7 +1036,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         Config config = new Config();
-        long callTimeoutMillis = 3000;
+        long callTimeoutMillis = 4000;
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);

@@ -63,6 +63,13 @@ public class DenseHyperLogLogEncoderTest extends HyperLogLogEncoderAbstractTest 
 
     @RequireAssertEnabled
     @Test(expected = AssertionError.class)
+    public void testAlpha_withGivenZeroAsInvalidMemoryFootprint() {
+        DenseHyperLogLogEncoder encoder = new DenseHyperLogLogEncoder(0);
+        encoder.estimate();
+    }
+
+    @RequireAssertEnabled
+    @Test(expected = AssertionError.class)
     public void testAlpha_withInvalidMemoryFootprint() {
         DenseHyperLogLogEncoder encoder = new DenseHyperLogLogEncoder(1);
 

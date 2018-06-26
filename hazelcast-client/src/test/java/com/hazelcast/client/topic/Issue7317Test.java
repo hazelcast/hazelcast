@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.client.topic;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
@@ -22,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ReliableMessageListener;
@@ -34,10 +37,8 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test for #7317 (https://github.com/hazelcast/hazelcast/issues/7317), contributed
@@ -47,7 +48,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class Issue7317Test {
+public class Issue7317Test extends HazelcastTestSupport {
 
     static final String smallRB = "foo";
     static final int smallRBCapacity = 3;
@@ -63,7 +64,9 @@ public class Issue7317Test {
         rbConf.setCapacity(smallRBCapacity);
         serverConfig.addRingBufferConfig(rbConf);
         hazelcastFactory.newHazelcastInstance(serverConfig);
-        client = hazelcastFactory.newHazelcastClient();
+        ClientConfig config = new ClientConfig();
+        config.getReliableTopicConfig(smallRB).setReadBatchSize(smallRBCapacity);
+        client = hazelcastFactory.newHazelcastClient(config);
     }
 
     @After
@@ -118,7 +121,7 @@ public class Issue7317Test {
         }
         ReliableMessageListener<String> listener = new Issue7317MessageListener(messages, cdl);
         String reg = rTopic.addMessageListener(listener);
-        assertTrue(cdl.await(5, TimeUnit.SECONDS));
+        assertOpenEventually(cdl);
         rTopic.removeMessageListener(reg);
 
     }

@@ -37,8 +37,9 @@ import static java.lang.System.arraycopy;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * The {@link Diagnostics} is a debugging tool that provides insight in all kinds of potential performance and stability issues.
- * The actual logic to provide such insights, is placed in the {@link DiagnosticsPlugin}.
+ * The {@link Diagnostics} is a debugging tool that provides insight in all kinds
+ * of potential performance and stability issues. The actual logic to provide such
+ * insights, is placed in the {@link DiagnosticsPlugin}.
  */
 @SuppressWarnings("WeakerAccess")
 public class Diagnostics {
@@ -46,8 +47,10 @@ public class Diagnostics {
     public static final String PREFIX = "hazelcast.diagnostics";
 
     /**
-     * The minimum level for probes is MANDATORY, but it can be changed to INFO or DEBUG. A lower level will increase
-     * memory usage (probably just a few 100KB) and provides much greater detail on what is going on inside a HazelcastInstance.
+     * The minimum level for probes is MANDATORY, but it can be changed to INFO
+     * or DEBUG. A lower level will increase memory usage (probably just a few
+     * 100KB) and provides much greater detail on what is going on inside a
+     * HazelcastInstance.
      * <p>
      * By default only mandatory probes are being tracked
      */
@@ -56,16 +59,19 @@ public class Diagnostics {
             .setDeprecatedName("hazelcast.performance.metric.level");
 
     /**
-     * If metrics should be tracked on distributed data-structures like IMap, IQueue etc.
+     * If metrics should be tracked on distributed data-structures like IMap,
+     * IQueue etc.
      * <p>
-     * By default these data-structures are not tracked, but in a future release this will probably be changed to {@code true}.
+     * By default these data-structures are not tracked, but in a future release
+     * this will probably be changed to {@code true}.
      */
     public static final HazelcastProperty METRICS_DISTRIBUTED_DATASTRUCTURES
             = new HazelcastProperty(PREFIX + ".metric.distributed.datastructures", false);
 
 
     /**
-     * Use the {@link Diagnostics} to see internal performance metrics and cluster related information.
+     * Use the {@link Diagnostics} to see internal performance metrics and cluster
+     * related information.
      * <p>
      * The performance monitor logs all metrics into the log file.
      * <p>
@@ -77,7 +83,8 @@ public class Diagnostics {
             .setDeprecatedName("hazelcast.performance.monitoring.enabled");
 
     /**
-     * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent eating too much disk space.
+     * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent
+     * eating too much disk space.
      * <p>
      * This property sets the maximum size in MB for a single file.
      * <p>
@@ -90,7 +97,8 @@ public class Diagnostics {
             .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.size.mb");
 
     /**
-     * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent eating too much disk space.
+     * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent
+     * eating too much disk space.
      * <p>
      * This property sets the maximum number of rolling files to keep on disk.
      * <p>
@@ -101,8 +109,10 @@ public class Diagnostics {
             .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.count");
 
     /**
-     * Configures if the epoch time should be included in the 'top' section. This makes it easy to determine the time in epoch
-     * format and prevents needing to parse the date-format section. The default is {@code false} since it will cause more noise.
+     * Configures if the epoch time should be included in the 'top' section.
+     * This makes it easy to determine the time in epoch format and prevents
+     * needing to parse the date-format section. The default is {@code false}
+     * since it will cause more noise.
      */
     public static final HazelcastProperty INCLUDE_EPOCH_TIME = new HazelcastProperty(PREFIX + ".include.epoch", true);
 
@@ -157,8 +167,9 @@ public class Diagnostics {
     }
 
     /**
-     * Gets the plugin for a given plugin class. This method should be used if the plugin instance is required within
-     * some data-structure outside of the Diagnostics.
+     * Gets the plugin for a given plugin class. This method should be used if
+     * the plugin instance is required within some data-structure outside of the
+     * Diagnostics.
      *
      * @param pluginClass the class of the DiagnosticsPlugin
      * @param <P>         type of the plugin

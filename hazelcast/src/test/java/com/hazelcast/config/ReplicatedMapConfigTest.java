@@ -23,12 +23,11 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-
-import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -43,6 +42,9 @@ public class ReplicatedMapConfigTest {
                 .withPrefabValues(MergePolicyConfig.class,
                         new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
                         new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                .withPrefabValues(ReplicatedMapConfigReadOnly.class,
+                        new ReplicatedMapConfigReadOnly(new ReplicatedMapConfig("red")),
+                        new ReplicatedMapConfigReadOnly(new ReplicatedMapConfig("black")))
                 .verify();
     }
 }

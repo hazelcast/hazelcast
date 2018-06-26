@@ -80,7 +80,7 @@ public class IndexesTest {
         }
         EntryObject entryObject = new PredicateBuilder().getEntryObject();
         PredicateBuilder predicate = entryObject.get("name").equal("0Name")
-                .and(entryObject.get("age").in(ages.toArray(new String[count])));
+                .and(entryObject.get("age").in(ages.toArray(new String[0])));
         Set<QueryableEntry> results = indexes.query(predicate);
         assertEquals(1, results.size());
     }

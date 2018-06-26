@@ -59,7 +59,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
 
         final int oldCount = OutOfMemoryErrorDispatcher.getOutOfMemoryErrorCount();
 
-        executor.handle(packet);
+        executor.accept(packet);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -136,7 +136,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         } else if (task instanceof PartitionSpecificRunnable) {
             executor.execute((PartitionSpecificRunnable) task);
         } else if (task instanceof Packet) {
-            executor.handle((Packet) task);
+            executor.accept((Packet) task);
         } else {
             fail("invalid task!");
         }

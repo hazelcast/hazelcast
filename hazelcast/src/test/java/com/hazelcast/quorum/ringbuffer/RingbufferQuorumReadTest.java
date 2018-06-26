@@ -39,7 +39,6 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -132,16 +131,13 @@ public class RingbufferQuorumReadTest extends AbstractQuorumTest {
         ring(0).readManyAsync(1L, 1, 1, new Filter()).get();
     }
 
-    @Test
-    public void readManyAsync_noQuorum() {
+    @Test(expected = QuorumException.class)
+    public void readManyAsync_noQuorum() throws Throwable {
         try {
             ring(3).readManyAsync(1L, 1, 1, new Filter()).get();
         } catch (Exception ex) {
-            if (ex instanceof QuorumException || ex.getCause() instanceof QuorumException) {
-                return;
-            }
+            throw ex.getCause();
         }
-        fail("Expected QuorumException top-level or as cause");
     }
 
     private static class Filter implements IFunction {

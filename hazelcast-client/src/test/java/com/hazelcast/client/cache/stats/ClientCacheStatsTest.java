@@ -21,7 +21,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.stats.CacheStatsTest;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -62,7 +62,8 @@ public class ClientCacheStatsTest extends CacheStatsTest {
     @Parameters(name = "nearCached:{0}")
     public static Collection<Object> parameters() {
         return Arrays.asList(new Object[]{
-                Boolean.TRUE, Boolean.FALSE
+                Boolean.TRUE,
+                Boolean.FALSE,
         });
     }
 
@@ -129,8 +130,11 @@ public class ClientCacheStatsTest extends CacheStatsTest {
     @Override
     @Test
     public void testEvictions() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
         expectedException.expect(UnsupportedOperationException.class);
-        super.testEvictions();
+        stats.getCacheEvictions();
     }
 
     @Override

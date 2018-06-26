@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.topic;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
@@ -50,7 +49,6 @@ public class TopicAddMessageListenerMessageTask
     protected Object call() throws Exception {
         partitionKey = serializationService.toData(parameters.name);
         TopicService service = getService(TopicService.SERVICE_NAME);
-        ClientEndpoint endpoint = getEndpoint();
         String registrationId = service.addMessageListener(parameters.name, this, parameters.localOnly);
         endpoint.addListenerDestroyAction(TopicService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;

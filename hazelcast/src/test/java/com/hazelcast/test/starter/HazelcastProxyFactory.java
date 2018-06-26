@@ -17,6 +17,14 @@
 package com.hazelcast.test.starter;
 
 import com.hazelcast.core.IFunction;
+import com.hazelcast.test.starter.constructor.AddressConstructor;
+import com.hazelcast.test.starter.constructor.ConfigConstructor;
+import com.hazelcast.test.starter.constructor.DataAwareEntryEventConstructor;
+import com.hazelcast.test.starter.constructor.EnumConstructor;
+import com.hazelcast.test.starter.constructor.GreaterLessPredicateConstructor;
+import com.hazelcast.test.starter.constructor.LifecycleEventConstructor;
+import com.hazelcast.test.starter.constructor.MapEventConstructor;
+import com.hazelcast.test.starter.constructor.VersionConstructor;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.ConstructorFunction;
 import net.bytebuddy.ByteBuddy;
@@ -50,6 +58,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static com.hazelcast.nio.ClassLoaderUtil.getAllInterfaces;
 import static com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader.DELEGATION_WHITE_LIST;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.ProxyPolicy.RETURN_SAME;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static net.bytebuddy.jar.asm.Opcodes.ACC_PUBLIC;
 import static net.bytebuddy.matcher.ElementMatchers.is;
@@ -85,8 +94,7 @@ public class HazelcastProxyFactory {
     private static final String CLASS_NAME_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
     private static final String CLASS_NAME_ADDRESS = "com.hazelcast.nio.Address";
     private static final String CLASS_NAME_VERSION = "com.hazelcast.version.Version";
-    private static final String CLASS_NAME_EVENT_JOURNAL_READER_39 = "com.hazelcast.journal.EventJournalReader";
-    private static final String CLASS_NAME_EVENT_JOURNAL_READER = "com.hazelcast.internal.journal.EventJournalReader";
+    private static final String CLASS_NAME_GREATER_LESS_PREDICATE = "com.hazelcast.query.impl.predicates.GreaterLessPredicate";
 
     static {
         Set<String> notProxiedClasses = new HashSet<String>();
@@ -96,6 +104,7 @@ public class HazelcastProxyFactory {
         notProxiedClasses.add(CLASS_NAME_CLIENT_CONFIG);
         notProxiedClasses.add(CLASS_NAME_ADDRESS);
         notProxiedClasses.add(CLASS_NAME_VERSION);
+        notProxiedClasses.add(CLASS_NAME_GREATER_LESS_PREDICATE);
         NO_PROXYING_WHITELIST = notProxiedClasses;
 
         Set<String> subclassProxiedClasses = new HashSet<String>();
@@ -103,11 +112,33 @@ public class HazelcastProxyFactory {
         subclassProxiedClasses.add(CLASS_NAME_LIFECYCLE_EVENT);
         SUBCLASS_PROXYING_WHITELIST = subclassProxiedClasses;
 
-        // RU_COMPAT_3_9 revise refactored interfaces mapping in 3.11 development cycle
         Map<String, String> refactoredInterfaces = new HashMap<String, String>();
-        refactoredInterfaces.put(CLASS_NAME_EVENT_JOURNAL_READER, CLASS_NAME_EVENT_JOURNAL_READER_39);
-        refactoredInterfaces.put(CLASS_NAME_EVENT_JOURNAL_READER_39, CLASS_NAME_EVENT_JOURNAL_READER);
         REFACTORED_INTERFACES = refactoredInterfaces;
+    }
+
+    /**
+     * Decide whether given {@code delegateClass} should be proxied by subclassing, dynamic JDK proxy or not
+     * proxied at all.
+     *
+     * @param delegateClass class of object to be proxied
+     * @param ifaces        interfaces implemented by delegateClass
+     */
+    public static ProxyPolicy shouldProxy(Class<?> delegateClass, Class<?>[] ifaces) {
+        if (delegateClass.isPrimitive() || isJDKClass(delegateClass)) {
+            return ProxyPolicy.RETURN_SAME;
+        }
+
+        String className = delegateClass.getName();
+        if (DELEGATION_WHITE_LIST.contains(className)) {
+            return RETURN_SAME;
+        }
+        if (NO_PROXYING_WHITELIST.contains(className) || delegateClass.isEnum()) {
+            return ProxyPolicy.NO_PROXY;
+        }
+        if (SUBCLASS_PROXYING_WHITELIST.contains(className) || ifaces.length == 0) {
+            return ProxyPolicy.SUBCLASS_PROXY;
+        }
+        return ProxyPolicy.JDK_PROXY;
     }
 
     /**
@@ -134,7 +165,7 @@ public class HazelcastProxyFactory {
         Class<?>[] delegateIfaces = new Class<?>[ifaces.length];
         Object newArg;
         ProxyPolicy proxyPolicy = shouldProxy(arg.getClass(), ifaces);
-        Utils.debug("Proxy policy for " + arg.getClass() + " is " + proxyPolicy);
+        debug("Proxy policy for %s is %s", arg.getClass(), proxyPolicy);
         switch (proxyPolicy) {
             case NO_PROXY:
                 newArg = constructWithoutProxy(targetClassLoader, arg);
@@ -193,7 +224,7 @@ public class HazelcastProxyFactory {
         }
     }
 
-    static boolean isJDKClass(Class clazz) {
+    private static boolean isJDKClass(Class clazz) {
         return clazz.getClassLoader() == String.class.getClassLoader();
     }
 
@@ -254,34 +285,6 @@ public class HazelcastProxyFactory {
         return construct(targetClass, arg);
     }
 
-    /**
-     * Decide whether given {@code delegateClass} should be proxied by subclassing, dynamic JDK proxy or not
-     * proxied at all.
-     *
-     * @param delegateClass class of object to be proxied
-     * @param ifaces        interfaces implemented by delegateClass
-     */
-    private static ProxyPolicy shouldProxy(Class<?> delegateClass, Class<?>[] ifaces) {
-        if (delegateClass.isPrimitive() || isJDKClass(delegateClass)) {
-            return ProxyPolicy.RETURN_SAME;
-        }
-
-        String className = delegateClass.getName();
-        if (DELEGATION_WHITE_LIST.contains(className)) {
-            return RETURN_SAME;
-        }
-
-        if (NO_PROXYING_WHITELIST.contains(className) || delegateClass.isEnum()) {
-            return ProxyPolicy.NO_PROXY;
-        }
-
-        if (SUBCLASS_PROXYING_WHITELIST.contains(className) || ifaces.length == 0) {
-            return ProxyPolicy.SUBCLASS_PROXY;
-        }
-
-        return ProxyPolicy.JDK_PROXY;
-    }
-
     private static Object construct(Class<?> klass, Object delegate) {
         ConstructorFunction<Object, Object> constructorFunction = CONSTRUCTORS.applyIfAbsent(klass,
                 new IFunction<Class<?>, ConstructorFunction<Object, Object>>() {
@@ -303,9 +306,11 @@ public class HazelcastProxyFactory {
                             return new VersionConstructor(input);
                         } else if (input.isEnum()) {
                             return new EnumConstructor(input);
+                        } else if (className.equals(CLASS_NAME_GREATER_LESS_PREDICATE)) {
+                            return new GreaterLessPredicateConstructor(input);
                         } else {
-                            throw new UnsupportedOperationException("Cannot construct target object "
-                                    + "for target class" + input + " on classloader " + input.getClassLoader());
+                            throw new UnsupportedOperationException("Cannot construct target object for target class" + input
+                                    + " on classloader " + input.getClassLoader());
                         }
                     }
                 });
@@ -317,8 +322,7 @@ public class HazelcastProxyFactory {
      * Return all interfaces implemented by {@code type}, along with {@code type} itself if it is an interface
      */
     private static Class<?>[] getAllInterfacesIncludingSelf(Class<?> type) {
-        Set<Class<?>> interfaces = new HashSet<Class<?>>();
-        interfaces.addAll(Arrays.asList(getAllInterfaces(type)));
+        Set<Class<?>> interfaces = new HashSet<Class<?>>(Arrays.asList(getAllInterfaces(type)));
         //if the return type itself is an interface then we have to add it
         //to the list of interfaces implemented by the proxy
         if (type.isInterface()) {
@@ -336,19 +340,20 @@ public class HazelcastProxyFactory {
      * proxy class for {@code toProxy} on {@code targetClassloader}.
      */
     private static class ProxySource {
+
         private final Class<?> toProxy;
         private final ClassLoader targetClassLoader;
 
-        public ProxySource(Class<?> toProxy, ClassLoader targetClassLoader) {
+        ProxySource(Class<?> toProxy, ClassLoader targetClassLoader) {
             this.toProxy = toProxy;
             this.targetClassLoader = targetClassLoader;
         }
 
-        public Class<?> getToProxy() {
+        Class<?> getToProxy() {
             return toProxy;
         }
 
-        public ClassLoader getTargetClassLoader() {
+        ClassLoader getTargetClassLoader() {
             return targetClassLoader;
         }
 
@@ -429,7 +434,7 @@ public class HazelcastProxyFactory {
             return stripped;
         }
 
-        protected List<MethodDescription.Token> doExtractConstructors(TypeDescription instrumentedType) {
+        List<MethodDescription.Token> doExtractConstructors(TypeDescription instrumentedType) {
             TypeDescription.Generic superClass = instrumentedType.getSuperClass();
             return (superClass == null
                     ? new MethodList.Empty<MethodDescription.InGenericShape>()

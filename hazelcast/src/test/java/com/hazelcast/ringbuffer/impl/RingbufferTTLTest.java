@@ -85,7 +85,7 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
 
         // and we verify that the slots are nulled so we don't have a memory leak on our hands.
         for (int k = 0; k < ringbuffer.capacity(); k++) {
-            assertNull(arrayRingbuffer.ringItems[k]);
+            assertNull(arrayRingbuffer.getItems()[k]);
         }
     }
 

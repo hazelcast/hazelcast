@@ -17,7 +17,7 @@
 package com.hazelcast.client.partitionservice;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -46,7 +46,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.client.impl.ClientTestUtil.getHazelcastClientInstanceImpl;
+import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;

@@ -36,12 +36,6 @@ public final class ThreadLeakTestUtils {
 
     private static final int ASSERT_TIMEOUT_SECONDS = 300;
 
-    private static final ILogger LOGGER = Logger.getLogger(ThreadLeakTestUtils.class);
-
-    static {
-        LOGGER.info("Initializing Logger (required for thread leak tests)");
-    }
-
     /**
      * List of whitelisted classes of threads, which are allowed to be not joinable.
      * We should not add classes of Hazelcast production code here, just test related classes.
@@ -49,6 +43,15 @@ public final class ThreadLeakTestUtils {
     private static final List<Class> THREAD_CLASS_WHITELIST = asList(new Class[]{
             JitterThread.class,
     });
+
+    private static final ILogger LOGGER = Logger.getLogger(ThreadLeakTestUtils.class);
+
+    static {
+        LOGGER.info("Initializing Logger (required for thread leak tests)");
+    }
+
+    private ThreadLeakTestUtils() {
+    }
 
     public static Set<Thread> getThreads() {
         return Thread.getAllStackTraces().keySet();

@@ -27,9 +27,9 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.F_ID;
 import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.REPLICATION;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class AtomicReferenceReplicationOperation extends Operation
         implements IdentifiedDataSerializable {

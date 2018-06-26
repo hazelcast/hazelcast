@@ -178,7 +178,7 @@ public class HazelcastServerCacheManager
 
     @Override
     protected <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
-        CacheMergePolicyProvider mergePolicyProvider = cacheService.getCacheMergePolicyProvider();
+        CacheMergePolicyProvider mergePolicyProvider = cacheService.getMergePolicyProvider();
         checkCacheConfig(cacheConfig, mergePolicyProvider);
 
         Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());

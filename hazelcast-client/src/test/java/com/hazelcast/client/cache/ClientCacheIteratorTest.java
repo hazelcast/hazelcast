@@ -17,6 +17,7 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheIteratorAbstractTest;
+import com.hazelcast.client.HazelcastClientManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
@@ -47,6 +48,7 @@ public class ClientCacheIteratorTest extends CacheIteratorAbstractTest {
     @After
     public void tear() {
         factory.shutdownAll();
+        HazelcastClientManager.shutdownAll();
     }
 
 }

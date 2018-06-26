@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,9 +49,9 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
         super.setup();
         packetsB = Collections.synchronizedList(new ArrayList<Packet>());
         startAllConnectionManagers();
-        ioServiceB.packetHandler = new PacketHandler() {
+        ioServiceB.packetConsumer = new Consumer<Packet>() {
             @Override
-            public void handle(Packet packet) {
+            public void accept(Packet packet) {
                 packetsB.add(packet);
             }
         };

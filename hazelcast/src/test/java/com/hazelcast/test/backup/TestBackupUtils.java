@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.test.backup;
 
 import com.hazelcast.cache.HazelcastCacheManager;
@@ -23,7 +39,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestTaskExecutorUtil;
 
 import javax.cache.spi.CachingProvider;
-
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
@@ -35,13 +50,12 @@ import static org.junit.Assert.assertNull;
 
 /**
  * Convenience for accessing and asserting backup records.
- *
  */
 public final class TestBackupUtils {
+
     private static final int DEFAULT_REPLICA_INDEX = 1;
 
     private TestBackupUtils() {
-
     }
 
     /**
@@ -50,8 +64,8 @@ public final class TestBackupUtils {
      *
      * @param cluster all instances in the cluster
      * @param mapName map to access
-     * @param <K> type of keys
-     * @param <V> type of values
+     * @param <K>     type of keys
+     * @param <V>     type of values
      * @return accessor for a given map and first backup replica
      */
     public static <K, V> BackupAccessor<K, V> newMapAccessor(HazelcastInstance[] cluster, String mapName) {
@@ -62,11 +76,11 @@ public final class TestBackupUtils {
      * Create a new instance of {@link BackupAccessor} for a given map.
      * It allows to access an arbitrary replica index as long as it's greater or equals 1
      *
-     * @param cluster all instances in the cluster
-     * @param mapName map to access
+     * @param cluster      all instances in the cluster
+     * @param mapName      map to access
      * @param replicaIndex replica index to access
-     * @param <K> type of keys
-     * @param <V> type of values
+     * @param <K>          type of keys
+     * @param <V>          type of values
      * @return accessor for a given map and replica index
      */
     public static <K, V> BackupAccessor<K, V> newMapAccessor(HazelcastInstance[] cluster, String mapName, int replicaIndex) {
@@ -77,10 +91,10 @@ public final class TestBackupUtils {
      * Create a new instance of {@link BackupAccessor} for a given cache.
      * It access a first backup replica.
      *
-     * @param cluster all instances in the cluster
+     * @param cluster   all instances in the cluster
      * @param cacheName cache to access
-     * @param <K> type of keys
-     * @param <V> type of values
+     * @param <K>       type of keys
+     * @param <V>       type of values
      * @return accessor for a given cache and first backup replica
      */
     public static <K, V> BackupAccessor<K, V> newCacheAccessor(HazelcastInstance[] cluster, String cacheName) {
@@ -91,11 +105,11 @@ public final class TestBackupUtils {
      * Create a new instance of {@link BackupAccessor} for a given cache.
      * It allows to access an arbitrary replica index as long as it's greater or equals 1
      *
-     * @param cluster all instances in the cluster
-     * @param cacheName cache to access
+     * @param cluster      all instances in the cluster
+     * @param cacheName    cache to access
      * @param replicaIndex replica index to access
-     * @param <K> type of keys
-     * @param <V> type of values
+     * @param <K>          type of keys
+     * @param <V>          type of values
      * @return accessor for a given cache and replica index
      */
     public static <K, V> BackupAccessor<K, V> newCacheAccessor(HazelcastInstance[] cluster, String cacheName, int replicaIndex) {
@@ -118,7 +132,8 @@ public final class TestBackupUtils {
             @Override
             public void run() {
                 V actualValue = accessor.get(key);
-                assertNull("Backup entry with key '" + key + "' was '" + actualValue + "', but it was expected to be NULL.", actualValue);
+                assertNull("Backup entry with key '" + key + "' was '" + actualValue
+                        + "', but it was expected to be NULL.", actualValue);
             }
         });
     }
@@ -138,7 +153,7 @@ public final class TestBackupUtils {
     // ##### PRIVATE STUFF BELLOW, NO NEED TO TOUCH IT IN REGULAR TESTS #####
     // ######################################################################
 
-    private static class CacheBackupAccessor<K, V> extends BackupAccessorSupport<K, V> implements BackupAccessor<K ,V> {
+    private static class CacheBackupAccessor<K, V> extends BackupAccessorSupport<K, V> implements BackupAccessor<K, V> {
         private final String cacheName;
         private final int replicaIndex;
 
@@ -155,7 +170,6 @@ public final class TestBackupUtils {
             this.cacheName = cacheName;
             this.replicaIndex = replicaIndex;
         }
-
 
         @Override
         public int size() {
@@ -230,6 +244,7 @@ public final class TestBackupUtils {
     }
 
     private static class MapBackupAccessor<K, V> extends BackupAccessorSupport<K, V> implements BackupAccessor<K, V> {
+
         private final String mapName;
         private final int replicaIndex;
 
@@ -277,7 +292,6 @@ public final class TestBackupUtils {
             return count;
         }
 
-
         public V get(final K key) {
             final InternalPartition partition = getPartitionForKey(key);
             Address replicaAddress = partition.getReplicaAddress(replicaIndex);
@@ -306,7 +320,7 @@ public final class TestBackupUtils {
                         return null;
                     }
                     Data keyData = serializationService.toData(key);
-                    Object o = recordStore.get(keyData, true);
+                    Object o = recordStore.get(keyData, true, null);
                     if (o == null) {
                         return null;
                     }
@@ -317,6 +331,7 @@ public final class TestBackupUtils {
     }
 
     private abstract static class BackupAccessorSupport<K, V> implements BackupAccessor<K, V> {
+
         protected final HazelcastInstance[] cluster;
 
         protected BackupAccessorSupport(HazelcastInstance[] cluster) {
@@ -328,8 +343,7 @@ public final class TestBackupUtils {
             HazelcastInstance instance = cluster[0];
             InternalPartitionService partitionService = getNode(instance).getPartitionService();
             int partitionId = partitionService.getPartitionId(key);
-            InternalPartition partition = partitionService.getPartition(partitionId);
-            return partition;
+            return partitionService.getPartition(partitionId);
         }
 
         protected HazelcastInstance getInstanceWithAddress(Address address) {

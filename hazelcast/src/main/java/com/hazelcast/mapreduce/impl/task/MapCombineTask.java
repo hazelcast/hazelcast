@@ -58,7 +58,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
- * This class acutally executed the mapping-combine phase. It is responsible for opening / closing
+ * This class actually executed the mapping-combine phase. It is responsible for opening / closing
  * the {@link com.hazelcast.mapreduce.KeyValueSource} implementation and possible configuring the
  * partitionId to operate on.
  *

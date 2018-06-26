@@ -17,7 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
 import com.hazelcast.nio.Connection;
@@ -168,7 +168,7 @@ public class ClientUserCodeDeploymentService {
         }
         ClientMessage request = ClientDeployClassesCodec.encodeRequest(classDefinitionList);
         ClientInvocation invocation = new ClientInvocation(client, request, null, ownerConnection);
-        ClientInvocationFuture future = invocation.invoke();
+        ClientInvocationFuture future = invocation.invokeUrgent();
         future.get();
     }
 

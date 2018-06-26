@@ -18,8 +18,8 @@ package com.hazelcast.internal.eviction.impl.strategy.sampling;
 
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
-import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionChecker;
+import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 
 /**

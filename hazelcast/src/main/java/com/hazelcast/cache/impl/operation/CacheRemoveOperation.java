@@ -30,8 +30,7 @@ import java.io.IOException;
  * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, String, String, int)
  * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, Object, String, String, int)
  */
-public class CacheRemoveOperation
-        extends AbstractMutatingCacheOperation {
+public class CacheRemoveOperation extends MutatingCacheOperation {
 
     // if same
     private Data oldValue;
@@ -48,18 +47,16 @@ public class CacheRemoveOperation
     public void run()
             throws Exception {
         if (oldValue == null) {
-            response = cache.remove(key, getCallerUuid(), null, completionId);
+            response = recordStore.remove(key, getCallerUuid(), null, completionId);
         } else {
-            response = cache.remove(key, oldValue, getCallerUuid(), null, completionId);
+            response = recordStore.remove(key, oldValue, getCallerUuid(), null, completionId);
         }
     }
 
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            if (cache.isWanReplicationEnabled()) {
-                wanEventPublisher.publishWanReplicationRemove(name, key);
-            }
+            publishWanRemove(key);
         }
         super.afterRun();
     }

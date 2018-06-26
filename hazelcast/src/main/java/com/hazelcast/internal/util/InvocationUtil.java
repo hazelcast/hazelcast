@@ -21,13 +21,11 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -72,8 +70,6 @@ public final class InvocationUtil {
             return new CompletedFuture<Object>(null, null, new CallerRunsExecutor());
         }
 
-        warmUpPartitions(nodeEngine);
-
         RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
 
         // we are going to iterate over all members and invoke an operation on each of them
@@ -117,31 +113,6 @@ public final class InvocationUtil {
         final LocalRetryableExecution execution = new LocalRetryableExecution(nodeEngine, operation);
         execution.run();
         return execution;
-    }
-
-    private static void warmUpPartitions(NodeEngine nodeEngine) {
-        ClusterService clusterService = nodeEngine.getClusterService();
-        if (!clusterService.getClusterState().isMigrationAllowed()) {
-            return;
-        }
-
-        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
-        if (partitionService.getMemberGroupsSize() == 0) {
-            return;
-        }
-
-        for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-            try {
-                partitionService.getPartitionOwnerOrWait(i);
-            } catch (IllegalStateException e) {
-                if (!clusterService.getClusterState().isMigrationAllowed()) {
-                    return;
-                }
-                throw e;
-            } catch (NoDataMemberInClusterException e) {
-                return;
-            }
-        }
     }
 
     // IFunction extends Serializable, but this function is only executed locally

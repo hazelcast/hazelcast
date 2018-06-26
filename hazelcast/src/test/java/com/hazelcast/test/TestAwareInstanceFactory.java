@@ -16,8 +16,12 @@
 
 package com.hazelcast.test;
 
-import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,12 +29,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
+import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 
 /**
  * Per test-method factory for Hazelcast members. It sets existing members host:port from given cluster to TCP join

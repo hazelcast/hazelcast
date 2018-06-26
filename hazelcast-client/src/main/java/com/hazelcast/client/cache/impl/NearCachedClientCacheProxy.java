@@ -487,7 +487,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     private void invalidateNearCache(Object key) {
         assert key != null;
 
-        nearCache.remove(key);
+        nearCache.invalidate(key);
     }
 
     private long tryReserveForUpdate(Object key, Data keyData) {
@@ -869,7 +869,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 return;
             }
             if (key != null) {
-                nearCache.remove(serializeKeys ? key : toObject(key));
+                nearCache.invalidate(serializeKeys ? key : toObject(key));
             } else {
                 nearCache.clear();
             }
@@ -885,12 +885,12 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                     Data key = keysIt.next();
                     String sourceUuid = sourceUuidsIt.next();
                     if (!clientUuid.equals(sourceUuid)) {
-                        nearCache.remove(serializeKeys ? key : toObject(key));
+                        nearCache.invalidate(serializeKeys ? key : toObject(key));
                     }
                 }
             } else {
                 for (Data key : keys) {
-                    nearCache.remove(serializeKeys ? key : toObject(key));
+                    nearCache.invalidate(serializeKeys ? key : toObject(key));
                 }
             }
         }

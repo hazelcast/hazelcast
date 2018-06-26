@@ -25,7 +25,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
@@ -81,8 +80,8 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         instance1.getLifecycleService().terminate();
         instance1 = hazelcastFactory.newHazelcastInstance(config);
 
-        final EventService eventService1 = TestUtil.getNode(instance1).nodeEngine.getEventService();
-        final EventService eventService2 = TestUtil.getNode(instance2).nodeEngine.getEventService();
+        final EventService eventService1 = getNodeEngineImpl(instance1).getEventService();
+        final EventService eventService2 = getNodeEngineImpl(instance2).getEventService();
 
         assertTrueEventually(new AssertTask() {
             @Override

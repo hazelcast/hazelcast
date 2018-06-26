@@ -47,8 +47,10 @@ public class ClientListQuorumWriteTest extends ListQuorumWriteTest {
 
     @AfterClass
     public static void tearDown() {
+        if (clients != null) {
+            clients.terminateAll();
+        }
         shutdownTestEnvironment();
-        clients.terminateAll();
     }
 
     @Override

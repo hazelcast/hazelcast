@@ -26,7 +26,7 @@ package com.hazelcast.internal.networking;
 public interface ChannelErrorHandler {
 
     /**
-     * Called when an error happened.
+     * Called when an error was detected.
      *
      * @param channel the Channel that ran into an error. It could be that
      *                the Channel is null if error

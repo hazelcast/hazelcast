@@ -21,6 +21,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -178,5 +179,10 @@ public final class CollectionUtil {
             result.add(partitionId);
         }
         return result;
+    }
+
+    /** Returns an empty Collection if argument is null. **/
+    public static <T> Collection<T> nullToEmpty(Collection<T> collection) {
+        return collection == null ? Collections.<T>emptyList() : collection;
     }
 }

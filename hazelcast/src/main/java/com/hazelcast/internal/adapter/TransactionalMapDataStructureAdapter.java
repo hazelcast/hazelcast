@@ -72,7 +72,7 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     @Override
     public void set(K key, V value) {
         begin();
-        transactionalMap.put(key, value);
+        transactionalMap.set(key, value);
         commit();
     }
 
@@ -137,6 +137,12 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     @Override
     @MethodNotAvailable
     public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void setTTL(K key, long duration, TimeUnit timeUnit) {
         throw new MethodNotAvailableException();
     }
 

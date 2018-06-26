@@ -17,14 +17,17 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
+import com.hazelcast.client.impl.protocol.util.BufferBuilder;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.nio.Bits;
+import com.hazelcast.nio.Connection;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * <p>
@@ -109,8 +112,17 @@ public class ClientMessage
     private transient boolean isRetryable;
     private transient boolean acquiresResource;
     private transient String operationName;
+    private Connection connection;
 
     protected ClientMessage() {
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public void setConnection(Connection connection) {
+        this.connection = connection;
     }
 
     protected void wrapForEncode(ClientProtocolBuffer buffer, int offset) {
@@ -388,11 +400,16 @@ public class ClientMessage
         this.operationName = operationName;
     }
 
+    public String getOperationName() {
+        return operationName;
+    }
+
     @Override
     public String toString() {
         int len = index();
         final StringBuilder sb = new StringBuilder("ClientMessage{");
-        sb.append("length=").append(len);
+        sb.append("connection=").append(connection);
+        sb.append(", length=").append(len);
         if (len >= HEADER_SIZE) {
             sb.append(", correlationId=").append(getCorrelationId());
             sb.append(", operation=").append(operationName);
@@ -412,19 +429,14 @@ public class ClientMessage
     }
 
     public static ClientMessage createForEncode(int initialCapacity) {
-        initialCapacity = findSuitableMessageSize(initialCapacity);
+        if (initialCapacity < 0) {
+            throw new MaxMessageSizeExceeded();
+        }
         if (USE_UNSAFE) {
             return createForEncode(new UnsafeBuffer(new byte[initialCapacity]), 0);
         } else {
             return createForEncode(new SafeBuffer(new byte[initialCapacity]), 0);
         }
-    }
-
-    public static int findSuitableMessageSize(int desiredMessageSize) {
-        if (desiredMessageSize < 0) {
-            throw new MaxMessageSizeExceeded();
-        }
-        return desiredMessageSize;
     }
 
     public static ClientMessage createForEncode(ClientProtocolBuffer buffer, int offset) {
@@ -437,6 +449,16 @@ public class ClientMessage
         ClientMessage clientMessage = new ClientMessage();
         clientMessage.wrapForDecode(buffer, offset);
         return clientMessage;
+    }
+
+    public ClientMessage copy() {
+        byte[] oldBinary = buffer().byteArray();
+        byte[] bytes = Arrays.copyOf(oldBinary, oldBinary.length);
+        ClientMessage newMessage = ClientMessage.createForDecode(BufferBuilder.createBuffer(bytes), 0);
+        newMessage.isRetryable = isRetryable;
+        newMessage.acquiresResource = acquiresResource;
+        newMessage.operationName = operationName;
+        return newMessage;
     }
 
     @Override

@@ -22,6 +22,10 @@ import com.hazelcast.wan.impl.WanEventCounter.EventCounter;
 
 import java.util.Map;
 
+/**
+ * Local WAN publisher statistics to be used by {@link MemberState}
+ * implementations.
+ */
 public interface LocalWanPublisherStats extends JsonSerializable {
 
     /**

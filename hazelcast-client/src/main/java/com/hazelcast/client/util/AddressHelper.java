@@ -41,11 +41,15 @@ public final class AddressHelper {
     private AddressHelper() {
     }
 
-    public static Collection<Address> getSocketAddresses(String address) {
-        final AddressHolder addressHolder = AddressUtil.getAddressHolder(address, -1);
-        final String scopedAddress = addressHolder.getScopeId() != null
+    public static String getScopedHostName(AddressHolder addressHolder) {
+        return addressHolder.getScopeId() != null
                 ? addressHolder.getAddress() + '%' + addressHolder.getScopeId()
                 : addressHolder.getAddress();
+    }
+
+    public static Collection<Address> getSocketAddresses(String address) {
+        AddressHolder addressHolder = AddressUtil.getAddressHolder(address, -1);
+        String scopedAddress = getScopedHostName(addressHolder);
 
         int port = addressHolder.getPort();
         int maxPortTryCount = 1;

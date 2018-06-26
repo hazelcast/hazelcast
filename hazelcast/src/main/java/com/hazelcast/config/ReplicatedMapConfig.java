@@ -78,6 +78,8 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
 
     private String quorumName;
 
+    private transient volatile ReplicatedMapConfigReadOnly readOnly;
+
     public ReplicatedMapConfig() {
     }
 
@@ -290,7 +292,10 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
      * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public ReplicatedMapConfig getAsReadOnly() {
-        return new ReplicatedMapConfigReadOnly(this);
+        if (readOnly == null) {
+            readOnly = new ReplicatedMapConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**

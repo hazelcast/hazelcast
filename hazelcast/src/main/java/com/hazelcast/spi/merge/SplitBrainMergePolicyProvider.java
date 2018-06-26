@@ -18,6 +18,7 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  *
  * @since 3.10
  */
+@Beta
 public final class SplitBrainMergePolicyProvider {
 
     private static final Map<String, SplitBrainMergePolicy> OUT_OF_THE_BOX_MERGE_POLICIES;

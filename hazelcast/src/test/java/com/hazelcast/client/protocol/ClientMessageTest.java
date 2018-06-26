@@ -407,6 +407,34 @@ public class ClientMessageTest {
 
     @Test(expected = MaxMessageSizeExceeded.class)
     public void testMessageSizeOverflow() {
-        ClientMessage.findSuitableMessageSize(Integer.MAX_VALUE << 1);
+        ClientMessage.createForEncode(Integer.MAX_VALUE << 1);
+    }
+
+    @Test
+    public void testCopyClientMessage() {
+        SafeBuffer byteBuffer = new SafeBuffer(new byte[1024]);
+
+        ClientMessage clientMessage = TestClientMessage.createForEncode(byteBuffer, 0);
+
+        clientMessage.setMessageType(7)
+                .setVersion((short) 3)
+                .addFlag(ClientMessage.BEGIN_AND_END_FLAGS)
+                .setCorrelationId(66).setPartitionId(77);
+
+        clientMessage.setRetryable(true);
+        clientMessage.setAcquiresResource(true);
+        clientMessage.setOperationName("operationName");
+
+
+        ClientMessage copyMessage = clientMessage.copy();
+        assertEquals(copyMessage, clientMessage);
+        assertEquals(copyMessage.getMessageType(), clientMessage.getMessageType());
+        assertEquals(copyMessage.getVersion(), clientMessage.getVersion());
+        assertEquals(copyMessage.getFlags(), clientMessage.getFlags());
+        assertEquals(copyMessage.getCorrelationId(), clientMessage.getCorrelationId());
+        assertEquals(copyMessage.getPartitionId(), clientMessage.getPartitionId());
+        assertEquals(copyMessage.isRetryable(), clientMessage.isComplete());
+        assertEquals(copyMessage.acquiresResource(), clientMessage.acquiresResource());
+        assertEquals(copyMessage.getOperationName(), clientMessage.getOperationName());
     }
 }

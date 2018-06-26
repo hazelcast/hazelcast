@@ -43,7 +43,7 @@ public class TransactionalMapKeySetWithPredicateMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
+        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
 
         Predicate predicate = serializationService.toObject(parameters.predicate);

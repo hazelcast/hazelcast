@@ -18,7 +18,6 @@ package com.hazelcast.client.connection;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListenable;
@@ -59,8 +58,6 @@ public interface ClientConnectionManager extends ConnectionListenable {
      * @throws IOException if connection is not able to triggered
      */
     Connection getOrTriggerConnect(Address address, boolean acquiresResource) throws IOException;
-
-    void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
 
     Collection<ClientConnection> getActiveConnections();
 

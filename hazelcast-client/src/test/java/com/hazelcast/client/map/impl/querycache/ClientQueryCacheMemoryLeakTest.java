@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.map.impl.querycache;
 
-import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEventService;
 import com.hazelcast.client.impl.querycache.subscriber.QueryCacheToListenerMapper;

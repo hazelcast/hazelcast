@@ -25,13 +25,14 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.Offload;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
@@ -39,24 +40,23 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 import static com.hazelcast.spi.CallStatus.DONE_RESPONSE;
-import static com.hazelcast.spi.CallStatus.OFFLOADED;
 import static com.hazelcast.spi.CallStatus.WAIT;
 import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Contains implementation of the off-loadable contract for EntryProcessor execution on a single key.
@@ -142,7 +142,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
 
     private EntryProcessor entryProcessor;
 
-    private transient boolean offloading;
+    private transient boolean offload;
 
     // EntryOperation
     private transient Object response;
@@ -151,8 +151,6 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     private transient boolean readOnly;
     private transient int setUnlockRetryCount;
     private transient long begin;
-    private transient OperationServiceImpl ops;
-    private transient ExecutionService exs;
 
     public EntryOperation() {
     }
@@ -165,13 +163,11 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     @Override
     public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
-        this.ops = (OperationServiceImpl) getNodeEngine().getOperationService();
-        this.exs = getNodeEngine().getExecutionService();
         this.begin = Clock.currentTimeMillis();
         this.readOnly = entryProcessor instanceof ReadOnly;
 
-        final SerializationService serializationService = getNodeEngine().getSerializationService();
-        final ManagedContext managedContext = serializationService.getManagedContext();
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+        ManagedContext managedContext = serializationService.getManagedContext();
         managedContext.initialize(entryProcessor);
     }
 
@@ -181,209 +177,15 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
             return WAIT;
         }
 
-        if (offloading) {
-            runOffloaded();
-            return OFFLOADED;
+        if (offload) {
+            return new EntryOperationOffload(getCallerAddress());
         } else {
-            runVanilla();
+            response = operator(this, entryProcessor)
+                    .operateOnKey(dataKey)
+                    .doPostOperateOps()
+                    .getResult();
             return DONE_RESPONSE;
         }
-    }
-
-    public void runOffloaded() {
-        if (!(entryProcessor instanceof Offloadable)) {
-            throw new HazelcastException("EntryProcessor is expected to implement Offloadable for this operation");
-        }
-        if (readOnly && entryProcessor.getBackupProcessor() != null) {
-            throw new HazelcastException("EntryProcessor.getBackupProcessor() should return null if ReadOnly implemented");
-        }
-
-        boolean shouldCloneForOffloading = OBJECT.equals(mapContainer.getMapConfig().getInMemoryFormat());
-        Object oldValue = recordStore.get(dataKey, false);
-        Object clonedOldValue = shouldCloneForOffloading ? toData(oldValue) : oldValue;
-
-        String executorName = ((Offloadable) entryProcessor).getExecutorName();
-        executorName = executorName.equals(Offloadable.OFFLOADABLE_EXECUTOR) ? OFFLOADABLE_EXECUTOR : executorName;
-
-        if (readOnly) {
-            runOffloadedReadOnlyEntryProcessor(clonedOldValue, executorName);
-        } else {
-            runOffloadedModifyingEntryProcessor(clonedOldValue, executorName);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void runOffloadedReadOnlyEntryProcessor(final Object oldValue, String executorName) {
-        ops.onStartAsyncOperation(this);
-        getNodeEngine().getExecutionService().execute(executorName, new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Data result = operator(EntryOperation.this, entryProcessor)
-                            .operateOnKeyValue(dataKey, oldValue).getResult();
-                    getOperationResponseHandler().sendResponse(EntryOperation.this, result);
-                } catch (Throwable t) {
-                    getOperationResponseHandler().sendResponse(EntryOperation.this, t);
-                } finally {
-                    ops.onCompletionAsyncOperation(EntryOperation.this);
-                }
-            }
-        });
-    }
-
-    @SuppressWarnings("unchecked")
-    private void runOffloadedModifyingEntryProcessor(final Object oldValue, String executorName) {
-        final OperationServiceImpl ops = (OperationServiceImpl) getNodeEngine().getOperationService();
-
-        // callerId is random since the local locks are NOT re-entrant
-        // using a randomID every time prevents from re-entering the already acquired lock
-        final String finalCaller = UuidUtil.newUnsecureUuidString();
-        final Data finalDataKey = dataKey;
-        final long finalThreadId = threadId;
-        final long finalCallId = getCallId();
-        final long finalBegin = begin;
-
-        // The off-loading uses local locks, since the locking is used only on primary-replica.
-        // The locks are not supposed to be migrated on partition migration or partition promotion & downgrade.
-        lock(finalDataKey, finalCaller, finalThreadId, finalCallId);
-
-        try {
-            ops.onStartAsyncOperation(this);
-            getNodeEngine().getExecutionService().execute(executorName, new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        EntryOperator entryOperator = operator(EntryOperation.this, entryProcessor)
-                                .operateOnKeyValue(dataKey, oldValue);
-                        Data result = entryOperator.getResult();
-                        EntryEventType modificationType = entryOperator.getEventType();
-                        if (modificationType != null) {
-                            Data newValue = toData(entryOperator.getNewValue());
-                            updateAndUnlock(toData(oldValue), newValue, modificationType, finalCaller, finalThreadId,
-                                    result, finalBegin);
-                        } else {
-                            unlockOnly(result, finalCaller, finalThreadId, finalBegin);
-                        }
-                    } catch (Throwable t) {
-                        getLogger().severe("Unexpected error on Offloadable execution", t);
-                        unlockOnly(t, finalCaller, finalThreadId, finalBegin);
-                    }
-                }
-            });
-        } catch (Throwable t) {
-            try {
-                unlock(finalDataKey, finalCaller, finalThreadId, finalCallId, t);
-                sneakyThrow(t);
-            } finally {
-                ops.onCompletionAsyncOperation(this);
-            }
-        }
-    }
-
-    private Data toData(Object obj) {
-        return mapServiceContext.toData(obj);
-    }
-
-    private void lock(Data finalDataKey, String finalCaller, long finalThreadId, long finalCallId) {
-        boolean locked = recordStore.localLock(finalDataKey, finalCaller, finalThreadId, finalCallId, -1);
-        if (!locked) {
-            // should not happen since it's a lock-awaiting operation and we are on a partition-thread, but just to make sure
-            throw new IllegalStateException(
-                    String.format("Could not obtain a lock by the caller=%s and threadId=%d", finalCaller, threadId));
-        }
-    }
-
-    private void unlock(Data finalDataKey, String finalCaller, long finalThreadId, long finalCallId, Throwable cause) {
-        boolean unlocked = recordStore.unlock(finalDataKey, finalCaller, finalThreadId, finalCallId);
-        if (!unlocked) {
-            throw new IllegalStateException(
-                    String.format("Could not unlock by the caller=%s and threadId=%d", finalCaller, threadId), cause);
-        }
-    }
-
-    @SuppressWarnings({"unchecked", "checkstyle:methodlength"})
-    private void updateAndUnlock(Data previousValue, Data newValue, EntryEventType modificationType, String caller,
-                                 long threadId, final Object result, long now) {
-        EntryOffloadableSetUnlockOperation updateOperation = new EntryOffloadableSetUnlockOperation(name, modificationType,
-                dataKey, previousValue, newValue, caller, threadId, now, entryProcessor.getBackupProcessor());
-
-        updateOperation.setPartitionId(getPartitionId());
-        updateOperation.setReplicaIndex(0);
-        updateOperation.setNodeEngine(getNodeEngine());
-        updateOperation.setCallerUuid(getCallerUuid());
-        OperationAccessor.setCallerAddress(updateOperation, getCallerAddress());
-        @SuppressWarnings("checkstyle:anoninnerlength")
-        OperationResponseHandler setUnlockResponseHandler = new OperationResponseHandler() {
-            @Override
-            public void sendResponse(Operation op, Object response) {
-                if (isRetryable(response) || isTimeout(response)) {
-                    retry(op);
-                } else {
-                    handleResponse(response);
-                }
-            }
-
-            private void retry(final Operation op) {
-                setUnlockRetryCount++;
-                if (isFastRetryLimitReached()) {
-                    exs.schedule(new Runnable() {
-                        @Override
-                        public void run() {
-                            ops.execute(op);
-                        }
-                    }, DEFAULT_TRY_PAUSE_MILLIS, TimeUnit.MILLISECONDS);
-                } else {
-                    ops.execute(op);
-                }
-            }
-
-            private void handleResponse(Object response) {
-                if (response instanceof Throwable) {
-                    Throwable t = (Throwable) response;
-                    try {
-                        // EntryOffloadableLockMismatchException is a marker send from the EntryOffloadableSetUnlockOperation
-                        // meaning that the whole invocation of the EntryOffloadableOperation should be retried
-                        if (t instanceof EntryOffloadableLockMismatchException) {
-                            t = new RetryableHazelcastException(t.getMessage(), t);
-                        }
-                        getOperationResponseHandler().sendResponse(EntryOperation.this, t);
-                    } finally {
-                        ops.onCompletionAsyncOperation(EntryOperation.this);
-                    }
-                } else {
-                    try {
-                        getOperationResponseHandler().sendResponse(EntryOperation.this, result);
-                    } finally {
-                        ops.onCompletionAsyncOperation(EntryOperation.this);
-                    }
-                }
-            }
-        };
-        updateOperation.setOperationResponseHandler(setUnlockResponseHandler);
-        ops.execute(updateOperation);
-    }
-
-    private boolean isRetryable(Object response) {
-        return response instanceof RetryableHazelcastException && !(response instanceof WrongTargetException);
-    }
-
-    private boolean isTimeout(Object response) {
-        return response instanceof CallTimeoutResponse;
-    }
-
-    private boolean isFastRetryLimitReached() {
-        return setUnlockRetryCount > SET_UNLOCK_FAST_RETRY_LIMIT;
-    }
-
-    private void unlockOnly(final Object result, String caller, long threadId, long now) {
-        updateAndUnlock(null, null, null, caller, threadId, result, now);
-    }
-
-    private void runVanilla() {
-        response = operator(this, entryProcessor)
-                .operateOnKey(dataKey)
-                .doPostOperateOps()
-                .getResult();
     }
 
     @Override
@@ -395,17 +197,17 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     public boolean shouldWait() {
         // optimisation for ReadOnly processors -> they will not wait for the lock
         if (entryProcessor instanceof ReadOnly) {
-            offloading = isOffloadingRequested(entryProcessor);
+            offload = isOffloadingRequested(entryProcessor);
             return false;
         }
-        // mutating offloading -> only if key not locked, since it uses locking too (but on reentrant one)
+        // mutating offload -> only if key not locked, since it uses locking too (but on reentrant one)
         if (!recordStore.isLocked(dataKey) && isOffloadingRequested(entryProcessor)) {
-            offloading = true;
+            offload = true;
             return false;
         }
-        //at this point we cannot offload. the entry is locked or the EP does not support offloading
+        //at this point we cannot offload. the entry is locked or the EP does not support offload
         //if the entry is locked by us then we can still run the EP on the partition thread
-        offloading = false;
+        offload = false;
         return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
     }
 
@@ -451,6 +253,11 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     }
 
     @Override
+    public int getId() {
+        return MapDataSerializerHook.ENTRY_OPERATION;
+    }
+
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         entryProcessor = in.readObject();
@@ -462,8 +269,185 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
         out.writeObject(entryProcessor);
     }
 
-    @Override
-    public int getId() {
-        return MapDataSerializerHook.ENTRY_OPERATION;
+    private final class EntryOperationOffload extends Offload {
+        private Address callerAddress;
+
+        private EntryOperationOffload(Address callerAddress) {
+            super(EntryOperation.this);
+            this.callerAddress = callerAddress;
+        }
+
+        @Override
+        public void start() {
+            verifyEntryProcessor();
+
+            boolean shouldCloneForOffloading = OBJECT.equals(mapContainer.getMapConfig().getInMemoryFormat());
+            Object oldValue = recordStore.get(dataKey, false, callerAddress);
+            Object clonedOldValue = shouldCloneForOffloading ? serializationService.toData(oldValue) : oldValue;
+
+            String executorName = ((Offloadable) entryProcessor).getExecutorName();
+            executorName = executorName.equals(Offloadable.OFFLOADABLE_EXECUTOR) ? OFFLOADABLE_EXECUTOR : executorName;
+
+            if (readOnly) {
+                executeReadOnlyEntryProcessor(clonedOldValue, executorName);
+            } else {
+                executeMutatingEntryProcessor(clonedOldValue, executorName);
+            }
+        }
+
+        private void verifyEntryProcessor() {
+            if (!(entryProcessor instanceof Offloadable)) {
+                throw new HazelcastException("EntryProcessor is expected to implement Offloadable for this operation");
+            }
+            if (readOnly && entryProcessor.getBackupProcessor() != null) {
+                throw new HazelcastException("EntryProcessor.getBackupProcessor() should return null if ReadOnly implemented");
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        private void executeReadOnlyEntryProcessor(final Object oldValue, String executorName) {
+            executionService.execute(executorName, new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Data result = operator(EntryOperation.this, entryProcessor)
+                                .operateOnKeyValue(dataKey, oldValue).getResult();
+                        sendResponse(result);
+                    } catch (Throwable t) {
+                        sendResponse(t);
+                    }
+                }
+            });
+        }
+
+        @SuppressWarnings("unchecked")
+        private void executeMutatingEntryProcessor(final Object oldValue, String executorName) {
+            // callerId is random since the local locks are NOT re-entrant
+            // using a randomID every time prevents from re-entering the already acquired lock
+            final String finalCaller = UuidUtil.newUnsecureUuidString();
+            final Data finalDataKey = dataKey;
+            final long finalThreadId = threadId;
+            final long finalCallId = getCallId();
+            final long finalBegin = begin;
+
+            // The off-loading uses local locks, since the locking is used only on primary-replica.
+            // The locks are not supposed to be migrated on partition migration or partition promotion & downgrade.
+            lock(finalDataKey, finalCaller, finalThreadId, finalCallId);
+
+            try {
+                executionService.execute(executorName, new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            EntryOperator entryOperator = operator(EntryOperation.this, entryProcessor)
+                                    .operateOnKeyValue(dataKey, oldValue);
+                            Data result = entryOperator.getResult();
+                            EntryEventType modificationType = entryOperator.getEventType();
+                            if (modificationType != null) {
+                                Data newValue = serializationService.toData(entryOperator.getNewValue());
+                                updateAndUnlock(serializationService.toData(oldValue),
+                                        newValue, modificationType, finalCaller, finalThreadId, result, finalBegin);
+                            } else {
+                                unlockOnly(result, finalCaller, finalThreadId, finalBegin);
+                            }
+                        } catch (Throwable t) {
+                            getLogger().severe("Unexpected error on Offloadable execution", t);
+                            unlockOnly(t, finalCaller, finalThreadId, finalBegin);
+                        }
+                    }
+                });
+            } catch (Throwable t) {
+                unlock(finalDataKey, finalCaller, finalThreadId, finalCallId, t);
+                sneakyThrow(t);
+            }
+        }
+
+        private void lock(Data finalDataKey, String finalCaller, long finalThreadId, long finalCallId) {
+            boolean locked = recordStore.localLock(finalDataKey, finalCaller, finalThreadId, finalCallId, -1);
+            if (!locked) {
+                // should not happen since it's a lock-awaiting operation and we are on a partition-thread, but just to make sure
+                throw new IllegalStateException(
+                        format("Could not obtain a lock by the caller=%s and threadId=%d", finalCaller, threadId));
+            }
+        }
+
+        private void unlock(Data finalDataKey, String finalCaller, long finalThreadId, long finalCallId, Throwable cause) {
+            boolean unlocked = recordStore.unlock(finalDataKey, finalCaller, finalThreadId, finalCallId);
+            if (!unlocked) {
+                throw new IllegalStateException(
+                        format("Could not unlock by the caller=%s and threadId=%d", finalCaller, threadId), cause);
+            }
+        }
+
+        private void unlockOnly(final Object result, String caller, long threadId, long now) {
+            updateAndUnlock(null, null, null, caller, threadId, result, now);
+        }
+
+        @SuppressWarnings({"unchecked", "checkstyle:methodlength"})
+        private void updateAndUnlock(Data previousValue, Data newValue, EntryEventType modificationType, String caller,
+                                     long threadId, final Object result, long now) {
+            EntryOffloadableSetUnlockOperation updateOperation = new EntryOffloadableSetUnlockOperation(name, modificationType,
+                    dataKey, previousValue, newValue, caller, threadId, now, entryProcessor.getBackupProcessor());
+
+            updateOperation.setPartitionId(getPartitionId());
+            updateOperation.setReplicaIndex(0);
+            updateOperation.setNodeEngine(nodeEngine);
+            updateOperation.setCallerUuid(getCallerUuid());
+            OperationAccessor.setCallerAddress(updateOperation, getCallerAddress());
+            @SuppressWarnings("checkstyle:anoninnerlength")
+            OperationResponseHandler setUnlockResponseHandler = new OperationResponseHandler() {
+                @Override
+                public void sendResponse(Operation op, Object response) {
+                    if (isRetryable(response) || isTimeout(response)) {
+                        retry(op);
+                    } else {
+                        EntryOperation.this.sendResponse(toResponse(response));
+                    }
+                }
+
+                private void retry(final Operation op) {
+                    setUnlockRetryCount++;
+                    if (isFastRetryLimitReached()) {
+                        executionService.schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                operationService.execute(op);
+                            }
+                        }, DEFAULT_TRY_PAUSE_MILLIS, MILLISECONDS);
+                    } else {
+                        operationService.execute(op);
+                    }
+                }
+
+                private Object toResponse(Object response) {
+                    if (response instanceof Throwable) {
+                        Throwable t = (Throwable) response;
+                        // EntryOffloadableLockMismatchException is a marker send from the EntryOffloadableSetUnlockOperation
+                        // meaning that the whole invocation of the EntryOffloadableOperation should be retried
+                        if (t instanceof EntryOffloadableLockMismatchException) {
+                            t = new RetryableHazelcastException(t.getMessage(), t);
+                        }
+                        return t;
+                    } else {
+                        return result;
+                    }
+                }
+            };
+
+            updateOperation.setOperationResponseHandler(setUnlockResponseHandler);
+            operationService.execute(updateOperation);
+        }
+
+        private boolean isRetryable(Object response) {
+            return response instanceof RetryableHazelcastException && !(response instanceof WrongTargetException);
+        }
+
+        private boolean isTimeout(Object response) {
+            return response instanceof CallTimeoutResponse;
+        }
+
+        private boolean isFastRetryLimitReached() {
+            return setUnlockRetryCount > SET_UNLOCK_FAST_RETRY_LIMIT;
+        }
     }
 }

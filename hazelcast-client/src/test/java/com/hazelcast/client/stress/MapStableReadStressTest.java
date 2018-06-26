@@ -72,7 +72,7 @@ public class MapStableReadStressTest extends StressTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 600000)
     public void testChangingCluster() {
         test(true);
     }
@@ -92,6 +92,7 @@ public class MapStableReadStressTest extends StressTestSupport {
     }
 
     private void fillMap() {
+        long timeMillis = System.currentTimeMillis();
         System.out.println("==================================================================");
         System.out.println("Inserting data in map");
         System.out.println("==================================================================");
@@ -102,9 +103,10 @@ public class MapStableReadStressTest extends StressTestSupport {
                 System.out.println("Inserted data: " + k);
             }
         }
+        long timeTookToInsertData = System.currentTimeMillis() - timeMillis;
 
         System.out.println("==================================================================");
-        System.out.println("Completed with inserting data in map");
+        System.out.println("Completed with inserting data in map in " + timeTookToInsertData + " millis ");
         System.out.println("==================================================================");
     }
 

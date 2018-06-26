@@ -28,8 +28,7 @@ import java.io.IOException;
  * Backup operation used by remove operations.
  */
 public class CacheRemoveBackupOperation
-        extends AbstractBackupCacheOperation
-        implements BackupOperation {
+        extends KeyBasedCacheOperation implements BackupOperation {
 
     private boolean wanOriginated;
 
@@ -37,24 +36,25 @@ public class CacheRemoveBackupOperation
     }
 
     public CacheRemoveBackupOperation(String name, Data key) {
-        super(name, key);
+        this(name, key, false);
     }
 
     public CacheRemoveBackupOperation(String name, Data key, boolean wanOriginated) {
-        this(name, key);
+        super(name, key, true);
         this.wanOriginated = wanOriginated;
     }
 
     @Override
-    public void runInternal()
-            throws Exception {
-        cache.removeRecord(key);
+    public void run() {
+        if (recordStore != null) {
+            recordStore.removeRecord(key);
+        }
     }
 
     @Override
-    public void afterRunInternal() throws Exception {
-        if (!wanOriginated && cache.isWanReplicationEnabled()) {
-            wanEventPublisher.publishWanReplicationRemoveBackup(name, key);
+    public void afterRun() {
+        if (recordStore != null && !wanOriginated) {
+            publishWanRemove(key);
         }
     }
 

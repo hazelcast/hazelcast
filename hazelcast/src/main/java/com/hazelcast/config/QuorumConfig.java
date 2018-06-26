@@ -33,7 +33,7 @@ import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 /**
  * Configuration for cluster quorum, a means to protect consistency of data from network partitions.
  * In this context, quorum does not refer to an implementation of a consensus protocol, it refers to
- * the count of members in the cluster required for an operation to succeed.
+ * the number of members in the cluster required for an operation to succeed.
  * <p>
  * Since Hazelcast 3.5, the default built-in quorum implementation keeps track of the number of members
  * in the cluster, as determined by Hazelcast's cluster membership management.

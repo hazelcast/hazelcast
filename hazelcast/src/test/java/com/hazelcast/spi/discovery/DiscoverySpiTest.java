@@ -35,7 +35,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -83,7 +82,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.PartitionGroupConfig.MemberGroupType.SPI;
 import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
+import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
+import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 import static com.hazelcast.spi.discovery.DiscoverySpiTest.ParametrizedDiscoveryStrategyFactory.BOOL_PROPERTY;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -206,7 +208,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
 
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-3.10.xsd");
+        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-3.11.xsd");
         assertNotNull(schemaResource);
 
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
@@ -348,8 +350,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     public void testSPIAwareMemberGroupFactoryInvalidConfig() throws Exception {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
         try {
-            MemberGroupFactory groupFactory
-                    = new SPIAwareMemberGroupFactory(TestUtil.getNode(hazelcastInstance).getDiscoveryService());
+            MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(getNode(hazelcastInstance).getDiscoveryService());
             Collection<Member> members = createMembers();
             groupFactory.createMemberGroups(members);
         } finally {
@@ -363,7 +364,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         Config config = getDiscoverySPIConfig(xmlFileName);
         // we create this instance in order to fully create Node
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
-        Node node = TestUtil.getNode(hazelcastInstance);
+        Node node = getNode(hazelcastInstance);
         assertNotNull(node);
 
         MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(node.getDiscoveryService());
@@ -667,7 +668,9 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
         @Override
         public Collection<PropertyDefinition> getConfigurationProperties() {
-            return Collections.emptyList();
+            return asList((PropertyDefinition) new SimplePropertyDefinition("key-string", true, STRING),
+                    new SimplePropertyDefinition("key-int", true, INTEGER),
+                    new SimplePropertyDefinition("key-boolean", true, BOOLEAN));
         }
     }
 

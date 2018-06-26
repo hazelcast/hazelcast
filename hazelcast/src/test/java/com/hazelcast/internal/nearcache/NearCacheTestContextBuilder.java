@@ -50,7 +50,6 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
 
     private boolean hasLocalData;
     private DataStructureLoader loader;
-    private NearCacheInvalidationListener invalidationListener;
 
     private RepairingTask repairingTask;
 
@@ -109,11 +108,6 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
         return this;
     }
 
-    public NearCacheTestContextBuilder<K, V, NK, NV> setInvalidationListener(NearCacheInvalidationListener invalidationListener) {
-        this.invalidationListener = invalidationListener;
-        return this;
-    }
-
     public NearCacheTestContextBuilder<K, V, NK, NV> setRepairingTask(RepairingTask repairingTask) {
         this.repairingTask = repairingTask;
         return this;
@@ -138,7 +132,6 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
                 memberCacheManager,
                 hasLocalData,
                 loader,
-                invalidationListener,
                 repairingTask);
 
         warmUpPartitions(context.dataInstance, context.nearCacheInstance);

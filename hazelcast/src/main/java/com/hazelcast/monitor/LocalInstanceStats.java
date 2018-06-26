@@ -18,13 +18,18 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.internal.management.JsonSerializable;
 
+/**
+ * Base interface for local instance statistics.
+ */
 public interface LocalInstanceStats extends JsonSerializable {
 
     /**
-     * Fill a stat value with this if it is not available
+     * Default value for unavailable statistics.
      */
     long STAT_NOT_AVAILABLE = -99L;
 
-    /** Returns the creation time of this distributed object instance on this member. */
+    /**
+     * Returns the creation time of this distributed object instance on this member.
+     */
     long getCreationTime();
 }

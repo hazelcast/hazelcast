@@ -18,7 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
@@ -64,7 +64,7 @@ public class ClientInvocation implements Runnable {
     private final ClientClusterService clientClusterService;
     private final AbstractClientInvocationService invocationService;
     private final ClientExecutionService executionService;
-    private final ClientMessage clientMessage;
+    private volatile ClientMessage clientMessage;
     private final CallIdSequence callIdSequence;
     private final Address address;
     private final int partitionId;
@@ -73,7 +73,6 @@ public class ClientInvocation implements Runnable {
     private final long retryPauseMillis;
     private final String objectName;
     private volatile ClientConnection sendConnection;
-    private boolean bypassHeartbeatCheck;
     private EventHandler handler;
     private volatile long invokeCount;
 
@@ -95,7 +94,7 @@ public class ClientInvocation implements Runnable {
         this.startTimeMillis = System.currentTimeMillis();
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
         this.logger = invocationService.invocationLogger;
-        this.callIdSequence = client.getCallIdSequence();
+        this.callIdSequence = invocationService.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, executionService,
                 clientMessage, logger, callIdSequence);
     }
@@ -179,6 +178,9 @@ public class ClientInvocation implements Runnable {
     }
 
     private void retry() {
+        // retry modifies the client message and should not reuse the client message.
+        // It could be the case that it is in write queue of the connection.
+        clientMessage = clientMessage.copy();
         // first we force a new invocation slot because we are going to return our old invocation slot immediately after
         // It is important that we first 'force' taking a new slot; otherwise it could be that a sneaky invocation gets
         // through that takes our slot!
@@ -204,7 +206,7 @@ public class ClientInvocation implements Runnable {
         logException(exception);
 
         if (!lifecycleService.isRunning()) {
-            clientInvocationFuture.complete(new HazelcastClientNotActiveException(exception.getMessage(), exception));
+            clientInvocationFuture.complete(new HazelcastClientNotActiveException("Client is shutting down", exception));
             return;
         }
 
@@ -286,14 +288,6 @@ public class ClientInvocation implements Runnable {
 
     public void setEventHandler(EventHandler handler) {
         this.handler = handler;
-    }
-
-    public boolean shouldBypassHeartbeatCheck() {
-        return bypassHeartbeatCheck;
-    }
-
-    public void setBypassHeartbeatCheck(boolean bypassHeartbeatCheck) {
-        this.bypassHeartbeatCheck = bypassHeartbeatCheck;
     }
 
     public void setSendConnection(ClientConnection connection) {

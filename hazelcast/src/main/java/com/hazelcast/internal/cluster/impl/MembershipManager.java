@@ -320,6 +320,7 @@ public class MembershipManager {
         setMembers(MemberMap.createNew(membersView.getVersion(), members));
 
         for (MemberImpl member : removedMembers) {
+            closeConnection(member.getAddress(), "Member left event received from master");
             handleMemberRemove(memberMapRef.get(), member);
         }
 
@@ -961,10 +962,10 @@ public class MembershipManager {
     void addMembersRemovedInNotJoinableState(Collection<MemberImpl> members) {
         clusterServiceLock.lock();
         try {
-            members.remove(clusterService.getLocalMember());
-            MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
-            membersRemovedInNotJoinableStateRef.set(MemberMap.cloneAdding(membersRemovedInNotJoinableState,
-                    members.toArray(new MemberImpl[0])));
+            MemberMap m = membersRemovedInNotJoinableStateRef.get();
+            m = MemberMap.cloneAdding(m, members.toArray(new MemberImpl[0]));
+            m = MemberMap.cloneExcluding(m, clusterService.getLocalMember());
+            membersRemovedInNotJoinableStateRef.set(m);
         } finally {
             clusterServiceLock.unlock();
         }

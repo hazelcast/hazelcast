@@ -71,15 +71,14 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
-    static ConcurrentMap<Long, Boolean> HAZELCAST_INSTANCE_INJECTION_RESULT_MAP = new ConcurrentHashMap<Long, Boolean>();
-    static ConcurrentMap<Long, Boolean> NODE_INJECTION_RESULT_MAP = new ConcurrentHashMap<Long, Boolean>();
+    private static final ConcurrentMap<Long, Boolean> HAZELCAST_INSTANCE_INJECTION_RESULT_MAP = new ConcurrentHashMap<Long, Boolean>();
+    private static final ConcurrentMap<Long, Boolean> NODE_INJECTION_RESULT_MAP = new ConcurrentHashMap<Long, Boolean>();
 
     private static final String CACHE_NAME = "MyCache";
 
     @AfterClass
     public static void destroy() {
         HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.clear();
-        HAZELCAST_INSTANCE_INJECTION_RESULT_MAP = null;
     }
 
     protected Config createConfig() {

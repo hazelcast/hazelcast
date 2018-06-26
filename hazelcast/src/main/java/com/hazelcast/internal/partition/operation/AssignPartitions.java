@@ -16,21 +16,25 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 
 /** Sent from non-master nodes to the master to initialize the partition assignment. */
-public class AssignPartitions extends AbstractPartitionOperation {
+public class AssignPartitions extends AbstractPartitionOperation implements MigrationCycleOperation {
+
+    private PartitionRuntimeState partitionState;
 
     @Override
     public void run() {
         InternalPartitionServiceImpl service = getService();
-        service.firstArrangement();
+        partitionState = service.firstArrangement();
     }
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return partitionState;
     }
 
     @Override

@@ -58,7 +58,7 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 touchRandomNode(client1);
                 touchRandomNode(client2);
 
@@ -86,13 +86,13 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 touchRandomNode(client1);
                 touchRandomNode(client2);
 
-                int actual = instance1.getClientService().getConnectedClients().size() +
-                        instance2.getClientService().getConnectedClients().size() +
-                        instance3.getClientService().getConnectedClients().size();
+                int actual = instance1.getClientService().getConnectedClients().size()
+                        + instance2.getClientService().getConnectedClients().size()
+                        + instance3.getClientService().getConnectedClients().size();
                 assertEquals(2, actual);
             }
         });

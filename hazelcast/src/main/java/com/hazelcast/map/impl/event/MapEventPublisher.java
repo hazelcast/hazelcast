@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Clock;
 
 /**
  * Helper methods for publishing events related to map actions. The implementation may delegate
@@ -36,35 +35,15 @@ public interface MapEventPublisher {
      * @param mapName   the map name
      * @param entryView the updated entry
      */
-    void publishWanReplicationUpdate(String mapName, EntryView<Data, Data> entryView);
+    void publishWanUpdate(String mapName, EntryView<Data, Data> entryView);
 
     /**
      * Notifies the WAN subsystem of a map entry removal on a replica owner.
      *
-     * @param mapName    the map name
-     * @param key        the key of the removed entry
-     * @param removeTime the clock time for the remove event
-     * @see Clock#currentTimeMillis()
+     * @param mapName the map name
+     * @param key     the key of the removed entry
      */
-    void publishWanReplicationRemove(String mapName, Data key, long removeTime);
-
-    /**
-     * Notifies the WAN subsystem of a map update on a backup replica.
-     *
-     * @param mapName   the map name
-     * @param entryView the updated entry
-     */
-    void publishWanReplicationUpdateBackup(String mapName, EntryView entryView);
-
-    /**
-     * Notifies the WAN subsystem of a map entry removal on a backup replica.
-     *
-     * @param mapName    the map name
-     * @param key        the key of the removed entry
-     * @param removeTime the clock time for the remove event
-     * @see Clock#currentTimeMillis()
-     */
-    void publishWanReplicationRemoveBackup(String mapName, Data key, long removeTime);
+    void publishWanRemove(String mapName, Data key);
 
     void publishMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected);
 
@@ -96,6 +75,27 @@ public interface MapEventPublisher {
      */
     void publishEvent(Address caller, String mapName, EntryEventType eventType,
                       Data dataKey, Object dataOldValue, Object dataValue, Object dataMergingValue);
+
+    /**
+     * This method tries to publish events after a load happened in a backward
+     * compatible manner by choosing one of the two ways below:
+     *
+     * - As ADD events if listener implements only {@link
+     * com.hazelcast.map.listener.EntryAddedListener} but not {@link
+     * com.hazelcast.map.listener.EntryLoadedListener}, this is for the
+     * backward compatibility. Old listener implementation will continue
+     * to receive ADD events after loads happened.
+     *
+     * - As LOAD events if listener implements {@link
+     * com.hazelcast.map.listener.EntryLoadedListener}
+     *
+     * @param caller       the address of the caller that caused the event
+     * @param mapName      the map name
+     * @param dataKey      the key of the event map entry
+     * @param dataOldValue the old value of the map entry
+     * @param dataValue    the new value of the map entry
+     */
+    void publishLoadedOrAdded(Address caller, String mapName, Data dataKey, Object dataOldValue, Object dataValue);
 
     void publishMapPartitionLostEvent(Address caller, String mapName, int partitionId);
 

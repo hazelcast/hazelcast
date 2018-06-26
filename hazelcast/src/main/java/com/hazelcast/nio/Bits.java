@@ -66,7 +66,7 @@ public final class Bits {
      */
     public static final int DOUBLE_SIZE_IN_BYTES = 8;
     /**
-     * for null arrays, this value writen to stream to represent null array size.
+     * for null arrays, this value is written to the stream to represent null array size.
      */
     public static final int NULL_ARRAY_LENGTH = -1;
     /**

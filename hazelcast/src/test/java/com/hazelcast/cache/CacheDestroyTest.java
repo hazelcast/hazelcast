@@ -238,7 +238,8 @@ public class CacheDestroyTest extends CacheTestSupport {
                 .registerListener(ICacheService.SERVICE_NAME, name, cacheEventListener);
     }
 
-    public static abstract class CacheTask implements Runnable {
+    public abstract static class CacheTask implements Runnable {
+
         protected final AtomicBoolean running = new AtomicBoolean(true);
         protected final String cacheName;
         protected final CacheManager cacheManager;

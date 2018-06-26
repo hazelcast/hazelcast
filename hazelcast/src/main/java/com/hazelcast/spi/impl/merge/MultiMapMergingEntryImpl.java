@@ -26,6 +26,8 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Implementation of {@link MultiMapMergeTypes}.
@@ -35,8 +37,8 @@ import java.io.IOException;
 @SuppressWarnings("WeakerAccess")
 public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
 
-    private Object value;
     private Data key;
+    private Collection<Object> value;
     private long creationTime = -1;
     private long expirationTime = -1;
     private long hits = -1;
@@ -53,32 +55,36 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
     }
 
     @Override
-    public Object getValue() {
-        return value;
-    }
-
-    @Override
-    public Object getDeserializedValue() {
-        return serializationService.toObject(value);
-    }
-
-    public MultiMapMergingEntryImpl setValue(Object value) {
-        this.value = value;
-        return this;
-    }
-
-    @Override
     public Data getKey() {
         return key;
     }
 
     @Override
-    public Object getDeserializedKey() {
+    public <DK> DK getDeserializedKey() {
         return serializationService.toObject(key);
     }
 
     public MultiMapMergingEntryImpl setKey(Data key) {
         this.key = key;
+        return this;
+    }
+
+    @Override
+    public Collection<Object> getValue() {
+        return value;
+    }
+
+    @Override
+    public <DV> DV getDeserializedValue() {
+        Collection<Object> deserializedValues = new ArrayList<Object>(value.size());
+        for (Object aValue : value) {
+            deserializedValues.add(serializationService.toObject(aValue));
+        }
+        return (DV) deserializedValues;
+    }
+
+    public MultiMapMergingEntryImpl setValues(Collection<Object> values) {
+        this.value = values;
         return this;
     }
 
@@ -130,7 +136,10 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeObject(out, key);
-        IOUtil.writeObject(out, value);
+        out.writeInt(value.size());
+        for (Object aValue : value) {
+            out.writeObject(aValue);
+        }
         out.writeLong(creationTime);
         out.writeLong(expirationTime);
         out.writeLong(hits);
@@ -141,7 +150,11 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         key = IOUtil.readObject(in);
-        value = IOUtil.readObject(in);
+        int size = in.readInt();
+        value = new ArrayList<Object>(size);
+        for (int i = 0; i < size; i++) {
+            value.add(in.readObject());
+        }
         creationTime = in.readLong();
         expirationTime = in.readLong();
         hits = in.readLong();

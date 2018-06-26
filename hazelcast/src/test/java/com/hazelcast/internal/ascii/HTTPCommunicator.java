@@ -133,9 +133,19 @@ public class HTTPCommunicator {
     }
 
     public String getClusterHealth() throws IOException {
+        return getClusterHealth("");
+    }
+
+    public String getClusterHealth(String pathParam) throws IOException {
         String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
-        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL;
+        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + pathParam;
         return doGet(url).response;
+    }
+
+    public int getClusterHealthResponseCode(String pathParam) throws IOException {
+        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
+        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + pathParam;
+        return doGet(url).responseCode;
     }
 
     public int mapPut(String mapName, String key, String value) throws IOException {

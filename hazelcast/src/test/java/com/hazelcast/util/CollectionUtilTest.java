@@ -39,12 +39,14 @@ import static com.hazelcast.util.CollectionUtil.addToValueList;
 import static com.hazelcast.util.CollectionUtil.getItemAtPositionOrNull;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.util.CollectionUtil.nullToEmpty;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
 import static com.hazelcast.util.CollectionUtil.toIntegerList;
 import static com.hazelcast.util.CollectionUtil.toLongArray;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -252,5 +254,16 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     public void testToIntegerList_whenNotEmpty() {
         List<Integer> result = toIntegerList(new int[]{1, 2, 3, 4});
         assertEquals(asList(1, 2, 3, 4), result);
+    }
+
+    @Test
+    public void testNullToEmpty_whenNull() {
+        assertEquals(emptyList(), nullToEmpty(null));
+    }
+
+    @Test
+    public void testNullToEmpty_whenNotNull() {
+        List<Integer> result = asList(1, 2, 3, 4, 5);
+        assertEquals(result, nullToEmpty(result));
     }
 }

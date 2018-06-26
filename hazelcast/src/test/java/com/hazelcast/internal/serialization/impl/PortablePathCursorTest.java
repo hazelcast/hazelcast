@@ -256,8 +256,7 @@ public class PortablePathCursorTest {
         try {
             assertEquals("", cursor.token());
             fail();
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException expected) {
         }
-
     }
 }

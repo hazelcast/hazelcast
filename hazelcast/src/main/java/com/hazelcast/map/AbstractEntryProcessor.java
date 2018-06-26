@@ -16,9 +16,9 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 
 import java.util.Map;
 

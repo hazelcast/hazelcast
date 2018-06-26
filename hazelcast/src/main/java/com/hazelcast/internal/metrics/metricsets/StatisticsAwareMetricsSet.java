@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.StringUtil.lowerCaseFirstChar;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -107,13 +108,18 @@ public class StatisticsAwareMetricsSet {
                     String name = entry.getKey();
 
                     NearCacheStats nearCacheStats = getNearCacheStats(localInstanceStats);
+                    String baseName = localInstanceStats.getClass().getSimpleName()
+                            .replace("Stats", "")
+                            .replace("Local", "")
+                            .replace("Impl", "");
+                    baseName = lowerCaseFirstChar(baseName);
                     if (nearCacheStats != null) {
                         metricsRegistry.scanAndRegister(nearCacheStats,
-                                localInstanceStats.getClass().getSimpleName() + "[" + name + "].nearcache");
+                                baseName + "[" + name + "].nearcache");
                     }
 
                     metricsRegistry.scanAndRegister(localInstanceStats,
-                            localInstanceStats.getClass().getSimpleName() + "[" + name + "]");
+                            baseName + "[" + name + "]");
                 }
             }
         }

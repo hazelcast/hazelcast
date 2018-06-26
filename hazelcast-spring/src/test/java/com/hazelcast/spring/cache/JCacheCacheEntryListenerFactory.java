@@ -34,13 +34,13 @@ public class JCacheCacheEntryListenerFactory implements Factory<CacheEntryListen
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();
 
-    public static JCacheCacheEntryListenerFactory INSTANCE;
+    public static JCacheCacheEntryListenerFactory instance;
 
     @Resource(name = "dummy")
     private IJCacheDummyBean dummyBean;
 
     public JCacheCacheEntryListenerFactory() {
-        INSTANCE = this;
+        instance = this;
     }
 
     @Override

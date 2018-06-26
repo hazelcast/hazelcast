@@ -31,7 +31,6 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -52,6 +51,10 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods.GET;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.util.Arrays.asList;
 
 /**
@@ -156,9 +159,12 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
     }
 
     private Config getConfig(boolean withNearCache) {
-        Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
-                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
+        Config config = smallInstanceConfig()
+                // we don't want to have the invalidations from the initial population being sent during this test
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE))
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE))
+                .setProperty(PARTITION_COUNT.getName(), "1")
+                .setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
                 .setInMemoryFormat(mapInMemoryFormat)
                 .setBackupCount(0)

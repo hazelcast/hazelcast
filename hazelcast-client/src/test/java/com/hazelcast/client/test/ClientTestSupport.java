@@ -17,8 +17,8 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
@@ -81,7 +81,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
     protected void makeSureConnectedToServers(final HazelcastInstance client, final int numberOfServers) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
                 assertEquals(numberOfServers, connectionManager.getActiveConnections().size());
             }

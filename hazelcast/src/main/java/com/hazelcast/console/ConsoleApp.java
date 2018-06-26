@@ -40,6 +40,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -358,8 +359,6 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             handleAddListener(args);
         } else if (first.equals("m.removeMapListener")) {
             handleRemoveListener(args);
-        } else if (first.equals("m.unlock")) {
-            handleMapUnlock(args);
         } else if (first.equals("mm.put")) {
             handleMultiMapPut(args);
         } else if (first.equals("mm.get")) {
@@ -485,16 +484,18 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         File f = new File(first.substring(1));
         println("Executing script file " + f.getAbsolutePath());
         if (f.exists()) {
+            BufferedReader br = null;
             try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
                 String l = br.readLine();
                 while (l != null) {
                     handleCommand(l);
                     l = br.readLine();
                 }
-                br.close();
             } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+                IOUtil.closeResource(br);
             }
         } else {
             println("File not found! " + f.getAbsolutePath());
@@ -946,7 +947,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         }
     }
 
-    @java.lang.SuppressWarnings("LockAcquiredButNotSafelyReleased")
+    // squid:S2222 suppression avoids sonar analysis bug regarding already known lock release issue
+    @SuppressWarnings({"LockAcquiredButNotSafelyReleased", "squid:S2222"})
     protected void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
@@ -1540,7 +1542,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     /**
      * Starts the test application.
-     *
+     * <p>
      * Loads the config from classpath hazelcast.xml, if it fails to load, will use default config.
      */
     public static void main(String[] args) throws Exception {

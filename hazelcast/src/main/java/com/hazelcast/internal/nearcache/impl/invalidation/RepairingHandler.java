@@ -87,7 +87,7 @@ public final class RepairingHandler {
             if (key == null) {
                 nearCache.clear();
             } else {
-                nearCache.remove(serializeKeys ? key : serializationService.toObject(key));
+                nearCache.invalidate(serializeKeys ? key : serializationService.toObject(key));
             }
         }
 

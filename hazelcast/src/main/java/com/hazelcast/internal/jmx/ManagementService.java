@@ -27,7 +27,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 import java.util.List;

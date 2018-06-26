@@ -35,7 +35,10 @@ import com.hazelcast.util.function.BiConsumer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.config.MergePolicyConfig.DEFAULT_BATCH_SIZE;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
@@ -43,34 +46,46 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntr
 class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordStore, CacheMergeTypes> {
 
     private final CacheService cacheService;
-    private final CacheSplitBrainHandlerService cacheSplitBrainHandlerService;
+    private final ConcurrentMap<String, CacheConfig> configs;
 
-    CacheMergeRunnable(Map<String, Collection<ICacheRecordStore>> collectedStores,
-                       Map<String, Collection<ICacheRecordStore>> collectedStoresWithLegacyPolicies,
-                       Collection<ICacheRecordStore> backupStores,
-                       CacheSplitBrainHandlerService cacheSplitBrainHandlerService,
+    CacheMergeRunnable(Collection<ICacheRecordStore> mergingStores,
+                       CacheSplitBrainHandlerService splitBrainHandlerService,
                        NodeEngine nodeEngine) {
-        super(CacheService.SERVICE_NAME, collectedStores, collectedStoresWithLegacyPolicies, backupStores, nodeEngine);
+        super(CacheService.SERVICE_NAME, mergingStores, splitBrainHandlerService, nodeEngine);
 
         this.cacheService = nodeEngine.getService(SERVICE_NAME);
-        this.cacheSplitBrainHandlerService = cacheSplitBrainHandlerService;
+        this.configs = new ConcurrentHashMap<String, CacheConfig>(cacheService.getConfigs());
     }
 
     @Override
-    protected void consumeStore(ICacheRecordStore store, BiConsumer<Integer, CacheMergeTypes> consumer) {
+    protected void onRunStart() {
+        super.onRunStart();
+
+        for (CacheConfig cacheConfig : configs.values()) {
+            cacheService.putCacheConfigIfAbsent(cacheConfig);
+        }
+    }
+
+    @Override
+    protected void onMerge(String cacheName) {
+        cacheService.sendInvalidationEvent(cacheName, null, SOURCE_NOT_AVAILABLE);
+    }
+
+    @Override
+    protected void mergeStore(ICacheRecordStore store, BiConsumer<Integer, CacheMergeTypes> consumer) {
         int partitionId = store.getPartitionId();
 
         for (Map.Entry<Data, CacheRecord> entry : store.getReadOnlyRecords().entrySet()) {
-            Data key = entry.getKey();
+            Data key = toHeapData(entry.getKey());
             CacheRecord record = entry.getValue();
-            Data dataValue = toData(record.getValue());
+            Data dataValue = toHeapData(record.getValue());
 
             consumer.accept(partitionId, createMergingEntry(getSerializationService(), key, dataValue, record));
         }
     }
 
     @Override
-    protected void consumeStoreLegacy(ICacheRecordStore recordStore, BiConsumer<Integer, Operation> consumer) {
+    protected void mergeStoreLegacy(ICacheRecordStore recordStore, BiConsumer<Integer, Operation> consumer) {
         int partitionId = recordStore.getPartitionId();
         String name = recordStore.getName();
         CacheMergePolicy mergePolicy = ((CacheMergePolicy) getMergePolicy(name));
@@ -92,7 +107,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
 
     @Override
     protected InMemoryFormat getInMemoryFormat(String dataStructureName) {
-        return cacheSplitBrainHandlerService.getConfigs().get(dataStructureName).getInMemoryFormat();
+        return cacheService.getConfigs().get(dataStructureName).getInMemoryFormat();
     }
 
     @Override
@@ -105,12 +120,17 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
 
     @Override
     protected Object getMergePolicy(String dataStructureName) {
-        return cacheSplitBrainHandlerService.getMergePolicy(dataStructureName);
+        return cacheService.getMergePolicy(dataStructureName);
     }
 
     @Override
-    protected void destroyStores(Collection<ICacheRecordStore> stores) {
-        cacheSplitBrainHandlerService.destroyStores(stores);
+    protected String getDataStructureName(ICacheRecordStore iCacheRecordStore) {
+        return iCacheRecordStore.getName();
+    }
+
+    @Override
+    protected int getPartitionId(ICacheRecordStore store) {
+        return store.getPartitionId();
     }
 
     @Override

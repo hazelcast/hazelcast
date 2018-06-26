@@ -18,7 +18,6 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.nio.ObjectDataOutput;

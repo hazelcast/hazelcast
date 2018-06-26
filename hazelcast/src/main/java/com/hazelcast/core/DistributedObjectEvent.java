@@ -30,9 +30,7 @@ public class DistributedObjectEvent {
     protected DistributedObject distributedObject;
 
     private EventType eventType;
-
     private String serviceName;
-
     private String objectName;
 
     /**
@@ -103,10 +101,17 @@ public class DistributedObjectEvent {
     }
 
     /**
-     * Type of event.
+     * Type of the DistributedObjectEvent.
      */
     public enum EventType {
-        CREATED, DESTROYED
+        /**
+         * Event if a DistributedObjectEvent is created.
+         */
+        CREATED,
+        /**
+         * Event if a DistributedObjectEvent is destroyed.
+         */
+        DESTROYED
     }
 
     @Override

@@ -21,15 +21,55 @@ package com.hazelcast.core;
  */
 public enum EntryEventType {
 
+    /**
+     * Fired if an entry is added.
+     */
     ADDED(TypeId.ADDED),
+
+    /**
+     * Fired if an entry is removed.
+     */
     REMOVED(TypeId.REMOVED),
+
+    /**
+     * Fired if an entry is updated.
+     */
     UPDATED(TypeId.UPDATED),
+
+    /**
+     * Fired if an entry is evicted.
+     */
     EVICTED(TypeId.EVICTED),
+
+    /**
+     * Fired if all entries are evicted.
+     */
     EVICT_ALL(TypeId.EVICT_ALL),
+
+    /**
+     * Fired if all entries are cleared.
+     */
     CLEAR_ALL(TypeId.CLEAR_ALL),
+
+    /**
+     * Fired if an entry is merged after a network partition.
+     */
     MERGED(TypeId.MERGED),
+
+    /**
+     * Fired if an entry is expired.
+     */
     EXPIRED(TypeId.EXPIRED),
-    INVALIDATION(TypeId.INVALIDATION);
+
+    /**
+     * Fired if an entry is invalidated.
+     */
+    INVALIDATION(TypeId.INVALIDATION),
+
+    /**
+     * Fired if an entry is loaded.
+     */
+    LOADED(TypeId.LOADED);
 
     private int typeId;
 
@@ -38,14 +78,15 @@ public enum EntryEventType {
     }
 
     /**
-     * @return the event type ID.
+     * @return the event type ID
      */
     public int getType() {
         return typeId;
     }
 
     /**
-     * @return the matching EntryEventType for the supplied {@code typeId} or null if there is no match.
+     * @return the matching EntryEventType for the supplied {@code typeId}
+     * or {@code null} if there is no match
      */
     @SuppressWarnings("checkstyle:returncount")
     public static EntryEventType getByType(final int typeId) {
@@ -68,6 +109,8 @@ public enum EntryEventType {
                 return EXPIRED;
             case TypeId.INVALIDATION:
                 return INVALIDATION;
+            case TypeId.LOADED:
+                return LOADED;
             default:
                 return null;
         }
@@ -78,8 +121,9 @@ public enum EntryEventType {
      *
      * @see com.hazelcast.map.impl.MapListenerFlagOperator
      */
-    //CHECKSTYLE:OFF
+    @SuppressWarnings("checkstyle:magicnumber")
     private static class TypeId {
+
         private static final int ADDED = 1;
         private static final int REMOVED = 1 << 1;
         private static final int UPDATED = 1 << 2;
@@ -89,6 +133,6 @@ public enum EntryEventType {
         private static final int MERGED = 1 << 6;
         private static final int EXPIRED = 1 << 7;
         private static final int INVALIDATION = 1 << 8;
+        private static final int LOADED = 1 << 9;
     }
-    //CHECKSTYLE:ON
 }

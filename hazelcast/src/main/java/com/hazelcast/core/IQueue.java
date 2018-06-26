@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Concurrent, blocking, distributed, observable queue.
- *
- * The IQueue is not a partitioned data-structure. All the content of the IQueue is stored in a single machine (and
- * in the backup). The IQueue will not scale by adding more members in the cluster.
+ * <p>
+ * The IQueue is not a partitioned data-structure. All the content of an IQueue is stored in a single machine (and
+ * in the backup). The IQueue will not scale by adding more members to the cluster.
  *
  * @see BaseQueue
  * @see java.util.Queue

@@ -33,7 +33,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Contains enough information about Hazelcast Config, to do a validation check so that clusters with different configurations
+ * Contains enough information about Hazelcast Config to do a validation check so that clusters with different configurations
  * don't join.
  */
 public final class ConfigCheck implements IdentifiedDataSerializable {

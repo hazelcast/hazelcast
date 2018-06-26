@@ -22,7 +22,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -61,7 +60,7 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
             factory.newHazelcastClient();
         }
 
-        Node node = TestUtil.getNode(h1);
+        Node node = getNode(h1);
         Map<ClientType, Integer> clientStats = node.clientEngine.getConnectedClientStats();
 
         assertEquals(numberOfClients, clientStats.get(ClientType.JAVA).intValue());
@@ -69,13 +68,14 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
         assertEquals(0, clientStats.get(ClientType.CSHARP).intValue());
         assertEquals(0, clientStats.get(ClientType.NODEJS).intValue());
         assertEquals(0, clientStats.get(ClientType.PYTHON).intValue());
+        assertEquals(0, clientStats.get(ClientType.GO).intValue());
         assertEquals(0, clientStats.get(ClientType.OTHER).intValue());
     }
 
     @Test
     public void testGetConnectedClientsOperation_WhenZeroClientConnects() throws Exception {
         HazelcastInstance instance = factory.newHazelcastInstance();
-        Node node = TestUtil.getNode(instance);
+        Node node = getNode(instance);
 
         Operation operation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();
@@ -92,7 +92,7 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
         factory.newHazelcastClient();
         factory.newHazelcastClient();
 
-        Node node = TestUtil.getNode(instance);
+        Node node = getNode(instance);
         Operation operation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();
         Future<Map<String, ClientType>> future =

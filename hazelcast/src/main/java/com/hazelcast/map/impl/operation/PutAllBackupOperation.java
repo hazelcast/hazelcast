@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
@@ -31,7 +30,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
 public class PutAllBackupOperation extends MapOperation implements PartitionAwareOperation, BackupOperation {
@@ -50,18 +48,13 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
 
     @Override
     public void run() {
-        boolean wanEnabled = mapContainer.isWanReplicationEnabled();
         for (int i = 0; i < entries.size(); i++) {
             Data dataKey = entries.getKey(i);
             Data dataValue = entries.getValue(i);
             Record record = recordStore.putBackup(dataKey, dataValue);
             applyRecordInfo(record, recordInfos.get(i));
-            if (wanEnabled) {
-                Data dataValueAsData = mapServiceContext.toData(dataValue);
-                EntryView entryView = createSimpleEntryView(dataKey, dataValueAsData, record);
-                mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
-            }
 
+            publishWanUpdate(dataKey, dataValue);
             evict(dataKey);
         }
     }

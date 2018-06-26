@@ -41,7 +41,7 @@ public class RemoveAllOperation extends AbstractBackupAwareMultiMapOperation imp
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        coll = remove(executedLocally());
+        coll = container.remove(dataKey, executedLocally());
         response = new MultiMapResponse(coll, getValueCollectionType(container));
     }
 

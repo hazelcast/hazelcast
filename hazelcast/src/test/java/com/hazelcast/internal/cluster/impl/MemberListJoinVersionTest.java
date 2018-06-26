@@ -27,6 +27,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SerializationSamplesExcluded;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -57,7 +59,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelTest.class, SerializationSamplesExcluded.class})
 public class MemberListJoinVersionTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
@@ -134,10 +136,7 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
         assertNotEquals(afterJoinVersionOnMember1, beforeJoinVersionOnMember3);
 
         int versionOnLocalMember3 = getNode(member3).getLocalMember().getMemberListJoinVersion();
-        // during join, we are forcibly changing member-type of member3 to lite member, upon end of merge operations
-        // promoting that member3 to data member, in this scenario, local members version is not incremented and
-        // in this test it should be off by 1.
-        assertEquals(afterJoinVersionOnMember1, versionOnLocalMember3 + 1);
+        assertEquals(afterJoinVersionOnMember1, versionOnLocalMember3);
 
         assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member3));
         assertTrueEventually(new AssertTask() {

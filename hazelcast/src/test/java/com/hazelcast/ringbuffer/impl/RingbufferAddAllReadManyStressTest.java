@@ -34,16 +34,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.logging.Logger.getLogger;
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
-import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
@@ -156,7 +153,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         @Override
         public void doRun() throws Throwable {
             while (!stop.get()) {
-                LinkedList<Long> items = makeBatch();
+                List<Long> items = makeBatch();
                 addAll(items);
             }
 
@@ -164,7 +161,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         }
 
         @SuppressWarnings("NonAtomicOperationOnVolatileField")
-        private LinkedList<Long> makeBatch() {
+        private List<Long> makeBatch() {
             int count = max(1, random.nextInt(MAX_BATCH));
             LinkedList<Long> items = new LinkedList<Long>();
 
@@ -181,7 +178,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
             return items;
         }
 
-        private void addAll(LinkedList<Long> items) throws InterruptedException, ExecutionException {
+        private void addAll(List<Long> items) throws Exception {
             long sleepMs = 100;
             for (; ; ) {
                 long result = ringbuffer.addAllAsync(items, FAIL).get();

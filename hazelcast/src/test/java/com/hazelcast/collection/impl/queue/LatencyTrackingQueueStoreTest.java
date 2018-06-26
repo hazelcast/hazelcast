@@ -44,16 +44,16 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
-    private static final String NAME = "somequeue";
 
-    private HazelcastInstance hz;
+    private static final String NAME = "someQueue";
+
     private StoreLatencyPlugin plugin;
     private QueueStore<String> delegate;
     private LatencyTrackingQueueStore<String> queueStore;
 
     @Before
     public void setup() {
-        hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(QueueStore.class);
         queueStore = new LatencyTrackingQueueStore<String>(delegate, plugin, NAME);
@@ -62,7 +62,7 @@ public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
     @Test
     public void load() {
         Long key = 1L;
-        String value = "somevalue";
+        String value = "someValue";
 
         when(delegate.load(key)).thenReturn(value);
 

@@ -31,9 +31,9 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * This class collects statistics about the replication map usage for management center and is
  * able to transform those between wire format and instance view.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
-    //CHECKSTYLE:OFF
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_ACCESS_TIME =
             newUpdater(LocalReplicatedMapStatsImpl.class, "lastAccessTime");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_UPDATE_TIME =
@@ -64,9 +64,8 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
             newUpdater(LocalReplicatedMapStatsImpl.class, "maxRemoveLatency");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> OWNED_ENTRY_MEMORY_COST =
             newUpdater(LocalReplicatedMapStatsImpl.class, "ownedEntryMemoryCost");
-    //CHECKSTYLE:ON
 
-    // These fields are only accessed through the updaters
+    // these fields are only accessed through the updaters
     @Probe
     private volatile long lastAccessTime;
     @Probe

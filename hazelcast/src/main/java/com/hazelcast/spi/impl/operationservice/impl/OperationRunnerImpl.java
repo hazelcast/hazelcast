@@ -41,6 +41,7 @@ import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.Offload;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.ReadonlyOperation;
@@ -65,6 +66,10 @@ import java.util.logging.Level;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.spi.CallStatus.DONE_RESPONSE_ORDINAL;
+import static com.hazelcast.spi.CallStatus.DONE_VOID_ORDINAL;
+import static com.hazelcast.spi.CallStatus.OFFLOAD_ORDINAL;
+import static com.hazelcast.spi.CallStatus.WAIT_ORDINAL;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
@@ -201,19 +206,21 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private void call(Operation op) throws Exception {
         CallStatus callStatus = op.call();
 
-        switch (callStatus) {
-            case DONE_RESPONSE:
+        switch (callStatus.ordinal()) {
+            case DONE_RESPONSE_ORDINAL:
                 handleResponse(op);
                 afterRun(op);
                 break;
-            case DONE_VOID:
-                // todo: currently there is no difference between DONE_VOID and OFFLOADED
+            case DONE_VOID_ORDINAL:
                 op.afterRun();
                 break;
-            case OFFLOADED:
+            case OFFLOAD_ORDINAL:
                 op.afterRun();
+                Offload offload = (Offload) callStatus;
+                offload.init(nodeEngine, operationService.asyncOperations);
+                offload.start();
                 break;
-            case WAIT:
+            case WAIT_ORDINAL:
                 nodeEngine.getOperationParker().park((BlockingOperation) op);
                 break;
             default:

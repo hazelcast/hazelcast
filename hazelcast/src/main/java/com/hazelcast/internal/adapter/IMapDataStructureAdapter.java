@@ -115,6 +115,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public void setTTL(K key, long duration, TimeUnit timeUnit) {
+        map.setTTL(key, duration, timeUnit);
+    }
+
+    @Override
     public V replace(K key, V newValue) {
         return map.replace(key, newValue);
     }

@@ -116,7 +116,7 @@ public abstract class AbstractMultiMapOperation extends Operation
 
     @Override
     public ObjectNamespace getServiceNamespace() {
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         return container.getObjectNamespace();
     }
 

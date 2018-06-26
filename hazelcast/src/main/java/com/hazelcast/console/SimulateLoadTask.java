@@ -32,7 +32,7 @@ import static java.lang.Thread.currentThread;
 public final class SimulateLoadTask implements Callable, Serializable, HazelcastInstanceAware {
 
     private static final long serialVersionUID = 1;
-    private static final int ONE_THOUSAND = 1000;
+    private static final long ONE_THOUSAND = 1000L;
 
     private final int delay;
     private final int taskId;

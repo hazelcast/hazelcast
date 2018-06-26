@@ -17,8 +17,8 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.client.impl.ClientLockReferenceIdGenerator;
-import com.hazelcast.client.impl.ClientMessageDecoder;
+import com.hazelcast.client.impl.clientside.ClientLockReferenceIdGenerator;
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -73,6 +73,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCo
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSetTTLCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSubmitToKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryLockCodec;
@@ -149,7 +150,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.collection.InflatableSet;
 
 import java.util.AbstractMap;
@@ -165,7 +165,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
-import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -1292,6 +1292,20 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
+    public void setTTL(K key, long ttl, TimeUnit timeunit) {
+        checkNotNull(key);
+        checkNotNull(timeunit);
+        setTTLInternal(key, ttl, timeunit);
+    }
+
+    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+        long ttlMillis = timeUnit.toMillis(ttl);
+        Data keyData = toData(key);
+        ClientMessage request = MapSetTTLCodec.encodeRequest(getName(), keyData, ttlMillis);
+        invoke(request, keyData);
+    }
+
+    @Override
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return executeOnKeyInternal(key, entryProcessor);
@@ -1487,7 +1501,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                                    IMap map) {
         QueryCacheRequest request = newQueryCacheRequest()
                 .withCacheName(name)
-                .withCacheId(UuidUtil.newUnsecureUuidString())
                 .withListener(listener)
                 .withPredicate(predicate)
                 .withIncludeValue(includeValue)
@@ -1501,7 +1514,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     private QueryCache<K, V> createQueryCache(QueryCacheRequest request) {
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheId(),
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
                 new ClientQueryCacheEndToEndConstructor(request));
     }
 

@@ -34,12 +34,12 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.util.function.Consumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -47,7 +47,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -62,11 +61,12 @@ import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static java.util.Collections.newSetFromMap;
 
-public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
+public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet> {
 
     private static final int RETRY_NUMBER = 5;
-    private static final int DELAY_FACTOR = 100;
+    private static final long DELAY_FACTOR = 100L;
     private static final int SCHEDULER_POOL_SIZE = 4;
 
     final LoggingService loggingService;
@@ -95,16 +95,13 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             new ConcurrentHashMap<Address, TcpIpConnectionErrorHandler>(100);
 
     @Probe(name = "inProgressCount")
-    private final Set<Address> connectionsInProgress =
-            Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
+    private final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     @Probe(name = "acceptedSocketCount", level = MANDATORY)
-    private final Set<Channel> acceptedSockets =
-            Collections.newSetFromMap(new ConcurrentHashMap<Channel, Boolean>());
+    private final Set<Channel> acceptedChannels = newSetFromMap(new ConcurrentHashMap<Channel, Boolean>());
 
     @Probe(name = "activeCount", level = MANDATORY)
-    private final Set<TcpIpConnection> activeConnections =
-            Collections.newSetFromMap(new ConcurrentHashMap<TcpIpConnection, Boolean>());
+    private final Set<TcpIpConnection> activeConnections = newSetFromMap(new ConcurrentHashMap<TcpIpConnection, Boolean>());
 
     @Probe(name = "textCount", level = MANDATORY)
     private final AtomicInteger allTextConnections = new AtomicInteger();
@@ -207,7 +204,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     @Override
-    public void handle(Packet packet) throws Exception {
+    public void accept(Packet packet)  {
         assert packet.getPacketType() == Packet.Type.BIND;
 
         BindMessage bind = ioService.getSerializationService().toObject(packet);
@@ -229,7 +226,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         // Prevent BINDs from src that match us (same host & port)
         if (spoofingChecks
                 && (!ensureValidBindSource(connection, remoteEndPoint)
-                 || !ensureBindNotFromSelf(connection, remoteEndPoint, thisAddress))) {
+                || !ensureBindNotFromSelf(connection, remoteEndPoint, thisAddress))) {
             return false;
         }
 
@@ -256,7 +253,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             InetAddress originalRemoteAddr = connection.getRemoteSocketAddress().getAddress();
             InetAddress presentedRemoteAddr = remoteEndPoint.getInetAddress();
             if (!originalRemoteAddr.equals(presentedRemoteAddr)) {
-                String msg =  "Wrong bind request from " + originalRemoteAddr + ", identified as " + presentedRemoteAddr;
+                String msg = "Wrong bind request from " + originalRemoteAddr + ", identified as " + presentedRemoteAddr;
                 logger.warning(msg);
                 connection.close(msg, null);
                 return false;
@@ -274,7 +271,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                                           Address thisAddress) {
         if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
             String msg = "Wrong bind request from " + remoteEndPoint
-                       + "! This node is not the requested endpoint: " + localEndpoint;
+                    + "! This node is not the requested endpoint: " + localEndpoint;
             logger.warning(msg);
             connection.close(msg, null);
             return false;
@@ -371,9 +368,9 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     Channel createChannel(SocketChannel socketChannel, boolean client) throws Exception {
-        Channel wrapper = channelFactory.create(socketChannel, client, ioService.useDirectSocketBuffer());
-        acceptedSockets.add(wrapper);
-        return wrapper;
+        Channel channel = channelFactory.create(socketChannel, client, ioService.useDirectSocketBuffer());
+        acceptedChannels.add(channel);
+        return channel;
     }
 
     synchronized TcpIpConnection newConnection(Channel channel, Address endpoint) {
@@ -394,7 +391,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             eventLoopGroup.register(channel);
             return connection;
         } finally {
-            acceptedSockets.remove(channel);
+            acceptedChannels.remove(channel);
         }
     }
 
@@ -507,7 +504,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
         shutdownAcceptor();
 
-        for (Channel socketChannel : acceptedSockets) {
+        for (Channel socketChannel : acceptedChannels) {
             closeResource(socketChannel);
         }
         for (Connection conn : connectionsMap.values()) {
@@ -517,7 +514,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             destroySilently(conn, "TcpIpConnectionManager is stopping");
         }
         eventLoopGroup.shutdown();
-        acceptedSockets.clear();
+        acceptedChannels.clear();
         connectionsInProgress.clear();
         connectionsMap.clear();
         monitors.clear();
@@ -619,6 +616,9 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
                 return true;
             } catch (RejectedExecutionException e) {
+                if (live) {
+                    throw e;
+                }
                 if (logger.isFinestEnabled()) {
                     logger.finest("Packet send task is rejected. Packet cannot be sent to " + target);
                 }

@@ -131,7 +131,8 @@ public class ValueContainer implements DataSerializable, Comparable<ValueContain
                 return bigInteger.compareTo(o.bigInteger);
             case STRING:
                 return stringValue.compareTo(o.stringValue);
+            default:
+                return 0;
         }
-        return 0;
     }
 }

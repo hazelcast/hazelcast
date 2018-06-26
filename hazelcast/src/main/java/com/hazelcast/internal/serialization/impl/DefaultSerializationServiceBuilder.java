@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -29,6 +30,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.ClassNameFilter;
+import com.hazelcast.nio.SerializationClassNameFilter;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -87,6 +90,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
 
+    protected ClassNameFilter classNameFilter;
+
     @Override
     public SerializationServiceBuilder setVersion(byte version) {
         byte maxVersion = BuildInfoProvider.getBuildInfo().getSerializationVersion();
@@ -125,6 +130,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         enableCompression = config.isEnableCompression();
         enableSharedObject = config.isEnableSharedObject();
         allowUnsafe = config.isAllowUnsafe();
+        JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
+        classNameFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
         return this;
     }
 
@@ -272,10 +279,22 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                                                                       Supplier<RuntimeException> notActiveExceptionSupplier) {
         switch (version) {
             case 1:
-                SerializationServiceV1 serializationServiceV1 = new SerializationServiceV1(inputOutputFactory, version,
-                        portableVersion, classLoader, dataSerializableFactories, portableFactories, managedContext,
-                        partitioningStrategy, initialOutputBufferSize, new BufferPoolFactoryImpl(), enableCompression,
-                        enableSharedObject, notActiveExceptionSupplier);
+                SerializationServiceV1 serializationServiceV1 = SerializationServiceV1.builder()
+                    .withInputOutputFactory(inputOutputFactory)
+                    .withVersion(version)
+                    .withPortableVersion(portableVersion)
+                    .withClassLoader(classLoader)
+                    .withDataSerializableFactories(dataSerializableFactories)
+                    .withPortableFactories(portableFactories)
+                    .withManagedContext(managedContext)
+                    .withGlobalPartitionStrategy(partitioningStrategy)
+                    .withInitialOutputBufferSize(initialOutputBufferSize)
+                    .withBufferPoolFactory(new BufferPoolFactoryImpl())
+                    .withEnableCompression(enableCompression)
+                    .withEnableSharedObject(enableSharedObject)
+                    .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
+                    .withClassNameFilter(classNameFilter)
+                    .build();
                 serializationServiceV1.registerClassDefinitions(classDefinitions, checkClassDefErrors);
                 return serializationServiceV1;
 

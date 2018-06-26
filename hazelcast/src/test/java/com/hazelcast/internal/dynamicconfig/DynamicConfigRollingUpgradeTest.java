@@ -27,6 +27,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SerializationSamplesExcluded;
 import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,7 +38,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_8;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelTest.class, SerializationSamplesExcluded.class})
 public class DynamicConfigRollingUpgradeTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)

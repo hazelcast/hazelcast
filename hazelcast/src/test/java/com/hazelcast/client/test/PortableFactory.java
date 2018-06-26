@@ -44,7 +44,7 @@ public class PortableFactory implements com.hazelcast.nio.serialization.Portable
         }
 
         public int getFactoryId() {
-            return 666;
+            return PortableFactory.FACTORY_ID;
         }
 
         public int getClassId() {
@@ -63,7 +63,7 @@ public class PortableFactory implements com.hazelcast.nio.serialization.Portable
     class BasePortable implements Portable {
         @Override
         public int getFactoryId() {
-            return 666;
+            return PortableFactory.FACTORY_ID;
         }
 
         @Override
@@ -108,6 +108,8 @@ public class PortableFactory implements com.hazelcast.nio.serialization.Portable
             return new Derived1Portable();
         } else if (classId == 5) {
             return new Derived2Portable();
+        } else if (classId == 6) {
+            return new Student();
         }
         return null;
     }

@@ -25,6 +25,10 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.newCollectionFor;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.isDebugEnabled;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable;
 
 class ProxyInvocationHandler implements InvocationHandler, Serializable {
 
@@ -37,7 +41,7 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         ClassLoader targetClassLoader = proxy.getClass().getClassLoader();
-        Utils.debug("Proxy " + this + " called. Method: " + method);
+        debug("Proxy %s called. Method: %s", this, method);
         Class<?> delegateClass = delegate.getClass();
         Method methodDelegate = getMethodDelegate(method, delegateClass);
 
@@ -116,9 +120,9 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
             methodDelegate.setAccessible(true);
             delegateResult = methodDelegate.invoke(delegate, args);
         } catch (IllegalAccessException e) {
-            throw Utils.rethrow(e);
+            throw rethrowGuardianException(e);
         } catch (InvocationTargetException e) {
-            throw e.getTargetException();
+            throw transferThrowable(e.getTargetException());
         }
         return delegateResult;
     }
@@ -137,7 +141,7 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
                         Class<?> delegateParameterType = delegateClassLoader.loadClass(parameterType.getName());
                         parameterTypes[i] = delegateParameterType;
                     } catch (ClassNotFoundException e) {
-                        throw Utils.rethrow(e);
+                        throw rethrowGuardianException(e);
                     }
                 }
             }
@@ -145,20 +149,19 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
         try {
             methodDelegate = delegateClass.getMethod(method.getName(), parameterTypes);
         } catch (NoSuchMethodException e) {
-            throw Utils.rethrow(e);
+            throw rethrowGuardianException(e);
         }
         return methodDelegate;
     }
 
     private static void printInfoAboutResultProxy(Object resultingProxy) {
-        if (!Utils.DEBUG_ENABLED) {
+        if (!isDebugEnabled()) {
             return;
         }
-        Utils.debug("Returning proxy " + resultingProxy + ", loaded by " + resultingProxy.getClass().getClassLoader());
-        Class<?>[] ifaces = resultingProxy.getClass().getInterfaces();
-        Utils.debug("The proxy implements interfaces: ");
-        for (Class<?> iface : ifaces) {
-            Utils.debug(iface + ", loaded by " + iface.getClassLoader());
+        debug("Returning proxy %s, loaded by %s", resultingProxy, resultingProxy.getClass().getClassLoader());
+        debug("The proxy implements interfaces:");
+        for (Class<?> interfaceClass : resultingProxy.getClass().getInterfaces()) {
+            debug("%s, loaded by %s", interfaceClass, interfaceClass.getClassLoader());
         }
     }
 
@@ -178,5 +181,4 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
         Class<?> delegateReturnClass = delegateMethod.getReturnType();
         return !(returnClass.equals(delegateReturnClass));
     }
-
 }

@@ -62,7 +62,7 @@ class LazySet<K, V, R> implements Set<R> {
         while (iterator.hasNext()) {
             result.add(iterator.next());
         }
-        return result.toArray(new Object[result.size()]);
+        return result.toArray(new Object[0]);
     }
 
     @Override

@@ -25,14 +25,14 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,53 +46,58 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static java.lang.Integer.parseInt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * Ported to jcache
- *
- * @see com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheStaleReadTest
+ * Tests that the Near Cache doesn't lose invalidations.
+ * <p>
+ * Issue: https://github.com/hazelcast/hazelcast/issues/4671
+ * <p>
+ * Thanks Lukas Blunschi for the original test (https://github.com/lukasblu).
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelTest.class})
 public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
 
     private static final int NUM_GETTERS = 7;
     private static final int MAX_RUNTIME = 30;
-    private static final String CACHE_NAME = "test";
     private static final String KEY = "key123";
+
     private static final ILogger LOGGER = Logger.getLogger(ClientCacheNearCacheStaleReadTest.class);
 
-    private AtomicInteger valuePut;
-    private AtomicBoolean stop;
-    private AtomicInteger assertionViolationCount;
-    private AtomicBoolean failed;
-    private Cache<String, String> cache;
+    private AtomicInteger valuePut = new AtomicInteger(0);
+    private AtomicBoolean stop = new AtomicBoolean(false);
+    private AtomicInteger assertionViolationCount = new AtomicInteger(0);
+    private AtomicBoolean failed = new AtomicBoolean(false);
+
     private HazelcastInstance member;
     private HazelcastInstance client;
-    private NearCacheConfig.LocalUpdatePolicy localUpdatePolicy = NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
-    private InMemoryFormat inMemoryFormat = InMemoryFormat.BINARY;
+    private Cache<String, String> cache;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
+        String cacheName = randomMapName();
         TestHazelcastFactory factory = new TestHazelcastFactory();
-        valuePut = new AtomicInteger(0);
-        stop = new AtomicBoolean(false);
-        failed = new AtomicBoolean(false);
-        assertionViolationCount = new AtomicInteger(0);
 
-        Config config = new Config();
-        config.setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "2");
+        Config config = getConfig()
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "2");
+
+        ClientConfig clientConfig = getClientConfig(cacheName)
+                .setProperty(MAX_TOLERATED_MISS_COUNT.getName(), "0");
+
         member = factory.newHazelcastInstance(config);
-
-        ClientConfig clientConfig = getClientConfig(CACHE_NAME);
-        clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
         client = factory.newHazelcastClient(clientConfig);
+
         CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
-        cache = cacheManager.createCache(CACHE_NAME, createCacheConfig(inMemoryFormat));
+
+        CacheConfig<String, String> cacheConfig = createCacheConfig(cacheName);
+        cache = cacheManager.createCache(cacheName, cacheConfig);
     }
 
     @After
@@ -102,16 +107,16 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNoLostInvalidationsEventually() throws Exception {
+    public void testNoLostInvalidationsEventually() {
         testNoLostInvalidationsStrict(false);
     }
 
     @Test
-    public void testNoLostInvalidationsStrict() throws Exception {
+    public void testNoLostInvalidationsStrict() {
         testNoLostInvalidationsStrict(true);
     }
 
-    private void testNoLostInvalidationsStrict(boolean strict) throws Exception {
+    private void testNoLostInvalidationsStrict(boolean strict) {
         // run test
         runTestInternal();
 
@@ -142,10 +147,10 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
             }
         }
 
-        // stop hazelcast
+        // stop instance
         client.getLifecycleService().terminate();
 
-        // fail after stopping hazelcast instance
+        // fail after stopping instance
         if (msg != null) {
             LOGGER.warning(msg);
             fail(msg);
@@ -159,21 +164,28 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
         }
     }
 
-    private CacheConfig<String, String> createCacheConfig(InMemoryFormat inMemoryFormat) {
+    protected CacheConfig<String, String> createCacheConfig(String cacheName) {
         return new CacheConfig<String, String>()
-                .setName(CACHE_NAME)
-                .setInMemoryFormat(inMemoryFormat);
+                .setName(cacheName)
+                .setInMemoryFormat(InMemoryFormat.BINARY);
     }
 
-    // will be overridden
-    protected ClientConfig getClientConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig(mapName)
-                .setInMemoryFormat(inMemoryFormat)
-                .setLocalUpdatePolicy(localUpdatePolicy);
+    @Override
+    protected Config getConfig() {
+        return getBaseConfig();
+    }
 
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addNearCacheConfig(nearCacheConfig);
-        return clientConfig;
+    protected ClientConfig getClientConfig(String cacheName) {
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(cacheName);
+
+        return new ClientConfig()
+                .addNearCacheConfig(nearCacheConfig);
+    }
+
+    protected NearCacheConfig getNearCacheConfig(String cacheName) {
+        return new NearCacheConfig(cacheName)
+                .setInMemoryFormat(InMemoryFormat.BINARY)
+                .setLocalUpdatePolicy(LocalUpdatePolicy.INVALIDATE);
     }
 
     /**
@@ -185,7 +197,7 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
         ((NearCachedClientCacheProxy) cache).getNearCache().clear();
     }
 
-    private void runTestInternal() throws Exception {
+    private void runTestInternal() {
         // start 1 putter thread (put0)
         Thread threadPut = new Thread(new PutRunnable(), "put0");
         threadPut.start();
@@ -212,9 +224,9 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
             LOGGER.info("Problem did not occur within " + MAX_RUNTIME + "s.");
         }
         stop.set(true);
-        threadPut.join();
+        assertJoinable(threadPut);
         for (Thread thread : threads) {
-            thread.join();
+            assertJoinable(thread);
         }
     }
 

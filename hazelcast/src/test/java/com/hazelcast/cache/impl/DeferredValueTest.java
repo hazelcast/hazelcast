@@ -33,8 +33,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.cache.impl.DeferredValue.concurrentSetOfValues;
 import static com.hazelcast.cache.impl.DeferredValue.asPassThroughSet;
+import static com.hazelcast.cache.impl.DeferredValue.concurrentSetOfValues;
 import static com.hazelcast.cache.impl.DeferredValue.withSerializedValue;
 import static com.hazelcast.cache.impl.DeferredValue.withValue;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;

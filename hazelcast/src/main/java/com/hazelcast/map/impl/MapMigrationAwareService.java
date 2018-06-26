@@ -42,6 +42,7 @@ import java.util.Iterator;
 
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAccumulator;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.removeAccumulator;
+import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.sendEndOfSequenceEvents;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
 
@@ -92,17 +93,21 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
      * Flush and remove query cache on this source partition.
      */
     private void flushAndRemoveQueryCaches(PartitionMigrationEvent event) {
-        if (event.getMigrationEndpoint() != MigrationEndpoint.SOURCE) {
-            return;
-        }
-
+        int partitionId = event.getPartitionId();
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
         PublisherContext publisherContext = queryCacheContext.getPublisherContext();
 
-        int partitionId = event.getPartitionId();
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            flushAccumulator(publisherContext, partitionId);
+            removeAccumulator(publisherContext, partitionId);
+            return;
+        }
 
-        flushAccumulator(publisherContext, partitionId);
-        removeAccumulator(publisherContext, partitionId);
+        if (isLocalPromotion(event)) {
+            removeAccumulator(publisherContext, partitionId);
+            sendEndOfSequenceEvents(publisherContext, partitionId);
+            return;
+        }
     }
 
     @Override

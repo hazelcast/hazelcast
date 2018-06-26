@@ -22,9 +22,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * DataSerializable is a serialization method as an alternative to standard Java serialization.
- * DataSerializable is very similar to {@link java.io.Externalizable} and relies on reflection to create
- * instances using classnames.
+ * DataSerializable is a serialization method alternative to standard Java
+ * serialization. DataSerializable is very similar to {@link java.io.Externalizable}
+ * and relies on reflection to create instances using class names.
+ * <p>
+ * Conforming classes must provide a no-arguments constructor to facilitate the
+ * creation of their instances during the deserialization. Anonymous, local and
+ * non-static member classes can't satisfy this requirement since their
+ * constructors are always accepting an instance of the enclosing class as an
+ * implicit argument, therefore they must be avoided.
  *
  * @see com.hazelcast.nio.serialization.IdentifiedDataSerializable
  * @see com.hazelcast.nio.serialization.Portable

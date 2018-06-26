@@ -154,7 +154,7 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         if (connection.getChannel() instanceof NioChannel) {
             NioChannel nioChannel = (NioChannel) connection.getChannel();
             NioOutboundPipeline outboundPipeline = nioChannel.outboundPipeline();
-            return priority ? outboundPipeline.urgentWriteQueue : outboundPipeline.writeQueue;
+            return priority ? outboundPipeline.priorityWriteQueue : outboundPipeline.writeQueue;
         } else {
             return EMPTY_QUEUE;
         }

@@ -41,15 +41,11 @@ import java.io.IOException;
 public class TxnSetOperation extends BasePutOperation implements MapTxnOperation, MutatingOperation {
 
     private long version;
-    private transient boolean shouldBackup;
     private String ownerUuid;
 
-    public TxnSetOperation() {
-    }
+    private transient boolean shouldBackup;
 
-    public TxnSetOperation(String name, Data dataKey, Data value, long version) {
-        super(name, dataKey, value);
-        this.version = version;
+    public TxnSetOperation() {
     }
 
     public TxnSetOperation(String name, Data dataKey, Data value, long version, long ttl) {

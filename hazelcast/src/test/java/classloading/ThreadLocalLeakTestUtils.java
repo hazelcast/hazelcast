@@ -44,6 +44,9 @@ public final class ThreadLocalLeakTestUtils {
             "org.mockito.internal.progress.MockingProgressImpl",
     };
 
+    private ThreadLocalLeakTestUtils() {
+    }
+
     public static void checkThreadLocalsForLeaks(ClassLoader cl) throws Exception {
         Thread[] threads = getThreads();
         // make the fields in the Thread class that store ThreadLocals accessible

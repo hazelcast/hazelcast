@@ -20,20 +20,17 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.executor.impl.RunnableAdapter;
-import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.NamedOperation;
+import com.hazelcast.spi.Offload;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
-
-import static com.hazelcast.spi.CallStatus.OFFLOADED;
 
 abstract class AbstractCallableTaskOperation extends Operation implements NamedOperation, IdentifiedDataSerializable {
 
@@ -52,30 +49,7 @@ abstract class AbstractCallableTaskOperation extends Operation implements NamedO
 
     @Override
     public final CallStatus call() {
-        Callable callable = loadCallable();
-        DistributedExecutorService service = getService();
-        service.execute(name, uuid, callable, this);
-        return OFFLOADED;
-    }
-
-    private Callable loadCallable() {
-        ManagedContext managedContext = getManagedContext();
-
-        Callable callable = getNodeEngine().toObject(callableData);
-        if (callable instanceof RunnableAdapter) {
-            RunnableAdapter adapter = (RunnableAdapter) callable;
-            Runnable runnable = (Runnable) managedContext.initialize(adapter.getRunnable());
-            adapter.setRunnable(runnable);
-        } else {
-            callable = (Callable) managedContext.initialize(callable);
-        }
-        return callable;
-    }
-
-    private ManagedContext getManagedContext() {
-        HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) getNodeEngine().getHazelcastInstance();
-        SerializationService serializationService = hazelcastInstance.getSerializationService();
-        return serializationService.getManagedContext();
+        return new OffloadImpl();
     }
 
     @Override
@@ -112,5 +86,32 @@ abstract class AbstractCallableTaskOperation extends Operation implements NamedO
     @Override
     public int getFactoryId() {
         return ExecutorDataSerializerHook.F_ID;
+    }
+
+    private class OffloadImpl extends Offload {
+        OffloadImpl() {
+            super(AbstractCallableTaskOperation.this);
+        }
+
+        @Override
+        public void start() {
+            Callable callable = loadCallable();
+            DistributedExecutorService service = getService();
+            service.execute(name, uuid, callable, AbstractCallableTaskOperation.this);
+        }
+
+        private Callable loadCallable() {
+            ManagedContext managedContext = serializationService.getManagedContext();
+
+            Callable callable = serializationService.toObject(callableData);
+            if (callable instanceof RunnableAdapter) {
+                RunnableAdapter adapter = (RunnableAdapter) callable;
+                Runnable runnable = (Runnable) managedContext.initialize(adapter.getRunnable());
+                adapter.setRunnable(runnable);
+            } else {
+                callable = (Callable) managedContext.initialize(callable);
+            }
+            return callable;
+        }
     }
 }

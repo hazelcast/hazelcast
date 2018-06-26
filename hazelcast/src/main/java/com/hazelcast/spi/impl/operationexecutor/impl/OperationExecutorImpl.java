@@ -34,12 +34,14 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
+import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.concurrent.IdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.BitSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -88,7 +90,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     private final OperationRunner[] partitionOperationRunners;
 
     private final OperationQueue genericQueue
-            = new DefaultOperationQueue(new LinkedBlockingQueue<Object>(), new LinkedBlockingQueue<Object>());
+            = new OperationQueueImpl(new LinkedBlockingQueue<Object>(), new LinkedBlockingQueue<Object>());
 
     // all operations that are not specific for a partition will be executed here, e.g. heartbeat or map.size()
     private final GenericOperationThread[] genericThreads;
@@ -160,7 +162,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
             // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
             MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(idleStrategy);
 
-            OperationQueue operationQueue = new DefaultOperationQueue(normalQueue, new ConcurrentLinkedQueue<Object>());
+            OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<Object>());
 
             PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
                     nodeExtension, partitionOperationRunners, configClassLoader);
@@ -180,7 +182,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return threads;
     }
 
-    private static int getPartitionThreadId(int partitionId, int partitionThreadCount) {
+    static int getPartitionThreadId(int partitionId, int partitionThreadCount) {
         return partitionId % partitionThreadCount;
     }
 
@@ -340,11 +342,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public boolean isOperationThread() {
-        return Thread.currentThread() instanceof OperationThread;
-    }
-
-    @Override
     public int getPartitionThreadId(int partitionId) {
         return getPartitionThreadId(partitionId, partitionThreads.length);
     }
@@ -357,6 +354,17 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
+    public void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions) {
+        checkNotNull(taskFactory, "taskFactory can't be null");
+        checkNotNull(partitions, "partitions can't be null");
+
+        for (PartitionOperationThread partitionThread : partitionThreads) {
+            TaskBatch batch = new TaskBatch(taskFactory, partitions, partitionThread.threadId, partitionThreads.length);
+            partitionThread.queue.add(batch, false);
+        }
+    }
+
+    @Override
     public void execute(PartitionSpecificRunnable task) {
         checkNotNull(task, "task can't be null");
 
@@ -364,7 +372,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public void handle(Packet packet) {
+    public void accept(Packet packet) {
         execute(packet, packet.getPartitionId(), packet.isUrgent());
     }
 
@@ -383,13 +391,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
         for (OperationThread partitionThread : partitionThreads) {
             partitionThread.queue.add(task, true);
-        }
-    }
-
-    @Override
-    public void interruptPartitionThreads() {
-        for (PartitionOperationThread partitionThread : partitionThreads) {
-            partitionThread.interrupt();
         }
     }
 

@@ -36,6 +36,8 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
+import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -43,8 +45,6 @@ import static org.junit.Assert.assertNull;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class StringSerializationTest {
-
-    private InternalSerializationService serializationService;
 
     private static final String TEST_DATA_TURKISH = "Pijamalı hasta, yağız şoföre çabucak güvendi.";
     private static final String TEST_DATA_JAPANESE = "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム";
@@ -55,6 +55,8 @@ public class StringSerializationTest {
     private static final byte[] TEST_DATA_BYTES_ALL = TEST_DATA_ALL.getBytes(Charset.forName("utf8"));
 
     private static final char[] allChars;
+
+    private InternalSerializationService serializationService;
 
     static {
         CharBuffer cb = CharBuffer.allocate(Character.MAX_VALUE);
@@ -166,9 +168,32 @@ public class StringSerializationTest {
 
     private byte[] toDataByte(byte[] input, int length) {
         // the first 4 byte of type id, 4 byte string length and last 4 byte of partition hashCode
+        if (serializationService.getByteOrder() == BIG_ENDIAN) {
+            return toDataByteBigEndian(input, length);
+        } else {
+            return toDataByteLittleEndian(input, length);
+        }
+    }
+
+    private byte[] toDataByteBigEndian(byte[] input, int length) {
         ByteBuffer bf = ByteBuffer.allocate(input.length + 12);
         bf.putInt(0);
         bf.putInt(SerializationConstants.CONSTANT_TYPE_STRING);
+        bf.putInt(length);
+        bf.put(input);
+        return bf.array();
+    }
+
+    private byte[] toDataByteLittleEndian(byte[] input, int length) {
+        ByteBuffer bf = ByteBuffer.allocate(input.length + 12);
+        bf.order(LITTLE_ENDIAN);
+        bf.putInt(0);
+        // even when serialization service is configured with little endian byte order,
+        // the serializerTypeId (CONSTANT_TYPE_STRING) is still output in BIG_ENDIAN
+        bf.put((byte) 0xFF);
+        bf.put((byte) 0xFF);
+        bf.put((byte) 0xFF);
+        bf.put((byte) 0xF5);
         bf.putInt(length);
         bf.put(input);
         return bf.array();

@@ -25,8 +25,19 @@ import com.hazelcast.util.AddressUtil.Ip4AddressMatcher;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+import java.net.Inet6Address;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.net.InetAddress;
 import java.util.Collections;
+import java.util.Collection;
+import java.util.Vector;
+import java.util.Enumeration;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
 import static java.util.Arrays.asList;
@@ -35,18 +46,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for AddressUtil class.
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(HazelcastSerialClassRunner.class)
+@PrepareForTest({Inet6Address.class, AddressUtil.class, NetworkInterface.class})
 @Category(QuickTest.class)
 public class AddressUtilTest extends HazelcastTestSupport {
-
-    @Test
-    public void testConstructor() {
-        assertUtilityConstructor(AddressUtil.class);
-    }
 
     @Test
     public void testMatchAnyInterface() {
@@ -188,4 +201,124 @@ public class AddressUtilTest extends HazelcastTestSupport {
             assertTrue(e instanceof InvalidAddressException);
         }
     }
+
+    @Test
+    public void testFixScopeIdAndGetInetAddress_whenNotLinkLocalAddress() throws SocketException, UnknownHostException {
+        InetAddress inetAddress = InetAddress.getByName("2001:db8:85a3:0:0:8a2e:370:7334");
+        InetAddress actual = AddressUtil.fixScopeIdAndGetInetAddress(inetAddress);
+        assertEquals(inetAddress, actual);
+    }
+
+    @Test
+    public void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress() throws SocketException, UnknownHostException {
+        // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
+        assumeThatJDK8();
+
+        Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
+        when(inet6Address.isLinkLocalAddress()).thenReturn(true);
+        when(inet6Address.getScopeId()).thenReturn(1);
+        InetAddress actual = AddressUtil.fixScopeIdAndGetInetAddress(inet6Address);
+        assertEquals(inet6Address, actual);
+    }
+
+    @Test
+    public void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress_withNoInterfaceBind() throws SocketException, UnknownHostException {
+        // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
+        assumeThatJDK8();
+
+        Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
+        when(inet6Address.isLinkLocalAddress()).thenReturn(true);
+        when(inet6Address.getScopeId()).thenReturn(0);
+        when(inet6Address.getAddress()).thenReturn(null);
+        InetAddress actual = AddressUtil.fixScopeIdAndGetInetAddress(inet6Address);
+        assertEquals(inet6Address, actual);
+    }
+
+    @Test
+    public void testGetInetAddressFor() throws SocketException, UnknownHostException {
+        // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
+        assumeThatJDK8();
+
+        InetAddress expected = InetAddress.getByName("2001:db8:85a3:0:0:8a2e:370:7334");
+        Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
+        byte[] address = "address".getBytes();
+        String scope = "1";
+
+        PowerMockito.mockStatic(Inet6Address.class);
+
+        when(inet6Address.getAddress()).thenReturn(address);
+        when(inet6Address.isSiteLocalAddress()).thenReturn(true);
+        when(Inet6Address.getByAddress(anyString(), eq(address), eq(Integer.parseInt(scope))))
+                .thenReturn((Inet6Address) expected);
+
+        InetAddress actual = AddressUtil.getInetAddressFor(inet6Address, scope);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testGetPossibleInetAddressesFor_whenNotLocalAddress() {
+        // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
+        assumeThatJDK8();
+
+        Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
+        when(inet6Address.isSiteLocalAddress()).thenReturn(false);
+        when(inet6Address.isLinkLocalAddress()).thenReturn(false);
+        Collection<Inet6Address> actual = AddressUtil.getPossibleInetAddressesFor(inet6Address);
+        assertEquals(1, actual.size());
+        assertTrue(actual.contains(inet6Address));
+    }
+
+    @Test
+    public void testGetPossibleInetAddressesFor_whenLocalAddress() throws SocketException, UnknownHostException {
+        // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
+        assumeThatJDK8();
+
+        InetAddress expected = InetAddress.getByName("2001:db8:85a3:0:0:8a2e:370:7334");
+        Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
+        Inet6Address possibleAddress = PowerMockito.mock(Inet6Address.class);
+        NetworkInterface networkInterface = PowerMockito.mock(NetworkInterface.class);
+
+        Vector<NetworkInterface> networkInterfaces = new Vector<NetworkInterface>();
+        networkInterfaces.add(networkInterface);
+        Enumeration<NetworkInterface> networkInterfaceEnumeration = networkInterfaces.elements();
+
+        Vector<InetAddress> inet6AddressVector = new Vector<InetAddress>();
+        inet6AddressVector.add(possibleAddress);
+        Enumeration<InetAddress> inetAddressEnumeration = inet6AddressVector.elements();
+
+        PowerMockito.mockStatic(NetworkInterface.class);
+        PowerMockito.mockStatic(Inet6Address.class);
+        PowerMockito.when(NetworkInterface.getNetworkInterfaces()).thenReturn(networkInterfaceEnumeration);
+        when(Inet6Address.getByAddress(anyString(), any(byte[].class), anyInt()))
+                .thenReturn((Inet6Address) expected);
+        when(networkInterface.getInetAddresses()).thenReturn(inetAddressEnumeration);
+        when(possibleAddress.isLinkLocalAddress()).thenReturn(true);
+        when(inet6Address.isSiteLocalAddress()).thenReturn(true);
+        when(inet6Address.isLinkLocalAddress()).thenReturn(true);
+
+        Collection<Inet6Address> actual = AddressUtil.getPossibleInetAddressesFor(inet6Address);
+        assertEquals(1, actual.size());
+        assertTrue(actual.contains(expected));
+    }
+
+    @Test
+    public void testGetMatchingIpv4Addresses_whenWildcardForLastPart() {
+        AddressMatcher addressMatcher = AddressUtil.getAddressMatcher("192.168.1.*");
+        Collection<String> actual = AddressUtil.getMatchingIpv4Addresses(addressMatcher);
+        assertEquals(256, actual.size());
+    }
+
+    @Test
+    public void testGetMatchingIpv4Addresses_whenDashForLastPart() {
+        AddressMatcher addressMatcher = AddressUtil.getAddressMatcher("192.168.1.1-42");
+        Collection<String> actual = AddressUtil.getMatchingIpv4Addresses(addressMatcher);
+        assertEquals(42, actual.size());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetMatchingIpv4Addresses_whenIPv6AsMatcher() {
+        AddressMatcher addressMatcher = AddressUtil.getAddressMatcher("2001:db8:85a3:0:0:8a2e:370:7334");
+        AddressUtil.getMatchingIpv4Addresses(addressMatcher);
+    }
 }
+

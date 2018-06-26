@@ -19,7 +19,7 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
@@ -27,9 +27,11 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.impl.sequence.CallIdFactory;
+import com.hazelcast.spi.impl.sequence.CallIdSequence;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.IOException;
@@ -38,8 +40,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public abstract class AbstractClientInvocationService implements ClientInvocationService {
@@ -54,7 +59,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     final ILogger invocationLogger;
     private AbstractClientListenerService clientListenerService;
 
-    @Probe(name = "pendingCalls", level = ProbeLevel.MANDATORY)
+    @Probe(name = "pendingCalls", level = MANDATORY)
     private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<Long, ClientInvocation>();
 
     private ClientResponseHandlerSupplier responseHandlerSupplier;
@@ -62,6 +67,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     private volatile boolean isShutdown;
     private final long invocationTimeoutMillis;
     private final long invocationRetryPauseMillis;
+    private final CallIdSequence callIdSequence;
 
     public AbstractClientInvocationService(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -69,17 +75,46 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
         this.invocationRetryPauseMillis = initInvocationRetryPauseMillis();
         this.responseHandlerSupplier = new ClientResponseHandlerSupplier(this);
+
+        HazelcastProperties properties = client.getProperties();
+        int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
+        long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
+        boolean isBackPressureEnabled = maxAllowedConcurrentInvocations != Integer.MAX_VALUE;
+        callIdSequence = CallIdFactory
+                .newCallIdSequence(isBackPressureEnabled, maxAllowedConcurrentInvocations, backofftimeoutMs);
+
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
     }
 
     private long initInvocationRetryPauseMillis() {
-        long pauseTime = client.getProperties().getMillis(INVOCATION_RETRY_PAUSE_MILLIS);
-        return pauseTime > 0 ? pauseTime : Long.parseLong(INVOCATION_RETRY_PAUSE_MILLIS.getDefaultValue());
+        return client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
+
     }
 
     private long initInvocationTimeoutMillis() {
-        long waitTime = client.getProperties().getMillis(INVOCATION_TIMEOUT_SECONDS);
-        return waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
+        return client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
+    }
+
+    @Probe(level = MANDATORY)
+    private long startedInvocations() {
+        return callIdSequence.getLastCallId();
+    }
+
+    @Probe(level = MANDATORY)
+    private long maxCurrentInvocations() {
+        return callIdSequence.getMaxConcurrentInvocations();
+    }
+
+    public long getInvocationTimeoutMillis() {
+        return invocationTimeoutMillis;
+    }
+
+    public long getInvocationRetryPauseMillis() {
+        return invocationRetryPauseMillis;
+    }
+
+    CallIdSequence getCallIdSequence() {
+        return callIdSequence;
     }
 
     public void start() {
@@ -88,11 +123,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         partitionService = client.getClientPartitionService();
         responseHandlerSupplier.start();
         ClientExecutionService executionService = client.getClientExecutionService();
-        long cleanResourcesMillis = client.getProperties().getMillis(CLEAN_RESOURCES_MILLIS);
-        if (cleanResourcesMillis <= 0) {
-            cleanResourcesMillis = Integer.parseInt(CLEAN_RESOURCES_MILLIS.getDefaultValue());
-
-        }
+        long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);
         executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
                 cleanResourcesMillis, MILLISECONDS);
     }
@@ -114,7 +145,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         registerInvocation(invocation);
 
         ClientMessage clientMessage = invocation.getClientMessage();
-        if (!isAllowedToSendRequest(connection, invocation) || !writeToConnection(connection, clientMessage)) {
+        if (!writeToConnection(connection, clientMessage)) {
             final long callId = clientMessage.getCorrelationId();
             ClientInvocation clientInvocation = deRegisterCallId(callId);
             if (clientInvocation != null) {
@@ -133,22 +164,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     private boolean writeToConnection(ClientConnection connection, ClientMessage clientMessage) {
         clientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         return connection.write(clientMessage);
-    }
-
-    private boolean isAllowedToSendRequest(ClientConnection connection, ClientInvocation invocation) {
-        if (!connection.isHeartBeating()) {
-            if (invocation.shouldBypassHeartbeatCheck()) {
-                // ping and removeAllListeners should be send even though heart is not beating
-                return true;
-            }
-
-            if (invocationLogger.isFinestEnabled()) {
-                invocationLogger.finest("Connection is not heart-beating, won't write client message -> "
-                        + invocation.getClientMessage());
-            }
-            return false;
-        }
-        return true;
     }
 
     private void registerInvocation(ClientInvocation clientInvocation) {
@@ -183,14 +198,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         }
     }
 
-    public long getInvocationTimeoutMillis() {
-        return invocationTimeoutMillis;
-    }
-
-    public long getInvocationRetryPauseMillis() {
-        return invocationRetryPauseMillis;
-    }
-
     private class CleanResourcesTask implements Runnable {
 
         @Override
@@ -204,7 +211,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
                     continue;
                 }
 
-                if (connection.isHeartBeating()) {
+                if (connection.isAlive()) {
                     continue;
                 }
 
@@ -215,17 +222,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         }
 
         private void notifyException(ClientInvocation invocation, ClientConnection connection) {
-            Exception ex;
-
-            // Connection may be closed(e.g. remote member shutdown) in which case the isAlive is set to false or the
-            // heartbeat failure occurs. The order of the following check matters. We need to first check for isAlive since
-            // the connection.isHeartBeating also checks for isAlive as well.
-            if (!connection.isAlive()) {
-                ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
-            } else {
-                ex = new TargetDisconnectedException("Heartbeat timed out to " + connection);
-            }
-
+            Exception ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
             invocation.notifyException(ex);
         }
     }

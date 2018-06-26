@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -498,6 +499,13 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public MergePolicyProvider getMergePolicyProvider() {
         return mergePolicyProvider;
+    }
+
+    @Override
+    public Object getMergePolicy(String name) {
+        MapContainer mapContainer = getMapContainer(name);
+        MergePolicyConfig mergePolicyConfig = mapContainer.getMapConfig().getMergePolicyConfig();
+        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
     }
 
     @Override

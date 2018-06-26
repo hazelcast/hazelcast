@@ -25,8 +25,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
+import com.hazelcast.util.function.Consumer;
 
 import java.nio.ByteOrder;
 
@@ -53,7 +53,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * processing responses, each thread needs to get its own instance. Only the backup
  * handling is threadsafe since backups can be completed locally by any thread.
  */
-public final class InboundResponseHandler implements PacketHandler {
+public final class InboundResponseHandler implements Consumer<Packet> {
 
     final SwCounter responsesNormal = newSwCounter();
     final SwCounter responsesTimeout = newSwCounter();
@@ -75,7 +75,7 @@ public final class InboundResponseHandler implements PacketHandler {
     }
 
     @Override
-    public void handle(Packet packet) {
+    public void accept(Packet packet) {
         checkNotNull(packet, "packet can't be null");
         checkTrue(packet.getPacketType() == OPERATION, "Packet type is not OPERATION");
         checkTrue(packet.isFlagRaised(FLAG_OP_RESPONSE), "FLAG_OP_RESPONSE is not set");

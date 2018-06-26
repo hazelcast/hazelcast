@@ -16,5 +16,8 @@
 
 package com.hazelcast.monitor;
 
+/**
+ * Local multi map statistics to be used by {@link MemberState} implementations.
+ */
 public interface LocalMultiMapStats extends LocalMapStats {
 }

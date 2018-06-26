@@ -155,14 +155,14 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        long mergeFirstRunDelayMs = node.getProperties().getMillis(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS);
-        mergeFirstRunDelayMs = (mergeFirstRunDelayMs > 0 ? mergeFirstRunDelayMs : DEFAULT_MERGE_RUN_DELAY_MILLIS);
+        long mergeFirstRunDelayMs = node.getProperties().getPositiveMillisOrDefault(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS,
+                DEFAULT_MERGE_RUN_DELAY_MILLIS);
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.register(EXECUTOR_NAME, 2, CLUSTER_EXECUTOR_QUEUE_CAPACITY, ExecutorType.CACHED);
 
-        long mergeNextRunDelayMs = node.getProperties().getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
-        mergeNextRunDelayMs = (mergeNextRunDelayMs > 0 ? mergeNextRunDelayMs : DEFAULT_MERGE_RUN_DELAY_MILLIS);
+        long mergeNextRunDelayMs = node.getProperties().getPositiveMillisOrDefault(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS,
+                DEFAULT_MERGE_RUN_DELAY_MILLIS);
         executionService.scheduleWithRepetition(EXECUTOR_NAME, new SplitBrainHandler(node), mergeFirstRunDelayMs,
                 mergeNextRunDelayMs, TimeUnit.MILLISECONDS);
 
@@ -312,14 +312,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void reset() {
-        reset(false);
-    }
-
-    public void reset(boolean isForceStart) {
         lock.lock();
         try {
             resetJoinState();
-            resetLocalMember(isForceStart);
+            resetLocalMemberUuid();
             resetClusterId();
             clearInternalState();
         } finally {
@@ -327,15 +323,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    /**
-     * Reset means:
-     * - Give a new uuid to local member
-     * - If {@code isForceStart} is {@code false}, set member type of local member to lite
-     *
-     * @param isForceStart set {@code true} if this method is called to start local node forcibly for hot-restart,
-     *                     otherwise set it to {@code false} when resetting this service
-     */
-    private void resetLocalMember(boolean isForceStart) {
+    private void resetLocalMemberUuid() {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         assert !isJoined() : "Cannot reset local member UUID when joined.";
 
@@ -344,19 +332,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
 
-        boolean liteMember = !isForceStart || localMember.isLiteMember();
-
-        MemberImpl resetLocalMember = new MemberImpl(address, localMember.getVersion(),
-                true, newUuid, localMember.getAttributes(), liteMember,
+        MemberImpl memberWithNewUuid = new MemberImpl(address, localMember.getVersion(),
+                true, newUuid, localMember.getAttributes(), localMember.isLiteMember(),
                 localMember.getMemberListJoinVersion(), node.hazelcastInstance);
 
-        localMember = resetLocalMember;
+        localMember = memberWithNewUuid;
 
-        if (!isForceStart) {
-            logger.info("Converted local member to lite-member before start of split brain healing");
-        }
-
-        node.loggingService.setThisMember(this.localMember);
+        node.loggingService.setThisMember(localMember);
     }
 
     public void resetJoinState() {

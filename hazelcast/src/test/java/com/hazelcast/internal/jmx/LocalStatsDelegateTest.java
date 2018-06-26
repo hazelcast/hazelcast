@@ -136,10 +136,11 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
     }
 
     private class MapStatsThread implements Runnable {
+
         private LocalStatsDelegate localStatsDelegate;
         private AtomicBoolean done;
 
-        private boolean stress = false;
+        private boolean stress;
 
         private int sleepMs;
 

@@ -88,7 +88,7 @@ public final class HazelcastCachingProvider
                 cp = new HazelcastServerCachingProvider();
             }
             if (cp == null) {
-                throw new CacheException("CacheProvider cannot created with the provided type:" + providerType);
+                throw new CacheException("CacheProvider cannot be created with the provided type: " + providerType);
             }
         } else {
             cp = createClientProvider();

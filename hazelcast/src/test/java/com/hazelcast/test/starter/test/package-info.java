@@ -15,6 +15,6 @@
  */
 
 /**
- * Tests for Hazelcast Starter
+ * Tests for Hazelcast Starter classes.
  */
 package com.hazelcast.test.starter.test;

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.HazelcastClient;
@@ -55,8 +56,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
 
         TestAddressTranslator translator = new TestAddressTranslator();
         clientConnectionManager =
-                new ClientConnectionManagerImpl(getHazelcastClientInstanceImpl(client),
-                        translator, list);
+                new ClientConnectionManagerImpl(getHazelcastClientInstanceImpl(client), translator, list);
         clientConnectionManager.start(new ClientContext(getHazelcastClientInstanceImpl(client)));
         clientConnectionManager.connectToCluster();
 

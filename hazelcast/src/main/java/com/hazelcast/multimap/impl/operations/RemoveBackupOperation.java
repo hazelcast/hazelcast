@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapValue;
@@ -30,7 +31,7 @@ import java.util.Iterator;
 
 public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
-    long recordId;
+    private long recordId;
 
     public RemoveBackupOperation() {
     }
@@ -42,8 +43,9 @@ public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation imp
 
     @Override
     public void run() throws Exception {
-        MultiMapValue multiMapValue = getMultiMapValueOrNull();
         response = false;
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
+        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         if (multiMapValue == null) {
             return;
         }
@@ -54,7 +56,7 @@ public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation imp
                 iterator.remove();
                 response = true;
                 if (coll.isEmpty()) {
-                    delete();
+                    container.delete(dataKey);
                 }
                 break;
             }

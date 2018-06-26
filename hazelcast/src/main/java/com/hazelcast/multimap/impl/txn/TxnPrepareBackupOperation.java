@@ -45,7 +45,7 @@ public class TxnPrepareBackupOperation extends AbstractKeyBasedMultiMapOperation
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         if (!container.txnLock(dataKey, caller, threadId, getCallId(), LOCK_EXTENSION_TIME_IN_MILLIS, true)) {
             throw new TransactionException(
                     "Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey)

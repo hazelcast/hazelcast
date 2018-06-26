@@ -400,7 +400,7 @@ public class HashSlotArray16byteKeyImplTest {
 
     private long insert(long key1, long key2) {
         final long valueAddress = hsa.ensure(key1, key2);
-        assertTrue(valueAddress > 0);
+        assertNotEquals(NULL_ADDRESS, valueAddress);
         // Value length must be at least 16 bytes
         mem.putLong(valueAddress, key1);
         mem.putLong(valueAddress + 8L, key2);

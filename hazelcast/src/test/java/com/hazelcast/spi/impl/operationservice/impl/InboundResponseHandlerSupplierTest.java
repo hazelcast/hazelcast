@@ -24,7 +24,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.AsyncMultithreadedResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.AsyncSingleThreadedResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -36,6 +35,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Consumer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -125,7 +125,7 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
         whenNoProblemPacket(2);
     }
 
-    private void whenNoProblemPacket(int threadCount) throws Exception {
+    private void whenNoProblemPacket(int threadCount) {
         supplier = newSupplier(threadCount);
         supplier.start();
         final Invocation invocation = newInvocation();
@@ -138,7 +138,7 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
                 .raiseFlags(FLAG_OP_RESPONSE)
                 .setConn(mock(Connection.class));
 
-        supplier.get().handle(response);
+        supplier.get().accept(response);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -148,7 +148,6 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
                 assertNull(inv);
             }
         });
-
 
         assertEquals(1, supplier.responsesNormal());
         assertEquals(0, supplier.responsesBackup());
@@ -162,7 +161,7 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
     // This test isn't terribly exciting since responses are constructed by
     // the system and unlikely to fail.
     @Test
-    public void whenPacketThrowsException() throws Exception {
+    public void whenPacketThrowsException() {
         supplier = newSupplier(1);
         supplier.start();
 
@@ -176,16 +175,16 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
                 .setPacketType(Packet.Type.OPERATION)
                 .setConn(mock(Connection.class));
 
-        PacketHandler responseHandler = supplier.get();
+        Consumer<Packet> responseConsumer = supplier.get();
 
-        responseHandler.handle(badResponse);
+        responseConsumer.accept(badResponse);
 
         final Packet goodResponse = new Packet(serializationService.toBytes(new NormalResponse("foo", callId, 0, false)))
                 .setPacketType(Packet.Type.OPERATION)
                 .raiseFlags(FLAG_OP_RESPONSE)
                 .setConn(mock(Connection.class));
 
-        responseHandler.handle(goodResponse);
+        responseConsumer.accept(goodResponse);
 
         assertTrueEventually(new AssertTask() {
             @Override

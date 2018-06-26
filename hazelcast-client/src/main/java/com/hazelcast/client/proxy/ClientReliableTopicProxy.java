@@ -18,7 +18,7 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.ExecutionCallback;
@@ -342,5 +342,11 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 return true;
             }
         }
+    }
+
+    @Override
+    protected void postDestroy() {
+        // this will trigger all listeners to destroy themselves.
+        ringbuffer.destroy();
     }
 }

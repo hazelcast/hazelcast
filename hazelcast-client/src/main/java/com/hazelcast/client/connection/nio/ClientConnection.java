@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientResponseHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
@@ -31,15 +31,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.util.Clock;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.util.StringUtil.timeToStringFriendly;
@@ -53,8 +50,6 @@ public class ClientConnection implements Connection {
     @Probe
     private final int connectionId;
     private final ILogger logger;
-
-    private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
     private final Channel channel;
     private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
@@ -63,11 +58,7 @@ public class ClientConnection implements Connection {
     private final ClientResponseHandler responseHandler;
 
     private volatile Address remoteEndpoint;
-    private volatile boolean isHeartBeating = true;
-    // the time in millis the last heartbeat was received. 0 indicates that no heartbeat has ever been received.
-    private volatile long lastHeartbeatRequestedMillis;
-    private volatile long lastHeartbeatReceivedMillis;
-    private boolean isAuthenticatedAsOwner;
+    private volatile boolean isAuthenticatedAsOwner;
     @Probe(level = ProbeLevel.DEBUG)
     private final AtomicLong closedTime = new AtomicLong();
 
@@ -95,18 +86,6 @@ public class ClientConnection implements Connection {
         this.connectionId = connectionId;
         this.channel = null;
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
-    }
-
-    public void incrementPendingPacketCount() {
-        pendingPacketCount.incrementAndGet();
-    }
-
-    public void decrementPendingPacketCount() {
-        pendingPacketCount.decrementAndGet();
-    }
-
-    public int getPendingPacketCount() {
-        return pendingPacketCount.get();
     }
 
     @Override
@@ -249,34 +228,12 @@ public class ClientConnection implements Connection {
     }
 
     public void handleClientMessage(ClientMessage message) {
-        incrementPendingPacketCount();
         if (message.isFlagSet(ClientMessage.LISTENER_EVENT_FLAG)) {
             AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
-            listenerService.handleClientMessage(message, this);
+            listenerService.handleClientMessage(message);
         } else {
-            responseHandler.handle(message, this);
+            responseHandler.handle(message);
         }
-    }
-
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "incremented in single thread")
-    void onHeartbeatFailed() {
-        isHeartBeating = false;
-    }
-
-    void onHeartbeatResumed() {
-        isHeartBeating = true;
-    }
-
-    void onHeartbeatReceived() {
-        lastHeartbeatReceivedMillis = Clock.currentTimeMillis();
-    }
-
-    void onHeartbeatRequested() {
-        lastHeartbeatRequestedMillis = Clock.currentTimeMillis();
-    }
-
-    public boolean isHeartBeating() {
-        return isAlive() && isHeartBeating;
     }
 
     public boolean isAuthenticatedAsOwner() {
@@ -319,19 +276,8 @@ public class ClientConnection implements Connection {
                 + ", lastReadTime=" + timeToStringFriendly(lastReadTimeMillis())
                 + ", lastWriteTime=" + timeToStringFriendly(lastWriteTimeMillis())
                 + ", closedTime=" + timeToStringFriendly(closedTime.get())
-                + ", lastHeartbeatRequested=" + timeToStringFriendly(lastHeartbeatRequestedMillis)
-                + ", lastHeartbeatReceived=" + timeToStringFriendly(lastHeartbeatReceivedMillis)
                 + ", connected server version=" + connectedServerVersionString
                 + '}';
-    }
-
-    /**
-     * Closed time is the first time connection.close called.
-     *
-     * @return the closed time of connection, returns zero if not closed yet
-     */
-    public long getClosedTime() {
-        return closedTime.get();
     }
 
     public void setConnectedServerVersion(String connectedServerVersion) {

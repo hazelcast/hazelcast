@@ -26,7 +26,7 @@ import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.NodeState;
-import com.hazelcast.monitor.TimedMemberState;
+import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

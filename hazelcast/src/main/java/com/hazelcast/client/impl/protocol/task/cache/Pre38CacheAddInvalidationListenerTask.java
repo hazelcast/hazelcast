@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
@@ -40,7 +40,6 @@ public class Pre38CacheAddInvalidationListenerTask
 
     @Override
     protected Object call() {
-        ClientEndpoint endpoint = getEndpoint();
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(parameters.name);
         String uuid = nodeEngine.getLocalMember().getUuid();

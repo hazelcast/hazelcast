@@ -22,6 +22,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
@@ -130,6 +131,8 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             return CallStatus.DONE_RESPONSE;
         }
 
+        partitionService.getInternalMigrationListener().onPromotionStart(MigrationParticipant.DESTINATION, promotions);
+
         if (logger.isFineEnabled()) {
             logger.fine("Submitting BeforePromotionOperations for " + promotions.size() + " promotions. "
                     + "Promotion partition state version: " + partitionState.getVersion()
@@ -177,6 +180,8 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             op.setPartitionId(promotion.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
             operationService.execute(op);
         }
+        partitionService.getInternalMigrationListener()
+                .onPromotionComplete(MigrationParticipant.DESTINATION, promotions, success);
         partitionService.getMigrationManager().releasePromotionPermit();
     }
 
