@@ -16,21 +16,16 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheRecordStore;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.backup.BackupAccessor;
+import com.hazelcast.test.backup.TestBackupUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +38,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static com.hazelcast.test.backup.TestBackupUtils.assertExpiryPolicyEventually;
 
 @Category({QuickTest.class, ParallelTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
@@ -82,21 +77,12 @@ public class CacheExpiryPolicyBackupTest extends HazelcastTestSupport {
         return cacheConfig;
     }
 
-    private void assertExpiryPolicyInAllNodes(ExpiryPolicy expiryPolicy, Collection<String> keys) {
-        for (int i = 0; i < instances.length; i++) {
-            Node node = getNode(instances[i]);
+    private void assertExpiryPolicy(final ExpiryPolicy expiryPolicy, final Collection<String> keys) {
+        for (int replicaIndex = 1; replicaIndex < NINSTANCES; replicaIndex++) {
+            final BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cacheName, replicaIndex);
 
-            CacheService cacheService = node.getNodeEngine().getService(ICacheService.SERVICE_NAME);
-            SerializationService serializationService = node.getSerializationService();
-            InternalPartitionService partitionService = node.getPartitionService();
             for (String key: keys) {
-                Data dataKey = serializationService.toData(key);
-                int partitionId = partitionService.getPartitionId(dataKey);
-
-                ICacheRecordStore recordStore = cacheService.getRecordStore("/hz/" + cacheName, partitionId);
-                ExpiryPolicy actual = serializationService.toObject(recordStore.getExpiryPolicy(dataKey));
-
-                assertEquals(expiryPolicy, actual);
+                assertExpiryPolicyEventually(key, expiryPolicy, backupAccessor);
             }
         }
     }
@@ -115,7 +101,6 @@ public class CacheExpiryPolicyBackupTest extends HazelcastTestSupport {
         ExpiryPolicy expiryPolicy = new EternalExpiryPolicy();
         cache.setExpiryPolicy(keys, expiryPolicy);
 
-        assertExpiryPolicyInAllNodes(expiryPolicy, keys);
-
+        assertExpiryPolicy(expiryPolicy, keys);
     }
 }

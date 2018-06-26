@@ -324,6 +324,13 @@ public final class FutureUtil {
     }
 
     @PrivateApi
+    public static List<Throwable> waitUntilAllResponded(Collection<? extends Future> futures) {
+        CollectAllExceptionHandler collector = new CollectAllExceptionHandler(futures.size());
+        waitForever(futures, collector);
+        return collector.getThrowables();
+    }
+
+    @PrivateApi
     public static void waitWithDeadline(Collection<? extends Future> futures, long timeout, TimeUnit timeUnit,
                                         ExceptionHandler exceptionHandler) {
 

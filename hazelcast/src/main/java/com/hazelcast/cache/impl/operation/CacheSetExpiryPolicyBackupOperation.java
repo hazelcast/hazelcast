@@ -17,14 +17,11 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ServiceNamespaceAware;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,7 +29,7 @@ import java.util.List;
 
 public class CacheSetExpiryPolicyBackupOperation
         extends CacheOperation
-        implements BackupOperation, IdentifiedDataSerializable, ServiceNamespaceAware {
+        implements BackupOperation {
 
     private List<Data> keys;
     private Data expiryPolicy;
@@ -61,7 +58,7 @@ public class CacheSetExpiryPolicyBackupOperation
         if (recordStore.isWanReplicationEnabled()) {
             for (Data key : keys) {
                 CacheRecord record = recordStore.getRecord(key);
-                wanEventPublisher.publishWanUpdate(name, CacheEntryViews.createEntryView(key, expiryPolicy, record));
+                publishWanUpdate(key, record);
             }
         }
     }
@@ -90,7 +87,7 @@ public class CacheSetExpiryPolicyBackupOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int s = in.readInt();
-        keys = new ArrayList<Data>();
+        keys = new ArrayList<Data>(s);
         while (s-- > 0) {
             keys.add(in.readData());
         }

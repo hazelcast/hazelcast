@@ -29,6 +29,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -36,6 +37,7 @@ import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.MutableEntry;
 import java.io.IOException;
 
+import static com.hazelcast.cache.impl.record.AbstractCacheRecord.EXPIRY_POLICY_VERSION;
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
@@ -127,7 +129,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         }
     }
 
-    public static class CacheBrowserEntryView implements CacheEntryView<Object, Object>, IdentifiedDataSerializable {
+    public static class CacheBrowserEntryView implements CacheEntryView<Object, Object>, IdentifiedDataSerializable, Versioned {
         private Object value;
         private long expirationTime;
         private long creationTime;
@@ -201,7 +203,9 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             out.writeLong(creationTime);
             out.writeLong(lastAccessTime);
             out.writeLong(accessHit);
-            out.writeObject(expiryPolicy);
+            if (out.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
+                out.writeObject(expiryPolicy);
+            }
         }
 
         @Override
@@ -211,7 +215,9 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             creationTime = in.readLong();
             lastAccessTime = in.readLong();
             accessHit = in.readLong();
-            expiryPolicy = in.readObject();
+            if (in.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
+                expiryPolicy = in.readObject();
+            }
         }
     }
 }

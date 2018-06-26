@@ -38,6 +38,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestTaskExecutorUtil;
 
+import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.spi.CachingProvider;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
@@ -47,6 +48,7 @@ import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Convenience for accessing and asserting backup records.
@@ -148,6 +150,18 @@ public final class TestBackupUtils {
         });
     }
 
+    public static <K> void assertExpiryPolicyEventually(final K key,
+                                                        final ExpiryPolicy expiryPolicy,
+                                                        final BackupAccessor<K, Object> accessor) {
+        assertTrue("Need to supply a CacheBackupAccessor", accessor instanceof CacheBackupAccessor);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(expiryPolicy, ((CacheBackupAccessor) accessor).getExpiryPolicy(key));
+            }
+        });
+    }
+
 
     // ######################################################################
     // ##### PRIVATE STUFF BELLOW, NO NEED TO TOUCH IT IN REGULAR TESTS #####
@@ -238,6 +252,44 @@ public final class TestBackupUtils {
                     }
                     Object value = cacheRecord.getValue();
                     return serializationService.toObject(value);
+                }
+            }, partition.getPartitionId());
+        }
+
+        public ExpiryPolicy getExpiryPolicy(final K key) {
+            final InternalPartition partition = getPartitionForKey(key);
+            Address replicaAddress = partition.getReplicaAddress(replicaIndex);
+            if (replicaAddress == null) {
+                // there is no owner of this replica (yet?)
+                return null;
+            }
+
+            HazelcastInstance hz = getInstanceWithAddress(replicaAddress);
+            if (hz == null) {
+                throw new IllegalStateException("Partition " + partition + " with replica index " + replicaIndex
+                        + " is mapped to " + replicaAddress + " but there is no member with this address in the cluster."
+                        + " List of known members: " + Arrays.toString(cluster));
+            }
+            CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hz);
+            HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
+            final String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(cacheName);
+            NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+            final CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
+            final SerializationService serializationService = nodeEngine.getSerializationService();
+            return TestTaskExecutorUtil.runOnPartitionThread(hz, new Callable<ExpiryPolicy>() {
+                @Override
+                public ExpiryPolicy call() {
+                    ICacheRecordStore recordStore = cacheService.getRecordStore(cacheNameWithPrefix, partition.getPartitionId());
+                    if (recordStore == null) {
+                        return null;
+                    }
+                    Data keyData = serializationService.toData(key);
+                    CacheRecord cacheRecord = recordStore.getReadOnlyRecords().get(keyData);
+                    if (cacheRecord == null) {
+                        return null;
+                    }
+                    Object expiryPolicy = cacheRecord.getExpiryPolicy();
+                    return serializationService.toObject(expiryPolicy);
                 }
             }, partition.getPartitionId());
         }

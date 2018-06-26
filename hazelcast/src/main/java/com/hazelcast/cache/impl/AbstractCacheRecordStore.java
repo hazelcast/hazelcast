@@ -706,11 +706,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         Object inMemoryExpiryPolicy;
         switch (cacheConfig.getInMemoryFormat()) {
             case OBJECT:
-                if (expiryPolicy instanceof Data) {
-                    inMemoryExpiryPolicy = dataToValue((Data) expiryPolicy);
-                } else {
-                    inMemoryExpiryPolicy = expiryPolicy;
-                }
+                inMemoryExpiryPolicy = toValue(expiryPolicy);
                 break;
             case BINARY:
             case NATIVE:
