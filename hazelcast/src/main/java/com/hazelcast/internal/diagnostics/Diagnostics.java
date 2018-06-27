@@ -59,10 +59,10 @@ public class Diagnostics {
             .setDeprecatedName("hazelcast.performance.metric.level");
 
     /**
-     * If metrics should be tracked on distributed data-structures like IMap,
+     * If metrics should be tracked on distributed data structures like IMap,
      * IQueue etc.
      * <p>
-     * By default these data-structures are not tracked, but in a future release
+     * By default, these data structures are not tracked, but in a future release
      * this will probably be changed to {@code true}.
      */
     public static final HazelcastProperty METRICS_DISTRIBUTED_DATASTRUCTURES
