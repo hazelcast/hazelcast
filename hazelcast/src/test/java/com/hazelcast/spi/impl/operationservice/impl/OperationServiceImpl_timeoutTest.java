@@ -186,26 +186,6 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testOperationTimeoutForLongRunningRemoteOperation() throws Exception {
-        int callTimeoutMillis = 6000;
-        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMillis);
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
-
-        // invoke on the "remote" member
-        Address remoteAddress = getNode(hz2).getThisAddress();
-        OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
-        ICompletableFuture<Boolean> future = operationService
-                .invokeOnTarget(null, new SleepingOperation(callTimeoutMillis * 5), remoteAddress);
-
-        // wait more than operation timeout
-        sleepAtLeastMillis(callTimeoutMillis * 3);
-        assertTrue(future.get());
-    }
-
-    @Test
     public void testOperationTimeoutForLongRunningLocalOperation() throws Exception {
         int callTimeoutMillis = 500;
         Config config = new Config();
@@ -225,7 +205,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         assertTrue(future.get());
     }
 
-    private static class SleepingOperation extends Operation {
+    public static class SleepingOperation extends Operation {
         private long sleepTime;
 
         public SleepingOperation() {
