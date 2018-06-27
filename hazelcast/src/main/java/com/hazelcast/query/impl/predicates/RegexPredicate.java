@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 public class RegexPredicate extends AbstractPredicate {
 
     private String regex;
-    private volatile Pattern pattern;
+    private transient volatile Pattern pattern;
 
     public RegexPredicate() {
     }

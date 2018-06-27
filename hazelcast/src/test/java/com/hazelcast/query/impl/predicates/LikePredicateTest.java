@@ -34,8 +34,7 @@ public class LikePredicateTest {
         EqualsVerifier.forClass(LikePredicate.class)
             .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
             .withRedefinedSuperclass()
-            //.allFieldsShouldBeUsed() cannot be used
-            // as we should not use the "pattern" field for equality
+            .allFieldsShouldBeUsed()
             .verify();
     }
 

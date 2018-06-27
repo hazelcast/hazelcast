@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 public class LikePredicate extends AbstractPredicate {
 
     protected String expression;
-    private volatile Pattern pattern;
+    private transient volatile Pattern pattern;
 
     public LikePredicate() {
     }

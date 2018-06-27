@@ -37,7 +37,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 public class InPredicate extends AbstractIndexAwarePredicate {
 
     Comparable[] values;
-    private volatile Set<Comparable> convertedInValues;
+    private transient volatile Set<Comparable> convertedInValues;
 
     public InPredicate() {
     }
