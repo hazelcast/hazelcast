@@ -16,8 +16,12 @@
 
 package com.hazelcast.jet.impl.pipeline;
 
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.DistributedTriPredicate;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
+import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.GeneralStageWithKey;
 
 import javax.annotation.Nonnull;
@@ -43,6 +47,42 @@ class StageWithGroupingBase<T, K> {
     @Nonnull
     public DistributedFunction<? super T, ? extends K> keyFn() {
         return keyFn;
+    }
+
+    @Nonnull
+    <C, R, RET> RET attachMapUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
+    ) {
+        DistributedFunction<? super T, ? extends K> keyFn = keyFn();
+        return computeStage.attachMapUsingPartitionedContext(contextFactory, keyFn, (c, t) -> {
+            K k = keyFn.apply(t);
+            return mapFn.apply(c, k, t);
+        });
+    }
+
+    @Nonnull
+    <C, RET> RET attachFilterUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedTriPredicate<? super C, ? super K, ? super T> filterFn
+    ) {
+        DistributedFunction<? super T, ? extends K> keyFn = keyFn();
+        return computeStage.attachFilterUsingPartitionedContext(contextFactory, keyFn, (c, t) -> {
+            K k = keyFn.apply(t);
+            return filterFn.test(c, k, t);
+        });
+    }
+
+    @Nonnull
+    public <C, R, RET> RET attachFlatMapUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    ) {
+        DistributedFunction<? super T, ? extends K> keyFn = keyFn();
+        return computeStage.attachFlatMapUsingPartitionedContext(contextFactory, keyFn, (c, t) -> {
+            K k = keyFn.apply(t);
+            return flatMapFn.apply(c, k, t);
+        });
     }
 
     static Transform transformOf(GeneralStageWithKey stage) {

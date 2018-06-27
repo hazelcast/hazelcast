@@ -144,7 +144,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, K, R, RET> RET attachMapUsingContext(
+    <C, R, RET> RET attachMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
     ) {
@@ -185,8 +185,8 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @SuppressWarnings("unchecked")
     <C, K, R, RET> RET attachMapUsingPartitionedContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn,
-            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
+            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
     ) {
         checkSerializable(mapFn, "mapFn");
         checkSerializable(partitionKeyFn, "partitionKeyFn");
@@ -201,8 +201,8 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @SuppressWarnings("unchecked")
     <C, K, RET> RET attachFilterUsingPartitionedContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn,
-            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
+            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn,
+            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
     ) {
         checkSerializable(filterFn, "filterFn");
         checkSerializable(partitionKeyFn, "partitionKeyFn");
@@ -218,8 +218,8 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @SuppressWarnings("unchecked")
     <C, K, R, RET> RET attachFlatMapUsingPartitionedContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn,
-            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
+            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         checkSerializable(flatMapFn, "flatMapFn");
         checkSerializable(partitionKeyFn, "partitionKeyFn");

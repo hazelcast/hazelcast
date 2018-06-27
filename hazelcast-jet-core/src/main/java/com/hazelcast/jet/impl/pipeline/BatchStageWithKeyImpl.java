@@ -22,8 +22,9 @@ import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedBiPredicate;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.DistributedTriPredicate;
 import com.hazelcast.jet.impl.pipeline.transform.DistinctTransform;
 import com.hazelcast.jet.impl.pipeline.transform.GroupTransform;
 import com.hazelcast.jet.pipeline.BatchStage;
@@ -54,25 +55,25 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
     @Nonnull @Override
     public <C, R> BatchStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
     ) {
-        return computeStage.attachMapUsingPartitionedContext(contextFactory, mapFn, keyFn());
+        return attachMapUsingContext(contextFactory, mapFn);
     }
 
     @Nonnull @Override
     public <C> BatchStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+            @Nonnull DistributedTriPredicate<? super C, ? super K, ? super T> filterFn
     ) {
-        return computeStage.attachFilterUsingPartitionedContext(contextFactory, filterFn, keyFn());
+        return attachFilterUsingContext(contextFactory, filterFn);
     }
 
     @Nonnull @Override
     public <C, R> BatchStage<R> flatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
-        return computeStage.attachFlatMapUsingPartitionedContext(contextFactory, flatMapFn, keyFn());
+        return attachFlatMapUsingContext(contextFactory, flatMapFn);
     }
 
     @Nonnull @Override

@@ -152,7 +152,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         StreamStage<String> mapped = srcStage
                 .addTimestamps()
                 .addKey(i -> i)
-                .mapUsingContext(ContextFactory.withCreateFn(i -> "-keyed-context"), (suffix, r) -> r + suffix);
+                .mapUsingContext(ContextFactory.withCreateFn(i -> "-keyed-context"), (suffix, k, r) -> r + suffix);
 
         // Then
         mapped.drainTo(sink);
@@ -194,7 +194,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         StreamStage<Integer> mapped = srcStage
                 .addTimestamps()
                 .addKey(i -> i)
-                .filterUsingContext(ContextFactory.withCreateFn(i -> 1), (ctx, r) -> r % 2 == ctx);
+                .filterUsingContext(ContextFactory.withCreateFn(i -> 1), (ctx, k, r) -> r % 2 == ctx);
 
         // Then
         mapped.drainTo(sink);
@@ -241,7 +241,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
                 .addKey(i -> i)
                 .flatMapUsingContext(
                         ContextFactory.withCreateFn(procCtx -> flatMapFn),
-                        (ctx, o) -> traverseStream(ctx.apply(o))
+                        (ctx, k, o) -> traverseStream(ctx.apply(o))
                 );
 
         // Then

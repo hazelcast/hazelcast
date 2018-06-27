@@ -23,8 +23,9 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedBiPredicate;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.DistributedTriPredicate;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -76,7 +77,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <C, R> GeneralStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
     );
 
     /**
@@ -108,7 +109,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <C> GeneralStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+            @Nonnull DistributedTriPredicate<? super C, ? super K, ? super T> filterFn
     );
 
     /**
@@ -142,7 +143,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <C, R> GeneralStage<R> flatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     );
 
     /**
@@ -171,9 +172,8 @@ public interface GeneralStageWithKey<T, K> {
             @Nonnull String mapName,
             @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        DistributedFunction<? super T, ? extends K> keyFn = keyFn();
         return mapUsingContext(ContextFactories.<K, V>iMapContext(mapName),
-                (map, item) -> mapFn.apply(item, map.get(keyFn.apply(item))));
+                (map, key, item) -> mapFn.apply(item, map.get(key)));
     }
 
     /**

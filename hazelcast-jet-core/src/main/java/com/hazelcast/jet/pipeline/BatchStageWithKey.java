@@ -25,7 +25,8 @@ import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedBiPredicate;
+import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.DistributedTriPredicate;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -75,19 +76,19 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     @Nonnull @Override
     <C, R> BatchStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
     );
 
     @Nonnull @Override
     <C> BatchStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+            @Nonnull DistributedTriPredicate<? super C, ? super K, ? super T> filterFn
     );
 
     @Nonnull @Override
     <C, R> BatchStage<R> flatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     );
 
     @Nonnull @Override

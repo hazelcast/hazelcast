@@ -180,7 +180,7 @@ public class BatchStageTest extends PipelineTestSupport {
         // When
         BatchStage<String> mapped = srcStage.addKey(i -> i).mapUsingContext(
                 ContextFactory.withCreateFn(i -> "-keyed-context"),
-                (suffix, r) -> r + suffix
+                (suffix, k, r) -> r + suffix
         );
 
         // Then
@@ -219,7 +219,7 @@ public class BatchStageTest extends PipelineTestSupport {
         // When
         BatchStage<Integer> mapped = srcStage.addKey(i -> i).filterUsingContext(
                 ContextFactory.withCreateFn(i -> 1),
-                (ctx, r) -> r % 2 == ctx);
+                (ctx, k, r) -> r % 2 == ctx);
 
         // Then
         mapped.drainTo(sink);
@@ -257,7 +257,7 @@ public class BatchStageTest extends PipelineTestSupport {
         // When
         BatchStage<String> flatMapped = srcStage.addKey(i -> i).flatMapUsingContext(
                 ContextFactory.withCreateFn(procCtx -> asList("A", "B")),
-                (ctx, o) -> traverseIterable(asList(o + ctx.get(0), o + ctx.get(1))));
+                (ctx, k, o) -> traverseIterable(asList(o + ctx.get(0), o + ctx.get(1))));
 
         // Then
         flatMapped.drainTo(sink);
