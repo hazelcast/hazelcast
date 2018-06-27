@@ -35,6 +35,9 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
 @BinaryInterface
 public final class NotPredicate
         implements Predicate, VisitablePredicate, NegatablePredicate, IdentifiedDataSerializable {
+
+    private static final long serialVersionUID = 1L;
+
     protected Predicate predicate;
 
     public NotPredicate(Predicate predicate) {

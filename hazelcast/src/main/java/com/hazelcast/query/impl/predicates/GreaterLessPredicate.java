@@ -35,6 +35,8 @@ import java.util.Set;
 @BinaryInterface
 public final class GreaterLessPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
 
+    private static final long serialVersionUID = 1L;
+
     protected Comparable value;
     boolean equal;
     boolean less;

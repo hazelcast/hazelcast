@@ -29,6 +29,9 @@ import java.util.Set;
  */
 @BinaryInterface
 public final class NotEqualPredicate extends EqualPredicate {
+
+    private static final long serialVersionUID = 1L;
+
     public NotEqualPredicate() {
     }
 

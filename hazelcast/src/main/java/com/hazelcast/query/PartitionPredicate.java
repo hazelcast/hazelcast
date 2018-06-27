@@ -40,6 +40,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 @BinaryInterface
 public class PartitionPredicate<K, V> implements Predicate<K, V>, IdentifiedDataSerializable {
 
+    private static final long serialVersionUID = 1L;
+
     private Object partitionKey;
     private Predicate<K, V> target;
 

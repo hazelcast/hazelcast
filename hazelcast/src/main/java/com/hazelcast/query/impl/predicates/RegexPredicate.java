@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
 @BinaryInterface
 public class RegexPredicate extends AbstractPredicate {
 
+    private static final long serialVersionUID = 1L;
+
     private String regex;
     private transient volatile Pattern pattern;
 

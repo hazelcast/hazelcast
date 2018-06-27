@@ -46,6 +46,8 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
 public final class AndPredicate
         implements IndexAwarePredicate, IdentifiedDataSerializable, VisitablePredicate, NegatablePredicate, CompoundPredicate {
 
+    private static final long serialVersionUID = 1L;
+
     protected Predicate[] predicates;
 
     public AndPredicate() {

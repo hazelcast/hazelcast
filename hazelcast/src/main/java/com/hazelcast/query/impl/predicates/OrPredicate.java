@@ -45,6 +45,8 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
 public final class OrPredicate
         implements IndexAwarePredicate, VisitablePredicate, NegatablePredicate, IdentifiedDataSerializable, CompoundPredicate {
 
+    private static final long serialVersionUID = 1L;
+
     protected Predicate[] predicates;
 
     public OrPredicate() {

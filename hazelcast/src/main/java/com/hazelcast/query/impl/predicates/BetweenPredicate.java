@@ -33,6 +33,8 @@ import java.util.Set;
 @BinaryInterface
 public class BetweenPredicate extends AbstractIndexAwarePredicate {
 
+    private static final long serialVersionUID = 1L;
+
     Comparable to;
     Comparable from;
 

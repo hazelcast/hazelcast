@@ -36,6 +36,8 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 @BinaryInterface
 public class InPredicate extends AbstractIndexAwarePredicate {
 
+    private static final long serialVersionUID = 1L;
+
     Comparable[] values;
     private transient volatile Set<Comparable> convertedInValues;
 
