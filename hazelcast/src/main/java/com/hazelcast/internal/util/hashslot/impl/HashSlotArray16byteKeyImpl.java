@@ -20,6 +20,7 @@ import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.util.hashslot.HashSlotArray16byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor16byteKey;
+import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 
 import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_CAPACITY;
 import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_LOAD_FACTOR;
@@ -67,11 +68,14 @@ public class HashSlotArray16byteKeyImpl extends HashSlotArrayBase implements Has
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Whenever this method returns a newly assigned slot, the caller must ensure
+     * that the null-sentinel value at the returned address is overwritten with
+     * a non-sentinel value.
      *
-     * Whenever this method returns a positive value, the caller must ensure that the null-sentinel value
-     * at the returned address is overwritten with a non-null-sentinel value.
+     * @see SlotAssignmentResult#isNew()
      */
-    @Override public long ensure(long key1, long key2) {
+    @Override public SlotAssignmentResult ensure(long key1, long key2) {
         return super.ensure0(key1, key2);
     }
 

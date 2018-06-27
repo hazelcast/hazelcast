@@ -20,6 +20,7 @@ import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.util.collection.HsaHeapMemoryManager;
 import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
+import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
@@ -66,16 +67,19 @@ public class HashSlotArray8byteKeyImplTest {
     @Test
     public void testPut() throws Exception {
         final long key = random.nextLong();
-        final long valueAddress = insert(key);
+        SlotAssignmentResult slot = insert(key);
+        final long valueAddress = slot.address();
+        assertTrue(slot.isNew());
 
-        final long valueAddress2 = hsa.ensure(key);
-        assertEquals(-valueAddress, valueAddress2);
+        slot = hsa.ensure(key);
+        assertFalse(slot.isNew());
+        assertEquals(valueAddress, slot.address());
     }
 
     @Test
     public void testGet() throws Exception {
         final long key = random.nextLong();
-        final long valueAddress = insert(key);
+        final long valueAddress = insert(key).address();
 
         final long valueAddress2 = hsa.get(key);
         assertEquals(valueAddress, valueAddress2);
@@ -252,11 +256,11 @@ public class HashSlotArray8byteKeyImplTest {
 
     @Test
     public void testCursor_valueAddress() {
-        final long valueAddress = insert(random.nextLong());
+        final SlotAssignmentResult slot = insert(random.nextLong());
 
         HashSlotCursor8byteKey cursor = hsa.cursor();
         cursor.advance();
-        assertEquals(valueAddress, cursor.valueAddress());
+        assertEquals(slot.address(), cursor.valueAddress());
     }
 
     @Test(expected = AssertionError.class)
@@ -303,11 +307,11 @@ public class HashSlotArray8byteKeyImplTest {
         }
     }
 
-    private long insert(long key) {
-        final long valueAddress = hsa.ensure(key);
-        assertNotEquals(NULL_ADDRESS, valueAddress);
-        mem.putLong(valueAddress, key);
-        return valueAddress;
+    private SlotAssignmentResult insert(long key) {
+        final SlotAssignmentResult slot = hsa.ensure(key);
+        assertNotEquals(NULL_ADDRESS, slot.address());
+        mem.putLong(slot.address(), key);
+        return slot;
     }
 
     private void verifyValue(long key, long valueAddress) {

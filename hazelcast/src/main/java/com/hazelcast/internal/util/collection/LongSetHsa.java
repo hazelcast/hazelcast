@@ -46,7 +46,7 @@ public class LongSetHsa implements LongSet {
     @Override
     public boolean add(long value) {
         assert value != nullValue : "add() called with null-sentinel value " + nullValue;
-        return hsa.ensure(value) > 0;
+        return hsa.ensure(value).isNew();
     }
 
     @Override
