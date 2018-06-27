@@ -30,9 +30,7 @@ import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
 public class ObjectDataInputStream extends VersionedObjectDataInput implements Closeable {
 
-    private static final int BITS_IN_BYTE = 8;
-    private static final int MASK_INT_LAST_BYTE = 0xFF;
-    private static final int MASK_INT_LAST_BUT_ONE_BYTE = 0xFF00;
+    private static final int SHORT_MASK = 0xFFFF;
 
     private final InternalSerializationService serializationService;
     private final DataInputStream dataInput;
@@ -107,9 +105,7 @@ public class ObjectDataInputStream extends VersionedObjectDataInput implements C
 
     @Override
     public int readUnsignedShort() throws IOException {
-        int v = dataInput.readUnsignedShort();
-        return bigEndian() ? v
-                : ((v & MASK_INT_LAST_BUT_ONE_BYTE) >> BITS_IN_BYTE | (v & MASK_INT_LAST_BYTE) << BITS_IN_BYTE);
+        return readShort() & SHORT_MASK;
     }
 
     @Override
