@@ -70,6 +70,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED;
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.map.impl.EntryViews.toLazyEntryView;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
@@ -829,7 +830,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
-        mergingEntry = EntryViews.convertToLazyEntryView(mergingEntry, serializationService, mergePolicy);
+        mergingEntry = toLazyEntryView(mergingEntry, serializationService, mergePolicy);
         Object newValue;
         Object oldValue = null;
         if (record == null) {
@@ -1137,7 +1138,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 FutureUtil.checkAllDone(doneFutures);
             } catch (Exception e) {
                 logger.severe("Exception while loading map " + name, e);
-                ExceptionUtil.rethrow(e);
+                throw ExceptionUtil.rethrow(e);
             } finally {
                 loadingFutures.removeAll(doneFutures);
             }

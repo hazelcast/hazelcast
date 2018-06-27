@@ -62,7 +62,7 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
                 continue;
             }
 
-            publishWanUpdate(key, value);
+            publishLoadAsWanUpdate(key, value);
         }
     }
 

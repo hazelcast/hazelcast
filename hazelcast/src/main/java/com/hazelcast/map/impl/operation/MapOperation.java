@@ -192,6 +192,10 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     }
 
     protected final void publishWanUpdate(Data dataKey, Object value) {
+        publishWanUpdateInternal(dataKey, value, false);
+    }
+
+    private void publishWanUpdateInternal(Data dataKey, Object value, boolean hasLoadProvenance) {
         if (!canPublishWANEvent()) {
             return;
         }
@@ -204,7 +208,11 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         Data dataValue = toHeapData(mapServiceContext.toData(value));
         EntryView entryView = createSimpleEntryView(toHeapData(dataKey), dataValue, record);
 
-        mapEventPublisher.publishWanUpdate(name, entryView);
+        mapEventPublisher.publishWanUpdate(name, entryView, hasLoadProvenance);
+    }
+
+    protected final void publishLoadAsWanUpdate(Data dataKey, Object value) {
+        publishWanUpdateInternal(dataKey, value, true);
     }
 
     protected final void publishWanRemove(Data dataKey) {

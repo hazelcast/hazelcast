@@ -69,8 +69,9 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
             Object value = hasInterceptor ? mapServiceContext.toObject(dataValue) : dataValue;
 
             recordStore.putFromLoad(key, value, getCallerAddress());
-            // the following check is for the case when the putFromLoad does not put the data due to various reasons
-            // one of the reasons may be size eviction threshold has been reached
+            // the following check is for the case when the putFromLoad does not put
+            // the data due to various reasons one of the reasons may be size
+            // eviction threshold has been reached
             if (value != null && !recordStore.existInMemory(key)) {
                 continue;
             }
@@ -84,7 +85,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
                 checkNotNull(record, "Value loaded by a MapLoader cannot be null.");
                 value = record.getValue();
             }
-            publishWanUpdate(key, value);
+            publishLoadAsWanUpdate(key, value);
             addInvalidation(key);
         }
     }
