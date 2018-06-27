@@ -7,8 +7,14 @@ to the full descriptions of the issues at https://github.com/hazelcast/hazelcast
 
 ==== 3.9.4 RELEASE NOTES ====
 
+New Features:
+
+- Introduced new WAN publisher states (REPLICATING, PAUSED, STOPPED).
+
 Enhancements: 
 
+- Introduced WAN synchronization based on time.
+- Introduced WAN event counters for each WAN publisher.
 - Introduced variable replacers. [#12809]
 - Reporting of the ExecuteScriptRequest and ThreadDumpRequest: These two types of requests are sent from the Hazelcast Management Center to members. When they finish, there is no distinction between the logs (it is not obvious whether the responses end up with error or success). [#12437]
 - Version of the client should be added to the Statistics API. [#12394]
