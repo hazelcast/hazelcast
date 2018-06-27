@@ -28,7 +28,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -62,6 +61,7 @@ import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENT
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryInfoAccessor;
+import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -608,7 +608,7 @@ public class EvictionTest extends HazelcastTestSupport {
         MapConfig mapConfig = new MapConfig(name)
                 .setMaxIdleSeconds(20);
         Config config = getConfig()
-                .setProperty(ExpirationManager.PROP_TASK_PERIOD_SECONDS, "1")
+                .setProperty(PROP_TASK_PERIOD_SECONDS, "1")
                 .addMapConfig(mapConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -635,7 +635,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     /**
-     * Background task {@link com.hazelcast.map.impl.eviction.ExpirationManager.ClearExpiredRecordsTask}
+     * Background task {@link com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask}
      * should sweep expired records eventually.
      */
     @Test

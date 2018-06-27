@@ -88,9 +88,4 @@ public final class InvalidationQueue<T> extends ConcurrentLinkedQueue<T> {
     public boolean retainAll(Collection<?> c) {
         throw new UnsupportedOperationException();
     }
-
-    @Override
-    public void clear() {
-        throw new UnsupportedOperationException();
-    }
 }

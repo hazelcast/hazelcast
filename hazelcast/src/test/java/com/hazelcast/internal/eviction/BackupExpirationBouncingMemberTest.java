@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.eviction;
+package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
@@ -93,8 +93,8 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
                         IMap map = node.getMap(mapName);
 
                         MapService mapService = getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
-                        long lastStartMillis = mapService.getMapServiceContext().getExpirationManager().getTask().lastStartMillis;
-                        long lastEndMillis = mapService.getMapServiceContext().getExpirationManager().getTask().lastEndMillis;
+                        long lastStartMillis = getLastStartMillis(mapService.getMapServiceContext().getExpirationManager());
+                        long lastEndMillis = getLastEndMillis(mapService.getMapServiceContext().getExpirationManager());
 
                         LocalMapStats localMapStats = map.getLocalMapStats();
                         String msg = "Failed on node: %s, current cluster state is: %s, "
@@ -145,5 +145,13 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
                 hz.getMap(mapName).set(i, i);
             }
         }
+    }
+
+    private long getLastStartMillis(ExpirationManager expirationManager) {
+        return expirationManager.task.lastStartMillis;
+    }
+
+    private long getLastEndMillis(ExpirationManager expirationManager) {
+        return expirationManager.task.lastEndMillis;
     }
 }

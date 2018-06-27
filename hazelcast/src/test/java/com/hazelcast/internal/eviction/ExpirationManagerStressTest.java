@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.eviction;
+package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
@@ -105,7 +105,7 @@ public class ExpirationManagerStressTest extends HazelcastTestSupport {
         assertTrue(expirationManager.isScheduled());
     }
 
-    static ExpirationManager getExpirationManager(HazelcastInstance node) {
+    public static ExpirationManager getExpirationManager(HazelcastInstance node) {
         MapService mapService = getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getExpirationManager();
