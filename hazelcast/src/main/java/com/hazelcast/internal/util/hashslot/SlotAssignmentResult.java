@@ -18,16 +18,14 @@ package com.hazelcast.internal.util.hashslot;
 
 
 /**
- * <p>
- * A <i>Flyweight</i> object that carries information about the result of
- * slot assignment.
- * This includes the address of the block and if the block is newly assigned
- * or if there was an existing block for the required key.
- * </p><p>
- * <b>Since this is a <i>Flyweight</i>-style object, the same instance is used
- * for many assignment invocations and a single object is valid only up to the
- * next assignment operation</b>.
- * </p>
+ * An object that carries information about the result of a slot assignment
+ * invocation.
+ * The returned object contains the slot value block address and whether a new
+ * slot had to be assigned. Each hash slot array implementation keeps a reference
+ * to the returned object and will always return the same instance, albeit with
+ * updated fields on each new invocation.
+ * This means the returned object is valid until the next invocation of this
+ * method.
  *
  * @see HashSlotArray8byteKey#ensure(long)
  * @see HashSlotArray12byteKey#ensure(long, int)
@@ -36,7 +34,7 @@ package com.hazelcast.internal.util.hashslot;
 public interface SlotAssignmentResult {
 
     /**
-     * @return current slot address of this flyweight
+     * @return slot address of the latest assignment invocation
      */
     long address();
 

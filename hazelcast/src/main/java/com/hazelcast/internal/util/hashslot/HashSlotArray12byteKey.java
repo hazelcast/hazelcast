@@ -26,9 +26,12 @@ public interface HashSlotArray12byteKey extends HashSlotArray {
 
     /**
      * Ensures that there is a mapping from {@code (key1, key2)} to a slot in the array.
-     * The returned object contains the slot value block address and if a new
-     * slot had to be assigned. This object is valid until the next invocation
-     * of this method.
+     * The returned object contains the slot value block address and whether a new
+     * slot had to be assigned. The hash slot array implementation keeps a reference
+     * to the returned object and will always return the same instance, albeit with
+     * updated fields on each new invocation.
+     * This means the returned object is valid until the next invocation of this
+     * method.
      *
      * @param key1 key part 1
      * @param key2 key part 2
