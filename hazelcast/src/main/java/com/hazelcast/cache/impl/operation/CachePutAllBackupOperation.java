@@ -34,8 +34,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  *
  * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperation
  */
-public class CachePutAllBackupOperation
-        extends CacheOperation implements BackupOperation {
+public class CachePutAllBackupOperation extends CacheOperation implements BackupOperation {
 
     private Map<Data, CacheRecord> cacheRecords;
 
@@ -60,6 +59,17 @@ public class CachePutAllBackupOperation
                 publishWanUpdate(entry.getKey(), record);
             }
         }
+    }
+
+    @Override
+    protected boolean requiresExplicitServiceName() {
+        // RU_COMPAT_3_10
+        // We are not checking target member version here since this requires
+        // the operation to be target-aware and that breaks the multi-member
+        // broadcast serialization optimization in OperationBackupHandler. It's
+        // cheaper just to transfer an additional service name string than
+        // serializing the operation for each member individually.
+        return true;
     }
 
     @Override
