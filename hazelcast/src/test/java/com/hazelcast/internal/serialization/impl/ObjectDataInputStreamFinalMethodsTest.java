@@ -133,7 +133,7 @@ public class ObjectDataInputStreamFinalMethodsTest {
     @Test
     public void testReadUnsignedShort() throws Exception {
         inMockedDis.readUnsignedShort();
-        verify(mockedDis).readUnsignedShort();
+        verify(mockedDis).readShort();
     }
 
     @Test
