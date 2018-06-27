@@ -88,25 +88,18 @@ public interface GeneralStage<T> extends Stage {
      * Attaches a mapping stage which applies the supplied function to each
      * input item independently and emits the function's result as the output
      * item. The mapping function receives another parameter, the context
-     * object which Jet will create using the supplied {@code contextFactory}.
+     * object, which Jet will create using the supplied {@code contextFactory}.
      * <p>
      * If the mapping result is {@code null}, it emits nothing. Therefore this
      * stage can be used to implement filtering semantics as well.
      *
-     * <h3>Note on state saving</h3>
-     * Any state you maintain in the context object does not automatically
-     * become a part of a fault-tolerant snapshot. If Jet must restore from a
-     * snapshot, your state will either be lost (if it was just local state) or
-     * not rewound to the checkpoint (if it was stored in some durable
-     * storage).
-     *
-     * <h3>Note on item retention in {@linkplain GeneralStage#addTimestamps
-     * jobs with timestamps}</h3>
-     *
-     * The context should not be used to accumulate stream items and emit the
-     * result later. For example to run an async operation for the item and
-     * return the result later with next item. This can cause that the
-     * watermark to overtake the items and render the items late.
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the context object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
      *
      * @param <C> type of context object
      * @param <R> the result type of the mapping function
@@ -124,15 +117,16 @@ public interface GeneralStage<T> extends Stage {
      * Attaches a filtering stage which applies the provided predicate function
      * to each input item to decide whether to pass the item to the output or
      * to discard it. The predicate function receives another parameter, the
-     * context object which Jet will create using the supplied {@code
+     * context object, which Jet will create using the supplied {@code
      * contextFactory}.
      *
-     * <h3>Note on state saving</h3>
-     * Any state you maintain in the context object does not automatically
-     * become a part of a fault-tolerant snapshot. If Jet must restore from a
-     * snapshot, your state will either be lost (if it was just local state) or
-     * not rewound to the checkpoint (if it was stored in some durable
-     * storage).
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the context object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
      *
      * @param <C> type of context object
      * @param contextFactory the context factory
@@ -150,23 +144,16 @@ public interface GeneralStage<T> extends Stage {
      * each input item independently and emits all items from the {@link
      * Traverser} it returns as the output items. The traverser must be
      * <em>null-terminated</em>. The mapping function receives another
-     * parameter, the context object which Jet will create using the supplied
+     * parameter, the context object, which Jet will create using the supplied
      * {@code contextFactory}.
      *
-     * <h3>Note on state saving</h3>
-     * Any state you maintain in the context object does not automatically
-     * become a part of a fault-tolerant snapshot. If Jet must restore from a
-     * snapshot, your state will either be lost (if it was just local state) or
-     * not rewound to the checkpoint (if it was stored in some durable
-     * storage).
-     *
-     * <h3>Note on item retention in {@linkplain GeneralStage#addTimestamps
-     * jobs with timestamps}</h3>
-     *
-     * The context should not be used to accumulate stream items and emit the
-     * result later. For example to run an async operation for the item and
-     * return the result later with next item. This can cause that the
-     * watermark to overtake the items and render the items late.
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the context object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
      *
      * @param <C> type of context object
      * @param <R> the type of items in the result's traversers
@@ -353,13 +340,10 @@ public interface GeneralStage<T> extends Stage {
     GeneralHashJoinBuilder<T> hashJoinBuilder();
 
     /**
-     * Specifies the function that will extract the grouping key from the items
-     * in the associated pipeline stage, as a first step in the construction of a
-     * group-and-aggregate stage.
-     * <p>
-     * <b>Warning:</b> make sure the extracted key is not-null, it would fail the
-     * job. Also make sure that it implements {@code equals()} and {@code
-     * hashCode()}.
+     * Specifies the function that will extract a key from the items in the
+     * associated pipeline stage. This enables the operations that need the
+     * key, such as grouped aggregation. The key must not be null and must
+     * properly implement {@code equals()} and {@code hashCode()}.
      *
      * @param keyFn function that extracts the grouping key
      * @param <K> type of the key
@@ -510,10 +494,7 @@ public interface GeneralStage<T> extends Stage {
 
     /**
      * Attaches a stage with a custom transform based on the provided supplier
-     * of Core API {@link Processor}s. To be compatible with the rest of the
-     * pipeline, the processor must expect a single inbound edge and
-     * arbitrarily many outbound edges, and it must push the same data to all
-     * outbound edges.
+     * of Core API {@link Processor}s.
      * <p>
      * Note that the returned stage's type parameter is inferred from the call
      * site and not propagated from the processor that will produce the result,

@@ -39,37 +39,33 @@ import java.util.Map.Entry;
 public interface GeneralStageWithKey<T, K> {
 
     /**
-     * Returns the function that extracts the grouping key from stream items.
-     * This function will be used in the aggregating stage you are about to
-     * construct using this object.
+     * Returns the function that extracts the key from stream items. The
+     * purpose of the key varies with the operation you apply.
      */
     @Nonnull
     DistributedFunction<? super T, ? extends K> keyFn();
 
     /**
-     * Attaches to this stage a mapping stage, one which applies the supplied
-     * function to each input item independently and emits the function's result
-     * as the output item. The mapping function receives another parameter, the
-     * context object which Jet will create using the supplied {@code
-     * contextFactory}.
+     * Attaches a mapping stage which applies the given function to each input
+     * item independently and emits the function's result as the output item.
+     * The mapping function receives another parameter, the context object,
+     * which Jet will create using the supplied {@code contextFactory}. If the
+     * mapping result is {@code null}, it emits nothing. Therefore this stage
+     * can be used to implement filtering semantics as well.
      * <p>
-     * If the mapping result is {@code null}, it emits nothing. Therefore this
-     * stage can be used to implement filtering semantics as well.
+     * Jet uses the {@link #keyFn() key-extracting function} specified on this
+     * stage for partitioning: all the items with the same key will see the
+     * same context instance (but note that the same instance serves many keys).
+     * One case where this is useful is fetching data from an external system
+     * because you can use a near-cache without duplicating the cached data.
      *
-     * <h3>Note on state saving</h3>
-     * Any state you maintain in the context object does not automatically
-     * become a part of a fault-tolerant snapshot. If Jet must restore from a
-     * snapshot, your state will either be lost (if it was just local state) or
-     * not rewound to the checkpoint (if it was stored in some durable
-     * storage).
-     *
-     * <h3>Note on item retention in {@linkplain GeneralStage#addTimestamps
-     * jobs with timestamps}</h3>
-     *
-     * The context should not be used to accumulate stream items and emit the
-     * result later. For example to run an async operation for the item and
-     * return the result later with next item. This can cause that the
-     * watermark to overtake the items and render the items late.
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the context object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
      *
      * @param <C> type of context object
      * @param <R> the result type of the mapping function
@@ -84,18 +80,25 @@ public interface GeneralStageWithKey<T, K> {
     );
 
     /**
-     * Attaches to this stage a filtering stage, one which applies the provided
-     * predicate function to each input item to decide whether to pass the item
-     * to the output or to discard it. The predicate function receives another
-     * parameter, the context object which Jet will create using the supplied
-     * {@code contextFactory}.
+     * Attaches a filtering stage which applies the provided predicate function
+     * to each input item to decide whether to pass the item to the output or
+     * to discard it. The predicate function receives another parameter, the
+     * context object, which Jet will create using the supplied {@code
+     * contextFactory}.
+     * <p>
+     * Jet uses the {@link #keyFn() key-extracting function} specified on this
+     * stage for partitioning: all the items with the same key will see the
+     * same context instance (but note that the same instance serves many keys).
+     * One case where this is useful is fetching data from an external system
+     * because you can use a near-cache without duplicating the cached data.
      *
-     * <h3>Note on state saving</h3>
-     * Any state you maintain in the context object does not automatically
-     * become a part of a fault-tolerant snapshot. If Jet must restore from a
-     * snapshot, your state will either be lost (if it was just local state) or
-     * not rewound to the checkpoint (if it was stored in some durable
-     * storage).
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the context object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
      *
      * @param <C> type of context object
      * @param contextFactory the context factory
@@ -109,12 +112,18 @@ public interface GeneralStageWithKey<T, K> {
     );
 
     /**
-     * Attaches to this stage a flat-mapping stage, one which applies the
-     * supplied function to each input item independently and emits all the
-     * items from the {@link Traverser} it returns as the output items. The
-     * traverser must be <em>null-terminated</em>. The mapping function
-     * receives another parameter, the context object which Jet will create
-     * using the supplied {@code contextFactory}.
+     * Attaches a flat-mapping stage which applies the supplied function to
+     * each input item independently and emits all the items from the
+     * {@link Traverser} it returns as the output items. The traverser must
+     * be <em>null-terminated</em>. The mapping function receives another
+     * parameter, the context object, which Jet will create using the supplied
+     * {@code contextFactory}.
+     * <p>
+     * Jet uses the {@link #keyFn() key-extracting function} specified on this
+     * stage for partitioning: all the items with the same key will see the
+     * same context instance (but note that the same instance serves many keys).
+     * One case where this is useful is fetching data from an external system
+     * because you can use a near-cache without duplicating the cached data.
      *
      * <h3>Interaction with fault-tolerant unbounded jobs</h3>
      * If you use this stage in a fault-tolerant unbounded job, keep in mind
@@ -241,11 +250,8 @@ public interface GeneralStageWithKey<T, K> {
 
     /**
      * Attaches a stage with a custom transform based on the provided supplier
-     * of Core API {@link Processor}s. To be compatible with the rest of the
-     * pipeline, the processor must expect a single inbound edge and
-     * arbitrarily many outbound edges, and it must emit the same data to all
-     * outbound edges. The inbound edge will be distributed and partitioned
-     * using the key function assigned to this stage.
+     * of Core API {@link Processor}s. The inbound edge will be distributed and
+     * partitioned using the key function assigned to this stage.
      * <p>
      * Note that the type parameter of the returned stage is inferred from the
      * call site and not propagated from the processor that will produce the
