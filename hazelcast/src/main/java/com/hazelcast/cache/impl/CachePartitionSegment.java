@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -40,6 +41,18 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
     protected final Object mutex = new Object();
     protected final AbstractCacheService cacheService;
     protected final ConcurrentMap<String, ICacheRecordStore> recordStores = new ConcurrentHashMap<String, ICacheRecordStore>();
+    private boolean runningCleanupOperation;
+
+    private volatile long lastCleanupTime;
+
+    /**
+     * Used when sorting partition containers in {@link ExpirationManager}
+     * A non-volatile copy of lastCleanupTime is used with two reasons.
+     * <p/>
+     * 1. We need an un-modified field during sorting.
+     * 2. Decrease number of volatile reads.
+     */
+    private long lastCleanupTimeCopy;
 
     public CachePartitionSegment(final AbstractCacheService cacheService, final int partitionId) {
         this.cacheService = cacheService;
@@ -53,6 +66,30 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
 
     public Iterator<ICacheRecordStore> recordStoreIterator() {
         return recordStores.values().iterator();
+    }
+
+    public boolean hasRunningCleanupOperation() {
+        return runningCleanupOperation;
+    }
+
+    public void setRunningCleanupOperation(boolean status) {
+        runningCleanupOperation = status;
+    }
+
+    public long getLastCleanupTime() {
+        return lastCleanupTime;
+    }
+
+    public void setLastCleanupTime(long time) {
+        lastCleanupTime = time;
+    }
+
+    public long getLastCleanupTimeBeforeSorting() {
+        return lastCleanupTimeCopy;
+    }
+
+    public void storeLastCleanupTime() {
+        lastCleanupTimeCopy = getLastCleanupTime();
     }
 
     public Collection<CacheConfig> getCacheConfigs() {

@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -85,7 +86,7 @@ public class PartitionContainer {
     private volatile long lastCleanupTime;
 
     /**
-     * Used when sorting partition containers in {@link com.hazelcast.map.impl.eviction.ExpirationManager}
+     * Used when sorting partition containers in {@link ExpirationManager}
      * A non-volatile copy of lastCleanupTime is used with two reasons.
      * <p/>
      * 1. We need an un-modified field during sorting.
