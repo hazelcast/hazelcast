@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -29,6 +30,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -37,6 +39,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Preconditions;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -71,6 +74,12 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
+    /**
+     * This rule is here artificially just to test that ChangeLoggingRule is working (meaning not broken).
+     */
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2.xml");
+
     static final int INSTANCE_COUNT = 3;
     static final Random RANDOM = new Random();
 
@@ -83,17 +92,25 @@ public class BasicMapTest extends HazelcastTestSupport {
         instances = factory.newInstances(config);
     }
 
+    protected Config getConfig() {
+        Config cfg = super.getConfig();
+        MapConfig mapConfig = new MapConfig("mapWithTTL*");
+        mapConfig.setTimeToLiveSeconds(1);
+        cfg.addMapConfig(mapConfig);
+        return cfg;
+    }
+
     HazelcastInstance getInstance() {
         return instances[RANDOM.nextInt(INSTANCE_COUNT)];
     }
 
     @Test
-    @SuppressWarnings({"UnnecessaryBoxing", "BooleanConstructorCall"})
+    @SuppressWarnings("UnnecessaryBoxing")
     public void testBoxedPrimitives() {
         IMap<String, Object> map = getInstance().getMap("testPrimitives");
 
-        assertPutGet(map, new Boolean(true));
-        assertPutGet(map, new Boolean(false));
+        assertPutGet(map, Boolean.TRUE);
+        assertPutGet(map, Boolean.FALSE);
 
         assertPutGet(map, new Integer(10));
 
@@ -1183,6 +1200,39 @@ public class BasicMapTest extends HazelcastTestSupport {
                 assertNull(map.get("key"));
             }
         }, 30);
+    }
+
+    @Test
+    public void testAlterTTLOfAnEternalKey() {
+        final IMap<String, String> map = getInstance().getMap("testSetTTL");
+
+        map.put("key", "value");
+        map.setTTL("key", 1, TimeUnit.SECONDS);
+
+        sleepAtLeastMillis(1000);
+
+        assertNull(map.get("key"));
+    }
+
+    @Test
+    public void testExtendTTLOfAKeyBeforeItExpires() {
+        final IMap<String, String> map = getInstance().getMap("testSetTTLExtend");
+        map.put("key", "value", 1, TimeUnit.SECONDS);
+        //Make the entry eternal
+        map.setTTL("key", 0, TimeUnit.DAYS);
+
+        sleepAtLeastMillis(1200);
+
+        assertEquals("value", map.get("key"));
+    }
+
+    @Test
+    public void testSetTTLConfiguresMapPolicyIfTTLIsNegative() {
+        final IMap<String, String> map = getInstance().getMap("mapWithTTL");
+        map.put("tempKey", "tempValue", 10, TimeUnit.SECONDS);
+        map.setTTL("tempKey", -1, TimeUnit.SECONDS);
+        sleepAtLeastMillis(1000);
+        assertNull(map.get("tempKey"));
     }
 
     @Test

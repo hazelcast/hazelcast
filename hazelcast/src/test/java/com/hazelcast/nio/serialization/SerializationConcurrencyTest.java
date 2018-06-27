@@ -50,8 +50,9 @@ public class SerializationConcurrencyTest {
                         return new PortablePerson();
                     case 2:
                         return new PortableAddress();
+                    default:
+                        throw new IllegalArgumentException();
                 }
-                throw new IllegalArgumentException();
             }
         };
         final SerializationService ss = new DefaultSerializationServiceBuilder()

@@ -16,11 +16,17 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 
 import java.io.CharArrayWriter;
+import java.io.File;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
+
+import static com.hazelcast.nio.IOUtil.deleteQuietly;
 
 public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
 
@@ -48,5 +54,32 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
 
     protected void assertNotContains(String expected) {
         assertNotContains(getContent(), expected);
+    }
+
+    static Diagnostics getDiagnostics(HazelcastInstance hazelcastInstance) {
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
+        try {
+            Field field = NodeEngineImpl.class.getDeclaredField("diagnostics");
+            field.setAccessible(true);
+            return (Diagnostics) field.get(nodeEngine);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static void cleanupDiagnosticFiles(Diagnostics diagnostics) {
+        if (diagnostics == null) {
+            return;
+        }
+        File[] files = new File(diagnostics.directory).listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            String name = file.getName();
+            if (name.startsWith(diagnostics.baseFileName) && name.endsWith(".log")) {
+                deleteQuietly(file);
+            }
+        }
     }
 }

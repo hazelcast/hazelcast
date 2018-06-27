@@ -18,6 +18,7 @@ package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -25,7 +26,6 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -37,6 +37,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -241,22 +245,22 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
                 .setInvalidateOnChange(true);
 
-        Config config = getConfig()
-                .setLiteMember(liteMember)
-                .setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true")
-                .setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "5")
-                .setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), "1000");
-        config.getMapConfig(mapName)
+        MapConfig mapConfig = new MapConfig(mapName)
                 .setNearCacheConfig(nearCacheConfig);
 
-        return config;
+        return getBaseConfig()
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true")
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "5")
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), "1000")
+                .setLiteMember(liteMember)
+                .addMapConfig(mapConfig);
     }
 
     @SuppressWarnings("unchecked")
     private NearCache<Object, Object> getNearCache(HazelcastInstance instance, String mapName) {
         MapServiceContext mapServiceContext = getMapService(instance).getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        NearCacheConfig nearCacheConfig = getNodeEngineImpl(instance).getConfig().getMapConfig(mapName).getNearCacheConfig();
+        NearCacheConfig nearCacheConfig = getNodeEngineImpl(instance).getConfig().findMapConfig(mapName).getNearCacheConfig();
         return mapNearCacheManager.getOrCreateNearCache(mapName, nearCacheConfig);
     }
 

@@ -112,7 +112,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd\">");
         gen.open("group")
                 .node("name", config.getGroupConfig().getName())
                 .node("password", getOrMaskValue(config.getGroupConfig().getPassword()))
@@ -403,7 +403,7 @@ public class ConfigXmlGenerator {
         gen.node("check-class-def-errors", c.isCheckClassDefErrors());
         JavaSerializationFilterConfig javaSerializationFilterConfig = c.getJavaSerializationFilterConfig();
         if (javaSerializationFilterConfig != null) {
-            gen.open("java-serialization-filter");
+            gen.open("java-serialization-filter", "defaults-disabled", javaSerializationFilterConfig.isDefaultsDisabled());
             appendFilterList(gen, "blacklist", javaSerializationFilterConfig.getBlacklist());
             appendFilterList(gen, "whitelist", javaSerializationFilterConfig.getWhitelist());
             gen.close();
@@ -1415,6 +1415,9 @@ public class ConfigXmlGenerator {
         }
         for (String packageName : classFilterList.getPackages()) {
             gen.node("package", packageName);
+        }
+        for (String prefix : classFilterList.getPrefixes()) {
+            gen.node("prefix", prefix);
         }
         gen.close();
     }

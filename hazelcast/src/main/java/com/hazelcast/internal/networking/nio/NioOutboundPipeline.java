@@ -25,7 +25,6 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Packet;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -52,7 +51,7 @@ public final class NioOutboundPipeline extends NioPipeline {
     public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
-    public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+    public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
     private final ChannelInitializer initializer;
 
     private ByteBuffer outputBuffer;
@@ -69,9 +68,9 @@ public final class NioOutboundPipeline extends NioPipeline {
     private OutboundFrame currentFrame;
     private volatile long lastWriteTime;
 
-    private long bytesReadLastPublish;
-    private long normalFramesReadLastPublish;
-    private long priorityFramesReadLastPublish;
+    private long bytesWrittenLastPublish;
+    private long normalFramesWrittenLastPublish;
+    private long priorityFramesWrittenLastPublish;
     private long processCountLastPublish;
 
     public NioOutboundPipeline(NioChannel channel,
@@ -90,7 +89,7 @@ public final class NioOutboundPipeline extends NioPipeline {
             case LOAD_BALANCING_HANDLE:
                 return processCount.get();
             case LOAD_BALANCING_BYTE:
-                return bytesWritten.get() + priorityFramesWritten.get();
+                return bytesWritten.get();
             case LOAD_BALANCING_FRAME:
                 return normalFramesWritten.get() + priorityFramesWritten.get();
             default:
@@ -99,7 +98,7 @@ public final class NioOutboundPipeline extends NioPipeline {
     }
 
     public int totalFramesPending() {
-        return writeQueue.size() + urgentWriteQueue.size();
+        return writeQueue.size() + priorityWriteQueue.size();
     }
 
     public long lastWriteTimeMillis() {
@@ -113,15 +112,13 @@ public final class NioOutboundPipeline extends NioPipeline {
 
     @Probe(name = "priorityWriteQueuePendingBytes", level = DEBUG)
     public long priorityBytesPending() {
-        return bytesPending(urgentWriteQueue);
+        return bytesPending(priorityWriteQueue);
     }
 
     private long bytesPending(Queue<OutboundFrame> writeQueue) {
         long bytesPending = 0;
         for (OutboundFrame frame : writeQueue) {
-            if (frame instanceof Packet) {
-                bytesPending += ((Packet) frame).packetSize();
-            }
+            bytesPending += frame.getFrameLength();
         }
         return bytesPending;
     }
@@ -138,7 +135,7 @@ public final class NioOutboundPipeline extends NioPipeline {
 
     public void write(OutboundFrame frame) {
         if (frame.isUrgent()) {
-            urgentWriteQueue.offer(frame);
+            priorityWriteQueue.offer(frame);
         } else {
             writeQueue.offer(frame);
         }
@@ -147,7 +144,7 @@ public final class NioOutboundPipeline extends NioPipeline {
     }
 
     private OutboundFrame poll() {
-        OutboundFrame frame = urgentWriteQueue.poll();
+        OutboundFrame frame = priorityWriteQueue.poll();
         if (frame == null) {
             frame = writeQueue.poll();
             if (frame == null) {
@@ -217,7 +214,7 @@ public final class NioOutboundPipeline extends NioPipeline {
         // So the outputBuffer is empty, so we are going to unschedule ourselves.
         scheduled.set(false);
 
-        if (writeQueue.isEmpty() && urgentWriteQueue.isEmpty()) {
+        if (writeQueue.isEmpty() && priorityWriteQueue.isEmpty()) {
             // there are no remaining frames, so we are done.
             return;
         }
@@ -323,7 +320,7 @@ public final class NioOutboundPipeline extends NioPipeline {
     @Override
     public void close() {
         writeQueue.clear();
-        urgentWriteQueue.clear();
+        priorityWriteQueue.clear();
 
         CloseTask closeTask = new CloseTask();
         addTaskAndWakeup(closeTask);
@@ -343,14 +340,14 @@ public final class NioOutboundPipeline extends NioPipeline {
 
         // since this is executed by the owner, the owner field can't change while
         // this method is executed.
-        owner.bytesTransceived += bytesWritten.get() - bytesReadLastPublish;
-        owner.framesTransceived += normalFramesWritten.get() - normalFramesReadLastPublish;
-        owner.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesReadLastPublish;
+        owner.bytesTransceived += bytesWritten.get() - bytesWrittenLastPublish;
+        owner.framesTransceived += normalFramesWritten.get() - normalFramesWrittenLastPublish;
+        owner.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesWrittenLastPublish;
         owner.processCount += processCount.get() - processCountLastPublish;
 
-        bytesReadLastPublish = bytesWritten.get();
-        normalFramesReadLastPublish = normalFramesWritten.get();
-        priorityFramesReadLastPublish = priorityFramesWritten.get();
+        bytesWrittenLastPublish = bytesWritten.get();
+        normalFramesWrittenLastPublish = normalFramesWritten.get();
+        priorityFramesWrittenLastPublish = priorityFramesWritten.get();
         processCountLastPublish = processCount.get();
     }
 

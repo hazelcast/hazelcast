@@ -100,7 +100,7 @@ public class ExpirationManagerStressTest extends HazelcastTestSupport {
         sleepSeconds(5);
         stop.set(true);
 
-        assertJoinable(threads.toArray(new Thread[threads.size()]));
+        assertJoinable(threads.toArray(new Thread[0]));
 
         assertTrue(expirationManager.isScheduled());
     }

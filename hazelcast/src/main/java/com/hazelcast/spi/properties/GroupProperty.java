@@ -975,6 +975,28 @@ public final class GroupProperty {
     public static final HazelcastProperty TASK_SCHEDULER_REMOVE_ON_CANCEL =
             new HazelcastProperty("hazelcast.executionservice.taskscheduler.remove.oncancel", true);
 
+    /**
+     * By default, search for data structures config is performed within static configuration first:
+     * <ul>
+     *     <li>Exact match in static config</li>
+     *     <li>Wildcard match in static config</li>
+     *     <li>Exact match in dynamic config</li>
+     *     <li>Wildcard match in dynamic config</li>
+     *     <li>Fallback to default</li>
+     * </ul>
+     * But sometimes it makes sense to perform search within dynamic configs first. If this property is set to
+     * <code>true</code>, search algorithm changes to:
+     * <ul>
+     *     <li>Exact match in dynamic config</li>
+     *     <li>Wildcard match in dynamic config</li>
+     *     <li>Exact match in static config</li>
+     *     <li>Wildcard match in static config</li>
+     *     <li>Fallback to default</li>
+     * </ul>
+     */
+    public static final HazelcastProperty SEARCH_DYNAMIC_CONFIG_FIRST
+            = new HazelcastProperty("hazelcast.data.search.dynamic.config.first.enabled", false);
+
     private GroupProperty() {
     }
 }

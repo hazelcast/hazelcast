@@ -731,11 +731,11 @@ public class CacheStatsTest extends CacheTestSupport {
         // configure members with 2 partitions, cache with eviction on max size 2
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName("*")
-                   .setBackupCount(1)
-                   .setStatisticsEnabled(true)
-                   .setEvictionConfig(
-                           new EvictionConfig(maxEntryCount, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.LFU)
-                   );
+                .setBackupCount(1)
+                .setStatisticsEnabled(true)
+                .setEvictionConfig(
+                        new EvictionConfig(maxEntryCount, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.LFU)
+                );
 
         Config config = new Config();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), Integer.toString(partitionCount));
@@ -757,8 +757,8 @@ public class CacheStatsTest extends CacheTestSupport {
         cache1.put(key, "foo");
 
         // number of evictions on primary and backup must be 1
-        assertEquals(1, cache1.getLocalCacheStatistics().getCacheEvictions() +
-                cache2.getLocalCacheStatistics().getCacheEvictions());
+        assertEquals(1, cache1.getLocalCacheStatistics().getCacheEvictions()
+                + cache2.getLocalCacheStatistics().getCacheEvictions());
     }
 
     @Test(expected = UnsupportedOperationException.class)

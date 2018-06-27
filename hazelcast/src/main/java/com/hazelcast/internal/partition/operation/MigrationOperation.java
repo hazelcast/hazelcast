@@ -77,56 +77,6 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
         setReplicaIndex(migrationInfo.getDestinationNewReplicaIndex());
     }
 
-    @Override
-    protected PartitionMigrationEvent getMigrationEvent() {
-        return new PartitionMigrationEvent(MigrationEndpoint.DESTINATION,
-                migrationInfo.getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(),
-                migrationInfo.getDestinationNewReplicaIndex());
-    }
-
-    @Override
-    protected MigrationParticipant getMigrationParticipantType() {
-        return MigrationParticipant.DESTINATION;
-    }
-
-    protected void prepareOperation(Operation op) {
-        op.setNodeEngine(getNodeEngine())
-          .setPartitionId(getPartitionId())
-          .setReplicaIndex(getReplicaIndex());
-        op.setOperationResponseHandler(ERROR_RESPONSE_HANDLER);
-        OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
-    }
-
-    private void verifyMasterOnMigrationDestination() {
-        NodeEngine nodeEngine = getNodeEngine();
-        Address masterAddress = nodeEngine.getMasterAddress();
-        if (!masterAddress.equals(migrationInfo.getMaster())) {
-            throw new IllegalStateException("Migration initiator is not master node! => " + toString());
-        }
-    }
-
-    private void runMigrationOperation(Operation op) throws Exception {
-        prepareOperation(op);
-        op.beforeRun();
-        op.run();
-        op.afterRun();
-    }
-
-    private void logMigrationCancelled() {
-        getLogger().warning("Migration is cancelled -> " + migrationInfo);
-    }
-
-    private void logMigrationFailure(Throwable e) {
-        Level level = Level.WARNING;
-        if (e instanceof IllegalStateException) {
-            level = Level.FINEST;
-        }
-        ILogger logger = getLogger();
-        if (logger.isLoggable(level)) {
-            logger.log(level, e.getMessage(), e);
-        }
-    }
-
     /**
      * {@inheritDoc}
      * Sets the active migration and the migration flag for the partition, notifies {@link MigrationAwareService}s that
@@ -142,13 +92,20 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
             doRun();
         } catch (Throwable t) {
             logMigrationFailure(t);
-            success = false;
             failureReason = t;
         } finally {
             onMigrationComplete();
             if (!success) {
                 onExecutionFailure(failureReason);
             }
+        }
+    }
+
+    private void verifyMasterOnMigrationDestination() {
+        NodeEngine nodeEngine = getNodeEngine();
+        Address masterAddress = nodeEngine.getMasterAddress();
+        if (!masterAddress.equals(migrationInfo.getMaster())) {
+            throw new IllegalStateException("Migration initiator is not master node! => " + toString());
         }
     }
 
@@ -166,16 +123,29 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
 
                 success = true;
             } catch (Throwable e) {
-                success = false;
                 failureReason = e;
                 getLogger().severe("Error while executing replication operations " + migrationInfo, e);
             } finally {
                 afterMigrate();
             }
         } else {
-            success = false;
             logMigrationCancelled();
         }
+    }
+
+    private void runMigrationOperation(Operation op) throws Exception {
+        prepareOperation(op);
+        op.beforeRun();
+        op.run();
+        op.afterRun();
+    }
+
+    protected void prepareOperation(Operation op) {
+        op.setNodeEngine(getNodeEngine())
+                .setPartitionId(getPartitionId())
+                .setReplicaIndex(getReplicaIndex());
+        op.setOperationResponseHandler(ERROR_RESPONSE_HANDLER);
+        OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
     }
 
     private void afterMigrate() {
@@ -205,6 +175,33 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
         }
 
         migrationInfo.doneProcessing();
+    }
+
+    private void logMigrationCancelled() {
+        getLogger().warning("Migration is cancelled -> " + migrationInfo);
+    }
+
+    private void logMigrationFailure(Throwable e) {
+        Level level = Level.WARNING;
+        if (e instanceof IllegalStateException) {
+            level = Level.FINEST;
+        }
+        ILogger logger = getLogger();
+        if (logger.isLoggable(level)) {
+            logger.log(level, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    protected PartitionMigrationEvent getMigrationEvent() {
+        return new PartitionMigrationEvent(MigrationEndpoint.DESTINATION,
+                migrationInfo.getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(),
+                migrationInfo.getDestinationNewReplicaIndex());
+    }
+
+    @Override
+    protected MigrationParticipant getMigrationParticipantType() {
+        return MigrationParticipant.DESTINATION;
     }
 
     /**
@@ -247,9 +244,9 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     }
 
     @Override
-    void onMigrationComplete(boolean result) {
+    void onMigrationComplete() {
         if (lastFragment) {
-            super.onMigrationComplete(result);
+            super.onMigrationComplete();
         }
     }
 

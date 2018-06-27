@@ -20,15 +20,18 @@ import java.util.Set;
 
 /**
  * Concurrent, distributed implementation of {@link Set}
- * <p/>
- * <b>This class is <i>not</i> a general-purpose <tt>Set</tt> implementation! While this class implements
- * the <tt>Set</tt> interface, it intentionally violates <tt>Set's</tt> general contract, which mandates the
- * use of the <tt>equals</tt> method when comparing objects. Instead of the equals method this implementation
- * compares the serialized byte version of the objects.</b>
+ * <p>
+ * <b>Note:</b> This class is <i>not</i> a general-purpose {@link Set}
+ * implementation! While this class implements the {@link Set} interface,
+ * it intentionally violates {@link Set}'s general contract, which mandates the
+ * use of the {@code equals() method when comparing objects. Instead of the
+ * equals method this implementation compares the serialized byte version
+ * of the objects.
+ * <p>
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster
+ * versions 3.10 and higher.
  *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
- *
- * @param <E>
+ * @param <E> the type of elements maintained by this set
  * @see Set
  */
 public interface ISet<E> extends Set<E>, ICollection<E> {

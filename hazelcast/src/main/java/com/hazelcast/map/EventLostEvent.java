@@ -100,4 +100,13 @@ public class EventLostEvent implements IMapEvent {
 
         return 1 << ++eventFlagPosition;
     }
+
+    @Override
+    public String toString() {
+        return "EventLostEvent{"
+                + "partitionId=" + partitionId
+                + ", source='" + source + '\''
+                + ", member=" + member
+                + '}';
+    }
 }

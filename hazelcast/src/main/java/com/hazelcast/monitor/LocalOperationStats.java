@@ -17,7 +17,7 @@
 package com.hazelcast.monitor;
 
 /**
- * Hazelcast statistic interface for local operations.
+ * Local operation statistics to be used by {@link MemberState} implementations.
  */
 public interface LocalOperationStats extends LocalInstanceStats {
 }

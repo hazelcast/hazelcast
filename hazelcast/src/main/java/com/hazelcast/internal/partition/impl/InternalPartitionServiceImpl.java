@@ -604,6 +604,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
      */
     @SuppressWarnings("checkstyle:npathcomplexity")
     boolean syncPartitionRuntimeState() {
+        assert !((ReentrantLock) lock).isHeldByCurrentThread();
         if (!partitionStateManager.isInitialized()) {
             // do not send partition state until initialized!
             return false;

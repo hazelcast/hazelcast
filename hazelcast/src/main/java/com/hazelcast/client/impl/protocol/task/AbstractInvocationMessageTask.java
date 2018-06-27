@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
@@ -32,7 +31,6 @@ public abstract class AbstractInvocationMessageTask<P> extends AbstractMessageTa
 
     @Override
     protected void processMessage() {
-        final ClientEndpoint endpoint = getEndpoint();
         Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
 

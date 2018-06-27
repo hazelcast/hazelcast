@@ -38,12 +38,12 @@ public class SimpleMapTestFromClient {
         GroupProperty.SOCKET_BIND_ANY.setSystemProperty("false");
     }
 
-    public static int THREAD_COUNT = 40;
-    public static int ENTRY_COUNT = 10 * 1000;
-    public static int VALUE_SIZE = 1000;
-    public static final int STATS_SECONDS = 10;
-    public static int GET_PERCENTAGE = 40;
-    public static int PUT_PERCENTAGE = 40;
+    private static int threadCount = 40;
+    private static int entryCount = 10 * 1000;
+    private static int valueSize = 1000;
+    private static int statsSeconds = 10;
+    private static int getPercentage = 40;
+    private static int putPercentage = 40;
 
     public static void main(String[] args) {
         final ClientConfig clientConfig = new ClientConfig();
@@ -55,15 +55,15 @@ public class SimpleMapTestFromClient {
             for (String arg : args) {
                 arg = arg.trim();
                 if (arg.startsWith("t")) {
-                    THREAD_COUNT = Integer.parseInt(arg.substring(1));
+                    threadCount = Integer.parseInt(arg.substring(1));
                 } else if (arg.startsWith("c")) {
-                    ENTRY_COUNT = Integer.parseInt(arg.substring(1));
+                    entryCount = Integer.parseInt(arg.substring(1));
                 } else if (arg.startsWith("v")) {
-                    VALUE_SIZE = Integer.parseInt(arg.substring(1));
+                    valueSize = Integer.parseInt(arg.substring(1));
                 } else if (arg.startsWith("g")) {
-                    GET_PERCENTAGE = Integer.parseInt(arg.substring(1));
+                    getPercentage = Integer.parseInt(arg.substring(1));
                 } else if (arg.startsWith("p")) {
-                    PUT_PERCENTAGE = Integer.parseInt(arg.substring(1));
+                    putPercentage = Integer.parseInt(arg.substring(1));
                 }
             }
         } else {
@@ -72,25 +72,25 @@ public class SimpleMapTestFromClient {
             System.out.println("");
         }
         System.out.println("Starting Test with ");
-        System.out.println("      Thread Count: " + THREAD_COUNT);
-        System.out.println("       Entry Count: " + ENTRY_COUNT);
-        System.out.println("        Value Size: " + VALUE_SIZE);
-        System.out.println("    Get Percentage: " + GET_PERCENTAGE);
-        System.out.println("    Put Percentage: " + PUT_PERCENTAGE);
-        System.out.println(" Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
-        ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
-        for (int i = 0; i < THREAD_COUNT; i++) {
+        System.out.println("      Thread Count: " + threadCount);
+        System.out.println("       Entry Count: " + entryCount);
+        System.out.println("        Value Size: " + valueSize);
+        System.out.println("    Get Percentage: " + getPercentage);
+        System.out.println("    Put Percentage: " + putPercentage);
+        System.out.println(" Remove Percentage: " + (100 - (putPercentage + getPercentage)));
+        ExecutorService es = Executors.newFixedThreadPool(threadCount);
+        for (int i = 0; i < threadCount; i++) {
             es.submit(new Runnable() {
                 public void run() {
                     IMap<String, Object> map = client.getMap("default");
                     while (true) {
-                        int key = (int) (Math.random() * ENTRY_COUNT);
+                        int key = (int) (Math.random() * entryCount);
                         int operation = ((int) (Math.random() * 100));
-                        if (operation < GET_PERCENTAGE) {
+                        if (operation < getPercentage) {
                             map.get(String.valueOf(key));
                             stats.gets.incrementAndGet();
-                        } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
-                            map.put(String.valueOf(key), new byte[VALUE_SIZE]);
+                        } else if (operation < getPercentage + putPercentage) {
+                            map.put(String.valueOf(key), new byte[valueSize]);
                             stats.puts.incrementAndGet();
                         } else {
                             map.remove(String.valueOf(key));
@@ -104,13 +104,13 @@ public class SimpleMapTestFromClient {
             public void run() {
                 while (true) {
                     try {
-                        Thread.sleep(STATS_SECONDS * 1000);
+                        Thread.sleep(statsSeconds * 1000);
                         System.out.println("cluster size:"
                                 + client.getCluster().getMembers().size());
                         Stats currentStats = stats.getAndReset();
                         System.out.println(currentStats);
                         System.out.println("Operations per Second: " + currentStats.total()
-                                / STATS_SECONDS);
+                                / statsSeconds);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

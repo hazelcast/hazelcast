@@ -26,6 +26,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.Collection;
 
@@ -43,15 +45,15 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class CompoundPredicateTest {
 
-    @Parameterized.Parameters(name = "{0}")
+    @Parameter
+    public Class<? extends CompoundPredicate> klass;
+
+    @Parameters(name = "{0}")
     public static Collection<Class<? extends CompoundPredicate>> getCompoundPredicateImplementations()
             throws ClassNotFoundException {
         // locate all classes which implement CompoundPredicate and exercise them
         return REFLECTIONS.getSubTypesOf(CompoundPredicate.class);
     }
-
-    @Parameterized.Parameter
-    public Class<? extends CompoundPredicate> klass;
 
     @Test
     public void test_newInstance()

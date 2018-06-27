@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.multimap;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryAdapter;
@@ -41,7 +40,6 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
 
     @Override
     protected Object call() throws Exception {
-        final ClientEndpoint endpoint = getEndpoint();
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
         EntryAdapter listener = new MultiMapListener();
 

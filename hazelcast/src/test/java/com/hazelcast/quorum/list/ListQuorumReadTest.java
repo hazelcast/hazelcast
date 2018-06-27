@@ -112,12 +112,12 @@ public class ListQuorumReadTest extends AbstractQuorumTest {
 
     @Test
     public void getAllOperation_toArrayT_successful_whenQuorumSize_met() {
-        list(0).toArray(new Object[]{});
+        list(0).toArray(new Object[0]);
     }
 
     @Test(expected = QuorumException.class)
     public void getAllOperation_toArrayT_failing_whenQuorumSize_notMet() {
-        list(3).toArray(new Object[]{});
+        list(3).toArray(new Object[0]);
     }
 
     @Test

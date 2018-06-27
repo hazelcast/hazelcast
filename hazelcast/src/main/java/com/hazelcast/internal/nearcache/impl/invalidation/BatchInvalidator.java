@@ -51,19 +51,19 @@ public class BatchInvalidator extends Invalidator {
     /**
      * Creates an invalidation-queue per data-structure-name.
      */
-    private final ConstructorFunction<String, InvalidationQueue> invalidationQueueConstructor
-            = new ConstructorFunction<String, InvalidationQueue>() {
+    private final ConstructorFunction<String, InvalidationQueue<Invalidation>> invalidationQueueConstructor
+            = new ConstructorFunction<String, InvalidationQueue<Invalidation>>() {
         @Override
-        public InvalidationQueue createNew(String dataStructureName) {
-            return new InvalidationQueue();
+        public InvalidationQueue<Invalidation> createNew(String dataStructureName) {
+            return new InvalidationQueue<Invalidation>();
         }
     };
 
     /**
      * data-structure-name to invalidation-queue mappings.
      */
-    private final ConcurrentMap<String, InvalidationQueue> invalidationQueues
-            = new ConcurrentHashMap<String, InvalidationQueue>();
+    private final ConcurrentMap<String, InvalidationQueue<Invalidation>> invalidationQueues
+            = new ConcurrentHashMap<String, InvalidationQueue<Invalidation>>();
 
     private final int batchSize;
     private final int batchFrequencySeconds;
@@ -89,7 +89,7 @@ public class BatchInvalidator extends Invalidator {
     @Override
     protected void invalidateInternal(Invalidation invalidation, int orderKey) {
         String dataStructureName = invalidation.getName();
-        InvalidationQueue invalidationQueue = invalidationQueueOf(dataStructureName);
+        InvalidationQueue<Invalidation> invalidationQueue = invalidationQueueOf(dataStructureName);
         invalidationQueue.offer(invalidation);
 
         if (invalidationQueue.size() >= batchSize) {
@@ -97,11 +97,11 @@ public class BatchInvalidator extends Invalidator {
         }
     }
 
-    private InvalidationQueue invalidationQueueOf(String dataStructureName) {
+    private InvalidationQueue<Invalidation> invalidationQueueOf(String dataStructureName) {
         return getOrPutIfAbsent(invalidationQueues, dataStructureName, invalidationQueueConstructor);
     }
 
-    private void pollAndSendInvalidations(String dataStructureName, InvalidationQueue invalidationQueue) {
+    private void pollAndSendInvalidations(String dataStructureName, InvalidationQueue<Invalidation> invalidationQueue) {
         assert invalidationQueue != null;
 
         if (!invalidationQueue.tryAcquire()) {
@@ -163,8 +163,8 @@ public class BatchInvalidator extends Invalidator {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == SHUTTING_DOWN) {
-                    Set<Map.Entry<String, InvalidationQueue>> entries = invalidationQueues.entrySet();
-                    for (Map.Entry<String, InvalidationQueue> entry : entries) {
+                    Set<Map.Entry<String, InvalidationQueue<Invalidation>>> entries = invalidationQueues.entrySet();
+                    for (Map.Entry<String, InvalidationQueue<Invalidation>> entry : entries) {
                         pollAndSendInvalidations(entry.getKey(), entry.getValue());
                     }
                 }
@@ -192,12 +192,12 @@ public class BatchInvalidator extends Invalidator {
 
         @Override
         public void run() {
-            for (Map.Entry<String, InvalidationQueue> entry : invalidationQueues.entrySet()) {
+            for (Map.Entry<String, InvalidationQueue<Invalidation>> entry : invalidationQueues.entrySet()) {
                 if (currentThread().isInterrupted()) {
                     break;
                 }
                 String name = entry.getKey();
-                InvalidationQueue invalidationQueue = entry.getValue();
+                InvalidationQueue<Invalidation> invalidationQueue = entry.getValue();
                 if (invalidationQueue.size() > 0) {
                     pollAndSendInvalidations(name, invalidationQueue);
                 }

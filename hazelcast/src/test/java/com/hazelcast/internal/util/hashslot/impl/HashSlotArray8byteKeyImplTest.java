@@ -305,7 +305,7 @@ public class HashSlotArray8byteKeyImplTest {
 
     private long insert(long key) {
         final long valueAddress = hsa.ensure(key);
-        assertTrue(valueAddress > 0);
+        assertNotEquals(NULL_ADDRESS, valueAddress);
         mem.putLong(valueAddress, key);
         return valueAddress;
     }

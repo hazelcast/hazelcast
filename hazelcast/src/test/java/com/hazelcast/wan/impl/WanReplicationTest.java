@@ -105,6 +105,18 @@ public class WanReplicationTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void mapSetTTLTest() {
+        initInstancesAndMap("wan-replication-test-setTTL");
+        for (int i = 0; i < 10; i++) {
+            map.put(i, i);
+            map.setTTL(i, 1, TimeUnit.MINUTES);
+            map.remove(i);
+        }
+
+        assertTotalQueueSize(30);
+    }
+
+    @Test
     public void mapSetReplaceRemoveIfSameTest() {
         initInstancesAndMap("wan-replication-test-set-replace-remove-if-same");
         for (int i = 0; i < 10; i++) {

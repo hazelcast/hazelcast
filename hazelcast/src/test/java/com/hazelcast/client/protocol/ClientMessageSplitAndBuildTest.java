@@ -115,7 +115,7 @@ public class ClientMessageSplitAndBuildTest {
                 });
         decoder.setNormalPacketsRead(readCounter);
 
-        int currentFrameIndex[] = new int[NUMBER_OF_MESSAGES];
+        int[] currentFrameIndex = new int[NUMBER_OF_MESSAGES];
         for (int nFinishedMessages = 0; nFinishedMessages < NUMBER_OF_MESSAGES; ) {
             for (int i = 0; i < NUMBER_OF_MESSAGES; i++) {
                 List<ClientMessage> clientMessageFrames = framedClientMessages.get(i);

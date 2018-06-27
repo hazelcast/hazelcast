@@ -78,8 +78,9 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
                         return new PortablePerson();
                     case 2:
                         return new PortableAddress();
+                    default:
+                        throw new IllegalArgumentException();
                 }
-                throw new IllegalArgumentException();
             }
         };
         return new DefaultSerializationServiceBuilder().addPortableFactory(FACTORY_ID, portableFactory);

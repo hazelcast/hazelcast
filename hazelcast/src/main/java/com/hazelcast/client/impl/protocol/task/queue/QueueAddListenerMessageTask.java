@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.queue;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
@@ -45,7 +44,6 @@ public class QueueAddListenerMessageTask
 
     @Override
     protected Object call() {
-        final ClientEndpoint endpoint = getEndpoint();
         final QueueService service = getService(QueueService.SERVICE_NAME);
         final Data partitionKey = serializationService.toData(parameters.name);
         ItemListener listener = new ItemListener() {

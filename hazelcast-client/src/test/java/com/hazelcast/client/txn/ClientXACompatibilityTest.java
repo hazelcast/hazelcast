@@ -58,16 +58,23 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
+    private HazelcastInstance instance;
+    private HazelcastInstance secondInstance;
+    private HazelcastInstance client;
+    private HazelcastInstance secondClient;
+
+    private HazelcastXAResource xaResource;
+    private HazelcastXAResource secondXaResource;
+    private HazelcastXAResource instanceXaResource;
+
+    private Xid xid;
+
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
     }
 
-    private HazelcastInstance instance, secondInstance, client, secondClient;
-    private HazelcastXAResource xaResource, secondXaResource, instanceXaResource;
-    private Xid xid;
-
-    private static Xid createXid() throws InterruptedException {
+    private static Xid createXid() {
         return new XID(randomString(), "test");
     }
 

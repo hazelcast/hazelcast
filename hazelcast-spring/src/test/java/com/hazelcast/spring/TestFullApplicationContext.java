@@ -1288,13 +1288,18 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testJavaSerializationFilterConfig() {
         JavaSerializationFilterConfig filterConfig = config.getSerializationConfig().getJavaSerializationFilterConfig();
         assertNotNull(filterConfig);
-        
+        assertTrue(filterConfig.isDefaultsDisabled());
+
         ClassFilter blacklist = filterConfig.getBlacklist();
         assertNotNull(blacklist);
         assertEquals(1, blacklist.getClasses().size());
         assertTrue(blacklist.getClasses().contains("com.acme.app.BeanComparator"));
         assertEquals(0, blacklist.getPackages().size());
-        
+        Set<String> prefixes = blacklist.getPrefixes();
+        assertTrue(prefixes.contains("a.dangerous.package."));
+        assertTrue(prefixes.contains("justaprefix"));
+        assertEquals(2, prefixes.size());
+
         ClassFilter whitelist = filterConfig.getWhitelist();
         assertNotNull(whitelist);
         assertEquals(2, whitelist.getClasses().size());

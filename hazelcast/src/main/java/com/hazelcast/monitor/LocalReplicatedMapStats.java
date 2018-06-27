@@ -16,6 +16,10 @@
 
 package com.hazelcast.monitor;
 
+/**
+ * Local replicated map statistics to be used by {@link MemberState}
+ * implementations.
+ */
 public interface LocalReplicatedMapStats extends LocalMapStats {
 
     /**
@@ -23,5 +27,4 @@ public interface LocalReplicatedMapStats extends LocalMapStats {
      */
     @Deprecated
     long getReplicationEventCount();
-
 }

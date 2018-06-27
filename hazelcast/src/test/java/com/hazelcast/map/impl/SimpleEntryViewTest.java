@@ -36,13 +36,12 @@ public class SimpleEntryViewTest extends HazelcastTestSupport {
     @Test
     public void test_toString() throws Exception {
         HazelcastInstance instance = createHazelcastInstance();
-        IMap map = instance.getMap("test");
+        IMap<Integer, Integer> map = instance.getMap("test");
         map.put(1, 1);
 
         EntryView entryView = map.getEntryView(1);
 
         assertEquals(stringify(entryView), entryView.toString());
-
     }
 
     private String stringify(EntryView entryView) {

@@ -54,7 +54,7 @@ public class ExecutorServiceSubmitToAddressMessageTask
         Data callableData = parameters.callable;
         if (securityContext != null) {
             Callable callable = serializationService.toObject(parameters.callable);
-            Subject subject = getEndpoint().getSubject();
+            Subject subject = endpoint.getSubject();
             callable = securityContext.createSecureCallable(subject, callable);
             callableData = serializationService.toData(callable);
         }

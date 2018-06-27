@@ -18,6 +18,8 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.memory.GarbageCollectorStats;
 
+/**
+ * Local GC statistics to be used by {@link MemberState} implementations.
+ */
 public interface LocalGCStats extends GarbageCollectorStats, LocalInstanceStats {
-
 }

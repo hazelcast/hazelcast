@@ -65,6 +65,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class ExecutorServiceProxy
         extends AbstractDistributedObject<DistributedExecutorService>
         implements IExecutorService {

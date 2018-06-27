@@ -202,7 +202,7 @@ public class NodeEngineImpl implements NodeEngine {
         if (node.getProperties().getBoolean(METRICS_DISTRIBUTED_DATASTRUCTURES)) {
             new StatisticsAwareMetricsSet(serviceManager, this).register(metricsRegistry);
         }
-
+        metricsRegistry.scanAndRegister(node.getNodeExtension().getMemoryStats(), "memory");
         metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
 
         serviceManager.start();
@@ -441,7 +441,7 @@ public class NodeEngineImpl implements NodeEngine {
                 postJoinOps.add(postJoinOperation);
             }
         }
-        return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[postJoinOps.size()]);
+        return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[0]);
     }
 
     public Operation[] getPreJoinOperations() {
@@ -459,7 +459,7 @@ public class NodeEngineImpl implements NodeEngine {
                 preJoinOps.add(preJoinOperation);
             }
         }
-        return preJoinOps.isEmpty() ? null : preJoinOps.toArray(new Operation[preJoinOps.size()]);
+        return preJoinOps.isEmpty() ? null : preJoinOps.toArray(new Operation[0]);
     }
 
     public void reset() {
@@ -505,7 +505,7 @@ public class NodeEngineImpl implements NodeEngine {
     private class ConnectionManagerPacketConsumer implements Consumer<Packet> {
 
         @Override
-        public void accept(Packet packet)  {
+        public void accept(Packet packet) {
             // ConnectionManager is only available after the NodeEngineImpl is available
             Consumer<Packet> packetConsumer = (Consumer<Packet>) node.getConnectionManager();
             packetConsumer.accept(packet);
@@ -517,7 +517,7 @@ public class NodeEngineImpl implements NodeEngine {
         private volatile Consumer<Packet> packetConsumer;
 
         @Override
-        public void accept(Packet packet)  {
+        public void accept(Packet packet) {
             // currently service registration is done after the creation of the packet dispatcher,
             // hence we need to lazily initialize the JetPacketConsumer
             if (packetConsumer == null) {

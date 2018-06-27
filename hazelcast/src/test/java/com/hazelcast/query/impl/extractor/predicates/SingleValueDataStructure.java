@@ -23,7 +23,10 @@ import java.io.Serializable;
 /**
  * Data structure used in the tests of extraction in single-value attributes (not in collections).
  */
-public class SingleValueDataStructure {
+public final class SingleValueDataStructure {
+
+    private SingleValueDataStructure() {
+    }
 
     public static class Person implements Serializable {
 

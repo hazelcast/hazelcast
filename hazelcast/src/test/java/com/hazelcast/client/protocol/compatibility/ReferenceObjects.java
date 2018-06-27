@@ -16,14 +16,14 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
-import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.impl.StubAuthenticationException;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
@@ -57,7 +57,7 @@ import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.BigEndianSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
@@ -684,10 +684,6 @@ public class ReferenceObjects {
     public static List<Map.Entry<Integer, UUID>> aPartitionUuidList = Collections.<Map.Entry<Integer, UUID>>singletonList(
             new AbstractMap.SimpleEntry<Integer, UUID>(anInt, aUUID));
 
-    private static final DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
-    public static final SerializationService serializationService = defaultSerializationServiceBuilder
-            .setVersion(InternalSerializationService.VERSION_1).build();
-
     public static RingbufferStoreConfigHolder ringbufferStore;
     public static QueueStoreConfigHolder queueStoreConfig;
 
@@ -711,9 +707,10 @@ public class ReferenceObjects {
         props = new Properties();
         props.setProperty("a", "b");
 
-        DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
+        BigEndianSerializationServiceBuilder defaultSerializationServiceBuilder = new BigEndianSerializationServiceBuilder();
         SerializationService serializationService = defaultSerializationServiceBuilder
                 .setVersion(InternalSerializationService.VERSION_1).build();
+
         listenerConfigs = new ArrayList<ListenerConfigHolder>();
         ListenerConfigHolder holder1 = new ListenerConfigHolder(TYPE_LISTENER_CONFIG, "listener.By.ClassName");
         //noinspection RedundantCast
@@ -807,7 +804,7 @@ public class ReferenceObjects {
 
     public static Throwable[] throwables_1_0 = {new CacheException(aString), new CacheLoaderException(
             aString), new CacheWriterException(aString), new EntryProcessorException(aString), new ArrayIndexOutOfBoundsException(
-            aString), new ArrayStoreException(aString), new AuthenticationException(aString), new CacheNotExistsException(
+            aString), new ArrayStoreException(aString), new StubAuthenticationException(aString), new CacheNotExistsException(
             aString), new CallerNotMemberException(aString), new CancellationException(aString), new ClassCastException(
             aString), new ClassNotFoundException(aString), new ConcurrentModificationException(
             aString), new ConfigMismatchException(aString), new ConfigurationException(

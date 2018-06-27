@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
@@ -48,7 +48,6 @@ public class MapAddListenerMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ClientEndpoint endpoint = getEndpoint();
         return registerListener(endpoint, this);
     }
 

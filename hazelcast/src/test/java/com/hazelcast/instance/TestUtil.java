@@ -36,7 +36,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 @SuppressWarnings("WeakerAccess")
 public final class TestUtil {
 
-    private static final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private static final SerializationService SERIALIZATION_SERVICE = new DefaultSerializationServiceBuilder().build();
 
     private TestUtil() {
     }
@@ -48,7 +48,7 @@ public final class TestUtil {
      * @return the serialized {@link Data} instance
      */
     public static Data toData(Object obj) {
-        return serializationService.toData(obj);
+        return SERIALIZATION_SERVICE.toData(obj);
     }
 
     /**
@@ -58,7 +58,7 @@ public final class TestUtil {
      * @return the deserialized object
      */
     public static Object toObject(Data data) {
-        return serializationService.toObject(data);
+        return SERIALIZATION_SERVICE.toObject(data);
     }
 
     /**

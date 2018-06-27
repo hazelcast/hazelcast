@@ -32,16 +32,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
-/**
- *
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class HazelcastProxyFactoryTest {
 
     @Test
-    public void testRetunedProxyImplements_sameInterfaceByNameOnTargetClassLoader()
-            throws Exception {
+    public void testReturnedProxyImplements_sameInterfaceByNameOnTargetClassLoader() throws Exception {
         ProxiedInterface delegate = new ProxiedInterface() {
             @Override
             public void get() {
@@ -50,8 +46,8 @@ public class HazelcastProxyFactoryTest {
 
         // HazelcastAPIDelegatingClassloader will reload the bytes of ProxiedInterface as a new class
         // as happens with every com.hazelcast class that contains "test"
-        HazelcastAPIDelegatingClassloader targetClassLoader =
-                new HazelcastAPIDelegatingClassloader(new URL[]{}, HazelcastProxyFactoryTest.class.getClassLoader());
+        HazelcastAPIDelegatingClassloader targetClassLoader
+                = new HazelcastAPIDelegatingClassloader(new URL[]{}, HazelcastProxyFactoryTest.class.getClassLoader());
 
         Object proxy = HazelcastProxyFactory.proxyObjectForStarter(targetClassLoader, delegate);
 

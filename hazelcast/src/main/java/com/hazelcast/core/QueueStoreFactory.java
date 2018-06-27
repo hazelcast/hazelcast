@@ -18,6 +18,11 @@ package com.hazelcast.core;
 
 import java.util.Properties;
 
+/**
+ * Creates a new {@link QueueStore}.
+ *
+ * @param <T> type of the queue items
+ */
 public interface QueueStoreFactory<T> {
 
     QueueStore<T> newQueueStore(String name, Properties properties);

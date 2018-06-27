@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.client.impl.ClientEngineImpl.SERVICE_NAME;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -43,6 +44,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     private final ILogger logger;
+    private final EventService eventService;
 
     @Probe(name = "count", level = MANDATORY)
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
@@ -53,7 +55,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     public ClientEndpointManagerImpl(NodeEngine nodeEngine) {
         this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
-
+        this.eventService = nodeEngine.getEventService();
         MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
         metricsRegistry.scanAndRegister(this, "client.endpoint");
     }
@@ -87,6 +89,11 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
             return false;
         } else {
             totalRegistrations.inc();
+            ClientEvent event = new ClientEvent(endpoint.getUuid(),
+                    ClientEventType.CONNECTED,
+                    endpoint.getSocketAddress(),
+                    endpoint.getClientType());
+            sendClientEvent(event);
             return true;
         }
     }
@@ -109,6 +116,17 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
             logger.warning(e);
         }
 
+        ClientEvent event = new ClientEvent(endpoint.getUuid(),
+                ClientEventType.DISCONNECTED,
+                endpoint.getSocketAddress(),
+                endpoint.getClientType());
+        sendClientEvent(event);
+    }
+
+    private void sendClientEvent(ClientEvent event) {
+        final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
+        String uuid = event.getUuid();
+        eventService.publishEvent(SERVICE_NAME, regs, event, uuid.hashCode());
     }
 
     @Override

@@ -47,4 +47,11 @@ public interface OutboundFrame {
      * @return true if urgent, false otherwise.
      */
     boolean isUrgent();
+
+    /**
+     * Returns the frame length. This includes header and payload size.
+     *
+     * @return The frame length.
+     */
+    int getFrameLength();
 }

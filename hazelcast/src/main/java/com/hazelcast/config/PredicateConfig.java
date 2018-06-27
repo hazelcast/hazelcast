@@ -165,8 +165,8 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         this.implementation = null;
     }
 
-    //CHECKSTYLE:OFF
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -182,11 +182,8 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         if (sql != null ? !sql.equals(that.sql) : that.sql != null) {
             return false;
         }
-        return !(implementation != null
-                ? !implementation.equals(that.implementation) : that.implementation != null);
-
+        return !(implementation != null ? !implementation.equals(that.implementation) : that.implementation != null);
     }
-    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {

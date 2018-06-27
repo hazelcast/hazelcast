@@ -111,6 +111,8 @@ import com.hazelcast.map.impl.operation.RemoveOperation;
 import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
 import com.hazelcast.map.impl.operation.ReplaceOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
+import com.hazelcast.map.impl.operation.SetTTLBackupOperation;
+import com.hazelcast.map.impl.operation.SetTTLOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
 import com.hazelcast.map.impl.operation.TryPutOperation;
@@ -308,8 +310,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int EVENT_JOURNAL_READ_RESULT_SET = 145;
     public static final int MERGE_FACTORY = 146;
     public static final int MERGE = 147;
+    public static final int SET_TTL = 148;
+    public static final int SET_TTL_BACKUP = 149;
 
-    private static final int LEN = MERGE + 1;
+    private static final int LEN = SET_TTL_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -1038,6 +1042,18 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MergeOperation();
+            }
+        };
+        constructors[SET_TTL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SetTTLOperation();
+            }
+        };
+        constructors[SET_TTL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SetTTLBackupOperation();
             }
         };
 

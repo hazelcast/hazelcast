@@ -123,11 +123,17 @@ abstract class AbstractInternalCacheProxy<K, V>
     }
 
     @Override
+    public void resetCacheManager() {
+        cacheManagerRef.set(null);
+    }
+
+    @Override
     protected void postDestroy() {
         CacheManager cacheManager = cacheManagerRef.get();
         if (cacheManager != null) {
             cacheManager.destroyCache(getName());
         }
+        resetCacheManager();
     }
 
     @Override

@@ -73,7 +73,7 @@ public class ClientMapTryLockConcurrentTests {
         map.put(upKey, 0);
         map.put(downKey, 0);
 
-        Thread threads[] = new Thread[maxThreads];
+        Thread[] threads = new Thread[maxThreads];
         for (int i = 0; i < threads.length; i++) {
 
             Thread t;
@@ -140,8 +140,10 @@ public class ClientMapTryLockConcurrentTests {
         }
     }
 
-    static abstract class TestHelper extends Thread {
+    abstract static class TestHelper extends Thread {
+
         protected static final int ITERATIONS = 1000 * 10;
+
         protected final Random random = new Random();
         protected final IMap<String, Integer> map;
         protected final String upKey;

@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
@@ -556,6 +557,16 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT_ASYNC);
     }
 
+    @Test
+    public void whenSetTTLIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.SET_TTL);
+    }
+
+    @Test
+    public void whenSetTTLIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.SET_TTL);
+    }
+
     /**
      * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ASYNC} is used.
      */
@@ -838,6 +849,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 case EXECUTE_ON_ENTRIES:
                 case EXECUTE_ON_ENTRIES_WITH_PREDICATE:
                     break;
+                case SET_TTL:
+                    adapter.setTTL(i, 1, TimeUnit.DAYS);
+                    break;
                 default:
                     throw new IllegalArgumentException("Unexpected method: " + method);
             }
@@ -865,8 +879,12 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);
         String message = format("Invalidation is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, 0, message);
+        String newValuePrefix = "newValue-";
+        if (method == DataStructureMethods.SET_TTL) {
+            newValuePrefix = "value-";
+        }
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertEquals("newValue-" + i, context.dataAdapter.get(i));
+            assertEquals(newValuePrefix + i, context.dataAdapter.get(i));
         }
     }
 
@@ -1513,6 +1531,24 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertEquals("newValue", context.nearCacheAdapter.get(1));
 
         assertNearCacheStats(context, size, expectedHits, expectedMisses);
+    }
+
+    @Test
+    public void whenSetTTLIsCalled_thenAnotherNearCacheContextShouldBeInvalidated() {
+        assumeThatMethodIsAvailable(DataStructureMethods.SET_TTL);
+        nearCacheConfig.setInvalidateOnChange(true);
+        NearCacheTestContext<Integer, String, NK, NV> firstContext = createContext();
+        NearCacheTestContext<Integer, String, NK, NV> secondContext = createNearCacheContext();
+
+        populateDataAdapter(firstContext, DEFAULT_RECORD_COUNT);
+
+        populateNearCache(secondContext);
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            firstContext.nearCacheAdapter.setTTL(i, 0, TimeUnit.DAYS);
+        }
+
+        assertNearCacheSizeEventually(secondContext, 0);
     }
 
     @Test

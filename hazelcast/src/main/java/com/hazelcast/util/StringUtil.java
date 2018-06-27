@@ -140,6 +140,27 @@ public final class StringUtil {
     }
 
     /**
+     * Converts the first character to lower case.
+     *
+     * Empty strings are ignored.
+     *
+     * @param s the given string
+     * @return the converted string.
+     */
+    public static String lowerCaseFirstChar(String s) {
+        if (s.isEmpty()) {
+            return s;
+        }
+
+        char first = s.charAt(0);
+        if (isLowerCase(first)) {
+            return s;
+        }
+
+        return toLowerCase(first) + s.substring(1);
+    }
+
+    /**
      * HC specific settings, operands etc. use this method.
      * Creates a lowercase string from the given string.
      *
@@ -242,6 +263,7 @@ public final class StringUtil {
      * (4) patch version, eg "0"
      * (5) 1st -qualifier, if exists
      * (6) -SNAPSHOT qualifier, if exists
+     *
      * @param version
      * @return
      */
@@ -263,10 +285,10 @@ public final class StringUtil {
      * Example: 'getFoo' is converted into 'foo'
      *
      * It's written defensively, when output is not a getter then it
-     * return the original name.
+     * returns the original name.
      *
-     * It converters name starting with the get- prefix only. When a getter
-     * starts with is- prefix (=boolean) then it does not convert it.
+     * It only converts names starting with a get- prefix. When a getter
+     * starts with an is- prefix (=boolean) then it does not convert it.
      *
      * @param getterName
      * @return property matching the given getter
@@ -316,7 +338,7 @@ public final class StringUtil {
             return null;
         }
         String[] splitWithEmptyValues = trim(input).split("\\s*,\\s*", -1);
-        return allowEmpty ? splitWithEmptyValues : subraction(splitWithEmptyValues, new String[] { "" });
+        return allowEmpty ? splitWithEmptyValues : subraction(splitWithEmptyValues, new String[]{""});
     }
 
     /**
@@ -335,7 +357,7 @@ public final class StringUtil {
         }
         List<String> list = new ArrayList<String>(Arrays.asList(arr1));
         list.retainAll(Arrays.asList(arr2));
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 
     /**
@@ -351,7 +373,7 @@ public final class StringUtil {
         }
         List<String> list = new ArrayList<String>(Arrays.asList(arr1));
         list.removeAll(Arrays.asList(arr2));
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 
     /**

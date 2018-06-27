@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteWithPredicateCodec;
@@ -54,7 +53,6 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ClientEndpoint endpoint = getEndpoint();
         InternalOperationService operationService = nodeEngine.getOperationService();
 
         Predicate predicate = serializationService.toObject(parameters.predicate);

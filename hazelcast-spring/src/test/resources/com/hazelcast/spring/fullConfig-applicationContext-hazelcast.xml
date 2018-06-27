@@ -551,9 +551,11 @@
                     <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject2"
                                    implementation="dummySerializer"/>
                 </hz:serializers>
-                <hz:java-serialization-filter>
+                <hz:java-serialization-filter defaults-disabled="true">
                     <hz:blacklist>
                         <hz:class>com.acme.app.BeanComparator</hz:class>
+                        <hz:prefix>a.dangerous.package.</hz:prefix>
+                        <hz:prefix>justaprefix</hz:prefix>
                     </hz:blacklist>
                     <hz:whitelist>
                         <hz:class>java.lang.String</hz:class>

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.util.Map;
@@ -25,7 +25,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Management bean for {@link com.hazelcast.client.ClientEngine}
+ * Management bean for {@link com.hazelcast.client.impl.ClientEngine}
  */
 @ManagedDescription("HazelcastInstance.ClientEngine")
 public class ClientEngineMBean extends HazelcastMBean<ClientEngine> {

@@ -25,6 +25,7 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -177,7 +178,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
         }
 
         if (offload) {
-            return new EntryOperationOffload();
+            return new EntryOperationOffload(getCallerAddress());
         } else {
             response = operator(this, entryProcessor)
                     .operateOnKey(dataKey)
@@ -269,8 +270,11 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     }
 
     private final class EntryOperationOffload extends Offload {
-        private EntryOperationOffload() {
+        private Address callerAddress;
+
+        private EntryOperationOffload(Address callerAddress) {
             super(EntryOperation.this);
+            this.callerAddress = callerAddress;
         }
 
         @Override
@@ -278,7 +282,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
             verifyEntryProcessor();
 
             boolean shouldCloneForOffloading = OBJECT.equals(mapContainer.getMapConfig().getInMemoryFormat());
-            Object oldValue = recordStore.get(dataKey, false);
+            Object oldValue = recordStore.get(dataKey, false, callerAddress);
             Object clonedOldValue = shouldCloneForOffloading ? serializationService.toData(oldValue) : oldValue;
 
             String executorName = ((Offloadable) entryProcessor).getExecutorName();

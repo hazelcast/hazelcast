@@ -16,6 +16,10 @@
 
 package com.hazelcast.monitor;
 
+/**
+ * Local record store statistics to be used by {@link MemberState}
+ * implementations.
+ */
 public interface LocalRecordStoreStats {
 
     /**

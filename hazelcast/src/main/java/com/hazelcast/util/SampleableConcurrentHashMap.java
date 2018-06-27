@@ -231,7 +231,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
          * Originally taken by Jaromir Hamala's implementation and changed as incremental implementation.
          * So kudos to Jaromir :)
          */
-        //CHECKSTYLE:OFF
+        @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
         private void iterate() {
             if (returnedEntryCount >= maxEntryCount || reachedToEnd) {
                 currentSample = null;
@@ -285,7 +285,6 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             reachedToEnd = true;
             currentSample = null;
         }
-        //CHECKSTYLE:ON
 
         @Override
         public boolean hasNext() {

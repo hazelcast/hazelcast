@@ -233,6 +233,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public final boolean equals(Object o) {
         if (this == o) {
             return true;

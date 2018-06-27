@@ -252,7 +252,7 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
 
     private static class ReturnLongPiMergePolicy implements SplitBrainMergePolicy<Long, AtomicLongMergeTypes> {
 
-        private static long LONG_PI = 31415L;
+        private static final long LONG_PI = 31415L;
 
         @Override
         public Long merge(AtomicLongMergeTypes mergingValue, AtomicLongMergeTypes existingValue) {

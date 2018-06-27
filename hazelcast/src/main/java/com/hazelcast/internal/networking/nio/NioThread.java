@@ -363,7 +363,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             eventCount.inc();
             pipeline.process();
         } catch (Throwable t) {
-            pipeline.onFailure(t);
+            pipeline.onError(t);
         }
     }
 

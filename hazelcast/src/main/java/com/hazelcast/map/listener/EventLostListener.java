@@ -21,6 +21,13 @@ import com.hazelcast.map.EventLostEvent;
 /**
  * Invoked upon lost of event or events.
  *
+ * That event lost can be both a real or a possible event lost situation.
+ * In real event lost situation we can be sure that a sequence of events
+ * are missing and a recovery can be tried but in possible event lost
+ * situation we cannot be sure whether or not there is an event lost, for
+ * example, after a node is killed suddenly, we cannot be sure that all
+ * events on the killed node are sent and received by query caches.
+ *
  * @since 3.5
  */
 public interface EventLostListener extends MapListener {

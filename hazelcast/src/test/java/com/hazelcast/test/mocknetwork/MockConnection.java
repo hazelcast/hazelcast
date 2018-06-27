@@ -40,10 +40,11 @@ public class MockConnection implements Connection {
     protected final Address localEndpoint;
     protected final NodeEngineImpl remoteNodeEngine;
 
-    private final Address remoteEndpoint;
     volatile MockConnection localConnection;
 
-    private volatile AtomicBoolean alive = new AtomicBoolean(true);
+    private final AtomicBoolean alive = new AtomicBoolean(true);
+
+    private final Address remoteEndpoint;
 
     public MockConnection(Address localEndpoint, Address remoteEndpoint, NodeEngineImpl remoteNodeEngine) {
         this.localEndpoint = localEndpoint;

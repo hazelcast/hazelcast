@@ -17,7 +17,7 @@
 package com.hazelcast.monitor;
 
 /**
- * Local queue statistics.
+ * Local queue statistics to be used by {@link MemberState} implementations.
  */
 public interface LocalQueueStats extends LocalInstanceStats {
 

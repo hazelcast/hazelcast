@@ -48,7 +48,6 @@ public class LazyEntryViewFromRecordTest {
     private final String key = "key";
     private final String value = "value";
 
-    private SerializationService serializationService;
     private Record<Data> recordInstance;
     private EntryView view;
 
@@ -63,7 +62,7 @@ public class LazyEntryViewFromRecordTest {
     private EntryView createDefaultEntryView() {
         PartitioningStrategy mockPartitioningStrategy = mock(PartitioningStrategy.class);
         MapConfig mapConfig = new MapConfig();
-        serializationService = new DefaultSerializationServiceBuilder().build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         DataRecordFactory dataRecordFactory
                 = new DataRecordFactory(mapConfig, serializationService, mockPartitioningStrategy);
         recordInstance = dataRecordFactory.newRecord(value);

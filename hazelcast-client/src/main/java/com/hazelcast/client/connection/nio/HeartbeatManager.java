@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.config.ClientIcmpPingConfig;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
@@ -48,11 +48,8 @@ public class HeartbeatManager implements Runnable {
         this.clientConnectionManager = clientConnectionManager;
         this.client = client;
         HazelcastProperties hazelcastProperties = client.getProperties();
-        long timeout = hazelcastProperties.getMillis(HEARTBEAT_TIMEOUT);
-        this.heartbeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
-
-        long interval = hazelcastProperties.getMillis(HEARTBEAT_INTERVAL);
-        this.heartbeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
+        this.heartbeatTimeout = hazelcastProperties.getPositiveMillisOrDefault(HEARTBEAT_TIMEOUT);
+        this.heartbeatInterval = hazelcastProperties.getPositiveMillisOrDefault(HEARTBEAT_INTERVAL);
         this.logger = client.getLoggingService().getLogger(HeartbeatManager.class);
         ClientIcmpPingConfig icmpPingConfig = client.getClientConfig().getNetworkConfig().getClientIcmpPingConfig();
         this.clientICMPManager = new ClientICMPManager(icmpPingConfig,

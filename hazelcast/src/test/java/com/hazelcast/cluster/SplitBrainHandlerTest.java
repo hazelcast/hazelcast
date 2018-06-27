@@ -45,7 +45,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -73,21 +72,21 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
-    public void testMulticast_ClusterMerge() throws Exception {
+    public void testMulticast_ClusterMerge() {
         testClusterMerge(true);
     }
 
     @Test
-    public void testTcpIp_ClusterMerge() throws Exception {
+    public void testTcpIp_ClusterMerge() {
         testClusterMerge(false);
     }
 
-    private void testClusterMerge(boolean multicast) throws Exception {
+    private void testClusterMerge(boolean multicast) {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
@@ -132,7 +131,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClusterShouldNotMergeDifferentGroupName() throws Exception {
+    public void testClusterShouldNotMergeDifferentGroupName() {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
@@ -193,7 +192,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         boolean waitFor(LifecycleEvent.LifecycleState state, int seconds) {
             long remainingMillis = TimeUnit.SECONDS.toMillis(seconds);
             while (remainingMillis >= 0) {
-                LifecycleEvent.LifecycleState received = null;
+                LifecycleEvent.LifecycleState received;
                 try {
                     long now = Clock.currentTimeMillis();
                     received = eventQueue.poll(remainingMillis, TimeUnit.MILLISECONDS);
@@ -397,6 +396,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
                     case MERGING:
                     case MERGED:
                         latch.countDown();
+                        break;
                     default:
                         break;
                 }
@@ -429,17 +429,17 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMulticast_ClusterMerge_when_split_not_detected_by_master() throws InterruptedException {
+    public void testMulticast_ClusterMerge_when_split_not_detected_by_master() {
         testClusterMerge_when_split_not_detected_by_master(true);
     }
 
     @Test
     // https://github.com/hazelcast/hazelcast/issues/8137
-    public void testTcpIp_ClusterMerge_when_split_not_detected_by_master() throws InterruptedException {
+    public void testTcpIp_ClusterMerge_when_split_not_detected_by_master() {
         testClusterMerge_when_split_not_detected_by_master(false);
     }
 
-    private void testClusterMerge_when_split_not_detected_by_master(boolean multicastEnabled) throws InterruptedException {
+    private void testClusterMerge_when_split_not_detected_by_master(boolean multicastEnabled) {
         Config config = new Config();
         String groupName = generateRandomString(10);
         config.getGroupConfig().setName(groupName);
@@ -588,8 +588,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertClusterSize(2, hz1, hz2);
                 assertClusterSize(1, hz3);
             }
@@ -628,8 +627,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertClusterSize(2, hz1, hz2);
                 assertClusterSize(1, hz3);
             }
@@ -654,7 +652,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     @Test
     // https://github.com/hazelcast/hazelcast/issues/8137
-    public void testClusterMerge_when_split_not_detected_by_slave() throws InterruptedException {
+    public void testClusterMerge_when_split_not_detected_by_slave() {
         Config config = new Config();
         String groupName = generateRandomString(10);
         config.getGroupConfig().setName(groupName);
@@ -713,7 +711,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     @Test
     // https://github.com/hazelcast/hazelcast/issues/8137
-    public void testClusterMerge_when_split_not_detected_by_slave_and_restart_during_merge() throws InterruptedException {
+    public void testClusterMerge_when_split_not_detected_by_slave_and_restart_during_merge() {
         Config config = new Config();
         String groupName = generateRandomString(10);
         config.getGroupConfig().setName(groupName);
@@ -789,12 +787,11 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertMasterAddress(getAddress(hz3), hz1, hz2, hz3);
     }
 
-    public static class MergedEventLifeCycleListener
-            implements LifecycleListener {
+    public static class MergedEventLifeCycleListener implements LifecycleListener {
 
         private final CountDownLatch mergeLatch;
 
-        public MergedEventLifeCycleListener(CountDownLatch mergeLatch) {
+        MergedEventLifeCycleListener(CountDownLatch mergeLatch) {
             this.mergeLatch = mergeLatch;
         }
 
@@ -803,14 +800,13 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
                 mergeLatch.countDown();
             }
         }
-
     }
 
-    private static class MemberRemovedMembershipListener
-            implements MembershipListener {
+    private static class MemberRemovedMembershipListener implements MembershipListener {
+
         private final CountDownLatch splitLatch;
 
-        public MemberRemovedMembershipListener(CountDownLatch splitLatch) {
+        MemberRemovedMembershipListener(CountDownLatch splitLatch) {
             this.splitLatch = splitLatch;
         }
 

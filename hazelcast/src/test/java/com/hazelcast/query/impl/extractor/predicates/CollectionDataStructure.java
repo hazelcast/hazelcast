@@ -28,12 +28,15 @@ import java.util.List;
  * Each multi-value attribute is present as both an array and as a collection, for example:
  * limbs_list & limbs_array, so that both extraction in arrays and in collections may be tested.
  */
-public class CollectionDataStructure {
+public final class CollectionDataStructure {
+
+    private CollectionDataStructure() {
+    }
 
     public static class Person implements Serializable {
 
         List<Limb> limbs_list = new ArrayList<Limb>();
-        Limb[] limbs_array = null;
+        Limb[] limbs_array;
 
         @Override
         public boolean equals(Object o) {
@@ -51,8 +54,9 @@ public class CollectionDataStructure {
     }
 
     public static class Limb implements Serializable {
-        String name;
+
         public Integer power;
+        String name;
 
         @Override
         public boolean equals(Object o) {

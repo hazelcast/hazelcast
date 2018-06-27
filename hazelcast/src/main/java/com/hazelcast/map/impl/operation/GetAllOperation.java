@@ -62,7 +62,7 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
                 partitionKeySet.add(key);
             }
         }
-        entries = recordStore.getAll(partitionKeySet);
+        entries = recordStore.getAll(partitionKeySet, getCallerAddress());
     }
 
     @Override

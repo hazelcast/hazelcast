@@ -16,9 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,11 +27,11 @@ import java.io.IOException;
 
 /**
  * Operator implementation for cache replace functionality.
+ *
  * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, String, int)
  * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, String, int)
  */
-public class CacheReplaceOperation
-        extends AbstractMutatingCacheOperation {
+public class CacheReplaceOperation extends MutatingCacheOperation {
 
     private Data newValue;
     // replace if same
@@ -55,23 +53,21 @@ public class CacheReplaceOperation
     public void run()
             throws Exception {
         if (oldValue == null) {
-            response = cache.replace(key, newValue, expiryPolicy, getCallerUuid(), completionId);
+            response = recordStore.replace(key, newValue, expiryPolicy, getCallerUuid(), completionId);
         } else {
-            response = cache.replace(key, oldValue, newValue, expiryPolicy, getCallerUuid(), completionId);
+            response = recordStore.replace(key, oldValue, newValue, expiryPolicy, getCallerUuid(), completionId);
         }
         if (Boolean.TRUE.equals(response)) {
-            backupRecord = cache.getRecord(key);
+            backupRecord = recordStore.getRecord(key);
         }
     }
 
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            if (cache.isWanReplicationEnabled()) {
-                CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key, newValue, backupRecord);
-                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
-            }
+            publishWanUpdate(key, backupRecord);
         }
+
         super.afterRun();
     }
 

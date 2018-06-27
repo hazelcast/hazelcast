@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.listeners;
 
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryAdapter;
@@ -114,5 +114,14 @@ public class ListenerTests extends ClientTestSupport {
         }
         executorService.shutdown();
 
+    }
+
+    @Test
+    public void testRemoveListenerOnClosedClient() {
+        factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap("test");
+        client.shutdown();
+        assertTrue(map.removeEntryListener("test"));
     }
 }

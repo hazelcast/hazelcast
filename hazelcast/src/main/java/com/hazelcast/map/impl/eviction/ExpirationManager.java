@@ -268,7 +268,10 @@ public final class ExpirationManager implements OperationResponseHandler, Lifecy
      * This task provides per partition expiration operation logic. (not per map, not per record store).
      * Fires cleanup operations at most partition operation thread count or some factor of it in one round.
      */
-    private class ClearExpiredRecordsTask implements Runnable {
+    class ClearExpiredRecordsTask implements Runnable {
+
+        volatile long lastStartMillis;
+        volatile long lastEndMillis;
 
         private final Comparator<PartitionContainer> partitionContainerComparator = new Comparator<PartitionContainer>() {
             @Override
@@ -286,7 +289,11 @@ public final class ExpirationManager implements OperationResponseHandler, Lifecy
                     return;
                 }
 
+                lastStartMillis = System.currentTimeMillis();
+
                 runInternal();
+
+                lastEndMillis = System.currentTimeMillis();
 
             } finally {
                 singleRunPermit.set(false);
@@ -556,4 +563,8 @@ public final class ExpirationManager implements OperationResponseHandler, Lifecy
         return scheduled.get();
     }
 
+    // only used for testing purposes
+    ClearExpiredRecordsTask getTask() {
+        return task;
+    }
 }

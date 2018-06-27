@@ -88,7 +88,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
             salaries.add(salary);
         }
 
-        return salaries.toArray(new Double[mapStore.queue.size()]);
+        return salaries.toArray(new Double[0]);
     }
 
     private void assertStoreOperationsCompleted(final int size, final JournalingMapStore mapStore) {

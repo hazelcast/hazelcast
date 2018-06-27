@@ -316,13 +316,13 @@ public class ClientMultiMapListenersTest {
         assertOpenEventually(listener.clearLatch);
     }
 
-    static abstract class MyEntryListener extends EntryAdapter {
+    abstract static class MyEntryListener extends EntryAdapter {
 
-        final public CountDownLatch addLatch;
-        final public CountDownLatch removeLatch;
-        final public CountDownLatch updateLatch;
-        final public CountDownLatch evictLatch;
-        final public CountDownLatch clearLatch;
+        public final CountDownLatch addLatch;
+        public final CountDownLatch removeLatch;
+        public final CountDownLatch updateLatch;
+        public final CountDownLatch evictLatch;
+        public final CountDownLatch clearLatch;
 
         public MyEntryListener(int latchCount) {
             addLatch = new CountDownLatch(latchCount);

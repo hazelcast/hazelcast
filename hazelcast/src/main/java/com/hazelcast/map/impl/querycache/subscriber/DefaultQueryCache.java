@@ -116,12 +116,12 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         SubscriberRegistry subscriberRegistry = mapSubscriberRegistry.getOrNull(mapName);
         if (subscriberRegistry == null) {
-            return true;
+            return false;
         }
 
         Accumulator accumulator = subscriberRegistry.getOrNull(cacheId);
         if (accumulator == null) {
-            return true;
+            return false;
         }
 
         SubscriberAccumulator subscriberAccumulator = (SubscriberAccumulator) accumulator;

@@ -66,7 +66,6 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     private static final int DEFAULT_TIMEOUT_SECONDS = (int) MILLISECONDS.toSeconds(TransactionOptions.DEFAULT_TIMEOUT_MILLIS);
 
-
     private final ConcurrentMap<Long, TransactionContext> threadContextMap = new ConcurrentHashMap<Long, TransactionContext>();
     private final ConcurrentMap<Xid, List<TransactionContext>> xidContextMap
             = new ConcurrentHashMap<Xid, List<TransactionContext>>();
@@ -274,7 +273,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
                 }
             }
         }
-        return xids.toArray(new SerializableXID[xids.size()]);
+        return xids.toArray(new SerializableXID[0]);
     }
 
     @Override

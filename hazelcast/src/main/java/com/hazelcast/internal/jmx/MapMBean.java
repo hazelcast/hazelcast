@@ -32,6 +32,7 @@ import java.util.Set;
  */
 @ManagedDescription("IMap")
 public class MapMBean extends HazelcastMBean<IMap> {
+
     private final LocalStatsDelegate<LocalMapStats> localMapStatsDelegate;
 
     protected MapMBean(IMap managedObject, ManagementService service) {

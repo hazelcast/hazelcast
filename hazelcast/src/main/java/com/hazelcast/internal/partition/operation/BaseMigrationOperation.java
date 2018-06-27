@@ -78,7 +78,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
             verifyClusterState();
             verifyPartitionStateVersion();
         } catch (Exception e) {
-            onMigrationComplete(false);
+            onMigrationComplete();
             throw e;
         }
     }
@@ -160,13 +160,9 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     }
 
     void onMigrationComplete() {
-        onMigrationComplete(success);
-    }
-
-    void onMigrationComplete(boolean result) {
         InternalPartitionServiceImpl partitionService = getService();
         InternalMigrationListener migrationListener = partitionService.getInternalMigrationListener();
-        migrationListener.onMigrationComplete(getMigrationParticipantType(), migrationInfo, result);
+        migrationListener.onMigrationComplete(getMigrationParticipantType(), migrationInfo, success);
     }
 
     /** Notifies all {@link MigrationAwareService}s that the migration is starting. */

@@ -114,8 +114,6 @@ public class ClassDefinitionImpl implements ClassDefinition {
         }
     }
 
-    //CHECKSTYLE:OFF
-    //Generated equals method has too high NPath Complexity
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -136,7 +134,6 @@ public class ClassDefinitionImpl implements ClassDefinition {
         }
         return fieldDefinitionsMap.equals(that.fieldDefinitionsMap);
     }
-    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {

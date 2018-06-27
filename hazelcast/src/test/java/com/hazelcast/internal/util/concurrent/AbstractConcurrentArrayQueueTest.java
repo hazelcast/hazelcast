@@ -161,7 +161,7 @@ public abstract class AbstractConcurrentArrayQueueTest extends HazelcastTestSupp
 
     @Test(expected = UnsupportedOperationException.class)
     public void testToArray_withArray() {
-        queue.toArray(new Integer[1]);
+        queue.toArray(new Integer[0]);
     }
 
     @Test(expected = UnsupportedOperationException.class)

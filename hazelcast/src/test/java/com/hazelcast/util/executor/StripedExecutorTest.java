@@ -64,8 +64,8 @@ public class StripedExecutorTest extends HazelcastTestSupport {
     private static int calculateWorkersTotalQueueCapacity(StripedExecutor executor) {
         int totalQueueCapacity = 0;
         StripedExecutor.Worker[] workers = executor.getWorkers();
-        for (int i = 0; i < workers.length; i++) {
-            totalQueueCapacity += workers[i].getQueueCapacity();
+        for (StripedExecutor.Worker worker : workers) {
+            totalQueueCapacity += worker.getQueueCapacity();
         }
         return totalQueueCapacity;
     }

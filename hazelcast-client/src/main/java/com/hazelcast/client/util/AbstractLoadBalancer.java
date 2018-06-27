@@ -33,7 +33,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembershipListener {
 
-    private final AtomicReference<Member[]> membersRef = new AtomicReference(new Member[]{});
+    private final AtomicReference<Member[]> membersRef = new AtomicReference<Member[]>(new Member[0]);
+
     private volatile Cluster clusterRef;
 
     @Override
@@ -44,7 +45,7 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembe
 
     private void setMembersRef() {
         Set<Member> memberSet = clusterRef.getMembers();
-        Member[] members = memberSet.toArray(new Member[memberSet.size()]);
+        Member[] members = memberSet.toArray(new Member[0]);
         membersRef.set(members);
     }
 

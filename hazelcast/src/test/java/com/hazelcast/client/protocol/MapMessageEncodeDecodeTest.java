@@ -44,7 +44,7 @@ public class MapMessageEncodeDecodeTest {
 
     private static final String NAME = "name";
     private static final Data DATA = serializationService.toData("The Test");
-    private static final long THE_LONG = 0xFFFFl;
+    private static final long THE_LONG = 0xFFFFL;
 
     private ClientProtocolBuffer byteBuffer;
 

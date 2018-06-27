@@ -47,10 +47,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_REDU
 /**
  * This class contains all the ID hooks for IdentifiedDataSerializable classes used inside the MR framework.
  */
-//Deactivated all checkstyle rules because those classes will never comply
-//CHECKSTYLE:OFF
-public class MapReduceDataSerializerHook
-        implements DataSerializerHook {
+public class MapReduceDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(MAP_REDUCE_DS_FACTORY, MAP_REDUCE_DS_FACTORY_ID);
 
@@ -88,7 +85,8 @@ public class MapReduceDataSerializerHook
 
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[LEN];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+
         constructors[KEY_VALUE_SOURCE_MAP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
@@ -235,5 +233,4 @@ public class MapReduceDataSerializerHook
         };
         return new ArrayDataSerializableFactory(constructors);
     }
-
 }

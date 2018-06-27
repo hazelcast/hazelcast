@@ -23,22 +23,11 @@ public class JavaSerializationFilterConfig {
 
     private volatile ClassFilter blacklist;
     private volatile ClassFilter whitelist;
+    private volatile boolean defaultsDisabled;
 
     public ClassFilter getBlacklist() {
         if (blacklist == null) {
             blacklist = new ClassFilter();
-            // default blacklist - some well-known vulnerable classes/packages
-            blacklist.addClasses(
-                    "com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl",
-                    "bsh.XThis",
-                    "org.apache.commons.beanutils.BeanComparator",
-                    "org.codehaus.groovy.runtime.ConvertedClosure",
-                    "org.codehaus.groovy.runtime.MethodClosure",
-                    "org.springframework.beans.factory.ObjectFactory",
-                    "com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl")
-            .addPackages(
-                    "org.apache.commons.collections.functors",
-                    "org.apache.commons.collections4.functors");
         }
         return blacklist;
     }
@@ -60,12 +49,22 @@ public class JavaSerializationFilterConfig {
         return this;
     }
 
+    public boolean isDefaultsDisabled() {
+        return defaultsDisabled;
+    }
+
+    public JavaSerializationFilterConfig setDefaultsDisabled(boolean defaultsDisabled) {
+        this.defaultsDisabled = defaultsDisabled;
+        return this;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((blacklist == null) ? 0 : blacklist.hashCode());
         result = prime * result + ((whitelist == null) ? 0 : whitelist.hashCode());
+        result = prime * result + (defaultsDisabled ? 0 : 1);
         return result;
     }
 
@@ -79,12 +78,14 @@ public class JavaSerializationFilterConfig {
         }
         JavaSerializationFilterConfig other = (JavaSerializationFilterConfig) obj;
         return ((blacklist == null && other.blacklist == null) || (blacklist != null && blacklist.equals(other.blacklist)))
-                && ((whitelist == null && other.whitelist == null) || (whitelist != null && whitelist.equals(other.whitelist)));
+                && ((whitelist == null && other.whitelist == null) || (whitelist != null && whitelist.equals(other.whitelist)))
+                && defaultsDisabled == other.defaultsDisabled;
     }
 
     @Override
     public String toString() {
-        return "JavaSerializationFilterConfig{ blacklist=" + blacklist + ", whitelist=" + whitelist + "}";
+        return "JavaSerializationFilterConfig{defaultsDisabled=" + defaultsDisabled + ", blacklist=" + blacklist
+                + ", whitelist=" + whitelist + "}";
     }
 
 }

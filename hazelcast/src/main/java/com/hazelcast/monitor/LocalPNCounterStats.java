@@ -17,11 +17,14 @@
 package com.hazelcast.monitor;
 
 /**
- * Statistics for a single PN counter. The statistics are local to this member.
+ * Local statistics of a single PN counter to be used by {@link MemberState}
+ * implementations.
  */
 public interface LocalPNCounterStats extends LocalInstanceStats {
 
-    /** Returns the current value of this PN counter */
+    /**
+     * Returns the current value of this PN counter
+     */
     long getValue();
 
     /**

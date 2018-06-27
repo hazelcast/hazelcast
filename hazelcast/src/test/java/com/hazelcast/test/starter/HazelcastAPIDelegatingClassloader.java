@@ -32,6 +32,7 @@ import java.util.Set;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.nio.IOUtil.toByteArray;
 import static com.hazelcast.test.compatibility.SamplingSerializationService.isTestClass;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static java.util.Collections.enumeration;
 
 /**
@@ -66,7 +67,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
-        Utils.debug("Calling getResource with " + name);
+        debug("Calling getResource with %s", name);
         if (checkResourceExcluded(name)) {
             return enumeration(Collections.<URL>emptyList());
         }
@@ -78,7 +79,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     @Override
     public URL getResource(String name) {
-        Utils.debug("Getting resource " + name);
+        debug("Getting resource %s", name);
         if (checkResourceExcluded(name)) {
             return null;
         }
@@ -131,8 +132,6 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     /**
      * Attempts to locate a class' bytes as a resource in parent classpath, then loads the class in this classloader.
-     *
-     * @return
      */
     private Class<?> findClassInParentURLs(final String name) {
         String classFilePath = name.replaceAll("\\.", "/").concat(".class");
@@ -145,8 +144,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
                 e.printStackTrace();
             }
             if (classBytes != null) {
-                Class<?> klass = this.defineClass(name, classBytes, 0, classBytes.length);
-                return klass;
+                return defineClass(name, classBytes, 0, classBytes.length);
             }
         }
         return null;
@@ -157,32 +155,20 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
         if (name.startsWith("usercodedeployment")) {
             return false;
         }
-
         if (!name.startsWith("com.hazelcast")) {
             return true;
         }
-
-        if (DELEGATION_WHITE_LIST.contains(name)) {
-            return true;
-        }
-
-        return false;
+        return DELEGATION_WHITE_LIST.contains(name);
     }
 
     private boolean isHazelcastTestClass(String name) {
         if (name.startsWith("usercodedeployment")) {
             return true;
         }
-
         if (!name.startsWith("com.hazelcast")) {
             return false;
         }
-
-        if (isTestClass(name)) {
-            return true;
-        }
-
-        return false;
+        return isTestClass(name);
     }
 
     private void checkExcluded(String className) throws ClassNotFoundException {
@@ -192,7 +178,6 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     }
 
     private boolean checkResourceExcluded(String resourceName) {
-        return (parent instanceof FilteringClassLoader)
-                && ((FilteringClassLoader) parent).checkResourceExcluded(resourceName);
+        return (parent instanceof FilteringClassLoader) && ((FilteringClassLoader) parent).checkResourceExcluded(resourceName);
     }
 }

@@ -43,15 +43,21 @@ import java.util.concurrent.Executors;
 @Category(NightlyTest.class)
 public class ClientXAStressTest extends HazelcastTestSupport {
 
-    private HazelcastInstance instance, secondInstance, client, secondClient;
-    private HazelcastXAResource xaResource, secondXaResource, instanceXaResource;
+    private HazelcastInstance instance;
+    private HazelcastInstance secondInstance;
+    private HazelcastInstance client;
+    private HazelcastInstance secondClient;
 
-    private static Xid createXid() throws InterruptedException {
+    private HazelcastXAResource xaResource;
+    private HazelcastXAResource secondXaResource;
+    private HazelcastXAResource instanceXaResource;
+
+    private static Xid createXid() {
         return new XID(randomString(), "test");
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         instance = Hazelcast.newHazelcastInstance();
         secondInstance = Hazelcast.newHazelcastInstance();
         instanceXaResource = instance.getXAResource();
@@ -69,7 +75,7 @@ public class ClientXAStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCommitConcurrently() throws InterruptedException, XAException {
+    public void testCommitConcurrently() {
         int count = 10000;
         String name = randomString();
         ExecutorService executorService = Executors.newFixedThreadPool(5);

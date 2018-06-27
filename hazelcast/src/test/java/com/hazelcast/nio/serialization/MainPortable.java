@@ -18,9 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 22/05/14
- */
 class MainPortable implements Portable {
 
     byte b;
@@ -98,7 +95,6 @@ class MainPortable implements Portable {
         }
 
         MainPortable that = (MainPortable) o;
-
         if (b != that.b) {
             return false;
         }
@@ -129,7 +125,6 @@ class MainPortable implements Portable {
         if (str != null ? !str.equals(that.str) : that.str != null) {
             return false;
         }
-
         return true;
     }
 

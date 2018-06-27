@@ -18,7 +18,7 @@ package com.hazelcast.client.spi.impl.listener;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
@@ -35,6 +35,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
@@ -132,17 +133,24 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
-        Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return deregisterListenerInternal(userRegistrationId);
-            }
-        });
-
         try {
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
+                @Override
+                public Boolean call() {
+                    return deregisterListenerInternal(userRegistrationId);
+                }
+            });
+
+            try {
+                return future.get();
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        } catch (RejectedExecutionException ignored) {
+            //RejectedExecutionException executor(hence the client) is already shutdown
+            //listeners are cleaned up by the server side. We can ignore the exception and return true safely
+            EmptyStatement.ignore(ignored);
+            return true;
         }
 
     }
@@ -166,9 +174,9 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         eventHandlerMap.put(callId, handler);
     }
 
-    public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
+    public void handleClientMessage(ClientMessage clientMessage) {
         try {
-            eventExecutor.execute(new ClientEventProcessor(clientMessage, (ClientConnection) connection));
+            eventExecutor.execute(new ClientEventProcessor(clientMessage));
         } catch (RejectedExecutionException e) {
             logger.warning("Event clientMessage could not be handled", e);
         }
@@ -343,28 +351,21 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
 
     private final class ClientEventProcessor implements StripedRunnable {
         final ClientMessage clientMessage;
-        final ClientConnection connection;
 
-        private ClientEventProcessor(ClientMessage clientMessage, ClientConnection connection) {
+        private ClientEventProcessor(ClientMessage clientMessage) {
             this.clientMessage = clientMessage;
-            this.connection = connection;
         }
 
         @Override
         public void run() {
-            try {
-                long correlationId = clientMessage.getCorrelationId();
-                final EventHandler eventHandler = eventHandlerMap.get(correlationId);
-                if (eventHandler == null) {
-                    logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage
-                            + ", connection: " + connection);
-                    return;
-                }
-
-                eventHandler.handle(clientMessage);
-            } finally {
-                connection.decrementPendingPacketCount();
+            long correlationId = clientMessage.getCorrelationId();
+            final EventHandler eventHandler = eventHandlerMap.get(correlationId);
+            if (eventHandler == null) {
+                logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+                return;
             }
+
+            eventHandler.handle(clientMessage);
         }
 
         @Override

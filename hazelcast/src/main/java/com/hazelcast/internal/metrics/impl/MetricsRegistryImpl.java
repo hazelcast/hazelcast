@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeBuilder;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
@@ -60,7 +61,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     };
 
     final ILogger logger;
-    final ProbeLevel minimumLevel;
+    private final ProbeLevel minimumLevel;
 
     private final ScheduledExecutorService scheduledExecutorService;
     private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
@@ -128,7 +129,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
      * @param clazz the Class to be analyzed.
      * @return the loaded SourceMetadata.
      */
-    private SourceMetadata loadSourceMetadata(Class<?> clazz) {
+    SourceMetadata loadSourceMetadata(Class<?> clazz) {
         SourceMetadata metadata = metadataMap.get(clazz);
         if (metadata == null) {
             metadata = new SourceMetadata(clazz);
@@ -351,9 +352,14 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             this.probeInstances = null;
         }
 
-        public SortedProbeInstances(long mod, List<ProbeInstance> probeInstances) {
+        SortedProbeInstances(long mod, List<ProbeInstance> probeInstances) {
             this.mod = mod;
             this.probeInstances = probeInstances;
         }
+    }
+
+    @Override
+    public ProbeBuilder newProbeBuilder() {
+        return new ProbeBuilderImpl(this);
     }
 }

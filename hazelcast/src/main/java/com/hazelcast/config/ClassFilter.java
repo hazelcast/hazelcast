@@ -39,6 +39,7 @@ public class ClassFilter {
 
     private final Set<String> classes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     private final Set<String> packages = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private final Set<String> prefixes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
     private AtomicBoolean warningLogged = new AtomicBoolean();
 
@@ -54,6 +55,13 @@ public class ClassFilter {
      */
     public Set<String> getPackages() {
         return unmodifiableSet(packages);
+    }
+
+    /**
+     * Returns unmodifiable set of class name prefixes.
+     */
+    public Set<String> getPrefixes() {
+        return unmodifiableSet(prefixes);
     }
 
     public ClassFilter addClasses(String... names) {
@@ -86,8 +94,23 @@ public class ClassFilter {
         return this;
     }
 
+    public ClassFilter addPrefixes(String... names) {
+        checkNotNull(names);
+        for (String name : names) {
+            prefixes.add(name);
+        }
+        return this;
+    }
+
+    public ClassFilter setPrefixes(Collection<String> names) {
+        checkNotNull(names);
+        prefixes.clear();
+        prefixes.addAll(names);
+        return this;
+    }
+
     public boolean isEmpty() {
-        return classes.isEmpty() && packages.isEmpty();
+        return classes.isEmpty() && packages.isEmpty() && prefixes.isEmpty();
     }
 
     public boolean isListed(String className) {
@@ -96,12 +119,11 @@ public class ClassFilter {
         }
         if (!packages.isEmpty()) {
             int dotPosition = className.lastIndexOf(".");
-            if (dotPosition > 0) {
-                // String packageName = ;
-                return checkPackage(className, className.substring(0, dotPosition));
+            if (dotPosition > 0 && checkPackage(className, className.substring(0, dotPosition))) {
+                return true;
             }
         }
-        return false;
+        return checkPrefixes(className);
     }
 
     /**
@@ -114,17 +136,31 @@ public class ClassFilter {
      */
     private boolean checkPackage(String className, String packageName) {
         if (packages.contains(packageName)) {
-            if (classes.size() < CLASSNAME_LIMIT) {
-                // performance optimization
-                classes.add(className);
-            } else if (warningLogged.compareAndSet(false, true)) {
-                LOGGER.warning(String.format(
-                        "The class names collection size reached its limit. Optimizations for package names checks "
-                                + "will not optimize next usages. You can control the class names collection size limit by "
-                                + "setting system property '%s'. Actual value is %d.",
-                        PROPERTY_CLASSNAME_LIMIT, CLASSNAME_LIMIT));
-            }
+            cacheClassname(className);
             return true;
+        }
+        return false;
+    }
+
+    private void cacheClassname(String className) {
+        if (classes.size() < CLASSNAME_LIMIT) {
+            // performance optimization
+            classes.add(className);
+        } else if (warningLogged.compareAndSet(false, true)) {
+            LOGGER.warning(String.format(
+                    "The class names collection size reached its limit. Optimizations for package names checks "
+                            + "will not optimize next usages. You can control the class names collection size limit by "
+                            + "setting system property '%s'. Actual value is %d.",
+                    PROPERTY_CLASSNAME_LIMIT, CLASSNAME_LIMIT));
+        }
+    }
+
+    private boolean checkPrefixes(String className) {
+        for (String prefix : prefixes) {
+            if (className.startsWith(prefix)) {
+                cacheClassname(className);
+                return true;
+            }
         }
         return false;
     }
@@ -133,8 +169,10 @@ public class ClassFilter {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((classes == null) ? 0 : classes.hashCode());
-        result = prime * result + ((packages == null) ? 0 : packages.hashCode());
+        result = prime * result + classes.hashCode();
+        result = prime * result + packages.hashCode();
+        result = prime * result + prefixes.hashCode();
+        result = prime * result + (warningLogged.get() ? 0 : 1);
         return result;
     }
 
@@ -147,13 +185,16 @@ public class ClassFilter {
             return false;
         }
         ClassFilter other = (ClassFilter) obj;
-        return ((classes == null && other.classes == null) || (classes != null && classes.equals(other.classes)))
-                && ((packages == null && other.packages == null) || (packages != null && packages.equals(other.packages)));
+       boolean result = classes.equals(other.classes)
+               && packages.equals(other.packages)
+               && prefixes.equals(other.prefixes)
+               && warningLogged.get() == other.warningLogged.get();
+       return result;
     }
 
     @Override
     public String toString() {
-        return "ClassFilter{classes=" + classes + ", packages=" + packages + "}";
+        return "ClassFilter{classes=" + classes + ", packages=" + packages + ", prefixes=" + prefixes + "}";
     }
 
 }

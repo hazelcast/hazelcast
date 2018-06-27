@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.ClientLoggingService;
+import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;

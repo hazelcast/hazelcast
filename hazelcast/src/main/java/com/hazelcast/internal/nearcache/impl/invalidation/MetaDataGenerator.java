@@ -37,7 +37,6 @@ import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
  */
 public class MetaDataGenerator {
 
-
     private final int partitionCount;
     private final ConstructorFunction<String, AtomicLongArray> sequenceGeneratorConstructor
             = new ConstructorFunction<String, AtomicLongArray>() {
@@ -110,6 +109,10 @@ public class MetaDataGenerator {
 
     public void regenerateUuid(int partitionId) {
         uuids.put(partitionId, uuidConstructor.createNew(partitionId));
+    }
+
+    public void resetSequence(String name, int partitionId) {
+        sequenceGenerator(name).set(partitionId, 0);
     }
 
     // used for testing

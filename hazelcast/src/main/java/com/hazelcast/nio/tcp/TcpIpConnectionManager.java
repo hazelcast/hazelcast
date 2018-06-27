@@ -66,7 +66,7 @@ import static java.util.Collections.newSetFromMap;
 public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet> {
 
     private static final int RETRY_NUMBER = 5;
-    private static final int DELAY_FACTOR = 100;
+    private static final long DELAY_FACTOR = 100L;
     private static final int SCHEDULER_POOL_SIZE = 4;
 
     final LoggingService loggingService;
@@ -616,6 +616,9 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
                 scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
                 return true;
             } catch (RejectedExecutionException e) {
+                if (live) {
+                    throw e;
+                }
                 if (logger.isFinestEnabled()) {
                     logger.finest("Packet send task is rejected. Packet cannot be sent to " + target);
                 }

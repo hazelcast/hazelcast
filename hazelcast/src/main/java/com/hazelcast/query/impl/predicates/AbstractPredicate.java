@@ -43,6 +43,7 @@ public abstract class AbstractPredicate<K, V>
         implements Predicate<K, V>, IdentifiedDataSerializable {
 
     String attributeName;
+
     private transient volatile AttributeType attributeType;
 
     protected AbstractPredicate() {

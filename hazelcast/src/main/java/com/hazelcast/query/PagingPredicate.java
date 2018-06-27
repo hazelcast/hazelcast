@@ -182,7 +182,7 @@ public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, Identif
 
         Set<QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext);
         if (set == null || set.isEmpty()) {
-            return null;
+            return set;
         }
         List<QueryableEntry<K, V>> resultList = new ArrayList<QueryableEntry<K, V>>();
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry();

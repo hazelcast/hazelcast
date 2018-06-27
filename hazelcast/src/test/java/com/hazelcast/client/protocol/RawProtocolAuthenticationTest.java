@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.protocol;
 
-import com.hazelcast.client.ClientTypes;
+import com.hazelcast.client.impl.ClientTypes;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;

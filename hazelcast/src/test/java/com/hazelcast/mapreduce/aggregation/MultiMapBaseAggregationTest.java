@@ -46,7 +46,7 @@ public class MultiMapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<String, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<String, Integer> map = hazelcastInstance.getMultiMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -70,7 +70,7 @@ public class MultiMapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<Integer, Integer> map = hazelcastInstance.getMultiMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -95,7 +95,7 @@ public class MultiMapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<Integer, Integer> map = hazelcastInstance.getMultiMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -121,7 +121,7 @@ public class MultiMapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<Integer, Integer> map = hazelcastInstance.getMultiMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -150,7 +150,7 @@ public class MultiMapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<Integer, Person> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<Integer, Person> map = hazelcastInstance.getMultiMap(mapName);
 
         Person[] values = buildPlainValues(new ValueProvider<Person>() {
             @Override
@@ -177,7 +177,7 @@ public class MultiMapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<Integer, Integer> map = hazelcastInstance.getMultiMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -202,7 +202,7 @@ public class MultiMapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<Integer, Integer> map = hazelcastInstance.getMultiMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -231,7 +231,7 @@ public class MultiMapBaseAggregationTest
         Set<String> expectation = new HashSet<String>(Arrays.asList(probes));
 
         String mapName = randomMapName();
-        MultiMap<String, String> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<String, String> map = hazelcastInstance.getMultiMap(mapName);
 
         String[] values = buildPlainValues(new ValueProvider<String>() {
             @Override

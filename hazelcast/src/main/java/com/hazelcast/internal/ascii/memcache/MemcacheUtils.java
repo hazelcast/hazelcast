@@ -22,7 +22,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
 import static com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor.DEFAULT_MAP_NAME;
-import static com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor.MAP_NAME_PRECEDER;
+import static com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor.MAP_NAME_PREFIX;
 
 public final class MemcacheUtils {
 
@@ -37,7 +37,7 @@ public final class MemcacheUtils {
         String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
+            mapName = MAP_NAME_PREFIX + key.substring(0, index);
             key = key.substring(index + 1);
         }
         return new MapNameAndKeyPair(mapName, key);

@@ -18,7 +18,7 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.client.impl.ClientMessageDecoder;
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
@@ -130,12 +130,17 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
         if (!isClosed.compareAndSet(false, true)) {
             return;
         }
-        closeInternal();
+        close0(false);
     }
 
-    protected void closeInternal() {
+    private void close0(boolean destroy) {
         waitOnGoingLoadAllCallsToFinish();
         closeListeners();
+        if (!destroy) {
+            // when cache is being destroyed, the CacheManager is still required for cleanup and reset in postDestroy
+            // when cache is being closed, the CacheManager is reset now
+            resetCacheManager();
+        }
     }
 
     private void waitOnGoingLoadAllCallsToFinish() {
@@ -159,7 +164,7 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
         if (!isDestroyed.compareAndSet(false, true)) {
             return false;
         }
-        closeInternal();
+        close0(true);
         isClosed.set(true);
         return true;
     }

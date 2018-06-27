@@ -287,30 +287,31 @@ public class AbstractSerializationServiceTest {
             if (this == obj) {
                 return true;
             }
-
             if (null == obj) {
                 return false;
             }
-
             if (null == obj || !(getClass().isAssignableFrom(obj.getClass()))) {
                 return false;
             }
 
             TypedBaseClass rhs = (TypedBaseClass) obj;
-
             if (null == innerObj && null != rhs.innerObj || null != innerObj && null == rhs.innerObj) {
                 return false;
             }
-
             if (null == innerObj && null == rhs.innerObj) {
                 return true;
             }
-
             return innerObj.equals(rhs.innerObj);
+        }
+
+        @Override
+        public int hashCode() {
+            return innerObj != null ? innerObj.hashCode() : 0;
         }
     }
 
     public static class BaseClass implements DataSerializable {
+
         private int intField;
         private String stringField;
 
@@ -328,15 +329,13 @@ public class AbstractSerializationServiceTest {
         }
 
         @Override
-        public void writeData(ObjectDataOutput out)
-                throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(intField);
             out.writeUTF(stringField);
         }
 
         @Override
-        public void readData(ObjectDataInput in)
-                throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             intField = in.readInt();
             stringField = in.readUTF();
         }
@@ -351,12 +350,10 @@ public class AbstractSerializationServiceTest {
             }
 
             BaseClass baseClass = (BaseClass) o;
-
             if (intField != baseClass.intField) {
                 return false;
             }
             return stringField != null ? stringField.equals(baseClass.stringField) : baseClass.stringField == null;
-
         }
 
         @Override
@@ -368,6 +365,7 @@ public class AbstractSerializationServiceTest {
     }
 
     public static class ExtendedClass extends BaseClass {
+
         private long longField;
 
         public ExtendedClass() {
@@ -379,16 +377,14 @@ public class AbstractSerializationServiceTest {
         }
 
         @Override
-        public void writeData(ObjectDataOutput out)
-                throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             super.writeData(out);
             out.writeLong(longField);
 
         }
 
         @Override
-        public void readData(ObjectDataInput in)
-                throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             super.readData(in);
             longField = in.readLong();
         }
@@ -406,7 +402,6 @@ public class AbstractSerializationServiceTest {
             }
 
             ExtendedClass that = (ExtendedClass) o;
-
             return longField == that.longField;
 
         }
@@ -420,6 +415,7 @@ public class AbstractSerializationServiceTest {
     }
 
     private class StringBufferSerializer implements StreamSerializer<StringBuffer> {
+
         int typeId = 100000;
         private boolean fail;
 
@@ -434,7 +430,6 @@ public class AbstractSerializationServiceTest {
 
         @Override
         public void destroy() {
-
         }
 
         @Override
@@ -462,5 +457,4 @@ public class AbstractSerializationServiceTest {
             super(fail);
         }
     }
-
 }

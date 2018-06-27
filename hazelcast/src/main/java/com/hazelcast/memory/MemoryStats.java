@@ -35,6 +35,7 @@ public interface MemoryStats {
      *
      * @return total physical memory in bytes.
      */
+    @Probe(level = MANDATORY)
     long getTotalPhysical();
 
     /**
@@ -46,6 +47,7 @@ public interface MemoryStats {
      *
      * @return free physical memory in bytes.
      */
+    @Probe(level = MANDATORY)
     long getFreePhysical();
 
     /**
@@ -54,6 +56,7 @@ public interface MemoryStats {
      * @return the maximum amount of memory in bytes.
      * @see Runtime#maxMemory()
      */
+    @Probe(level = MANDATORY)
     long getMaxHeap();
 
     /**
@@ -64,6 +67,7 @@ public interface MemoryStats {
      * @see Runtime#totalMemory()
      * @see java.lang.management.MemoryUsage#getCommitted()
      */
+    @Probe(level = MANDATORY)
     long getCommittedHeap();
 
     /**
@@ -72,6 +76,7 @@ public interface MemoryStats {
      * @return the amount of used memory in bytes
      * @see java.lang.management.MemoryUsage#getUsed()
      */
+    @Probe(level = MANDATORY)
     long getUsedHeap();
 
     /**
@@ -80,6 +85,7 @@ public interface MemoryStats {
      * @return the amount of free memory in bytes
      * @see Runtime#freeMemory()
      */
+    @Probe(level = MANDATORY)
     long getFreeHeap();
 
     /**

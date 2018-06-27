@@ -17,7 +17,6 @@
 package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
-import com.hazelcast.monitor.TimedMemberState;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

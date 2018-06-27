@@ -124,6 +124,12 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
 
     @Override
     @MethodNotAvailable
+    public void setTTL(K key, long duration, TimeUnit timeUnit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
     public V replace(K key, V newValue) {
         throw new MethodNotAvailableException();
     }

@@ -27,8 +27,9 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Converts an operation class into something readable.
  * <p>
- * In most cases the class name is sufficient, but there are certain operations like {@link Backup}
- * and {@link PartitionIteratingOperation} where one needs to see inside the content of an operation.
+ * In most cases the class name is sufficient, but there are certain
+ * operations like {@link Backup} and {@link PartitionIteratingOperation} where
+ * one needs to see inside the content of an operation.
  */
 public final class OperationDescriptors {
 

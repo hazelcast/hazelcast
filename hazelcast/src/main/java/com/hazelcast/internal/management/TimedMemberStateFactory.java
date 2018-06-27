@@ -50,7 +50,6 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.LocalWanStats;
-import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.monitor.impl.HotRestartStateImpl;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
@@ -81,7 +80,7 @@ import static com.hazelcast.spi.properties.GroupProperty.MC_MAX_VISIBLE_INSTANCE
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
- * A Factory for creating {@link com.hazelcast.monitor.TimedMemberState} instances.
+ * A Factory for creating {@link TimedMemberState} instances.
  */
 public class TimedMemberStateFactory {
 

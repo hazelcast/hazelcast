@@ -126,7 +126,8 @@ final class Sums {
                     numberSum += container.numberValue.doubleValue();
                 }
                 return (T) numberSum;
+            default:
+                return null;
         }
-        return null;
     }
 }

@@ -258,7 +258,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         // indicate that we need to unblacklist addresses from the joiner when split-brain will be healed
         unblacklistHint = true;
         // create a new Hazelcast instance which has blocked addresses blacklisted in its joiner
-        return factory.newHazelcastInstance(config(), addressesToBlock.toArray(new Address[addressesToBlock.size()]));
+        return factory.newHazelcastInstance(config(), addressesToBlock.toArray(new Address[0]));
     }
 
     private void validateBrainsConfig(int[] clusterTopology) {
@@ -534,8 +534,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     protected static class ReturnPiCollectionMergePolicy
             implements SplitBrainMergePolicy<Collection<Object>, MergingValue<Collection<Object>>> {
 
-        private static Collection<Object> PI_COLLECTION;
-        private static Set<Object> PI_SET;
+        private static final Collection<Object> PI_COLLECTION;
+        private static final Set<Object> PI_SET;
 
         static {
             PI_COLLECTION = new ArrayList<Object>(5);

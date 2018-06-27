@@ -19,9 +19,11 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.memory.MemoryStats;
 
+/**
+ * Local memory statistics to be used by {@link MemberState} implementations.
+ */
 public interface LocalMemoryStats extends MemoryStats, LocalInstanceStats {
 
     @Override
     LocalGCStats getGCStats();
-
 }
