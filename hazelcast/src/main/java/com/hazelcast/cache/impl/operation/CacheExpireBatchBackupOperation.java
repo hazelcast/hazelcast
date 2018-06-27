@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.WrongTargetException;
 
@@ -29,27 +28,19 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
-
 /**
  * Used to transfer expired keys from owner replica to backup replicas.
  */
-public class EvictBatchBackupOperation extends MapOperation implements BackupOperation {
+public class CacheExpireBatchBackupOperation extends CacheOperation {
 
-    private String name;
     private Collection<ExpiredKey> expiredKeys;
     private int ownerPartitionEntryCount;
 
-    public EvictBatchBackupOperation() {
+    public CacheExpireBatchBackupOperation() {
     }
 
-    public EvictBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int ownerPartitionEntryCount) {
-        super(name);
-
-        assert isNotEmpty(expiredKeys);
-        assert name != null;
-
-        this.name = name;
+    public CacheExpireBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int ownerPartitionEntryCount) {
+        super(name, true);
         this.expiredKeys = expiredKeys;
         this.ownerPartitionEntryCount = ownerPartitionEntryCount;
     }
@@ -57,16 +48,12 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     @Override
     public void run() {
         for (ExpiredKey expiredKey : expiredKeys) {
-            Record existingRecord = recordStore.getRecord(expiredKey.getKey());
-            if (canEvictRecord(existingRecord, expiredKey)) {
-                recordStore.evict(existingRecord.getKey(), true);
-            }
+            evictIfSame(expiredKey);
         }
 
-        // equalize backup entry count to owner entry count to have identical memory occupancy
         int diff = recordStore.size() - ownerPartitionEntryCount;
         for (int i = 0; i < diff; i++) {
-            mapContainer.getEvictor().evict(recordStore, null);
+            recordStore.evictOneEntry();
         }
     }
 
@@ -82,30 +69,24 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         return super.onInvocationException(throwable);
     }
 
-    protected boolean canEvictRecord(Record existingRecord, ExpiredKey expiredKey) {
-        if (existingRecord == null) {
-            return false;
+    protected void evictIfSame(ExpiredKey key) {
+        if (recordStore == null) {
+            return;
         }
-
-        // creation time of a record is always same between all replicas.
-        // by doing creation time check we can prevent un-wanted record deletion on replicas.
-        // un-wanted record deletion example: on primary record was expired and queued but before
-        // we send it to backups a new record is added with same key, when we send queued item
-        // to backups, backups should not remove it. Comparing creation times to be sure that
-        // we are deleting correct record.
-        return existingRecord.getCreationTime() == expiredKey.getCreationTime();
+        CacheRecord record = recordStore.getRecord(key.getKey());
+        if (record != null && record.getCreationTime() == key.getCreationTime()) {
+            recordStore.removeRecord(key.getKey());
+        }
     }
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.EVICT_BATCH_BACKUP;
+        return CacheDataSerializerHook.EXPIRE_BATCH_BACKUP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
-        out.writeUTF(name);
         out.writeInt(expiredKeys.size());
         for (ExpiredKey expiredKey : expiredKeys) {
             out.writeData(expiredKey.getKey());
@@ -117,8 +98,6 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
-        name = in.readUTF();
         int size = in.readInt();
         expiredKeys = new LinkedList<ExpiredKey>();
         for (int i = 0; i < size; i++) {

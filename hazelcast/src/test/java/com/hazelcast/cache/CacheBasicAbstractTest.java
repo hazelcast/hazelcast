@@ -30,6 +30,9 @@ import javax.cache.CacheManager;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.event.CacheEntryEvent;
+import javax.cache.event.CacheEntryExpiredListener;
+import javax.cache.event.CacheEntryListenerException;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
@@ -294,6 +297,30 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         for (int i = 0; i < size; i++) {
             assertEquals(i, keys[i]);
         }
+    }
+
+    @Test
+    public void testExpiration() {
+        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        final SimpleExpiryListener<Integer, String> listener = new SimpleExpiryListener<Integer, String>();
+        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
+                new MutableCacheEntryListenerConfiguration<Integer, String>(
+                        FactoryBuilder.factoryOf(listener), null, true, true);
+
+        config.addCacheEntryListenerConfiguration(listenerConfiguration);
+        config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new HazelcastExpiryPolicy(100, 100, 100)));
+
+        Cache<Integer, String> instanceCache = createCache(config);
+
+        instanceCache.put(1, "value");
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(1, listener.expired.get());
+            }
+        });
     }
 
     @Test
@@ -1050,6 +1077,23 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         @Override
         public String toString() {
             return "foo";
+        }
+    }
+
+    public static class SimpleExpiryListener<K, V>
+            implements CacheEntryExpiredListener<K, V>, Serializable {
+
+        public AtomicInteger expired = new AtomicInteger();
+
+        public SimpleExpiryListener() {
+        }
+
+        @Override
+        public void onExpired(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
+                throws CacheEntryListenerException {
+            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
+                expired.incrementAndGet();
+            }
         }
     }
 }

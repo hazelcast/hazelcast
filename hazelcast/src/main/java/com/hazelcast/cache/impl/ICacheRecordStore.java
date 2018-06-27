@@ -20,8 +20,10 @@ import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.wan.impl.CallerProvenance;
+import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -403,6 +405,8 @@ public interface ICacheRecordStore {
      */
     Map<Data, CacheRecord> getReadOnlyRecords();
 
+    boolean isExpirable();
+
     /**
      * Gets internal record of the store by key.
      *
@@ -495,6 +499,8 @@ public interface ICacheRecordStore {
      */
     boolean evictIfRequired();
 
+    boolean evictOneEntry();
+
     /**
      * Determines whether wan replication is enabled or not for this record store.
      *
@@ -539,4 +545,13 @@ public interface ICacheRecordStore {
      * @return partition ID of this store
      */
     int getPartitionId();
+
+    /**
+     * Do expiration operations.
+     *
+     * @param percentage of max expirables according to the record store size.
+     */
+    void evictExpiredEntries(int percentage);
+
+    InvalidationQueue<ExpiredKey> getExpiredKeys();
 }

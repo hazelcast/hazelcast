@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.cache.impl.CachePartitionSegment;
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractLocalOperation;
 import com.hazelcast.spi.NodeEngine;
@@ -27,22 +26,19 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
-import java.util.concurrent.ConcurrentMap;
+import java.util.Iterator;
 
-/**
- * Clears expired records.
- */
-public class ClearExpiredOperation extends AbstractLocalOperation implements PartitionAwareOperation, MutatingOperation {
+public class CacheClearExpiredOperation extends AbstractLocalOperation implements PartitionAwareOperation, MutatingOperation {
 
     private int expirationPercentage;
 
-    public ClearExpiredOperation(int expirationPercentage) {
+    public CacheClearExpiredOperation(int expirationPercentage) {
         this.expirationPercentage = expirationPercentage;
     }
 
     @Override
     public String getServiceName() {
-        return MapService.SERVICE_NAME;
+        return CacheService.SERVICE_NAME;
     }
 
     @Override
@@ -53,15 +49,17 @@ public class ClearExpiredOperation extends AbstractLocalOperation implements Par
             return;
         }
 
-        MapService mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
-        ConcurrentMap<String, RecordStore> recordStores = partitionContainer.getMaps();
-        boolean backup = !isOwner();
-        for (final RecordStore recordStore : recordStores.values()) {
-            if (recordStore.size() > 0 && recordStore.isExpirable()) {
-                recordStore.evictExpiredEntries(expirationPercentage, backup);
-                recordStore.disposeDeferredBlocks();
+        if (!isOwner()) {
+            return;
+        }
+
+        CacheService service = getService();
+        CachePartitionSegment segment = service.getSegment(getPartitionId());
+        Iterator<ICacheRecordStore> iterator = segment.recordStoreIterator();
+        while (iterator.hasNext()) {
+            ICacheRecordStore store = iterator.next();
+            if (store.size() > 0) {
+                store.evictExpiredEntries(expirationPercentage);
             }
         }
     }
@@ -87,11 +85,10 @@ public class ClearExpiredOperation extends AbstractLocalOperation implements Par
     }
 
     protected void prepareForNextCleanup() {
-        MapService mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
-        partitionContainer.setHasRunningCleanup(false);
-        partitionContainer.setLastCleanupTime(Clock.currentTimeMillis());
+        CacheService service = getService();
+        CachePartitionSegment segment = service.getSegment(getPartitionId());
+        segment.setRunningCleanupOperation(false);
+        segment.setLastCleanupTime(Clock.currentTimeMillis());
     }
 
     @Override
