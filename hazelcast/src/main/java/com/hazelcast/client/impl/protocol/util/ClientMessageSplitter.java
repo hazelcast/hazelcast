@@ -46,9 +46,6 @@ public final class ClientMessageSplitter {
         assert ClientMessage.HEADER_SIZE < frameSize;
         int frameLength = originalClientMessage.getFrameLength();
         int sizeWithoutHeader = frameSize - ClientMessage.HEADER_SIZE;
-        System.out.println(ClientMessage.HEADER_SIZE);
-        System.out.println(frameLength);
-        System.out.println(sizeWithoutHeader);
         return (int) Math.ceil((float) (frameLength - ClientMessage.HEADER_SIZE) / sizeWithoutHeader);
     }
 
