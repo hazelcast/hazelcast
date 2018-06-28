@@ -22,22 +22,26 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.getOrCreate;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.util.MapUtil.calculateInitialCapacity;
 
 /**
  * Open source implementation of the {@link com.hazelcast.wan.WanReplicationService}
  */
-public class WanReplicationServiceImpl implements WanReplicationService {
+public class WanReplicationServiceImpl implements WanReplicationService, ManagedService {
 
     private final Node node;
 
@@ -47,20 +51,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     /** WAN event counters for all services and only sent events */
     private final WanEventCounters sentWanEventCounters = new WanEventCounters();
 
-    private final ConcurrentHashMap<String, WanReplicationPublisherDelegate> wanReplications
-            = initializeWanReplicationPublisherMapping();
-    private final ConstructorFunction<String, WanReplicationPublisherDelegate> publisherDelegateConstructorFunction =
-            new ConstructorFunction<String, WanReplicationPublisherDelegate>() {
-                @Override
-                public WanReplicationPublisherDelegate createNew(String name) {
-                    final WanReplicationConfig wanReplicationConfig = node.getConfig().getWanReplicationConfig(name);
-                    if (wanReplicationConfig == null) {
-                        return null;
-                    }
-                    final List<WanPublisherConfig> publisherConfigs = wanReplicationConfig.getWanPublisherConfigs();
-                    return new WanReplicationPublisherDelegate(name, createPublishers(wanReplicationConfig, publisherConfigs));
-                }
-            };
+    private ConcurrentHashMap<String, WanReplicationPublisherDelegate> wanReplications;
 
     public WanReplicationServiceImpl(Node node) {
         this.node = node;
@@ -68,7 +59,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
 
     @Override
     public WanReplicationPublisher getWanReplicationPublisher(String name) {
-        return getOrPutSynchronized(wanReplications, name, this, publisherDelegateConstructorFunction);
+        return wanReplications.get(name);
     }
 
     private WanReplicationEndpoint[] createPublishers(WanReplicationConfig wanReplicationConfig,
@@ -161,8 +152,37 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         return null;
     }
 
-    private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
-        return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
+    /**
+     * Creates WAN replication publishers and returns a mapping from WAN
+     * replication name to WAN publisher.
+     * This method must be called when all node services have been created as
+     * some publishers might require references to other services when being
+     * initialized.
+     *
+     * @param wanReplicationConfigs the WAN replication configurations
+     * @return map from WAN replication name to WAN publisher
+     */
+    private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWANReplications(
+            Map<String, WanReplicationConfig> wanReplicationConfigs) {
+        if (MapUtil.isNullOrEmpty(wanReplicationConfigs)) {
+            return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(0);
+        }
+
+        final ConcurrentHashMap<String, WanReplicationPublisherDelegate> wanReplications =
+                new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(
+                        calculateInitialCapacity(wanReplicationConfigs.size()));
+
+        for (Entry<String, WanReplicationConfig> configEntry : wanReplicationConfigs.entrySet()) {
+            final String name = configEntry.getKey();
+            final WanReplicationConfig replicationConfig = configEntry.getValue();
+            final List<WanPublisherConfig> publisherConfigs = replicationConfig.getWanPublisherConfigs();
+            final WanReplicationPublisherDelegate delegate = new WanReplicationPublisherDelegate(
+                    name, createPublishers(replicationConfig, publisherConfigs));
+
+            wanReplications.put(name, delegate);
+        }
+
+        return wanReplications;
     }
 
     @Override
@@ -186,5 +206,20 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     public void removeWanEventCounters(String serviceName, String objectName) {
         receivedWanEventCounters.removeCounter(serviceName, objectName);
         sentWanEventCounters.removeCounter(serviceName, objectName);
+    }
+
+    @Override
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        this.wanReplications = initializeWANReplications(node.getConfig().getWanReplicationConfigs());
+    }
+
+    @Override
+    public void reset() {
+        // NOOP
+    }
+
+    @Override
+    public void shutdown(boolean terminate) {
+        // NOOP
     }
 }
