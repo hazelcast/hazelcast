@@ -116,7 +116,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         }
 
         @Override
-        public void handle(Data dataItem, String uuid, int eventType) {
+        public void handleItemEventV10(Data dataItem, String uuid, int eventType) {
             Member member = getContext().getClusterService().getMember(uuid);
             ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
                     dataItem, member, getSerializationService());

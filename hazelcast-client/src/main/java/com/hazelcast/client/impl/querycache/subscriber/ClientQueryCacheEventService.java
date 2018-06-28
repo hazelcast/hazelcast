@@ -229,12 +229,12 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         }
 
         @Override
-        public void handle(QueryCacheEventData data) {
+        public void handleQueryCacheSingleEventV10(QueryCacheEventData data) {
             adapter.onEvent(new SingleIMapEvent(data));
         }
 
         @Override
-        public void handle(Collection<QueryCacheEventData> events, String source, int partitionId) {
+        public void handleQueryCacheBatchEventV10(Collection<QueryCacheEventData> events, String source, int partitionId) {
             adapter.onEvent(new BatchIMapEvent(new BatchEventData(events, source, partitionId)));
         }
     }

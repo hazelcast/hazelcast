@@ -566,7 +566,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
         }
 
         @Override
-        public void handle(int partitionId, String uuid) {
+        public void handleCachePartitionLostEventV10(int partitionId, String uuid) {
             Member member = getContext().getClusterService().getMember(uuid);
             listener.partitionLost(new CachePartitionLostEvent(name, member, PARTITION_LOST.getType(), partitionId));
         }

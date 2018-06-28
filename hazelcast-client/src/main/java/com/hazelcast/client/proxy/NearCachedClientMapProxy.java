@@ -611,7 +611,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     private void registerInvalidationListener() {
         try {
-            invalidationListenerId = addNearCacheInvalidationListener(new ConnectedServerVersionAwareNearCacheEventHandler());
+            invalidationListenerId = addNearCacheInvalidationListener(new NearCacheInvalidationEventHandler());
         } catch (Exception e) {
             ILogger logger = getContext().getLoggingService().getLogger(getClass());
             logger.severe("-----------------\nNear Cache is not initialized!\n-----------------", e);
@@ -665,131 +665,77 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         deregisterListener(invalidationListenerId);
     }
 
+    private boolean supportsRepairableNearCache() {
+        return getConnectedServerVersion() >= minConsistentNearCacheSupportingServerVersion;
+    }
+
     /**
-     * Deals with client compatibility.
-     * <p>
-     * Eventual consistency for Near Cache can be used with server versions >= 3.8,
-     * other connected server versions must use {@link Pre38NearCacheEventHandler}
+     * Eventual consistency for Near Cache can be used with server versions >= 3.8
+     * For repairing functionality please see {@link RepairingHandler}
+     * handleCacheInvalidationEventV14 and handleCacheBatchInvalidationEventV14
+     *
+     * If server version is < 3.8 and client version is >= 3.8, eventual consistency is not supported
+     * Following methods handle the old behaviour:
+     * handleCacheBatchInvalidationEventV10 and handleCacheInvalidationEventV10
      */
-    private final class ConnectedServerVersionAwareNearCacheEventHandler implements EventHandler<ClientMessage> {
+    private final class NearCacheInvalidationEventHandler
+            extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
 
-        private final Pre38NearCacheEventHandler pre38EventHandler = new Pre38NearCacheEventHandler();
-        private final RepairableNearCacheEventHandler repairingEventHandler = new RepairableNearCacheEventHandler();
-
+        private volatile RepairingHandler repairingHandler;
         private volatile boolean supportsRepairableNearCache;
 
         @Override
         public void beforeListenerRegister() {
-            repairingEventHandler.beforeListenerRegister();
-
             supportsRepairableNearCache = supportsRepairableNearCache();
 
-            if (!supportsRepairableNearCache) {
-                pre38EventHandler.beforeListenerRegister();
-
+            if (supportsRepairableNearCache) {
+                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
+                repairingHandler = repairingTask.registerAndGetHandler(name, nearCache);
+            } else {
+                nearCache.clear();
+                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
+                repairingTask.deregisterHandler(name);
                 logger.warning(format("Near Cache for '%s' map is started in legacy mode", name));
             }
         }
 
         @Override
         public void onListenerRegister() {
-            if (supportsRepairableNearCache) {
-                repairingEventHandler.onListenerRegister();
-            } else {
-                pre38EventHandler.onListenerRegister();
-            }
-        }
-
-        @Override
-        public void handle(ClientMessage clientMessage) {
-            if (supportsRepairableNearCache) {
-                repairingEventHandler.handle(clientMessage);
-            } else {
-                pre38EventHandler.handle(clientMessage);
-            }
-        }
-    }
-
-    /**
-     * This event handler can only be used with server versions >= 3.8 and supports Near Cache eventual consistency improvements.
-     * For repairing functionality please see {@link RepairingHandler}.
-     */
-    private final class RepairableNearCacheEventHandler
-            extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler
-            implements EventHandler<ClientMessage> {
-
-        private volatile RepairingHandler repairingHandler;
-
-        @Override
-        public void beforeListenerRegister() {
-            if (supportsRepairableNearCache()) {
-                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
-                repairingHandler = repairingTask.registerAndGetHandler(name, nearCache);
-            } else {
-                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
-                repairingTask.deregisterHandler(name);
-            }
-        }
-
-        @Override
-        public void onListenerRegister() {
-            // NOP
-        }
-
-        @Override
-        public void handle(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
-            repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
-        }
-
-        @Override
-        public void handle(Collection<Data> keys, Collection<String> sourceUuids,
-                           Collection<UUID> partitionUuids, Collection<Long> sequences) {
-            repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);
-        }
-    }
-
-    /**
-     * This event handler is here to be used with server versions < 3.8.
-     * <p>
-     * If server version is < 3.8 and client version is >= 3.8, this event handler must be used to
-     * listen Near Cache invalidations. Because new improvements for Near Cache eventual consistency
-     * cannot work with server versions < 3.8.
-     */
-    private final class Pre38NearCacheEventHandler
-            extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
-            implements EventHandler<ClientMessage> {
-
-        @Override
-        public void beforeListenerRegister() {
-            nearCache.clear();
-        }
-
-        @Override
-        public void onListenerRegister() {
-            nearCache.clear();
-        }
-
-        @Override
-        public void handle(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
-            // null key means that the Near Cache has to remove all entries in it
-            // (see Pre38MapAddNearCacheEntryListenerMessageTask)
-            if (key == null) {
+            if (!supportsRepairableNearCache) {
                 nearCache.clear();
-            } else {
-                nearCache.invalidate(serializeKeys ? key : toObject(key));
             }
         }
 
         @Override
-        public void handle(Collection<Data> keys, Collection<String> sourceUuids,
-                           Collection<UUID> partitionUuids, Collection<Long> sequences) {
+        public void handleIMapInvalidationEventV10(Data key) {
+            if (key != null) {
+                nearCache.invalidate(serializeKeys ? key : toObject(key));
+            } else {
+                nearCache.clear();
+            }
+        }
+
+        @Override
+        public void handleIMapBatchInvalidationEventV10(Collection<Data> keys) {
             for (Data key : keys) {
                 nearCache.invalidate(serializeKeys ? key : toObject(key));
             }
         }
-    }
 
-    private boolean supportsRepairableNearCache() {
-        return getConnectedServerVersion() >= minConsistentNearCacheSupportingServerVersion;
+        @Override
+        public void handleIMapInvalidationEventV14(Data key, String sourceUuid,
+                                                   UUID partitionUuid, long sequence) {
+            repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
+        }
+
+
+        @Override
+        public void handleIMapBatchInvalidationEventV14(Collection<Data> keys,
+                                                        Collection<String> sourceUuids,
+                                                        Collection<UUID> partitionUuids,
+                                                        Collection<Long> sequences) {
+            repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);
+        }
     }
 }
