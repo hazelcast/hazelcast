@@ -35,6 +35,8 @@ import java.util.Set;
 @BinaryInterface
 public class EqualPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
 
+    private static final long serialVersionUID = 1L;
+
     protected Comparable value;
 
     public EqualPredicate() {
@@ -88,5 +90,37 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
     @Override
     public int getId() {
         return PredicateDataSerializerHook.EQUAL_PREDICATE;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof EqualPredicate)) {
+            return false;
+        }
+
+        EqualPredicate that = (EqualPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
+
+        return value != null ? value.equals(that.value) : that.value == null;
+    }
+
+    @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof EqualPredicate);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
     }
 }

@@ -35,6 +35,8 @@ import java.util.Set;
 @BinaryInterface
 public final class GreaterLessPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
 
+    private static final long serialVersionUID = 1L;
+
     protected Comparable value;
     boolean equal;
     boolean less;
@@ -112,5 +114,46 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
     @Override
     public int getId() {
         return PredicateDataSerializerHook.GREATERLESS_PREDICATE;
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof GreaterLessPredicate)) {
+            return false;
+        }
+
+        GreaterLessPredicate that = (GreaterLessPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
+
+        if (equal != that.equal) {
+            return false;
+        }
+        if (less != that.less) {
+            return false;
+        }
+        return value != null ? value.equals(that.value) : that.value == null;
+    }
+
+    @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof GreaterLessPredicate);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (equal ? 1 : 0);
+        result = 31 * result + (less ? 1 : 0);
+        return result;
     }
 }

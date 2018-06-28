@@ -39,6 +39,8 @@ public class TruePredicate<K, V> implements IdentifiedDataSerializable, Predicat
      */
     public static final TruePredicate INSTANCE = new TruePredicate();
 
+    private static final long serialVersionUID = 1L;
+
     @SuppressWarnings("unchecked")
     public static <K, V> TruePredicate<K, V> truePredicate() {
         return INSTANCE;
@@ -71,4 +73,18 @@ public class TruePredicate<K, V> implements IdentifiedDataSerializable, Predicat
     public int getId() {
         return PredicateDataSerializerHook.TRUE_PREDICATE;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof TruePredicate)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
 }

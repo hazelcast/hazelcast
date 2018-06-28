@@ -36,10 +36,13 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  */
 @BinaryInterface
 public class FalsePredicate<K, V> implements IdentifiedDataSerializable, Predicate<K, V>, IndexAwarePredicate<K, V> {
+
     /**
      * An instance of the FalsePredicate.
      */
     public static final FalsePredicate INSTANCE = new FalsePredicate();
+
+    private static final long serialVersionUID = 1L;
 
      @Override
     public boolean apply(Map.Entry<K, V> mapEntry) {
@@ -77,5 +80,18 @@ public class FalsePredicate<K, V> implements IdentifiedDataSerializable, Predica
     @Override
     public int getId() {
         return PredicateDataSerializerHook.FALSE_PREDICATE;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof FalsePredicate)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

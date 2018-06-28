@@ -33,6 +33,8 @@ import java.util.Set;
 @BinaryInterface
 public class BetweenPredicate extends AbstractIndexAwarePredicate {
 
+    private static final long serialVersionUID = 1L;
+
     Comparable to;
     Comparable from;
 
@@ -89,5 +91,42 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
     @Override
     public int getId() {
         return PredicateDataSerializerHook.BETWEEN_PREDICATE;
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof BetweenPredicate)) {
+            return false;
+        }
+
+        BetweenPredicate that = (BetweenPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
+
+        if (to != null ? !to.equals(that.to) : that.to != null) {
+            return false;
+        }
+        return from != null ? from.equals(that.from) : that.from == null;
+    }
+
+    @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof BetweenPredicate);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (to != null ? to.hashCode() : 0);
+        result = 31 * result + (from != null ? from.hashCode() : 0);
+        return result;
     }
 }

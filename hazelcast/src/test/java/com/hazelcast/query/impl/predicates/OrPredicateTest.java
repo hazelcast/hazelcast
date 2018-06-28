@@ -20,6 +20,8 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -68,4 +70,13 @@ public class OrPredicateTest {
         NotPredicate notPredicate = (NotPredicate) inners[0];
         assertThat(nonNegatable, sameInstance(notPredicate.predicate));
     }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(OrPredicate.class)
+            .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
+            .allFieldsShouldBeUsed()
+            .verify();
+    }
+
 }

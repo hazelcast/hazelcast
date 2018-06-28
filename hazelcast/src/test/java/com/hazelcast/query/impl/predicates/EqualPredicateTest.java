@@ -19,10 +19,11 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -77,6 +78,15 @@ public class EqualPredicateTest {
         assertFalse(Float.NaN == -Float.NaN);
         assertFalse(Double.NaN == -Float.NaN);
         assertFalse(Float.NaN == -Double.NaN);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(EqualPredicate.class)
+            .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
+            .withRedefinedSuperclass()
+            .allFieldsShouldBeUsed()
+            .verify();
     }
 
 }

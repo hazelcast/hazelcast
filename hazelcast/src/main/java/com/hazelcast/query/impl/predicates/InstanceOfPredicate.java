@@ -36,6 +36,9 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
 @BinaryInterface
 public class InstanceOfPredicate
         implements Predicate, IdentifiedDataSerializable {
+
+    private static final long serialVersionUID = 1L;
+
     private Class klass;
 
     public InstanceOfPredicate(Class klass) {
@@ -82,5 +85,23 @@ public class InstanceOfPredicate
     @Override
     public int getId() {
         return PredicateDataSerializerHook.INSTANCEOF_PREDICATE;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof InstanceOfPredicate)) {
+            return false;
+        }
+
+        InstanceOfPredicate that = (InstanceOfPredicate) o;
+        return klass != null ? klass.equals(that.klass) : that.klass == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return klass != null ? klass.hashCode() : 0;
     }
 }

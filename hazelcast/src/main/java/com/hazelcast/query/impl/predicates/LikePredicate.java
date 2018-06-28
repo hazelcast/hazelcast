@@ -31,8 +31,10 @@ import java.util.regex.Pattern;
 @BinaryInterface
 public class LikePredicate extends AbstractPredicate {
 
+    private static final long serialVersionUID = 1L;
+
     protected String expression;
-    private volatile Pattern pattern;
+    private transient volatile Pattern pattern;
 
     public LikePredicate() {
     }
@@ -97,5 +99,37 @@ public class LikePredicate extends AbstractPredicate {
     @Override
     public int getId() {
         return PredicateDataSerializerHook.LIKE_PREDICATE;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof LikePredicate)) {
+            return false;
+        }
+
+        LikePredicate that = (LikePredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
+
+        return expression != null ? expression.equals(that.expression) : that.expression == null;
+    }
+
+    @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof LikePredicate);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (expression != null ? expression.hashCode() : 0);
+        return result;
     }
 }
