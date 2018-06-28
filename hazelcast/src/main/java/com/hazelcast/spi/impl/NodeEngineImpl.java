@@ -95,7 +95,7 @@ import static java.lang.System.currentTimeMillis;
  * But the crucial thing is that we don't want to leak concrete dependencies to the outside. For example
  * we don't leak {@link com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl} to the outside.
  */
-@SuppressWarnings("checkstyle:classdataabstractioncoupling")
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class NodeEngineImpl implements NodeEngine {
 
     private static final String JET_SERVICE_NAME = "hz:impl:jetService";

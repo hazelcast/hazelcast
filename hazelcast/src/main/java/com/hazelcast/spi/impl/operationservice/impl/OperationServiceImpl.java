@@ -94,6 +94,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @see PartitionInvocation
  * @see TargetInvocation
  */
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class OperationServiceImpl implements InternalOperationService, MetricsProvider, LiveOperationsTracker {
 
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
