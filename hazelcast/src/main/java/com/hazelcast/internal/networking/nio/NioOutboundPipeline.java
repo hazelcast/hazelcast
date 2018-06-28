@@ -358,8 +358,24 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
         urgentWriteQueue.clear();
 
         CloseTask closeTask = new CloseTask();
-        write(new TaskFrame(closeTask));
-        closeTask.awaitCompletion();
+        NioThread owner = this.owner;
+        Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof NioThread) {
+            if (currentThread == owner) {
+                // we don't schedule the task, we execute it immediately
+                // This will prevent waiting on a task this thread is
+                // supposed to execute, but can't. And therefor runs into
+                // a temporary stall.
+                closeTask.run();
+            }
+
+            // if the currentThread isn't the owner, there
+            // is a migration happening and we can't close
+        } else {
+            // closing is executed from a non-io thread, so we can block
+            owner.addTaskAndWakeup(closeTask);
+            closeTask.awaitCompletion();
+        }
     }
 
     @Override
@@ -438,6 +454,12 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
 
         @Override
         public void run() {
+            NioThread owner = NioOutboundPipeline.this.owner;
+            if (owner != Thread.currentThread()) {
+                owner.addTaskAndWakeup(this);
+                return;
+            }
+
             try {
                 channel.closeOutbound();
             } catch (IOException e) {
