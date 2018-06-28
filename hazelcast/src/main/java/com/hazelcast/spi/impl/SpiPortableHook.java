@@ -49,6 +49,7 @@ public final class SpiPortableHook implements PortableHook {
     @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
+            @SuppressWarnings("checkstyle:returncount")
             public Portable create(int classId) {
                 switch (classId) {
                     case USERNAME_PWD_CRED:

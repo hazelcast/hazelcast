@@ -58,6 +58,7 @@ import java.util.Set;
  * @deprecated Use fast-aggregations {@link com.hazelcast.aggregation.Aggregators}
  */
 @Deprecated
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public final class Aggregations {
 
     private Aggregations() {

@@ -91,7 +91,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * and we don't wait for the response before publishing the next event. The previously published
  * event can be retransmitted causing it to be received by the target node at a later time.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:eventService";

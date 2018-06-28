@@ -48,6 +48,7 @@ import static com.hazelcast.util.StringUtil.timeToString;
  * is going to be executed; this logic will be placed in the
  * {@link Operation#run()} method.
  */
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:magicnumber"})
 public abstract class Operation implements DataSerializable {
 
     /**
@@ -633,6 +634,7 @@ public abstract class Operation implements DataSerializable {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public final void writeData(ObjectDataOutput out) throws IOException {
         // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
         // It is used to return deserialization exceptions to the caller.
@@ -675,6 +677,7 @@ public abstract class Operation implements DataSerializable {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public final void readData(ObjectDataInput in) throws IOException {
         // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
         // It is used to return deserialization exceptions to the caller.

@@ -29,7 +29,7 @@ import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCES
 /**
  * Access and manipulate bits, bytes, primitives...
  */
-@SuppressWarnings({"checkstyle:magicnumber", "MagicNumber"})
+@SuppressWarnings({"checkstyle:magicnumber", "checkstyle:methodcount"})
 @PrivateApi
 public final class Bits {
 
