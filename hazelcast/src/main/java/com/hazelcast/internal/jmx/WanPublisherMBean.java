@@ -47,6 +47,9 @@ public class WanPublisherMBean extends HazelcastMBean<WanReplicationService> {
     @ManagedDescription("State of the WAN replication publisher")
     public String getState() {
         final Map<String, LocalWanStats> wanStats = managedObject.getStats();
+        if (wanStats == null) {
+            return "";
+        }
         final LocalWanStats wanReplicationStats = wanStats.get(wanReplicationName);
         final Map<String, LocalWanPublisherStats> wanDelegatingPublisherStats = wanReplicationStats.getLocalWanPublisherStats();
         final LocalWanPublisherStats wanPublisherStats = wanDelegatingPublisherStats.get(targetGroupName);
