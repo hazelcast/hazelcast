@@ -44,42 +44,43 @@ public class LazyCollectionTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_add_throws_exception() {
-        collection.add(null);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void test_add_all_throws_exception() {
-        collection.addAll(Collections.EMPTY_LIST);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void test_remove_throws_exception() {
-        collection.remove(null);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void test_removeAll_throws_exception() {
-        collection.removeAll(Collections.EMPTY_LIST);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void test_contains_throws_exception() {
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testContains_throwsException() {
         collection.contains(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_contains_all_throws_exception() {
+    public void testContainsAll_throwsException() {
         collection.containsAll(Collections.EMPTY_LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_retain_all_throws_exception() {
+    public void testAdd_throwsException() {
+        collection.add(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAddAll_throwsException() {
+        collection.addAll(Collections.EMPTY_LIST);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRemove_throwsException() {
+        collection.remove(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRemoveAll_throwsException() {
+        collection.removeAll(Collections.EMPTY_LIST);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRetainAll_throwsException() {
         collection.retainAll(Collections.EMPTY_LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_clear_throws_exception() {
+    public void testClear_throwsException() {
         collection.clear();
     }
 }
