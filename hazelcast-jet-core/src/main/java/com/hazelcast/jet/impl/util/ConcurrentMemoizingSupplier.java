@@ -47,7 +47,7 @@ final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
             }
             remembered = onceSupplier.get();
             if (remembered == null) {
-                throw new NullPointerException("Supplier returned null.");
+                throw new NullPointerException("Supplier returned null");
             }
             return remembered;
         }

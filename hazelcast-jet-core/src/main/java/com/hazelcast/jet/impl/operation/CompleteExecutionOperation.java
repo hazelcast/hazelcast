@@ -56,7 +56,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
 
         Address masterAddress = getNodeEngine().getMasterAddress();
         if (!callerAddress.equals(masterAddress)) {
-            throw new IllegalStateException("Caller " + callerAddress + " cannot complete execution of "
+            throw new IllegalStateException("Caller " + callerAddress + " cannot complete execution "
                     + idToString(executionId) + " because it is not master. Master is: " + masterAddress);
         }
 

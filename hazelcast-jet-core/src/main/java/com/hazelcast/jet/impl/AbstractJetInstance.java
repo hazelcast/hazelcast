@@ -82,7 +82,7 @@ abstract class AbstractJetInstance implements JetInstance {
         hazelcastInstance.shutdown();
     }
 
-    protected long uploadResourcesAndAssignId(JobConfig config) {
+    long uploadResourcesAndAssignId(JobConfig config) {
         return jobRepository.get().uploadJobResources(config);
     }
 

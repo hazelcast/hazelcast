@@ -63,21 +63,19 @@ public abstract class AbstractJobProxy<T> implements Job {
     private final AtomicBoolean cancelledJob = new AtomicBoolean();
     private final ExecutionCallback<Void> joinJobCallback = new JoinJobCallback();
 
-    private final Supplier<JobConfig> jobConfigSup;
+    private volatile JobConfig jobConfig;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
 
     AbstractJobProxy(T container, long jobId) {
         this.jobId = jobId;
-        this.jobConfigSup = memoizeConcurrent(this::doGetJobConfig);
         this.container = container;
-        this.logger = createLogger();
+        this.logger = loggingService().getLogger(Job.class);
     }
 
     AbstractJobProxy(T container, long jobId, DAG dag, JobConfig config) {
         this.jobId = jobId;
-        this.jobConfigSup = () -> config;
         this.container = container;
-        this.logger = createLogger();
+        this.logger = loggingService().getLogger(Job.class);
 
         doSubmitJob(dag, config);
 
@@ -92,7 +90,35 @@ public abstract class AbstractJobProxy<T> implements Job {
 
     @Nonnull @Override
     public JobConfig getConfig() {
-        return jobConfigSup.get();
+        // The common path will use a single volatile load
+        JobConfig loadResult = jobConfig;
+        if (loadResult != null) {
+            return loadResult;
+        }
+        synchronized (this) {
+            // The uncommon path can use simpler code with multiple volatile loads
+            if (jobConfig != null) {
+                return jobConfig;
+            }
+            jobConfig = doGetJobConfig();
+            if (jobConfig == null) {
+                throw new NullPointerException("Supplier returned null");
+            }
+            return jobConfig;
+        }
+    }
+
+    /**
+     * Returns the string {@code <jobId> (name <jobName>)} without risking
+     * triggering of lazy-loading of JobConfig: if we don't have it, it will
+     * say {@code name ??}. If we have it and it is null, it will say {@code
+     * name ''}.
+     */
+    private String idAndName() {
+        JobConfig config = jobConfig;
+        return idToString(jobId) + " (name "
+                + (config != null ? "'" + (config.getName() != null ? config.getName() : "") + "'" : "??")
+                + ')';
     }
 
     @Nonnull @Override
@@ -112,7 +138,7 @@ public abstract class AbstractJobProxy<T> implements Job {
     public boolean cancel() {
         boolean cancelled = cancelledJob.compareAndSet(false, true);
         if (cancelled) {
-            logger.fine("Sending Cancel Job " + idToString(jobId) + " request.");
+            logger.fine("Sending cancel request for job " + idAndName());
             invokeCancelJob().andThen(new CancelJobCallback());
         }
         return cancelled;
@@ -149,10 +175,6 @@ public abstract class AbstractJobProxy<T> implements Job {
 
     protected abstract LoggingService loggingService();
 
-    protected ILogger getLogger() {
-        return logger;
-    }
-
     protected T container() {
         return container;
     }
@@ -172,10 +194,6 @@ public abstract class AbstractJobProxy<T> implements Job {
 
     private void doInvokeJoinJob() {
         invokeJoinJob().andThen(joinJobCallback);
-    }
-
-    private ILogger createLogger() {
-        return loggingService().getLogger(Job.class + "." + idToString(jobId));
     }
 
     private class SubmitJobCallback implements ExecutionCallback<Void> {
@@ -198,11 +216,11 @@ public abstract class AbstractJobProxy<T> implements Job {
         public synchronized void onFailure(Throwable t) {
             Throwable ex = peel(t);
             if (ex instanceof LocalMemberResetException) {
-                String msg = "Job " + idToString(jobId) + " failed because the cluster is performing split-brain merge";
+                String msg = "Job " + idAndName() + " failed because the cluster is performing split-brain merge";
                 logger.warning(msg, ex);
                 future.completeExceptionally(new CancellationException(msg));
             } else if (!isRestartable(ex)) {
-                String msg = "Job " + idToString(jobId)
+                String msg = "Job " + idAndName()
                         + " failed because it has received a non-restartable exception during submission";
                 logger.warning(msg, ex);
                 future.completeExceptionally(ex);
@@ -217,12 +235,12 @@ public abstract class AbstractJobProxy<T> implements Job {
 
         private void resubmitJob(Throwable t) {
             if (masterAddress() != null) {
-                logger.fine("Resubmitting job " + idToString(jobId) + " after " + t.getClass().getSimpleName());
+                logger.fine("Resubmitting job " + idAndName() + " after " + t.getClass().getSimpleName());
                 invokeSubmitJob(serializationService().toData(dag), config).andThen(this);
                 return;
             }
             // job data will be cleaned up eventually by coordinator
-            String msg = "Job " + idToString(jobId) + " failed because the cluster is performing "
+            String msg = "Job " + idAndName() + " failed because the cluster is performing "
                     + " split-brain merge and coordinator is not known";
             logger.warning(msg, t);
             future.completeExceptionally(new CancellationException(msg));
@@ -241,7 +259,7 @@ public abstract class AbstractJobProxy<T> implements Job {
         public synchronized void onFailure(Throwable t) {
             Throwable ex = peel(t);
             if (ex instanceof LocalMemberResetException) {
-                String msg = "Job " + idToString(jobId) + " failed because the cluster is performing split-brain merge";
+                String msg = "Job " + idAndName() + " failed because the cluster is performing split-brain merge";
                 logger.warning(msg, ex);
                 future.internalCompleteExceptionally(new CancellationException(msg));
             } else if (!isRestartable(ex)) {
@@ -257,12 +275,12 @@ public abstract class AbstractJobProxy<T> implements Job {
 
         private void rejoinJob(Throwable t) {
             if (masterAddress() != null) {
-                logger.fine("Rejoining to job " + idToString(jobId) + " after " + t.getClass().getSimpleName());
+                logger.fine("Rejoining to job " + idAndName() + " after " + t.getClass().getSimpleName());
                 doInvokeJoinJob();
                 return;
             }
             // job data will be cleaned up eventually by coordinator
-            String msg = "Job " + idToString(jobId) + " failed because the cluster is performing "
+            String msg = "Job " + idAndName() + " failed because the cluster is performing "
                     + " split-brain merge and coordinator is not known";
             logger.warning(msg, t);
             future.internalCompleteExceptionally(new CancellationException(msg));
@@ -273,19 +291,18 @@ public abstract class AbstractJobProxy<T> implements Job {
 
         @Override
         public void onResponse(Void response) {
-            logger.fine("Job " + idToString(jobId) + " is cancelled.");
+            logger.fine("Job " + idAndName() + " is cancelled.");
         }
 
         @Override
         public void onFailure(Throwable t) {
             Throwable ex = peel(t);
             if (isRestartable(ex)) {
-                logger.fine("Re-sending cancel request for Job " + idToString(jobId));
+                logger.fine("Re-sending cancel request for job " + idAndName());
                 invokeCancelJob().andThen(this);
             } else {
-                logger.severe("Cancellation of Job " + idToString(jobId) + " failed.", t);
+                logger.severe("Cancellation of job " + idAndName() + " failed.", t);
             }
         }
     }
-
 }

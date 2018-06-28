@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class SnapshotContext {
@@ -34,8 +33,7 @@ public class SnapshotContext {
 
     private final ILogger logger;
 
-    private final long jobId;
-    private final long executionId;
+    private final String jobNameAndExecutionId;
     private final ProcessingGuarantee guarantee;
 
     /**
@@ -87,11 +85,10 @@ public class SnapshotContext {
     private final AtomicLong totalKeys = new AtomicLong();
     private final AtomicLong totalChunks = new AtomicLong();
 
-    SnapshotContext(ILogger logger, long jobId, long executionId, long lastSnapshotId,
+    SnapshotContext(ILogger logger, String jobNameAndExecutionId, long lastSnapshotId,
                     ProcessingGuarantee guarantee
     ) {
-        this.jobId = jobId;
-        this.executionId = executionId;
+        this.jobNameAndExecutionId = jobNameAndExecutionId;
         this.lastSnapshotId = new AtomicLong(lastSnapshotId);
         this.guarantee = guarantee;
         this.logger = logger;
@@ -142,7 +139,7 @@ public class SnapshotContext {
         if (numHigherPriorityTasklets == 0) {
             lastSnapshotId.set(snapshotId);
         } else {
-            logger.warning("Snapshot " + snapshotId + " for " + jobAndExecutionId(jobId, executionId) + " is postponed" +
+            logger.warning("Snapshot " + snapshotId + " for " + jobNameAndExecutionId + " is postponed" +
                     " until all higher priority vertices are completed (number of such vertices = "
                     + numHigherPriorityTasklets + ')');
             snapshotPostponed = true;
@@ -176,7 +173,7 @@ public class SnapshotContext {
             // after all higher priority vertices are done we can start the snapshot
             if (numHigherPriorityTasklets == 0 && snapshotPostponed) {
                 this.lastSnapshotId.incrementAndGet();
-                logger.info("Postponed snapshot " + this.lastSnapshotId + " for " + jobAndExecutionId(jobId, executionId)
+                logger.info("Postponed snapshot " + this.lastSnapshotId + " for " + jobNameAndExecutionId
                         + " started");
             }
         }

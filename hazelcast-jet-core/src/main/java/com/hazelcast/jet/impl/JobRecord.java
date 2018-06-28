@@ -54,6 +54,10 @@ public class JobRecord implements IdentifiedDataSerializable {
         return jobId;
     }
 
+    public String getJobNameOrId() {
+        return config.getName() != null ? config.getName() : idToString(jobId);
+    }
+
     public long getCreationTime() {
         return creationTime;
     }
@@ -108,6 +112,7 @@ public class JobRecord implements IdentifiedDataSerializable {
     public String toString() {
         return "JobRecord{" +
                 "jobId=" + idToString(jobId) +
+                ", name=" + getConfig().getName() +
                 ", creationTime=" + toLocalDateTime(creationTime) +
                 ", dagJson=" + dagJson +
                 ", config=" + config +

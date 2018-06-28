@@ -63,6 +63,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
@@ -79,8 +80,7 @@ import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createE
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
+import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
@@ -98,6 +98,7 @@ public class MasterContext {
     private final ILogger logger;
     private final JobRecord jobRecord;
     private final long jobId;
+    private final String jobName;
     private final NonCompletableFuture completionFuture = new NonCompletableFuture();
     private final CompletionToken cancellationToken;
     private final AtomicReference<JobStatus> jobStatus = new AtomicReference<>(NOT_STARTED);
@@ -116,10 +117,11 @@ public class MasterContext {
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRecord = jobRecord;
         this.jobId = jobRecord.getJobId();
+        this.jobName = jobRecord.getJobNameOrId();
         this.cancellationToken = new CompletionToken(logger);
     }
 
-    public long getJobId() {
+    public long jobId() {
         return jobId;
     }
 
@@ -249,19 +251,19 @@ public class MasterContext {
     private boolean setJobStatusToStarting() {
         JobStatus status = jobStatus();
         if (status == COMPLETED || status == FAILED) {
-            logger.severe("Cannot init job " + idToString(jobId) + ": it is already " + status);
+            logger.severe("Cannot init job '" + jobName + "': it is already " + status);
             return false;
         }
 
         if (cancellationToken.isCompleted()) {
-            logger.fine("Skipping init job " + idToString(jobId) + ": is already cancelled.");
+            logger.fine("Skipping init job '" + jobName + "': is already cancelled.");
             finalizeJob(new CancellationException());
             return false;
         }
 
         if (status == NOT_STARTED) {
             if (!jobStatus.compareAndSet(NOT_STARTED, STARTING)) {
-                logger.fine("Cannot init job " + idToString(jobId) + ": someone else is just starting it");
+                logger.fine("Cannot init job '" + jobName + "': someone else is just starting it");
                 return false;
             }
 
@@ -270,7 +272,7 @@ public class MasterContext {
 
         status = jobStatus();
         if (!(status == STARTING || status == RESTARTING)) {
-            logger.severe("Cannot init job " + idToString(jobId) + ": status is " + status);
+            logger.severe("Cannot init job '" + jobName + "': status is " + status);
             return false;
         }
 
@@ -283,7 +285,7 @@ public class MasterContext {
             return false;
         }
 
-        logger.fine("Rescheduling restart of job " + idToString(jobId) + ": quorum size " + quorumSize + " is not met");
+        logger.fine("Rescheduling restart of job '" + jobName + "': quorum size " + quorumSize + " is not met");
         scheduleRestart();
         return true;
     }
@@ -293,7 +295,7 @@ public class MasterContext {
             return false;
         }
 
-        logger.fine("Rescheduling restart of job " + idToString(jobId) + ": cluster is not safe");
+        logger.fine("Rescheduling restart of job '" + jobName + "': cluster is not safe");
         scheduleRestart();
         return true;
     }
@@ -435,15 +437,15 @@ public class MasterContext {
     void beginSnapshot(long executionId) {
         if (this.executionId != executionId) {
             // current execution is completed and probably a new execution has started
-            logger.warning("Not beginning snapshot since expected execution id " + idToString(this.executionId)
-                    + " does not match to " + jobAndExecutionId(jobId, executionId));
+            logger.warning("Not beginning snapshot since unexpected execution ID received for " + jobIdString()
+                    + ". Received execution ID: " + idToString(executionId));
             return;
         }
 
         List<String> vertexNames = vertices.stream().map(Vertex::getName).collect(Collectors.toList());
         long newSnapshotId = snapshotRepository.registerSnapshot(jobId, vertexNames);
 
-        logger.info(String.format("Starting snapshot %s for %s", newSnapshotId, jobAndExecutionId(jobId, executionId)));
+        logger.info(String.format("Starting snapshot %s for %s", newSnapshotId, jobIdString()));
         Function<ExecutionPlan, Operation> factory =
                 plan -> new SnapshotOperation(jobId, executionId, newSnapshotId);
 
@@ -458,7 +460,7 @@ public class MasterContext {
 
         boolean isSuccess = mergedResult.getError() == null;
         if (!isSuccess) {
-            logger.warning(jobAndExecutionId(jobId, executionId) + " snapshot " + snapshotId + " has failure, " +
+            logger.warning(jobIdString() + " snapshot " + snapshotId + " has failure, " +
                     "first failure: " + mergedResult.getError());
         }
         coordinationService.completeSnapshot(jobId, executionId, snapshotId, isSuccess,
@@ -557,7 +559,7 @@ public class MasterContext {
         jobStatus.set(status);
 
         try {
-            coordinationService.completeJob(this, executionId, System.currentTimeMillis(), failure);
+            coordinationService.completeJob(this, System.currentTimeMillis(), failure);
         } catch (RuntimeException e) {
             logger.warning("Completion of " + jobIdString() + " failed", e);
         } finally {
@@ -663,8 +665,8 @@ public class MasterContext {
         return getJobConfig().getProcessingGuarantee() != ProcessingGuarantee.NONE;
     }
 
-    private String jobIdString() {
-        return jobAndExecutionId(jobId, executionId);
+    String jobIdString() {
+        return jobNameAndExecutionId(jobName, executionId);
     }
 
     private static ClassLoader swapContextClassLoader(ClassLoader jobClassLoader) {

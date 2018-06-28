@@ -51,6 +51,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_STARTED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.FAILED;
@@ -58,8 +59,6 @@ import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.SUC
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
-import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.util.executor.ExecutorType.CACHED;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -79,9 +78,9 @@ public class JobCoordinationService {
     private final SnapshotRepository snapshotRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
 
-    public JobCoordinationService(NodeEngineImpl nodeEngine, JetConfig config,
-                                  JobRepository jobRepository, JobExecutionService jobExecutionService,
-                                  SnapshotRepository snapshotRepository) {
+    JobCoordinationService(NodeEngineImpl nodeEngine, JetConfig config,
+                           JobRepository jobRepository, JobExecutionService jobExecutionService,
+                           SnapshotRepository snapshotRepository) {
         this.nodeEngine = nodeEngine;
         this.config = config;
         this.logger = nodeEngine.getLogger(getClass());
@@ -167,7 +166,7 @@ public class JobCoordinationService {
      */
     public CompletableFuture<Void> submitOrJoinJob(long jobId, Data dag, JobConfig config) {
         if (!isMaster()) {
-            throw new JetException("Cannot submit Job " + idToString(jobId) + ". Master address: "
+            throw new JetException("Cannot submit job " + idToString(jobId) + ". Master address: "
                     + nodeEngine.getClusterService().getMasterAddress());
         }
 
@@ -189,7 +188,7 @@ public class JobCoordinationService {
         // just try to initiate the coordination
         MasterContext prev = masterContexts.putIfAbsent(jobId, masterContext);
         if (prev != null) {
-            logger.fine("Joining to already started job " + idToString(jobId));
+            logger.fine("Joining to already started job " + prev.jobIdString());
             return prev.completionFuture();
         }
 
@@ -201,7 +200,7 @@ public class JobCoordinationService {
         // If there is no master context and job result at the same time, it means this is the first submission
         jobRepository.putNewJobRecord(jobRecord);
 
-        logger.info("Starting job " + idToString(jobId) + " based on submit request from client");
+        logger.info("Starting " + masterContext.jobIdString() + " based on submit request from client");
         nodeEngine.getExecutionService().execute(COORDINATOR_EXECUTOR_NAME, () -> tryStartJob(masterContext));
 
         return masterContext.completionFuture();
@@ -216,7 +215,7 @@ public class JobCoordinationService {
 
     public CompletableFuture<Void> joinSubmittedJob(long jobId) {
         if (!isMaster()) {
-            throw new JetException("Cannot join Job " + idToString(jobId) + ". Master address: "
+            throw new JetException("Cannot join job " + idToString(jobId) + ". Master address: "
                     + nodeEngine.getClusterService().getMasterAddress());
         }
 
@@ -255,17 +254,17 @@ public class JobCoordinationService {
             return;
         }
 
-        logger.info("Starting job " + idToString(masterContext.getJobId()) + " discovered by scanning of JobRecords");
+        logger.info("Starting job " + masterContext.jobIdString() + " discovered by scanning of JobRecords");
         tryStartJob(masterContext);
     }
 
     // If a job result is present, it completes the master context using the job result
     private boolean completeMasterContextIfJobAlreadyCompleted(MasterContext masterContext) {
-        long jobId = masterContext.getJobId();
+        long jobId = masterContext.jobId();
         JobResult jobResult = jobRepository.getJobResult(jobId);
         if (jobResult != null) {
-            logger.fine("Completing master context " + idToString(jobId) + " since already completed with result: " +
-                    jobResult);
+            logger.fine("Completing master context for " + masterContext.jobIdString()
+                    + " since already completed with result: " + jobResult);
             masterContext.setFinalResult(jobResult.getFailure());
             return masterContexts.remove(jobId, masterContext);
         }
@@ -274,7 +273,7 @@ public class JobCoordinationService {
                 && jobRepository.getExecutionIdCount(jobId) > 0) {
             String coordinator = nodeEngine.getNode().getThisUuid();
             Throwable result = new TopologyChangedException();
-            logger.info("Completing Job " + idToString(jobId) + " with " + result
+            logger.info("Completing job " + masterContext.jobIdString() + " with " + result
                     + " since auto-restart is disabled and the job has been executed before");
             jobRepository.completeJob(jobId, coordinator, System.currentTimeMillis(), result);
             masterContext.setFinalResult(result);
@@ -337,7 +336,7 @@ public class JobCoordinationService {
      */
     public JobStatus getJobStatus(long jobId) {
         if (!isMaster()) {
-            throw new JetException("Cannot query status of Job " + idToString(jobId) + ". Master address: "
+            throw new JetException("Cannot query status of job " + idToString(jobId) + ". Master address: "
                     + nodeEngine.getClusterService().getMasterAddress());
         }
 
@@ -380,7 +379,7 @@ public class JobCoordinationService {
      */
     public long getJobSubmissionTime(long jobId) {
         if (!isMaster()) {
-            throw new JetException("Cannot query submission time of Job " + idToString(jobId) + ". Master address: "
+            throw new JetException("Cannot query submission time of job " + idToString(jobId) + ". Master address: "
                     + nodeEngine.getClusterService().getMasterAddress());
         }
 
@@ -442,7 +441,7 @@ public class JobCoordinationService {
 
         boolean cancelled = masterContext.restartExecution();
         if (cancelled) {
-            logger.info("Job " + idToString(jobId) + " is going to be restarted");
+            logger.info(masterContext.jobIdString() + " is going to be restarted");
         } else {
             logger.warning("Cannot restart job " + idToString(jobId) + " because it is not currently being executed");
         }
@@ -457,23 +456,23 @@ public class JobCoordinationService {
     /**
      * Completes the job which is coordinated with the given master context object.
      */
-    void completeJob(MasterContext masterContext, long executionId, long completionTime, Throwable error) {
+    void completeJob(MasterContext masterContext, long completionTime, Throwable error) {
         // the order of operations is important.
 
-        long jobId = masterContext.getJobId();
+        long jobId = masterContext.jobId();
         String coordinator = nodeEngine.getNode().getThisUuid();
 
         jobRepository.completeJob(jobId, coordinator, completionTime, error);
 
-        if (masterContexts.remove(masterContext.getJobId(), masterContext)) {
-            logger.fine(jobAndExecutionId(jobId, executionId) + " is completed");
+        if (masterContexts.remove(masterContext.jobId(), masterContext)) {
+            logger.fine(masterContext.jobIdString() + " is completed");
         } else {
             MasterContext existing = masterContexts.get(jobId);
             if (existing != null) {
-                logger.severe("Different master context found to complete " + jobAndExecutionId(jobId, executionId)
+                logger.severe("Different master context found to complete " + masterContext.jobIdString()
                         + ", master context execution " + idToString(existing.getExecutionId()));
             } else {
-                logger.severe("No master context found to complete " + jobAndExecutionId(jobId, executionId));
+                logger.severe("No master context found to complete " + masterContext.jobIdString());
             }
         }
     }
@@ -483,82 +482,82 @@ public class JobCoordinationService {
      */
     void scheduleRestart(long jobId) {
         MasterContext masterContext = masterContexts.get(jobId);
-        if (masterContext != null) {
-            logger.fine("Scheduling restart on master for job " + idToString(jobId));
-            nodeEngine.getExecutionService().schedule(COORDINATOR_EXECUTOR_NAME, () -> restartJob(jobId),
-                    RETRY_DELAY_IN_MILLIS, MILLISECONDS);
-        } else {
+        if (masterContext == null) {
             logger.severe("Master context for job " + idToString(jobId) + " not found to schedule restart");
+            return;
         }
+        logger.fine("Scheduling restart on master for job " + idToString(jobId));
+        nodeEngine.getExecutionService().schedule(COORDINATOR_EXECUTOR_NAME, () -> restartJob(jobId),
+                RETRY_DELAY_IN_MILLIS, MILLISECONDS);
     }
 
     void scheduleSnapshot(long jobId, long executionId) {
         MasterContext masterContext = masterContexts.get(jobId);
-        if (masterContext != null) {
-            long snapshotInterval = masterContext.getJobConfig().getSnapshotIntervalMillis();
-            InternalExecutionService executionService = nodeEngine.getExecutionService();
-            if (logger.isFineEnabled()) {
-                logger.fine(jobAndExecutionId(jobId, executionId) + " snapshot is scheduled in "
-                        + snapshotInterval + "ms");
-            }
-            executionService.schedule(COORDINATOR_EXECUTOR_NAME, () -> beginSnapshot(jobId, executionId),
-                    snapshotInterval, MILLISECONDS);
-        } else {
-            logger.warning("MasterContext not found to schedule snapshot of " + jobAndExecutionId(jobId, executionId));
+        if (masterContext == null) {
+            logger.warning("MasterContext not found to schedule snapshot of " + idToString(jobId));
+            return;
         }
+        long snapshotInterval = masterContext.getJobConfig().getSnapshotIntervalMillis();
+        InternalExecutionService executionService = nodeEngine.getExecutionService();
+        if (logger.isFineEnabled()) {
+            logger.fine(masterContext.jobIdString() + " snapshot is scheduled in "
+                    + snapshotInterval + "ms");
+        }
+        executionService.schedule(COORDINATOR_EXECUTOR_NAME, () -> beginSnapshot(jobId, executionId),
+                snapshotInterval, MILLISECONDS);
     }
 
     private void beginSnapshot(long jobId, long executionId) {
         MasterContext masterContext = masterContexts.get(jobId);
-        if (masterContext != null) {
-            if (masterContext.completionFuture().isDone() || masterContext.isCancelled()
-                    || masterContext.jobStatus() != RUNNING) {
-                logger.fine("Not starting snapshot since " + jobAndExecutionId(jobId, executionId) + " is done.");
-                return;
-            }
-
-            if (!shouldStartJobs()) {
-                scheduleSnapshot(jobId, executionId);
-                return;
-            }
-
-            masterContext.beginSnapshot(executionId);
-        } else {
-            logger.warning("MasterContext not found to schedule snapshot of " + jobAndExecutionId(jobId, executionId));
+        if (masterContext == null) {
+            logger.warning("MasterContext not found to schedule snapshot of " + idToString(jobId));
+            return;
         }
+        if (masterContext.completionFuture().isDone() || masterContext.isCancelled()
+                || masterContext.jobStatus() != RUNNING) {
+            logger.fine("Not starting snapshot since " + masterContext.jobIdString() + " is done.");
+            return;
+        }
+
+        if (!shouldStartJobs()) {
+            scheduleSnapshot(jobId, executionId);
+            return;
+        }
+
+        masterContext.beginSnapshot(executionId);
     }
 
     void completeSnapshot(long jobId, long executionId, long snapshotId, boolean isSuccess,
                           long numBytes, long numKeys, long numChunks
     ) {
         MasterContext masterContext = masterContexts.get(jobId);
-        if (masterContext != null) {
-            try {
-                SnapshotStatus status = isSuccess ? SUCCESSFUL : FAILED;
-                long elapsed = snapshotRepository.setSnapshotComplete(jobId, snapshotId, status, numBytes, numKeys,
-                        numChunks);
-                logger.info(String.format("Snapshot %s for job %s completed with status %s in %dms, " +
-                                "%,d bytes, %,d keys in %,d chunks", snapshotId, idToString(jobId), status, elapsed,
-                                numBytes, numKeys, numChunks));
-            } catch (Exception e) {
-                logger.warning("Cannot update snapshot status for " + jobAndExecutionId(jobId, executionId) + " snapshot "
-                        + snapshotId + " isSuccess: " + isSuccess);
-                return;
-            }
-            try {
-                if (isSuccess) {
-                    snapshotRepository.deleteAllSnapshotsExceptOne(jobId, snapshotId);
-                } else {
-                    snapshotRepository.deleteSingleSnapshot(jobId, snapshotId);
-                }
-            } catch (Exception e) {
-                logger.warning("Cannot delete old snapshots for " + jobAndExecutionId(jobId, executionId));
-            }
-            scheduleSnapshot(jobId, executionId);
-        } else {
-            logger.warning("MasterContext not found to finalize snapshot of " + jobAndExecutionId(jobId, executionId)
+        if (masterContext == null) {
+            logger.warning("MasterContext not found to finalize snapshot of " + idToString(jobId)
                     + " with result: " + isSuccess);
+            return;
         }
+        try {
+            SnapshotStatus status = isSuccess ? SUCCESSFUL : FAILED;
+            long elapsed = snapshotRepository.setSnapshotComplete(jobId, snapshotId, status, numBytes, numKeys,
+                    numChunks);
+            logger.info(String.format("Snapshot %d for %s completed with status %s in %dms, " +
+                            "%,d bytes, %,d keys in %,d chunks", snapshotId, masterContext.jobIdString(), status, elapsed,
+                            numBytes, numKeys, numChunks));
+        } catch (Exception e) {
+            logger.warning("Cannot update snapshot status for " + masterContext.jobIdString() + " snapshot "
+                    + snapshotId + " isSuccess: " + isSuccess);
+            return;
+        }
+        try {
+            if (isSuccess) {
+                snapshotRepository.deleteAllSnapshotsExceptOne(jobId, snapshotId);
+            } else {
+                snapshotRepository.deleteSingleSnapshot(jobId, snapshotId);
+            }
+        } catch (Exception e) {
+            logger.warning("Cannot delete old snapshots for " + masterContext.jobIdString());
+        }
+        scheduleSnapshot(jobId, executionId);
     }
 
     boolean shouldStartJobs() {
@@ -582,7 +581,7 @@ public class JobCoordinationService {
 
         masterContexts.values().stream()
                       .filter(ctx -> name.equals(ctx.getJobConfig().getName()))
-                      .forEach(ctx -> jobs.put(ctx.getJobId(), ctx.getJobRecord().getCreationTime()));
+                      .forEach(ctx -> jobs.put(ctx.jobId(), ctx.getJobRecord().getCreationTime()));
 
         jobRepository.getJobResults(name)
                   .forEach(r -> jobs.put(r.getJobId(), r.getCreationTime()));
@@ -603,16 +602,16 @@ public class JobCoordinationService {
      */
     private void restartJob(long jobId) {
         MasterContext masterContext = masterContexts.get(jobId);
-        if (masterContext != null) {
-            if (masterContext.isCancelled()) {
-                tryStartJob(masterContext);
-                return;
-            }
-
-            tryStartJob(masterContext);
-        } else {
+        if (masterContext == null) {
             logger.severe("Master context for job " + idToString(jobId) + " not found to restart");
+            return;
         }
+
+        if (masterContext.isCancelled()) {
+            tryStartJob(masterContext);
+            return;
+        }
+        tryStartJob(masterContext);
     }
 
     // runs periodically to restart jobs on coordinator failure and perform gc
@@ -643,5 +642,4 @@ public class JobCoordinationService {
     private boolean isMaster() {
         return nodeEngine.getClusterService().isMaster();
     }
-
 }

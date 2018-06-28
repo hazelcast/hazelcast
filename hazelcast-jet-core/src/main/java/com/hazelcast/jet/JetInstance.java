@@ -75,6 +75,10 @@ public interface JetInstance {
     /**
      * Creates and returns a Jet job based on the supplied DAG and job
      * configuration. Jet will asynchronously start executing the job.
+     *
+     * <p>If the name in the JobConfig is null, it will set the generated jobId
+     * as a name. If the name looks like a previously assigned jobId, it will
+     * be replaced as well.
      */
     @Nonnull
     Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config);
@@ -91,6 +95,10 @@ public interface JetInstance {
     /**
      * Creates and returns a Jet job based on the supplied pipeline and job
      * configuration. Jet will asynchronously start executing the job.
+     *
+     * <p>If the name in the JobConfig is null, it will set the generated jobId
+     * as a name. If the name looks like a previously assigned jobId, it will
+     * be replaced as well.
      */
     @Nonnull
     default Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {

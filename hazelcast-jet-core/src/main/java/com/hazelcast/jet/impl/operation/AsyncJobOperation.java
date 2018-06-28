@@ -22,12 +22,12 @@ import com.hazelcast.spi.ExceptionAction;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
-public abstract class AsyncOperation extends AbstractJobOperation {
+public abstract class AsyncJobOperation extends AbstractJobOperation {
 
-    protected AsyncOperation() {
+    protected AsyncJobOperation() {
     }
 
-    protected AsyncOperation(long jobId) {
+    protected AsyncJobOperation(long jobId) {
         super(jobId);
     }
 

@@ -73,7 +73,7 @@ public class SnapshotContextTest {
     @Test
     public void test_snapShortStartAndDone() {
         SnapshotContext ssContext =
-                new SnapshotContext(mock(ILogger.class), 1, 1, 9, ProcessingGuarantee.EXACTLY_ONCE);
+                new SnapshotContext(mock(ILogger.class), "test job", 9, ProcessingGuarantee.EXACTLY_ONCE);
 
         ssContext.initTaskletCount(taskletCount, numHigherPriority);
         CompletableFuture<SnapshotOperationResult> future = null;

@@ -219,7 +219,7 @@ public class JobRepository {
         JobRecord prev = jobRecords.putIfAbsent(jobId, jobRecord);
         if (prev != null && !prev.getDag().equals(jobRecord.getDag())) {
             throw new IllegalStateException("Cannot put job record for job " + idToString(jobId)
-                    + " because it already exists with a different dag");
+                    + " because it already exists with a different DAG");
         }
     }
 

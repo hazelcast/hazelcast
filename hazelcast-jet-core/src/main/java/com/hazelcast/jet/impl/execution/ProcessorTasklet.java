@@ -59,7 +59,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.SAVE_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
-import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
+import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.sum;
@@ -218,7 +218,7 @@ public class ProcessorTasklet implements Tasklet {
         try {
             processor.close();
         } catch (Exception e) {
-            logger.severe(jobAndExecutionId(context.jobId(), context.executionId())
+            logger.severe(jobNameAndExecutionId(context.jobConfig().getName(), context.executionId())
                     + " encountered an exception in Processor.close(), ignoring it", e);
         }
     }

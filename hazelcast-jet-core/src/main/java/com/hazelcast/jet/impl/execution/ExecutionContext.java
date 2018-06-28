@@ -22,12 +22,14 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +38,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
+import static com.hazelcast.jet.Util.idToString;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
@@ -55,6 +57,7 @@ public class ExecutionContext {
     private final Set<Address> participants;
     private final Object executionLock = new Object();
     private final ILogger logger;
+    private String jobName;
 
     // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
     private Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap = emptyMap();
@@ -90,11 +93,15 @@ public class ExecutionContext {
     }
 
     public ExecutionContext initialize(ExecutionPlan plan) {
+        jobName = plan.getJobConfig().getName();
+        if (jobName == null) {
+            jobName = idToString(jobId);
+        }
         // Must be populated early, so all processor suppliers are
         // available to be completed in the case of init failure
         procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
         processors = plan.getProcessors();
-        snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobId, executionId,
+        snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
                 plan.lastSnapshotId(), plan.getJobConfig().getProcessingGuarantee());
         plan.initialize(nodeEngine, jobId, executionId, snapshotContext);
         snapshotContext.initTaskletCount(plan.getStoreSnapshotTaskletCount(), plan.getHigherPriorityVertexCount());
@@ -140,7 +147,7 @@ public class ExecutionContext {
             try {
                 tasklet.close();
             } catch (Throwable e) {
-                logger.severe(jobAndExecutionId(jobId, executionId)
+                logger.severe(jobNameAndExecutionId()
                         + " encountered an exception in Processor.close(), ignoring it", e);
             }
         }
@@ -149,7 +156,7 @@ public class ExecutionContext {
             try {
                 s.close(error);
             } catch (Throwable e) {
-                logger.severe(jobAndExecutionId(jobId, executionId)
+                logger.severe(jobNameAndExecutionId()
                         + " encountered an exception in ProcessorSupplier.complete(), ignoring it", e);
             }
         }
@@ -204,6 +211,10 @@ public class ExecutionContext {
         return executionId;
     }
 
+    public String jobNameAndExecutionId() {
+        return Util.jobNameAndExecutionId(jobName, executionId);
+    }
+
     public Address coordinator() {
         return coordinator;
     }
@@ -219,5 +230,10 @@ public class ExecutionContext {
     // visible for testing only
     public SnapshotContext snapshotContext() {
         return snapshotContext;
+    }
+
+    @Nullable
+    public String jobName() {
+        return jobName;
     }
 }

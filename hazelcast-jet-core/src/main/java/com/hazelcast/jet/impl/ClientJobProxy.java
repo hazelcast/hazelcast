@@ -138,11 +138,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     private ClientInvocation invocation(ClientMessage request, Address invocationAddr) {
-        return new ClientInvocation(container(), request, jobName(), invocationAddr);
-    }
-
-    private String jobName() {
-        return "jobId=" + idToString(getId());
+        return new ClientInvocation(container(), request, "jobId=" + idToString(getId()), invocationAddr);
     }
 
     /**

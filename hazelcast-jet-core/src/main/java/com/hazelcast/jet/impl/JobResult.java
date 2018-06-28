@@ -101,7 +101,7 @@ public class JobResult implements IdentifiedDataSerializable {
         return "JobResult{" +
                 "coordinatorUUID='" + coordinatorUUID + '\'' +
                 ", jobId=" + idToString(jobId) +
-                ", jobConfig.name=" + jobConfig.getName() +
+                ", name=" + jobConfig.getName() +
                 ", creationTime=" + toLocalDateTime(creationTime) +
                 ", completionTime=" + toLocalDateTime(completionTime) +
                 ", failure=" + failure +

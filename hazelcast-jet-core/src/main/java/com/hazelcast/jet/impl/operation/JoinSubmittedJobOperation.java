@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
-public class JoinSubmittedJobOperation extends AsyncOperation {
+public class JoinSubmittedJobOperation extends AsyncJobOperation {
 
     public JoinSubmittedJobOperation() {
     }

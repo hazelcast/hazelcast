@@ -48,7 +48,6 @@ import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -68,6 +67,7 @@ import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
+import java.util.regex.Pattern;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
@@ -80,6 +80,8 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
 public final class Util {
+
+    private static final Pattern ID_PATTERN = Pattern.compile("(\\p{XDigit}{4}-){3}\\p{XDigit}{4}");
 
     private static final int BUFFER_SIZE = 1 << 15;
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
@@ -309,7 +311,11 @@ public final class Util {
         return Holder.NUMBER_GENERATOR.nextLong();
     }
 
-    public static String jobAndExecutionId(long jobId, long executionId) {
+    public static String jobNameAndExecutionId(String jobName, long executionId) {
+        return "job '" + jobName + "', execution " + idToString(executionId);
+    }
+
+    public static String jobIdAndExecutionId(long jobId, long executionId) {
         return "job " + idToString(jobId) + ", execution " + idToString(executionId);
     }
 
@@ -325,13 +331,23 @@ public final class Util {
         return toZonedDateTime(timestamp).toLocalTime().format(LOCAL_TIME_FORMATTER);
     }
 
+    /**
+     * Parses the jobId formatted with {@link
+     * com.hazelcast.jet.Util#idToString(long)}.
+     *
+     * <p>The method is lenient: if the string doesn't match the structure
+     * output by {@code idToString} or if the string is null, it will return
+     * -1.
+     *
+     * @return the parsed ID or -1 if parsing failed.
+     */
     @SuppressWarnings("checkstyle:magicnumber")
     public static long idFromString(String str) {
-        if (str == null || str.length() != 19) {
+        if (str == null || !ID_PATTERN.matcher(str).matches()) {
             return -1;
         }
         str = str.replaceAll("-", "");
-        return new BigInteger(str, 16).longValue();
+        return Long.parseUnsignedLong(str, 16);
     }
 
     public static <K, V> EntryProcessor<K, V> entryProcessor(

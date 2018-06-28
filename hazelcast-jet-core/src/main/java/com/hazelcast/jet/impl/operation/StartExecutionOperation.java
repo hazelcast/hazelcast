@@ -27,9 +27,8 @@ import java.io.IOException;
 import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 
-public class StartExecutionOperation extends AsyncOperation {
+public class StartExecutionOperation extends AsyncJobOperation {
 
     private long executionId;
 
@@ -46,16 +45,16 @@ public class StartExecutionOperation extends AsyncOperation {
         ExecutionContext execCtx = getExecutionCtx();
         Address coordinator = getCallerAddress();
         getLogger().info("Start execution of "
-                + jobAndExecutionId(jobId(), executionId) + " from coordinator " + coordinator);
+                + execCtx.jobNameAndExecutionId() + " from coordinator " + coordinator);
         execCtx.beginExecution().whenComplete(withTryCatch(getLogger(), (i, e) -> {
             if (e instanceof CancellationException) {
-                getLogger().fine("Execution of " + jobAndExecutionId(jobId(), executionId)
+                getLogger().fine("Execution of " + execCtx.jobNameAndExecutionId()
                         + " was cancelled");
             } else if (e != null) {
-                getLogger().fine("Execution of " + jobAndExecutionId(jobId(), executionId)
+                getLogger().fine("Execution of " + execCtx.jobNameAndExecutionId()
                         + " completed with failure", e);
             } else {
-                getLogger().fine("Execution of " + jobAndExecutionId(jobId(), executionId) + " completed");
+                getLogger().fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
             }
             doSendResponse(e);
         }));

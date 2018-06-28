@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.impl.operation.AsyncOperation;
+import com.hazelcast.jet.impl.operation.AsyncJobOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.LiveOperations;
 
@@ -25,18 +25,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LiveOperationRegistry {
     // memberAddress -> callId -> operation
-    final ConcurrentHashMap<Address, Map<Long, AsyncOperation>> liveOperations = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<Address, Map<Long, AsyncJobOperation>> liveOperations = new ConcurrentHashMap<>();
 
-    public void register(AsyncOperation operation) {
-        Map<Long, AsyncOperation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
+    public void register(AsyncJobOperation operation) {
+        Map<Long, AsyncJobOperation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
                 (key) -> new ConcurrentHashMap<>());
         if (callIds.putIfAbsent(operation.getCallId(), operation) != null) {
             throw new IllegalStateException("Duplicate operation during registration of operation=" + operation);
         }
     }
 
-    public void deregister(AsyncOperation operation) {
-        Map<Long, AsyncOperation> operations = liveOperations.get(operation.getCallerAddress());
+    public void deregister(AsyncJobOperation operation) {
+        Map<Long, AsyncJobOperation> operations = liveOperations.get(operation.getCallerAddress());
 
         if (operations == null) {
             throw new IllegalStateException("Missing address during de-registration of operation=" + operation);
