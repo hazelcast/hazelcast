@@ -48,8 +48,9 @@ class KeySetIteratorFactory<K, V> implements IteratorFactory<K, V, K> {
         @Override
         public boolean hasNext() {
             while (iterator.hasNext()) {
-                nextEntry = iterator.next();
-                if (testEntry(nextEntry)) {
+                Map.Entry<K, ReplicatedRecord<K, V>> entry = iterator.next();
+                if (testEntry(entry)) {
+                    nextEntry = entry;
                     return true;
                 }
             }
