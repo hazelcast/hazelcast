@@ -23,6 +23,7 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.clientside.ClientICacheManager;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCacheManager;
@@ -54,11 +55,14 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
         /*
          * TODO:
          *
-         * A new interface, such as `InternalHazelcastInstance` (has `getOriginalInstance()` method),
-         * might be introduced. Then underlying actual (original) Hazelcast instance is retrieved through this.
+         * A new interface, such as `InternalHazelcastInstance` (with a
+         * `getOriginalInstance()` method), might be introduced. Then the
+         * underlying actual (original) Hazelcast instance can be retrieved
+         * through this.
          *
-         * Original Hazelcast instance is used for getting `NearCacheManager` and
-         * passing full cache name directly by this cache manager itself.
+         * The original Hazelcast instance is used for getting access to
+         * internals. It's also used for passing the full cache name directly
+         * by this cache manager itself.
          */
         if (hazelcastInstance instanceof HazelcastClientProxy) {
             client = ((HazelcastClientProxy) hazelcastInstance).client;
@@ -66,8 +70,8 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
             client = ((HazelcastClientInstanceImpl) hazelcastInstance);
         }
 
-        clientCacheProxyFactory =
-                (ClientCacheProxyFactory) client.getProxyManager().getClientProxyFactory(ICacheService.SERVICE_NAME);
+        ProxyManager proxyManager = client.getProxyManager();
+        clientCacheProxyFactory = (ClientCacheProxyFactory) proxyManager.getClientProxyFactory(ICacheService.SERVICE_NAME);
     }
 
     @Override
@@ -83,8 +87,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     private void enableStatisticManagementOnNodes(String cacheName, boolean statOrMan, boolean enabled) {
         ensureOpen();
         checkNotNull(cacheName, "cacheName cannot be null");
-        ClientCacheHelper.enableStatisticManagementOnNodes(client, getCacheNameWithPrefix(cacheName),
-                statOrMan, enabled);
+        ClientCacheHelper.enableStatisticManagementOnNodes(client, getCacheNameWithPrefix(cacheName), statOrMan, enabled);
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
@@ -119,6 +122,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected <K, V> CacheConfig<K, V> findCacheConfig(String cacheName, String simpleCacheName) {
         if (simpleCacheName == null) {
             return null;
@@ -141,6 +145,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T unwrap(Class<T> clazz) {
         if (HazelcastClientCacheManager.class.isAssignableFrom(clazz)) {
             return (T) this;
@@ -157,12 +162,12 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected void postDestroy() {
-        Iterator<Map.Entry<String, CacheConfig>> iter = clientCacheProxyFactory.configs().iterator();
-        while (iter.hasNext()) {
-            Map.Entry<String, CacheConfig> entry = iter.next();
+        Iterator<Map.Entry<String, CacheConfig>> iterator = clientCacheProxyFactory.configs().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, CacheConfig> entry = iterator.next();
             String cacheName = entry.getKey();
             clientCacheProxyFactory.removeCacheConfig(cacheName);
-            iter.remove();
+            iterator.remove();
         }
     }
 

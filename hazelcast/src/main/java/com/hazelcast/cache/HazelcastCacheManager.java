@@ -21,20 +21,21 @@ import com.hazelcast.core.HazelcastInstance;
 import javax.cache.CacheManager;
 
 /**
- * Contract point of Hazelcast cache manager implementations (client + server) based on {@link CacheManager}.
+ * Contract point of Hazelcast cache manager implementations (client + server)
+ * based on {@link CacheManager}.
  *
  * @see CacheManager
  */
-public interface HazelcastCacheManager
-        extends CacheManager {
+public interface HazelcastCacheManager extends CacheManager {
 
     /**
-     * Hazelcast's {@link javax.cache.CacheManager}'s prefix to be appended to the head of the cache name.
+     * Hazelcast's {@link javax.cache.CacheManager} prefix to be appended to
+     * the head of the cache name.
      */
     String CACHE_MANAGER_PREFIX = "/hz/";
 
     /**
-     * Gets cache name by adding manager prefix.
+     * Gets the cache name by adding the manager prefix.
      *
      * @param name pure cache name without prefix
      * @return the cache name with manager prefix
@@ -49,16 +50,16 @@ public interface HazelcastCacheManager
     HazelcastInstance getHazelcastInstance();
 
     /**
-     * Removes associated cache with the given cache name.
+     * Removes the associated cache with the given cache name.
      *
      * @param cacheName pure cache name without prefix
-     * @param destroy   flag to specify whether removed cache will be destroyed
+     * @param destroy   flag to specify whether the removed cache will be
+     *                  destroyed
      */
     void removeCache(String cacheName, boolean destroy);
 
     /**
-     * Destroys cache manager.
+     * Destroys the cache manager.
      */
     void destroy();
-
 }

@@ -31,31 +31,36 @@ import java.net.URI;
 import java.util.Properties;
 
 /**
- * This class is the Hazelcast JCache public {@link javax.cache.spi.CachingProvider} implementation. This provider
- * class acts as the commonly used entry point for the JCache SPI to register Hazelcast JCache as an eligible JCache
+ * Hazelcast implementation of JCache {@link javax.cache.spi.CachingProvider}.
+ * <p>
+ * This provider class acts as the commonly used entry point for the JCache SPI
+ * to register Hazelcast JCache as an eligible JCache implementation.
+ * <p>
+ * The main purpose of this provider implementation is to delegate to the
+ * user-selected internal {@link javax.cache.spi.CachingProvider}
  * implementation.
- * <p>Main purpose of this provider implementation is to delegate to the user-selected internal
- * {@link javax.cache.spi.CachingProvider} implementation.</p>
- * <p>Hazelcast uses two internal {@link javax.cache.spi.CachingProvider}s depending on the environment:
+ * <p>
+ * Hazelcast uses two internal {@link javax.cache.spi.CachingProvider}s,
+ * depending on the environment:
  * <ul>
  * <li>{@link com.hazelcast.cache.impl.HazelcastServerCachingProvider}</li>
- * <li>{@link com.hazelcast.client.cache.impl.HazelcastClientCachingProvider}</li>
+ * <li>{@code com.hazelcast.client.cache.impl.HazelcastClientCachingProvider}</li>
  * </ul>
- * </p>
+ * <h3>Provider Type Selection</h3>
+ * The first step is to check whether a selection exists using the system
+ * property {@code hazelcast.jcache.provider.type} with values of
+ * {@code client} or {@code server}.
  * <p>
- * <h3>Provider Type Selection:</h3>
- * The first step is to check whether a selection exists using the system property
- * <tt>hazelcast.jcache.provider.type</tt> with values of <tt>client</tt> or <tt>server</tt>.
- * If no selection exists, then the default behavior for selecting the internal provider type is based on
- * which dependency is found on the classpath. Client and server provider classes are searched on the classpath. If
- * both {@link javax.cache.spi.CachingProvider} implementations are found (client and server), the client
- * provider has precedence. To select the server provider, use the above mentioned property.
- * </p>
+ * If no selection exists, then the default behavior for selecting the internal
+ * provider type is based on which dependency is found on the classpath. Client
+ * and server provider classes are searched on the classpath. If both
+ * {@link javax.cache.spi.CachingProvider} implementations are found, the client
+ * provider has precedence. To select the server provider, use the above
+ * mentioned property.
  *
  * @since 3.4
  */
-public final class HazelcastCachingProvider
-        implements CachingProvider {
+public final class HazelcastCachingProvider implements CachingProvider {
 
     /**
      * Hazelcast config location property
@@ -115,7 +120,7 @@ public final class HazelcastCachingProvider
      * @return properties instance pre-configured with the configuration location
      */
     public static Properties propertiesByLocation(String configFileLocation) {
-        final Properties properties = new Properties();
+        Properties properties = new Properties();
         properties.setProperty(HAZELCAST_CONFIG_LOCATION, configFileLocation);
         return properties;
     }
@@ -127,7 +132,7 @@ public final class HazelcastCachingProvider
      * @return the properties instance pre-configured with the instance name
      */
     public static Properties propertiesByInstanceName(String instanceName) {
-        final Properties properties = new Properties();
+        Properties properties = new Properties();
         properties.setProperty(HAZELCAST_INSTANCE_NAME, instanceName);
         return properties;
     }
@@ -139,7 +144,7 @@ public final class HazelcastCachingProvider
      * @return the properties instance pre-configured with the instance itself
      */
     public static Properties propertiesByInstanceItself(HazelcastInstance instance) {
-        final Properties properties = new Properties();
+        Properties properties = new Properties();
         properties.put(HAZELCAST_INSTANCE_ITSELF, instance);
         return properties;
     }
