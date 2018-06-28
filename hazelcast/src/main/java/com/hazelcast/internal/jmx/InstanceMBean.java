@@ -22,14 +22,19 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.monitor.LocalWanPublisherStats;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
@@ -69,6 +74,29 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         InternalOperationService operationService = node.nodeEngine.getOperationService();
         createMBeans(hazelcastInstance, managementService, node, executionService, operationService);
         registerMBeans();
+        registerWanPublisherMBeans(node.nodeEngine.getWanReplicationService());
+    }
+
+    /**
+     * Registers managed beans for all WAN publishers, if any.
+     *
+     * @param wanReplicationService the WAN replication service
+     */
+    private void registerWanPublisherMBeans(WanReplicationService wanReplicationService) {
+        final Map<String, LocalWanStats> wanStats = wanReplicationService.getStats();
+        if (wanStats == null) {
+            return;
+        }
+
+        for (Entry<String, LocalWanStats> replicationStatsEntry : wanStats.entrySet()) {
+            final String wanReplicationName = replicationStatsEntry.getKey();
+            final LocalWanStats localWanStats = replicationStatsEntry.getValue();
+            final Map<String, LocalWanPublisherStats> publisherStats = localWanStats.getLocalWanPublisherStats();
+
+            for (String targetGroupName : publisherStats.keySet()) {
+                register(new WanPublisherMBean(wanReplicationService, wanReplicationName, targetGroupName, service));
+            }
+        }
     }
 
     private void createMBeans(HazelcastInstanceImpl hazelcastInstance, ManagementService managementService, Node node,

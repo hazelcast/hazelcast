@@ -38,7 +38,7 @@ import static org.junit.Assert.fail;
 /**
  * Holds the Hazelcast instance and MBean server and provides some utility functions for accessing the MBeans.
  */
-final class MBeanDataHolder {
+public final class MBeanDataHolder {
 
     private HazelcastInstance hz;
     private MBeanServer mbs;
@@ -47,7 +47,7 @@ final class MBeanDataHolder {
     /**
      * Initialize with new hazelcast instance and MBean server
      */
-    MBeanDataHolder(TestHazelcastInstanceFactory factory) {
+    public MBeanDataHolder(TestHazelcastInstanceFactory factory) {
         Config config = new Config();
         config.setInstanceName("hz:\",=*?" + ID_GEN.getAndIncrement());
         config.setProperty(GroupProperty.ENABLE_JMX.getName(), "true");
@@ -55,7 +55,12 @@ final class MBeanDataHolder {
         mbs = ManagementFactory.getPlatformMBeanServer();
     }
 
-    void assertMBeanExistEventually(final String type, final String name) {
+    public MBeanDataHolder(HazelcastInstance instance) {
+        hz = instance;
+        mbs = ManagementFactory.getPlatformMBeanServer();
+    }
+
+    public void assertMBeanExistEventually(final String type, final String name) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -69,7 +74,7 @@ final class MBeanDataHolder {
         });
     }
 
-    void assertMBeanNotExistEventually(final String type, final String name) {
+    public void assertMBeanNotExistEventually(final String type, final String name) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -101,7 +106,7 @@ final class MBeanDataHolder {
      * @param attributeName Name of attribute to query, e.g. "size"
      * @return Value to get
      */
-    Object getMBeanAttribute(final String type, final String objectName, String attributeName) throws Exception {
+    public Object getMBeanAttribute(final String type, final String objectName, String attributeName) throws Exception {
         return mbs.getAttribute(getObjectName(type, objectName), attributeName);
     }
 
@@ -116,8 +121,8 @@ final class MBeanDataHolder {
      *                      May be null for methods without parameters.
      * @return Value to get
      */
-    Object invokeMBeanOperation(final String type, final String objectName, String operationName, Object[] params,
-                                String[] signature) throws Exception {
+    public Object invokeMBeanOperation(final String type, final String objectName, String operationName, Object[] params,
+                                       String[] signature) throws Exception {
         return mbs.invoke(getObjectName(type, objectName), operationName, params, signature);
     }
 
