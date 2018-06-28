@@ -254,7 +254,10 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         List<OUT> results = new ArrayList<>();
         int i = 0;
         for (; i < w.size && w.ends[i] < wm; i++) {
-            results.add(mapToOutputFn.apply(w.starts[i], w.ends[i], key, aggrOp.finishFn().apply(w.accs[i])));
+            OUT out = mapToOutputFn.apply(w.starts[i], w.ends[i], key, aggrOp.finishFn().apply(w.accs[i]));
+            if (out != null) {
+                results.add(out);
+            }
         }
         if (i != w.size) {
             w.removeHead(i);

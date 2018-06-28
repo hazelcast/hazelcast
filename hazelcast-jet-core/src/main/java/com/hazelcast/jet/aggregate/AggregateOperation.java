@@ -121,6 +121,9 @@ public interface AggregateOperation<A, R> extends Serializable {
      * primitive is defined, the accumulator object <strong>must</strong>
      * properly implement {@code equals()}. See {@link #deductFn()} for an
      * explanation.
+     * <p>
+     * The returned accumulator must be serializable. For performance, you
+     * should prefer Hazelcast custom serialization.
      */
     @Nonnull
     DistributedSupplier<A> createFn();
@@ -200,6 +203,9 @@ public interface AggregateOperation<A, R> extends Serializable {
      * For example, when accumulating into an {@code ArrayList}, you must copy
      * it before returning it. If the elements of the list are mutated, they
      * must be copied as well.
+     * <p>
+     * The returned function must never return {@code null}. In other words,
+     * for any accumulator it must return a non-null exported value.
      */
     @Nonnull
     DistributedFunction<? super A, ? extends R> exportFn();
@@ -210,6 +216,9 @@ public interface AggregateOperation<A, R> extends Serializable {
      * primitive: the accumulator is guaranteed to be no longer used after this
      * operation. For example, when accumulating into an {@code ArrayList}, you
      * can return the accumulator list directly without copying it.
+     * <p>
+     * The returned function must never return {@code null}. In other words,
+     * for any accumulator it must return a non-null finished value.
      */
     @Nonnull
     default DistributedFunction<? super A, ? extends R> finishFn() {

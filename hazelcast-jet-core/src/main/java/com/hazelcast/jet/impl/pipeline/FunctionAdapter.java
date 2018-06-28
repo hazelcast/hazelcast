@@ -206,10 +206,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     <T, R> DistributedFunction<? super JetEvent<T>, ?> adaptMapFn(
             @Nonnull DistributedFunction<? super T, ? extends R> mapFn
     ) {
-        return e -> {
-            R result = mapFn.apply(e.payload());
-            return result != null ? jetEvent(result, e.timestamp()) : null;
-        };
+        return e -> jetEvent(mapFn.apply(e.payload()), e.timestamp());
     }
 
     @Nonnull @Override
@@ -228,10 +225,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     <C, T, R> DistributedBiFunction<? super C, ? super JetEvent<T>, ? extends JetEvent<R>> adaptMapUsingContextFn(
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
     ) {
-        return (context, e) -> {
-            R result = mapFn.apply(context, e.payload());
-            return result != null ? jetEvent(result, e.timestamp()) : null;
-        };
+        return (context, e) -> jetEvent(mapFn.apply(context, e.payload()), e.timestamp());
     }
 
     @Nonnull @Override

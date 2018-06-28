@@ -17,6 +17,7 @@
 package com.hazelcast.jet.function;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 
 /**
@@ -43,7 +44,9 @@ import java.io.Serializable;
  */
 @FunctionalInterface
 public interface WindowResult3Function<R0, R1, R2, OUT> extends Serializable {
-    @Nonnull OUT apply(long start, long end, @Nonnull R0 result0, @Nonnull R1 result1, @Nonnull R2 result2);
+
+    @Nullable
+    OUT apply(long start, long end, @Nonnull R0 result0, @Nonnull R1 result1, @Nonnull R2 result2);
 
     default KeyedWindowResult3Function<Object, R0, R1, R2, OUT> toKeyedWindowResult3Fn() {
         return (start, end, k, result0, result1, result2) -> apply(start, end, result0, result1, result2);

@@ -437,18 +437,20 @@ public class BatchStageTest extends PipelineTestSupport {
         IMap<Integer, String> enriching = jet().getMap(enrichingName);
         input.forEach(i -> enriching.put(i, i + "A"));
         BatchStage<Entry<Integer, String>> enrichingStage = p.drawFrom(Sources.map(enrichingName));
+        int filteredOutItem = 100;
 
         // When
         BatchStage<Tuple2<Integer, String>> joined = srcStage.hashJoin(
                 enrichingStage,
                 joinMapEntries(wholeItem()),
-                (t1, t2) -> tuple2(t1, t2));
+                (t1, t2) -> t1 == filteredOutItem ? null : tuple2(t1, t2));
 
         // Then
         joined.drainTo(sink);
         execute();
         List<Tuple2<Integer, String>> expected = input.stream()
                                                       .map(i -> tuple2(i, i + "A"))
+                                                      .filter(t -> t.f0() != filteredOutItem)
                                                       .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
@@ -466,12 +468,13 @@ public class BatchStageTest extends PipelineTestSupport {
         IMap<Integer, String> enriching2 = jet().getMap(enriching2Name);
         input.forEach(i -> enriching1.put(i, i + "A"));
         input.forEach(i -> enriching2.put(i, i + "B"));
+        int filteredOutItem = 100;
 
         // When
         BatchStage<Tuple3<Integer, String, String>> joined = srcStage.hashJoin2(
                 enrichingStage1, joinMapEntries(wholeItem()),
                 enrichingStage2, joinMapEntries(wholeItem()),
-                (t1, t2, t3) -> tuple3(t1, t2, t3)
+                (t1, t2, t3) -> t1 == filteredOutItem ? null : tuple3(t1, t2, t3)
         );
 
         // Then
@@ -479,6 +482,7 @@ public class BatchStageTest extends PipelineTestSupport {
         execute();
         List<Tuple3<Integer, String, String>> expected = input.stream()
                                                               .map(i -> tuple3(i, i + "A", i + "B"))
+                                                              .filter(t -> t.f0() != filteredOutItem)
                                                               .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
@@ -496,12 +500,14 @@ public class BatchStageTest extends PipelineTestSupport {
         IMap<Integer, String> enriching2 = jet().getMap(enriching2Name);
         input.forEach(i -> enriching1.put(i, i + "A"));
         input.forEach(i -> enriching2.put(i, i + "B"));
+        int filteredOutItem = 100;
 
         // When
         HashJoinBuilder<Integer> b = srcStage.hashJoinBuilder();
         Tag<String> tagA = b.add(enrichingStage1, joinMapEntries(wholeItem()));
         Tag<String> tagB = b.add(enrichingStage2, joinMapEntries(wholeItem()));
-        GeneralStage<Tuple2<Integer, ItemsByTag>> joined = b.build((t1, t2) -> tuple2(t1, t2));
+        GeneralStage<Tuple2<Integer, ItemsByTag>> joined =
+                b.build((t1, t2) -> t1 == filteredOutItem ? null : tuple2(t1, t2));
 
         // Then
         joined.drainTo(sink);
@@ -509,6 +515,7 @@ public class BatchStageTest extends PipelineTestSupport {
         List<Tuple2<Integer, ItemsByTag>> expected = input
                 .stream()
                 .map(i -> tuple2(i, itemsByTag(tagA, i + "A", tagB, i + "B")))
+                .filter(t -> t.f0() != filteredOutItem)
                 .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }

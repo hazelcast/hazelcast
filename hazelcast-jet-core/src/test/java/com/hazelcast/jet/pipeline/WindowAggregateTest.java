@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -53,6 +54,8 @@ import static java.util.stream.Stream.concat;
 import static org.junit.Assert.assertEquals;
 
 public class WindowAggregateTest extends PipelineStreamTestSupport {
+
+    private static final long FILTERED_WINDOW_START = 0;
 
     @Test
     public void when_setWindowDefinition_then_windowDefinitionReturnsIt() {
@@ -96,7 +99,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .map(i -> new TimestampedItem<>(winSize + i - i % winSize, i % winSize))
                 .distinct()
                 .collect(toList()));
-        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()), 10);
     }
 
     @Test
@@ -116,7 +119,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .addTimestamps(i -> i, maxLag)
                 .window(tumbling(winSize))
                 .addKey(keyFn)
-                .distinct((start, end, item) -> formatFn.apply(end, item));
+                .distinct((start, end, item) -> start == FILTERED_WINDOW_START ? null
+                        : formatFn.apply(end, item));
 
         // Then
         distinct.drainTo(sink);
@@ -124,10 +128,14 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         // The expected output for window size 4 (timestamp, key):  (4, 0), (4, 1), (8, 2), (8, 3), ...
         Map<String, Integer> expectedKeys = toBag(timestamps
                 .stream()
-                .map(i -> formatFn.apply((long) winSize + i - i % winSize, i))
+                .map(i -> {
+                    long end = (long) winSize + i - i % winSize;
+                    return end - winSize == FILTERED_WINDOW_START ? null : formatFn.apply(end, i);
+                })
+                .filter(Objects::nonNull)
                 .distinct()
                 .collect(toList()));
-        assertTrueEventually(() -> assertEquals(expectedKeys, sinkToBag()));
+        assertTrueEventually(() -> assertEquals(expectedKeys, sinkToBag()), 10);
     }
 
     @Test
@@ -159,7 +167,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .map(start -> formatFn.apply((long) start + winSize, expectedWindowSum.apply(start)))
                 .collect(toList());
         Map<String, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()));
+        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
     }
 
     @Test
@@ -178,7 +186,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StreamStage<String> aggregated = srcStage
                 .addTimestamps(i -> i, maxLag)
                 .window(sliding(winSize, slideBy))
-                .aggregate(summingLong(i -> i), (start, end, sum) -> formatFn.apply(end, sum));
+                .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_WINDOW_START ? null
+                        : formatFn.apply(end, sum));
 
         // Then
         aggregated.drainTo(sink);
@@ -197,11 +206,13 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .stream()
                 .map(i -> i - i % slideBy)
                 .distinct()
-                .map(start -> formatFn.apply((long) start + winSize,
-                        expectedWindowSum.apply(start, min(start + winSize, itemCount))));
+                .map(start -> start == FILTERED_WINDOW_START ? null
+                        : formatFn.apply((long) start + winSize,
+                                expectedWindowSum.apply(start, min(start + winSize, itemCount))))
+                .filter(Objects::nonNull);
         List<String> expected = concat(headOfStream, restOfStream).collect(toList());
         Map<String, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()));
+        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
     }
 
     @Test
@@ -222,7 +233,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StreamStage<String> aggregated = srcStage
                 .addTimestamps(i -> i, maxLag)
                 .window(session(sessionTimeout))
-                .aggregate(summingLong(i -> i), (start, end, sum) -> formatFn.apply(start, sum));
+                .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_WINDOW_START ? null
+                        : formatFn.apply(start, sum));
 
         // Then
         aggregated.drainTo(sink);
@@ -233,9 +245,11 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .stream()
                 .map(i -> i - i % (sessionLength + sessionTimeout))
                 .distinct()
-                .map(start -> formatFn.apply((long) start, expectedWindowSum.apply(start)))
+                .map(start -> start == FILTERED_WINDOW_START ? null
+                        : formatFn.apply((long) start, expectedWindowSum.apply(start)))
+                .filter(Objects::nonNull)
                 .collect(toList()));
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()));
+        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
     }
 
     @Test
@@ -289,7 +303,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 })
                 .collect(toList());
         Map<TimestampedItem<Tuple2<Long, Long>>, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()));
+        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
     }
 
     @Test
@@ -297,7 +311,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         AggregateOperation1<Integer, LongAccumulator, Long> aggrOp = summingLong(i -> i);
         testAggregate2_withOutputFn((stage0, stage1, formatFn) ->
                 stage0.aggregate2(aggrOp, stage1, aggrOp,
-                        (start, end, sum0, sum1) -> formatFn.apply(end, tuple2(sum0, sum1))));
+                        (start, end, sum0, sum1) -> start == FILTERED_WINDOW_START ? null
+                                : formatFn.apply(end, tuple2(sum0, sum1))));
     }
 
     @Test
@@ -305,7 +320,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         AggregateOperation1<Integer, LongAccumulator, Long> aggrOp = summingLong(i -> i);
         testAggregate2_withOutputFn((stage0, stage1, formatFn) ->
                 stage0.aggregate2(stage1, aggregateOperation2(aggrOp, aggrOp),
-                        (start, end, sums) -> formatFn.apply(end, sums)));
+                        (start, end, sums) -> start == FILTERED_WINDOW_START ? null
+                                : formatFn.apply(end, sums)));
     }
 
     private void testAggregate2_withOutputFn(
@@ -348,11 +364,13 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .distinct()
                 .map(start -> {
                     long sum = expectedWindowSum.apply(start);
-                    return formatFn.apply((long) start + winSize, tuple2(sum, sum));
+                    return start == FILTERED_WINDOW_START ? null
+                            : formatFn.apply((long) start + winSize, tuple2(sum, sum));
                 })
+                .filter(Objects::nonNull)
                 .collect(toList());
         Map<String, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()));
+        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
     }
 
     @Test
@@ -414,7 +432,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 })
                 .collect(toList());
         Map<TimestampedItem<Tuple3<Long, Long, Long>>, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()));
+        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
     }
 
     @Test
@@ -422,7 +440,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         AggregateOperation1<Integer, LongAccumulator, Long> aggrOp = summingLong(i -> i);
         testAggregate3_withOutputFn((stage0, stage1, stage2, formatFn) ->
                 stage0.aggregate3(aggrOp, stage1, aggrOp, stage2, aggrOp,
-                        (start, end, sum0, sum1, sum2) -> formatFn.apply(end, tuple3(sum0, sum1, sum2))));
+                        (start, end, sum0, sum1, sum2) -> start == FILTERED_WINDOW_START ? null
+                                : formatFn.apply(end, tuple3(sum0, sum1, sum2))));
     }
 
     @Test
@@ -430,7 +449,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         AggregateOperation1<Integer, LongAccumulator, Long> aggrOp = summingLong(i -> i);
         testAggregate3_withOutputFn((stage0, stage1, stage2, formatFn) ->
                 stage0.aggregate3(stage1, stage2, aggregateOperation3(aggrOp, aggrOp, aggrOp),
-                        (start, end, sums) -> formatFn.apply(end, tuple3(sums.f0(), sums.f1(), sums.f2()))));
+                        (start, end, sums) -> start == FILTERED_WINDOW_START ? null
+                                : formatFn.apply(end, tuple3(sums.f0(), sums.f1(), sums.f2()))));
     }
 
     private void testAggregate3_withOutputFn(
@@ -479,11 +499,13 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .distinct()
                 .map(start -> {
                     long sum = expectedWindowSum.apply(start);
-                    return formatFn.apply((long) start + winSize, tuple3(sum, sum, sum));
+                    return start == FILTERED_WINDOW_START ? null
+                            : formatFn.apply((long) start + winSize, tuple3(sum, sum, sum));
                 })
+                .filter(Objects::nonNull)
                 .collect(toList());
         Map<String, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()));
+        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
     }
 
     private class AggregateBuilderFixture {
@@ -495,7 +517,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StreamStage<Integer> srcStage0 = srcStage.addTimestamps(i -> i, maxLag);
         StreamStage<Integer> srcStage1 = drawEventJournalValues(srcName1).addTimestamps(i -> i, maxLag);
 
-        {
+        AggregateBuilderFixture() {
             addToSrcMapJournal(input);
             addToSrcMapJournal(closingItems);
             addToMapJournal(srcMap1, input);
@@ -517,7 +539,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         DistributedBiFunction<Long, ItemsByTag, String> formatFn =
                 (timestamp, sums) -> String.format("(%03d: %03d, %03d)", timestamp, sums.get(tag0), sums.get(tag1));
 
-        StreamStage<String> aggregated = b.build((start, end, sums) -> formatFn.apply(end, sums));
+        StreamStage<String> aggregated = b.build((start, end, sums) ->
+                start == FILTERED_WINDOW_START ? null : formatFn.apply(end, sums));
 
         // Then
         validateAggrBuilder(aggregated, fx, winSize, tag0, tag1, formatFn);
@@ -543,7 +566,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
         StreamStage<String> aggregated = b.build(
                 b2.build(),
-                (start, end, sums) -> formatFn.apply(end, sums));
+                (start, end, sums) -> start == FILTERED_WINDOW_START ? null : formatFn.apply(end, sums));
 
         // Then
         validateAggrBuilder(aggregated, fx, winSize, tag0, tag1, formatFn);
@@ -566,10 +589,12 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .distinct()
                 .map(start -> {
                     long sum = expectedWindowSum.apply(start);
-                    return formatFn.apply((long) start + winSize, itemsByTag(tag0, sum, tag1, sum));
+                    return start == FILTERED_WINDOW_START ? null
+                            : formatFn.apply((long) start + winSize, itemsByTag(tag0, sum, tag1, sum));
                 })
+                .filter(Objects::nonNull)
                 .collect(toList());
         Map<String, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()));
+        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
     }
 }

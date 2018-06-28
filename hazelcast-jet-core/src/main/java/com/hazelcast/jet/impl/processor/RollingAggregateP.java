@@ -57,7 +57,9 @@ public final class RollingAggregateP<T, K, A, R, OUT> extends AbstractProcessor 
             aggrOp.accumulateFn().accept(acc, t);
             R aggResult = aggrOp.exportFn().apply(acc);
             OUT output = mapToOutputFn.apply(key, aggResult);
-            outputTraverser.accept(output);
+            if (output != null) {
+                outputTraverser.accept(output);
+            }
             return outputTraverser;
         });
     }

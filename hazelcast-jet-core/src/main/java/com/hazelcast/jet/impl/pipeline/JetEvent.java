@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
@@ -35,7 +36,11 @@ public final class JetEvent<T> {
         this.payload = payload;
     }
 
-    public static <T> JetEvent<T> jetEvent(T payload, long timestamp) {
+    @Nullable
+    public static <T> JetEvent<T> jetEvent(@Nullable T payload, long timestamp) {
+        if (payload == null) {
+            return null;
+        }
         return new JetEvent<>(payload, timestamp);
     }
 

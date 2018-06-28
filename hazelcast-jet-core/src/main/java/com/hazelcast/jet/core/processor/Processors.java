@@ -259,7 +259,7 @@ public final class Processors {
     /**
      * Returns a supplier of processors for a vertex that performs the provided
      * aggregate operation on all the items it receives. After exhausting all
-     * its input it emits a single item of type {@code R} &mdash;the result of
+     * its input it emits a single item of type {@code R} &mdash; the result of
      * the aggregate operation.
      * <p>
      * Since the input to this vertex must be bounded, its primary use case is

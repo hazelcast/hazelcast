@@ -19,6 +19,7 @@ package com.hazelcast.jet.function;
 import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 
 /**
@@ -45,5 +46,7 @@ import java.io.Serializable;
  */
 @FunctionalInterface
 public interface KeyedWindowResultFunction<K, R, OUT> extends Serializable {
-    @Nonnull OUT apply(long winStart, long winEnd, @Nonnull K key, @Nonnull R windowResult);
+
+    @Nullable
+    OUT apply(long winStart, long winEnd, @Nonnull K key, @Nonnull R windowResult);
 }
