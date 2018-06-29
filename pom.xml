@@ -192,7 +192,6 @@
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -223,7 +222,6 @@
             <artifactId>log4j</artifactId>
             <version>${log4j.version}</version>
             <scope>test</scope>
-            <optional>true</optional>
         </dependency>
         <dependency> <!-- required for mockito -->
             <groupId>javax.cache</groupId>
