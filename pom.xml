@@ -66,7 +66,7 @@
         <maven.animal.sniffer.plugin.version>1.15</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>2.21.0</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
         <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>
         <maven.sonar.plugin.version>2.6</maven.sonar.plugin.version>
@@ -235,6 +235,7 @@
                 <configuration combine.self="override">
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <useFile>false</useFile>
+                    <trimStackTrace>false</trimStackTrace>
                     <runOrder>failedfirst</runOrder>
 
                     <!-- 1C means 1 process per cpu core -->
@@ -266,13 +267,6 @@
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.github.jerrinot.maven-surefire</groupId>
-                        <artifactId>maven-surefire-common</artifactId>
-                        <version>${maven.surefire.plugin.version}-buffered</version>
-                    </dependency>
-                </dependencies>
             </plugin>
 
             <plugin>
@@ -333,6 +327,7 @@
                                 <configuration combine.self="override">
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <useFile>false</useFile>
+                                    <trimStackTrace>false</trimStackTrace>
                                     <!-- 1C means 1 process per cpu core -->
                                     <forkCount>1C</forkCount>
                                     <reuseForks>true</reuseForks>
@@ -397,13 +392,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.github.jerrinot.maven-surefire</groupId>
-                                <artifactId>maven-surefire-common</artifactId>
-                                <version>${maven.surefire.plugin.version}-buffered</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -420,6 +408,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
+                            <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.phone.home.enabled=false
@@ -440,13 +429,6 @@
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
                         </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.github.jerrinot.maven-surefire</groupId>
-                                <artifactId>maven-surefire-common</artifactId>
-                                <version>${maven.surefire.plugin.version}-buffered</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
 
                     <plugin>
@@ -514,6 +496,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
+                            <trimStackTrace>false</trimStackTrace>
                             <testFailureIgnore>true</testFailureIgnore>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
@@ -528,13 +511,6 @@
                                 <include>**/YourTestFileHear.java</include>
                             </includes>
                         </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.github.jerrinot.maven-surefire</groupId>
-                                <artifactId>maven-surefire-common</artifactId>
-                                <version>${maven.surefire.plugin.version}-buffered</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -595,6 +571,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
+                            <trimStackTrace>false</trimStackTrace>
                             <testFailureIgnore>true</testFailureIgnore>
                             <includes>
                                 <include>**/*.java</include>
@@ -610,13 +587,6 @@
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
                         </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.github.jerrinot.maven-surefire</groupId>
-                                <artifactId>maven-surefire-common</artifactId>
-                                <version>${maven.surefire.plugin.version}-buffered</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
 
                     <plugin>
@@ -651,13 +621,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.github.jerrinot.maven-surefire</groupId>
-                                <artifactId>maven-surefire-common</artifactId>
-                                <version>${maven.surefire.plugin.version}-buffered</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
 
                 </plugins>
@@ -784,13 +747,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.github.jerrinot.maven-surefire</groupId>
-                                <artifactId>maven-surefire-common</artifactId>
-                                <version>${maven.surefire.plugin.version}-buffered</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -988,6 +944,7 @@
                             <parallel>none</parallel>
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
+                            <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=1024M
                                 -Dhazelcast.phone.home.enabled=false
@@ -1009,13 +966,6 @@
                                 com.hazelcast.test.annotation.SlowTest
                             </groups>
                         </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.github.jerrinot.maven-surefire</groupId>
-                                <artifactId>maven-surefire-common</artifactId>
-                                <version>${maven.surefire.plugin.version}-buffered</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -1061,6 +1011,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
+                            <trimStackTrace>false</trimStackTrace>
                             <parallel>none</parallel>
                             <argLine>
                                 -Xms512m -Xmx2G -XX:MaxPermSize=1024M
@@ -1084,13 +1035,6 @@
                                 com.hazelcast.test.annotation.NightlyTest
                             </groups>
                         </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.github.jerrinot.maven-surefire</groupId>
-                                <artifactId>maven-surefire-common</artifactId>
-                                <version>${maven.surefire.plugin.version}-buffered</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -1140,6 +1084,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
+                            <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 -Xms128m -Xmx1G
                                 -Dhazelcast.phone.home.enabled=false
@@ -1160,13 +1105,6 @@
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
                         </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.github.jerrinot.maven-surefire</groupId>
-                                <artifactId>maven-surefire-common</artifactId>
-                                <version>${maven.surefire.plugin.version}-buffered</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -1190,6 +1128,7 @@
                                 </property>
                             </properties>
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <trimStackTrace>false</trimStackTrace>
                             <runOrder>failedfirst</runOrder>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
@@ -1253,14 +1192,6 @@
             <url>https://oss.sonatype.org/content/repositories/releases</url>
         </repository>
     </repositories>
-
-    <pluginRepositories>
-        <!-- JitPack repository is needed to fetch patch surefire-common plugin -->
-        <pluginRepository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </pluginRepository>
-    </pluginRepositories>
 
     <dependencies>
         <dependency>
