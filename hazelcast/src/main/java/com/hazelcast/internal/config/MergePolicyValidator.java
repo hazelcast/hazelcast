@@ -289,7 +289,7 @@ public final class MergePolicyValidator {
             throw new InvalidConfigurationException("The merge policy " + mergePolicyClassName
                     + " can just be configured on data structures which provide the merging type "
                     + requiredMergeTypeClass.getName()
-                    + ". See SplitBrainMergingTypes for supported merging types.");
+                    + ". See SplitBrainMergeTypes for supported merging types.");
         }
         requiredMergeTypes.add(requiredMergeTypeClass);
     }
