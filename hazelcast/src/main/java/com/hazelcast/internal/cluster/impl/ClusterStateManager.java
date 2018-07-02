@@ -115,7 +115,7 @@ public class ClusterStateManager {
                         + initialState);
                 return;
             }
-            // no need to validate again
+            validateNodeCompatibleWith(version);
             logger.fine("Setting initial cluster state: " + initialState + " and version: " + version);
             setClusterStateAndVersion(initialState, version, true);
         } finally {
