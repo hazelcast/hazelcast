@@ -44,6 +44,7 @@ public final class SplitBrainMergePolicyProvider {
     static {
         OUT_OF_THE_BOX_MERGE_POLICIES = new HashMap<String, SplitBrainMergePolicy>();
         addPolicy(DiscardMergePolicy.class, new DiscardMergePolicy());
+        addPolicy(ExpirationTimeMergePolicy.class, new ExpirationTimeMergePolicy());
         addPolicy(HigherHitsMergePolicy.class, new HigherHitsMergePolicy());
         addPolicy(HyperLogLogMergePolicy.class, new HyperLogLogMergePolicy());
         addPolicy(LatestAccessMergePolicy.class, new LatestAccessMergePolicy());
