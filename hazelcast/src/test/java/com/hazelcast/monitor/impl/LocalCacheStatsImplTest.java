@@ -139,6 +139,16 @@ public class LocalCacheStatsImplTest {
             public NearCacheStats getNearCacheStatistics() {
                 return null;
             }
+
+            @Override
+            public JsonObject toJson() {
+                return null;
+            }
+
+            @Override
+            public void fromJson(JsonObject json) {
+
+            }
         };
 
         LocalCacheStatsImpl localCacheStats = new LocalCacheStatsImpl(cacheStatistics);

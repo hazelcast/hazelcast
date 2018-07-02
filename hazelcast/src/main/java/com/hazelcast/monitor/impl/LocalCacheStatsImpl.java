@@ -18,6 +18,7 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalCacheStats;
 
 import static com.hazelcast.util.JsonUtil.getFloat;
@@ -41,20 +42,35 @@ import static com.hazelcast.util.JsonUtil.getLong;
  */
 public class LocalCacheStatsImpl implements LocalCacheStats {
 
+    @Probe
     private long creationTime;
+    @Probe
     private long lastAccessTime;
+    @Probe
     private long lastUpdateTime;
+    @Probe
     private long ownedEntryCount;
+    @Probe
     private long cacheHits;
+    @Probe
     private float cacheHitPercentage;
+    @Probe
     private long cacheMisses;
+    @Probe
     private float cacheMissPercentage;
+    @Probe
     private long cacheGets;
+    @Probe
     private long cachePuts;
+    @Probe
     private long cacheRemovals;
+    @Probe
     private long cacheEvictions;
+    @Probe
     private float averageGetTime;
+    @Probe
     private float averagePutTime;
+    @Probe
     private float averageRemoveTime;
 
     public LocalCacheStatsImpl() {

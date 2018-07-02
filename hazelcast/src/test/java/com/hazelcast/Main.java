@@ -1,5 +1,7 @@
 package com.hazelcast;
 
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
@@ -7,20 +9,20 @@ import com.hazelcast.internal.management.metrics.CompressingProbeRenderer;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import javax.cache.Cache;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 
 public class Main extends HazelcastTestSupport {
 
     public static void main(String[] args) throws Exception{
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+        Config config = new Config();
+        config.addCacheConfig(new CacheSimpleConfig().setName("foo").setStatisticsEnabled(true));
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
 
-        for(int k=0;k<3;k++){
-            hz.getMap("foobar"+k).put("1","1");
-        }
-
-        for(int k=0;k<3;k++){
-            hz.getMultiMap("multimap"+k).put("1","a");
+        Cache cache = hz.getCacheManager().getCache("foo");
+        for(int k=0;k<100;k++){
+            cache.put(k,k);
         }
 
         Node node = getNode(hz);

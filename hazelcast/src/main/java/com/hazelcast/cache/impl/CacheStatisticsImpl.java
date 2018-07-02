@@ -16,12 +16,16 @@
 
 package com.hazelcast.cache.impl;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.ConcurrencyUtil.setMax;
+import static com.hazelcast.util.JsonUtil.getFloat;
+import static com.hazelcast.util.JsonUtil.getLong;
 
 /**
  * {@link CacheStatistics} implementation for {@link com.hazelcast.cache.ICache}.
@@ -64,16 +68,27 @@ public class CacheStatisticsImpl
      */
     protected long creationTime;
 
+    @Probe
     protected volatile long lastAccessTime;
+    @Probe
     protected volatile long lastUpdateTime;
+    @Probe
     protected volatile long removals;
+    @Probe
     protected volatile long expiries;
+    @Probe
     protected volatile long puts;
+    @Probe
     protected volatile long hits;
+    @Probe
     protected volatile long misses;
+    @Probe
     protected volatile long evictions;
+    @Probe
     protected volatile long putTimeTakenNanos;
+    @Probe
     protected volatile long getCacheTimeTakenNanos;
+    @Probe
     protected volatile long removeTimeTakenNanos;
 
     protected final CacheEntryCountResolver cacheEntryCountResolver;
@@ -449,4 +464,45 @@ public class CacheStatisticsImpl
                     + ", removeTimeTakenNanos=" + removeTimeTakenNanos
                 + '}';
     }
+
+    @Override
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+//        root.add("creationTime", creationTime);
+//        root.add("lastAccessTime", lastAccessTime);
+//        root.add("lastUpdateTime", lastUpdateTime);
+//        root.add("ownedEntryCount", ownedEntryCount);
+//        root.add("cacheHits", cacheHits);
+//        root.add("cacheHitPercentage", cacheHitPercentage);
+//        root.add("cacheMisses", cacheMisses);
+//        root.add("cacheMissPercentage", cacheMissPercentage);
+//        root.add("cacheGets", cacheGets);
+//        root.add("cachePuts", cachePuts);
+//        root.add("cacheRemovals", cacheRemovals);
+//        root.add("cacheEvictions", cacheEvictions);
+//        root.add("averageGetTime", averageGetTime);
+//        root.add("averagePutTime", averagePutTime);
+//        root.add("averageRemoveTime", averageRemoveTime);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+        creationTime = getLong(json, "creationTime", -1L);
+        lastAccessTime = getLong(json, "lastAccessTime", -1L);
+        lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
+//        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
+//        cacheHits = getLong(json, "cacheHits", -1L);
+//        cacheHitPercentage = getFloat(json, "cacheHitPercentage", -1f);
+//        cacheMisses = getLong(json, "cacheMisses", -1L);
+//        cacheMissPercentage = getFloat(json, "cacheMissPercentage", -1f);
+//        cacheGets = getLong(json, "cacheGets", -1L);
+//        cachePuts = getLong(json, "cachePuts", -1L);
+//        cacheRemovals = getLong(json, "cacheRemovals", -1L);
+//        cacheEvictions = getLong(json, "cacheEvictions", -1L);
+//        averageGetTime = getFloat(json, "averageGetTime", -1f);
+//        averagePutTime = getFloat(json, "averagePutTime", -1f);
+//        averageRemoveTime = getFloat(json, "averageRemoveTime", -1f);
+    }
+
 }

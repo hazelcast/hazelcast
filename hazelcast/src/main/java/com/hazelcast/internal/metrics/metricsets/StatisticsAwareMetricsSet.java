@@ -17,6 +17,7 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalInstanceStats;
@@ -85,7 +86,7 @@ public class StatisticsAwareMetricsSet {
                 currentStats = tmp;
                 currentStats.clear();
             } catch (Exception e) {
-                logger.finest("Error occurred while scanning for statistics aware metrics", e);
+                logger.severe("Error occurred while scanning for statistics aware metrics", e);
             }
         }
 
@@ -97,32 +98,43 @@ public class StatisticsAwareMetricsSet {
                 }
 
                 for (Map.Entry<String, LocalInstanceStats> entry : stats.entrySet()) {
-                    LocalInstanceStats localInstanceStats = entry.getValue();
-
-                    currentStats.add(localInstanceStats);
-
-                    if (previousStats.contains(localInstanceStats)) {
-                        // already registered
-                        continue;
-                    }
-
-                    String name = entry.getKey();
-
-                    NearCacheStats nearCacheStats = getNearCacheStats(localInstanceStats);
-                    String baseName = localInstanceStats.getClass().getSimpleName()
-                            .replace("Stats", "")
-                            .replace("Local", "")
-                            .replace("Impl", "");
-                    baseName = lowerCaseFirstChar(baseName);
-                    if (nearCacheStats != null) {
-                        metricsRegistry.scanAndRegister(nearCacheStats,
-                                baseName + "[" + name + "].nearcache");
-                    }
-
-                    metricsRegistry.scanAndRegister(localInstanceStats,
-                            baseName + "[" + name + "]");
+                    register(entry);
                 }
             }
+
+        }
+
+        private void register(Map.Entry<String, LocalInstanceStats> entry) {
+            LocalInstanceStats localInstanceStats = entry.getValue();
+            String name = entry.getKey();
+
+             currentStats.add(localInstanceStats);
+
+            if (previousStats.contains(localInstanceStats)) {
+                // already registered
+                return;
+            }
+
+
+            NearCacheStats nearCacheStats = getNearCacheStats(localInstanceStats);
+            String baseName = toBaseName(localInstanceStats);
+            System.out.println("registering :"+localInstanceStats.getClass()+ "basename:"+baseName);
+            if (nearCacheStats != null) {
+                metricsRegistry.scanAndRegister(nearCacheStats,
+                        baseName + "[" + name + "].nearcache");
+            }
+
+            metricsRegistry.scanAndRegister(localInstanceStats,
+                    baseName + "[" + name + "]");
+        }
+
+        private String toBaseName(LocalInstanceStats localInstanceStats) {
+            String baseName = localInstanceStats.getClass().getSimpleName()
+                    .replace("Stats", "")
+                    .replace("Local", "")
+                    .replace("Impl", "");
+            baseName = lowerCaseFirstChar(baseName);
+            return baseName;
         }
 
         private NearCacheStats getNearCacheStats(LocalInstanceStats localInstanceStats) {
@@ -130,8 +142,13 @@ public class StatisticsAwareMetricsSet {
                 LocalMapStats localMapStats = (LocalMapStats) localInstanceStats;
                 return localMapStats.getNearCacheStats();
             } else if (localInstanceStats instanceof CacheStatistics) {
-                CacheStatistics localMapStats = (CacheStatistics) localInstanceStats;
-                return localMapStats.getNearCacheStatistics();
+                try {
+                    CacheStatistics localMapStats = (CacheStatistics) localInstanceStats;
+                    return localMapStats.getNearCacheStatistics();
+                }catch (UnsupportedOperationException e){
+                    //todo
+                    return null;
+                }
             } else {
                 return null;
             }

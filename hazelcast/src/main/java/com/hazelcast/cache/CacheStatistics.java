@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.NearCacheStats;
 
 /**
@@ -37,7 +38,7 @@ import com.hazelcast.monitor.NearCacheStats;
  *
  * @since 3.3.1
  */
-public interface CacheStatistics {
+public interface CacheStatistics extends LocalCacheStats {
 
     /**
      * Gets the cache creation time.

@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
@@ -34,6 +35,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
@@ -47,6 +49,7 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.Clock;
@@ -64,6 +67,7 @@ import javax.cache.event.CacheEntryListener;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
@@ -83,7 +87,8 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
-        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService {
+        PartitionAwareService, QuorumAwareService,
+        SplitBrainHandlerService, StatisticsAwareService<LocalCacheStats> {
 
     private static final String SETUP_REF = "setupRef";
 
@@ -395,6 +400,11 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     @Override
     public CacheStatisticsImpl createCacheStatIfAbsent(String cacheNameWithPrefix) {
         return ConcurrencyUtil.getOrPutIfAbsent(statistics, cacheNameWithPrefix, cacheStatisticsConstructorFunction);
+    }
+
+    @Override
+    public Map<String, LocalCacheStats> getStats() {
+         return (Map<String, LocalCacheStats>) (Object)statistics;
     }
 
     public CacheContext getCacheContext(String name) {
