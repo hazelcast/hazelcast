@@ -27,6 +27,7 @@ import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
+import com.hazelcast.jet.impl.connector.ReadJdbcP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
@@ -35,6 +36,7 @@ import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.jet.pipeline.ToResultSetFunction;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
@@ -46,6 +48,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.sql.ResultSet;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.cacheEventToEntry;
@@ -381,6 +384,35 @@ public final class SourceProcessors {
     ) {
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn));
+    }
+
+    /**
+     * Returns a supplier of processors for {@link
+     * Sources#jdbc(DistributedSupplier, ToResultSetFunction,
+     * DistributedFunction)}.
+     */
+    public static <T> ProcessorMetaSupplier readJdbcP(
+            @Nonnull DistributedSupplier<java.sql.Connection> connectionSupplier,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull DistributedFunction<ResultSet, T> mapOutputFn
+    ) {
+        checkSerializable(connectionSupplier, "connectionSupplier");
+        checkSerializable(resultSetFn, "resultSetFn");
+        checkSerializable(mapOutputFn, "mapOutputFn");
+        return ReadJdbcP.supplier(connectionSupplier, resultSetFn, mapOutputFn);
+    }
+
+    /**
+     * Returns a supplier of processors for {@link
+     * Sources#jdbc(String, String, DistributedFunction)}.
+     */
+    public static <T> ProcessorMetaSupplier readJdbcP(
+            @Nonnull String connectionURL,
+            @Nonnull String query,
+            @Nonnull DistributedFunction<ResultSet, T> mapOutputFn
+    ) {
+        checkSerializable(mapOutputFn, "mapOutputFn");
+        return ReadJdbcP.supplier(connectionURL, query, mapOutputFn);
     }
 
     private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionFn) {

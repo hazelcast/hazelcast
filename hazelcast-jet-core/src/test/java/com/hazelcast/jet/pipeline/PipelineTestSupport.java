@@ -50,6 +50,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
 
     protected Pipeline p;
     protected Sink<Object> sink;
+    protected BatchSource<Object> source;
 
     protected IMap<String, Integer> srcMap;
     protected IList<Object> srcList;
@@ -63,6 +64,8 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         srcMap = jet().getMap(srcName);
         srcCache = jet().getCacheManager().getCache(srcName);
         srcList = jet().getList(srcName);
+        source = Sources.list(srcName);
+
         sink = Sinks.list(sinkName);
         sinkList = jet().getList(sinkName);
     }
@@ -71,7 +74,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return testMode.getJet();
     }
 
-    void execute() {
+    protected void execute() {
         jet().newJob(p).join();
     }
 
@@ -83,7 +86,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return randomMapName(JOURNALED_MAP_PREFIX);
     }
 
-    void addToSrcList(Collection<Integer> data) {
+    protected void addToSrcList(Collection<Integer> data) {
         srcList.addAll(data);
     }
 
@@ -123,7 +126,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return bag;
     }
 
-    static List<Integer> sequence(int itemCount) {
+    protected static List<Integer> sequence(int itemCount) {
         return IntStream.range(0, itemCount).boxed().collect(toList());
     }
 

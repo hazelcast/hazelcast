@@ -29,6 +29,7 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
+import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
@@ -43,6 +44,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
+import java.sql.PreparedStatement;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
@@ -324,5 +326,20 @@ public final class SinkProcessors {
             @Nonnull String name
     ) {
         return WriteJmsP.supplier(connectionSupplier, sessionF, messageFn, sendFn, flushFn, name, true);
+    }
+
+    /**
+     * Returns a supplier of processors for {@link
+     * Sinks#jdbc(String, DistributedSupplier, DistributedBiConsumer)}.
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier writeJdbcP(
+            @Nonnull String updateQuery,
+            @Nonnull DistributedSupplier<java.sql.Connection> connectionSupplier,
+            @Nonnull DistributedBiConsumer<PreparedStatement, T> bindFn
+    ) {
+        checkSerializable(connectionSupplier, "connectionSupplier");
+        checkSerializable(bindFn, "bindFn");
+        return WriteJdbcP.metaSupplier(updateQuery, connectionSupplier, bindFn);
     }
 }

@@ -21,11 +21,11 @@ import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.jet.GenericPredicates;
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -41,6 +41,8 @@ import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
 import java.nio.charset.Charset;
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -266,12 +268,13 @@ public final class Sources {
      *
      * @param mapName the name of the map
      * @param predicateFn the predicate to filter the events. If you want to specify just the
-     *                    projection, use {@link Util#mapPutEvents} to pass only {@link
-     *                    com.hazelcast.core.EntryEventType#ADDED ADDED} and {@link
-     *                    com.hazelcast.core.EntryEventType#UPDATED UPDATED} events.
+     *                    projection, use {@link com.hazelcast.jet.Util#mapPutEvents} to pass
+     *                    only {@link com.hazelcast.core.EntryEventType#ADDED ADDED} and
+     *                    {@link com.hazelcast.core.EntryEventType#UPDATED UPDATED} events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     Util#mapEventToEntry()} to extract just the key and the new value.
+     *                     com.hazelcast.jet.Util#mapEventToEntry()} to extract just the key and
+     *                     the new value.
      * @param initialPos describes which event to start receiving from
      * @param <T> type of emitted item
      */
@@ -432,13 +435,14 @@ public final class Sources {
      *
      * @param mapName the name of the map
      * @param clientConfig configuration for the client to connect to the remote cluster
-     * @param predicateFn the predicate to filter the events. You may use {@link Util#mapPutEvents}
-     *                    to pass only {@link EntryEventType#ADDED
-     *                    ADDED} and {@link EntryEventType#UPDATED UPDATED}
+     * @param predicateFn the predicate to filter the events. You may use {@link
+     *                    com.hazelcast.jet.Util#mapPutEvents} to pass only {@link
+     *                    EntryEventType#ADDED ADDED} and {@link EntryEventType#UPDATED UPDATED}
      *                    events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     Util#mapEventToEntry()} to extract just the key and the new value.
+     *                     com.hazelcast.jet.Util#mapEventToEntry()} to extract just the key and
+     *                     the new value.
      * @param initialPos describes which event to start receiving from
      * @param <K> type of key
      * @param <V> type of value
@@ -531,12 +535,13 @@ public final class Sources {
      *
      * @param cacheName the name of the cache
      * @param predicateFn the predicate to filter the events. You may use {@link
-     *                    Util#cachePutEvents()} to pass only {@link
+     *                    com.hazelcast.jet.Util#cachePutEvents()} to pass only {@link
      *                    com.hazelcast.cache.CacheEventType#CREATED CREATED} and {@link
      *                    com.hazelcast.cache.CacheEventType#UPDATED UPDATED} events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     Util#cacheEventToEntry()} to extract just the key and the new value.
+     *                     com.hazelcast.jet.Util#cacheEventToEntry()} to extract just the key
+     *                     and the new value.
      * @param initialPos describes which event to start receiving from
      * @param <T> type of emitted item
      */
@@ -625,12 +630,13 @@ public final class Sources {
      * @param cacheName the name of the cache
      * @param clientConfig configuration for the client to connect to the remote cluster
      * @param predicateFn the predicate to filter the events. You may use {@link
-     *                    Util#cachePutEvents()} to pass only {@link
+     *                    com.hazelcast.jet.Util#cachePutEvents()} to pass only {@link
      *                    com.hazelcast.cache.CacheEventType#CREATED CREATED} and {@link
      *                    com.hazelcast.cache.CacheEventType#UPDATED UPDATED} events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     Util#cacheEventToEntry()} to extract just the key and the new value.
+     *                     com.hazelcast.jet.Util#cacheEventToEntry()} to extract just the key
+     *                     and the new value.
      * @param initialPos describes which event to start receiving from
      * @param <T> type of emitted item
      */
@@ -869,5 +875,100 @@ public final class Sources {
     @Nonnull
     public static JmsSourceBuilder jmsTopicBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
         return new JmsSourceBuilder(factorySupplier, true);
+    }
+
+    /**
+     * Returns a source which connects to the specified database using the given
+     * {@code connectionSupplier}, queries the database and creates a result set
+     * using the the given {@code resultSetFn}. It creates output objects from the
+     * {@link ResultSet} using given {@code mapOutputFn} and emits them to
+     * downstream.
+     * <p>
+     * {@code resultSetFn} gets the created connection, total parallelism (local
+     * parallelism * member count) and global processor index as arguments and
+     * produces a result set. The parallelism and processor index arguments
+     * should be used to fetch a part of the whole result set specific to the
+     * processor. If the table itself isn't partitioned by the same key, then
+     * running multiple queries might not really be faster than using the
+     * {@linkplain #jdbc(String, String, DistributedFunction) simpler
+     * version} of this method, do your own testing.
+     * <p>
+     * {@code createOutputFn} gets the {@link ResultSet} and creates desired
+     * output object. The function is called for each row of the result set,
+     * user should not call {@link ResultSet#next()} or any other
+     * cursor-navigating functions.
+     * <p>
+     * Example: <pre>{@code
+     *     p.drawFrom(Sources.jdbc(
+     *         () -> {
+     *             try {
+     *                 return DriverManager.getConnection(DB_CONNECTION_URL);
+     *             } catch (SQLException e) {
+     *                 throw ExceptionUtil.rethrow(e);
+     *             }
+     *         },
+     *         (con, parallelism, index) -> {
+     *             return con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?);
+     *             stmt.setInt(1, parallelism);
+     *             stmt.setInt(2, index);
+     *             return stmt.executeQuery();
+     *         },
+     *         resultSet -> {
+     *             try {
+     *                 return new Person(resultSet.getInt(1), resultSet.getString(2));
+     *             } catch (SQLException e) {
+     *                 throw ExceptionUtil.rethrow(e);
+     *             }
+     *         }))
+     * }</pre>
+     * <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all entries.
+     * <p>
+     * Any {@code SQLException} will cause the job to fail.
+     * <p>
+     * The default local parallelism for this processor is 1.
+     *
+     * @param connectionSupplier creates the connection
+     * @param resultSetFn creates a {@link ResultSet} using the connection,
+     *                    total parallelism and index
+     * @param createOutputFn creates output objects from {@link ResultSet}
+     * @param <T> type of output objects
+     */
+    public static <T> BatchSource<T> jdbc(
+            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull DistributedFunction<ResultSet, T> createOutputFn
+    ) {
+        return batchFromProcessor("jdbcSource",
+                SourceProcessors.readJdbcP(connectionSupplier, resultSetFn, createOutputFn));
+    }
+
+    /**
+     * Convenience for {@link Sources#jdbc(DistributedSupplier,
+     * ToResultSetFunction, DistributedFunction)}.
+     * A non-distributed, single-worker source which fetches the whole resultSet
+     * with a single query.
+     * <p>
+     * Example: <pre>{@code
+     *     p.drawFrom(Sources.jdbc(
+     *         DB_CONNECTION_URL,
+     *         "select ID, NAME from PERSON",
+     *         resultSet -> {
+     *             try {
+     *                 return new Person(resultSet.getInt(1), resultSet.getString(2));
+     *             } catch (SQLException e) {
+     *                 throw ExceptionUtil.rethrow(e);
+     *             }
+     *         }))
+     * }</pre>
+     */
+    public static <T> BatchSource<T> jdbc(
+            @Nonnull String connectionURL,
+            @Nonnull String query,
+            @Nonnull DistributedFunction<ResultSet, T> createOutputFn
+    ) {
+        return batchFromProcessor("jdbcSource",
+                SourceProcessors.readJdbcP(connectionURL, query, createOutputFn));
     }
 }

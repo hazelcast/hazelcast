@@ -20,6 +20,8 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -30,6 +32,11 @@ import com.hazelcast.map.EntryProcessor;
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
 import java.nio.charset.Charset;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.SQLNonTransientException;
 import java.util.Map;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
@@ -48,6 +55,7 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -631,7 +639,7 @@ public final class Sinks {
      * @param <T> type of the items the sink accepts
      */
     @Nonnull
-    public static <T> JmsSinkBuilder<T> jmsQueueBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
+    public static <T> JmsSinkBuilder<T> jmsQueueBuilder(@Nonnull DistributedSupplier<ConnectionFactory> factorySupplier) {
         return new JmsSinkBuilder<>(factorySupplier, false);
     }
 
@@ -675,7 +683,81 @@ public final class Sinks {
      * @param <T> type of the items the sink accepts
      */
     @Nonnull
-    public static <T> JmsSinkBuilder<T> jmsTopicBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
-        return new  JmsSinkBuilder<>(factorySupplier, true);
+    public static <T> JmsSinkBuilder<T> jmsTopicBuilder(@Nonnull DistributedSupplier<ConnectionFactory> factorySupplier) {
+        return new JmsSinkBuilder<>(factorySupplier, true);
+    }
+
+    /**
+     * Returns a sink that connects to the specified database using the given
+     * {@code connectionSupplier}, prepares a statement using the given {@code
+     * updateQuery} and inserts/updates the items.
+     * <p>
+     * The {@code updateQuery} should contain a parametrized query. The {@code
+     * bindFn} will receive a {@code PreparedStatement} created for this query
+     * and should bind parameters to it. It should not execute the query,
+     * call commit or any other method.
+     * <p>
+     * The records will be committed after each batch of records and a batch
+     * mode will be used (if the driver supports it). Auto-commit will be
+     * disabled on the connection.
+     * <p>
+     * Example:<pre>{@code
+     *     p.drainTo(Sinks.jdbc(
+     *             "REPLACE into table (id, name) values(?, ?)",
+     *             () -> {
+     *                 try {
+     *                     return DriverManager.getConnection("jdbc:...");
+     *                 } catch (SQLException e) {
+     *                     throw ExceptionUtil.rethrow(e);
+     *                 }
+     *             },
+     *             (stmt, item) -> {
+     *                 try {
+     *                     stmt.setInt(1, item.id);
+     *                     stmt.setInt(2, item.name);
+     *                 } catch (SQLException e) {
+     *                     throw ExceptionUtil.rethrow(e);
+     *                 }
+     *             }
+     *     ));
+     * }</pre>
+     * <p>
+     * In case of an {@link SQLException} the processor will automatically try
+     * to reconnect and the job won't fail, except for the {@link
+     * SQLNonTransientException} subclass. The default local parallelism for
+     * this sink is 1.
+     * <p>
+     * No state is saved to snapshot for this sink. After the job is restarted,
+     * the items will likely be duplicated, providing an <i>at-least-once</i>
+     * guarantee. For this reason you should not use {@code INSERT} statement
+     * which can fail on duplicate primary key. Rather use an
+     * <em>insert-or-update</em> statement that can tolerate duplicate writes.
+     *
+     * @param updateQuery the SQL query which will do the insert/update
+     * @param connectionSupplier the supplier of database connection
+     * @param bindFn the function to set the parameters of the statement for
+     *                 each item received
+     * @param <T> type of the items the sink accepts
+     */
+    @Nonnull
+    public static <T> Sink<T> jdbc(
+            @Nonnull String updateQuery,
+            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull DistributedBiConsumer<PreparedStatement, T> bindFn
+    ) {
+        return Sinks.fromProcessor("jdbcSink",
+                SinkProcessors.writeJdbcP(updateQuery, connectionSupplier, bindFn));
+    }
+
+    /**
+     * Convenience for {@link Sinks#jdbc(String, DistributedSupplier,
+     * DistributedBiConsumer)}. The connection will be created from {@code
+     * connectionUrl}.
+     */
+    @Nonnull
+    public static <T> Sink<T> jdbc(@Nonnull String updateQuery,
+                                   @Nonnull String connectionUrl,
+                                   @Nonnull DistributedBiConsumer<PreparedStatement, T> bindFn) {
+        return Sinks.jdbc(updateQuery, () -> uncheckCall(() -> DriverManager.getConnection(connectionUrl)), bindFn);
     }
 }
