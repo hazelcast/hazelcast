@@ -22,15 +22,18 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,6 +45,7 @@ import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAG
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -50,11 +54,12 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport {
 
-    private String mapName;
+    private static final int ENTRY_COUNT = 100;
 
+    private String mapName;
     private TestHazelcastFactory factory;
 
-    private HazelcastInstance lite;
+    private HazelcastInstance liteMember;
     private HazelcastInstance client;
 
     @Before
@@ -63,8 +68,7 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
 
         factory = new TestHazelcastFactory();
         factory.newHazelcastInstance(createServerConfig(mapName, false));
-
-        lite = factory.newHazelcastInstance(createServerConfig(mapName, true));
+        liteMember = factory.newHazelcastInstance(createServerConfig(mapName, true));
         client = factory.newHazelcastClient();
     }
 
@@ -76,19 +80,16 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
     @Test
     public void testPut() {
         IMap<Object, Object> map = client.getMap(mapName);
-
-        int count = 100;
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < ENTRY_COUNT; i++) {
             map.put(i, i);
         }
 
-        IMap<Object, Object> liteMap = lite.getMap(mapName);
-
-        for (int i = 0; i < count; i++) {
+        IMap<Object, Object> liteMap = liteMember.getMap(mapName);
+        for (int i = 0; i < ENTRY_COUNT; i++) {
             assertNotNull(liteMap.get(i));
         }
 
-        NearCache nearCache = getNearCache(lite, mapName);
+        NearCache nearCache = getNearCache(liteMember, mapName);
         int sizeAfterPut = nearCache.size();
         assertTrue("Near Cache size should be > 0 but was " + sizeAfterPut, sizeAfterPut > 0);
     }
@@ -96,27 +97,23 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
     @Test
     public void testClear() {
         IMap<Object, Object> map = client.getMap(mapName);
-
-        final int count = 100;
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < ENTRY_COUNT; i++) {
             map.put(i, i);
         }
 
-        final IMap<Object, Object> liteMap = lite.getMap(mapName);
-        final NearCache nearCache = getNearCache(lite, mapName);
-
+        final IMap<Object, Object> liteMap = liteMember.getMap(mapName);
+        final NearCache nearCache = getNearCache(liteMember, mapName);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                for (int i = 0; i < count; i++) {
+                for (int i = 0; i < ENTRY_COUNT; i++) {
                     liteMap.get(i);
                 }
-                assertEquals(count, nearCache.size());
+                assertEquals(ENTRY_COUNT, nearCache.size());
             }
         });
 
         map.clear();
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -128,31 +125,27 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
     @Test
     public void testEvictAll() {
         IMap<Object, Object> map = client.getMap(mapName);
-
-        final int count = 100;
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < ENTRY_COUNT; i++) {
             map.put(i, i);
         }
 
-        final IMap<Object, Object> liteMap = lite.getMap(mapName);
-        final NearCache nearCache = getNearCache(lite, mapName);
-
+        final IMap<Object, Object> liteMap = liteMember.getMap(mapName);
+        final NearCache nearCache = getNearCache(liteMember, mapName);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                for (int i = 0; i < count; i++) {
+                for (int i = 0; i < ENTRY_COUNT; i++) {
                     liteMap.get(i);
                 }
-                assertEquals(count, nearCache.size());
+                assertEquals(ENTRY_COUNT, nearCache.size());
             }
         });
 
         map.evictAll();
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(nearCache.size() < count);
+                assertTrue(nearCache.size() < ENTRY_COUNT);
             }
         });
     }
@@ -160,31 +153,27 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
     @Test
     public void testEvict() {
         IMap<Object, Object> map = client.getMap(mapName);
-
-        final int count = 100;
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < ENTRY_COUNT; i++) {
             map.put(i, i);
         }
 
-        final IMap<Object, Object> liteMap = lite.getMap(mapName);
-        final NearCache nearCache = getNearCache(lite, mapName);
-
+        final IMap<Object, Object> liteMap = liteMember.getMap(mapName);
+        final NearCache nearCache = getNearCache(liteMember, mapName);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                for (int i = 0; i < count; i++) {
+                for (int i = 0; i < ENTRY_COUNT; i++) {
                     liteMap.get(i);
                 }
-                assertEquals(count, nearCache.size());
+                assertEquals(ENTRY_COUNT, nearCache.size());
             }
         });
 
         map.evict(0);
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(nearCache.size() < count);
+                assertTrue(nearCache.size() < ENTRY_COUNT);
             }
         });
     }
@@ -194,9 +183,8 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
         IMap<Object, Object> map = client.getMap(mapName);
         map.put(1, 1);
 
-        final IMap<Object, Object> liteMap = lite.getMap(mapName);
-        final NearCache<Object, Object> nearCache = getNearCache(lite, mapName);
-
+        final IMap<Object, Object> liteMap = liteMember.getMap(mapName);
+        final NearCache<Object, Object> nearCache = getNearCache(liteMember, mapName);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -206,7 +194,6 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
         });
 
         map.put(1, 2);
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -220,9 +207,8 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
         IMap<Object, Object> map = client.getMap(mapName);
         map.put(1, 1);
 
-        final IMap<Object, Object> liteMap = lite.getMap(mapName);
-        final NearCache<Object, Object> nearCache = getNearCache(lite, mapName);
-
+        final IMap<Object, Object> liteMap = liteMember.getMap(mapName);
+        final NearCache<Object, Object> nearCache = getNearCache(liteMember, mapName);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -232,13 +218,37 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
         });
 
         map.remove(1);
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 assertNull(nearCache.get(1));
             }
         });
+    }
+
+    @Test
+    public void testWithTransactionalMap() {
+        TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        try {
+            TransactionalMap<Object, Object> txnMap = context.getMap(mapName);
+            assertNull("Expected null for a non-existent key", txnMap.get("key"));
+            assertFalse("Expected non-existent key not to be found", txnMap.containsKey("key"));
+
+            assertNull("Expected no old value for new key", txnMap.put("key", "value"));
+            assertEquals("Expected value for existing key", "value", txnMap.get("key"));
+            assertTrue("Expected existing key to be found", txnMap.containsKey("key"));
+
+            assertEquals("Expected value when removing existing key", "value", txnMap.remove("key"));
+            assertNull("Expected null for a non-existent key", txnMap.get("key"));
+            assertFalse("Expected non-existent key not to be found", txnMap.containsKey("key"));
+        } finally {
+            context.rollbackTransaction();
+        }
+
+        IMap<Object, Object> map = client.getMap(mapName);
+        assertNull("Expected null for a non-existent key", map.get("key"));
+        assertFalse("Expected non-existent key not to be found", map.containsKey("key"));
     }
 
     private Config createServerConfig(String mapName, boolean liteMember) {
@@ -256,15 +266,15 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
                 .addMapConfig(mapConfig);
     }
 
-    @SuppressWarnings("unchecked")
     private NearCache<Object, Object> getNearCache(HazelcastInstance instance, String mapName) {
-        MapServiceContext mapServiceContext = getMapService(instance).getMapServiceContext();
+        NodeEngine nodeEngine = getNodeEngineImpl(instance);
+        MapServiceContext mapServiceContext = getMapService(nodeEngine).getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        NearCacheConfig nearCacheConfig = getNodeEngineImpl(instance).getConfig().findMapConfig(mapName).getNearCacheConfig();
-        return mapNearCacheManager.getOrCreateNearCache(mapName, nearCacheConfig);
+        MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(mapName);
+        return mapNearCacheManager.getOrCreateNearCache(mapName, mapConfig.getNearCacheConfig());
     }
 
-    private MapService getMapService(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
+    private MapService getMapService(NodeEngine nodeEngine) {
+        return nodeEngine.getService(MapService.SERVICE_NAME);
     }
 }
