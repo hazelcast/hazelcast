@@ -1026,21 +1026,21 @@ public abstract class HazelcastTestSupport {
         }, timeoutSeconds);
     }
 
-    public static <E> void assertEqualsEventually(final FutureTask<E> task, final E value) {
+    public static <E> void assertEqualsEventually(final FutureTask<E> task, final E expected) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertTrue("FutureTask is not complete", task.isDone());
-                assertEquals(value, task.get());
+                assertEquals(expected, task.get());
             }
         });
     }
 
-    public static <E> void assertEqualsEventually(final Callable<E> task, final E value) {
+    public static <E> void assertEqualsEventually(final Callable<E> task, final E expected) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(value, task.call());
+                assertEquals(expected, task.call());
             }
         });
     }

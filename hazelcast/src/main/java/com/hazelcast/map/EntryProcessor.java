@@ -69,13 +69,12 @@ public interface EntryProcessor<K, V> extends Serializable {
 
     /**
      * Process the entry without worrying about concurrency.
-     * <p/>
-     * Note that to modify an entry by using EntryProcessor you should explicitly call
-     * {@link java.util.Map.Entry#setValue} method of {@link java.util.Map.Entry} such as:
-     * <p/>
+     * <p>
+     * Note that to modify an entry by using an EntryProcessor you should explicitly call
+     * {@link java.util.Map.Entry#setValue setValue()} method of {@link java.util.Map.Entry},
+     * for example:
      * <pre>
-     * <code>
-     * {@literal @}Override
+     *       {@literal @}Override
      *        public Object process(Map.Entry entry) {
      *          Value value = entry.getValue();
      *          // process and modify value
@@ -83,9 +82,12 @@ public interface EntryProcessor<K, V> extends Serializable {
      *          entry.setValue(value);
      *          return result;
      *        }
-     * </code>
      * </pre>
      * otherwise the {@code EntryProcessor} does not guarantee to modify the entry.
+     * <p>
+     * The entry's value will be {@code null}, if the entry for the key doesn't exist. You
+     * can create new mapping by setting a non-null value or remove existing mapping
+     * entry by setting the value to null.
      *
      * @param entry entry to be processed
      * @return a result that will be returned from the method taking the {@link EntryProcessor}, such as
