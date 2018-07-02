@@ -9,19 +9,18 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.Serializable;
 
 public class Main extends HazelcastTestSupport {
 
     public static void main(String[] args) throws Exception{
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
 
-        for(int k=0;k<3;k++){
-            hz.getMap("foobar"+k).put("1","1");
-        }
 
-        for(int k=0;k<3;k++){
-            hz.getMultiMap("multimap"+k).put("1","a");
+        for(int k=0;k<1000;k++){
+            hz.getMap("foobar").put("1", "1");
         }
+        hz.getExecutorService("foo").execute(new MyTask());
 
         Node node = getNode(hz);
 
@@ -45,5 +44,11 @@ public class Main extends HazelcastTestSupport {
 
         byte[] bytes = outputStream.toByteArray();
         System.out.println(bytes.length);
+    }
+
+    public static class MyTask implements Runnable, Serializable{
+        @Override
+        public void run() {
+        }
     }
 }

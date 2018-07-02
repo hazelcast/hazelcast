@@ -121,6 +121,17 @@ public class StatisticsAwareMetricsSet {
 
                     metricsRegistry.scanAndRegister(localInstanceStats,
                             baseName + "[" + name + "]");
+
+                    String namePrefix = baseName + "[" + name + "]";
+                    if (localInstanceStats instanceof LocalMapStatsImpl) {
+                        LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) localInstanceStats;
+                        localMapStats.getGetLatencyDistribution()
+                                .provideMetrics(namePrefix + ".getLatency", metricsRegistry );
+                        localMapStats.getPutLatencyDistribution()
+                                .provideMetrics(namePrefix + ".putLatency", metricsRegistry );
+                        localMapStats.getRemoveLatencyDistribution()
+                                .provideMetrics(namePrefix + ".removeLatency", metricsRegistry );
+                    }
                 }
             }
         }
