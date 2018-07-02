@@ -53,6 +53,7 @@ import com.hazelcast.map.impl.query.ParallelAccumulationExecutor;
 import com.hazelcast.map.impl.query.ParallelPartitionScanExecutor;
 import com.hazelcast.map.impl.query.PartitionScanExecutor;
 import com.hazelcast.map.impl.query.PartitionScanRunner;
+import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultProcessor;
 import com.hazelcast.map.impl.query.QueryRunner;
@@ -755,6 +756,8 @@ class MapServiceContextImpl implements MapServiceContext {
             localMapStats.incrementRemoveLatencyNanos(durationNanos);
         } else if (operation instanceof GetOperation) {
             localMapStats.incrementGetLatencyNanos(durationNanos);
+        } else if(operation instanceof QueryOperation){
+            localMapStats.incrementQueryLatencyNanos(durationNanos);
         }
     }
 

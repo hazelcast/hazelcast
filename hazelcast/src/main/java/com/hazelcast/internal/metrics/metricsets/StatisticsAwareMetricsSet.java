@@ -131,6 +131,8 @@ public class StatisticsAwareMetricsSet {
                                 .provideMetrics(namePrefix + ".putLatency", metricsRegistry );
                         localMapStats.getRemoveLatencyDistribution()
                                 .provideMetrics(namePrefix + ".removeLatency", metricsRegistry );
+                        localMapStats.getQueryLatencyDistribution()
+                                .provideMetrics(namePrefix + ".queryLatency", metricsRegistry );
                     }
                 }
             }

@@ -25,6 +25,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.util.Clock;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.ConcurrencyUtil.setMax;
@@ -53,9 +54,10 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> REMOVE_COUNT =
             newUpdater(LocalMapStatsImpl.class, "removeCount");
 
-    private final Distribution getLatencyDistribution = new Distribution(20,1000);
-    private final Distribution putLatencyDistribution = new Distribution(20,1000);
-    private final Distribution removeLatencyDistribution = new Distribution(20,1000);
+    private final Distribution getLatencyDistribution = new Distribution(32,1000);
+    private final Distribution putLatencyDistribution = new Distribution(32,1000);
+    private final Distribution removeLatencyDistribution = new Distribution(32,1000);
+    private final Distribution queryLatencyDistribution = new Distribution(32,1000);
 
     // These fields are only accessed through the updaters
     @Probe
@@ -109,6 +111,10 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     public Distribution getRemoveLatencyDistribution() {
         return removeLatencyDistribution;
+    }
+
+    public Distribution getQueryLatencyDistribution() {
+        return queryLatencyDistribution;
     }
 
     public LocalMapStatsImpl() {
@@ -224,9 +230,13 @@ public class LocalMapStatsImpl implements LocalMapStats {
         incrementPutLatencyNanos(1, latencyNanos);
     }
 
+    public void incrementQueryLatencyNanos(long latencyNanos) {
+        queryLatencyDistribution.record(latencyNanos);
+    }
+
     public void incrementPutLatencyNanos(long delta, long latencyNanos) {
         PUT_COUNT.addAndGet(this, delta);
-        putLatencyDistribution.record(new Random().nextInt(100000000));
+        putLatencyDistribution.record(new Random().nextInt((int)TimeUnit.SECONDS.toNanos(5)));
     }
 
     @Override
