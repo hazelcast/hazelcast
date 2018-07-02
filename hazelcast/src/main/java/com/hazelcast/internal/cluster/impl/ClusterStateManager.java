@@ -117,6 +117,7 @@ public class ClusterStateManager {
             }
             // no need to validate again
             logger.fine("Setting initial cluster state: " + initialState + " and version: " + version);
+            validateNodeCompatibleWith(version);
             setClusterStateAndVersion(initialState, version, true);
         } finally {
             clusterServiceLock.unlock();
