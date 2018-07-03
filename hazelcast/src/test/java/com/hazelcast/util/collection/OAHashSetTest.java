@@ -32,6 +32,9 @@ import java.util.NoSuchElementException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -53,8 +56,13 @@ public class OAHashSetTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConstructorIllegalLoadFactor() {
+    public void testConstructorIllegalLoadFactorZero() {
         new OAHashSet<Integer>(8, 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorIllegalLoadFactorOne() {
+        new OAHashSet<Integer>(8, 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -607,8 +615,8 @@ public class OAHashSetTest {
         assertEquals(10, setElements.length);
 
         final BitSet foundElements = new BitSet(10);
-        for (int i = 0; i < 10; i++) {
-            foundElements.set(i);
+        for (Object foundElement : setElements) {
+            foundElements.set((Integer) foundElement);
         }
 
         for (int i = 0; i < 10; i++) {
@@ -621,12 +629,14 @@ public class OAHashSetTest {
         final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
         populateSet(set, 10);
 
-        final Integer[] setElements = new Integer[10];
-        set.toArray(setElements);
+        final Integer[] setElementsProvided = new Integer[10];
+        final Integer[] setElementsReturned = set.toArray(setElementsProvided);
+
+        assertSame(setElementsProvided, setElementsReturned);
 
         final BitSet foundElements = new BitSet(10);
-        for (int i = 0; i < 10; i++) {
-            foundElements.set(i);
+        for (Integer foundElement : setElementsProvided) {
+            foundElements.set(foundElement);
         }
 
         for (int i = 0; i < 10; i++) {
@@ -634,13 +644,36 @@ public class OAHashSetTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testToGenericArrayWithSmallArray() {
+    @Test
+    public void testToGenericArrayReturnsNewArrayWhenSmallArrayProvided() {
         final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
         populateSet(set, 10);
 
-        final Integer[] setElements = new Integer[9];
-        set.toArray(setElements);
+        final Integer[] setElementsProvided = new Integer[9];
+        final Object[] setElementsReturned = set.toArray(setElementsProvided);
+
+        assertNotSame(setElementsProvided, setElementsReturned);
+
+        final BitSet foundElements = new BitSet(10);
+        for (Object foundElement : setElementsReturned) {
+            foundElements.set((Integer) foundElement);
+        }
+
+        for (int i = 0; i < 10; i++) {
+            assertTrue(foundElements.get(i));
+        }
+    }
+
+    @Test
+    public void testToGenericArraySetsNullAfterLastContainedElement() {
+        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        populateSet(set, 10);
+
+        final Integer[] setElementsProvided = new Integer[11];
+        final Integer[] setElementsReturned = set.toArray(setElementsProvided);
+        assertSame(setElementsProvided, setElementsReturned);
+
+        assertNull(setElementsProvided[10]);
     }
 
     @Test
