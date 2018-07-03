@@ -32,7 +32,6 @@ import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Not thread-safe open-addressing hash {@link Set} implementation with linear
@@ -105,7 +104,7 @@ public class OAHashSet<E> extends AbstractSet<E> {
      */
     public OAHashSet(int initialCapacity, float loadFactor) {
         checkNotNegative(initialCapacity, "Illegal initial capacity: " + initialCapacity);
-        checkFalse(loadFactor <= 0 || Float.isNaN(loadFactor), "Illegal load factor: " + loadFactor);
+        checkFalse(loadFactor <= 0 || loadFactor >= 1 || Float.isNaN(loadFactor), "Illegal load factor: " + loadFactor);
 
         this.capacity = QuickMath.nextPowerOfTwo(initialCapacity);
         this.loadFactor = loadFactor;
@@ -277,11 +276,12 @@ public class OAHashSet<E> extends AbstractSet<E> {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] array) {
-        checkTrue(array.length >= size, "Elements stored in this set doesn't fit into the provided array. "
-                + "set size=" + size + ", array.length=" + array.length);
+        if (array.length < size) {
+            array = (T[]) new Object[size];
+        }
 
         int arrIdx = 0;
-        for (int i = 0; i < table.length && arrIdx < size - 1; i++) {
+        for (int i = 0; i < table.length && arrIdx < size; i++) {
             if (table[i] != null) {
                 array[arrIdx++] = (T) table[i];
             }
