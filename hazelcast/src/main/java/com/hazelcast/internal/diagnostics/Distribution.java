@@ -61,6 +61,7 @@ public final class Distribution {
         updateMax(v);
 
         int bucketIndex = toIndex(v);
+        System.out.println("index:"+bucketIndex);
         buckets.incrementAndGet(bucketIndex);
     }
 
@@ -78,16 +79,7 @@ public final class Distribution {
     }
 
     private int toIndex(long v) {
-        int bucketIndex = 0;
-        long maxValueForBucket = 1;//todo
-        for (int k = 0; k < buckets.length() - 1; k++) {
-            if (v <= maxValueForBucket) {
-                break;
-            }
-            bucketIndex++;
-            maxValueForBucket *= 2;
-        }
-        return bucketIndex;
+        return 64-Long.numberOfLeadingZeros(v);
     }
 
     public long max() {
