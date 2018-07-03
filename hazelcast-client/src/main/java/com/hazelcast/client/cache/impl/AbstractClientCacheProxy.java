@@ -50,6 +50,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.NULL_KEY_IS_NOT_ALLOWED;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
@@ -402,8 +403,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             List<Data> keys = keysByPartition[partitionId];
             if (keys != null) {
                 int completionId = nextCompletionId();
-                ClientMessage request = CacheSetExpiryPolicyCodec.encodeRequest(nameWithPrefix, keys, policyData, completionId);
-                futures.add(invoke(request, partitionId, completionId));
+                ClientMessage request = CacheSetExpiryPolicyCodec.encodeRequest(nameWithPrefix, keys, policyData);
+                futures.add(invoke(request, partitionId, IGNORE_COMPLETION));
             }
         }
 

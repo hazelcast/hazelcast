@@ -4427,12 +4427,11 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aLong, params.nextSeq));
 }
 {
-    ClientMessage clientMessage = CacheSetExpiryPolicyCodec.encodeRequest(    aString ,    datas ,    aData ,    anInt   );
+    ClientMessage clientMessage = CacheSetExpiryPolicyCodec.encodeRequest(    aString ,    datas ,    aData   );
     CacheSetExpiryPolicyCodec.RequestParameters params = CacheSetExpiryPolicyCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(datas, params.keys));
             assertTrue(isEqual(aData, params.expiryPolicy));
-            assertTrue(isEqual(anInt, params.completionId));
 }
 {
     ClientMessage clientMessage = CacheSetExpiryPolicyCodec.encodeResponse( );
