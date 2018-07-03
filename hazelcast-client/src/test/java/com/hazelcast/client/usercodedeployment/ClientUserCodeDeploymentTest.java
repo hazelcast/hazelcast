@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -37,13 +38,18 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import usercodedeployment.CapitalizatingFirstnameExtractor;
 import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
+import usercodedeployment.Person;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.query.Predicates.equal;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
@@ -177,6 +183,34 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
 
         assertCodeDeploymentWorking(client, new EntryProcessorWithAnonymousAndInner());
     }
+
+    @Test
+    public void testCustomAttributeExtractor() {
+        String mapName = randomMapName();
+        String attributeName = "syntheticAttribute"; //this attribute does not exist in the domain class
+
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(CapitalizatingFirstnameExtractor.class);
+        clientUserCodeDeploymentConfig.addClass(Person.class);
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        Config config = createNodeConfig();
+        config.getMapConfig(mapName).addMapAttributeConfig(new MapAttributeConfig(attributeName, "usercodedeployment.CapitalizatingFirstnameExtractor"));
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+
+        IMap<Integer, Person> map = client.getMap(mapName);
+        map.put(0, new Person("ada"));
+        map.put(1, new Person("non-ada"));
+
+        Set<Map.Entry<Integer, Person>> results = map.entrySet(equal(attributeName, "ADA"));
+        assertEquals(1, results.size());
+        assertEquals("ada", results.iterator().next().getValue().getName());
+    }
+
 
     private static class ClientReconnectionListener implements LifecycleListener {
         private final CountDownLatch clientReconnectedLatch;
