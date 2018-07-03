@@ -22,6 +22,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
+import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -29,22 +30,23 @@ import com.hazelcast.map.listener.MapClearedListener;
 import com.hazelcast.map.listener.MapEvictedListener;
 
 /**
- *
- * Internal usage only adapter for {@link com.hazelcast.map.listener.MapListener}.
+ * Internal usage only adapter for {@link
+ * com.hazelcast.map.listener.MapListener}.
  *
  * The difference between this adapter and {@link EntryAdapter} is,
- * {@link EntryAdapter} is deprecated form of this one and it doesn't implement newly added listener interfaces.
- *
+ * {@link EntryAdapter} is deprecated form of this one and it doesn't
+ * implement newly added listener interfaces.
  *
  * @param <K> key of the map entry
  * @param <V> value of the map entry.
- *
  * @see com.hazelcast.map.listener.MapListener
  * @since 3.6
  */
 
-public class MapListenerAdapter<K, V> implements EntryAddedListener<K, V>, EntryUpdatedListener<K, V>,
-        EntryRemovedListener<K, V>, EntryEvictedListener<K, V>, EntryExpiredListener<K, V>, EntryMergedListener<K, V>,
+public class MapListenerAdapter<K, V> implements EntryAddedListener<K, V>,
+        EntryUpdatedListener<K, V>, EntryRemovedListener<K, V>,
+        EntryEvictedListener<K, V>, EntryExpiredListener<K, V>,
+        EntryMergedListener<K, V>, EntryLoadedListener<K, V>,
         MapClearedListener, MapEvictedListener {
 
     @Override
@@ -74,6 +76,11 @@ public class MapListenerAdapter<K, V> implements EntryAddedListener<K, V>, Entry
 
     @Override
     public void entryMerged(EntryEvent<K, V> event) {
+        onEntryEvent(event);
+    }
+
+    @Override
+    public void entryLoaded(EntryEvent<K, V> event) {
         onEntryEvent(event);
     }
 

@@ -320,4 +320,8 @@ public final class MapListenerAdaptors {
         return new InternalMapListenerAdapter(mapListener);
     }
 
+    // only used for testing purposes
+    public static Map<EntryEventType, ConstructorFunction<MapListener, ListenerAdapter>> getConstructors() {
+        return CONSTRUCTORS;
+    }
 }
