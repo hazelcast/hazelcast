@@ -134,6 +134,11 @@
                             <artifactId>org.osgi.core</artifactId>
                             <version>4.2.0</version>
                         </additionalDependency>
+                        <additionalDependency>
+                            <groupId>javax.jms</groupId>
+                            <artifactId>javax.jms-api</artifactId>
+                            <version>${jms.api.version}</version>
+                        </additionalDependency>
                     </additionalDependencies>
                 </configuration>
             </plugin>
