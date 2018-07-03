@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -26,15 +27,11 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLongArray;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.max;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
  * A {@link DiagnosticsPlugin} that helps to detect if there are any performance issues with Stores/Loaders like e.g.
@@ -108,17 +105,19 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     private final long periodMillis;
     private final long resetPeriodMillis;
     private final long resetFrequency;
+    private final MetricsRegistry metricsRegistry;
 
     private long iteration;
 
     public StoreLatencyPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(StoreLatencyPlugin.class), nodeEngine.getProperties());
+        this(nodeEngine.getLogger(StoreLatencyPlugin.class), nodeEngine.getProperties(), nodeEngine.getMetricsRegistry());
     }
 
-    public StoreLatencyPlugin(ILogger logger, HazelcastProperties properties) {
+    public StoreLatencyPlugin(ILogger logger, HazelcastProperties properties, MetricsRegistry metricsRegistry) {
         super(logger);
         this.periodMillis = properties.getMillis(PERIOD_SECONDS);
         this.resetPeriodMillis = properties.getMillis(RESET_PERIOD_SECONDS);
+        this.metricsRegistry = metricsRegistry;
         if (periodMillis == 0 || resetPeriodMillis == 0) {
             this.resetFrequency = 0;
         } else {
@@ -206,7 +205,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     /**
      * Contains all probes for a given instance, e.g. for an {@link com.hazelcast.core.IMap} instance {@code employees}.
      */
-    private static final class InstanceProbes {
+    private  final class InstanceProbes {
 
         // key is the name of the probe, e.g. load
         private final ConcurrentMap<String, LatencyProbeImpl> probes = new ConcurrentHashMap<String, LatencyProbeImpl>();
@@ -219,7 +218,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         LatencyProbe newProbe(String methodName) {
             LatencyProbeImpl probe = probes.get(methodName);
             if (probe == null) {
-                LatencyProbeImpl newProbe = new LatencyProbeImpl(methodName, this);
+                LatencyProbeImpl newProbe = new LatencyProbeImpl(dataStructureName,methodName, this);
                 LatencyProbeImpl found = probes.putIfAbsent(methodName, newProbe);
                 probe = found == null ? newProbe : found;
             }
@@ -242,10 +241,11 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     }
 
     // package private for testing
-    static final class LatencyProbeImpl implements LatencyProbe {
+     final class LatencyProbeImpl implements LatencyProbe {
 
+        private final String mapName;
         // instead of storing it in a final field, it is stored in a volatile field because stats can be reset
-        volatile Statistics stats = new Statistics();
+        volatile Distribution stats = new Distribution(32,1000);
 
         // a strong reference to prevent garbage collection
         @SuppressWarnings("unused")
@@ -253,22 +253,25 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
         private final String methodName;
 
-        private LatencyProbeImpl(String methodName, InstanceProbes instanceProbes) {
+        private LatencyProbeImpl(String mapName, String methodName, InstanceProbes instanceProbes) {
             this.methodName = methodName;
+            this.mapName = mapName;
             this.instanceProbes = instanceProbes;
+
+            stats.provideMetrics("map["+mapName+"].mapLoader.latency",metricsRegistry);
         }
 
         @Override
         public void recordValue(long durationNanos) {
-            stats.recordValue(durationNanos);
+            stats.record(durationNanos);
         }
 
         private void render(DiagnosticsLogWriter writer) {
-            Statistics stats = this.stats;
+            Distribution stats = this.stats;
             long invocations = stats.count;
-            long totalMicros = stats.totalMicros;
+            long totalMicros = stats.total();
             long avgMicros = invocations == 0 ? 0 : totalMicros / invocations;
-            long maxMicros = stats.maxMicros;
+            long maxMicros = stats.max();
 
             if (invocations == 0) {
                 return;
@@ -281,8 +284,8 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             writer.writeKeyValueEntry("max(us)", maxMicros);
 
             writer.startSection("latency-distribution");
-            for (int k = 0; k < stats.latencyDistribution.length(); k++) {
-                long value = stats.latencyDistribution.get(k);
+            for (int k = 0; k < stats.buckets.length(); k++) {
+                long value = stats.buckets.get(k);
                 if (value > 0) {
                     writer.writeKeyValueEntry(LATENCY_KEYS[k], value);
                 }
@@ -293,54 +296,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         }
 
         private void resetStatistics() {
-            stats = new Statistics();
-        }
-    }
-
-    static final class Statistics {
-
-        private static final AtomicLongFieldUpdater<Statistics> COUNT
-                = newUpdater(Statistics.class, "count");
-        private static final AtomicLongFieldUpdater<Statistics> TOTAL_MICROS
-                = newUpdater(Statistics.class, "totalMicros");
-        private static final AtomicLongFieldUpdater<Statistics> MAX_MICROS
-                = newUpdater(Statistics.class, "maxMicros");
-
-        volatile long count;
-        volatile long maxMicros;
-        volatile long totalMicros;
-
-        private final AtomicLongArray latencyDistribution = new AtomicLongArray(LATENCY_BUCKET_COUNT);
-
-        private void recordValue(long durationNanos) {
-            long durationMicros = NANOSECONDS.toMicros(durationNanos);
-
-            COUNT.addAndGet(this, 1);
-            TOTAL_MICROS.addAndGet(this, durationMicros);
-
-            for (; ; ) {
-                long currentMax = maxMicros;
-                if (durationMicros <= currentMax) {
-                    break;
-                }
-
-                if (MAX_MICROS.compareAndSet(this, currentMax, durationMicros)) {
-                    break;
-                }
-            }
-
-            int bucketIndex = 0;
-            long maxDurationForBucket = LOW_WATERMARK_MICROS;
-            for (int k = 0; k < latencyDistribution.length() - 1; k++) {
-                if (durationMicros >= maxDurationForBucket) {
-                    bucketIndex++;
-                    maxDurationForBucket *= 2;
-                } else {
-                    break;
-                }
-            }
-
-            latencyDistribution.incrementAndGet(bucketIndex);
+            stats = new Distribution(32,1000);
         }
     }
 

@@ -79,7 +79,7 @@ public class Diagnostics {
      * <p>
      * The default is {@code false}.
      */
-    public static final HazelcastProperty ENABLED = new HazelcastProperty(PREFIX + ".enabled", false)
+    public static final HazelcastProperty ENABLED = new HazelcastProperty(PREFIX + ".enabled", true)
             .setDeprecatedName("hazelcast.performance.monitoring.enabled");
 
     /**

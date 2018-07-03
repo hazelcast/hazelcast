@@ -26,7 +26,6 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
-import com.hazelcast.util.StringUtil;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -57,6 +56,7 @@ public class StatisticsAwareMetricsSet {
     public StatisticsAwareMetricsSet(ServiceManager serviceManager, NodeEngineImpl nodeEngine) {
         this.serviceManager = serviceManager;
         this.logger = nodeEngine.getLogger(getClass());
+        System.out.println("StatisticsAwareMetricSet created");
     }
 
     public void register(MetricsRegistry metricsRegistry) {
@@ -85,12 +85,13 @@ public class StatisticsAwareMetricsSet {
                 currentStats = tmp;
                 currentStats.clear();
             } catch (Exception e) {
-                logger.finest("Error occurred while scanning for statistics aware metrics", e);
+                logger.severe("Error occurred while scanning for statistics aware metrics", e);
             }
         }
 
         private void registerAliveStats() {
             for (StatisticsAwareService statisticsAwareService : serviceManager.getServices(StatisticsAwareService.class)) {
+                System.out.println("statisticsAwareService:"+statisticsAwareService);
                 Map<String, LocalInstanceStats> stats = statisticsAwareService.getStats();
                 if (stats == null) {
                     continue;
@@ -98,6 +99,8 @@ public class StatisticsAwareMetricsSet {
 
                 for (Map.Entry<String, LocalInstanceStats> entry : stats.entrySet()) {
                     LocalInstanceStats localInstanceStats = entry.getValue();
+
+                    System.out.println("localInstanceStats:"+localInstanceStats.getClass());
 
                     currentStats.add(localInstanceStats);
 
