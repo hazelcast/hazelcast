@@ -23,13 +23,16 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class ManagementCenterConfig {
 
-    static final int UPDATE_INTERVAL = 3;
+    /**
+     * The default interval for sending member information to the management center.
+     */
+    public static final int UPDATE_INTERVAL_SECONDS = 3;
 
     private boolean enabled;
 
     private String url;
 
-    private int updateInterval = UPDATE_INTERVAL;
+    private int updateInterval = UPDATE_INTERVAL_SECONDS;
 
     private MCMutualAuthConfig mutualAuthConfig;
 

@@ -2268,7 +2268,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
         Node intervalNode = attrs.getNamedItem("update-interval");
         int interval = intervalNode != null ? getIntegerValue("update-interval",
-                getTextContent(intervalNode)) : ManagementCenterConfig.UPDATE_INTERVAL;
+                getTextContent(intervalNode)) : ManagementCenterConfig.UPDATE_INTERVAL_SECONDS;
 
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         managementCenterConfig.setEnabled(enabled);
