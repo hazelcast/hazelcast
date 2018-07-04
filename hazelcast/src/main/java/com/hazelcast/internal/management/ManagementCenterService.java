@@ -29,26 +29,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.management.metrics.CompressingProbeRenderer;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
-import com.hazelcast.internal.management.request.AsyncConsoleRequest;
-import com.hazelcast.internal.management.request.ChangeClusterStateRequest;
-import com.hazelcast.internal.management.request.ChangeWanStateRequest;
-import com.hazelcast.internal.management.request.ClearWanQueuesRequest;
-import com.hazelcast.internal.management.request.ClusterPropsRequest;
-import com.hazelcast.internal.management.request.ConsoleCommandRequest;
-import com.hazelcast.internal.management.request.ConsoleRequest;
-import com.hazelcast.internal.management.request.ExecuteScriptRequest;
-import com.hazelcast.internal.management.request.ForceStartNodeRequest;
-import com.hazelcast.internal.management.request.GetCacheEntryRequest;
-import com.hazelcast.internal.management.request.GetClusterStateRequest;
-import com.hazelcast.internal.management.request.GetMapEntryRequest;
-import com.hazelcast.internal.management.request.GetMemberSystemPropertiesRequest;
-import com.hazelcast.internal.management.request.MapConfigRequest;
-import com.hazelcast.internal.management.request.MemberConfigRequest;
-import com.hazelcast.internal.management.request.PromoteMemberRequest;
-import com.hazelcast.internal.management.request.RunGcRequest;
-import com.hazelcast.internal.management.request.ShutdownClusterRequest;
-import com.hazelcast.internal.management.request.ThreadDumpRequest;
-import com.hazelcast.internal.management.request.TriggerPartialStartRequest;
+import com.hazelcast.internal.management.request.*;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
@@ -61,15 +42,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -447,7 +420,7 @@ public class ManagementCenterService {
     private final class SendMetricsTask implements Callable {
         @Override
         public Object call() throws Exception {
-            logger.info("Sending metrics");
+           // logger.info("Sending metrics");
 
             URL url = newCollectorUrl();
             OutputStream outputStream = null;

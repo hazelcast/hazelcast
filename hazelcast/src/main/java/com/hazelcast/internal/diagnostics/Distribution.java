@@ -61,6 +61,7 @@ public final class Distribution {
         updateMax(v);
 
         int bucketIndex = toIndex(v);
+        //if(count %100==0)
         System.out.println("index:"+bucketIndex);
         buckets.incrementAndGet(bucketIndex);
     }

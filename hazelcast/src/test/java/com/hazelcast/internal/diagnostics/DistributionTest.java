@@ -3,6 +3,8 @@ package com.hazelcast.internal.diagnostics;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.TimeUnit;
+
 public class DistributionTest {
 
     private Distribution distribution;
@@ -14,6 +16,6 @@ public class DistributionTest {
 
     @Test
     public void test(){
-        distribution.record(20000000000l);
+        distribution.record(TimeUnit.NANOSECONDS.toNanos(10));
     }
 }

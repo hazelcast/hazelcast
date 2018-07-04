@@ -44,7 +44,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".metrics.period.seconds", 60, SECONDS);
+            = new HazelcastProperty(PREFIX + ".metrics.period.seconds", 5, SECONDS);
 
     private final MetricsRegistry metricsRegistry;
     private final long periodMillis;

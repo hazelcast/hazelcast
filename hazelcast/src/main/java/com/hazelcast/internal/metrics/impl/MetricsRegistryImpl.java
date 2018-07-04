@@ -16,32 +16,14 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
-import com.hazelcast.internal.metrics.DoubleGauge;
-import com.hazelcast.internal.metrics.DoubleProbeFunction;
-import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeBuilder;
-import com.hazelcast.internal.metrics.ProbeFunction;
-import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.*;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -213,6 +195,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     private void logOverwrite(ProbeInstance probeInstance) {
         if (probeInstance.function != null || probeInstance.source != null) {
             logger.warning(format("Overwriting existing probe '%s'", probeInstance.name));
+           try {
+               throw new RuntimeException("Overwriting existing probe " + probeInstance.name);
+           }catch (Exception e){
+               e.printStackTrace();
+           }
         }
     }
 

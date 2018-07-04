@@ -91,7 +91,6 @@ public class StatisticsAwareMetricsSet {
 
         private void registerAliveStats() {
             for (StatisticsAwareService statisticsAwareService : serviceManager.getServices(StatisticsAwareService.class)) {
-                System.out.println("statisticsAwareService:"+statisticsAwareService);
                 Map<String, LocalInstanceStats> stats = statisticsAwareService.getStats();
                 if (stats == null) {
                     continue;
@@ -100,7 +99,6 @@ public class StatisticsAwareMetricsSet {
                 for (Map.Entry<String, LocalInstanceStats> entry : stats.entrySet()) {
                     LocalInstanceStats localInstanceStats = entry.getValue();
 
-                    System.out.println("localInstanceStats:"+localInstanceStats.getClass());
 
                     currentStats.add(localInstanceStats);
 
@@ -108,6 +106,8 @@ public class StatisticsAwareMetricsSet {
                         // already registered
                         continue;
                     }
+
+                    System.out.println("localInstanceStats:"+localInstanceStats.getClass()+" "+Thread.currentThread());
 
                     String name = entry.getKey();
 

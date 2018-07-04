@@ -24,8 +24,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.util.Clock;
 
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.ConcurrencyUtil.setMax;
@@ -236,7 +234,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     public void incrementPutLatencyNanos(long delta, long latencyNanos) {
         PUT_COUNT.addAndGet(this, delta);
-        putLatencyDistribution.record(new Random().nextInt((int)TimeUnit.SECONDS.toNanos(5)));
+        putLatencyDistribution.record(latencyNanos);
     }
 
     @Override
