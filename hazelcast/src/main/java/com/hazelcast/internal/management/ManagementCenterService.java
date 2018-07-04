@@ -420,8 +420,7 @@ public class ManagementCenterService {
     private final class SendMetricsTask implements Callable {
         @Override
         public Object call() throws Exception {
-           // logger.info("Sending metrics");
-
+            long start = System.currentTimeMillis();
             URL url = newCollectorUrl();
             OutputStream outputStream = null;
             try {
@@ -447,7 +446,14 @@ public class ManagementCenterService {
                 } else if (!success) {
                     manCenterConnectionLost = true;
                 }
+                long durationMs = System.currentTimeMillis()-start;
+                if(success) {
+                    logger.info("Uploaded metrics in " + durationMs + " ms");
+                }else{
+                    logger.warning("Failed to upload metrics in " + durationMs + " ms");
+                }
             } catch (Exception e) {
+                logger.warning("Failed to upload metrics ",e);
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
                     log("Failed to connect to:" + url, e);

@@ -62,7 +62,7 @@ public final class Distribution {
 
         int bucketIndex = toIndex(v);
         //if(count %100==0)
-        System.out.println("index:"+bucketIndex);
+      //  System.out.println("index:"+bucketIndex);
         buckets.incrementAndGet(bucketIndex);
     }
 
