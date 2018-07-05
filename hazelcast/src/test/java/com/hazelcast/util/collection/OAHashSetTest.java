@@ -265,7 +265,7 @@ public class OAHashSetTest {
 
         set.containsAll(elementsToCheck);
     }
-    
+
     @Test
     public void testCapacityIncreasesIfNeeded() {
         final OAHashSet<Integer> set = new OAHashSet<Integer>(8, 0.9F);
