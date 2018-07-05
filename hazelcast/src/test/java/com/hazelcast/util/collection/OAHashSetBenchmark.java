@@ -143,7 +143,7 @@ public class OAHashSetBenchmark {
         return new ObjectWithExpensiveHashCodeAndEquals(getAnInt(maxInt), EQUALS_COST_FACTOR, HASHCODE_COST_FACTOR);
     }
 
-    public static abstract class BenchmarkContext {
+    public abstract static class BenchmarkContext {
         @Param({"10", "100", "1000", "10000", "100000", "1000000"})
         protected int size;
 
@@ -167,7 +167,6 @@ public class OAHashSetBenchmark {
             //            System.out.println("OAHashSet.capacity: " + set.capacity());
             //            System.out.println("OAHashSet.footprint: " + set.footprint());
         }
-
     }
 
     @State(Scope.Benchmark)
