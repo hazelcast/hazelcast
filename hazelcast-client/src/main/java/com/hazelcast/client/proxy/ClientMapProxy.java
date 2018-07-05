@@ -1757,7 +1757,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         @Override
         public void handleEntryEventV10(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid,
-                           int numberOfAffectedEntries) {
+                                        int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             listenerAdapter.onEvent(createIMapEvent(key, value, oldValue, mergingValue, eventType, numberOfAffectedEntries,
                     member));
@@ -1774,6 +1774,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 case EVICTED:
                 case EXPIRED:
                 case MERGED:
+                case LOADED:
                     return createEntryEvent(key, value, oldValue, mergingValue, eventType, member);
                 case EVICT_ALL:
                 case CLEAR_ALL:

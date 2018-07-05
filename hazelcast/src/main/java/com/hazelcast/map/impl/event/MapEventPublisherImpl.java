@@ -50,6 +50,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.event.AbstractFilteringStrategy.FILTER_DOES_NOT_MATCH;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static java.util.Collections.singleton;
 
 public class MapEventPublisherImpl implements MapEventPublisher {
 
@@ -193,9 +194,9 @@ public class MapEventPublisherImpl implements MapEventPublisher {
             EventFilter filter = registration.getFilter();
             if (filter instanceof EventListenerFilter) {
                 if (filter.eval(ADDED.getType()) && !filter.eval(LOADED.getType())) {
-                    publishEvent(caller, mapName, ADDED, dataKey, dataOldValue, dataValue);
-                } else {
-                    publishEvent(caller, mapName, LOADED, dataKey, dataOldValue, dataValue);
+                    publishEvent(singleton(registration), caller, mapName, ADDED, dataKey, dataOldValue, dataValue, null);
+                } else if (filter.eval(LOADED.getType())) {
+                    publishEvent(singleton(registration), caller, mapName, LOADED, dataKey, dataOldValue, dataValue, null);
                 }
             }
         }
