@@ -50,8 +50,14 @@ public class ClientQueryCacheConfigurator extends AbstractQueryCacheConfigurator
     }
 
     @Override
-    public QueryCacheConfig getOrNull(String mapName, String cacheName) {
-        return clientConfig.getOrNullQueryCacheConfig(mapName, cacheName);
+    public QueryCacheConfig getOrNull(String mapName, String cacheName, String cacheId) {
+        QueryCacheConfig config = clientConfig.getOrNullQueryCacheConfig(mapName, cacheName);
+        if (config != null) {
+            setPredicateImpl(config);
+            setEntryListener(mapName, cacheId, config);
+        }
+
+        return config;
     }
 
     @Override

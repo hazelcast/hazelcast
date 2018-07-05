@@ -42,7 +42,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -80,16 +80,21 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastClient();
         IMap<Integer, Employee> map = instance.getMap(mapName);
 
-        CountDownLatch numberOfCaughtEvents = new CountDownLatch(10);
         final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
-        cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), new SqlPredicate("id > 100"), true);
+        final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
+        cache.addEntryListener(listener, new SqlPredicate("id > 100"), true);
 
         final int putCount = 111;
         for (int i = 0; i < putCount; i++) {
             map.put(i, new Employee(i));
         }
 
-        assertOpenEventually(numberOfCaughtEvents, 10);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(10, listener.getAddedEventCount());
+            }
+        });
     }
 
     @Test
@@ -100,10 +105,10 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastClient();
         IMap<Integer, Employee> map = instance.getMap(mapName);
 
-        CountDownLatch numberOfCaughtEvents = new CountDownLatch(1);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
         int keyToListen = 109;
-        cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), new SqlPredicate("id > 100"), keyToListen,
+        final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
+        cache.addEntryListener(listener, new SqlPredicate("id > 100"), keyToListen,
                 true);
 
         int putCount = 111;
@@ -111,7 +116,12 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
             map.put(i, new Employee(i));
         }
 
-        assertOpenEventually(numberOfCaughtEvents, 10);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, listener.getAddedEventCount());
+            }
+        });
     }
 
     @Test
@@ -122,12 +132,14 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastClient();
         IMap<Integer, Employee> map = instance.getMap(mapName);
 
-        CountDownLatch additionCount = new CountDownLatch(2);
-        CountDownLatch removalCount = new CountDownLatch(2);
         final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
         int keyToListen = 109;
-        cache.addEntryListener(new QueryCacheAdditionListener(additionCount), new SqlPredicate("id > 100"), keyToListen, true);
-        cache.addEntryListener(new QueryCacheRemovalListener(removalCount), new SqlPredicate("id > 100"), keyToListen, true);
+
+        final QueryCacheAdditionListener addListener = new QueryCacheAdditionListener();
+        cache.addEntryListener(addListener, new SqlPredicate("id > 100"), keyToListen, true);
+
+        final QueryCacheRemovalListener removeListener = new QueryCacheRemovalListener();
+        cache.addEntryListener(removeListener, new SqlPredicate("id > 100"), keyToListen, true);
 
         // populate map before construction of query cache
         int count = 111;
@@ -147,16 +159,16 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        AssertTask task = new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
-                assertEquals(0, cache.size());
+            public void run() {
+                int cacheSize = cache.size();
+                String message = "Cache size is=" + cacheSize;
+                assertEquals(message, 0, cacheSize);
+                assertEquals(message, 2, addListener.getAddedEventCount());
+                assertEquals(message, 2, removeListener.getRemovedEventCount());
             }
-        };
-
-        assertTrueEventually(task);
-        assertOpenEventually(cache.size() + "", additionCount, 10);
-        assertOpenEventually(cache.size() + "", removalCount, 10);
+        });
     }
 
     @Test
@@ -175,14 +187,14 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
 
     @Test
     public void listenerShouldBeRegistered_whenConfiguredProgrammatically() {
-        int valueCount = 100;
-        CountDownLatch completionLatch = new CountDownLatch(valueCount);
+        final int valueCount = 100;
         String mapName = randomString();
         String qcName = randomString();
+        final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(qcName)
                 .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE))
                 .addEntryListenerConfig(
-                        new EntryListenerConfig(new QueryCacheAdditionListener(completionLatch), true, true));
+                        new EntryListenerConfig(listener, true, true));
         ClientConfig config = new ClientConfig().addQueryCacheConfig(mapName, queryCacheConfig);
 
         HazelcastInstance instance = factory.newHazelcastClient(config);
@@ -192,7 +204,12 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
         for (int i = 0; i < valueCount; i++) {
             map.put(i, new Employee(i));
         }
-        assertOpenEventually(completionLatch, 30);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(valueCount, listener.getAddedEventCount());
+            }
+        });
     }
 
     private void testIncludeValue(final boolean includeValue) {
@@ -237,29 +254,35 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
 
     private class QueryCacheAdditionListener implements EntryAddedListener {
 
-        private final CountDownLatch numberOfCaughtEvents;
+        private final AtomicInteger addedEventCount = new AtomicInteger(0);
 
-        QueryCacheAdditionListener(CountDownLatch numberOfCaughtEvents) {
-            this.numberOfCaughtEvents = numberOfCaughtEvents;
+        QueryCacheAdditionListener() {
         }
 
         @Override
         public void entryAdded(EntryEvent event) {
-            numberOfCaughtEvents.countDown();
+            addedEventCount.incrementAndGet();
+        }
+
+        public int getAddedEventCount() {
+            return addedEventCount.get();
         }
     }
 
     private class QueryCacheRemovalListener implements EntryRemovedListener {
 
-        private final CountDownLatch numberOfCaughtEvents;
+        private final AtomicInteger removedEventCount = new AtomicInteger(0);
 
-        QueryCacheRemovalListener(CountDownLatch numberOfCaughtEvents) {
-            this.numberOfCaughtEvents = numberOfCaughtEvents;
+        QueryCacheRemovalListener() {
         }
 
         @Override
         public void entryRemoved(EntryEvent event) {
-            numberOfCaughtEvents.countDown();
+            removedEventCount.incrementAndGet();
+        }
+
+        public int getRemovedEventCount() {
+            return removedEventCount.get();
         }
     }
 }
