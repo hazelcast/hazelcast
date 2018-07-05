@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.nio.ByteOrder;
 
+import static com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder.DEFAULT_BYTE_ORDER;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -87,6 +88,20 @@ public class DefaultSerializationServiceBuilderTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_exceptionThrown_whenInitialOutputBufferSizeNegative() {
         getSerializationServiceBuilder().setInitialOutputBufferSize(-1);
+    }
+
+    @Test
+    public void test_nullByteOrder() {
+        InternalSerializationService serializationService = getSerializationServiceBuilder()
+                .setByteOrder(null).build();
+        assertEquals(DEFAULT_BYTE_ORDER, serializationService.getByteOrder());
+    }
+
+    @Test
+    public void test_useNativeByteOrder() {
+        ByteOrder nativeOrder = ByteOrder.nativeOrder();
+        InternalSerializationService serializationService = getSerializationServiceBuilder().setUseNativeByteOrder(true).build();
+        assertEquals(nativeOrder, serializationService.getByteOrder());
     }
 
     protected SerializationServiceBuilder getSerializationServiceBuilder() {
