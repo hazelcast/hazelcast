@@ -40,7 +40,7 @@ public interface QueryCacheConfigurator {
      * @param cacheName query cache name.
      * @return {@link QueryCacheConfig} for the requested {@code cacheName}.
      */
-    QueryCacheConfig getOrNull(String mapName, String cacheName);
+    QueryCacheConfig getOrNull(String mapName, String cacheName, String cacheId);
 
     /**
      * Removes corresponding configuration for the supplied {@code cacheName}

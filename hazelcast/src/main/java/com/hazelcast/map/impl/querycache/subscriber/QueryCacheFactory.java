@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -45,8 +46,9 @@ public class QueryCacheFactory {
             String cacheName = request.getCacheName();
             IMap delegate = request.getMap();
             QueryCacheContext context = request.getContext();
+            QueryCacheConfig queryCacheConfig = request.getQueryCacheConfig();
 
-            return new DefaultQueryCache(cacheId, cacheName, delegate, context);
+            return new DefaultQueryCache(cacheId, cacheName, queryCacheConfig, delegate, context);
         }
     }
 
