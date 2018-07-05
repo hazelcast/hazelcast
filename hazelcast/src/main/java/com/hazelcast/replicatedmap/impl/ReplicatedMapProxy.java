@@ -117,6 +117,9 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
                         requestDataForPartition(i);
                     }
                     sleep();
+                    if (store == null) {
+                        store = service.getReplicatedRecordStore(name, false, i);
+                    }
                 }
             }
         }
