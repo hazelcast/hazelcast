@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.management;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.request.ExecuteScriptRequest;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

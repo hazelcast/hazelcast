@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.Client;
 import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.json.JsonObject;
 
 import static com.hazelcast.util.JsonUtil.getString;
 

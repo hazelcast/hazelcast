@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.management;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.request.MapConfigRequest;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.management.request;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.lang.management.ManagementFactory;

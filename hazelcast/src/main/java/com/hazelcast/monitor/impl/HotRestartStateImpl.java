@@ -16,9 +16,9 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.hotrestart.BackupTaskState;
 import com.hazelcast.hotrestart.BackupTaskStatus;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.util.JsonUtil;
 

@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

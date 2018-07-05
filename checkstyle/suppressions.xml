@@ -110,6 +110,9 @@
     <!-- OSGI -->
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]osgi[\\/]impl[\\/]HazelcastOSGiInstanceImpl"/>
 
+    <!-- JSON -->
+    <suppress checks="" files="[\\/]com[\\/]hazelcast[\\/]internal[\\/]json[\\/]"/>
+
     <!-- Client -->
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]cache[\\/]impl[\\/]ClientCacheProxy"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]proxy[\\/]ClientAtomicReferenceProxy"/>

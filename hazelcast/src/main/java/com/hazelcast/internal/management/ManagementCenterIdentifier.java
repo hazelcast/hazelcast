@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.management;
 
-import com.eclipsesource.json.JsonObject;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.hazelcast.internal.json.JsonObject;
 
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getString;
