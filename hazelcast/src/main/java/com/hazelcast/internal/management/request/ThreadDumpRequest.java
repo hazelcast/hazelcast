@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.management.request;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ThreadDumpOperation;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.util.ExceptionUtil;
 

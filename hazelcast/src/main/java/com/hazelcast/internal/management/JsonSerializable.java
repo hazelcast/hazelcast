@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management;
 
-import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.json.JsonObject;
 
 /**
  * JsonSerializable is a serialization interface that serializes/de-serializes to/from JSON.

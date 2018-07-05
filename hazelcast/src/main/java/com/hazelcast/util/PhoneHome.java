@@ -16,8 +16,6 @@
 
 package com.hazelcast.util;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.ClientType;
@@ -25,6 +23,8 @@ import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.properties.GroupProperty;

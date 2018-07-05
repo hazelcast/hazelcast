@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.management;
 
-import com.eclipsesource.json.JsonObject;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.hazelcast.internal.json.JsonObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 

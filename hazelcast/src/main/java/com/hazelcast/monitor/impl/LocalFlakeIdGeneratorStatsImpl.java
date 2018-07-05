@@ -16,8 +16,8 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.util.Clock;
 

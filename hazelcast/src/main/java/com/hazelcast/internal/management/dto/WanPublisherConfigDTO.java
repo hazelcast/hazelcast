@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.WANQueueFullBehavior;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
 
 import java.util.Map;
 

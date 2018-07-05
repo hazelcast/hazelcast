@@ -16,8 +16,8 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.LocalCacheStats;
 
 import static com.hazelcast.util.JsonUtil.getFloat;
@@ -35,7 +35,7 @@ import static com.hazelcast.util.JsonUtil.getLong;
  * <p/>
  * No setter methods are provided, all class fields supposed to be populated either
  * by a {@link com.hazelcast.cache.CacheStatistics} or while deserialization process
- * ({@link #fromJson(com.eclipsesource.json.JsonObject)}.
+ * ({@link #fromJson(com.hazelcast.internal.json.JsonObject)}.
  *
  * @see com.hazelcast.cache.CacheStatistics
  */
