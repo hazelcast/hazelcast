@@ -56,6 +56,8 @@ import static java.nio.ByteOrder.nativeOrder;
 @SuppressWarnings({"checkstyle:methodcount"})
 public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
 
+    static final ByteOrder DEFAULT_BYTE_ORDER = BIG_ENDIAN;
+
     // System property to override configured byte order for tests
     private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
     private static final int DEFAULT_OUT_BUFFER_SIZE = 4 * 1024;
@@ -78,7 +80,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected ManagedContext managedContext;
 
     protected boolean useNativeByteOrder;
-    protected ByteOrder byteOrder = BIG_ENDIAN;
+    protected ByteOrder byteOrder = DEFAULT_BYTE_ORDER;
 
     protected boolean enableCompression;
     protected boolean enableSharedObject;
@@ -339,7 +341,10 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         overrideByteOrder();
 
         if (byteOrder == null) {
-            byteOrder = useNativeByteOrder ? nativeOrder() : BIG_ENDIAN;
+            byteOrder = DEFAULT_BYTE_ORDER;
+        }
+        if (useNativeByteOrder) {
+            byteOrder = nativeOrder();
         }
         return byteOrder == nativeOrder() && allowUnsafe && GlobalMemoryAccessorRegistry.MEM_AVAILABLE
                 ? new UnsafeInputOutputFactory()

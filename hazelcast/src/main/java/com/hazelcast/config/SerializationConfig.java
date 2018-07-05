@@ -368,7 +368,7 @@ public class SerializationConfig {
     }
 
     /**
-     * Not that configuring use native byte order as enabled will override the byte order set by this method.
+     * Note that configuring use native byte order as enabled will override the byte order set by this method.
      *
      * @param byteOrder that serialization will use
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
