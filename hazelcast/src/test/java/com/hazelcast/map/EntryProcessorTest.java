@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -26,6 +28,8 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.JsonString;
+import com.hazelcast.core.JsonStringImpl;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.PostProcessingMapStore;
@@ -459,6 +463,41 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         instance1.shutdown();
         for (Object key : keys) {
             assertEquals(expectedValue, map.get(key));
+        }
+    }
+
+    @Test
+    public void testEntryProcessorOnJsonStrings() {
+        Config cfg = getConfig();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+
+        IMap<String, JsonString> map = instance2.getMap(MAP_NAME);
+        Set<String> keys = new HashSet<String>();
+        for (int i = 0; i < 4; i++) {
+            final String key = generateKeyOwnedBy(instance1);
+            keys.add(key);
+        }
+
+        for (String key : keys) {
+            JsonString jsonString = new JsonStringImpl("{ \"value\": \"" + key + "\" }");
+            map.put(key, jsonString);
+        }
+
+        map.executeOnKeys(keys, new JsonStringPropAdder());
+
+        for (String key : keys) {
+            JsonObject jsonObject = map.get(key).asJsonValue().asObject();
+            assertNotNull(jsonObject);
+            assertTrue(jsonObject.get(JsonStringPropAdder.NEW_FIELD).asBoolean());
+        }
+
+        instance1.shutdown();
+        for (Object key : keys) {
+            JsonObject jsonObject = map.get(key).asJsonValue().asObject();
+            assertNotNull(jsonObject);
+            assertTrue(jsonObject.get(JsonStringPropAdder.NEW_FIELD).asBoolean());
         }
     }
 
@@ -1729,6 +1768,21 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         public Object process(final Map.Entry<String, SimpleValue> entry) {
             final SimpleValue value = entry.getValue();
             value.i++;
+            return null;
+        }
+    }
+
+    private static class JsonStringPropAdder extends AbstractEntryProcessor<String, JsonString> {
+
+        private static final String NEW_FIELD = "addedField";
+
+        @Override
+        public Object process(Map.Entry<String, JsonString> entry) {
+            JsonString jsonString = entry.getValue();
+            JsonValue value = jsonString.asJsonValue();
+            value.asObject().add(NEW_FIELD, true);
+            jsonString.set(value);
+            entry.setValue(jsonString);
             return null;
         }
     }

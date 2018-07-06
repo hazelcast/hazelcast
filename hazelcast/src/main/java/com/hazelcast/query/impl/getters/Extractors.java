@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.core.JsonString;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
@@ -120,6 +121,8 @@ public final class Extractors {
                     genericPortableGetter = new PortableGetter(serializationService);
                 }
                 return genericPortableGetter;
+            } else if (targetObject instanceof JsonString) {
+                return new JsonGetter();
             } else {
                 return ReflectionHelper.createGetter(targetObject, attributeName);
             }

@@ -16,9 +16,11 @@
 
 package com.hazelcast.query.impl;
 
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -182,9 +184,23 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         }
     }
 
+    private AttributeType extractAttributeTypeFromJsonValue(JsonValue value) {
+        if (value.isNumber()) {
+            return AttributeType.DOUBLE;
+        } else if (value.isBoolean()) {
+            return AttributeType.BOOLEAN;
+        } else if (value.isString()) {
+            return AttributeType.STRING;
+        }
+        throw new HazelcastSerializationException("Unknown Json type: " + value);
+    }
+
     private AttributeType extractAttributeTypeFromSingleResult(Object extractedSingleResult) {
         if (extractedSingleResult == null) {
             return null;
+        }
+        if (extractedSingleResult instanceof JsonValue) {
+            return extractAttributeTypeFromJsonValue((JsonValue) extractedSingleResult);
         }
         if (extractedSingleResult instanceof Portable) {
             return AttributeType.PORTABLE;

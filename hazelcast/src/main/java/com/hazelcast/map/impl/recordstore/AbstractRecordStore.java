@@ -19,6 +19,8 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.JsonString;
+import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -56,6 +58,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final LockStore lockStore;
     protected final MapContainer mapContainer;
     protected final RecordFactory recordFactory;
+    protected final RecordFactory objectRecordFactory;
     protected final MapEventJournal eventJournal;
     protected final InMemoryFormat inMemoryFormat;
     protected final MapStoreContext mapStoreContext;
@@ -76,6 +79,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.serializationService = nodeEngine.getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
+        this.objectRecordFactory = mapContainer.createObjectRecordFactory();
         this.recordComparator = mapServiceContext.getRecordComparator(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
@@ -106,7 +110,18 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     @Override
     public Record createRecord(Object value, long ttlMillis, long now) {
+        if (value instanceof JsonString) {
+            new Throwable(value + " is a JsonString").printStackTrace();
+        }
         Record record = recordFactory.newRecord(value);
+        // JsonString is kept only in object form. All is good if recordFactory is ObjectRecordFactory
+        // We convert value to object if recordFactory is DataRecordFactory
+        if (record.getValue() instanceof Data) {
+            Data dataRecord = (Data) record.getValue();
+            if (dataRecord.getType() == SerializationConstants.JAVA_DEFAULT_TYPE_JSON_STRING) {
+                record = objectRecordFactory.newRecord(toObject(value));
+            }
+        }
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
 
@@ -206,6 +221,10 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected Data toData(Object value) {
         return mapServiceContext.toData(value);
+    }
+
+    protected Object toObject(Object value) {
+        return mapServiceContext.toObject(value);
     }
 
     public void setSizeEstimator(EntryCostEstimator entryCostEstimator) {

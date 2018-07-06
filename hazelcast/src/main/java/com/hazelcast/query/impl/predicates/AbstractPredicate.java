@@ -16,9 +16,11 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
@@ -62,7 +64,23 @@ public abstract class AbstractPredicate<K, V>
             throw new IllegalArgumentException(String.format(
                     "Cannot use %s predicate with an array or a collection attribute", getClass().getSimpleName()));
         }
+        if (attributeValue instanceof JsonValue) {
+            attributeValue = convertFromJsonValue((JsonValue) attributeValue);
+        }
         return applyForSingleAttributeValue(mapEntry, (Comparable) attributeValue);
+    }
+
+    private Object convertFromJsonValue(JsonValue value) {
+        if (value.isNumber()) {
+            return value.asDouble();
+        } else if (value.isBoolean()) {
+            return value.asBoolean();
+        } else if (value.isNull()) {
+            return null;
+        } else if (value.isString()) {
+            return value.asString();
+        }
+        throw new HazelcastSerializationException("Unknown Json type: " + value);
     }
 
     private boolean applyForMultiResult(Map.Entry mapEntry, MultiResult result) {

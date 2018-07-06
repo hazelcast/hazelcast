@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.core.JsonString;
+import com.hazelcast.core.JsonStringImpl;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ClassNameFilter;
@@ -43,6 +45,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.J
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_ENUM;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_JSON_STRING;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
 import static com.hazelcast.nio.IOUtil.newObjectInputStream;
 import static java.lang.Math.max;
@@ -319,6 +322,25 @@ public final class JavaDefaultSerializers {
 
             String name = in.readUTF();
             return Enum.valueOf(clazz, name);
+        }
+    }
+
+    public static final class JsonStringSerializer extends SingletonSerializer<JsonString> {
+
+        @Override
+        public void write(ObjectDataOutput out, JsonString object) throws IOException {
+            String stringJson = object.asString();
+            out.writeUTF(stringJson);
+        }
+
+        @Override
+        public JsonString read(ObjectDataInput in) throws IOException {
+            return new JsonStringImpl(in.readUTF());
+        }
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_JSON_STRING;
         }
     }
 
