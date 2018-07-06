@@ -28,6 +28,7 @@ import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
@@ -195,6 +196,12 @@ public final class ActionConstants {
             @Override
             public Permission create(String name, String... actions) {
                 return new UserCodeDeploymentPermission(actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(PNCounterService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new PNCounterPermission(name, actions);
             }
         });
     }
