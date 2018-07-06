@@ -289,18 +289,12 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
     @Override
     public void clear() {
-        InternalReplicatedMapStorage<K, V> storage = getStorage();
-        storage.clear();
-        storage.incrementVersion();
-        getStats().incrementOtherOperations();
+        clearInternal().incrementVersion();
     }
 
     @Override
     public void clearWithVersion(long version) {
-        InternalReplicatedMapStorage<K, V> storage = getStorage();
-        storage.clear();
-        storage.setVersion(version);
-        getStats().incrementOtherOperations();
+        clearInternal().setVersion(version);
     }
 
     @Override
