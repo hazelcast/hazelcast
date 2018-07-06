@@ -129,6 +129,39 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
         assertAllTtlSchedulersEmpty(map);
     }
 
+    @Test
+    public void remove_empties_internal_ttl_schedulers() {
+        HazelcastInstance node = createHazelcastInstance();
+        String mapName = "test";
+        ReplicatedMap map = node.getReplicatedMap(mapName);
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i, 100, TimeUnit.DAYS);
+        }
+
+        for (int i = 0; i < 1000; i++) {
+            map.remove(i);
+        }
+
+        assertAllTtlSchedulersEmpty(map);
+    }
+
+    @Test
+    public void service_reset_empties_internal_ttl_schedulers() {
+        HazelcastInstance node = createHazelcastInstance();
+        String mapName = "test";
+        ReplicatedMap map = node.getReplicatedMap(mapName);
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i, 100, TimeUnit.DAYS);
+        }
+
+        ReplicatedMapService service = getNodeEngineImpl(node).getService(ReplicatedMapService.SERVICE_NAME);
+        service.reset();
+
+        assertAllTtlSchedulersEmpty(map);
+    }
+
     private static void assertAllTtlSchedulersEmpty(ReplicatedMap map) {
         String mapName = map.getName();
         ReplicatedMapProxy replicatedMapProxy = (ReplicatedMapProxy) map;
