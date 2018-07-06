@@ -49,7 +49,7 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
 
         QueryCacheConfig queryCacheConfig = findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
 
-        if (null != queryCacheConfig) {
+        if (queryCacheConfig != null) {
             setPredicateImpl(queryCacheConfig);
             setEntryListener(mapName, cacheId, queryCacheConfig);
             return queryCacheConfig;
@@ -61,13 +61,20 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
     }
 
     @Override
-    public QueryCacheConfig getOrNull(String mapName, String cacheName) {
+    public QueryCacheConfig getOrNull(String mapName, String cacheName, String cacheId) {
         MapConfig mapConfig = config.getMapConfigOrNull(mapName);
-        if (null == mapConfig) {
+        if (mapConfig == null) {
             return null;
         }
 
-        return findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
+        QueryCacheConfig queryCacheConfig = findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
+        if (queryCacheConfig != null) {
+            setPredicateImpl(queryCacheConfig);
+            setEntryListener(mapName, cacheId, queryCacheConfig);
+            return queryCacheConfig;
+        }
+
+        return queryCacheConfig;
     }
 
     private QueryCacheConfig findQueryCacheConfigFromMapConfig(MapConfig mapConfig, String cacheName) {

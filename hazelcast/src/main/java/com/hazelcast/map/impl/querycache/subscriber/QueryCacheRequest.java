@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.listener.MapListener;
@@ -32,12 +33,13 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class QueryCacheRequest {
 
     private IMap map;
-    private Predicate predicate;
-    private Boolean includeValue;
-    private MapListener listener;
-    private QueryCacheContext context;
     private String mapName;
     private String cacheName;
+    private Predicate predicate;
+    private MapListener listener;
+    private Boolean includeValue;
+    private QueryCacheContext context;
+    private QueryCacheConfig queryCacheConfig;
 
     QueryCacheRequest() {
     }
@@ -79,6 +81,11 @@ public class QueryCacheRequest {
         return this;
     }
 
+    public QueryCacheRequest withQueryCacheConfig(QueryCacheConfig queryCacheConfig) {
+        this.queryCacheConfig = checkNotNull(queryCacheConfig, "queryCacheConfig can not be null");
+        return this;
+    }
+
     public IMap getMap() {
         return map;
     }
@@ -105,5 +112,9 @@ public class QueryCacheRequest {
 
     public QueryCacheContext getContext() {
         return context;
+    }
+
+    public QueryCacheConfig getQueryCacheConfig() {
+        return queryCacheConfig;
     }
 }
