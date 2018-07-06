@@ -78,6 +78,11 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         return storageRef;
     }
 
+    // only used for testing purposes
+    public EntryTaskScheduler getTtlEvictionScheduler() {
+        return ttlEvictionScheduler;
+    }
+
     @Override
     public int getPartitionId() {
         return partitionId;
@@ -98,6 +103,14 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         if (storage != null) {
             storage.clear();
         }
+    }
+
+    protected InternalReplicatedMapStorage<K, V> clearInternal() {
+        InternalReplicatedMapStorage<K, V> storage = getStorage();
+        storage.clear();
+        getStats().incrementOtherOperations();
+        ttlEvictionScheduler.cancelAll();
+        return storage;
     }
 
     @Override

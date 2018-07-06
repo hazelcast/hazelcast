@@ -18,17 +18,25 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.record.AbstractBaseReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -104,5 +112,32 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
                 }
             }
         });
+    }
+
+    @Test
+    public void clear_empties_internal_ttl_schedulers() {
+        HazelcastInstance node = createHazelcastInstance();
+        String mapName = "test";
+        ReplicatedMap map = node.getReplicatedMap(mapName);
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i, 100, TimeUnit.DAYS);
+        }
+
+        map.clear();
+
+        assertAllTtlSchedulersEmpty(map);
+    }
+
+    private static void assertAllTtlSchedulersEmpty(ReplicatedMap map) {
+        String mapName = map.getName();
+        ReplicatedMapProxy replicatedMapProxy = (ReplicatedMapProxy) map;
+        ReplicatedMapService service = (ReplicatedMapService) replicatedMapProxy.getService();
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(mapName);
+        for (ReplicatedRecordStore store : stores) {
+            assertEquals(0,
+                    ((SecondsBasedEntryTaskScheduler) ((AbstractBaseReplicatedRecordStore) store)
+                            .getTtlEvictionScheduler()).size());
+        }
     }
 }

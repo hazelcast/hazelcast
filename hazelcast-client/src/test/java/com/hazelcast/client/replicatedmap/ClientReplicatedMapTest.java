@@ -28,11 +28,16 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.record.AbstractBaseReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,6 +57,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -518,6 +524,35 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         sampleMap.put(1, new SamplePortable(666));
         SamplePortable samplePortable = sampleMap.get(1);
         assertEquals(666, samplePortable.a);
+    }
+
+    @Test
+    public void clear_empties_internal_ttl_schedulers() {
+        String mapName = "test";
+        HazelcastInstance node = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        ReplicatedMap map = client.getReplicatedMap(mapName);
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i, 100, TimeUnit.DAYS);
+        }
+
+        map.clear();
+
+        assertAllTtlSchedulersEmpty(node.getReplicatedMap(mapName));
+    }
+
+    private static void assertAllTtlSchedulersEmpty(ReplicatedMap map) {
+        String mapName = map.getName();
+        ReplicatedMapProxy replicatedMapProxy = (ReplicatedMapProxy) map;
+        ReplicatedMapService service = (ReplicatedMapService) replicatedMapProxy.getService();
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(mapName);
+        for (ReplicatedRecordStore store : stores) {
+            assertEquals(0,
+                    ((SecondsBasedEntryTaskScheduler) ((AbstractBaseReplicatedRecordStore) store)
+                            .getTtlEvictionScheduler()).size());
+        }
     }
 
     @SuppressWarnings("unchecked")
