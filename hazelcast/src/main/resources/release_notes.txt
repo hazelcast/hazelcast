@@ -10,6 +10,7 @@ NOTE: Starting with Hazelcast 3.10.3, Hazelcast IMDG Enterprise license keys are
 
 2. Fixes
 
+- Setting `ExpirationTimeMergePolicy` throws exception during configuration validation. [#13392]
 - When a cache is closed, it is no longer managed by the `CacheManager`;
 its `CacheManager` should be reset to null and the method `getCacheManager()` should
 return null as per specification. [#13236]
