@@ -543,6 +543,25 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         assertAllTtlSchedulersEmpty(node.getReplicatedMap(mapName));
     }
 
+    @Test
+    public void remove_empties_internal_ttl_schedulers() {
+        String mapName = "test";
+        HazelcastInstance node = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        ReplicatedMap map = client.getReplicatedMap(mapName);
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i, 100, TimeUnit.DAYS);
+        }
+
+        for (int i = 0; i < 1000; i++) {
+            map.remove(i);
+        }
+
+        assertAllTtlSchedulersEmpty(node.getReplicatedMap(mapName));
+    }
+
     private static void assertAllTtlSchedulersEmpty(ReplicatedMap map) {
         String mapName = map.getName();
         ReplicatedMapProxy replicatedMapProxy = (ReplicatedMapProxy) map;
