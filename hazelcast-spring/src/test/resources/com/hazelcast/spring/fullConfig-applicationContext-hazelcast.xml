@@ -61,6 +61,7 @@
                 <hz:wan-publisher group-name="tokyo" class-name="com.hazelcast.enterprise.wan.replication.WanBatchReplication">
                     <hz:queue-full-behavior>THROW_EXCEPTION</hz:queue-full-behavior>
                     <hz:queue-capacity>1000</hz:queue-capacity>
+                    <hz:initial-publisher-state>STOPPED</hz:initial-publisher-state>
                     <hz:properties>
                         <hz:property name="batch.size">50</hz:property>
                         <hz:property name="batch.max.delay.millis">3000</hz:property>

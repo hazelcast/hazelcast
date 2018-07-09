@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,11 +42,13 @@ public class LocalWanStatsImplTest {
         tokyo.setConnected(true);
         tokyo.incrementPublishedEventCount(10);
         tokyo.setOutboundQueueSize(100);
+        tokyo.setState(WanPublisherState.REPLICATING);
 
         LocalWanPublisherStatsImpl singapore = new LocalWanPublisherStatsImpl();
         singapore.setConnected(true);
         singapore.setOutboundQueueSize(200);
         singapore.incrementPublishedEventCount(20);
+        singapore.setState(WanPublisherState.REPLICATING);
 
         LocalWanStatsImpl localWanStats = new LocalWanStatsImpl();
         Map<String, LocalWanPublisherStats> localWanPublisherStatsMap = new HashMap<String, LocalWanPublisherStats>();

@@ -18,6 +18,7 @@ package com.hazelcast.monitor.impl;
 
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,6 +38,7 @@ public class LocalWanPublisherStatsTest {
         localWanPublisherStats.setConnected(true);
         localWanPublisherStats.setOutboundQueueSize(100);
         localWanPublisherStats.incrementPublishedEventCount(10);
+        localWanPublisherStats.setState(WanPublisherState.REPLICATING);
 
         JsonObject serialized = localWanPublisherStats.toJson();
 

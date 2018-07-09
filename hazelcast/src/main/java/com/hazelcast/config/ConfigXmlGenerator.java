@@ -659,10 +659,11 @@ public class ConfigXmlGenerator {
             gen.open("wan-replication", "name", wan.getName());
             for (WanPublisherConfig p : wan.getWanPublisherConfigs()) {
                 gen.open("wan-publisher", "group-name", p.getGroupName())
-                        .node("class-name", p.getClassName())
-                        .node("queue-full-behavior", p.getQueueFullBehavior())
-                        .node("queue-capacity", p.getQueueCapacity())
-                        .appendProperties(p.getProperties());
+                   .node("class-name", p.getClassName())
+                   .node("queue-full-behavior", p.getQueueFullBehavior())
+                   .node("initial-publisher-state", p.getInitialPublisherState())
+                   .node("queue-capacity", p.getQueueCapacity())
+                   .appendProperties(p.getProperties());
                 awsConfigXmlGenerator(gen, p.getAwsConfig());
                 discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
                 gen.close();
@@ -671,10 +672,10 @@ public class ConfigXmlGenerator {
             WanConsumerConfig consumerConfig = wan.getWanConsumerConfig();
             if (consumerConfig != null) {
                 gen.open("wan-consumer")
-                        .node("class-name", classNameOrImplClass(consumerConfig.getClassName(),
-                                consumerConfig.getImplementation()))
-                        .appendProperties(consumerConfig.getProperties())
-                        .close();
+                   .node("class-name", classNameOrImplClass(consumerConfig.getClassName(),
+                           consumerConfig.getImplementation()))
+                   .appendProperties(consumerConfig.getProperties())
+                   .close();
             }
             gen.close();
         }

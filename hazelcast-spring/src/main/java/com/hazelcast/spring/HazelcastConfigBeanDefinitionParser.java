@@ -1266,9 +1266,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         String nodeName = cleanNodeName(child);
                         if ("properties".equals(nodeName)) {
                             handleProperties(child, publisherBuilder);
-                        } else if ("queue-full-behavior".equals(nodeName)) {
-                            publisherBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
-                        } else if ("queue-capacity".equals(nodeName)) {
+                        } else if ("queue-full-behavior".equals(nodeName)
+                                || "initial-publisher-state".equals(nodeName)
+                                || "queue-capacity".equals(nodeName)) {
                             publisherBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
                         } else if ("aws".equals(nodeName)) {
                             handleAws(child, publisherBuilder);
