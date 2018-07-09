@@ -114,30 +114,34 @@ public class TextCommandServiceImpl implements TextCommandService {
         this.hazelcast = node.hazelcastInstance;
         this.logger = node.getLogger(this.getClass().getName());
         EntryConverter entryConverter = new EntryConverter(this, node.getLogger(EntryConverter.class));
-        textCommandProcessors[GET.getValue()] = new GetCommandProcessor(this, entryConverter);
-        textCommandProcessors[BULK_GET.getValue()] = new BulkGetCommandProcessor(this, entryConverter);
-        textCommandProcessors[SET.getValue()] = new SetCommandProcessor(this);
-        textCommandProcessors[APPEND.getValue()] = new SetCommandProcessor(this);
-        textCommandProcessors[PREPEND.getValue()] = new SetCommandProcessor(this);
-        textCommandProcessors[ADD.getValue()] = new SetCommandProcessor(this);
-        textCommandProcessors[REPLACE.getValue()] = new SetCommandProcessor(this);
-        textCommandProcessors[GET_END.getValue()] = new NoOpCommandProcessor(this);
-        textCommandProcessors[DELETE.getValue()] = new DeleteCommandProcessor(this);
-        textCommandProcessors[QUIT.getValue()] = new SimpleCommandProcessor(this);
-        textCommandProcessors[STATS.getValue()] = new StatsCommandProcessor(this);
-        textCommandProcessors[UNKNOWN.getValue()] = new ErrorCommandProcessor(this);
-        textCommandProcessors[VERSION.getValue()] = new VersionCommandProcessor(this);
-        textCommandProcessors[TOUCH.getValue()] = new TouchCommandProcessor(this);
-        textCommandProcessors[INCREMENT.getValue()] = new IncrementCommandProcessor(this);
-        textCommandProcessors[DECREMENT.getValue()] = new IncrementCommandProcessor(this);
-        textCommandProcessors[ERROR_CLIENT.getValue()] = new ErrorCommandProcessor(this);
-        textCommandProcessors[ERROR_SERVER.getValue()] = new ErrorCommandProcessor(this);
-        textCommandProcessors[HTTP_GET.getValue()] = new HttpGetCommandProcessor(this);
-        textCommandProcessors[HTTP_POST.getValue()] = new HttpPostCommandProcessor(this);
-        textCommandProcessors[HTTP_PUT.getValue()] = new HttpPostCommandProcessor(this);
-        textCommandProcessors[HTTP_DELETE.getValue()] = new HttpDeleteCommandProcessor(this);
-        textCommandProcessors[HTTP_HEAD.getValue()] = new HttpHeadCommandProcessor(this);
-        textCommandProcessors[NO_OP.getValue()] = new NoOpCommandProcessor(this);
+        register(GET, new GetCommandProcessor(this, entryConverter));
+        register(BULK_GET, new BulkGetCommandProcessor(this, entryConverter));
+        register(SET, new SetCommandProcessor(this));
+        register(APPEND, new SetCommandProcessor(this));
+        register(PREPEND, new SetCommandProcessor(this));
+        register(ADD, new SetCommandProcessor(this));
+        register(REPLACE, new SetCommandProcessor(this));
+        register(GET_END, new NoOpCommandProcessor(this));
+        register(DELETE, new DeleteCommandProcessor(this));
+        register(QUIT, new SimpleCommandProcessor(this));
+        register(STATS, new StatsCommandProcessor(this));
+        register(UNKNOWN, new ErrorCommandProcessor(this));
+        register(VERSION, new VersionCommandProcessor(this));
+        register(TOUCH, new TouchCommandProcessor(this));
+        register(INCREMENT, new IncrementCommandProcessor(this));
+        register(DECREMENT, new IncrementCommandProcessor(this));
+        register(ERROR_CLIENT, new ErrorCommandProcessor(this));
+        register(ERROR_SERVER, new ErrorCommandProcessor(this));
+        register(HTTP_GET, new HttpGetCommandProcessor(this));
+        register(HTTP_POST, new HttpPostCommandProcessor(this));
+        register(HTTP_PUT, new HttpPostCommandProcessor(this));
+        register(HTTP_DELETE, new HttpDeleteCommandProcessor(this));
+        register(HTTP_HEAD, new HttpHeadCommandProcessor(this));
+        register(NO_OP, new NoOpCommandProcessor(this));
+    }
+
+    protected void register(TextCommandConstants.TextCommandType type, TextCommandProcessor processor) {
+        textCommandProcessors[type.getValue()] = processor;
     }
 
     @Override
@@ -354,6 +358,7 @@ public class TextCommandServiceImpl implements TextCommandService {
         responseThreadRunnable.sendResponse(textCommand);
     }
 
+    @Override
     public void stop() {
         final ResponseThreadRunnable rtr = responseThreadRunnable;
         if (rtr != null) {

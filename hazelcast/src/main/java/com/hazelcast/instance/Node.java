@@ -36,7 +36,6 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.crdt.CRDTReplicationMigrationService;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
@@ -127,7 +126,7 @@ public class Node {
     public final ClusterServiceImpl clusterService;
     public final MulticastService multicastService;
     public final DiscoveryService discoveryService;
-    public final TextCommandServiceImpl textCommandService;
+    public final TextCommandService textCommandService;
     public final LoggingServiceImpl loggingService;
 
     public final ConnectionManager connectionManager;
@@ -222,7 +221,7 @@ public class Node {
                     this.config.getNetworkConfig().getJoin().getDiscoveryConfig().getAsReadOnly(), localMember);
             partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this, localMember);
-            textCommandService = new TextCommandServiceImpl(this);
+            textCommandService = nodeExtension.createTextCommandService();
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {

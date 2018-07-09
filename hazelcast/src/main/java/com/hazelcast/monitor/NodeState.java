@@ -45,4 +45,5 @@ public interface NodeState extends JsonSerializable {
      * @return the codebase version of the Node
      */
     MemberVersion getMemberVersion();
+
 }

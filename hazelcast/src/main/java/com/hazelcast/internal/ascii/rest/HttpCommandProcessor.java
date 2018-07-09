@@ -19,6 +19,7 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.internal.ascii.TextCommandService;
 
+
 public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcessor<T> {
     public static final String URI_MAPS = "/hazelcast/rest/maps/";
     public static final String URI_QUEUES = "/hazelcast/rest/queues/";

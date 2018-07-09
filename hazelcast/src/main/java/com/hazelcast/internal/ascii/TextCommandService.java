@@ -91,4 +91,6 @@ public interface TextCommandService {
     Node getNode();
 
     byte[] toByteArray(Object value);
+
+    void stop();
 }
