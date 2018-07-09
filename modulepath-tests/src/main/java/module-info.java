@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/**
- * <p>This package contains the serverside client functionality</p>
- */
-package com.hazelcast.client;
+open module com.hazelcast.tests {
+    requires com.hazelcast.core;
+    requires com.hazelcast.client;
+}

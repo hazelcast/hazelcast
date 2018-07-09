@@ -314,4 +314,8 @@
             files="[\\/]src[\\/]test[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]protocol[\\/]compatibility[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
+
+    <!-- module-info.java -->
+    <suppress checks="" files="[\\/]module-info"/>
+
 </suppressions>
