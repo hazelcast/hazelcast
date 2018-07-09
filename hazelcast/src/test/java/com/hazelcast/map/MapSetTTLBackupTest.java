@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -59,6 +60,8 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
+        RuntimeAvailableProcessors.override(4);
+
         factory = createHazelcastInstanceFactory();
         Config config = getConfig();
         MapConfig mapConfig = new MapConfig("default");
