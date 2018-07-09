@@ -28,8 +28,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-class Employee implements Portable {
+public class Employee implements Portable {
 
+    public static final int CLASS_ID = 2;
     private String name;
     private int age;
 
@@ -67,7 +68,7 @@ class Employee implements Portable {
     }
 
     public int getClassId() {
-        return 2;
+        return CLASS_ID;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

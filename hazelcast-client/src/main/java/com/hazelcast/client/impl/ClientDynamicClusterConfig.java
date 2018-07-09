@@ -525,7 +525,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public GroupConfig getGroupConfig() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+        return instance.getClientConfig().getGroupConfig();
     }
 
     @Override
@@ -1026,7 +1026,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public SerializationConfig getSerializationConfig() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+        return instance.getClientConfig().getSerializationConfig();
     }
 
     @Override
