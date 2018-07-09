@@ -90,6 +90,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         if (replicatedMapConfig.isStatisticsEnabled()) {
             getStats().incrementRemoves(Clock.currentTimeMillis() - time);
         }
+        cancelTtlEntry(marshalledKey);
         return unmarshalledOldValue;
     }
 
