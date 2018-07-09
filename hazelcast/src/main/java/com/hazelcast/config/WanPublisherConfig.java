@@ -76,12 +76,17 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the capacity of the queue for WAN replication events. IMap, ICache,
-     * normal and backup events count against the queue capacity separately.
+     * Returns the capacity of the primary and backup queue for WAN replication events.
+     * <p>
+     * One hazelcast instance can have up to {@code 2*queueCapacity} events since
+     * we keep up to {@code queueCapacity} primary events (events with keys for
+     * which the instance is the owner) and {@code queueCapacity} backup events
+     * (events with keys for which the instance is the backup).
+     * Events for IMap and ICache count against this limit collectively.
+     * <p>
      * When the queue capacity is reached, backup events are dropped while normal
      * replication events behave as determined by the {@link #getQueueFullBehavior()}.
-     * The default queue size for replication queues is
-     * {@value #DEFAULT_QUEUE_CAPACITY}.
+     * The default queue size for replication queues is {@value #DEFAULT_QUEUE_CAPACITY}.
      *
      * @return the queue capacity
      */
@@ -90,8 +95,14 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets the capacity of the queue for WAN replication events. IMap, ICache,
-     * normal and backup events count against the queue capacity separately.
+     * Sets the capacity of the primary and backup queue for WAN replication events.
+     * <p>
+     * One hazelcast instance can have up to {@code 2*queueCapacity} events since
+     * we keep up to {@code queueCapacity} primary events (events with keys for
+     * which the instance is the owner) and {@code queueCapacity} backup events
+     * (events with keys for which the instance is the backup).
+     * Events for IMap and ICache count against this limit collectively.
+     * <p>
      * When the queue capacity is reached, backup events are dropped while normal
      * replication events behave as determined by the {@link #getQueueFullBehavior()}.
      * The default queue size for replication queues is {@value #DEFAULT_QUEUE_CAPACITY}.
