@@ -150,7 +150,6 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
         } else {
             writeQueue.offer(frame);
         }
-
         schedule();
     }
 
@@ -452,6 +451,10 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     private class CloseTask implements Runnable {
         private final CountDownLatch latch = new CountDownLatch(1);
 
+        public CloseTask() {
+            logger.info("Close task " + channel.socket() + " created.");
+        }
+
         @Override
         public void run() {
             NioThread owner = NioOutboundPipeline.this.owner;
@@ -461,17 +464,20 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
             }
 
             try {
+                logger.info("Close task " + channel.socket() + " started running.");
                 channel.closeOutbound();
             } catch (IOException e) {
                 logger.finest("Error while closing outbound", e);
             } finally {
+                logger.info("Close task " + channel.socket() + " releasing latch.");
                 latch.countDown();
             }
         }
 
         void awaitCompletion() {
             try {
-                latch.await(TIMEOUT, SECONDS);
+                latch.await(8, SECONDS);
+                logger.info("Close task " + channel.socket() + " latch released.");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
