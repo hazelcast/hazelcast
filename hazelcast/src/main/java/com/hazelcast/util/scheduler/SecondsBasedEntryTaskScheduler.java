@@ -47,10 +47,16 @@ import java.util.concurrent.atomic.AtomicLong;
  * @param <K> entry key type
  * @param <V> entry value type
  */
-final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
+public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
 
+    /**
+     * hash-map initial capacity
+     */
     public static final int INITIAL_CAPACITY = 10;
 
+    /**
+     * @see #ceilToSecond(long)
+     */
     public static final double FACTOR = 1000d;
 
     private static final long INITIAL_TIME_MILLIS = Clock.currentTimeMillis();
@@ -67,9 +73,13 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
     };
 
-    /** Map of keys to duration between this class being loaded and the time the key is scheduled */
+    /**
+     * Map of keys to duration between this class being loaded and the time the key is scheduled
+     */
     private final Map<Object, Integer> secondsOfKeys = new HashMap<Object, Integer>(1000);
-    /** Map from duration (see {@link #findRelativeSecond(long)} to scheduled key to scheduled entry map. */
+    /**
+     * Map from duration (see {@link #findRelativeSecond(long)} to scheduled key to scheduled entry map.
+     */
     private final Map<Integer, Map<Object, ScheduledEntry<K, V>>> scheduledEntries
             = new HashMap<Integer, Map<Object, ScheduledEntry<K, V>>>(1000);
     private final Map<Integer, ScheduledFuture> scheduledTaskMap = new HashMap<Integer, ScheduledFuture>(1000);
@@ -240,7 +250,9 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         return cancelled;
     }
 
-    /** Return all composite keys with the given {@code key} */
+    /**
+     * Return all composite keys with the given {@code key}
+     */
     private Set<CompositeKey> getCompositeKeys(K key) {
         Set<CompositeKey> candidateKeys = new HashSet<CompositeKey>();
         for (Object keyObj : secondsOfKeys.keySet()) {
@@ -252,7 +264,9 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         return candidateKeys;
     }
 
-    /** Returns one scheduled entry for the given {@code key} with no guaranteed ordering */
+    /**
+     * Returns one scheduled entry for the given {@code key} with no guaranteed ordering
+     */
     public ScheduledEntry<K, V> getByCompositeKey(K key) {
         Set<CompositeKey> candidateKeys = getCompositeKeys(key);
         ScheduledEntry<K, V> result = null;
@@ -372,13 +386,15 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     }
 
     // just for testing
-    int size() {
+    public int size() {
         synchronized (mutex) {
             return secondsOfKeys.size();
         }
     }
 
-    /** Returns the duration in seconds between the time this class was loaded and now+{@code delayMillis} */
+    /**
+     * Returns the duration in seconds between the time this class was loaded and now+{@code delayMillis}
+     */
     // package private for testing
     static int findRelativeSecond(long delayMillis) {
         long now = Clock.currentTimeMillis();
