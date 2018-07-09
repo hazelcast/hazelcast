@@ -27,7 +27,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Configuration for Wan target replication reference
+ * Configuration for a WAN target replication reference. This configuration
+ * is used on IMap and ICache configurations to refer to an actual WAN
+ * replication configuration. This way, several maps and cache configurations
+ * may share a single WAN replication configuration.
+ *
+ * @see WanReplicationConfig
  */
 @BinaryInterface
 public class WanReplicationRef implements DataSerializable, Serializable {
@@ -50,10 +55,11 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     }
 
     public WanReplicationRef(WanReplicationRef ref) {
-        name = ref.name;
-        mergePolicy = ref.mergePolicy;
-        filters = ref.filters;
-        republishingEnabled = ref.republishingEnabled;
+        this.name = ref.name;
+        this.mergePolicy = ref.mergePolicy;
+        this.filters = ref.filters;
+        this.republishingEnabled = ref.republishingEnabled;
+        this.readOnly = ref.readOnly;
     }
 
     /**
@@ -69,30 +75,52 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         return readOnly;
     }
 
+    /**
+     * Returns the WAN replication reference name.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets the WAN replication reference name.
+     *
+     * @param name the reference name
+     * @return this config
+     */
     public WanReplicationRef setName(String name) {
         this.name = name;
         return this;
     }
 
+    /**
+     * Returns the merge policy sent to the WAN replication target to merge
+     * replicated entries with existing target entries.
+     */
     public String getMergePolicy() {
         return mergePolicy;
     }
 
+    /**
+     * Sets the merge policy sent to the WAN replication target to merge
+     * replicated entries with existing target entries.
+     *
+     * @param mergePolicy the merge policy
+     * @return this config
+     */
     public WanReplicationRef setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
         return this;
     }
 
     /**
-     * Add class name implementing the CacheWanEventFilter or MapWanEventFilter for filtering WAN replication events.
+     * Adds the class name implementing the CacheWanEventFilter or
+     * MapWanEventFilter for filtering outbound WAN replication events.
+     * <p>
      * NOTE: EE only
      *
      * @param filter the class name
-     * @return this configuration
+     * @return this config
      */
     public WanReplicationRef addFilter(String filter) {
         filters.add(filter);
@@ -100,8 +128,9 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     }
 
     /**
-     * Return the list of class names implementing the CacheWanEventFilter or MapWanEventFilter for filtering WAN replication
-     * events.
+     * Returns the list of class names implementing the CacheWanEventFilter or
+     * MapWanEventFilter for filtering outbound WAN replication events.
+     * <p>
      * NOTE: EE only
      *
      * @return list of class names implementing the CacheWanEventFilter or MapWanEventFilter
@@ -111,22 +140,34 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     }
 
     /**
-     * Set the list of class names implementing the CacheWanEventFilter or MapWanEventFilter for filtering WAN replication
-     * events.
+     * Sets the list of class names implementing the CacheWanEventFilter or
+     * MapWanEventFilter for filtering outbound WAN replication events.
+     * <p>
      * NOTE: EE only
      *
      * @param filters the list of class names implementing CacheWanEventFilter or MapWanEventFilter
-     * @return this configuration
+     * @return this config
      */
     public WanReplicationRef setFilters(List<String> filters) {
         this.filters = filters;
         return this;
     }
 
+    /**
+     * Returns {@code true} if incoming WAN events to this member should be
+     * republished (forwarded) to this WAN replication reference.
+     */
     public boolean isRepublishingEnabled() {
         return republishingEnabled;
     }
 
+    /**
+     * Sets if incoming WAN events to this member should be republished
+     * (forwarded) to this WAN replication reference.
+     *
+     * @param republishEnabled whether WAN event republishing is enabled
+     * @return this config
+     */
     public WanReplicationRef setRepublishingEnabled(boolean republishEnabled) {
         this.republishingEnabled = republishEnabled;
         return this;

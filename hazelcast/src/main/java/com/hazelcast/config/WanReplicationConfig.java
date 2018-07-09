@@ -25,8 +25,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Configuration for WAN replication. This configuration is referenced from a map or cache to determine the receivers for the
- * WAN events. Each receiver is defined with a {@link WanPublisherConfig}
+ * Configuration for WAN replication. This configuration is referenced from an
+ * IMap or ICache configuration to determine the receivers for the WAN events.
+ * Each receiver is defined with a {@link WanPublisherConfig}.
+ * <p>
+ * A single WAN replication configuration may consist of several
+ * {@link WanPublisherConfig WAN publisher configurations}.
+ * You may consider each WAN publisher configuration as a single target cluster
+ * or a single external system. The WAN subsystem will track replication for
+ * each publisher separately. Having multiple publishers in a single WAN
+ * replication config simplifies simultaneous publication of map and cache
+ * events to multiple target systems.
+ * <p>
+ * In addition to defining publishers, you may optionally configure a WAN
+ * consumer. The WAN consumer is in charge of consuming (processing) incoming
+ * WAN events. Usually when defining a custom consumer you need to define a
+ * custom WAN publisher as well.
  *
  * @see MapConfig#setWanReplicationRef
  * @see CacheConfig#setWanReplicationRef
@@ -41,30 +55,66 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
         return name;
     }
 
+    /**
+     * Sets the name of this WAN replication config. This name is used by the
+     * {@link WanReplicationRef} configuration.
+     *
+     * @param name the WAN replication config name
+     * @return this config
+     * @see WanReplicationRef#getName()
+     */
     public WanReplicationConfig setName(String name) {
         this.name = name;
         return this;
     }
 
+    /**
+     * Returns the {@link WanConsumerConfig WAN consumer configuration} for this
+     * WAN replication. The WAN consumer is in charge of consuming (processing)
+     * incoming WAN events.
+     */
     public WanConsumerConfig getWanConsumerConfig() {
         return wanConsumerConfig;
     }
 
+    /**
+     * Sets the {@link WanConsumerConfig WAN consumer configuration} for this
+     * WAN replication. The WAN consumer is in charge of consuming (processing)
+     * incoming WAN events.
+     *
+     * @param wanConsumerConfig the WAN consumer configuration
+     * @return this config
+     */
     public WanReplicationConfig setWanConsumerConfig(WanConsumerConfig wanConsumerConfig) {
         this.wanConsumerConfig = wanConsumerConfig;
         return this;
     }
 
+    /**
+     * Returns the list of configured WAN publisher targets for this WAN
+     * replication.
+     */
     public List<WanPublisherConfig> getWanPublisherConfigs() {
         return wanPublisherConfigs;
     }
 
+    /**
+     * Sets the list of configured WAN publisher targets for this WAN replication.
+     *
+     * @param wanPublisherConfigs WAN publisher list
+     */
     public void setWanPublisherConfigs(List<WanPublisherConfig> wanPublisherConfigs) {
         if (wanPublisherConfigs != null && !wanPublisherConfigs.isEmpty()) {
             this.wanPublisherConfigs = wanPublisherConfigs;
         }
     }
 
+    /**
+     * Adds a WAN publisher configuration to this WAN replication.
+     *
+     * @param wanPublisherConfig the WAN publisher configuration
+     * @return this config
+     */
     public WanReplicationConfig addWanPublisherConfig(WanPublisherConfig wanPublisherConfig) {
         wanPublisherConfigs.add(wanPublisherConfig);
         return this;

@@ -27,8 +27,12 @@ import java.util.Map;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Configuration object for WAN publishers. A single publisher defines how WAN events are sent to a specific endpoint.
- * The endpoint can be a different cluster defined by static IP's or discovered using a cloud discovery mechanism.
+ * Configuration object for a WAN publisher. A single publisher defines how
+ * WAN events are sent to a specific endpoint.
+ * The endpoint can be a different cluster defined by static IP's or discovered
+ * using a cloud discovery mechanism. When using a custom WAN publisher
+ * implementation, the target may also be some other external system which is
+ * not a Hazelcast cluster.
  *
  * @see DiscoveryConfig
  * @see AwsConfig
@@ -48,8 +52,9 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
 
     /**
-     * Return the group name of this publisher. The group name is used for identifying the publisher in a
-     * {@link WanReplicationConfig} and for authentication on the target endpoint.
+     * Returns the group name of this publisher. The group name is used for
+     * identifying the publisher in a {@link WanReplicationConfig} and for
+     * authentication on the target endpoint.
      *
      * @return the publisher group name
      */
@@ -58,8 +63,9 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Set the group name of this publisher. The group name is used for identifying the publisher in a
-     * {@link WanReplicationConfig} and for authentication on the target endpoint.
+     * Set the group name of this publisher. The group name is used for
+     * identifying the publisher in a {@link WanReplicationConfig} and for
+     * authentication on the target endpoint.
      *
      * @param groupName the publisher group name
      * @return this config
@@ -70,8 +76,15 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Get the capacity of the queue for WAN replication events. IMap, ICache, normal and backup events count against
-     * the queue capacity separately. When the queue capacity is reached, backup events are dropped while normal
+     * Returns the capacity of the primary and backup queue for WAN replication events.
+     * <p>
+     * One hazelcast instance can have up to {@code 2*queueCapacity} events since
+     * we keep up to {@code queueCapacity} primary events (events with keys for
+     * which the instance is the owner) and {@code queueCapacity} backup events
+     * (events with keys for which the instance is the backup).
+     * Events for IMap and ICache count against this limit collectively.
+     * <p>
+     * When the queue capacity is reached, backup events are dropped while normal
      * replication events behave as determined by the {@link #getQueueFullBehavior()}.
      * The default queue size for replication queues is {@value #DEFAULT_QUEUE_CAPACITY}.
      *
@@ -82,65 +95,102 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Set the capacity of the queue for WAN replication events. IMap, ICache, normal and backup events count against
-     * the queue capacity separately. When the queue capacity is reached, backup events are dropped while normal
+     * Sets the capacity of the primary and backup queue for WAN replication events.
+     * <p>
+     * One hazelcast instance can have up to {@code 2*queueCapacity} events since
+     * we keep up to {@code queueCapacity} primary events (events with keys for
+     * which the instance is the owner) and {@code queueCapacity} backup events
+     * (events with keys for which the instance is the backup).
+     * Events for IMap and ICache count against this limit collectively.
+     * <p>
+     * When the queue capacity is reached, backup events are dropped while normal
      * replication events behave as determined by the {@link #getQueueFullBehavior()}.
      * The default queue size for replication queues is {@value #DEFAULT_QUEUE_CAPACITY}.
      *
      * @param queueCapacity the queue capacity
-     * @return this configuration
+     * @return this config
      */
     public WanPublisherConfig setQueueCapacity(int queueCapacity) {
         this.queueCapacity = queueCapacity;
         return this;
     }
 
+    /**
+     * Returns the configured behaviour of this WAN publisher when the WAN queue
+     * is full.
+     */
     public WANQueueFullBehavior getQueueFullBehavior() {
         return queueFullBehavior;
     }
 
+    /**
+     * Sets the configured behaviour of this WAN publisher when the WAN queue is
+     * full.
+     *
+     * @param queueFullBehavior the behaviour of this publisher when the WAN queue is full
+     * @return this config
+     */
     public WanPublisherConfig setQueueFullBehavior(WANQueueFullBehavior queueFullBehavior) {
         this.queueFullBehavior = queueFullBehavior;
         return this;
     }
 
+    /**
+     * Returns the WAN publisher properties.
+     */
     public Map<String, Comparable> getProperties() {
         return properties;
     }
 
+    /**
+     * Sets the WAN publisher properties.
+     *
+     * @param properties WAN publisher properties
+     * @return this config
+     */
     public WanPublisherConfig setProperties(Map<String, Comparable> properties) {
         this.properties = properties;
         return this;
     }
 
+    /**
+     * Returns the name of the class implementing the WanReplicationEndpoint.
+     * NOTE: OS and EE have different interfaces that this class should implement.
+     * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
+     */
     public String getClassName() {
         return className;
     }
 
     /**
-     * Set the name of the class implementing the WanReplicationEndpoint.
+     * Sets the name of the class implementing the WanReplicationEndpoint.
      * NOTE: OS and EE have different interfaces that this class should implement.
      * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
      *
      * @param className the name of the class implementation for the WAN replication
-     * @return the wan publisher config
+     * @return this config
      */
     public WanPublisherConfig setClassName(String className) {
         this.className = className;
         return this;
     }
 
+    /**
+     * Returns the implementation of the WanReplicationEndpoint.
+     * NOTE: OS and EE have different interfaces that this object should implement.
+     * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
+     */
     public Object getImplementation() {
         return implementation;
     }
 
     /**
-     * Set the implementation of the WanReplicationEndpoint.
+     * Sets the implementation of the WanReplicationEndpoint.
      * NOTE: OS and EE have different interfaces that this object should implement.
      * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
      *
      * @param implementation the implementation for the WAN replication
-     * @return the wan publisher config
+     * @return this config
      */
     public WanPublisherConfig setImplementation(Object implementation) {
         this.implementation = implementation;
@@ -148,14 +198,19 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return the awsConfig join configuration
+     * Returns the {@link AwsConfig} used by the discovery mechanism for this
+     * WAN publisher.
      */
     public AwsConfig getAwsConfig() {
         return awsConfig;
     }
 
     /**
-     * @param awsConfig the AwsConfig join configuration to set
+     * Sets the {@link AwsConfig} used by the discovery mechanism for this
+     * WAN publisher.
+     *
+     * @param awsConfig the AWS discovery configuration
+     * @return this config
      * @throws IllegalArgumentException if awsConfig is null
      */
     public WanPublisherConfig setAwsConfig(final AwsConfig awsConfig) {
@@ -164,7 +219,8 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the currently defined {@link DiscoveryConfig}
+     * Returns the currently defined {@link DiscoveryConfig} used by the
+     * discovery mechanism for this WAN publisher.
      *
      * @return current DiscoveryProvidersConfig instance
      */
@@ -173,9 +229,11 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets a custom defined {@link DiscoveryConfig}
+     * Sets the {@link DiscoveryConfig} used by the discovery mechanism for
+     * this WAN publisher.
      *
      * @param discoveryConfig configuration to set
+     * @return this config
      * @throws java.lang.IllegalArgumentException if discoveryProvidersConfig is null
      */
     public WanPublisherConfig setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
@@ -226,7 +284,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
         queueCapacity = in.readInt();
-        queueFullBehavior =  WANQueueFullBehavior.getByType(in.readInt());
+        queueFullBehavior = WANQueueFullBehavior.getByType(in.readInt());
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             properties.put(in.readUTF(), (Comparable) in.readObject());

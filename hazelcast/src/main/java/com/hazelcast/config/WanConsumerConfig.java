@@ -25,8 +25,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Config to be used by WanReplicationConsumer instances (EE only). This allows creating a custom WAN consumer which is
- * usually used in combination with a custom WAN publisher.
+ * Config to be used by WanReplicationConsumer instances (EE only). This
+ * allows creating a custom WAN consumer which is usually used in
+ * combination with a custom WAN publisher.
+ * The WAN consumer is in charge of consuming (processing) incoming WAN
+ * events.
+ *
+ * @see WanReplicationConfig#setWanConsumerConfig(WanConsumerConfig)
+ * @see WanPublisherConfig#setClassName(String)
  */
 public class WanConsumerConfig implements IdentifiedDataSerializable {
 
@@ -35,16 +41,15 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
     private Object implementation;
 
     /**
-     * Return the properties for this WAN consumer.
-     *
-     * @return the WAN consumer properties
+     * Returns the properties for this WAN consumer.
      */
     public Map<String, Comparable> getProperties() {
         return properties;
     }
 
     /**
-     * Set the properties for the WAN consumer. These properties are accessible when initalizing the WAN consumer.
+     * Sets the properties for the WAN consumer. These properties are accessible
+     * when initalizing the WAN consumer.
      *
      * @param properties the properties for the WAN consumer
      * @return this config
@@ -55,7 +60,8 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Get the fully qualified class name of the class implementing WanReplicationConsumer.
+     * Returns the fully qualified class name of the class implementing
+     * WanReplicationConsumer.
      *
      * @return fully qualified class name
      */
@@ -64,7 +70,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Set the name of the class implementing WanReplicationConsumer.
+     * Sets the name of the class implementing WanReplicationConsumer.
      *
      * @param className fully qualified class name
      * @return this config
@@ -75,7 +81,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Get the implementation implementing WanReplicationConsumer.
+     * Returns the implementation implementing WanReplicationConsumer.
      *
      * @return the implementation for this WAN consumer
      */
@@ -84,7 +90,8 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Set the implementation for this WAN consumer. The object must implement WanReplicationConsumer.
+     * Sets the implementation for this WAN consumer. The object must implement
+     * WanReplicationConsumer.
      *
      * @param implementation the object implementing WanReplicationConsumer
      * @return this config
