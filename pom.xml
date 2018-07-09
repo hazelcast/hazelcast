@@ -1009,7 +1009,7 @@
         <profile>
             <id>jdk-9</id>
             <activation>
-                <jdk>1.9</jdk>
+                <jdk>[9,)</jdk>
             </activation>
             <build>
                 <plugins>
@@ -1021,8 +1021,12 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
+                            <!--
+                            The jdk.xml.internal package export is added to workaround Powermock issue https://github.com/powermock/powermock/issues/905 in tests.
+                             -->
                             <argLine>
                                 ${vmHeapSettings}
+                                --add-exports java.xml/jdk.xml.internal=ALL-UNNAMED
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
@@ -1046,6 +1050,9 @@
                     </plugin>
                 </plugins>
             </build>
+            <modules>
+                <module>modulepath-tests</module>
+            </modules>
         </profile>
 
         <profile>
