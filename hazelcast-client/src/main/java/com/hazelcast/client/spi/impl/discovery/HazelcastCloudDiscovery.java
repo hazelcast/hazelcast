@@ -20,6 +20,8 @@ import com.hazelcast.com.eclipsesource.json.Json;
 import com.hazelcast.com.eclipsesource.json.JsonValue;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.AddressUtil;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -43,17 +45,23 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  * Discovery service that discover nodes via hazelcast.cloud
  * https://coordinator.hazelcast.cloud/cluster/discovery?token=<TOKEN>
  */
-class HazelcastCloudDiscovery {
+public class HazelcastCloudDiscovery {
 
-    private static final String CLOUD_URL = "https://coordinator.hazelcast.cloud/cluster/discovery?token=";
+    /**
+     * Internal client property to change base url of cloud discovery endpoint.
+     * Used for testing cloud discovery.
+     */
+    public static final HazelcastProperty CLOUD_URL_BASE_PROPERTY =
+            new HazelcastProperty("hazelcast.client.cloud.url", "https://coordinator.hazelcast.cloud");
+    private static final String CLOUD_URL_PATH = "/cluster/discovery?token=";
     private static final String PRIVATE_ADDRESS_PROPERTY = "private-address";
     private static final String PUBLIC_ADDRESS_PROPERTY = "public-address";
 
     private final String endpointUrl;
     private final int connectionTimeoutInMillis;
 
-    HazelcastCloudDiscovery(String cloudToken, int connectionTimeoutInMillis) {
-        endpointUrl = CLOUD_URL + cloudToken;
+    HazelcastCloudDiscovery(String endpointUrl, int connectionTimeoutInMillis) {
+        this.endpointUrl = endpointUrl;
         this.connectionTimeoutInMillis = connectionTimeoutInMillis;
     }
 
@@ -138,6 +146,11 @@ class HazelcastCloudDiscovery {
     private static String readFrom(InputStream stream) {
         Scanner scanner = (new Scanner(stream, "UTF-8")).useDelimiter("\\A");
         return scanner.hasNext() ? scanner.next() : "";
+    }
+
+    public static String createUrlEndpoint(HazelcastProperties hazelcastProperties, String cloudToken) {
+        String cloudBaseUrl = hazelcastProperties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
+        return cloudBaseUrl + CLOUD_URL_PATH + cloudToken;
     }
 
 }

@@ -62,6 +62,7 @@ import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
 import com.hazelcast.client.spi.impl.discovery.HazelcastCloudAddressProvider;
 import com.hazelcast.client.spi.impl.discovery.HazelcastCloudAddressTranslator;
+import com.hazelcast.client.spi.impl.discovery.HazelcastCloudDiscovery;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.spi.impl.listener.NonSmartClientListenerService;
 import com.hazelcast.client.spi.impl.listener.SmartClientListenerService;
@@ -323,12 +324,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private HazelcastCloudAddressProvider initCloudAddressProvider(ClientCloudConfig cloudConfig) {
         if (cloudConfig.isEnabled()) {
             String discoveryToken = cloudConfig.getDiscoveryToken();
-            return new HazelcastCloudAddressProvider(discoveryToken, getConnectionTimeoutMillis(), loggingService);
+            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(getProperties(), discoveryToken);
+            return new HazelcastCloudAddressProvider(urlEndpoint, getConnectionTimeoutMillis(), loggingService);
         }
 
         String cloudToken = properties.getString(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN);
         if (cloudToken != null) {
-            return new HazelcastCloudAddressProvider(cloudToken, getConnectionTimeoutMillis(), loggingService);
+            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(getProperties(), cloudToken);
+            return new HazelcastCloudAddressProvider(urlEndpoint, getConnectionTimeoutMillis(), loggingService);
         }
         return null;
     }
@@ -383,7 +386,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             } else {
                 discoveryToken = cloudDiscoveryToken;
             }
-            return new HazelcastCloudAddressTranslator(discoveryToken, getConnectionTimeoutMillis(), loggingService);
+            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(getProperties(), discoveryToken);
+            return new HazelcastCloudAddressTranslator(urlEndpoint, getConnectionTimeoutMillis(), loggingService);
         }
 
         return new DefaultAddressTranslator();
