@@ -18,7 +18,7 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.wan.impl.WanEventCounter.EventCounter;
+import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
 
 import java.util.Map;
 
@@ -66,10 +66,10 @@ public interface LocalWanPublisherStats extends JsonSerializable {
     /**
      * Returns the counter for the successfully transfered map WAN events.
      */
-    Map<String, EventCounter> getSentMapEventCounter();
+    Map<String, DistributedObjectWanEventCounters> getSentMapEventCounter();
 
     /**
      * Returns the counter for the successfully transfered cache WAN events.
      */
-    Map<String, EventCounter> getSentCacheEventCounter();
+    Map<String, DistributedObjectWanEventCounters> getSentCacheEventCounter();
 }

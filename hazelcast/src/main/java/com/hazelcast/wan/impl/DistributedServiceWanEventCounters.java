@@ -24,18 +24,21 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
- * Counter for WAN events for a single distributed object type (map or
+ * Counters for WAN events for a single distributed object type (map or
  * cache).
+ * This class may contain counters for a single WAN publisher or multiple
+ * WAN publishers, depending on its usage.
  */
-public class WanEventCounter {
-    private static final ConstructorFunction<String, EventCounter> EVENT_COUNTER_CONSTRUCTOR_FN
-            = new ConstructorFunction<String, EventCounter>() {
+public class DistributedServiceWanEventCounters {
+    private static final ConstructorFunction<String, DistributedObjectWanEventCounters> EVENT_COUNTER_CONSTRUCTOR_FN
+            = new ConstructorFunction<String, DistributedObjectWanEventCounters>() {
         @Override
-        public EventCounter createNew(String ignored) {
-            return new EventCounter();
+        public DistributedObjectWanEventCounters createNew(String ignored) {
+            return new DistributedObjectWanEventCounters();
         }
     };
-    private final ConcurrentHashMap<String, EventCounter> eventCounterMap = new ConcurrentHashMap<String, EventCounter>();
+    private final ConcurrentHashMap<String, DistributedObjectWanEventCounters> eventCounterMap
+            = new ConcurrentHashMap<String, DistributedObjectWanEventCounters>();
 
     /**
      * Increment the number of sync events for the {@code distributedObjectName}.
@@ -73,22 +76,22 @@ public class WanEventCounter {
     }
 
     /**
-     * Returns a map from distributed object name to {@link EventCounter}.
+     * Returns a map from distributed object name to {@link DistributedObjectWanEventCounters}.
      */
-    public ConcurrentHashMap<String, EventCounter> getEventCounterMap() {
+    public ConcurrentHashMap<String, DistributedObjectWanEventCounters> getEventCounterMap() {
         return eventCounterMap;
     }
 
     /**
-     * Counter for WAN events for a single map or cache.
+     * Counters for WAN events for a single map or cache.
      */
-    public static final class EventCounter {
+    public static final class DistributedObjectWanEventCounters {
         private final AtomicLong syncCount = new AtomicLong();
         private final AtomicLong updateCount = new AtomicLong();
         private final AtomicLong removeCount = new AtomicLong();
         private final AtomicLong droppedCount = new AtomicLong();
 
-        private EventCounter() {
+        private DistributedObjectWanEventCounters() {
         }
 
         /** Increment the counter for entry sync events */
