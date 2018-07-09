@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Configuration for WAN replication. This configuration is referenced from a
+ * Configuration for WAN replication. This configuration is referenced from an
  * IMap or ICache configuration to determine the receivers for the WAN events.
  * Each receiver is defined with a {@link WanPublisherConfig}.
  * <p>
@@ -36,6 +36,7 @@ import java.util.List;
  * each publisher separately. Having multiple publishers in a single WAN
  * replication config simplifies simultaneous publication of map and cache
  * events to multiple target systems.
+ * <p>
  * In addition to defining publishers, you may optionally configure a WAN
  * consumer. The WAN consumer is in charge of consuming (processing) incoming
  * WAN events. Usually when defining a custom consumer you need to define a

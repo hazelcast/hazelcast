@@ -76,14 +76,14 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     }
 
     /**
-     * Returns the WAN replication reference name
+     * Returns the WAN replication reference name.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Sets the WAN replication reference name
+     * Sets the WAN replication reference name.
      *
      * @param name the reference name
      * @return this config
@@ -130,6 +130,7 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     /**
      * Returns the list of class names implementing the CacheWanEventFilter or
      * MapWanEventFilter for filtering outbound WAN replication events.
+     * <p>
      * NOTE: EE only
      *
      * @return list of class names implementing the CacheWanEventFilter or MapWanEventFilter
@@ -141,6 +142,7 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     /**
      * Sets the list of class names implementing the CacheWanEventFilter or
      * MapWanEventFilter for filtering outbound WAN replication events.
+     * <p>
      * NOTE: EE only
      *
      * @param filters the list of class names implementing CacheWanEventFilter or MapWanEventFilter

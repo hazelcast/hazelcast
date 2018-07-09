@@ -185,7 +185,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Set the implementation of the WanReplicationEndpoint.
+     * Sets the implementation of the WanReplicationEndpoint.
      * NOTE: OS and EE have different interfaces that this object should implement.
      * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
      *
