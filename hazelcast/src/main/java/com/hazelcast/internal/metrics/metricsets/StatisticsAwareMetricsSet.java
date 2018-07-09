@@ -17,7 +17,6 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalInstanceStats;
@@ -27,7 +26,8 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -98,27 +98,25 @@ public class StatisticsAwareMetricsSet {
                 }
 
                 for (Map.Entry<String, LocalInstanceStats> entry : stats.entrySet()) {
-                    register(entry);
+                    register(entry, statisticsAwareService);
                 }
             }
-
         }
 
-        private void register(Map.Entry<String, LocalInstanceStats> entry) {
+        private void register(Map.Entry<String, LocalInstanceStats> entry, StatisticsAwareService statisticsAwareService) {
             LocalInstanceStats localInstanceStats = entry.getValue();
             String name = entry.getKey();
 
-             currentStats.add(localInstanceStats);
+            currentStats.add(localInstanceStats);
 
             if (previousStats.contains(localInstanceStats)) {
                 // already registered
                 return;
             }
 
-
             NearCacheStats nearCacheStats = getNearCacheStats(localInstanceStats);
-            String baseName = toBaseName(localInstanceStats);
-            System.out.println("registering :"+localInstanceStats.getClass()+ "basename:"+baseName);
+            String baseName = toBaseName(localInstanceStats, statisticsAwareService);
+            System.out.println("registering :" + localInstanceStats.getClass() + "basename:" + baseName);
             if (nearCacheStats != null) {
                 metricsRegistry.scanAndRegister(nearCacheStats,
                         baseName + "[" + name + "].nearcache");
@@ -128,12 +126,20 @@ public class StatisticsAwareMetricsSet {
                     baseName + "[" + name + "]");
         }
 
-        private String toBaseName(LocalInstanceStats localInstanceStats) {
+        private String toBaseName(LocalInstanceStats localInstanceStats, StatisticsAwareService statisticsAwareService) {
             String baseName = localInstanceStats.getClass().getSimpleName()
                     .replace("Stats", "")
                     .replace("Local", "")
                     .replace("Impl", "");
             baseName = lowerCaseFirstChar(baseName);
+
+            baseName = lowerCaseFirstChar(baseName);
+            if (statisticsAwareService instanceof ReliableTopicService) {
+                baseName = "reliableTopic";
+            } else if (statisticsAwareService instanceof TopicService) {
+                baseName = "topic";
+            }
+
             return baseName;
         }
 
@@ -145,7 +151,7 @@ public class StatisticsAwareMetricsSet {
                 try {
                     CacheStatistics localMapStats = (CacheStatistics) localInstanceStats;
                     return localMapStats.getNearCacheStatistics();
-                }catch (UnsupportedOperationException e){
+                } catch (UnsupportedOperationException e) {
                     //todo
                     return null;
                 }
