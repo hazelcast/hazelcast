@@ -306,8 +306,8 @@ public class TestHazelcastInstanceFactory {
 
                 if (newPort > MAX_PORT_NUMBER) {
                     throw new IllegalArgumentException(
-                            "Exhausted available port range. Try lowering the initial port in " +
-                                    getClass().getSimpleName() + ": " + newPort);
+                            "Exhausted available port range. Try lowering the initial port in "
+                                    + getClass().getSimpleName() + ": " + newPort);
                 }
 
                 final Address newAddress = createAddressOrNull(host, newPort);
