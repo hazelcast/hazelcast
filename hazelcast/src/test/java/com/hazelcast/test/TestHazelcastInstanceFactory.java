@@ -17,6 +17,7 @@
 package com.hazelcast.test;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -46,7 +47,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableCollection;
 
 public class TestHazelcastInstanceFactory {
-    private static final int DEFAULT_INITIAL_PORT = 5000;
+    private static final int DEFAULT_INITIAL_PORT = NetworkConfig.DEFAULT_PORT;
 
     protected final TestNodeRegistry registry;
 
@@ -155,11 +156,13 @@ public class TestHazelcastInstanceFactory {
      */
     public HazelcastInstance newHazelcastInstance(Address address, Config config, Address[] blockedAddresses) {
         final String instanceName = config != null ? config.getInstanceName() : null;
-        final Address thisAddress = address != null ? address : nextAddress();
         if (isMockNetwork) {
             config = initOrCreateConfig(config);
+            Address thisAddress = address != null ? address : nextAddress(config.getNetworkConfig().getPort());
             NodeContext nodeContext = registry.createNodeContext(thisAddress,
-                    blockedAddresses == null ? Collections.<Address>emptySet() : new HashSet<Address>(asList(blockedAddresses)));
+                    blockedAddresses == null
+                            ? Collections.<Address>emptySet()
+                            : new HashSet<Address>(asList(blockedAddresses)));
             return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
         }
         throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
