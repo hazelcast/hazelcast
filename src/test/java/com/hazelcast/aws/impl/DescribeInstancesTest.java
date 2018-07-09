@@ -48,6 +48,7 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DescribeInstancesTest {
+    public static final String DUMMY_PRIVATE_IP = "10.0.0.1";
     private static final String DUMMY_ACCESS_KEY = "DUMMY_ACCESS_KEY";
     private static final String DUMMY_SECRET_KEY = "DUMMY_SECRET_ACCESS_KEY";
     private static final String DUMMY_TOKEN = "DUMMY_TOKEN";
@@ -57,7 +58,15 @@ public class DescribeInstancesTest {
                     + "          \"SecretAccessKey\" : \"" + DUMMY_SECRET_KEY + "\",\n" + "          \"Token\" : \"" + DUMMY_TOKEN
                     + "\",\n" + "          \"Expiration\" : \"2016-10-04T18:19:39Z\"\n" + "        }\n";
     private static final String HOST_HEADER = "ec2.amazonaws.com";
-    public static final String DUMMY_PRIVATE_IP = "10.0.0.1";
+
+    private static InputStream toInputStream(String s)
+            throws Exception {
+        return new ByteArrayInputStream(s.getBytes("UTF-8"));
+    }
+
+    private static AwsConfig.Builder predefinedAwsConfigBuilder() {
+        return AwsConfig.builder().setHostHeader(HOST_HEADER).setRegion("us-east-1").setConnectionTimeoutSeconds(5);
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_whenAccessKey_And_IamRole_And_IamTaskRoleEnvVar_Null_With_No_DefaultRole()
@@ -340,14 +349,5 @@ public class DescribeInstancesTest {
                 + "                </item>\n" + "            </instancesSet>\n" + "        </item>\n" + "    </reservationSet>\n"
                 + "</DescribeInstancesResponse>", DUMMY_PRIVATE_IP, DUMMY_PRIVATE_IP, DUMMY_PRIVATE_IP);
         return new ByteArrayInputStream(response.getBytes());
-    }
-
-    private static InputStream toInputStream(String s)
-            throws Exception {
-        return new ByteArrayInputStream(s.getBytes("UTF-8"));
-    }
-
-    private static AwsConfig.Builder predefinedAwsConfigBuilder() {
-        return AwsConfig.builder().setHostHeader(HOST_HEADER).setRegion("us-east-1").setConnectionTimeoutSeconds(5);
     }
 }
