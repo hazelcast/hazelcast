@@ -39,7 +39,7 @@ import static org.mockito.Mockito.mock;
 public class DataAwareEntryEventConstructorTest {
 
     @Test
-    public void dataAwareEntryEventCloneTest() {
+    public void testConstructor() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         String key = "key";
         String newValue = "newValue";

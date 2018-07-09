@@ -36,7 +36,7 @@ import static org.mockito.Mockito.mock;
 public class MapEventConstructorTest {
 
     @Test
-    public void mapEventCloneTest() {
+    public void testConstructor() {
         String source = UuidUtil.newUnsecureUuidString();
         Member member = mock(Member.class);
         int eventType = EntryEventType.INVALIDATION.getType();

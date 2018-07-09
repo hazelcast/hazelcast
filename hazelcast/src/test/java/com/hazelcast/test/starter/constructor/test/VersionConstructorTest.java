@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 public class VersionConstructorTest {
 
     @Test
-    public void versionCloneTest() {
+    public void testConstructor() {
         Version version = Version.of(23, 42);
 
         VersionConstructor constructor = new VersionConstructor(Version.class);

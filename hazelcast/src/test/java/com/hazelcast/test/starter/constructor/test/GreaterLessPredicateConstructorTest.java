@@ -34,7 +34,7 @@ public class GreaterLessPredicateConstructorTest {
     // Tests that the copied object is not null due to lack of equals implementation in Predicate implementations
     // see also https://github.com/hazelcast/hazelcast/issues/13245
     @Test
-    public void greaterLessPredicateCloneTest() {
+    public void testConstructor() {
         GreaterLessPredicateConstructor constructor = new GreaterLessPredicateConstructor(GreaterLessPredicate.class);
 
         GreaterLessPredicate original = new GreaterLessPredicate("a", 3, true, true);

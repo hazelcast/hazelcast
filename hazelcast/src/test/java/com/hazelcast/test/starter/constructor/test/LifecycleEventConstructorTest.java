@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 public class LifecycleEventConstructorTest {
 
     @Test
-    public void lifecycleEventCloneTest() {
+    public void testConstructor() {
         LifecycleEvent lifecycleEvent = new LifecycleEvent(LifecycleEvent.LifecycleState.MERGING);
 
         LifecycleEventConstructor constructor = new LifecycleEventConstructor(LifecycleEvent.class);

@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 public class EnumConstructorTest {
 
     @Test
-    public void enumCloneTest() {
+    public void testConstructor() {
         EnumConstructor constructor = new EnumConstructor(TestEnum.class);
 
         assertEquals(TestEnum.FOO, constructor.createNew(TestEnum.FOO));

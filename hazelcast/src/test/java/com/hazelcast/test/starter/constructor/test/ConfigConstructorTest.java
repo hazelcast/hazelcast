@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 public class ConfigConstructorTest extends HazelcastTestSupport {
 
     @Test
-    public void configCloneTest() {
+    public void testConstructor() {
         Config config = new Config()
                 .setInstanceName("myInstanceName")
                 .addMapConfig(new MapConfig("myMap"))

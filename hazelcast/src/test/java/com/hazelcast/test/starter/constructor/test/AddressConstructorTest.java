@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 public class AddressConstructorTest {
 
     @Test
-    public void addressCloneTest() throws Exception {
+    public void testConstructor() throws Exception {
         Address address = new Address("172.16.16.1", 4223);
 
         AddressConstructor constructor = new AddressConstructor(Address.class);
