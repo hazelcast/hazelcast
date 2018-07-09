@@ -48,6 +48,7 @@ import static java.util.Collections.unmodifiableCollection;
 
 public class TestHazelcastInstanceFactory {
     private static final int DEFAULT_INITIAL_PORT = NetworkConfig.DEFAULT_PORT;
+    private static final int MAX_PORT_NUMBER = (1 << 16) - 1;
 
     protected final TestNodeRegistry registry;
 
@@ -90,8 +91,10 @@ public class TestHazelcastInstanceFactory {
 
     /**
      * Returns the address with the given {@code host} and {@code port}.
+     * This method may return {@code null} if no IP address for the {@code host}
+     * could be found.
      */
-    public static Address createAddress(String host, int port) {
+    public static Address createAddressOrNull(String host, int port) {
         try {
             return new Address(host, port);
         } catch (UnknownHostException e) {
@@ -299,7 +302,15 @@ public class TestHazelcastInstanceFactory {
     private Address addNewAddressToAddressMap(int id, String host, int initialPort) {
         synchronized (addressMap) {
             while (true) {
-                final Address newAddress = createAddress(host, initialPort++);
+                int newPort = initialPort++;
+
+                if (newPort > MAX_PORT_NUMBER) {
+                    throw new IllegalArgumentException(
+                            "Exhausted available port range. Try lowering the initial port in " +
+                                    getClass().getSimpleName() + ": " + newPort);
+                }
+
+                final Address newAddress = createAddressOrNull(host, newPort);
                 if (!addressMap.containsValue(newAddress)) {
                     addressMap.put(id, newAddress);
                     return newAddress;
