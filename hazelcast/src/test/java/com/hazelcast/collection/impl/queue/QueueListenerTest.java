@@ -114,7 +114,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
         for (int i = 0; i < TOTAL_QUEUE_PUT / 4; i++) {
             queue.put(i);
         }
-        assertTrue(countdownItemListener.added.await(3, TimeUnit.SECONDS));
+        assertOpenEventually(countdownItemListener.added);
     }
 
     @Test
