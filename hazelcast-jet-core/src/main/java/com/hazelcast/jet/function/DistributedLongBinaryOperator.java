@@ -16,13 +16,29 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.LongBinaryOperator;
 
 /**
  * {@code Serializable} variant of {@link LongBinaryOperator
- * java.util.function.LongBinaryOperator}.
+ * java.util.function.LongBinaryOperator} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedLongBinaryOperator extends LongBinaryOperator, Serializable {
+
+    /**
+     * Exception-declaring version of {@link LongBinaryOperator#applyAsLong}.
+     */
+    long applyAsLongEx(long left, long right) throws Exception;
+
+    @Override
+    default long applyAsLong(long left, long right) {
+        try {
+            return applyAsLongEx(left, right);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

@@ -16,15 +16,33 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * {@code Serializable} variant of {@link TriPredicate}.
+ * {@code Serializable} variant of {@link TriPredicate} which declares checked
+ * exception.
  */
+@FunctionalInterface
 public interface DistributedTriPredicate<T, U, V> extends TriPredicate<T, U, V>, Serializable {
+
+    /**
+     * Exception-declaring version of {@link TriPredicate#test}.
+     */
+    boolean testEx(T t, U u, V v) throws Exception;
+
+    @Override
+    default boolean test(T t, U u, V v) {
+        try {
+            return testEx(t, u, v);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 
     /**
      * Returns a composite predicate which evaluates the

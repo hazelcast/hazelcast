@@ -32,16 +32,16 @@ import static org.junit.Assert.assertEquals;
 public class TransformUsingContextPTest {
 
     @Test
-    public void when_sharedLocally_then_oneContextInstance() {
+    public void when_sharedLocally_then_oneContextInstance() throws Exception {
         testSharing(true);
     }
 
     @Test
-    public void when_notSharedLocally_then_multipleContextInstances() {
+    public void when_notSharedLocally_then_multipleContextInstances() throws Exception {
         testSharing(false);
     }
 
-    private void testSharing(boolean share) {
+    private void testSharing(boolean share) throws Exception {
         int[] createCounter = {0};
         int[] destroyCounter = {0};
         ContextFactory<String> contextFactory = ContextFactory.withCreateFn(jet -> "context-" + createCounter[0]++)

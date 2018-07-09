@@ -26,14 +26,12 @@ import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import javax.annotation.Nonnull;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -169,17 +167,15 @@ public final class JmsSourceBuilder {
         boolean isTopicLocal = isTopic;
 
         if (connectionFn == null) {
-            connectionFn = factory -> uncheckCall(() -> factory.createConnection(usernameLocal, passwordLocal));
+            connectionFn = factory -> factory.createConnection(usernameLocal, passwordLocal);
         }
         if (sessionFn == null) {
-            sessionFn = connection -> uncheckCall(() -> connection.createSession(transactedLocal, acknowledgeModeLocal));
+            sessionFn = connection -> connection.createSession(transactedLocal, acknowledgeModeLocal);
         }
         if (consumerFn == null) {
             checkNotNull(nameLocal);
-            consumerFn = session -> uncheckCall(() -> {
-                Destination destination = isTopicLocal ? session.createTopic(nameLocal) : session.createQueue(nameLocal);
-                return session.createConsumer(destination);
-            });
+            consumerFn = session ->
+                    session.createConsumer(isTopicLocal ? session.createTopic(nameLocal) : session.createQueue(nameLocal));
         }
         if (flushFn == null) {
             flushFn = noopConsumer();

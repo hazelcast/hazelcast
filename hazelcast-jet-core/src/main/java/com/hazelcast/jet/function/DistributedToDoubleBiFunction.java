@@ -16,13 +16,29 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.ToDoubleBiFunction;
 
 /**
  * {@code Serializable} variant of {@link ToDoubleBiFunction
- * java.util.function.ToDoubleBiFunction}.
+ * java.util.function.ToDoubleBiFunction} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedToDoubleBiFunction<T, U> extends ToDoubleBiFunction<T, U>, Serializable {
+
+    /**
+     * Exception-declaring version of {@link ToDoubleBiFunction#applyAsDouble}.
+     */
+    double applyAsDoubleEx(T t, U u) throws Exception;
+
+    @Override
+    default double applyAsDouble(T t, U u) {
+        try {
+            return applyAsDoubleEx(t, u);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

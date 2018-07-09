@@ -56,7 +56,6 @@ import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
  * Static utility class with factories of source processors (the DAG
@@ -334,7 +333,7 @@ public final class SourceProcessors {
 
         String charsetName = charset.name();
         return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem,
-                path -> uncheckCall(() -> Files.lines(path, Charset.forName(charsetName))),
+                path -> Files.lines(path, Charset.forName(charsetName)),
                 mapOutputFn);
     }
 

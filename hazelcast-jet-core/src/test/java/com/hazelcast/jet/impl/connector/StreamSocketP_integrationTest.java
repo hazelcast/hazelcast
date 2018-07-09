@@ -61,7 +61,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
         CountDownLatch latch = new CountDownLatch(1);
         // Given
         try (ServerSocket socket = new ServerSocket(PORT)) {
-            new Thread(() -> uncheckRun(() -> {
+            spawn(() -> uncheckRun(() -> {
                 Socket accept1 = socket.accept();
                 Socket accept2 = socket.accept();
                 PrintWriter writer1 = new PrintWriter(accept1.getOutputStream());
@@ -81,7 +81,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
 
                 accept1.close();
                 accept2.close();
-            })).start();
+            }));
 
             DAG dag = new DAG();
             Vertex producer = dag.newVertex("producer", streamSocketP(HOST, PORT, UTF_8)).localParallelism(2);
@@ -106,7 +106,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
             CountDownLatch acceptationLatch = new CountDownLatch(1);
             // Cancellation only works, if there are data on socket. Without data, SocketInputStream.read()
             // blocks indefinitely. The StreamSocketP should be improved to use NIO.
-            new Thread(() -> uncheckRun(() -> {
+            spawn(() -> uncheckRun(() -> {
                 accept.set(socket.accept());
                 acceptationLatch.countDown();
                 byte[] word = "jet\n".getBytes();
@@ -117,7 +117,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
                         Thread.sleep(1000);
                     }
                 }
-            })).start();
+            }));
 
             Vertex producer = new Vertex("producer", streamSocketP(HOST, PORT, UTF_8)).localParallelism(1);
             Vertex sink = new Vertex("sink", noopP()).localParallelism(1);

@@ -16,13 +16,29 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.ToLongBiFunction;
 
 /**
  * {@code Serializable} variant of {@link ToLongBiFunction
- * java.util.function.ToLongBiFunction}.
+ * java.util.function.ToLongBiFunction} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedToLongBiFunction<T, U> extends ToLongBiFunction<T, U>, Serializable {
+
+    /**
+     * Exception-declaring version of {@link ToLongBiFunction#applyAsLong}.
+     */
+    long applyAsLongEx(T t, U u) throws Exception;
+
+    @Override
+    default long applyAsLong(T t, U u) {
+        try {
+            return applyAsLongEx(t, u);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

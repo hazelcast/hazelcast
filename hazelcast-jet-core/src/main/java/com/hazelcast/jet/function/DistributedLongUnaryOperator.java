@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.LongUnaryOperator;
 
@@ -23,10 +25,24 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link LongUnaryOperator
- * java.util.function.LongUnaryOperator}.
+ * java.util.function.LongUnaryOperator} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedLongUnaryOperator extends LongUnaryOperator, Serializable {
+
+    /**
+     * Exception-declaring version of {@link LongUnaryOperator#applyAsLong}.
+     */
+    long applyAsLongEx(long operand) throws Exception;
+
+    @Override
+    default long applyAsLong(long operand) {
+        try {
+            return applyAsLongEx(operand);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 
     /**
      * {@code Serializable} variant of {@link LongUnaryOperator#identity()

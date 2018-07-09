@@ -16,13 +16,29 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.DoubleSupplier;
 
 /**
  * {@code Serializable} variant of {@link DoubleSupplier
- * java.util.function.DoubleSupplier}.
+ * java.util.function.DoubleSupplier} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedDoubleSupplier extends DoubleSupplier, Serializable {
+
+    /**
+     * Exception-declaring version of {@link DoubleSupplier#getAsDouble}.
+     */
+    double getAsDoubleEx() throws Exception;
+
+    @Override
+    default double getAsDouble() {
+        try {
+            return getAsDoubleEx();
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

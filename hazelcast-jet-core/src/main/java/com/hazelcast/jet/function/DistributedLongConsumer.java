@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.LongConsumer;
 
@@ -23,10 +25,24 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link LongConsumer
- * java.util.function.LongConsumer}.
+ * java.util.function.LongConsumer} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedLongConsumer extends LongConsumer, Serializable {
+
+    /**
+     * Exception-declaring version of {@link LongConsumer#accept}.
+     */
+    void acceptEx(long value) throws Exception;
+
+    @Override
+    default void accept(long value) {
+        try {
+            acceptEx(value);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 
     /**
      * {@code Serializable} variant of

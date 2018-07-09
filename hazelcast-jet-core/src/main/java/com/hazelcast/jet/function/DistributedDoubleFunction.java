@@ -16,13 +16,29 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.DoubleFunction;
 
 /**
  * {@code Serializable} variant of {@link DoubleFunction
- * java.util.function.DoubleFunction}.
+ * java.util.function.DoubleFunction} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedDoubleFunction<R> extends DoubleFunction<R>, Serializable {
+
+    /**
+     * Exception-declaring version of {@link DoubleFunction#apply}.
+     */
+    R applyEx(double value) throws Exception;
+
+    @Override
+    default R apply(double value) {
+        try {
+            return applyEx(value);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

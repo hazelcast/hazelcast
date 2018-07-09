@@ -29,7 +29,7 @@ public final class DistributedComparators {
     private static class NaturalOrderComparator implements DistributedComparator<Comparable<Object>> {
 
         @Override
-        public int compare(Comparable<Object> left, Comparable<Object> right) {
+        public int compareEx(Comparable<Object> left, Comparable<Object> right) {
             return left.compareTo(right);
         }
 
@@ -42,7 +42,7 @@ public final class DistributedComparators {
     private static class ReverseOrderComparator implements DistributedComparator<Comparable<Object>> {
 
         @Override
-        public int compare(Comparable<Object> left, Comparable<Object> right) {
+        public int compareEx(Comparable<Object> left, Comparable<Object> right) {
             return right.compareTo(left);
         }
 
@@ -61,7 +61,7 @@ public final class DistributedComparators {
         }
 
         @Override
-        public int compare(T left, T right) {
+        public int compareEx(T left, T right) {
             if (left == null) {
                 return (right == null) ? 0 : (isNullFirst ? -1 : 1);
             } else if (right == null) {

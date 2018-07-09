@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.IntUnaryOperator;
 
@@ -23,10 +25,24 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link IntUnaryOperator
- * java.util.function.IntUnaryOperator}.
+ * java.util.function.IntUnaryOperator} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedIntUnaryOperator extends IntUnaryOperator, Serializable {
+
+    /**
+     * Exception-declaring version of {@link IntUnaryOperator#applyAsInt}.
+     */
+    int applyAsIntEx(int operand) throws Exception;
+
+    @Override
+    default int applyAsInt(int operand) {
+        try {
+            return applyAsIntEx(operand);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 
     /**
      * {@code Serializable} variant of {@link

@@ -103,13 +103,9 @@ public class StreamJmsP<T> extends AbstractProcessor {
     }
 
     @Override
-    public void close() {
-        if (consumer != null) {
-            uncheckRun(() -> consumer.close());
-        }
-        if (session != null) {
-            uncheckRun(() -> session.close());
-        }
+    public void close() throws Exception {
+        consumer.close();
+        session.close();
     }
 
     private static final class Supplier<T> implements ProcessorSupplier {
@@ -143,9 +139,9 @@ public class StreamJmsP<T> extends AbstractProcessor {
         }
 
         @Override
-        public void close(@Nullable Throwable error) {
+        public void close(@Nullable Throwable error) throws Exception {
             if (connection != null) {
-                uncheckRun(() -> connection.close());
+                connection.close();
             }
         }
 

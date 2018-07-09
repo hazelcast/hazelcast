@@ -288,7 +288,7 @@ public class SourcesTest extends PipelineTestSupport {
     public void socket() throws Exception {
         // Given
         try (ServerSocket socket = new ServerSocket(8176)) {
-            new Thread(() -> uncheckRun(() -> {
+            spawn(() -> uncheckRun(() -> {
                 Socket accept1 = socket.accept();
                 Socket accept2 = socket.accept();
                 PrintWriter writer1 = new PrintWriter(accept1.getOutputStream());
@@ -306,7 +306,7 @@ public class SourcesTest extends PipelineTestSupport {
 
                 accept1.close();
                 accept2.close();
-            })).start();
+            }));
 
             // When
             p.drawFrom(Sources.socket("localhost", 8176, UTF_8))

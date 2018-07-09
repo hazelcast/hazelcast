@@ -16,13 +16,29 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.LongFunction;
 
 /**
  * {@code Serializable} variant of {@link LongFunction
- * java.util.function.LongFunction}.
+ * java.util.function.LongFunction} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedLongFunction<R> extends LongFunction<R>, Serializable {
+
+    /**
+     * Exception-declaring version of {@link LongFunction#apply}.
+     */
+    R applyEx(long value) throws Exception;
+
+    @Override
+    default R apply(long value) {
+        try {
+            return applyEx(value);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

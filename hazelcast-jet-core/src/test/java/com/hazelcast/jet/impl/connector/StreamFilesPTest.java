@@ -93,7 +93,7 @@ public class StreamFilesPTest extends JetTestSupport {
     }
 
     @Test
-    public void when_metaSupplier_then_returnsCorrectProcessors() {
+    public void when_metaSupplier_then_returnsCorrectProcessors() throws Exception {
         ProcessorMetaSupplier metaSupplier = streamFilesP(workDir.getAbsolutePath(), UTF_8, "*", false, Util::entry);
         Address a = new Address();
         ProcessorSupplier supplier = metaSupplier.get(singletonList(a)).apply(a);

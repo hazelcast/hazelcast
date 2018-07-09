@@ -15,7 +15,7 @@
  */
 
 /**
- * Serializable variants of functional interfaces from
+ * Serializable and exception-declaring variants of functional interfaces from
  * {@code java.util.function}.
  */
 package com.hazelcast.jet.function;

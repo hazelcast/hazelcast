@@ -53,7 +53,7 @@ public class WriteSocketTest extends JetTestSupport {
     public void unitTest() throws Exception {
         AtomicInteger counter = new AtomicInteger();
         ServerSocket serverSocket = new ServerSocket(0);
-        new Thread(() -> uncheckRun(() -> {
+        spawn(() -> uncheckRun(() -> {
             Socket socket = serverSocket.accept();
             serverSocket.close();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
@@ -61,7 +61,7 @@ public class WriteSocketTest extends JetTestSupport {
                     counter.incrementAndGet();
                 }
             }
-        })).start();
+        }));
 
         TestInbox inbox = new TestInbox();
         range(0, ITEM_COUNT).forEach(inbox::add);
@@ -81,18 +81,18 @@ public class WriteSocketTest extends JetTestSupport {
     public void integrationTest() throws Exception {
         AtomicInteger counter = new AtomicInteger();
         ServerSocket serverSocket = new ServerSocket(0);
-        new Thread(() -> uncheckRun(() -> {
+        spawn(() -> uncheckRun(() -> {
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
-                new Thread(() -> uncheckRun(() -> {
+                spawn(() -> uncheckRun(() -> {
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
                         while (reader.readLine() != null) {
                             counter.incrementAndGet();
                         }
                     }
-                })).start();
+                }));
             }
-        })).start();
+        }));
 
         JetInstance jetInstance = createJetMember();
         createJetMember();

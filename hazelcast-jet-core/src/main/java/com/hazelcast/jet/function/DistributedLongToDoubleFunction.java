@@ -16,13 +16,29 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.LongToDoubleFunction;
 
 /**
  * {@code Serializable} variant of {@link LongToDoubleFunction
- * java.util.function.LongToDoubleFunction}.
+ * java.util.function.LongToDoubleFunction} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedLongToDoubleFunction extends LongToDoubleFunction, Serializable {
+
+    /**
+     * Exception-declaring version of {@link LongToDoubleFunction#applyAsDouble}.
+     */
+    double applyAsDoubleEx(long value) throws Exception;
+
+    @Override
+    default double applyAsDouble(long value) {
+        try {
+            return applyAsDoubleEx(value);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

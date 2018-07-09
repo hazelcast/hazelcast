@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.IntPredicate;
 
@@ -23,10 +25,24 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link IntPredicate
- * java.util.function.IntPredicate}.
+ * java.util.function.IntPredicate} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedIntPredicate extends IntPredicate, Serializable {
+
+    /**
+     * Exception-declaring version of {@link IntPredicate#test}.
+     */
+    boolean testEx(int value) throws Exception;
+
+    @Override
+    default boolean test(int value) {
+        try {
+            return testEx(value);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 
     /**
      * {@code Serializable} variant of {@link

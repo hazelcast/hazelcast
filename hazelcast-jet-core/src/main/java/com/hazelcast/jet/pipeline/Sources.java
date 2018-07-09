@@ -900,26 +900,14 @@ public final class Sources {
      * <p>
      * Example: <pre>{@code
      *     p.drawFrom(Sources.jdbc(
-     *         () -> {
-     *             try {
-     *                 return DriverManager.getConnection(DB_CONNECTION_URL);
-     *             } catch (SQLException e) {
-     *                 throw ExceptionUtil.rethrow(e);
-     *             }
-     *         },
+     *         () -> DriverManager.getConnection(DB_CONNECTION_URL),
      *         (con, parallelism, index) -> {
      *             return con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?);
      *             stmt.setInt(1, parallelism);
      *             stmt.setInt(2, index);
      *             return stmt.executeQuery();
      *         },
-     *         resultSet -> {
-     *             try {
-     *                 return new Person(resultSet.getInt(1), resultSet.getString(2));
-     *             } catch (SQLException e) {
-     *                 throw ExceptionUtil.rethrow(e);
-     *             }
-     *         }))
+     *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      * }</pre>
      * <p>
      * The source does not save any state to snapshot. If the job is restarted,
@@ -954,13 +942,7 @@ public final class Sources {
      *     p.drawFrom(Sources.jdbc(
      *         DB_CONNECTION_URL,
      *         "select ID, NAME from PERSON",
-     *         resultSet -> {
-     *             try {
-     *                 return new Person(resultSet.getInt(1), resultSet.getString(2));
-     *             } catch (SQLException e) {
-     *                 throw ExceptionUtil.rethrow(e);
-     *             }
-     *         }))
+     *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      * }</pre>
      */
     public static <T> BatchSource<T> jdbc(

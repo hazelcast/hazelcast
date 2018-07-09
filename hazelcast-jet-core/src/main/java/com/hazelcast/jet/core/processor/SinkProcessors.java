@@ -40,7 +40,6 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
@@ -48,10 +47,7 @@ import java.sql.PreparedStatement;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
  * Static utility class with factories of sink processors (the terminators
@@ -220,21 +216,15 @@ public final class SinkProcessors {
 
         String charsetName = charset.name();
         return preferLocalParallelismOne(writeBufferedP(
-                index -> uncheckCall(
-                        () -> new BufferedWriter(new OutputStreamWriter(
-                                new Socket(host, port).getOutputStream(), charsetName))),
+                index -> new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName)),
                 (bufferedWriter, item) -> {
-                    try {
-                        @SuppressWarnings("unchecked")
-                        T t = (T) item;
-                        bufferedWriter.write(toStringFn.apply(t));
-                        bufferedWriter.write('\n');
-                    } catch (IOException e) {
-                        throw sneakyThrow(e);
-                    }
+                    @SuppressWarnings("unchecked")
+                    T t = (T) item;
+                    bufferedWriter.write(toStringFn.apply(t));
+                    bufferedWriter.write('\n');
                 },
-                bufferedWriter -> uncheckRun(bufferedWriter::flush),
-                bufferedWriter -> uncheckRun(bufferedWriter::close)
+                BufferedWriter::flush,
+                BufferedWriter::close
         ));
     }
 

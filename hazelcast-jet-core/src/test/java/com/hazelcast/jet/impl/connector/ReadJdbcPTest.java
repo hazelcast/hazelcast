@@ -29,7 +29,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static org.junit.Assert.assertEquals;
 
 public class ReadJdbcPTest extends PipelineTestSupport {
@@ -48,14 +47,14 @@ public class ReadJdbcPTest extends PipelineTestSupport {
     @Test
     public void test_whenPartitionedQuery() {
         p.drawFrom(Sources.jdbc(
-                () -> uncheckCall(() -> DriverManager.getConnection(DB_CONNECTION_URL)),
+                () -> DriverManager.getConnection(DB_CONNECTION_URL),
                 (con, parallelism, index) -> {
                     PreparedStatement statement = con.prepareStatement("select * from PERSON where mod(id,?)=?");
                     statement.setInt(1, parallelism);
                     statement.setInt(2, index);
                     return statement.executeQuery();
                 },
-                resultSet -> uncheckCall(() -> new Person(resultSet.getInt(1), resultSet.getString(2)))))
+                resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
          .drainTo(sink);
 
         execute();
@@ -66,7 +65,7 @@ public class ReadJdbcPTest extends PipelineTestSupport {
     @Test
     public void test_whenTotalParallelismOne() {
         p.drawFrom(Sources.jdbc(DB_CONNECTION_URL, "select * from PERSON",
-                resultSet -> uncheckCall(() -> new Person(resultSet.getInt(1), resultSet.getString(2)))))
+                resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
          .drainTo(sink);
 
         execute();

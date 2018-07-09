@@ -55,7 +55,6 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -704,20 +703,10 @@ public final class Sinks {
      * Example:<pre>{@code
      *     p.drainTo(Sinks.jdbc(
      *             "REPLACE into table (id, name) values(?, ?)",
-     *             () -> {
-     *                 try {
-     *                     return DriverManager.getConnection("jdbc:...");
-     *                 } catch (SQLException e) {
-     *                     throw ExceptionUtil.rethrow(e);
-     *                 }
-     *             },
+     *             () -> return DriverManager.getConnection("jdbc:..."),
      *             (stmt, item) -> {
-     *                 try {
-     *                     stmt.setInt(1, item.id);
-     *                     stmt.setInt(2, item.name);
-     *                 } catch (SQLException e) {
-     *                     throw ExceptionUtil.rethrow(e);
-     *                 }
+     *                 stmt.setInt(1, item.id);
+     *                 stmt.setInt(2, item.name);
      *             }
      *     ));
      * }</pre>
@@ -758,6 +747,6 @@ public final class Sinks {
     public static <T> Sink<T> jdbc(@Nonnull String updateQuery,
                                    @Nonnull String connectionUrl,
                                    @Nonnull DistributedBiConsumer<PreparedStatement, T> bindFn) {
-        return Sinks.jdbc(updateQuery, () -> uncheckCall(() -> DriverManager.getConnection(connectionUrl)), bindFn);
+        return Sinks.jdbc(updateQuery, () -> DriverManager.getConnection(connectionUrl), bindFn);
     }
 }

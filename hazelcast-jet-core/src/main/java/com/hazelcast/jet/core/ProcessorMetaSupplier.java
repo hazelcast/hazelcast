@@ -110,7 +110,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion
      */
-    default void close(@Nullable Throwable error) {
+    default void close(@Nullable Throwable error) throws Exception {
     }
 
     /**

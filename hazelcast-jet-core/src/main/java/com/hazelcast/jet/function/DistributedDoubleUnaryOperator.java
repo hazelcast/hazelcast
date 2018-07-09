@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.DoubleUnaryOperator;
 
@@ -23,10 +25,24 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link DoubleUnaryOperator
- * java.util.function.DoubleUnaryOperator}.
+ * java.util.function.DoubleUnaryOperator} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedDoubleUnaryOperator extends DoubleUnaryOperator, Serializable {
+
+    /**
+     * Exception-declaring version of {@link DoubleUnaryOperator#applyAsDouble}.
+     */
+    double applyAsDoubleEx(double operand) throws Exception;
+
+    @Override
+    default double applyAsDouble(double operand) {
+        try {
+            return applyAsDoubleEx(operand);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 
     /**
      * {@code Serializable} variant of {@link

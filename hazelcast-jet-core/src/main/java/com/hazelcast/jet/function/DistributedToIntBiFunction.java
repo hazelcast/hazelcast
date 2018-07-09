@@ -16,13 +16,29 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.ToIntBiFunction;
 
 /**
  * {@code Serializable} variant of {@link ToIntBiFunction
- * java.util.function.ToIntBiFunction}.
+ * java.util.function.ToIntBiFunction} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedToIntBiFunction<T, U> extends ToIntBiFunction<T, U>, Serializable {
+
+    /**
+     * Exception-declaring version of {@link ToIntBiFunction#applyAsInt}.
+     */
+    int applyAsIntEx(T t, U u) throws Exception;
+
+    @Override
+    default int applyAsInt(T t, U u) {
+        try {
+            return applyAsIntEx(t, u);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

@@ -16,16 +16,32 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.UnaryOperator;
 
 /**
  * {@code Serializable} variant of {@link UnaryOperator
- * java.util.function.UnaryOperator}.
+ * java.util.function.UnaryOperator} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedUnaryOperator<T>
         extends DistributedFunction<T, T>, UnaryOperator<T>, Serializable {
+
+    /**
+     * Exception-declaring version of {@link UnaryOperator#apply}.
+     */
+    T applyEx(T t) throws Exception;
+
+    @Override
+    default T apply(T t) {
+        try {
+            return applyEx(t);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 
     /**
      * {@code Serializable} variant of {@link UnaryOperator#identity()

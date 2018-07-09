@@ -35,7 +35,6 @@ import java.util.Collection;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
 
@@ -109,9 +108,8 @@ public final class WriteJmsP {
         public Collection<? extends Processor> get(int count) {
             DistributedFunction<Processor.Context, JmsContext> createFn = jet -> {
                 Session session = sessionF.apply(connection);
-                Destination destination =
-                        uncheckCall(() -> isTopic ? session.createTopic(name) : session.createQueue(name));
-                MessageProducer producer = uncheckCall(() -> session.createProducer(destination));
+                Destination destination = isTopic ? session.createTopic(name) : session.createQueue(name);
+                MessageProducer producer = session.createProducer(destination);
                 return new JmsContext(session, producer);
             };
             DistributedBiConsumer<JmsContext, T> onReceiveFn = (buffer, item) -> {
@@ -120,8 +118,8 @@ public final class WriteJmsP {
             };
             DistributedConsumer<JmsContext> flushF = buffer -> flushFn.accept(buffer.session);
             DistributedConsumer<JmsContext> destroyFn = buffer -> {
-                uncheckRun(buffer.producer::close);
-                uncheckRun(buffer.session::close);
+                buffer.producer.close();
+                buffer.session.close();
             };
             DistributedSupplier<Processor> supplier = writeBufferedP(createFn, onReceiveFn, flushF, destroyFn);
 
@@ -129,8 +127,10 @@ public final class WriteJmsP {
         }
 
         @Override
-        public void close(Throwable error) {
-            uncheckRun(() -> connection.close());
+        public void close(Throwable error) throws Exception {
+            if (connection != null) {
+                connection.close();
+            }
         }
 
         class JmsContext {

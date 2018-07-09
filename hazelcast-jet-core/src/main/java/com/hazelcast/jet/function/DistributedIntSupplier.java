@@ -16,13 +16,29 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.IntSupplier;
 
 /**
  * {@code Serializable} variant of {@link IntSupplier
- * java.util.function.IntSupplier}.
+ * java.util.function.IntSupplier} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedIntSupplier extends IntSupplier, Serializable {
+
+    /**
+     * Exception-declaring version of {@link IntSupplier#getAsInt}.
+     */
+    int getAsIntEx() throws Exception;
+
+    @Override
+    default int getAsInt() {
+        try {
+            return getAsIntEx();
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

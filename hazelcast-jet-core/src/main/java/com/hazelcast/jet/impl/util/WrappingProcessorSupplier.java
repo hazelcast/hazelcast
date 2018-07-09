@@ -55,7 +55,7 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier {
     }
 
     @Override
-    public void close(Throwable error) {
+    public void close(Throwable error) throws Exception {
         wrapped.close(error);
     }
 }

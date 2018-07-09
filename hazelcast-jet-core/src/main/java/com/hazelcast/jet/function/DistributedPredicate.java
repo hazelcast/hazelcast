@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -24,10 +26,24 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link Predicate
- * java.util.function.Predicate}.
+ * java.util.function.Predicate} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
+
+    /**
+     * Exception-declaring version of {@link Predicate#test}.
+     */
+    boolean testEx(T t) throws Exception;
+
+    @Override
+    default boolean test(T t) {
+        try {
+            return testEx(t);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 
     /**
      * {@code Serializable} variant of

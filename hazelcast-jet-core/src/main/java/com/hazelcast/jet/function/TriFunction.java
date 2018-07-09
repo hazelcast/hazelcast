@@ -19,7 +19,7 @@ package com.hazelcast.jet.function;
 /**
  * Represents a three-arity function that accepts three arguments
  * and produces a result.
- **/
+ */
 @FunctionalInterface
 public interface TriFunction<T, U, V, R> {
 

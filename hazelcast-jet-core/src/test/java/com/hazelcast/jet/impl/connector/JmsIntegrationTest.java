@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -32,6 +31,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -56,8 +56,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
     public static EmbeddedActiveMQBroker broker = new EmbeddedActiveMQBroker();
 
     private static final int MESSAGE_COUNT = 100;
-    private static final DistributedFunction<Message, String> TEXT_MESSAGE_FN = m ->
-            uncheckCall(((TextMessage) m)::getText);
+    private static final DistributedFunction<Message, String> TEXT_MESSAGE_FN = m -> ((TextMessage) m).getText();
 
     private String destinationName = randomString();
     private Job job;
@@ -146,9 +145,9 @@ public class JmsIntegrationTest extends PipelineTestSupport {
     public void sourceQueue_whenBuilder_withFunctions() {
         String queueName = destinationName;
         StreamSource<String> source = Sources.<String>jmsQueueBuilder(() -> broker.createConnectionFactory())
-                .connectionFn(factory -> uncheckCall(factory::createConnection))
-                .sessionFn(connection -> uncheckCall(() -> connection.createSession(false, AUTO_ACKNOWLEDGE)))
-                .consumerFn(session -> uncheckCall(() -> session.createConsumer(session.createQueue(queueName))))
+                .connectionFn(ConnectionFactory::createConnection)
+                .sessionFn(connection -> connection.createSession(false, AUTO_ACKNOWLEDGE))
+                .consumerFn(session -> session.createConsumer(session.createQueue(queueName)))
                 .flushFn(noopConsumer())
                 .build(TEXT_MESSAGE_FN);
 
@@ -219,10 +218,10 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         populateList();
 
         Sink<String> sink = Sinks.<String>jmsQueueBuilder(() -> broker.createConnectionFactory())
-                .connectionFn(factory -> uncheckCall(factory::createConnection))
-                .sessionFn(connection -> uncheckCall(() -> connection.createSession(false, AUTO_ACKNOWLEDGE)))
-                .messageFn((session, item) -> uncheckCall(() -> session.createTextMessage(item)))
-                .sendFn((producer, message) -> uncheckRun(() -> producer.send(message)))
+                .connectionFn(ConnectionFactory::createConnection)
+                .sessionFn(connection -> connection.createSession(false, AUTO_ACKNOWLEDGE))
+                .messageFn(Session::createTextMessage)
+                .sendFn(MessageProducer::send)
                 .flushFn(noopConsumer())
                 .destinationName(destinationName)
                 .build();
@@ -286,23 +285,19 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         connection.start();
 
         List<Object> messages = synchronizedList(new ArrayList<>());
-        spawn(() -> {
-            try {
-                Session session = connection.createSession(false, AUTO_ACKNOWLEDGE);
-                Destination dest = isQueue ? session.createQueue(destinationName) : session.createTopic(destinationName);
-                MessageConsumer consumer = session.createConsumer(dest);
-                int count = 0;
-                while (count < MESSAGE_COUNT) {
-                    messages.add(((TextMessage) consumer.receive()).getText());
-                    count++;
-                }
-                consumer.close();
-                session.close();
-                connection.close();
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+        spawn(() -> uncheckRun(() -> {
+            Session session = connection.createSession(false, AUTO_ACKNOWLEDGE);
+            Destination dest = isQueue ? session.createQueue(destinationName) : session.createTopic(destinationName);
+            MessageConsumer consumer = session.createConsumer(dest);
+            int count = 0;
+            while (count < MESSAGE_COUNT) {
+                messages.add(((TextMessage) consumer.receive()).getText());
+                count++;
             }
-        });
+            consumer.close();
+            session.close();
+            connection.close();
+        }));
         return messages;
     }
 

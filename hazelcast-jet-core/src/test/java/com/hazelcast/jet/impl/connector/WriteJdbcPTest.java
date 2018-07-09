@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sinks;
 import org.h2.tools.DeleteDbFiles;
@@ -38,7 +37,6 @@ import java.sql.SQLNonTransientException;
 import java.sql.Statement;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static org.junit.Assert.assertEquals;
 
 public class WriteJdbcPTest extends PipelineTestSupport {
@@ -70,12 +68,8 @@ public class WriteJdbcPTest extends PipelineTestSupport {
          .map(item -> new Person((Integer) item, item.toString()))
          .drainTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)", DB_CONNECTION_URL,
                  (stmt, item) -> {
-                     try {
-                         stmt.setInt(1, item.id);
-                         stmt.setString(2, item.name);
-                     } catch (SQLException e) {
-                         throw rethrow(e);
-                     }
+                     stmt.setInt(1, item.id);
+                     stmt.setString(2, item.name);
                  }
          ));
 
@@ -104,7 +98,9 @@ public class WriteJdbcPTest extends PipelineTestSupport {
         p.drawFrom(source)
          .map(item -> new Person((Integer) item, item.toString()))
          .drainTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)", DB_CONNECTION_URL,
-                 (stmt, item) -> rethrow(new SQLNonTransientException())
+                 (stmt, item) -> {
+                     throw new SQLNonTransientException();
+                 }
          ));
 
         execute();
@@ -129,17 +125,14 @@ public class WriteJdbcPTest extends PipelineTestSupport {
     private static DistributedSupplier<Connection> failOnceConnectionSupplier() {
         return new DistributedSupplier<Connection>() {
             boolean exceptionThrown;
+
             @Override
-            public Connection get() {
-                try {
-                    if (exceptionThrown) {
-                        exceptionThrown = true;
-                        throw new SQLException();
-                    }
-                    return DriverManager.getConnection(DB_CONNECTION_URL);
-                } catch (SQLException e) {
-                    throw ExceptionUtil.rethrow(e);
+            public Connection getEx() throws SQLException {
+                if (exceptionThrown) {
+                    exceptionThrown = true;
+                    throw new SQLException();
                 }
+                return DriverManager.getConnection(DB_CONNECTION_URL);
             }
         };
     }
@@ -147,18 +140,15 @@ public class WriteJdbcPTest extends PipelineTestSupport {
     private static DistributedBiConsumer<PreparedStatement, Person> failOnceBindFn() {
         return new DistributedBiConsumer<PreparedStatement, Person>() {
             boolean exceptionThrown;
+
             @Override
-            public void accept(PreparedStatement stmt, Person item) {
-                try {
-                    if (exceptionThrown) {
-                        exceptionThrown = true;
-                        throw new SQLException();
-                    }
-                    stmt.setInt(1, item.id);
-                    stmt.setString(2, item.name);
-                } catch (SQLException e) {
-                    throw rethrow(e);
+            public void acceptEx(PreparedStatement stmt, Person item) throws SQLException {
+                if (exceptionThrown) {
+                    exceptionThrown = true;
+                    throw new SQLException();
                 }
+                stmt.setInt(1, item.id);
+                stmt.setString(2, item.name);
             }
         };
     }

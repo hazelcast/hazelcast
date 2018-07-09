@@ -16,13 +16,29 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.IntFunction;
 
 /**
  * {@code Serializable} variant of {@link IntFunction
- * java.util.function.IntFunction}.
+ * java.util.function.IntFunction} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedIntFunction<R> extends IntFunction<R>, Serializable {
+
+    /**
+     * Exception-declaring version of {@link IntFunction#apply}.
+     */
+    R applyEx(int value) throws Exception;
+
+    @Override
+    default R apply(int value) {
+        try {
+            return applyEx(value);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

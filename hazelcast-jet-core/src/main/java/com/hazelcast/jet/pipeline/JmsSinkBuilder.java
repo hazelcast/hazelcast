@@ -33,8 +33,6 @@ import javax.jms.Session;
 
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -178,17 +176,17 @@ public final class JmsSinkBuilder<T> {
 
         checkNotNull(destinationName);
         if (connectionFn == null) {
-            connectionFn = factory -> uncheckCall(() -> factory.createConnection(usernameLocal, passwordLocal));
+            connectionFn = factory -> factory.createConnection(usernameLocal, passwordLocal);
         }
         if (sessionFn == null) {
-            sessionFn = connection -> uncheckCall(() -> connection.createSession(transactedLocal, acknowledgeModeLocal));
+            sessionFn = connection -> connection.createSession(transactedLocal, acknowledgeModeLocal);
         }
         if (messageFn == null) {
-            messageFn = (session, item) -> uncheckCall(() ->
-                    item instanceof Message ? (Message) item : session.createTextMessage(item.toString()));
+            messageFn = (session, item) ->
+                    item instanceof Message ? (Message) item : session.createTextMessage(item.toString());
         }
         if (sendFn == null) {
-            sendFn = (producer, message) -> uncheckRun(() -> producer.send(message));
+            sendFn = MessageProducer::send;
         }
         if (flushFn == null) {
             flushFn = noopConsumer();

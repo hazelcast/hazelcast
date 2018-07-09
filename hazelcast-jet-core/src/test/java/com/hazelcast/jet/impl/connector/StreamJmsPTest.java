@@ -42,7 +42,6 @@ import java.util.Enumeration;
 import java.util.Queue;
 
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -99,13 +98,10 @@ public class StreamJmsPTest extends JetTestSupport {
         processorConnection = broker.createConnectionFactory().createConnection();
         processorConnection.start();
 
-        DistributedFunction<Connection, Session> sessionFn = c -> uncheckCall(() ->
-                c.createSession(false, Session.AUTO_ACKNOWLEDGE));
-        DistributedFunction<Session, MessageConsumer> consumerFn = s -> uncheckCall(() -> {
-            Destination destination = isQueue ? s.createQueue(destinationName) : s.createTopic(destinationName);
-            return s.createConsumer(destination);
-        });
-        DistributedFunction<Message, String> textMessageFn = m -> uncheckCall(((TextMessage) m)::getText);
+        DistributedFunction<Connection, Session> sessionFn = c -> c.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        DistributedFunction<Session, MessageConsumer> consumerFn = s ->
+                s.createConsumer(isQueue ? s.createQueue(destinationName) : s.createTopic(destinationName));
+        DistributedFunction<Message, String> textMessageFn = m -> ((TextMessage) m).getText();
         processor = new StreamJmsP<>(processorConnection, sessionFn, consumerFn, noopConsumer(), textMessageFn);
         outbox = new TestOutbox(1);
         Context ctx = new TestProcessorContext().setLogger(Logger.getLogger(StreamJmsP.class));

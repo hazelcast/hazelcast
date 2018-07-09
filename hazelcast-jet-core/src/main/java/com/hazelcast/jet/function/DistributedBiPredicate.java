@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
 import java.io.Serializable;
 import java.util.function.BiPredicate;
 
@@ -23,10 +25,24 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link BiPredicate
- * java.util.function.BiPredicate}.
+ * java.util.function.BiPredicate} which declares checked exception.
  */
 @FunctionalInterface
 public interface DistributedBiPredicate<T, U> extends BiPredicate<T, U>, Serializable {
+
+    /**
+     * Exception-declaring version of {@link BiPredicate#test}.
+     */
+    boolean testEx(T t, U u) throws Exception;
+
+    @Override
+    default boolean test(T t, U u) {
+        try {
+            return testEx(t, u);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 
     /**
      * {@code Serializable} variant of {@link
