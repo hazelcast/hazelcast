@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
@@ -72,8 +73,9 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 @SuppressWarnings("checkstyle:methodcount")
 class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
-    public DefaultQueryCache(String cacheId, String cacheName, IMap delegate, QueryCacheContext context) {
-        super(cacheId, cacheName, delegate, context);
+    public DefaultQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
+                             IMap delegate, QueryCacheContext context) {
+        super(cacheId, cacheName, queryCacheConfig, delegate, context);
     }
 
     @Override

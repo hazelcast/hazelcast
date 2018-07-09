@@ -24,7 +24,6 @@ import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.query.DefaultIndexProvider;
-import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
@@ -56,18 +55,20 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final IMap delegate;
     protected final Indexes indexes;
     protected final QueryCacheContext context;
+    protected final QueryCacheConfig queryCacheConfig;
     protected final QueryCacheRecordStore recordStore;
     protected final InternalSerializationService serializationService;
     protected final PartitioningStrategy partitioningStrategy;
-
     /**
      * ID of registered listener on publisher side.
      */
     protected String publisherListenerId;
 
-    public AbstractInternalQueryCache(String cacheId, String cacheName, IMap delegate, QueryCacheContext context) {
+    public AbstractInternalQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
+                                      IMap delegate, QueryCacheContext context) {
         this.cacheId = cacheId;
         this.cacheName = cacheName;
+        this.queryCacheConfig = queryCacheConfig;
         this.mapName = delegate.getName();
         this.delegate = delegate;
         this.context = context;
@@ -79,10 +80,10 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
                 IndexCopyBehavior.COPY_ON_READ);
         this.includeValue = isIncludeValue();
         this.partitioningStrategy = getPartitioningStrategy();
-        this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes, getQueryCacheConfig(),
-                getEvictionListener());
+        this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes,
+                queryCacheConfig, getEvictionListener());
 
-        for (MapIndexConfig indexConfig : getQueryCacheConfig().getIndexConfigs()) {
+        for (MapIndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
             indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered());
         }
     }
@@ -102,12 +103,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     protected Predicate getPredicate() {
-        return getQueryCacheConfig().getPredicateConfig().getImplementation();
-    }
-
-    private QueryCacheConfig getQueryCacheConfig() {
-        QueryCacheConfigurator queryCacheConfigurator = context.getQueryCacheConfigurator();
-        return queryCacheConfigurator.getOrCreateConfiguration(mapName, cacheName, cacheId);
+        return queryCacheConfig.getPredicateConfig().getImplementation();
     }
 
     private EvictionListener getEvictionListener() {
@@ -187,8 +183,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     private boolean isIncludeValue() {
-        QueryCacheConfig config = getQueryCacheConfig();
-        return config.isIncludeValue();
+        return queryCacheConfig.isIncludeValue();
     }
 
     protected QueryCacheEventService getEventService() {

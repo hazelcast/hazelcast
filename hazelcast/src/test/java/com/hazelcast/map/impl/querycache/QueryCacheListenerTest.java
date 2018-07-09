@@ -43,7 +43,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -54,7 +53,6 @@ import static org.junit.Assert.assertTrue;
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
-
     @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> TRUE_PREDICATE = TruePredicate.INSTANCE;
     @SuppressWarnings("unchecked")
@@ -74,14 +72,19 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
     public void listen_withPredicate_afterQueryCacheCreation() {
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE, useNaturalFilteringStrategy);
 
-        CountDownLatch numberOfCaughtEvents = new CountDownLatch(10);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), SQL_PREDICATE_GT, true);
+        final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
+        cache.addEntryListener(listener, SQL_PREDICATE_GT, true);
 
-        int count = 111;
+        final int count = 111;
         populateMap(map, count);
 
-        assertOpenEventually(numberOfCaughtEvents, 10);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(10, listener.getAddedEventCount());
+            }
+        });
     }
 
     @Test
@@ -89,14 +92,19 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         int keyToListen = 109;
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE, useNaturalFilteringStrategy);
 
-        CountDownLatch numberOfCaughtEvents = new CountDownLatch(1);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), SQL_PREDICATE_GT, keyToListen, true);
+        final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
+        cache.addEntryListener(listener, SQL_PREDICATE_GT, keyToListen, true);
 
-        int count = 111;
+        final int count = 111;
         populateMap(map, count);
 
-        assertOpenEventually(numberOfCaughtEvents, 10);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, listener.getAddedEventCount());
+            }
+        });
     }
 
     @Test
@@ -104,28 +112,28 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         int keyToListen = 109;
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE, useNaturalFilteringStrategy);
 
-        CountDownLatch additionCount = new CountDownLatch(2);
-        CountDownLatch removalCount = new CountDownLatch(2);
         final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addEntryListener(new QueryCacheAdditionListener(additionCount), SQL_PREDICATE_GT, keyToListen, true);
-        cache.addEntryListener(new QueryCacheRemovalListener(removalCount), SQL_PREDICATE_GT, keyToListen, true);
+        final QueryCacheAdditionListener addListener = new QueryCacheAdditionListener();
+        cache.addEntryListener(addListener, SQL_PREDICATE_GT, keyToListen, true);
+        final QueryCacheRemovalListener removeListener = new QueryCacheRemovalListener();
+        cache.addEntryListener(removeListener, SQL_PREDICATE_GT, keyToListen, true);
 
-        int count = 111;
+        final int count = 111;
         populateMap(map, count);
         removeEntriesFromMap(map, 0, count);
         populateMap(map, count);
         removeEntriesFromMap(map, 0, count);
 
-        AssertTask task = new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
-                assertEquals(0, cache.size());
+            public void run() {
+                int cacheSize = cache.size();
+                String message = "Cache size is=" + cacheSize;
+                assertEquals(message, 0, cacheSize);
+                assertEquals(message, 2, addListener.getAddedEventCount());
+                assertEquals(message, 2, removeListener.getRemovedEventCount());
             }
-        };
-
-        assertTrueEventually(task);
-        assertOpenEventually(cache.size() + "", additionCount, 10);
-        assertOpenEventually(cache.size() + "", removalCount, 10);
+        });
     }
 
     @Test
@@ -175,48 +183,56 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
     public void listenKey_withPredicate_whenNoLongerMatching() {
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(SQL_PREDICATE_LT, useNaturalFilteringStrategy);
 
-        CountDownLatch numberOfCaughtEvents = new CountDownLatch(1);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
 
         Employee employee = new Employee(0);
         map.put(0, employee);
-        cache.addEntryListener(new QueryCacheRemovalListener(numberOfCaughtEvents), true);
+        final QueryCacheRemovalListener listener = new QueryCacheRemovalListener();
+        cache.addEntryListener(listener, true);
 
         employee = new Employee(200);
         map.put(0, employee);
 
-        sleepAtLeastSeconds(5);
-
-        assertOpenEventually(numberOfCaughtEvents);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, listener.getRemovedEventCount());
+            }
+        });
     }
 
     @Test
     public void listenKey_withPredicate_whenMatching() {
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(SQL_PREDICATE_LT, useNaturalFilteringStrategy);
 
-        CountDownLatch numberOfCaughtEvents = new CountDownLatch(1);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
 
         Employee employee = new Employee(200);
         map.put(0, employee);
-        cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), true);
+        final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
+        cache.addEntryListener(listener, true);
 
         employee = new Employee(0);
         map.put(0, employee);
 
         sleepAtLeastSeconds(5);
 
-        assertOpenEventually(numberOfCaughtEvents);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, listener.getAddedEventCount());
+            }
+        });
     }
 
     @Test
     public void listenerShouldBeRegistered_whenConfiguredProgrammatically() {
-        CountDownLatch completionLatch = new CountDownLatch(100);
         MapConfig mapConfig = new MapConfig(mapName);
+        final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName)
                 .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE))
                 .addEntryListenerConfig(
-                    new EntryListenerConfig(new QueryCacheAdditionListener(completionLatch), true, true));
+                        new EntryListenerConfig(listener, true, true));
         mapConfig.addQueryCacheConfig(queryCacheConfig);
         Config config = new Config();
         config.addMapConfig(mapConfig);
@@ -225,7 +241,18 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         // trigger creation of the query cache
         map.getQueryCache(cacheName);
         populateMap(map, 100);
-        assertOpenEventually(completionLatch, 30);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(100, listener.getAddedEventCount());
+            }
+        });
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(100, listener.getAddedEventCount());
+            }
+        }, 5);
     }
 
     private void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
@@ -273,29 +300,35 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
     private class QueryCacheAdditionListener implements EntryAddedListener {
 
-        private final CountDownLatch numberOfCaughtEvents;
+        private final AtomicInteger addedEventCount = new AtomicInteger(0);
 
-        QueryCacheAdditionListener(CountDownLatch numberOfCaughtEvents) {
-            this.numberOfCaughtEvents = numberOfCaughtEvents;
+        QueryCacheAdditionListener() {
         }
 
         @Override
         public void entryAdded(EntryEvent event) {
-            numberOfCaughtEvents.countDown();
+            addedEventCount.incrementAndGet();
+        }
+
+        public int getAddedEventCount() {
+            return addedEventCount.get();
         }
     }
 
     private class QueryCacheRemovalListener implements EntryRemovedListener {
 
-        private final CountDownLatch numberOfCaughtEvents;
+        private final AtomicInteger removedEventCount = new AtomicInteger(0);
 
-        QueryCacheRemovalListener(CountDownLatch numberOfCaughtEvents) {
-            this.numberOfCaughtEvents = numberOfCaughtEvents;
+        QueryCacheRemovalListener() {
         }
 
         @Override
         public void entryRemoved(EntryEvent event) {
-            numberOfCaughtEvents.countDown();
+            removedEventCount.incrementAndGet();
+        }
+
+        public int getRemovedEventCount() {
+            return removedEventCount.get();
         }
     }
 }
