@@ -23,7 +23,12 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 
@@ -31,6 +36,8 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ProbeBuilderImplTest {
 
     @Probe
@@ -60,14 +67,14 @@ public class ProbeBuilderImplTest {
         builder.register(this, "probe1", ProbeLevel.INFO, ProbeUnit.COUNT,
                 new LongProbeFunction<ProbeBuilderImplTest>() {
                     @Override
-                    public long get(ProbeBuilderImplTest source) throws Exception {
+                    public long get(ProbeBuilderImplTest source) {
                         return source.probe1;
                     }
                 });
         builder.register(this, "secondProbe", ProbeLevel.INFO, ProbeUnit.BYTES,
                 new LongProbeFunction<ProbeBuilderImplTest>() {
                     @Override
-                    public long get(ProbeBuilderImplTest source) throws Exception {
+                    public long get(ProbeBuilderImplTest source) {
                         return source.probe2;
                     }
                 });
