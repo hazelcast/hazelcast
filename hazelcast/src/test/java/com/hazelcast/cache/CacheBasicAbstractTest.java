@@ -922,6 +922,18 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
+    public void test_CustomExpiryPolicyIsUsedWhenEntryIsUpdated() {
+        ICache<Integer, String> cache = createCache();
+        cache.put(1, "value");
+        cache.setExpiryPolicy(1, new HazelcastExpiryPolicy(10000, 10000, 10000));
+        sleepAtLeastSeconds(5);
+        cache.put(1, "value2");
+        sleepAtLeastSeconds(5);
+
+        assertEquals("value2", cache.get(1));
+    }
+
+    @Test
     public void removeCacheFromOwnerCacheManagerWhenCacheIsDestroyed() {
         ICache cache = createCache();
 
