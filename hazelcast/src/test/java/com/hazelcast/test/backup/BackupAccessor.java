@@ -17,7 +17,7 @@
 package com.hazelcast.test.backup;
 
 /**
- * Access backup records in a given replica.
+ * Accesses backup records in a given replica.
  * <p>
  * All accessors use a partition thread to access values data hence
  * they are safe to use with HD-backed data structures.
@@ -31,17 +31,17 @@ package com.hazelcast.test.backup;
 public interface BackupAccessor<K, V> {
 
     /**
-     * Number of existing backup entries in a given structure and replica index
+     * Number of existing backup entries in a given structure and replica index.
      *
      * @return number of backup entries
      */
     int size();
 
     /**
-     * Reads backup value
+     * Returns the backup value for the given key.
      *
      * @param key key of the backup entry to get
-     * @return backup value or null
+     * @return backup value or {@code null}
      */
     V get(K key);
 }
