@@ -29,8 +29,8 @@ public class HazelcastCloudAddressProvider implements AddressProvider {
     private final ILogger logger;
     private final HazelcastCloudDiscovery cloudDiscovery;
 
-    public HazelcastCloudAddressProvider(String discoveryToken, int connectionTimeoutInMillis, LoggingService loggingService) {
-        this(new HazelcastCloudDiscovery(discoveryToken, connectionTimeoutInMillis), loggingService);
+    public HazelcastCloudAddressProvider(String endpointUrl, int connectionTimeoutInMillis, LoggingService loggingService) {
+        this(new HazelcastCloudDiscovery(endpointUrl, connectionTimeoutInMillis), loggingService);
     }
 
     HazelcastCloudAddressProvider(HazelcastCloudDiscovery cloudDiscovery, LoggingService loggingService) {
