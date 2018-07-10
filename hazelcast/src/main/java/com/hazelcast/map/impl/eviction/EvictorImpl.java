@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.LazyEntryViewFromRecord;
@@ -27,6 +29,7 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 
+import static com.hazelcast.memory.MemorySize.toPrettyString;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
 
@@ -35,27 +38,46 @@ import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
  */
 public class EvictorImpl implements Evictor {
 
+    protected final int maxEvictionsPerCycle;
     protected final EvictionChecker evictionChecker;
     protected final IPartitionService partitionService;
     protected final MapEvictionPolicy mapEvictionPolicy;
 
-    public EvictorImpl(MapEvictionPolicy mapEvictionPolicy,
+    private final ILogger logger;
+
+    public EvictorImpl(MapEvictionPolicy mapEvictionPolicy, int maxEvictionsPerCycle,
                        EvictionChecker evictionChecker, IPartitionService partitionService) {
         this.evictionChecker = checkNotNull(evictionChecker);
         this.partitionService = checkNotNull(partitionService);
         this.mapEvictionPolicy = checkNotNull(mapEvictionPolicy);
+        this.maxEvictionsPerCycle = maxEvictionsPerCycle;
+        this.logger = Logger.getLogger(EvictorImpl.class);
     }
 
     @Override
     public void evict(RecordStore recordStore, Data excludedKey) {
         assertRunningOnPartitionThread();
 
-        EntryView evictableEntry = selectEvictableEntry(recordStore, excludedKey);
-        if (evictableEntry == null) {
+        int evictionsCountdown = maxEvictionsPerCycle;
+        logger.fine("Trying eviction on " + recordStore.getName() + ". Evictable: " + recordStore.shouldEvict()
+                + " numOfRecords: " + recordStore.size() + " and memSize: "
+                + toPrettyString(recordStore.getStorage().getEntryCostEstimator().getEstimate()));
+
+        if (!recordStore.shouldEvict()) {
             return;
         }
 
-        evictEntry(recordStore, evictableEntry);
+        EntryView entry = selectEvictableEntry(recordStore, excludedKey);
+
+        while (entry != null && evictionsCountdown > 0) {
+            evictEntry(recordStore, entry);
+
+            entry = selectEvictableEntry(recordStore, excludedKey);
+            evictionsCountdown--;
+        }
+
+        logger.fine("Evicted " + (maxEvictionsPerCycle - evictionsCountdown) + " on " + recordStore.getName() + ", New memSize: "
+                + toPrettyString(recordStore.getStorage().getEntryCostEstimator().getEstimate()));
     }
 
     private EntryView selectEvictableEntry(RecordStore recordStore, Data excludedKey) {

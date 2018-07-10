@@ -345,6 +345,8 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         Config config = new Config();
         config.getProperties().setProperty(GroupProperty.PARTITION_COUNT.getName(), "5");
+        config.getProperties().setProperty(GroupProperty.MAX_EXPLICIT_EVICTIONS.getName(), "1");
+
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
         MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();

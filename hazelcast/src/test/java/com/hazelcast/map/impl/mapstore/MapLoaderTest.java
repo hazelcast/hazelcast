@@ -649,7 +649,8 @@ public class MapLoaderTest extends HazelcastTestSupport {
                 .setImplementation(new SimpleLoader(entriesCount));
 
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount))
+                .setProperty(GroupProperty.MAX_EXPLICIT_EVICTIONS.getName(), "1");
 
         config.getMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LRU)
