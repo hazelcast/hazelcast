@@ -42,17 +42,19 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedRecordStore {
 
-    protected final AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef;
-    protected final ReplicatedMapService replicatedMapService;
-    protected final ReplicatedMapConfig replicatedMapConfig;
-    protected final NodeEngine nodeEngine;
-    protected final SerializationService serializationService;
-    protected final IPartitionService partitionService;
-    protected final AtomicBoolean isLoaded = new AtomicBoolean(false);
-    protected final EntryTaskScheduler<Object, Object> ttlEvictionScheduler;
-    protected final EventService eventService;
-    protected final String name;
     protected int partitionId;
+
+    protected final String name;
+    protected final NodeEngine nodeEngine;
+    protected final EventService eventService;
+    protected final IPartitionService partitionService;
+    protected final ReplicatedMapConfig replicatedMapConfig;
+    protected final SerializationService serializationService;
+    protected final ReplicatedMapService replicatedMapService;
+    protected final AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef;
+    protected final AtomicBoolean isLoaded = new AtomicBoolean(false);
+
+    private final EntryTaskScheduler<Object, Object> ttlEvictionScheduler;
 
     protected AbstractBaseReplicatedRecordStore(String name, ReplicatedMapService replicatedMapService, int partitionId) {
         this.name = name;
@@ -103,6 +105,7 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         if (storage != null) {
             storage.clear();
         }
+        ttlEvictionScheduler.cancelAll();
     }
 
     protected InternalReplicatedMapStorage<K, V> clearInternal() {
