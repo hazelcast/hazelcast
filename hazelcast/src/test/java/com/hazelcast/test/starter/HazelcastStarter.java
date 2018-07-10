@@ -156,7 +156,7 @@ public class HazelcastStarter {
         Class<Hazelcast> hazelcastClass = (Class<Hazelcast>) classloader.loadClass("com.hazelcast.core.Hazelcast");
         System.out.println(hazelcastClass + " loaded by " + hazelcastClass.getClassLoader());
         Class<?> configClass = classloader.loadClass("com.hazelcast.config.Config");
-        Object config = getConfig(configTemplate, classloader, configClass);
+        Object config = getConfig(classloader, configClass, configTemplate);
 
         Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastInstance", configClass);
         Object delegate = newHazelcastInstanceMethod.invoke(null, config);
@@ -164,7 +164,7 @@ public class HazelcastStarter {
         return (HazelcastInstance) proxyObjectForStarter(HazelcastStarter.class.getClassLoader(), delegate);
     }
 
-    public static Object getConfig(Object configTemplate, HazelcastAPIDelegatingClassloader classloader, Class<?> configClass)
+    public static Object getConfig(HazelcastAPIDelegatingClassloader classloader, Class<?> configClass, Object configTemplate)
             throws InstantiationException, IllegalAccessException, NoSuchMethodException,
             InvocationTargetException, ClassNotFoundException {
         Object config;
