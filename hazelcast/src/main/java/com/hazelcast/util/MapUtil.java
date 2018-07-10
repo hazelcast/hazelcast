@@ -39,7 +39,7 @@ public final class MapUtil {
      * to minimize rehash operations
      */
     public static <K, V> Map<K, V> createHashMap(int expectedMapSize) {
-        final int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        final int initialCapacity = calculateInitialCapacity(expectedMapSize);
         return new HashMap<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
     }
 
@@ -48,7 +48,7 @@ public final class MapUtil {
      * to minimize rehash operations
      */
     public static <K, V> Map<K, V> createHashMapAdapter(int expectedMapSize) {
-        final int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        final int initialCapacity = calculateInitialCapacity(expectedMapSize);
         return new HashMapAdapter<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
     }
 
@@ -57,7 +57,7 @@ public final class MapUtil {
      * to minimize rehash operations
      */
     public static <K, V> Map<K, V> createLinkedHashMap(int expectedMapSize) {
-        final int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        final int initialCapacity = calculateInitialCapacity(expectedMapSize);
         return new LinkedHashMap<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
     }
 
@@ -77,6 +77,19 @@ public final class MapUtil {
     public static <V> Int2ObjectHashMap<V> createInt2ObjectHashMap(int expectedMapSize) {
         final int initialCapacity = (int) (expectedMapSize / Int2ObjectHashMap.DEFAULT_LOAD_FACTOR) + 1;
         return new Int2ObjectHashMap<V>(initialCapacity, Int2ObjectHashMap.DEFAULT_LOAD_FACTOR);
+    }
+
+    /**
+     * Returns the initial hash map capacity needed for the expected map size.
+     * To avoid resizing the map, the initial capacity should be different than
+     * the expected size, depending on the load factor.
+     *
+     * @param expectedMapSize the expected map size
+     * @return the necessary initial capacity
+     * @see HashMap
+     */
+    public static int calculateInitialCapacity(int expectedMapSize) {
+        return (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
     }
 
     /**
