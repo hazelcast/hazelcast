@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -29,8 +28,10 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.backup.BackupAccessor;
 import com.hazelcast.test.backup.TestBackupUtils;
+import com.hazelcast.test.environment.RuntimeAvailableProcessorsRule;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,6 +44,7 @@ import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryNullEve
 
 @Category({QuickTest.class, ParallelTest.class})
 @RunWith(Parameterized.class)
+
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class MapSetTTLBackupTest extends HazelcastTestSupport {
 
@@ -58,10 +60,11 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
     @Parameterized.Parameter
     public InMemoryFormat inMemoryFormat;
 
+    @Rule
+    public RuntimeAvailableProcessorsRule runtimeAvailableProcessorsRule = new RuntimeAvailableProcessorsRule(4);
+
     @Before
     public void setup() {
-        RuntimeAvailableProcessors.override(4);
-
         factory = createHazelcastInstanceFactory();
         Config config = getConfig();
         MapConfig mapConfig = new MapConfig("default");
