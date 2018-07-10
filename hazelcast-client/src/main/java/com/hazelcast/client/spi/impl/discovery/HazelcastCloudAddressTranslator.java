@@ -31,8 +31,8 @@ public class HazelcastCloudAddressTranslator implements AddressTranslator {
 
     private volatile Map<Address, Address> privateToPublic = new HashMap<Address, Address>();
 
-    public HazelcastCloudAddressTranslator(String token, int connectionTimeoutMillis, LoggingService loggingService) {
-        this(new HazelcastCloudDiscovery(token, connectionTimeoutMillis), loggingService);
+    public HazelcastCloudAddressTranslator(String endpointUrl, int connectionTimeoutMillis, LoggingService loggingService) {
+        this(new HazelcastCloudDiscovery(endpointUrl, connectionTimeoutMillis), loggingService);
     }
 
     // just for testing
