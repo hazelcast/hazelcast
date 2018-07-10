@@ -83,6 +83,7 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
     @After
     public void tearDown() {
         factory.shutdownAll();
+        RuntimeAvailableProcessors.resetOverride();
     }
 
     @Test
