@@ -249,15 +249,61 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         for (int i = 0; i < QUERIES; ++i) {
             map.entrySet(Predicates.equal("__key", 10));
             map.entrySet(Predicates.equal("this", 10));
-            assertEquals(expected, keyStats().getAverageHitSelectivity(), 0.01);
-            assertEquals(expected, valueStats().getAverageHitSelectivity(), 0.01);
+            assertEquals(expected, keyStats().getAverageHitSelectivity(), 0.015);
+            assertEquals(expected, valueStats().getAverageHitSelectivity(), 0.015);
         }
 
         for (int i = 1; i <= QUERIES; ++i) {
             map.entrySet(Predicates.greaterEqual("__key", entryCount / 2));
             map.entrySet(Predicates.greaterEqual("this", entryCount / 2));
-            assertEquals((expected * QUERIES + 0.5 * i) / (QUERIES + i), keyStats().getAverageHitSelectivity(), 0.01);
-            assertEquals((expected * QUERIES + 0.5 * i) / (QUERIES + i), valueStats().getAverageHitSelectivity(), 0.01);
+            assertEquals((expected * QUERIES + 0.5 * i) / (QUERIES + i), keyStats().getAverageHitSelectivity(), 0.015);
+            assertEquals((expected * QUERIES + 0.5 * i) / (QUERIES + i), valueStats().getAverageHitSelectivity(), 0.015);
+        }
+    }
+
+    @Test
+    public void testAverageQuerySelectivityCalculation_ChangingNumberOfIndex() {
+        double expected1 = 1.0 - 0.01;
+        double expected2 = 1.0 - 0.1;
+        double expected3 = 1.0 - 0.4;
+
+        map.addIndex("__key", false);
+        map.addIndex("this", true);
+        for (int i = 0; i < 100; ++i) {
+            map.put(i, i);
+        }
+        assertEquals(0.0, keyStats().getAverageHitSelectivity(), 0.0);
+        assertEquals(0.0, valueStats().getAverageHitSelectivity(), 0.0);
+
+        for (int i = 0; i < QUERIES; ++i) {
+            map.entrySet(Predicates.equal("__key", 10));
+            map.entrySet(Predicates.equal("this", 10));
+            assertEquals(expected1, keyStats().getAverageHitSelectivity(), 0.015);
+            assertEquals(expected1, valueStats().getAverageHitSelectivity(), 0.015);
+        }
+
+        for (int i = 100; i < 200; ++i) {
+            map.put(i, i);
+        }
+
+        for (int i = 1; i <= QUERIES; ++i) {
+            map.entrySet(Predicates.greaterEqual("__key", 180));
+            map.entrySet(Predicates.greaterEqual("this", 180));
+            assertEquals((expected1 * QUERIES + expected2 * i) / (QUERIES + i), keyStats().getAverageHitSelectivity(), 0.015);
+            assertEquals((expected1 * QUERIES + expected2 * i) / (QUERIES + i), valueStats().getAverageHitSelectivity(), 0.015);
+        }
+
+        for (int i = 150; i < 200; ++i) {
+            map.remove(i);
+        }
+
+        for (int i = 1; i <= QUERIES; ++i) {
+            map.entrySet(Predicates.greaterEqual("__key", 90));
+            map.entrySet(Predicates.greaterEqual("this", 90));
+            assertEquals(((expected1 + expected2) * QUERIES + expected3 * i) / (2 * QUERIES + i),
+                    keyStats().getAverageHitSelectivity(), 0.015);
+            assertEquals(((expected1 + expected2) * QUERIES + expected3 * i) / (2 * QUERIES + i),
+                    valueStats().getAverageHitSelectivity(), 0.015);
         }
     }
 
@@ -388,6 +434,14 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
             assertTrue(keyStats().getAverageHitLatency() > 0);
             assertTrue(keyStats().getAverageHitLatency() <= totalMeasuredLatency / i);
         }
+
+        long originalAvgHitLatency = keyStats().getAverageHitLatency();
+        for (int i = 1; i <= QUERIES; ++i) {
+            map.entrySet(Predicates.alwaysTrue());
+        }
+        long avgHitLatencyAfterNonIndexedQueries = keyStats().getAverageHitLatency();
+        assertEquals(originalAvgHitLatency, avgHitLatencyAfterNonIndexedQueries);
+
     }
 
     @Test
@@ -397,14 +451,17 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertEquals(0, keyStats().getTotalInsertLatency());
 
         long totalMeasuredLatency = 0;
+        long previousTotalInsertLatency = 0;
         for (int i = 1; i <= 100; ++i) {
             long start = System.nanoTime();
             map.put(i, i);
             totalMeasuredLatency += System.nanoTime() - start;
 
             assertEquals(i, keyStats().getInsertCount());
-            assertTrue(keyStats().getTotalInsertLatency() > 0);
+            assertTrue(keyStats().getTotalInsertLatency() > previousTotalInsertLatency);
             assertTrue(keyStats().getTotalInsertLatency() <= totalMeasuredLatency);
+
+            previousTotalInsertLatency = keyStats().getTotalInsertLatency();
         }
 
         assertEquals(0, keyStats().getUpdateCount());
@@ -424,14 +481,17 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertEquals(0, keyStats().getTotalUpdateLatency());
 
         long totalMeasuredLatency = 0;
+        long previousTotalUpdateLatency = 0;
         for (int i = 1; i <= 50; ++i) {
             long start = System.nanoTime();
             map.put(i, i * 2);
             totalMeasuredLatency += System.nanoTime() - start;
 
             assertEquals(i, keyStats().getUpdateCount());
-            assertTrue(keyStats().getTotalUpdateLatency() > 0);
+            assertTrue(keyStats().getTotalUpdateLatency() > previousTotalUpdateLatency);
             assertTrue(keyStats().getTotalUpdateLatency() <= totalMeasuredLatency);
+
+            previousTotalUpdateLatency = keyStats().getTotalUpdateLatency();
         }
 
         assertEquals(100, keyStats().getInsertCount());
@@ -451,18 +511,70 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertEquals(0, keyStats().getTotalRemoveLatency());
 
         long totalMeasuredLatency = 0;
+        long previousTotalRemoveLatency = 0;
         for (int i = 1; i <= 50; ++i) {
             long start = System.nanoTime();
             map.remove(i);
             totalMeasuredLatency += System.nanoTime() - start;
 
             assertEquals(i, keyStats().getRemoveCount());
-            assertTrue(keyStats().getTotalRemoveLatency() > 0);
+            assertTrue(keyStats().getTotalRemoveLatency() > previousTotalRemoveLatency);
             assertTrue(keyStats().getTotalRemoveLatency() <= totalMeasuredLatency);
+
+            previousTotalRemoveLatency = keyStats().getTotalRemoveLatency();
         }
 
         assertEquals(100, keyStats().getInsertCount());
         assertEquals(0, keyStats().getUpdateCount());
+    }
+
+    @Test
+    public void testInsertUpdateRemoveAreNotEffectEachOther() {
+        map.addIndex("__key", false);
+        assertEquals(0, keyStats().getInsertCount());
+        assertEquals(0, keyStats().getUpdateCount());
+        assertEquals(0, keyStats().getRemoveCount());
+
+        long originalTotalInsertLatency = keyStats().getTotalInsertLatency();
+        long originalTotalUpdateLatency = keyStats().getTotalUpdateLatency();
+        long originalTotalRemoveLatency = keyStats().getTotalRemoveLatency();
+
+        for (int i = 1; i <= 100; ++i) {
+            map.put(i, i);
+        }
+
+        assertTrue(keyStats().getTotalInsertLatency() > originalTotalInsertLatency);
+        assertEquals(originalTotalUpdateLatency, keyStats().getTotalUpdateLatency());
+        assertEquals(originalTotalRemoveLatency, keyStats().getTotalRemoveLatency());
+
+        originalTotalInsertLatency = keyStats().getTotalInsertLatency();
+        originalTotalUpdateLatency = keyStats().getTotalUpdateLatency();
+        originalTotalRemoveLatency = keyStats().getTotalRemoveLatency();
+
+        for (int i = 1; i <= 50; ++i) {
+            map.put(i, i * 2);
+        }
+
+        assertEquals(originalTotalInsertLatency, keyStats().getTotalInsertLatency());
+        assertTrue(keyStats().getTotalUpdateLatency() > originalTotalUpdateLatency);
+        assertEquals(originalTotalRemoveLatency, keyStats().getTotalRemoveLatency());
+
+        originalTotalInsertLatency = keyStats().getTotalInsertLatency();
+        originalTotalUpdateLatency = keyStats().getTotalUpdateLatency();
+        originalTotalRemoveLatency = keyStats().getTotalRemoveLatency();
+
+        for (int i = 1; i <= 20; ++i) {
+            map.remove(i);
+        }
+
+        assertEquals(originalTotalInsertLatency, keyStats().getTotalInsertLatency());
+        assertEquals(originalTotalUpdateLatency, keyStats().getTotalUpdateLatency());
+        assertTrue(keyStats().getTotalRemoveLatency() > originalTotalRemoveLatency);
+
+        assertEquals(100, keyStats().getInsertCount());
+        assertEquals(50, keyStats().getUpdateCount());
+        assertEquals(20, keyStats().getRemoveCount());
+
     }
 
     protected LocalMapStats stats() {
