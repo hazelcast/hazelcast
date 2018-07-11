@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
@@ -501,6 +502,13 @@ public final class HazelcastWriters {
         public Object process(Entry<K, V> entry) {
             V oldValue = entry.getValue();
             T item = keysToUpdate.get(entry.getKey());
+            if (item == null && !keysToUpdate.containsKey(entry.getKey())) {
+                // Implementing equals/hashCode is not required for IMap keys since serialized version is used
+                // instead. After serializing/deserializing the keys they will have different identity. And since they
+                // don't implement the methods, they key can't be found in the map.
+                throw new JetException("The new item not found in the map - is equals/hashCode " +
+                        "correctly implemented for the key? Key type: " + entry.getKey().getClass().getName());
+            }
             V newValue = updateFn.apply(oldValue, item);
             entry.setValue(newValue);
             return null;
