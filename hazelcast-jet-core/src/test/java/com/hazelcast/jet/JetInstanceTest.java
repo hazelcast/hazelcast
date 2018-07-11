@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -55,7 +56,7 @@ public class JetInstanceTest extends JetTestSupport {
     }
 
     @Test
-    public void when_twoJetAndTwoHzInstancesCreated_then_twoClusterSOfTwoShouldBeFormed() {
+    public void when_twoJetAndTwoHzInstancesCreated_then_twoClustersOfTwoShouldBeFormed() {
         JetInstance jetInstance1 = Jet.newJetInstance();
         JetInstance jetInstance2 = Jet.newJetInstance();
 
@@ -64,6 +65,16 @@ public class JetInstanceTest extends JetTestSupport {
 
         assertEquals(2, jetInstance1.getCluster().getMembers().size());
         assertEquals(2, hazelcastInstance1.getCluster().getMembers().size());
+    }
+
+    @Test
+    public void when_jetClientCreated_then_connectsToJetCluster() {
+        JetInstance jetInstance1 = Jet.newJetInstance();
+        JetInstance jetInstance2 = Jet.newJetInstance();
+
+        JetInstance client = Jet.newJetClient(new JetClientConfig());
+
+        assertEquals(2, client.getHazelcastInstance().getCluster().getMembers().size());
     }
 
     @Test

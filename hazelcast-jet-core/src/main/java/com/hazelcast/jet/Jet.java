@@ -29,6 +29,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
@@ -84,6 +85,9 @@ public final class Jet {
 
     /**
      * Creates a Jet client with the given Hazelcast client configuration.
+     *
+     * {@link JetClientConfig} may be used to create a configuration with the
+     * default group name and password for Jet.
      */
     public static JetInstance newJetClient(ClientConfig config) {
         return getJetClientInstance(HazelcastClient.newHazelcastClient(config));
