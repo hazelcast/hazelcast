@@ -59,6 +59,7 @@ public class TxnRemoveOperation extends AbstractKeyBasedMultiMapOperation implem
             response = false;
             return;
         }
+
         response = true;
         container.update();
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
@@ -66,6 +67,7 @@ public class TxnRemoveOperation extends AbstractKeyBasedMultiMapOperation implem
         while (iter.hasNext()) {
             if (iter.next().getRecordId() == recordId) {
                 iter.remove();
+                container.decrementSize(1);
                 break;
             }
         }

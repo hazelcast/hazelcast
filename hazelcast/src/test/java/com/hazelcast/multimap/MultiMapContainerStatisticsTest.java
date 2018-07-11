@@ -33,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static java.lang.String.format;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -77,11 +78,11 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
         assertEqualsStringFormat("Expected the lastUpdateTime to be %d, but was %d", 0L, mapContainer.getLastUpdateTime());
 
         assertNotEqualsStringFormat("Expected the creationTime on backup not to be %d, but was %d",
-                0L, mapBackupContainer.getCreationTime());
+            0L, mapBackupContainer.getCreationTime());
         assertEqualsStringFormat("Expected the lastAccessTime on backup to be %d, but was %d",
-                0L, mapBackupContainer.getLastAccessTime());
+            0L, mapBackupContainer.getLastAccessTime());
         assertEqualsStringFormat("Expected the lastUpdateTime on backup to be %d, but was %d",
-                0L, mapBackupContainer.getLastUpdateTime());
+            0L, mapBackupContainer.getLastUpdateTime());
 
         // a get operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
@@ -148,11 +149,45 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
         assertSameLastUpdateTimeOnBackup();
     }
 
+    @Test
+    public void testMultimapContainerSize() {
+        //Test put operation
+        assertSize(0);
+        multiMap.put(key, "value1");
+        sleepMillis(10);
+        assertSize(1);
+
+        multiMap.put(key, "value2");
+        multiMap.put(key, "value3");
+        sleepMillis(10);
+        assertSize(3);
+
+        //Test remove operation
+        multiMap.remove(key, "value1");
+        sleepMillis(10);
+        assertSize(2);
+
+        multiMap.remove(key, "invalid_value");
+        sleepMillis(10);
+        assertSize(2);
+
+        //Test clear operation
+        multiMap.lock(key);
+        multiMap.clear();
+        sleepMillis(10);
+        assertSize(2);
+
+        multiMap.unlock(key);
+        multiMap.clear();
+        sleepMillis(10);
+        assertSize(0);
+    }
+
     private void assertNewLastAccessTime() {
         long lastAccessTime = mapContainer.getLastAccessTime();
         assertTrue(format("Expected the lastAccessTime %d to be higher than the previousAccessTime %d (diff: %d ms)",
-                lastAccessTime, previousAccessTime, lastAccessTime - previousAccessTime),
-                lastAccessTime > previousAccessTime);
+            lastAccessTime, previousAccessTime, lastAccessTime - previousAccessTime),
+            lastAccessTime > previousAccessTime);
         previousAccessTime = lastAccessTime;
     }
 
@@ -165,23 +200,33 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
     private void assertNewLastUpdateTime() {
         long lastUpdateTime = mapContainer.getLastUpdateTime();
         assertTrue(format("Expected the lastUpdateTime %d to be higher than the previousAccessTime %d (diff: %d ms)",
-                lastUpdateTime, previousUpdateTime, lastUpdateTime - previousUpdateTime),
-                lastUpdateTime > previousUpdateTime);
+            lastUpdateTime, previousUpdateTime, lastUpdateTime - previousUpdateTime),
+            lastUpdateTime > previousUpdateTime);
         previousUpdateTime = lastUpdateTime;
     }
 
     private void assertSameLastAccessTimeOnBackup() {
         long lastAccessTime = mapBackupContainer.getLastAccessTime();
         assertEqualsStringFormat("Expected the lastAccessTime on backup to be %d, but was %d",
-                previousAccessTimeOnBackup, lastAccessTime);
+            previousAccessTimeOnBackup, lastAccessTime);
         previousAccessTimeOnBackup = lastAccessTime;
     }
 
     private void assertSameLastUpdateTimeOnBackup() {
         long lastUpdateTime = mapBackupContainer.getLastUpdateTime();
         assertEqualsStringFormat("Expected the lastUpdateTime on backup to be %d, but was %d",
-                previousUpdateTimeOnBackup, lastUpdateTime);
+            previousUpdateTimeOnBackup, lastUpdateTime);
         previousUpdateTimeOnBackup = lastUpdateTime;
+    }
+
+    private void assertSize(int expectedSize) {
+        int actualSize = mapContainer.size();
+        assertEquals(format("Expected the size to be %d, but it is %d", expectedSize, actualSize),
+            expectedSize, actualSize);
+
+        actualSize = mapBackupContainer.size();
+        assertEquals(format("Expected the backup size to be %d, but it is %d", expectedSize, actualSize),
+            expectedSize, actualSize);
     }
 
     private static MultiMapContainer getMultiMapContainer(HazelcastInstance hz, String key) {

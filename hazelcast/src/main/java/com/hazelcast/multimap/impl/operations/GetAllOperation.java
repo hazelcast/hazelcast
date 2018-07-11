@@ -46,7 +46,7 @@ public class GetAllOperation extends AbstractKeyBasedMultiMapOperation implement
         MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         Collection<MultiMapRecord> coll = null;
         if (multiMapValue != null) {
-            multiMapValue.incrementHit();
+            container.incrementHit(multiMapValue);
             coll = multiMapValue.getCollection(executedLocally());
         }
         response = new MultiMapResponse(coll, getValueCollectionType(container));

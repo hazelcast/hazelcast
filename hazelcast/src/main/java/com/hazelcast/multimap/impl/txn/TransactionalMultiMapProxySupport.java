@@ -47,8 +47,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class TransactionalMultiMapProxySupport<K, V>
-        extends TransactionalDistributedObject<MultiMapService>
-        implements TransactionalMultiMap<K, V> {
+    extends TransactionalDistributedObject<MultiMapService>
+    implements TransactionalMultiMap<K, V> {
 
     private static final double TIMEOUT_EXTEND_MULTIPLIER = 1.5;
 
@@ -84,7 +84,7 @@ public abstract class TransactionalMultiMapProxySupport<K, V>
 
         try {
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(MultiMapService.SERVICE_NAME,
-                    new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE));
+                new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE));
             int size = 0;
             for (Object obj : results.values()) {
                 if (obj == null) {
@@ -111,7 +111,7 @@ public abstract class TransactionalMultiMapProxySupport<K, V>
         }
     }
 
-    boolean putInternal(Data key, Data value) {
+    boolean  putInternal(Data key, Data value) {
         checkObjectNotNull(key);
         checkObjectNotNull(value);
 
@@ -219,7 +219,7 @@ public abstract class TransactionalMultiMapProxySupport<K, V>
             try {
                 int partitionId = partitionService.getPartitionId(key);
                 Future<MultiMapResponse> future = operationService
-                        .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+                    .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
                 MultiMapResponse response = future.get();
                 coll = response.getRecordCollection(getNodeEngine());
             } catch (Throwable t) {
@@ -265,7 +265,7 @@ public abstract class TransactionalMultiMapProxySupport<K, V>
         try {
             int partitionId = partitionService.getPartitionId(key);
             Future<MultiMapResponse> future = operationService
-                    .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+                .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
             return future.get();
         } catch (Throwable t) {
             throw rethrow(t);

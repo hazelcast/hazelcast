@@ -62,7 +62,10 @@ public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implement
         container.update();
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
-        coll.add(record);
+        boolean added = coll.add(record);
+        if (added) {
+            container.incrementSize(1);
+        }
     }
 
     @Override

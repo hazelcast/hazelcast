@@ -66,7 +66,9 @@ public class PutOperation extends AbstractBackupAwareMultiMapOperation implement
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            getOrCreateContainer().update();
+            MultiMapContainer container = getOrCreateContainer();
+            container.update();
+            container.incrementSize(1);
             publishEvent(EntryEventType.ADDED, dataKey, value, null);
         }
     }

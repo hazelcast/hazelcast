@@ -64,6 +64,14 @@ public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation imp
     }
 
     @Override
+    public void afterRun() throws Exception {
+        super.afterRun();
+        if (Boolean.TRUE.equals(response)) {
+            getOrCreateContainerWithoutAccess().decrementSize(1);
+        }
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(recordId);

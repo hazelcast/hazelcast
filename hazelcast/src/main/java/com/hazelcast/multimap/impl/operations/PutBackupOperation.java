@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -61,6 +60,14 @@ public class PutBackupOperation extends AbstractKeyBasedMultiMapOperation implem
             } catch (IndexOutOfBoundsException e) {
                 response = e;
             }
+        }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        super.afterRun();
+        if (Boolean.TRUE.equals(response)) {
+            getOrCreateContainerWithoutAccess().incrementSize(1);
         }
     }
 

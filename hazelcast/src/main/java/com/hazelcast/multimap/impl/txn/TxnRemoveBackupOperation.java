@@ -58,6 +58,7 @@ public class TxnRemoveBackupOperation extends AbstractKeyBasedMultiMapOperation 
         while (iterator.hasNext()) {
             if (iterator.next().getRecordId() == recordId) {
                 iterator.remove();
+                container.decrementSize(1);
                 break;
             }
         }

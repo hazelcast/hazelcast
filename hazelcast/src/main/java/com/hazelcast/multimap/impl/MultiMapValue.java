@@ -51,7 +51,7 @@ public class MultiMapValue {
         throw new IllegalArgumentException("No Matching CollectionProxyType!");
     }
 
-    public void incrementHit() {
+    void incrementHit() {
         hits++;
     }
 
@@ -70,5 +70,9 @@ public class MultiMapValue {
             }
         }
         return false;
+    }
+
+    public int size() {
+        return collection.size();
     }
 }

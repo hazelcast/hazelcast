@@ -62,9 +62,12 @@ public class MergeBackupOperation extends AbstractMultiMapOperation implements B
             } else {
                 MultiMapValue containerValue = container.getOrCreateMultiMapValue(key);
                 Collection<MultiMapRecord> collection = containerValue.getCollection(false);
+                container.decrementSize(collection.size());
                 collection.clear();
                 if (!collection.addAll(value)) {
                     response = false;
+                } else {
+                    container.incrementSize(value.size());
                 }
             }
         }

@@ -91,6 +91,7 @@ public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation imp
         MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
         if (removed != null) {
+            getOrCreateContainer().decrementSize(removed.size());
             for (MultiMapRecord record : removed) {
                 publishEvent(EntryEventType.REMOVED, dataKey, null, record.getObject());
             }

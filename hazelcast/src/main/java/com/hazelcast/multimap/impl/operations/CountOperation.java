@@ -42,7 +42,7 @@ public class CountOperation extends AbstractKeyBasedMultiMapOperation implements
         MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
-        response = multiMapValue == null ? 0 : multiMapValue.getCollection(false).size();
+        response = multiMapValue == null ? 0 : multiMapValue.size();
     }
 
     @Override

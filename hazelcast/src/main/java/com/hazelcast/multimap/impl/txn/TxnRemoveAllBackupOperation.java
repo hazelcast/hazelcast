@@ -53,7 +53,9 @@ public class TxnRemoveAllBackupOperation extends AbstractKeyBasedMultiMapOperati
                 return;
             }
         }
+
         response = true;
+        int numOfRecsRemoved = 0;
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         for (Long recordId : recordIds) {
             Iterator<MultiMapRecord> iterator = coll.iterator();
@@ -61,13 +63,18 @@ public class TxnRemoveAllBackupOperation extends AbstractKeyBasedMultiMapOperati
                 MultiMapRecord record = iterator.next();
                 if (record.getRecordId() == recordId) {
                     iterator.remove();
+                    ++numOfRecsRemoved;
                     break;
                 }
             }
         }
+        if (numOfRecsRemoved > 0) {
+            container.decrementSize(numOfRecsRemoved);
+        }
         if (coll.isEmpty()) {
             container.delete(dataKey);
         }
+
     }
 
     @Override

@@ -72,7 +72,9 @@ public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implem
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            getOrCreateContainer().update();
+            MultiMapContainer container = getOrCreateContainer();
+            container.update();
+            container.decrementSize(1);
             publishEvent(EntryEventType.REMOVED, dataKey, null, value);
         }
     }
