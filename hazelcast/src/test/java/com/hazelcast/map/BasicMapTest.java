@@ -36,6 +36,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Preconditions;
 import org.junit.Before;
@@ -1215,13 +1216,16 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testExtendTTLOfAKeyBeforeItExpires() {
         final IMap<String, String> map = getInstance().getMap("testSetTTLExtend");
-        map.put("key", "value", 1, TimeUnit.SECONDS);
+        map.put("key", "value", 10, TimeUnit.SECONDS);
+
+        sleepAtLeastMillis(SECONDS.toMillis(1));
         //Make the entry eternal
         map.setTTL("key", 0, TimeUnit.DAYS);
 
-        sleepAtLeastMillis(1200);
+        sleepAtLeastMillis(SECONDS.toMillis(15));
 
         assertEquals("value", map.get("key"));
     }
