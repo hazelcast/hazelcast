@@ -32,6 +32,11 @@ public class KubernetesClientTest {
     private static final String SAMPLE_ADDRESS_1 = "192.168.0.25";
     private static final String SAMPLE_ADDRESS_2 = "172.17.0.5";
     private static final String SAMPLE_NOT_READY_ADDRESS = "172.17.0.6";
+    private static final String SAMPLE_PORT_1 = "5701";
+    private static final String SAMPLE_PORT_2 = "5702";
+    private static final String SAMPLE_IP_PORT_1 = ipPort(SAMPLE_ADDRESS_1, SAMPLE_PORT_1);
+    private static final String SAMPLE_IP_PORT_2 = ipPort(SAMPLE_ADDRESS_2, SAMPLE_PORT_2);
+    private static final String SAMPLE_NOT_READY_IP = ipPort(SAMPLE_NOT_READY_ADDRESS, null);
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(KUBERNETES_MASTER_PORT);
@@ -49,8 +54,8 @@ public class KubernetesClientTest {
         Endpoints result = kubernetesClient.endpoints(NAMESPACE);
 
         // then
-        assertThat(extractIps(result.getAddresses()), containsInAnyOrder(SAMPLE_ADDRESS_1, SAMPLE_ADDRESS_2));
-        assertThat(extractIps(result.getNotReadyAddresses()), containsInAnyOrder(SAMPLE_NOT_READY_ADDRESS));
+        assertThat(extractIpPort(result.getAddresses()), containsInAnyOrder(SAMPLE_IP_PORT_1, SAMPLE_IP_PORT_2));
+        assertThat(extractIpPort(result.getNotReadyAddresses()), containsInAnyOrder(SAMPLE_NOT_READY_IP));
     }
 
     @Test
@@ -67,8 +72,8 @@ public class KubernetesClientTest {
         Endpoints result = kubernetesClient.endpointsByLabel(NAMESPACE, serviceLabel, serviceLabelValue);
 
         // then
-        assertThat(extractIps(result.getAddresses()), containsInAnyOrder(SAMPLE_ADDRESS_1, SAMPLE_ADDRESS_2));
-        assertThat(extractIps(result.getNotReadyAddresses()), containsInAnyOrder(SAMPLE_NOT_READY_ADDRESS));
+        assertThat(extractIpPort(result.getAddresses()), containsInAnyOrder(SAMPLE_IP_PORT_1, SAMPLE_IP_PORT_2));
+        assertThat(extractIpPort(result.getNotReadyAddresses()), containsInAnyOrder(SAMPLE_NOT_READY_IP));
 
     }
 
@@ -84,16 +89,22 @@ public class KubernetesClientTest {
         Endpoints result = kubernetesClient.endpointsByName(NAMESPACE, serviceName);
 
         // then
-        assertThat(extractIps(result.getAddresses()), containsInAnyOrder(SAMPLE_ADDRESS_1, SAMPLE_ADDRESS_2));
+        assertThat(extractIpPort(result.getAddresses()), containsInAnyOrder(SAMPLE_IP_PORT_1, SAMPLE_IP_PORT_2));
         assertTrue(result.getNotReadyAddresses().isEmpty());
     }
 
-    private static List<String> extractIps(List<Address> addresses) {
+    private static List<String> extractIpPort(List<Address> addresses) {
         List<String> result = new ArrayList<String>();
         for (Address address : addresses) {
-            result.add(address.getIp());
+            String ip = address.getIp();
+            String port = String.valueOf(address.getAdditionalProperties().get("hazelcast-service-port"));
+            result.add(ipPort(ip, port));
         }
         return result;
+    }
+
+    private static String ipPort(String ip, String port) {
+        return String.format("%s:%s", ip, port);
     }
 
     @Test(expected = KubernetesClientException.class)
@@ -129,12 +140,12 @@ public class KubernetesClientTest {
                         + "        \"selfLink\": \"/api/v1/namespaces/default/endpoints/kubernetes\",\n"
                         + "        \"uid\": \"01c5aaa4-8411-11e8-abd2-00155d395157\",\n" + "        \"resourceVersion\": \"38\",\n"
                         + "        \"creationTimestamp\": \"2018-07-10T07:15:21Z\"\n" + "      },\n" + "      \"subsets\": [\n"
-                        + "        {\n" + "          \"addresses\": [\n" + "            {\n" + "              \"ip\": \"%s\"\n"
-                        + "            }\n" + "          ],\n" + "          \"ports\": [\n" + "            {\n"
-                        + "              \"name\": \"https\",\n" + "              \"port\": 8443,\n"
-                        + "              \"protocol\": \"TCP\"\n" + "            }\n" + "          ]\n" + "        }\n" + "      ]\n"
-                        + "    },\n" + "    {\n" + "      \"metadata\": {\n" + "        \"name\": \"my-hazelcast\",\n"
-                        + "        \"namespace\": \"default\",\n"
+                        + "        {\n" + "          \"addresses\": [\n" + "            {\n" + "              \"ip\": \"%s\",\n"
+                        + "              \"hazelcast-service-port\" :\"%s\"\n" + "            }\n" + "          ],\n"
+                        + "          \"ports\": [\n" + "            {\n" + "              \"name\": \"https\",\n"
+                        + "              \"port\": 8443,\n" + "              \"protocol\": \"TCP\"\n" + "            }\n"
+                        + "          ]\n" + "        }\n" + "      ]\n" + "    },\n" + "    {\n" + "      \"metadata\": {\n"
+                        + "        \"name\": \"my-hazelcast\",\n" + "        \"namespace\": \"default\",\n"
                         + "        \"selfLink\": \"/api/v1/namespaces/default/endpoints/my-hazelcast\",\n"
                         + "        \"uid\": \"80f7f03d-8425-11e8-abd2-00155d395157\",\n" + "        \"resourceVersion\": \"8788\",\n"
                         + "        \"creationTimestamp\": \"2018-07-10T09:42:04Z\",\n" + "        \"labels\": {\n"
@@ -142,8 +153,9 @@ public class KubernetesClientTest {
                         + "          \"heritage\": \"Tiller\",\n" + "          \"release\": \"my-hazelcast\"\n" + "        }\n"
                         + "      },\n" + "      \"subsets\": [\n" + "        {\n" + "          \"addresses\": [\n" + "            {\n"
                         + "              \"ip\": \"%s\",\n" + "              \"nodeName\": \"minikube\",\n"
-                        + "              \"targetRef\": {\n" + "                \"kind\": \"Pod\",\n"
-                        + "                \"namespace\": \"default\",\n" + "                \"name\": \"my-hazelcast-0\",\n"
+                        + "              \"hazelcast-service-port\" : %s,\n" + "              \"targetRef\": {\n"
+                        + "                \"kind\": \"Pod\",\n" + "                \"namespace\": \"default\",\n"
+                        + "                \"name\": \"my-hazelcast-0\",\n"
                         + "                \"uid\": \"80f20bcb-8425-11e8-abd2-00155d395157\",\n"
                         + "                \"resourceVersion\": \"8771\"\n" + "              }\n" + "            }\n" + "          ],\n"
                         + "          \"notReadyAddresses\": [\n" + "            {\n" + "              \"ip\": \"%s\",\n"
@@ -154,8 +166,8 @@ public class KubernetesClientTest {
                         + "                \"resourceVersion\": \"8787\"\n" + "              }\n" + "            }\n" + "          ],\n"
                         + "          \"ports\": [\n" + "            {\n" + "              \"name\": \"hzport\",\n"
                         + "              \"port\": 5701,\n" + "              \"protocol\": \"TCP\"\n" + "            }\n"
-                        + "          ]\n" + "        }\n" + "      ]\n" + "    }\n" + "  ]\n" + "}", SAMPLE_ADDRESS_1, SAMPLE_ADDRESS_2,
-                SAMPLE_NOT_READY_ADDRESS);
+                        + "          ]\n" + "        }\n" + "      ]\n" + "    }\n" + "  ]\n" + "}", SAMPLE_ADDRESS_1, SAMPLE_PORT_1,
+                SAMPLE_ADDRESS_2, SAMPLE_PORT_2, SAMPLE_NOT_READY_ADDRESS);
     }
 
     /**
@@ -170,18 +182,20 @@ public class KubernetesClientTest {
                         + "      \"app\": \"hazelcast\",\n" + "      \"chart\": \"hazelcast-1.0.0\",\n"
                         + "      \"heritage\": \"Tiller\",\n" + "      \"release\": \"my-hazelcast\"\n" + "    }\n" + "  },\n"
                         + "  \"subsets\": [\n" + "    {\n" + "      \"addresses\": [\n" + "        {\n" + "          \"ip\": \"%s\",\n"
-                        + "          \"nodeName\": \"minikube\",\n" + "          \"targetRef\": {\n" + "            \"kind\": \"Pod\",\n"
+                        + "          \"nodeName\": \"minikube\",\n" + "          \"hazelcast-service-port\" : %s,\n"
+                        + "          \"targetRef\": {\n" + "            \"kind\": \"Pod\",\n"
                         + "            \"namespace\": \"default\",\n" + "            \"name\": \"my-hazelcast-0\",\n"
                         + "            \"uid\": \"def2f426-8443-11e8-abd2-00155d395157\",\n"
                         + "            \"resourceVersion\": \"18757\"\n" + "          }\n" + "        },\n" + "        {\n"
-                        + "          \"ip\": \"%s\",\n" + "          \"nodeName\": \"minikube\",\n" + "          \"targetRef\": {\n"
+                        + "          \"ip\": \"%s\",\n" + "          \"nodeName\": \"minikube\",\n"
+                        + "          \"hazelcast-service-port\" : %s,\n" + "          \"targetRef\": {\n"
                         + "            \"kind\": \"Pod\",\n" + "            \"namespace\": \"default\",\n"
                         + "            \"name\": \"my-hazelcast-1\",\n"
                         + "            \"uid\": \"f3b96106-8443-11e8-abd2-00155d395157\",\n"
                         + "            \"resourceVersion\": \"18815\"\n" + "          }\n" + "        }\n" + "      ],\n"
                         + "      \"ports\": [\n" + "        {\n" + "          \"name\": \"hzport\",\n" + "          \"port\": 5701,\n"
                         + "          \"protocol\": \"TCP\"\n" + "        }\n" + "      ]\n" + "    }\n" + "  ]\n" + "}", SAMPLE_ADDRESS_1,
-                SAMPLE_ADDRESS_2);
+                SAMPLE_PORT_1, SAMPLE_ADDRESS_2, SAMPLE_PORT_2);
     }
 
     private static String forbiddenBody() {

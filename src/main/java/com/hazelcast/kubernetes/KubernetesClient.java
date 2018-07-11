@@ -13,8 +13,14 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  * Responsible for connecting to the Kubernetes API.
@@ -76,7 +82,11 @@ class KubernetesClient {
         }
 
         JsonObject json = callGet(urlString);
+        return parseEndpointsList(json);
 
+    }
+
+    private static Endpoints parseEndpointsList(JsonObject json) {
         List<Address> addresses = new ArrayList<Address>();
         List<Address> notReadyAddresses = new ArrayList<Address>();
         for (JsonValue object : toJsonArray(json.get("items"))) {
@@ -86,7 +96,6 @@ class KubernetesClient {
         }
 
         return new Endpoints(addresses, notReadyAddresses);
-
     }
 
     private JsonObject callGet(String urlString) {
@@ -127,14 +136,36 @@ class KubernetesClient {
         for (JsonValue subset : toJsonArray(endpointsJson.asObject().get("subsets"))) {
             for (JsonValue address : toJsonArray(subset.asObject().get("addresses"))) {
                 String ip = address.asObject().get("ip").asString();
-                addresses.add(new Address(ip));
+                Map<String, Object> additionalProperties = extractAdditionalProperties(address.asObject());
+                addresses.add(new Address(ip, additionalProperties));
             }
             for (JsonValue notReadyAddress : toJsonArray(subset.asObject().get("notReadyAddresses"))) {
                 String ip = notReadyAddress.asObject().get("ip").asString();
-                notReadyAddresses.add(new Address(ip));
+                notReadyAddresses.add(new Address(ip, extractAdditionalProperties(notReadyAddress.asObject())));
             }
         }
         return new Endpoints(addresses, notReadyAddresses);
+    }
+
+    private static Map<String, Object> extractAdditionalProperties(JsonObject jsonObject) {
+        Set<String> knownFieldNames = new HashSet<String>(Arrays.asList("ip", "nodeName", "targetRef", "hostname"));
+        Map<String, Object> result = new HashMap<String, Object>();
+        Iterator<JsonObject.Member> iter = jsonObject.iterator();
+        while (iter.hasNext()) {
+            JsonObject.Member member = iter.next();
+            if (!knownFieldNames.contains(member.getName())) {
+                result.put(member.getName(), toString(member.getValue()));
+            }
+        }
+        return result;
+    }
+
+    private static String toString(JsonValue jsonValue) {
+        if (jsonValue.isString()) {
+            return jsonValue.asString();
+        } else {
+            return jsonValue.toString();
+        }
     }
 
     private static JsonArray toJsonArray(JsonValue jsonValue) {
@@ -165,13 +196,19 @@ class KubernetesClient {
 
     static class Address {
         private final String ip;
+        private final Map<String, Object> additionalProperties;
 
-        Address(String ip) {
+        Address(String ip, Map<String, Object> additionalProperties) {
             this.ip = ip;
+            this.additionalProperties = additionalProperties;
         }
 
         public String getIp() {
             return ip;
+        }
+
+        public Map<String, Object> getAdditionalProperties() {
+            return additionalProperties;
         }
     }
 }
