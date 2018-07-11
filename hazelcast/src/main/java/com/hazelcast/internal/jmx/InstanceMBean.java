@@ -43,6 +43,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  * Management bean for {@link com.hazelcast.core.HazelcastInstance}
  */
 @ManagedDescription("HazelcastInstance")
+@SuppressWarnings("checkstyle:methodcount")
 public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
     private static final int INITIAL_CAPACITY = 3;
