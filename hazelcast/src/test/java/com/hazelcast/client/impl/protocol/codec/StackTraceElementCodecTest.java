@@ -23,9 +23,10 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.internal.ComparisonCriteria;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -60,7 +61,8 @@ public class StackTraceElementCodecTest extends HazelcastTestSupport {
             stackTrace2[i] = StackTraceElementCodec.decode(clientMessage2);
         }
 
-        assertArrayEquals(stackTrace, stackTrace2);
+        // Use a custom array elements equality comparison due to Java 9 changes in StackTraceElement class
+        new StackTraceElementComparisonCriteria().arrayEquals(null, stackTrace, stackTrace2);
     }
 
     @Test
@@ -79,5 +81,26 @@ public class StackTraceElementCodecTest extends HazelcastTestSupport {
                     stackTraceElement.getMethodName(), null, stackTraceElement.getLineNumber());
         }
         return stackTraceWithNullFileName;
+    }
+
+    /**
+     * Helper class to assert 2 StackTraceElement arrays are equals, where the equality is only based on fields available in
+     * Java 6 (and also 7, 8). The reason for using this helper class is the fact Java 9 adds several new fields to the
+     * {@link StackTraceElement} class and Hazelcast encoder/decoder works just with the ones from Java 6.
+     */
+    public static class StackTraceElementComparisonCriteria extends ComparisonCriteria {
+        @Override
+        protected void assertElementsEqual(Object expected, Object actual) {
+            if (expected instanceof StackTraceElement && actual instanceof StackTraceElement) {
+                StackTraceElement st1 = (StackTraceElement) expected;
+                StackTraceElement st2 = (StackTraceElement) actual;
+                assertEquals("ClassNames have to be equal", st1.getClassName(), st2.getClassName());
+                assertEquals("LineNumbers have to be equal", st1.getLineNumber(), st2.getLineNumber());
+                assertEquals("MethodNames have to be equal", st1.getMethodName(), st2.getMethodName());
+                assertEquals("FileNames have to be equal", st1.getFileName(), st2.getFileName());
+            } else {
+                assertEquals(expected, actual);
+            }
+        }
     }
 }
