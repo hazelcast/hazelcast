@@ -17,6 +17,7 @@
 
 package com.hazelcast.monitor;
 
+import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
 
@@ -57,11 +58,12 @@ public interface LocalWanPublisherStats extends JsonSerializable {
     int getOutboundQueueSize();
 
     /**
-     * Returns if the wan replication on this member is paused
+     * Returns the current {@link WanPublisherState} of this publisher.
      *
-     * @return true the wan replication on this member is paused
+     * @see com.hazelcast.wan.WanReplicationService#pause(String, String)
+     * @see com.hazelcast.wan.WanReplicationService#stop(String, String)
      */
-    boolean isPaused();
+    WanPublisherState getPublisherState();
 
     /**
      * Returns the counter for the successfully transfered map WAN events.

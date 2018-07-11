@@ -107,13 +107,18 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public void pause(String name, String targetGroupName) {
-        throw new UnsupportedOperationException("Pausing wan replication is not supported.");
+    public void pause(String wanReplicationName, String targetGroupName) {
+        throw new UnsupportedOperationException("Pausing WAN replication is not supported.");
     }
 
     @Override
-    public void resume(String name, String targetGroupName) {
-        throw new UnsupportedOperationException("Resuming wan replication is not supported");
+    public void stop(String wanReplicationName, String targetGroupName) {
+        throw new UnsupportedOperationException("Stopping WAN replication is not supported");
+    }
+
+    @Override
+    public void resume(String wanReplicationName, String targetGroupName) {
+        throw new UnsupportedOperationException("Resuming WAN replication is not supported");
     }
 
     @Override

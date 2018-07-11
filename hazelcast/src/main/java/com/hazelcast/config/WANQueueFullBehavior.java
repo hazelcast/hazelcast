@@ -56,9 +56,9 @@ public enum WANQueueFullBehavior {
     }
 
     /**
-     * Returns the EntryEventType as an enum.
+     * Returns the WANQueueFullBehavior as an enum.
      *
-     * @return the EntryEventType as an enum
+     * @return the WANQueueFullBehavior as an enum
      */
     public static WANQueueFullBehavior getByType(final int id) {
         for (WANQueueFullBehavior behavior : values()) {
