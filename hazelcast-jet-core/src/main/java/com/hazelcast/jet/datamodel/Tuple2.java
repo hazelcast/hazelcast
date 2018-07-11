@@ -94,6 +94,6 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
 
     @Override
     public String toString() {
-        return "Tuple2{" + f0 + ", " + f1 + '}';
+        return "(" + f0 + ", " + f1 + ')';
     }
 }

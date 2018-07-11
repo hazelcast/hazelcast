@@ -89,6 +89,6 @@ public final class Tuple3<E0, E1, E2> {
 
     @Override
     public String toString() {
-        return "Tuple3{" + f0 + ", " + f1 + ", " + f2 + '}';
+        return "(" + f0 + ", " + f1 + ", " + f2 + ')';
     }
 }
