@@ -92,6 +92,7 @@ import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.net.URLEncoder.encode;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * ManagementCenterService is responsible for sending statistics data to the Management Center.
@@ -360,7 +361,7 @@ public class ManagementCenterService {
             try {
                 while (isRunning()) {
                     long startMs = Clock.currentTimeMillis();
-                    sendTimedMemberStateTask.call();
+                    //sendTimedMemberStateTask.call();
                     sendMetricsTask.call();
                     long endMs = Clock.currentTimeMillis();
                     sleepIfPossible(endMs - startMs);
@@ -382,6 +383,7 @@ public class ManagementCenterService {
     }
 
     private final class SendTimedMemberStateTask implements Callable {
+
         @Override
         public Object call() throws Exception {
             URL url = newCollectorUrl();
@@ -445,16 +447,27 @@ public class ManagementCenterService {
     }
 
     private final class SendMetricsTask implements Callable {
+        private volatile long previous = System.nanoTime();
         @Override
         public Object call() throws Exception {
-            logger.info("Sending metrics");
+            long now = System.nanoTime();
+            long duration = now-previous;
+            previous = now;
+
+            logger.info("Sending metrics, duration:"+NANOSECONDS.toMillis(duration)+" ms");
+
+            long l1 = System.nanoTime();
 
             URL url = newCollectorUrl();
             OutputStream outputStream = null;
             try {
+                long connectionStart = System.nanoTime();
                 HttpURLConnection connection = openConnection(url);
                 outputStream = connection.getOutputStream();
+                 now = System.nanoTime();
+                long connectionDuration = now-connectionStart;
 
+                long metricsStart = now;
                 DataOutputStream printWriter = new DataOutputStream(outputStream);
                 printWriter.writeLong(System.currentTimeMillis());
                 printWriter.writeUTF(getHazelcastInstance().node.address.toString());
@@ -466,6 +479,10 @@ public class ManagementCenterService {
                 metricsRegistry.render(probeRenderer);
                 outputStream.write(probeRenderer.getRenderedBlob());
                 outputStream.flush();
+                now = System.nanoTime();
+                long metricsDuration = now-metricsStart;
+
+                long sendStart = now;
 
                 boolean success = post(connection);
                 if (manCenterConnectionLost && success) {
@@ -474,6 +491,14 @@ public class ManagementCenterService {
                 } else if (!success) {
                     manCenterConnectionLost = true;
                 }
+                long sendDuration = System.nanoTime()-sendStart;
+
+                long total = System.nanoTime();
+                logger.info("Building and sending metrics in "+NANOSECONDS.toMillis(total-l1)+" ms, " +
+                        "connection build "+NANOSECONDS.toMillis(connectionDuration)+"ms," +
+                        " metricsDuration "+NANOSECONDS.toMillis(metricsDuration)+"," +
+                        " sendDuration "+NANOSECONDS.toMillis(sendDuration)+" ms");
+
             } catch (Exception e) {
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
@@ -481,6 +506,7 @@ public class ManagementCenterService {
                 }
             } finally {
                 closeResource(outputStream);
+
             }
             return null;
         }
