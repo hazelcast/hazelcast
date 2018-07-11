@@ -17,6 +17,7 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -24,6 +25,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
+import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.datamodel.Tag.tag0;
 import static com.hazelcast.jet.datamodel.Tag.tag1;
@@ -131,5 +134,29 @@ public class AggregateOperation3Test {
 
         // Then
         assertEquals(5, combinedAcc.get());
+    }
+
+    @Test
+    public void when_andThen_then_exportAndFinishChanged() {
+        // Given
+        AggregateOperation3<Long, Long, Long, Tuple3<LongAccumulator, LongAccumulator, LongAccumulator>, Long> aggrOp =
+                aggregateOperation3(
+                        summingLong((Long x) -> x),
+                        summingLong((Long x) -> x),
+                        summingLong((Long x) -> x),
+                        (r0, r1, r2) -> r2
+                );
+
+        // When
+        AggregateOperation3<Long, Long, Long, Tuple3<LongAccumulator, LongAccumulator, LongAccumulator>, Long> incAggrOp
+                = aggrOp.andThen(a -> a + 1);
+
+        // Then
+        Tuple3<LongAccumulator, LongAccumulator, LongAccumulator> acc = incAggrOp.createFn().get();
+        incAggrOp.accumulateFn2().accept(acc, 13L);
+        long exported = incAggrOp.exportFn().apply(acc);
+        long finished = incAggrOp.finishFn().apply(acc);
+        assertEquals(14L, exported);
+        assertEquals(14L, finished);
     }
 }

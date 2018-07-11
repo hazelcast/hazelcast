@@ -110,6 +110,15 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
     }
 
     @Nonnull
+    @Override
+    public <R_NEW> AggregateOperation<A, R_NEW> andThen(DistributedFunction<? super R, ? extends R_NEW> thenFn) {
+        return new AggregateOperationImpl<>(
+                createFn(), accumulateFns, combineFn(), deductFn(),
+                exportFn().andThen(thenFn), finishFn().andThen(thenFn)
+        );
+    }
+
+    @Nonnull
     @SuppressWarnings("unchecked")
     static <A> DistributedBiConsumer<? super A, ?>[] accumulateFns(DistributedBiConsumer... accFns) {
         return (DistributedBiConsumer<? super A, ?>[]) accFns;

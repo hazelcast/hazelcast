@@ -17,6 +17,9 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.datamodel.ItemsByTag;
+import com.hazelcast.jet.datamodel.Tag;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -24,6 +27,9 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
+import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperationBuilder;
+import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.datamodel.Tag.tag0;
 import static com.hazelcast.jet.datamodel.Tag.tag1;
 import static com.hazelcast.jet.datamodel.Tag.tag2;
@@ -39,10 +45,10 @@ public class AggregateOperationTest {
 
         // Given
         DistributedSupplier<LongAccumulator> createFn = LongAccumulator::new;
-        DistributedBiConsumer<LongAccumulator, Object> accFn0 = (acc, item) -> acc.addAllowingOverflow(1);
-        DistributedBiConsumer<LongAccumulator, Object> accFn1 = (acc, item) -> acc.addAllowingOverflow(10);
-        DistributedBiConsumer<LongAccumulator, LongAccumulator> combineFn = LongAccumulator::addAllowingOverflow;
-        DistributedBiConsumer<LongAccumulator, LongAccumulator> deductFn = LongAccumulator::subtractAllowingOverflow;
+        DistributedBiConsumer<LongAccumulator, Object> accFn0 = (acc, item) -> acc.add(1);
+        DistributedBiConsumer<LongAccumulator, Object> accFn1 = (acc, item) -> acc.add(10);
+        DistributedBiConsumer<LongAccumulator, LongAccumulator> combineFn = LongAccumulator::add;
+        DistributedBiConsumer<LongAccumulator, LongAccumulator> deductFn = LongAccumulator::subtract;
         DistributedFunction<LongAccumulator, Long> finishFn = LongAccumulator::get;
 
         // When
@@ -68,8 +74,8 @@ public class AggregateOperationTest {
         // Given
         AggregateOperation<LongAccumulator, Long> aggrOp = AggregateOperation
                 .withCreate(LongAccumulator::new)
-                .andAccumulate(tag0(), (acc, item) -> acc.addAllowingOverflow(1))
-                .andAccumulate(tag1(), (acc, item) -> acc.addAllowingOverflow(10))
+                .andAccumulate(tag0(), (acc, item) -> acc.add(1))
+                .andAccumulate(tag1(), (acc, item) -> acc.add(10))
                 .andExportFinish(LongAccumulator::get);
 
         // When - then exception
@@ -97,9 +103,9 @@ public class AggregateOperationTest {
         // Given
         AggregateOperation<LongAccumulator, Long> aggrOp = AggregateOperation
                 .withCreate(LongAccumulator::new)
-                .andAccumulate(tag0(), (acc, item) -> acc.addAllowingOverflow(1))
-                .andAccumulate(tag1(), (acc, item) -> acc.addAllowingOverflow(10))
-                .andCombine(LongAccumulator::addAllowingOverflow)
+                .andAccumulate(tag0(), (acc, item) -> acc.add(1))
+                .andAccumulate(tag1(), (acc, item) -> acc.add(10))
+                .andCombine(LongAccumulator::add)
                 .andExportFinish(LongAccumulator::get);
         AggregateOperation1<LongAccumulator, LongAccumulator, Long> combiningAggrOp =
                 aggrOp.withCombiningAccumulateFn(wholeItem());
@@ -118,20 +124,40 @@ public class AggregateOperationTest {
         assertEquals(5, combinedAcc.get());
     }
 
+    @Test
+    public void when_andThen_then_exportAndFinishChanged() {
+        // Given
+        CoAggregateOperationBuilder b = coAggregateOperationBuilder();
+        b.add(tag0(), summingLong((Long x) -> x));
+        Tag<Long> outTag1 = b.add(tag1(), summingLong((Long x) -> x));
+        AggregateOperation<Object[], Long> aggrOp = b.build(ibt -> ibt.get(outTag1));
+
+        // When
+        AggregateOperation<Object[], Long> incAggrOp = aggrOp.andThen(a -> a + 1);
+
+        // Then
+        Object[] acc = incAggrOp.createFn().get();
+        incAggrOp.accumulateFn(tag1()).accept(acc, 13L);
+        long exported = incAggrOp.exportFn().apply(acc);
+        long finished = incAggrOp.finishFn().apply(acc);
+        assertEquals(14L, exported);
+        assertEquals(14L, finished);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void when_duplicateTag_then_exception() {
         AggregateOperation
                 .withCreate(LongAccumulator::new)
-                .andAccumulate(tag0(), (acc, item) -> acc.addAllowingOverflow(1))
-                .andAccumulate(tag0(), (acc, item) -> acc.addAllowingOverflow(10));
+                .andAccumulate(tag0(), (acc, item) -> acc.add(1))
+                .andAccumulate(tag0(), (acc, item) -> acc.add(10));
     }
 
     @Test(expected = IllegalStateException.class)
     public void when_tagsNonContiguous_then_exception() {
         AggregateOperation
                 .withCreate(LongAccumulator::new)
-                .andAccumulate(tag0(), (acc, item) -> acc.addAllowingOverflow(1))
-                .andAccumulate(tag2(), (acc, item) -> acc.addAllowingOverflow(10))
+                .andAccumulate(tag0(), (acc, item) -> acc.add(1))
+                .andAccumulate(tag2(), (acc, item) -> acc.add(10))
                 .andExportFinish(LongAccumulator::get);
     }
 }

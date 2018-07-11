@@ -246,11 +246,11 @@ public interface AggregateOperation<A, R> extends Serializable {
 
     /**
      * Returns a copy of this aggregate operation, but with the {@code
-     * accumulate} primitive replaced with one that expects to find
-     * accumulator objects in the input and will combine them all into
-     * a single accumulator of the same type. It's used for the second
-     * aggregation stage in two-stage aggregation when accumulators from 1st
-     * stage are found on the input.
+     * accumulate} primitive replaced with one that expects to find accumulator
+     * objects in the input items and combines them all into a single
+     * accumulator of the same type. It's used in the second aggregation stage
+     * of a two-stage aggregation setup. The first stage emits its accumulators
+     * to the second stage.
      *
      * @param getAccFn the function that extracts the accumulator from the stream item
      * @param <T> the type of stream item
@@ -269,6 +269,21 @@ public interface AggregateOperation<A, R> extends Serializable {
                 exportFn(),
                 finishFn());
     }
+
+    /**
+     * Returns a copy of this aggregate operation, but with the {@code export}
+     * and {@code finish} primitives composed with the supplied {@code thenFn}.
+     * This transforms {@code exportFn} into {@code exportFn.andThen(thenFn)},
+     * same for {@code finishFn}. The main use case is to apply a
+     * transformation to the result of an existing (library-provided) aggregate
+     * operation.
+     *
+     * @param thenFn the function to apply to the results of {@code export} and {@code finish}
+     *               primitives
+     * @param <R_NEW> the type of the returned aggregate operation's result
+     */
+    @Nonnull
+    <R_NEW> AggregateOperation<A, R_NEW> andThen(DistributedFunction<? super R, ? extends R_NEW> thenFn);
 
     /**
      * Returns a builder object, initialized with the supplied {@code create}

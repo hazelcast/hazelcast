@@ -101,4 +101,14 @@ public class AggregateOperation2Impl<T0, T1, A, R>
                 createFn(), accumulateFns, combineFn(), deductFn(),
                 unsupportedExportFn(), DistributedFunction.identity());
     }
+
+    @Nonnull @Override
+    public <R_NEW> AggregateOperation2<T0, T1, A, R_NEW> andThen(
+            DistributedFunction<? super R, ? extends R_NEW> thenFn
+    ) {
+        return new AggregateOperation2Impl<>(
+                createFn(), accumulateFns, combineFn(), deductFn(),
+                exportFn().andThen(thenFn), finishFn().andThen(thenFn)
+        );
+    }
 }

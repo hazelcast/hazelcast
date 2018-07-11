@@ -17,6 +17,7 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
 
@@ -49,4 +50,8 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
     // Narrows the return type
     @Nonnull @Override
     AggregateOperation1<T, A, A> withIdentityFinish();
+
+    // Narrows the return type
+    @Nonnull @Override
+    <R_NEW> AggregateOperation1<T, A, R_NEW> andThen(DistributedFunction<? super R, ? extends R_NEW> thenFn);
 }

@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.datamodel.Tag.tag0;
 import static com.hazelcast.jet.datamodel.Tag.tag1;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
@@ -135,5 +136,22 @@ public class AggregateOperation1Test {
 
         // Then
         assertEquals(5, combinedAcc.get());
+    }
+
+    @Test
+    public void when_andThen_then_exportAndFinishChanged() {
+        // Given
+        AggregateOperation1<Long, LongAccumulator, Long> aggrOp = summingLong((Long x) -> x);
+
+        // When
+        AggregateOperation1<Long, LongAccumulator, Long> incAggrOp = aggrOp.andThen(a -> a + 1);
+
+        // Then
+        LongAccumulator acc = incAggrOp.createFn().get();
+        incAggrOp.accumulateFn().accept(acc, 13L);
+        long exported = incAggrOp.exportFn().apply(acc);
+        long finished = incAggrOp.finishFn().apply(acc);
+        assertEquals(14L, exported);
+        assertEquals(14L, finished);
     }
 }
