@@ -196,7 +196,7 @@ public final class Sinks {
      * input item.
      */
     @Nonnull
-    public static <E extends Map.Entry, V> Sink<E> mapWithMerging(
+    public static <E extends Map.Entry<?, V>, V> Sink<E> mapWithMerging(
             @Nonnull String mapName,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
@@ -209,7 +209,7 @@ public final class Sinks {
      * input item.
      */
     @Nonnull
-    public static <E extends Map.Entry, V> Sink<E> remoteMapWithMerging(
+    public static <E extends Map.Entry<?, V>, V> Sink<E> remoteMapWithMerging(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull DistributedBinaryOperator<V> mergeFn
@@ -286,7 +286,7 @@ public final class Sinks {
      * input item.
      */
     @Nonnull
-    public static <E extends Map.Entry, V> Sink<E> mapWithUpdating(
+    public static <E extends Map.Entry<?, V>, V> Sink<E> mapWithUpdating(
             @Nonnull String mapName,
             @Nonnull DistributedBiFunction<V, E, V> updateFn
     ) {
@@ -299,7 +299,7 @@ public final class Sinks {
      * input item.
      */
     @Nonnull
-    public static <E extends Map.Entry, V> Sink<E> remoteMapWithUpdating(
+    public static <E extends Map.Entry<?, V>, V> Sink<E> remoteMapWithUpdating(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull DistributedBiFunction<V, E, V> updateFn

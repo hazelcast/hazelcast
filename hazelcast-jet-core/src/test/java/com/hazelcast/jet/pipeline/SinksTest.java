@@ -209,7 +209,7 @@ public class SinksTest extends PipelineTestSupport {
          .drainTo(Sinks.mapWithMerging(srcName,
                  Entry::getKey,
                  Entry::getValue,
-                 (Integer oldValue, Integer newValue) -> oldValue + newValue));
+                 (oldValue, newValue) -> oldValue + newValue));
         execute();
 
         // Then
@@ -229,7 +229,7 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
-         .drainTo(Sinks.mapWithMerging(srcName, (Integer oldValue, Integer newValue) -> null));
+         .drainTo(Sinks.mapWithMerging(srcName, (oldValue, newValue) -> null));
         execute();
 
         // Then
@@ -245,7 +245,7 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
-         .drainTo(Sinks.mapWithMerging(srcName, (Integer oldValue, Integer newValue) -> oldValue + 1));
+         .drainTo(Sinks.mapWithMerging(srcName, (oldValue, newValue) -> oldValue + 1));
         execute();
 
         // Then
@@ -262,7 +262,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<Integer>list(srcName))
          .map(e -> entry("listSum", e))
-         .drainTo(Sinks.<Entry<String, Integer>, Integer>mapWithMerging(srcName,
+         .drainTo(Sinks.mapWithMerging(srcName,
                  (oldValue, newValue) -> oldValue + newValue));
         execute();
 
@@ -284,7 +284,7 @@ public class SinksTest extends PipelineTestSupport {
          .drainTo(Sinks.remoteMapWithMerging(srcName, clientConfig,
                  Entry::getKey,
                  Entry::getValue,
-                 (Integer oldValue, Integer newValue) -> oldValue + newValue));
+                 (oldValue, newValue) -> oldValue + newValue));
         execute();
 
         // Then
@@ -305,7 +305,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
          .drainTo(Sinks.remoteMapWithMerging(srcName, clientConfig,
-                 (Integer oldValue, Integer newValue) -> null));
+                 (oldValue, newValue) -> null));
         execute();
 
         // Then
@@ -345,7 +345,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
          .drainTo(Sinks.mapWithUpdating(srcName,
-                 (Integer value, Entry<String, Integer> item) -> null));
+                 (value, item) -> null));
         execute();
 
         // Then
@@ -363,7 +363,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, DataSerializableObject>map(srcName))
          .drainTo(Sinks.mapWithUpdating(srcName,
-                 (DataSerializableObject value, Entry<String, DataSerializableObject> item) ->
+                 (value, item) ->
                          new DataSerializableObject(value.value + item.getValue().value)));
         execute();
 
@@ -386,7 +386,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
          .drainTo(Sinks.mapWithUpdating(srcName,
-                 (Integer value, Entry<String, Integer> item) -> 2));
+                 (value, item) -> 2));
         execute();
 
         // Then
@@ -425,7 +425,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
          .drainTo(Sinks.remoteMapWithUpdating(srcName, clientConfig,
-                 (Integer value, Entry<String, Integer> item) -> null));
+                 (value, item) -> null));
         execute();
 
         // Then
@@ -443,7 +443,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, DataSerializableObject>remoteMap(srcName, clientConfig))
          .drainTo(Sinks.remoteMapWithUpdating(srcName, clientConfig,
-                 (DataSerializableObject value, Entry<String, DataSerializableObject> item) ->
+                 (value, item) ->
                          new DataSerializableObject(value.value + item.getValue().value)));
         execute();
 
