@@ -191,6 +191,7 @@ public class TimedMemberStateFactory {
         createMemState(memberState, services);
 
         createNodeState(memberState);
+        createLicenseInfo(memberState);
         createHotRestartState(memberState);
         createClusterHotRestartStatus(memberState);
         createWanSyncState(memberState);
@@ -218,6 +219,9 @@ public class TimedMemberStateFactory {
         NodeStateImpl nodeState = new NodeStateImpl(cluster.getClusterState(), node.getState(),
                 cluster.getClusterVersion(), node.getVersion());
         memberState.setNodeState(nodeState);
+    }
+
+    protected void createLicenseInfo(MemberStateImpl memberState) {
     }
 
     private void createWanSyncState(MemberStateImpl memberState) {
