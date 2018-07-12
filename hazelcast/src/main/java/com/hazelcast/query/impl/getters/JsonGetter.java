@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.getters;
 
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.core.JsonString;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -69,9 +70,24 @@ public class JsonGetter extends Getter {
                     }
                 }
             }
-            return value;
+            return convertFromJsonValue(value);
         }
         return null;
+    }
+
+    private Object convertFromJsonValue(JsonValue value) {
+        if (value == null) {
+            return null;
+        } else if (value.isNumber()) {
+            return value.asDouble();
+        } else if (value.isBoolean()) {
+            return value.asBoolean();
+        } else if (value.isNull()) {
+            return null;
+        } else if (value.isString()) {
+            return value.asString();
+        }
+        throw new HazelcastSerializationException("Unknown Json type: " + value);
     }
 
     @Override

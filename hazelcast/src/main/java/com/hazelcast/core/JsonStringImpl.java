@@ -80,4 +80,9 @@ public class JsonStringImpl implements JsonString {
     public int hashCode() {
         return asString().hashCode();
     }
+
+    @Override
+    public String toString() {
+        return original;
+    }
 }
