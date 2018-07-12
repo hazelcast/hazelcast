@@ -273,10 +273,9 @@ public interface AggregateOperation<A, R> extends Serializable {
     /**
      * Returns a copy of this aggregate operation, but with the {@code export}
      * and {@code finish} primitives composed with the supplied {@code thenFn}.
-     * This transforms {@code exportFn} into {@code exportFn.andThen(thenFn)},
-     * same for {@code finishFn}. The main use case is to apply a
-     * transformation to the result of an existing (library-provided) aggregate
-     * operation.
+     * This replaces {@code exportFn} with {@code exportFn.andThen(thenFn)},
+     * same for {@code finishFn}. The main use case is to transform the result
+     * of an existing (library-provided) aggregate operation.
      *
      * @param thenFn the function to apply to the results of {@code export} and {@code finish}
      *               primitives
