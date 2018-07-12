@@ -116,6 +116,7 @@ public class MigrationManager {
     private final MigrationPlanner migrationPlanner;
     private final boolean fragmentedMigrationEnabled;
     private final long memberHeartbeatTimeoutMillis;
+    private boolean triggerRepartitioningWhenClusterStateAllowsMigration;
 
     MigrationManager(Node node, InternalPartitionServiceImpl service, Lock partitionServiceLock) {
         this.node = node;
@@ -613,6 +614,16 @@ public class MigrationManager {
     }
 
     /**
+     * Returns {@code true} if a repartitioning action occurred (member removal or addition)
+     * while migrations are not allowed by current cluster state
+     * (such as {@link ClusterState#NO_MIGRATION}, {@link ClusterState#PASSIVE}),
+     * {@code false} otherwise.
+     */
+    boolean shouldTriggerRepartitioningWhenClusterStateAllowsMigration() {
+        return triggerRepartitioningWhenClusterStateAllowsMigration;
+    }
+
+    /**
      * Invoked on the master node. Rearranges the partition table if there is no recent activity in the cluster after
      * this task has been scheduled, schedules migrations and syncs the partition state.
      * Also schedules a {@link ProcessShutdownRequestsTask}. Acquires partition service lock.
@@ -625,6 +636,11 @@ public class MigrationManager {
             }
             partitionServiceLock.lock();
             try {
+                triggerRepartitioningWhenClusterStateAllowsMigration = !isMigrationAllowedByClusterState();
+                if (triggerRepartitioningWhenClusterStateAllowsMigration && logger.isFineEnabled()) {
+                    logger.fine("Migrations are not allowed yet, "
+                            + "repartitioning will be triggered when cluster state allows migrations.");
+                }
                 Address[][] newState = repartition();
                 if (newState == null) {
                     return;
