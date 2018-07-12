@@ -16,11 +16,14 @@
 
 package com.hazelcast.test.starter.constructor;
 
+import com.hazelcast.test.starter.HazelcastStarterConstructor;
+
 import java.lang.reflect.Constructor;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.query.impl.predicates.GreaterLessPredicate"})
 public class GreaterLessPredicateConstructor extends AbstractStarterObjectConstructor {
 
     public GreaterLessPredicateConstructor(Class<?> targetClass) {

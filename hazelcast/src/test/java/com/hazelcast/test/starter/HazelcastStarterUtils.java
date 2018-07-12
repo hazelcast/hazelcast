@@ -23,6 +23,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static java.lang.String.format;
@@ -59,11 +67,11 @@ public class HazelcastStarterUtils {
     }
 
     /**
-     * Transfers the given throwable to the class loader hosting the
+     * Transfers the given {@link Throwable} to the classloader hosting the
      * compatibility tests.
      *
-     * @param throwable the throwable to transfer
-     * @return the transferred throwable
+     * @param throwable the Throwable to transfer
+     * @return the transferred Throwable
      */
     public static Throwable transferThrowable(Throwable throwable) {
         if (throwable.getClass().getClassLoader() == HazelcastStarterUtils.class.getClassLoader()) {
@@ -106,5 +114,26 @@ public class HazelcastStarterUtils {
      */
     public static void assertInstanceOfByClassName(String className, Object object) {
         assertEquals(className, object.getClass().getName());
+    }
+
+    /**
+     * Returns a {@link Collection} object for a given collection interface.
+     *
+     * @return a new Collection object of a class that is assignable from the given type
+     * @throws UnsupportedOperationException if the given interface is not implemented
+     */
+    public static Collection<Object> newCollectionFor(Class<?> type) {
+        if (Set.class.isAssignableFrom(type)) {
+            // original set might be ordered
+            return new LinkedHashSet<Object>();
+        } else if (List.class.isAssignableFrom(type)) {
+            return new ArrayList<Object>();
+        } else if (Queue.class.isAssignableFrom(type)) {
+            return new ConcurrentLinkedQueue<Object>();
+        } else if (Collection.class.isAssignableFrom(type)) {
+            return new LinkedList<Object>();
+        } else {
+            throw new UnsupportedOperationException("Cannot locate collection type for " + type);
+        }
     }
 }

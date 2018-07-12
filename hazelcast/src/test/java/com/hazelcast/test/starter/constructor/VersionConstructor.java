@@ -16,13 +16,13 @@
 
 package com.hazelcast.test.starter.constructor;
 
+import com.hazelcast.test.starter.HazelcastStarterConstructor;
+
 import java.lang.reflect.Method;
 
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-/**
- * Constructor for {@link com.hazelcast.version.Version} class proxies
- */
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.version.Version"})
 public class VersionConstructor extends AbstractStarterObjectConstructor {
 
     public VersionConstructor(Class<?> targetClass) {
