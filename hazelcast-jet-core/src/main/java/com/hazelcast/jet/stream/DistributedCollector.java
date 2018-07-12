@@ -25,6 +25,7 @@ import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.reducers.DistributedCollectorImpl;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -81,7 +82,7 @@ public interface DistributedCollector<T, A, R> extends Collector<T, A, R>, Seria
 
     @Override
     default Set<Characteristics> characteristics() {
-        throw new UnsupportedOperationException("characteristics is not supported for DistributedCollector");
+        return Collections.emptySet();
     }
 
     /**

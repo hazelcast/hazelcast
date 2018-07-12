@@ -42,6 +42,7 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
@@ -68,6 +69,7 @@ import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
+import static com.hazelcast.jet.stream.DistributedCollectors.aggregating;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -527,6 +529,27 @@ public class AggregateOperationsTest {
         );
     }
 
+    @Test
+    public void when_aggregateOpAsCollector() {
+        collectAndVerify(IntStream.range(0, 1000));
+    }
+
+    @Test
+    public void when_aggregateOpAsParallelCollector() {
+        collectAndVerify(IntStream.range(0, 1000).parallel());
+    }
+
+    private void collectAndVerify(IntStream stream) {
+        AggregateOperation1<Integer, LongLongAccumulator, Double> averageOp = averagingLong(i -> i);
+        AggregateOperation1<Integer, MutableReference<Integer>, Integer> maxOp = maxBy(naturalOrder());
+
+        Tuple2<Double, Integer> result = stream
+                .boxed()
+                .collect(aggregating(allOf(averageOp, maxOp)));
+
+        assertEquals((Double) 499.5d, result.f0());
+        assertEquals((Integer) 999, result.f1());
+    }
 
     private static <T, A, X, R> void validateOp(
             AggregateOperation1<T, A, R> op,
