@@ -22,10 +22,14 @@ import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianEx
 import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable;
 
 /**
- * Abstract superclass for {@code ConstructorFunction}s which, given a target {@code Class}, create an {@code Object} of
- * target {@code Class} off an input {@code Object}. For example, assuming a {@code Config} instance in current classloader,
- * the appropriate {@code ConstructorFunction} would create a {@code Config} object representing the same configuration for
- * the classloader that loads Hazelcast version 3.8.
+ * Abstract superclass for {@link ConstructorFunction}s which, given a target
+ * {@link Class}, create an {@link Object} of target {@link Class} off an input
+ * {@link Object}.
+ * <p>
+ * For example, assuming a {@link com.hazelcast.config.Config} instance in the
+ * current classloader, the appropriate {@link ConstructorFunction} would
+ * create a {@link com.hazelcast.config.Config} object representing the same
+ * configuration for the classloader that loads Hazelcast version 3.8.
  */
 public abstract class AbstractStarterObjectConstructor implements ConstructorFunction<Object, Object> {
 

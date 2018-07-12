@@ -21,7 +21,6 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.constructor.ConfigConstructor;
@@ -31,11 +30,12 @@ import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertPropertiesEquals;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ConfigConstructorTest extends HazelcastTestSupport {
+public class ConfigConstructorTest {
 
     @Test
     public void testConstructor() {
@@ -56,7 +56,7 @@ public class ConfigConstructorTest extends HazelcastTestSupport {
         assertPropertiesEquals(config.getProperties(), clonedConfig.getProperties());
     }
 
-    private Properties buildPropertiesWithDefaults() {
+    private static Properties buildPropertiesWithDefaults() {
         Properties defaults = new Properties();
         defaults.setProperty("key1", "value1");
 

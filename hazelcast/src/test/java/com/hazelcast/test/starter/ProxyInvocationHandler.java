@@ -24,9 +24,9 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 
-import static com.hazelcast.test.starter.HazelcastProxyFactory.newCollectionFor;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.isDebugEnabled;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.newCollectionFor;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable;
 
@@ -40,8 +40,8 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        ClassLoader targetClassLoader = proxy.getClass().getClassLoader();
         debug("Proxy %s called. Method: %s", this, method);
+        ClassLoader targetClassLoader = proxy.getClass().getClassLoader();
         Class<?> delegateClass = delegate.getClass();
         Method methodDelegate = getMethodDelegate(method, delegateClass);
 

@@ -19,7 +19,8 @@ package com.hazelcast.test.starter.constructor;
 import java.lang.reflect.Method;
 
 /**
- * Construct enum instances using name() / valueOf() methods.
+ * Constructs enum instances using its {@link Enum#name()} and
+ * {@link Enum#valueOf(Class, String)} methods.
  */
 public class EnumConstructor extends AbstractStarterObjectConstructor {
 
