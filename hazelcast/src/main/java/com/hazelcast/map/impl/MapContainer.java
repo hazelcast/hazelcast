@@ -131,7 +131,8 @@ public class MapContainer {
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
         this.objectNamespace = MapService.getObjectNamespace(name);
         initWanReplication(nodeEngine);
-        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
+        ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
+        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), classloader);
         if (shouldUseGlobalIndex(mapConfig)) {
             this.globalIndexes = new Indexes((InternalSerializationService) serializationService,
                     mapServiceContext.getIndexProvider(mapConfig), extractors,
