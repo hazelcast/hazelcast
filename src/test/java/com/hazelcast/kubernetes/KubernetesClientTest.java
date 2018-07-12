@@ -37,6 +37,10 @@ public class KubernetesClientTest {
     private static final String SAMPLE_IP_PORT_2 = ipPort(SAMPLE_ADDRESS_2, SAMPLE_PORT_2);
     private static final String SAMPLE_NOT_READY_IP = ipPort(SAMPLE_NOT_READY_ADDRESS, null);
 
+    //    @Rule
+    //    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().httpsPort(KUBERNETES_MASTER_PORT).keystorePath(
+    //            KubernetesClient.class.getClassLoader().getResource("mycert.jks").getFile()));
+
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(KUBERNETES_MASTER_PORT);
 

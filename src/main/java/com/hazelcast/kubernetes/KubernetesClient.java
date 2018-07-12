@@ -5,6 +5,13 @@ import com.hazelcast.com.eclipsesource.json.JsonArray;
 import com.hazelcast.com.eclipsesource.json.JsonObject;
 import com.hazelcast.com.eclipsesource.json.JsonValue;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -12,6 +19,13 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,6 +42,8 @@ import java.util.Set;
  * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/">Kubernetes API</a>
  */
 class KubernetesClient {
+    private static final String CA_CERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
+
     private final String kubernetesMaster;
     private final String apiToken;
 
@@ -99,10 +115,15 @@ class KubernetesClient {
     }
 
     private JsonObject callGet(String urlString) {
+        System.out.println("############ HAHAHAHA CALL GET TTT ");
+
         HttpURLConnection connection = null;
         try {
             URL url = new URL(urlString);
             connection = (HttpURLConnection) url.openConnection();
+            if (connection instanceof HttpsURLConnection) {
+                ((HttpsURLConnection) connection).setSSLSocketFactory(buildSslSocketFactory());
+            }
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Authorization", String.format("Bearer %s", apiToken));
 
@@ -211,4 +232,55 @@ class KubernetesClient {
             return additionalProperties;
         }
     }
+
+    private static SSLSocketFactory buildSslSocketFactory() {
+        // Add support for self-signed (local) SSL certificates
+        // Based on http://developer.android.com/training/articles/security-ssl.html#UnknownCa
+        try {
+
+            // Load CAs from an InputStream
+            // (could be from a resource or ByteArrayInputStream or ...)
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            // From https://www.washington.edu/itconnect/security/ca/load-der.crt
+            InputStream is = new FileInputStream(new File("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"));
+            InputStream caInput = new BufferedInputStream(is);
+            Certificate ca;
+            try {
+                ca = cf.generateCertificate(caInput);
+                // System.out.println("ca=" + ((X509Certificate) ca).getSubjectDN());
+            } finally {
+                caInput.close();
+            }
+
+            // Create a KeyStore containing our trusted CAs
+            String keyStoreType = KeyStore.getDefaultType();
+            KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+            keyStore.load(null, null);
+            keyStore.setCertificateEntry("ca", ca);
+
+            // Create a TrustManager that trusts the CAs in our KeyStore
+            String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+            tmf.init(keyStore);
+
+            // Create an SSLContext that uses our TrustManager
+            SSLContext context = SSLContext.getInstance("TLS");
+            context.init(null, tmf.getTrustManagers(), null);
+            return context.getSocketFactory();
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
 }

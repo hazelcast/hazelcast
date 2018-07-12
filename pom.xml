@@ -189,7 +189,7 @@
               com.hazelcast.config,com.hazelcast.config.properties,
               com.hazelcast.spi.discovery,com.hazelcast.core,
               com.hazelcast.logging,com.hazelcast.nio, com.hazelcast.util,
-              org.xbill.DNS,com.hazelcast.com.eclipsesource.json
+              org.xbill.DNS,com.hazelcast.com.eclipsesource.json,javax.net.ssl,javax.security.auth.x500
             </Import-Package>
           </instructions>
         </configuration>
