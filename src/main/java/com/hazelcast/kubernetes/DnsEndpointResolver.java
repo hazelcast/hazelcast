@@ -66,14 +66,14 @@ final class DnsEndpointResolver
                 // Example:
                 // nslookup u219692-hazelcast.u219692-hazelcast.svc.cluster.local 172.30.0.1
                 //      Server:         172.30.0.1
-                //      Address:        172.30.0.1#53
+                //      EntrypointAddress:        172.30.0.1#53
                 //
                 //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
-                //      Address: 10.1.2.8
+                //      EntrypointAddress: 10.1.2.8
                 //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
-                //      Address: 10.1.5.28
+                //      EntrypointAddress: 10.1.5.28
                 //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
-                //      Address: 10.1.9.33
+                //      EntrypointAddress: 10.1.9.33
                 SRVRecord srv = (SRVRecord) record;
                 InetAddress[] inetAddress = getAllAddresses(srv);
                 int port = (this.port > 0) ? this.port : getHazelcastPort(srv.getPort());

@@ -5,7 +5,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,11 +30,12 @@ public class KubernetesDiscoveryStrategyFactoryTest {
     DiscoveryNode discoveryNode;
 
     @Mock
-    private DefaultKubernetesClient client;
+    private KubernetesClient client;
 
     @Before
-    public void setup() throws Exception {
-        PowerMockito.whenNew(DefaultKubernetesClient.class).withAnyArguments().thenReturn(client);
+    public void setup()
+            throws Exception {
+        PowerMockito.whenNew(KubernetesClient.class).withAnyArguments().thenReturn(client);
     }
 
     @Test
@@ -59,8 +59,8 @@ public class KubernetesDiscoveryStrategyFactoryTest {
         properties.put(KubernetesProperties.KUBERNETES_API_TOKEN.key(), API_TOKEN);
         properties.put(String.valueOf(KubernetesProperties.SERVICE_PORT), 333);
         HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
-        DiscoveryStrategy strategy   = factory.newDiscoveryStrategy(discoveryNode, LOGGER, properties);
-        assertTrue(strategy instanceof  HazelcastKubernetesDiscoveryStrategy);
+        DiscoveryStrategy strategy = factory.newDiscoveryStrategy(discoveryNode, LOGGER, properties);
+        assertTrue(strategy instanceof HazelcastKubernetesDiscoveryStrategy);
         strategy.start();
         strategy.destroy();
     }

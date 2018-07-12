@@ -37,7 +37,6 @@
     <powermock.version>1.7.3</powermock.version>
 
     <hazelcast.version>3.10</hazelcast.version>
-    <kubernetes-client.version>3.1.10</kubernetes-client.version>
     <dnsjava.version>2.1.8</dnsjava.version>
 
     <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
@@ -108,11 +107,6 @@
       <groupId>com.hazelcast</groupId>
       <artifactId>hazelcast</artifactId>
       <version>${hazelcast.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.fabric8</groupId>
-      <artifactId>kubernetes-client</artifactId>
-      <version>${kubernetes-client.version}</version>
     </dependency>
     <dependency>
       <groupId>dnsjava</groupId>
@@ -195,8 +189,7 @@
               com.hazelcast.config,com.hazelcast.config.properties,
               com.hazelcast.spi.discovery,com.hazelcast.core,
               com.hazelcast.logging,com.hazelcast.nio, com.hazelcast.util,
-              io.fabric8.kubernetes.api.model,io.fabric8.kubernetes.client.*,
-              org.xbill.DNS,io.fabric8.openshift.client
+              org.xbill.DNS,com.hazelcast.com.eclipsesource.json
             </Import-Package>
           </instructions>
         </configuration>

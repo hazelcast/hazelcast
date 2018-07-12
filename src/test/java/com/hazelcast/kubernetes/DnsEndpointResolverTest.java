@@ -3,13 +3,7 @@ package com.hazelcast.kubernetes;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
-import io.fabric8.kubernetes.api.model.EndpointAddress;
-import io.fabric8.kubernetes.api.model.EndpointSubset;
-import io.fabric8.kubernetes.api.model.Endpoints;
-import io.fabric8.kubernetes.api.model.EndpointsList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -22,8 +16,6 @@ import org.xbill.DNS.Name;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.SRVRecord;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -39,7 +31,7 @@ public class DnsEndpointResolverTest {
     private static final int SERVICE_DNS_TIMEOUT = 5;
 
     @Mock
-    private DefaultKubernetesClient client;
+    private KubernetesClient client;
 
     @Mock
     private Lookup lookup;
@@ -48,8 +40,9 @@ public class DnsEndpointResolverTest {
     private SRVRecord srvRecord;
 
     @Before
-    public void setup() throws Exception {
-        PowerMockito.whenNew(DefaultKubernetesClient.class).withAnyArguments().thenReturn(client);
+    public void setup()
+            throws Exception {
+        PowerMockito.whenNew(KubernetesClient.class).withAnyArguments().thenReturn(client);
         PowerMockito.whenNew(SRVRecord.class).withAnyArguments().thenReturn(srvRecord);
         when(srvRecord.getTarget()).thenReturn(Name.fromString("127.0.0.1"));
     }
@@ -62,18 +55,23 @@ public class DnsEndpointResolverTest {
     }
 
     @Test
-    public void testValidServiceDns() throws Exception {
+    public void testValidServiceDns()
+            throws Exception {
         testValidServiceDns(0, 5701);
     }
 
     @Test
-    public void testValidServiceDnsWithCustomPort() throws Exception {
+    public void testValidServiceDnsWithCustomPort()
+            throws Exception {
         testValidServiceDns(333, 333);
     }
 
-    private void testValidServiceDns(final int port, final int expectedPort) throws Exception {
-        DnsEndpointResolver endpointResolver = PowerMockito.spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", port, SERVICE_DNS_TIMEOUT));
-        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup")).withNoArguments().thenReturn(lookup);
+    private void testValidServiceDns(final int port, final int expectedPort)
+            throws Exception {
+        DnsEndpointResolver endpointResolver = PowerMockito
+                .spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", port, SERVICE_DNS_TIMEOUT));
+        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup")).withNoArguments()
+                    .thenReturn(lookup);
         when(lookup.getResult()).thenReturn(Lookup.SUCCESSFUL);
         when(lookup.run()).thenReturn(getRecords());
         List<DiscoveryNode> nodes = endpointResolver.resolve();
@@ -83,9 +81,12 @@ public class DnsEndpointResolverTest {
     }
 
     @Test
-    public void testDnsFailFlow() throws Exception {
-        DnsEndpointResolver endpointResolver = PowerMockito.spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", 0, SERVICE_DNS_TIMEOUT));
-        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup")).withNoArguments().thenReturn(lookup);
+    public void testDnsFailFlow()
+            throws Exception {
+        DnsEndpointResolver endpointResolver = PowerMockito
+                .spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", 0, SERVICE_DNS_TIMEOUT));
+        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup")).withNoArguments()
+                    .thenReturn(lookup);
 
         when(lookup.getResult()).thenReturn(Lookup.HOST_NOT_FOUND);
         when(lookup.run()).thenReturn(getRecords());

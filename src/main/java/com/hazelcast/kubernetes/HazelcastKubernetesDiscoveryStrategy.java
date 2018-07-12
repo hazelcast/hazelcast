@@ -185,7 +185,7 @@ final class HazelcastKubernetesDiscoveryStrategy
             try {
                 return InetAddress.getByName(address);
             } catch (UnknownHostException e) {
-                logger.warning("Address '" + address + "' could not be resolved");
+                logger.warning("EntrypointAddress '" + address + "' could not be resolved");
             }
             return null;
         }

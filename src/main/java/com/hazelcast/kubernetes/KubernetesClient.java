@@ -87,8 +87,8 @@ class KubernetesClient {
     }
 
     private static Endpoints parseEndpointsList(JsonObject json) {
-        List<Address> addresses = new ArrayList<Address>();
-        List<Address> notReadyAddresses = new ArrayList<Address>();
+        List<EntrypointAddress> addresses = new ArrayList<EntrypointAddress>();
+        List<EntrypointAddress> notReadyAddresses = new ArrayList<EntrypointAddress>();
         for (JsonValue object : toJsonArray(json.get("items"))) {
             Endpoints endpoints = parseEndpoint(object);
             addresses.addAll(endpoints.getAddresses());
@@ -110,7 +110,7 @@ class KubernetesClient {
                 throw new KubernetesClientException(String.format("Failure executing: GET at: %s. Message: %s,", urlString,
                         extractErrorMessage(connection.getErrorStream())));
             }
-            return Json.parse(new InputStreamReader((connection.getInputStream()))).asObject();
+            return Json.parse(new InputStreamReader(connection.getInputStream(), "UTF-8")).asObject();
         } catch (ProtocolException e) {
             throw new KubernetesClientException("Failure executing KubernetesClient", e);
         } catch (MalformedURLException e) {
@@ -125,23 +125,23 @@ class KubernetesClient {
     }
 
     private static String extractErrorMessage(InputStream errorStream) {
-        Scanner scanner = new Scanner(errorStream);
+        Scanner scanner = new Scanner(errorStream, "UTF-8");
         scanner.useDelimiter("\\Z");
         return scanner.next();
     }
 
     private static Endpoints parseEndpoint(JsonValue endpointsJson) {
-        List<Address> addresses = new ArrayList<Address>();
-        List<Address> notReadyAddresses = new ArrayList<Address>();
+        List<EntrypointAddress> addresses = new ArrayList<EntrypointAddress>();
+        List<EntrypointAddress> notReadyAddresses = new ArrayList<EntrypointAddress>();
         for (JsonValue subset : toJsonArray(endpointsJson.asObject().get("subsets"))) {
             for (JsonValue address : toJsonArray(subset.asObject().get("addresses"))) {
                 String ip = address.asObject().get("ip").asString();
                 Map<String, Object> additionalProperties = extractAdditionalProperties(address.asObject());
-                addresses.add(new Address(ip, additionalProperties));
+                addresses.add(new EntrypointAddress(ip, additionalProperties));
             }
             for (JsonValue notReadyAddress : toJsonArray(subset.asObject().get("notReadyAddresses"))) {
                 String ip = notReadyAddress.asObject().get("ip").asString();
-                notReadyAddresses.add(new Address(ip, extractAdditionalProperties(notReadyAddress.asObject())));
+                notReadyAddresses.add(new EntrypointAddress(ip, extractAdditionalProperties(notReadyAddress.asObject())));
             }
         }
         return new Endpoints(addresses, notReadyAddresses);
@@ -177,28 +177,28 @@ class KubernetesClient {
     }
 
     static class Endpoints {
-        private final List<Address> addresses;
-        private final List<Address> notReadyAddresses;
+        private final List<EntrypointAddress> addresses;
+        private final List<EntrypointAddress> notReadyAddresses;
 
-        Endpoints(List<Address> addresses, List<Address> notReadyAddresses) {
+        Endpoints(List<EntrypointAddress> addresses, List<EntrypointAddress> notReadyAddresses) {
             this.addresses = addresses;
             this.notReadyAddresses = notReadyAddresses;
         }
 
-        public List<Address> getAddresses() {
+        public List<EntrypointAddress> getAddresses() {
             return addresses;
         }
 
-        public List<Address> getNotReadyAddresses() {
+        public List<EntrypointAddress> getNotReadyAddresses() {
             return notReadyAddresses;
         }
     }
 
-    static class Address {
+    static class EntrypointAddress {
         private final String ip;
         private final Map<String, Object> additionalProperties;
 
-        Address(String ip, Map<String, Object> additionalProperties) {
+        EntrypointAddress(String ip, Map<String, Object> additionalProperties) {
             this.ip = ip;
             this.additionalProperties = additionalProperties;
         }

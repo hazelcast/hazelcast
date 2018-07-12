@@ -2,7 +2,6 @@ package com.hazelcast.kubernetes;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.com.eclipsesource.json.ParseException;
-import com.hazelcast.kubernetes.KubernetesClient.Address;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoints;
 import org.junit.Rule;
 import org.junit.Test;
@@ -93,9 +92,9 @@ public class KubernetesClientTest {
         assertTrue(result.getNotReadyAddresses().isEmpty());
     }
 
-    private static List<String> extractIpPort(List<Address> addresses) {
+    private static List<String> extractIpPort(List<KubernetesClient.EntrypointAddress> addresses) {
         List<String> result = new ArrayList<String>();
-        for (Address address : addresses) {
+        for (KubernetesClient.EntrypointAddress address : addresses) {
             String ip = address.getIp();
             String port = String.valueOf(address.getAdditionalProperties().get("hazelcast-service-port"));
             result.add(ipPort(ip, port));
