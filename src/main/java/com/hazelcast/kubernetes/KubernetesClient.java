@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.com.eclipsesource.json.Json;
@@ -5,6 +21,7 @@ import com.hazelcast.com.eclipsesource.json.JsonArray;
 import com.hazelcast.com.eclipsesource.json.JsonObject;
 import com.hazelcast.com.eclipsesource.json.JsonValue;
 import com.hazelcast.nio.IOUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -35,12 +52,13 @@ import java.util.Set;
 /**
  * Responsible for connecting to the Kubernetes API.
  * <p>
- * Note: This client should always be used from inside the Kubernetes since it depends on the CA Cert file, which exists in the POD filesystem.
+ * Note: This client should always be used from inside the Kubernetes since it depends on the CA Cert file, which exists
+ * in the POD filesystem.
  *
  * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/">Kubernetes API</a>
  */
 class KubernetesClient {
-    public static final String CA_CERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
+    private static final int HTTP_OK = 200;
 
     private final String kubernetesMaster;
     private final String apiToken;
@@ -55,7 +73,7 @@ class KubernetesClient {
      *
      * @param namespace namespace name
      * @return all POD addresses from the given {@code namespace}
-     * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint List API</a>
+     * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
     Endpoints endpoints(String namespace) {
         String urlString = String.format("%s/api/v1/namespaces/%s/endpoints", kubernetesMaster, namespace);
@@ -64,13 +82,14 @@ class KubernetesClient {
     }
 
     /**
-     * Retrieves POD addresses from all services in the given {@code namespace} filtered by {@code serviceLabel} and {@code serviceLabelValue}.
+     * Retrieves POD addresses from all services in the given {@code namespace} filtered by {@code serviceLabel}
+     * and {@code serviceLabelValue}.
      *
      * @param namespace         namespace name
      * @param serviceLabel      label used to filter responses
      * @param serviceLabelValue label value used to filter responses
      * @return all POD addresses from the given {@code namespace} filted by the label
-     * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint List API</a>
+     * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
     Endpoints endpointsByLabel(String namespace, String serviceLabel, String serviceLabelValue) {
         String param = String.format("labelSelector=%s=%s", serviceLabel, serviceLabelValue);
@@ -84,7 +103,7 @@ class KubernetesClient {
      * @param namespace    namespace name
      * @param endpointName endpoint name
      * @return all POD addresses from the given {@code namespace} and the given {@code endpointName}
-     * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint List API</a>
+     * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
     Endpoints endpointsByName(String namespace, String endpointName) {
         String urlString = String.format("%s/api/v1/namespaces/%s/endpoints/%s", kubernetesMaster, namespace, endpointName);
@@ -103,7 +122,7 @@ class KubernetesClient {
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Authorization", String.format("Bearer %s", apiToken));
 
-            if (connection.getResponseCode() != 200) {
+            if (connection.getResponseCode() != HTTP_OK) {
                 throw new KubernetesClientException(String.format("Failure executing: GET at: %s. Message: %s,", urlString,
                         extractErrorMessage(connection.getErrorStream())));
             }
@@ -216,7 +235,7 @@ class KubernetesClient {
         InputStream caInput = null;
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            caInput = new BufferedInputStream(new FileInputStream(new File(CA_CERT_PATH)));
+            caInput = new BufferedInputStream(new FileInputStream(new File(caCertPath())));
             return cf.generateCertificate(caInput);
         } finally {
             IOUtil.closeResource(caInput);
@@ -226,7 +245,7 @@ class KubernetesClient {
     /**
      * Result which aggregates information about all addresses.
      */
-    final static class Endpoints {
+    static final class Endpoints {
         private final List<EntrypointAddress> addresses;
         private final List<EntrypointAddress> notReadyAddresses;
 
@@ -247,7 +266,7 @@ class KubernetesClient {
     /**
      * Result which stores the information about a single address.
      */
-    final static class EntrypointAddress {
+    static final class EntrypointAddress {
         private final String ip;
         private final Map<String, Object> additionalProperties;
 
@@ -263,5 +282,10 @@ class KubernetesClient {
         Map<String, Object> getAdditionalProperties() {
             return additionalProperties;
         }
+    }
+
+    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
+    private static String caCertPath() {
+        return "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
     }
 }
