@@ -439,8 +439,8 @@ public final class HazelcastWriters {
         private final DistributedBiConsumer<B, T> addToBufferFn;
         private final DistributedConsumer<B> disposeBufferFn;
 
-        private transient DistributedConsumer<B> flushBuffer;
         private transient HazelcastInstance client;
+        private transient HazelcastInstance instance;
 
         HazelcastWriterSupplier(
                 SerializableClientConfig clientConfig,
@@ -458,13 +458,11 @@ public final class HazelcastWriters {
 
         @Override
         public void init(@Nonnull Context context) {
-            HazelcastInstance instance;
             if (isRemote()) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
             } else {
                 instance = context.jetInstance().getHazelcastInstance();
             }
-            flushBuffer = instanceToFlushBufferFn.apply(instance);
         }
 
         @Override
@@ -480,8 +478,9 @@ public final class HazelcastWriters {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return Stream.generate(() -> new WriteBufferedP<>(newBufferFn, addToBufferFn, flushBuffer, disposeBufferFn))
-                         .limit(count).collect(toList());
+            return Stream.generate(() -> new WriteBufferedP<>(
+                    newBufferFn, addToBufferFn, instanceToFlushBufferFn.apply(instance), disposeBufferFn)
+            ).limit(count).collect(toList());
         }
     }
 
