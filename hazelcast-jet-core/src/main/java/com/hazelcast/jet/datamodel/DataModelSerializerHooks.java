@@ -30,6 +30,8 @@ import java.util.Set;
 import static com.hazelcast.jet.datamodel.ItemsByTag.NONE;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.jet.datamodel.Tuple4.tuple4;
+import static com.hazelcast.jet.datamodel.Tuple5.tuple5;
 
 /**
  * Hazelcast serializer hooks for the classes in the {@code
@@ -224,6 +226,85 @@ class DataModelSerializerHooks {
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.TUPLE3;
+                }
+
+                @Override
+                public void destroy() {
+                }
+            };
+        }
+
+        @Override public boolean isOverwritable() {
+            return false;
+        }
+    }
+
+    public static final class Tuple4Hook implements SerializerHook<Tuple4> {
+
+        @Override
+        public Class<Tuple4> getSerializationType() {
+            return Tuple4.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<Tuple4>() {
+                @Override
+                public void write(ObjectDataOutput out, Tuple4 t) throws IOException {
+                    out.writeObject(t.f0());
+                    out.writeObject(t.f1());
+                    out.writeObject(t.f2());
+                    out.writeObject(t.f3());
+                }
+
+                @Override
+                public Tuple4 read(ObjectDataInput in) throws IOException {
+                    return tuple4(in.readObject(), in.readObject(), in.readObject(), in.readObject());
+                }
+
+                @Override
+                public int getTypeId() {
+                    return SerializerHookConstants.TUPLE4;
+                }
+
+                @Override
+                public void destroy() {
+                }
+            };
+        }
+
+        @Override public boolean isOverwritable() {
+            return false;
+        }
+    }
+
+    public static final class Tuple5Hook implements SerializerHook<Tuple5> {
+
+        @Override
+        public Class<Tuple5> getSerializationType() {
+            return Tuple5.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<Tuple5>() {
+                @Override
+                public void write(ObjectDataOutput out, Tuple5 t) throws IOException {
+                    out.writeObject(t.f0());
+                    out.writeObject(t.f1());
+                    out.writeObject(t.f2());
+                    out.writeObject(t.f3());
+                    out.writeObject(t.f4());
+                }
+
+                @Override
+                public Tuple5 read(ObjectDataInput in) throws IOException {
+                    return tuple5(in.readObject(), in.readObject(), in.readObject(), in.readObject(), in.readObject());
+                }
+
+                @Override
+                public int getTypeId() {
+                    return SerializerHookConstants.TUPLE5;
                 }
 
                 @Override
