@@ -130,7 +130,7 @@ public class KubernetesClientTest {
     }
 
     /**
-     * Real string recorded from the Kubernetes API call "/api/v1/namespaces/{namespace}/endpoints".
+     * Real response recorded from the Kubernetes API call "/api/v1/namespaces/{namespace}/endpoints".
      */
     private static String endpointsListBody() {
         return String.format(
@@ -229,7 +229,7 @@ public class KubernetesClientTest {
     }
 
     /**
-     * Real string recorded from the Kubernetes API call "/api/v1/namespaces/{namespace}/endpoints/{endpoint}".
+     * Real response recorded from the Kubernetes API call "/api/v1/namespaces/{namespace}/endpoints/{endpoint}".
      */
     private static String endpointsBody() {
         return String.format(
@@ -291,6 +291,9 @@ public class KubernetesClientTest {
                 , SAMPLE_ADDRESS_1, SAMPLE_PORT_1, SAMPLE_ADDRESS_2, SAMPLE_PORT_2);
     }
 
+    /**
+     * Real response recorded from the Kubernetes API.
+     */
     private static String forbiddenBody() {
         return "Forbidden!Configured service account doesn't have access. Service account may have been revoked. "
                 + "endpoints is forbidden: User \"system:serviceaccount:default:default\" cannot list endpoints "

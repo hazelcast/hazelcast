@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.KeyStore;
@@ -52,7 +51,7 @@ import java.util.Set;
 /**
  * Responsible for connecting to the Kubernetes API.
  * <p>
- * Note: This client should always be used from inside the Kubernetes since it depends on the CA Cert file, which exists
+ * Note: This client should always be used from inside Kubernetes since it depends on the CA Cert file, which exists
  * in the POD filesystem.
  *
  * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/">Kubernetes API</a>
@@ -69,7 +68,7 @@ class KubernetesClient {
     }
 
     /**
-     * Retrieves POD addresses from all services in the given {@code namespace}.
+     * Retrieves POD addresses for all services in the given {@code namespace}.
      *
      * @param namespace namespace name
      * @return all POD addresses from the given {@code namespace}
@@ -82,13 +81,13 @@ class KubernetesClient {
     }
 
     /**
-     * Retrieves POD addresses from all services in the given {@code namespace} filtered by {@code serviceLabel}
+     * Retrieves POD addresses for all services in the given {@code namespace} filtered by {@code serviceLabel}
      * and {@code serviceLabelValue}.
      *
      * @param namespace         namespace name
      * @param serviceLabel      label used to filter responses
      * @param serviceLabelValue label value used to filter responses
-     * @return all POD addresses from the given {@code namespace} filted by the label
+     * @return all POD addresses from the given {@code namespace} filtered by the label
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
     Endpoints endpointsByLabel(String namespace, String serviceLabel, String serviceLabelValue) {
@@ -124,9 +123,9 @@ class KubernetesClient {
 
             if (connection.getResponseCode() != HTTP_OK) {
                 throw new KubernetesClientException(String.format("Failure executing: GET at: %s. Message: %s,", urlString,
-                        extractErrorMessage(connection.getErrorStream())));
+                        read(connection.getErrorStream())));
             }
-            return Json.parse(new InputStreamReader(connection.getInputStream(), "UTF-8")).asObject();
+            return Json.parse(read(connection.getInputStream())).asObject();
         } catch (Exception e) {
             throw new KubernetesClientException("Failure in KubernetesClient", e);
         } finally {
@@ -136,8 +135,8 @@ class KubernetesClient {
         }
     }
 
-    private static String extractErrorMessage(InputStream errorStream) {
-        Scanner scanner = new Scanner(errorStream, "UTF-8");
+    private static String read(InputStream stream) {
+        Scanner scanner = new Scanner(stream, "UTF-8");
         scanner.useDelimiter("\\Z");
         return scanner.next();
     }
@@ -242,8 +241,13 @@ class KubernetesClient {
         }
     }
 
+    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
+    private static String caCertPath() {
+        return "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
+    }
+
     /**
-     * Result which aggregates information about all addresses.
+     * Result which stores the information about all addresses.
      */
     static final class Endpoints {
         private final List<EntrypointAddress> addresses;
@@ -282,10 +286,5 @@ class KubernetesClient {
         Map<String, Object> getAdditionalProperties() {
             return additionalProperties;
         }
-    }
-
-    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
-    private static String caCertPath() {
-        return "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
     }
 }
