@@ -4,6 +4,7 @@ import com.hazelcast.com.eclipsesource.json.Json;
 import com.hazelcast.com.eclipsesource.json.JsonArray;
 import com.hazelcast.com.eclipsesource.json.JsonObject;
 import com.hazelcast.com.eclipsesource.json.JsonValue;
+import com.hazelcast.nio.IOUtil;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -16,13 +17,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
-import java.security.KeyManagementException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -38,11 +34,13 @@ import java.util.Set;
 
 /**
  * Responsible for connecting to the Kubernetes API.
+ * <p>
+ * Note: This client should always be used from inside the Kubernetes since it depends on the CA Cert file, which exists in the POD filesystem.
  *
  * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/">Kubernetes API</a>
  */
 class KubernetesClient {
-    private static final String CA_CERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
+    public static final String CA_CERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
 
     private final String kubernetesMaster;
     private final String apiToken;
@@ -60,7 +58,9 @@ class KubernetesClient {
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint List API</a>
      */
     Endpoints endpoints(String namespace) {
-        return callEndpointsService(namespace, null);
+        String urlString = String.format("%s/api/v1/namespaces/%s/endpoints", kubernetesMaster, namespace);
+        return parseEndpointsList(callGet(urlString));
+
     }
 
     /**
@@ -74,7 +74,8 @@ class KubernetesClient {
      */
     Endpoints endpointsByLabel(String namespace, String serviceLabel, String serviceLabelValue) {
         String param = String.format("labelSelector=%s=%s", serviceLabel, serviceLabelValue);
-        return callEndpointsService(namespace, param);
+        String urlString = String.format("%s/api/v1/namespaces/%s/endpoints?%s", kubernetesMaster, namespace, param);
+        return parseEndpointsList(callGet(urlString));
     }
 
     /**
@@ -91,32 +92,7 @@ class KubernetesClient {
         return parseEndpoint(json);
     }
 
-    private Endpoints callEndpointsService(String namespace, String param) {
-        String urlString = String.format("%s/api/v1/namespaces/%s/endpoints", kubernetesMaster, namespace);
-        if (param != null && !param.isEmpty()) {
-            urlString = String.format("%s?%s", urlString, param);
-        }
-
-        JsonObject json = callGet(urlString);
-        return parseEndpointsList(json);
-
-    }
-
-    private static Endpoints parseEndpointsList(JsonObject json) {
-        List<EntrypointAddress> addresses = new ArrayList<EntrypointAddress>();
-        List<EntrypointAddress> notReadyAddresses = new ArrayList<EntrypointAddress>();
-        for (JsonValue object : toJsonArray(json.get("items"))) {
-            Endpoints endpoints = parseEndpoint(object);
-            addresses.addAll(endpoints.getAddresses());
-            notReadyAddresses.addAll(endpoints.getNotReadyAddresses());
-        }
-
-        return new Endpoints(addresses, notReadyAddresses);
-    }
-
     private JsonObject callGet(String urlString) {
-        System.out.println("############ HAHAHAHA CALL GET TTT ");
-
         HttpURLConnection connection = null;
         try {
             URL url = new URL(urlString);
@@ -132,12 +108,8 @@ class KubernetesClient {
                         extractErrorMessage(connection.getErrorStream())));
             }
             return Json.parse(new InputStreamReader(connection.getInputStream(), "UTF-8")).asObject();
-        } catch (ProtocolException e) {
-            throw new KubernetesClientException("Failure executing KubernetesClient", e);
-        } catch (MalformedURLException e) {
-            throw new KubernetesClientException("Failure executing KubernetesClient", e);
-        } catch (IOException e) {
-            throw new KubernetesClientException("Failure executing KubernetesClient", e);
+        } catch (Exception e) {
+            throw new KubernetesClientException("Failure in KubernetesClient", e);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -151,27 +123,45 @@ class KubernetesClient {
         return scanner.next();
     }
 
+    private static Endpoints parseEndpointsList(JsonObject json) {
+        List<EntrypointAddress> addresses = new ArrayList<EntrypointAddress>();
+        List<EntrypointAddress> notReadyAddresses = new ArrayList<EntrypointAddress>();
+
+        for (JsonValue object : toJsonArray(json.get("items"))) {
+            Endpoints endpoints = parseEndpoint(object);
+            addresses.addAll(endpoints.getAddresses());
+            notReadyAddresses.addAll(endpoints.getNotReadyAddresses());
+        }
+
+        return new Endpoints(addresses, notReadyAddresses);
+    }
+
     private static Endpoints parseEndpoint(JsonValue endpointsJson) {
         List<EntrypointAddress> addresses = new ArrayList<EntrypointAddress>();
         List<EntrypointAddress> notReadyAddresses = new ArrayList<EntrypointAddress>();
+
         for (JsonValue subset : toJsonArray(endpointsJson.asObject().get("subsets"))) {
             for (JsonValue address : toJsonArray(subset.asObject().get("addresses"))) {
-                String ip = address.asObject().get("ip").asString();
-                Map<String, Object> additionalProperties = extractAdditionalProperties(address.asObject());
-                addresses.add(new EntrypointAddress(ip, additionalProperties));
+                addresses.add(parseEntrypointAddress(address));
             }
             for (JsonValue notReadyAddress : toJsonArray(subset.asObject().get("notReadyAddresses"))) {
-                String ip = notReadyAddress.asObject().get("ip").asString();
-                notReadyAddresses.add(new EntrypointAddress(ip, extractAdditionalProperties(notReadyAddress.asObject())));
+                notReadyAddresses.add(parseEntrypointAddress(notReadyAddress));
             }
         }
         return new Endpoints(addresses, notReadyAddresses);
     }
 
-    private static Map<String, Object> extractAdditionalProperties(JsonObject jsonObject) {
+    private static EntrypointAddress parseEntrypointAddress(JsonValue endpointAddressJson) {
+        String ip = endpointAddressJson.asObject().get("ip").asString();
+        Map<String, Object> additionalProperties = parseAdditionalProperties(endpointAddressJson);
+        return new EntrypointAddress(ip, additionalProperties);
+    }
+
+    private static Map<String, Object> parseAdditionalProperties(JsonValue endpointAddressJson) {
         Set<String> knownFieldNames = new HashSet<String>(Arrays.asList("ip", "nodeName", "targetRef", "hostname"));
+
         Map<String, Object> result = new HashMap<String, Object>();
-        Iterator<JsonObject.Member> iter = jsonObject.iterator();
+        Iterator<JsonObject.Member> iter = endpointAddressJson.asObject().iterator();
         while (iter.hasNext()) {
             JsonObject.Member member = iter.next();
             if (!knownFieldNames.contains(member.getName())) {
@@ -179,14 +169,6 @@ class KubernetesClient {
             }
         }
         return result;
-    }
-
-    private static String toString(JsonValue jsonValue) {
-        if (jsonValue.isString()) {
-            return jsonValue.asString();
-        } else {
-            return jsonValue.toString();
-        }
     }
 
     private static JsonArray toJsonArray(JsonValue jsonValue) {
@@ -197,7 +179,54 @@ class KubernetesClient {
         }
     }
 
-    static class Endpoints {
+    private static String toString(JsonValue jsonValue) {
+        if (jsonValue.isString()) {
+            return jsonValue.asString();
+        } else {
+            return jsonValue.toString();
+        }
+    }
+
+    /**
+     * Builds SSL Socket Factory with the public CA Certificate from Kubernetes Master.
+     */
+    private static SSLSocketFactory buildSslSocketFactory() {
+        try {
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null, null);
+            keyStore.setCertificateEntry("ca", generateCertificate());
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(keyStore);
+
+            SSLContext context = SSLContext.getInstance("TLS");
+            context.init(null, tmf.getTrustManagers(), null);
+            return context.getSocketFactory();
+
+        } catch (Exception e) {
+            throw new KubernetesClientException("Failure in generating SSLSocketFactory", e);
+        }
+    }
+
+    /**
+     * Generates CA Certificate from the default CA Cert file (which always exists in the Kubernetes POD).
+     */
+    private static Certificate generateCertificate()
+            throws IOException, CertificateException {
+        InputStream caInput = null;
+        try {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            caInput = new BufferedInputStream(new FileInputStream(new File(CA_CERT_PATH)));
+            return cf.generateCertificate(caInput);
+        } finally {
+            IOUtil.closeResource(caInput);
+        }
+    }
+
+    /**
+     * Result which aggregates information about all addresses.
+     */
+    final static class Endpoints {
         private final List<EntrypointAddress> addresses;
         private final List<EntrypointAddress> notReadyAddresses;
 
@@ -206,16 +235,19 @@ class KubernetesClient {
             this.notReadyAddresses = notReadyAddresses;
         }
 
-        public List<EntrypointAddress> getAddresses() {
+        List<EntrypointAddress> getAddresses() {
             return addresses;
         }
 
-        public List<EntrypointAddress> getNotReadyAddresses() {
+        List<EntrypointAddress> getNotReadyAddresses() {
             return notReadyAddresses;
         }
     }
 
-    static class EntrypointAddress {
+    /**
+     * Result which stores the information about a single address.
+     */
+    final static class EntrypointAddress {
         private final String ip;
         private final Map<String, Object> additionalProperties;
 
@@ -224,63 +256,12 @@ class KubernetesClient {
             this.additionalProperties = additionalProperties;
         }
 
-        public String getIp() {
+        String getIp() {
             return ip;
         }
 
-        public Map<String, Object> getAdditionalProperties() {
+        Map<String, Object> getAdditionalProperties() {
             return additionalProperties;
         }
     }
-
-    private static SSLSocketFactory buildSslSocketFactory() {
-        // Add support for self-signed (local) SSL certificates
-        // Based on http://developer.android.com/training/articles/security-ssl.html#UnknownCa
-        try {
-
-            // Load CAs from an InputStream
-            // (could be from a resource or ByteArrayInputStream or ...)
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            // From https://www.washington.edu/itconnect/security/ca/load-der.crt
-            InputStream is = new FileInputStream(new File("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"));
-            InputStream caInput = new BufferedInputStream(is);
-            Certificate ca;
-            try {
-                ca = cf.generateCertificate(caInput);
-                // System.out.println("ca=" + ((X509Certificate) ca).getSubjectDN());
-            } finally {
-                caInput.close();
-            }
-
-            // Create a KeyStore containing our trusted CAs
-            String keyStoreType = KeyStore.getDefaultType();
-            KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-            keyStore.load(null, null);
-            keyStore.setCertificateEntry("ca", ca);
-
-            // Create a TrustManager that trusts the CAs in our KeyStore
-            String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
-            tmf.init(keyStore);
-
-            // Create an SSLContext that uses our TrustManager
-            SSLContext context = SSLContext.getInstance("TLS");
-            context.init(null, tmf.getTrustManagers(), null);
-            return context.getSocketFactory();
-
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
-            e.printStackTrace();
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
 }

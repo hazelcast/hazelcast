@@ -2,13 +2,16 @@ package com.hazelcast.kubernetes;
 
 import com.hazelcast.core.HazelcastException;
 
+/**
+ * Exception to indicate any issues with {@link KubernetesClient}.
+ */
 class KubernetesClientException
         extends HazelcastException {
-    public KubernetesClientException(String message) {
+    KubernetesClientException(String message) {
         super(message);
     }
 
-    public KubernetesClientException(String message, Throwable cause) {
+    KubernetesClientException(String message, Throwable cause) {
         super(message, cause);
     }
 }

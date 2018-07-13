@@ -1,7 +1,6 @@
 package com.hazelcast.kubernetes;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.hazelcast.com.eclipsesource.json.ParseException;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoints;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,10 +35,6 @@ public class KubernetesClientTest {
     private static final String SAMPLE_IP_PORT_1 = ipPort(SAMPLE_ADDRESS_1, SAMPLE_PORT_1);
     private static final String SAMPLE_IP_PORT_2 = ipPort(SAMPLE_ADDRESS_2, SAMPLE_PORT_2);
     private static final String SAMPLE_NOT_READY_IP = ipPort(SAMPLE_NOT_READY_ADDRESS, null);
-
-    //    @Rule
-    //    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().httpsPort(KUBERNETES_MASTER_PORT).keystorePath(
-    //            KubernetesClient.class.getClassLoader().getResource("mycert.jks").getFile()));
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(KUBERNETES_MASTER_PORT);
@@ -96,20 +91,6 @@ public class KubernetesClientTest {
         assertTrue(result.getNotReadyAddresses().isEmpty());
     }
 
-    private static List<String> extractIpPort(List<KubernetesClient.EntrypointAddress> addresses) {
-        List<String> result = new ArrayList<String>();
-        for (KubernetesClient.EntrypointAddress address : addresses) {
-            String ip = address.getIp();
-            String port = String.valueOf(address.getAdditionalProperties().get("hazelcast-service-port"));
-            result.add(ipPort(ip, port));
-        }
-        return result;
-    }
-
-    private static String ipPort(String ip, String port) {
-        return String.format("%s:%s", ip, port);
-    }
-
     @Test(expected = KubernetesClientException.class)
     public void forbidden() {
         // given
@@ -121,7 +102,7 @@ public class KubernetesClientTest {
         kubernetesClient.endpoints(NAMESPACE);
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expected = KubernetesClientException.class)
     public void malformedResponse() {
         // given
         stubFor(get(urlEqualTo(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE)))
@@ -136,69 +117,162 @@ public class KubernetesClientTest {
      * Real string recorded from the Kubernetes API call "/api/v1/namespaces/{namespace}/endpoints".
      */
     private static String endpointsListBody() {
-        return String.format("{\n" + "  \"kind\": \"EndpointsList\",\n" + "  \"apiVersion\": \"v1\",\n" + "  \"metadata\": {\n"
-                        + "    \"selfLink\": \"/api/v1/namespaces/default/endpoints\",\n" + "    \"resourceVersion\": \"8792\"\n"
-                        + "  },\n" + "  \"items\": [\n" + "    {\n" + "      \"metadata\": {\n" + "        \"name\": \"kubernetes\",\n"
-                        + "        \"namespace\": \"default\",\n"
-                        + "        \"selfLink\": \"/api/v1/namespaces/default/endpoints/kubernetes\",\n"
-                        + "        \"uid\": \"01c5aaa4-8411-11e8-abd2-00155d395157\",\n" + "        \"resourceVersion\": \"38\",\n"
-                        + "        \"creationTimestamp\": \"2018-07-10T07:15:21Z\"\n" + "      },\n" + "      \"subsets\": [\n"
-                        + "        {\n" + "          \"addresses\": [\n" + "            {\n" + "              \"ip\": \"%s\",\n"
-                        + "              \"hazelcast-service-port\" :\"%s\"\n" + "            }\n" + "          ],\n"
-                        + "          \"ports\": [\n" + "            {\n" + "              \"name\": \"https\",\n"
-                        + "              \"port\": 8443,\n" + "              \"protocol\": \"TCP\"\n" + "            }\n"
-                        + "          ]\n" + "        }\n" + "      ]\n" + "    },\n" + "    {\n" + "      \"metadata\": {\n"
-                        + "        \"name\": \"my-hazelcast\",\n" + "        \"namespace\": \"default\",\n"
-                        + "        \"selfLink\": \"/api/v1/namespaces/default/endpoints/my-hazelcast\",\n"
-                        + "        \"uid\": \"80f7f03d-8425-11e8-abd2-00155d395157\",\n" + "        \"resourceVersion\": \"8788\",\n"
-                        + "        \"creationTimestamp\": \"2018-07-10T09:42:04Z\",\n" + "        \"labels\": {\n"
-                        + "          \"app\": \"hazelcast\",\n" + "          \"chart\": \"hazelcast-1.0.0\",\n"
-                        + "          \"heritage\": \"Tiller\",\n" + "          \"release\": \"my-hazelcast\"\n" + "        }\n"
-                        + "      },\n" + "      \"subsets\": [\n" + "        {\n" + "          \"addresses\": [\n" + "            {\n"
-                        + "              \"ip\": \"%s\",\n" + "              \"nodeName\": \"minikube\",\n"
-                        + "              \"hazelcast-service-port\" : %s,\n" + "              \"targetRef\": {\n"
-                        + "                \"kind\": \"Pod\",\n" + "                \"namespace\": \"default\",\n"
-                        + "                \"name\": \"my-hazelcast-0\",\n"
-                        + "                \"uid\": \"80f20bcb-8425-11e8-abd2-00155d395157\",\n"
-                        + "                \"resourceVersion\": \"8771\"\n" + "              }\n" + "            }\n" + "          ],\n"
-                        + "          \"notReadyAddresses\": [\n" + "            {\n" + "              \"ip\": \"%s\",\n"
-                        + "              \"nodeName\": \"minikube\",\n" + "              \"targetRef\": {\n"
-                        + "                \"kind\": \"Pod\",\n" + "                \"namespace\": \"default\",\n"
-                        + "                \"name\": \"my-hazelcast-1\",\n"
-                        + "                \"uid\": \"95bd3636-8425-11e8-abd2-00155d395157\",\n"
-                        + "                \"resourceVersion\": \"8787\"\n" + "              }\n" + "            }\n" + "          ],\n"
-                        + "          \"ports\": [\n" + "            {\n" + "              \"name\": \"hzport\",\n"
-                        + "              \"port\": 5701,\n" + "              \"protocol\": \"TCP\"\n" + "            }\n"
-                        + "          ]\n" + "        }\n" + "      ]\n" + "    }\n" + "  ]\n" + "}", SAMPLE_ADDRESS_1, SAMPLE_PORT_1,
-                SAMPLE_ADDRESS_2, SAMPLE_PORT_2, SAMPLE_NOT_READY_ADDRESS);
+        return String.format(
+                "{" +
+                        "  \"kind\": \"EndpointsList\"," +
+                        "  \"apiVersion\": \"v1\"," +
+                        "  \"metadata\": {" +
+                        "    \"selfLink\": \"/api/v1/namespaces/default/endpoints\"," +
+                        "    \"resourceVersion\": \"8792\"" +
+                        "  }," +
+                        "  \"items\": [" +
+                        "    {" +
+                        "      \"metadata\": {" +
+                        "        \"name\": \"kubernetes\"," +
+                        "        \"namespace\": \"default\"," +
+                        "        \"selfLink\": \"/api/v1/namespaces/default/endpoints/kubernetes\"," +
+                        "        \"uid\": \"01c5aaa4-8411-11e8-abd2-00155d395157\"," +
+                        "        \"resourceVersion\": \"38\"," +
+                        "        \"creationTimestamp\": \"2018-07-10T07:15:21Z\"" +
+                        "      }," +
+                        "      \"subsets\": [" +
+                        "        {" +
+                        "          \"addresses\": [" +
+                        "            {" +
+                        "              \"ip\": \"%s\"," +
+                        "              \"hazelcast-service-port\" :\"%s\"" +
+                        "            }" +
+                        "          ]," +
+                        "          \"ports\": [" +
+                        "            {" +
+                        "              \"name\": \"https\"," +
+                        "              \"port\": 8443," +
+                        "              \"protocol\": \"TCP\"" +
+                        "            }" +
+                        "          ]" +
+                        "        }" +
+                        "      ]" +
+                        "    }," +
+                        "    {" +
+                        "      \"metadata\": {" +
+                        "        \"name\": \"my-hazelcast\"," +
+                        "        \"namespace\": \"default\"," +
+                        "        \"selfLink\": \"/api/v1/namespaces/default/endpoints/my-hazelcast\"," +
+                        "        \"uid\": \"80f7f03d-8425-11e8-abd2-00155d395157\"," +
+                        "        \"resourceVersion\": \"8788\"," +
+                        "        \"creationTimestamp\": \"2018-07-10T09:42:04Z\"," +
+                        "        \"labels\": {" +
+                        "          \"app\": \"hazelcast\"," +
+                        "          \"chart\": \"hazelcast-1.0.0\"," +
+                        "          \"heritage\": \"Tiller\"," +
+                        "          \"release\": \"my-hazelcast\"" +
+                        "        }" +
+                        "      }," +
+                        "      \"subsets\": [" +
+                        "        {" +
+                        "          \"addresses\": [" +
+                        "            {" +
+                        "              \"ip\": \"%s\"," +
+                        "              \"nodeName\": \"minikube\"," +
+                        "              \"hazelcast-service-port\" : %s," +
+                        "              \"targetRef\": {" +
+                        "                \"kind\": \"Pod\"," +
+                        "                \"namespace\": \"default\"," +
+                        "                \"name\": \"my-hazelcast-0\"," +
+                        "                \"uid\": \"80f20bcb-8425-11e8-abd2-00155d395157\"," +
+                        "                \"resourceVersion\": \"8771\"" +
+                        "              }" +
+                        "            }" +
+                        "          ]," +
+                        "          \"notReadyAddresses\": [" +
+                        "            {" +
+                        "              \"ip\": \"%s\"," +
+                        "              \"nodeName\": \"minikube\"," +
+                        "              \"targetRef\": {" +
+                        "                \"kind\": \"Pod\"," +
+                        "                \"namespace\": \"default\"," +
+                        "                \"name\": \"my-hazelcast-1\"," +
+                        "                \"uid\": \"95bd3636-8425-11e8-abd2-00155d395157\"," +
+                        "                \"resourceVersion\": \"8787\"" +
+                        "              }" +
+                        "            }" +
+                        "          ]," +
+                        "          \"ports\": [" +
+                        "            {" +
+                        "              \"name\": \"hzport\"," +
+                        "              \"port\": 5701," +
+                        "              \"protocol\": \"TCP\"" +
+                        "            }" +
+                        "          ]" +
+                        "        }" +
+                        "      ]" +
+                        "    }" +
+                        "  ]" +
+                        "}"
+                , SAMPLE_ADDRESS_1, SAMPLE_PORT_1, SAMPLE_ADDRESS_2, SAMPLE_PORT_2, SAMPLE_NOT_READY_ADDRESS);
     }
 
     /**
      * Real string recorded from the Kubernetes API call "/api/v1/namespaces/{namespace}/endpoints/{endpoint}".
      */
     private static String endpointsBody() {
-        return String.format("{\n" + "  \"kind\": \"Endpoints\",\n" + "  \"apiVersion\": \"v1\",\n" + "  \"metadata\": {\n"
-                        + "    \"name\": \"my-hazelcast\",\n" + "    \"namespace\": \"default\",\n"
-                        + "    \"selfLink\": \"/api/v1/namespaces/default/endpoints/my-hazelcast\",\n"
-                        + "    \"uid\": \"deefb354-8443-11e8-abd2-00155d395157\",\n" + "    \"resourceVersion\": \"18816\",\n"
-                        + "    \"creationTimestamp\": \"2018-07-10T13:19:27Z\",\n" + "    \"labels\": {\n"
-                        + "      \"app\": \"hazelcast\",\n" + "      \"chart\": \"hazelcast-1.0.0\",\n"
-                        + "      \"heritage\": \"Tiller\",\n" + "      \"release\": \"my-hazelcast\"\n" + "    }\n" + "  },\n"
-                        + "  \"subsets\": [\n" + "    {\n" + "      \"addresses\": [\n" + "        {\n" + "          \"ip\": \"%s\",\n"
-                        + "          \"nodeName\": \"minikube\",\n" + "          \"hazelcast-service-port\" : %s,\n"
-                        + "          \"targetRef\": {\n" + "            \"kind\": \"Pod\",\n"
-                        + "            \"namespace\": \"default\",\n" + "            \"name\": \"my-hazelcast-0\",\n"
-                        + "            \"uid\": \"def2f426-8443-11e8-abd2-00155d395157\",\n"
-                        + "            \"resourceVersion\": \"18757\"\n" + "          }\n" + "        },\n" + "        {\n"
-                        + "          \"ip\": \"%s\",\n" + "          \"nodeName\": \"minikube\",\n"
-                        + "          \"hazelcast-service-port\" : %s,\n" + "          \"targetRef\": {\n"
-                        + "            \"kind\": \"Pod\",\n" + "            \"namespace\": \"default\",\n"
-                        + "            \"name\": \"my-hazelcast-1\",\n"
-                        + "            \"uid\": \"f3b96106-8443-11e8-abd2-00155d395157\",\n"
-                        + "            \"resourceVersion\": \"18815\"\n" + "          }\n" + "        }\n" + "      ],\n"
-                        + "      \"ports\": [\n" + "        {\n" + "          \"name\": \"hzport\",\n" + "          \"port\": 5701,\n"
-                        + "          \"protocol\": \"TCP\"\n" + "        }\n" + "      ]\n" + "    }\n" + "  ]\n" + "}", SAMPLE_ADDRESS_1,
-                SAMPLE_PORT_1, SAMPLE_ADDRESS_2, SAMPLE_PORT_2);
+        return String.format(
+                "{" +
+                        "  \"kind\": \"Endpoints\"," +
+                        "  \"apiVersion\": \"v1\"," +
+                        "  \"metadata\": {" +
+                        "    \"name\": \"my-hazelcast\"," +
+                        "    \"namespace\": \"default\"," +
+                        "    \"selfLink\": \"/api/v1/namespaces/default/endpoints/my-hazelcast\"," +
+                        "    \"uid\": \"deefb354-8443-11e8-abd2-00155d395157\"," +
+                        "    \"resourceVersion\": \"18816\"," +
+                        "    \"creationTimestamp\": \"2018-07-10T13:19:27Z\"," +
+                        "    \"labels\": {" +
+                        "      \"app\": \"hazelcast\"," +
+                        "      \"chart\": \"hazelcast-1.0.0\"," +
+                        "      \"heritage\": \"Tiller\"," +
+                        "      \"release\": \"my-hazelcast\"" +
+                        "    }" +
+                        "  }," +
+                        "  \"subsets\": [" +
+                        "    {" +
+                        "      \"addresses\": [" +
+                        "        {" +
+                        "          \"ip\": \"%s\"," +
+                        "          \"nodeName\": \"minikube\"," +
+                        "          \"hazelcast-service-port\" : %s," +
+                        "          \"targetRef\": {" +
+                        "            \"kind\": \"Pod\"," +
+                        "            \"namespace\": \"default\"," +
+                        "            \"name\": \"my-hazelcast-0\"," +
+                        "            \"uid\": \"def2f426-8443-11e8-abd2-00155d395157\"," +
+                        "            \"resourceVersion\": \"18757\"" +
+                        "          }" +
+                        "        }," +
+                        "        {" +
+                        "          \"ip\": \"%s\"," +
+                        "          \"nodeName\": \"minikube\"," +
+                        "          \"hazelcast-service-port\" : %s," +
+                        "          \"targetRef\": {" +
+                        "            \"kind\": \"Pod\"," +
+                        "            \"namespace\": \"default\"," +
+                        "            \"name\": \"my-hazelcast-1\"," +
+                        "            \"uid\": \"f3b96106-8443-11e8-abd2-00155d395157\"," +
+                        "            \"resourceVersion\": \"18815\"" +
+                        "          }" +
+                        "        }" +
+                        "      ]," +
+                        "      \"ports\": [" +
+                        "        {" +
+                        "          \"name\": \"hzport\"," +
+                        "          \"port\": 5701," +
+                        "          \"protocol\": \"TCP\"" +
+                        "        }" +
+                        "      ]" +
+                        "    }" +
+                        "  ]" +
+                        "}"
+                , SAMPLE_ADDRESS_1, SAMPLE_PORT_1, SAMPLE_ADDRESS_2, SAMPLE_PORT_2);
     }
 
     private static String forbiddenBody() {
@@ -209,5 +283,19 @@ public class KubernetesClientTest {
 
     private static String malformedBody() {
         return "malformed response";
+    }
+
+    private static List<String> extractIpPort(List<KubernetesClient.EntrypointAddress> addresses) {
+        List<String> result = new ArrayList<String>();
+        for (KubernetesClient.EntrypointAddress address : addresses) {
+            String ip = address.getIp();
+            String port = String.valueOf(address.getAdditionalProperties().get("hazelcast-service-port"));
+            result.add(ipPort(ip, port));
+        }
+        return result;
+    }
+
+    private static String ipPort(String ip, String port) {
+        return String.format("%s:%s", ip, port);
     }
 }
