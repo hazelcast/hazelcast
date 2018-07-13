@@ -116,6 +116,7 @@ public final class Extractors {
             return new ExtractorGetter(serializationService, valueExtractor, arguments);
         } else {
             if (targetObject instanceof Data) {
+                //targetObject may be a Data whose object form is a json?
                 if (genericPortableGetter == null) {
                     // will be initialised a couple of times in the worst case
                     genericPortableGetter = new PortableGetter(serializationService);

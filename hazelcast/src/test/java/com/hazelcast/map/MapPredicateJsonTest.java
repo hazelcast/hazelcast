@@ -24,6 +24,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.JsonString;
 import com.hazelcast.core.JsonStringImpl;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,11 +35,16 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -70,10 +79,23 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         return json;
     }
 
+    private String putWithJsonStringKey(Map map, String name, int age, boolean onDuty) {
+        String f = createNameAgeOnDuty(name, age, onDuty).toString();
+        JsonString json = new JsonStringImpl(f);
+        map.put(json, name);
+        return name;
+    }
+
     private JsonString putJsonString(Map map, String key, JsonValue value) {
         JsonString json = new JsonStringImpl(value.toString());
         map.put(key, json);
         return json;
+    }
+
+    private String putWithJsonStringKey(Map map, JsonValue key, String value) {
+        JsonString json = new JsonStringImpl(key.toString());
+        map.put(json, value);
+        return value;
     }
 
     @Test
@@ -85,6 +107,21 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonString p3 = putJsonString(map, "c", 10, true);
 
         Collection<JsonString> vals = map.values(Predicates.greaterEqual("age", 20));
+
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(p1));
+        assertTrue(vals.contains(p2));
+    }
+
+    @Test
+    public void testQueryOnNumberPropertyOnKey() {
+        IMap<JsonString, String> map = instance.getMap(randomMapName());
+
+        String p1 = putWithJsonStringKey(map, "a", 30, true);
+        String p2 = putWithJsonStringKey(map, "b", 20, false);
+        String p3 = putWithJsonStringKey(map, "c", 10, true);
+
+        Collection<String> vals = map.values(Predicates.greaterEqual("__key.age", 20));
 
         assertEquals(2, vals.size());
         assertTrue(vals.contains(p1));
@@ -105,6 +142,25 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonString p3 = putJsonString(map, "c", val3);
 
         Collection<JsonString> vals = map.values(Predicates.equal("email", "a@aa.com"));
+
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains(p1));
+    }
+
+    @Test
+    public void testQueryOnNumberPropertyOnKey_whenSomeEntriesDoNotHaveTheField_shouldNotFail() {
+        IMap<JsonString, String> map = instance.getMap(randomMapName());
+
+        JsonValue val1 = createNameAgeOnDuty("a", 30, true);
+        ((JsonObject) val1).add("email", "a@aa.com");
+        JsonValue val2 = createNameAgeOnDuty("b", 20, false);
+        JsonValue val3 = createNameAgeOnDuty("c", 10, true);
+
+        String p1 = putWithJsonStringKey(map, val1, "a");
+        String p2 = putWithJsonStringKey(map, val2, "b");
+        String p3 = putWithJsonStringKey(map, val3, "c");
+
+        Collection<String> vals = map.values(Predicates.equal("__key.email", "a@aa.com"));
 
         assertEquals(1, vals.size());
         assertTrue(vals.contains(p1));
@@ -158,6 +214,29 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonString p3 = putJsonString(map, "three", value3);
 
         Collection<JsonString> vals = map.values(Predicates.greaterEqual("numbers[1]", 20));
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(p2));
+        assertTrue(vals.contains(p3));
+    }
+
+    @Test
+    public void testQueryOnArrayIndexOnKey() {
+        JsonObject value1 = Json.object();
+        JsonObject value2 = Json.object();
+        JsonObject value3 = Json.object();
+        JsonArray array1 = Json.array(1, 2, 3, 4, 5);
+        JsonArray array2 = Json.array(10, 20, 30, 40, 50);
+        JsonArray array3 = Json.array(100, 200, 300, 400, 500);
+        value1.add("numbers", array1);
+        value2.add("numbers", array2);
+        value3.add("numbers", array3);
+
+        IMap<JsonString, String> map = instance.getMap(randomMapName());
+        String p1 = putWithJsonStringKey(map, value1, "one");
+        String p2 = putWithJsonStringKey(map, value2, "two");
+        String p3 = putWithJsonStringKey(map, value3, "three");
+
+        Collection<String> vals = map.values(Predicates.greaterEqual("__key.numbers[1]", 20));
         assertEquals(2, vals.size());
         assertTrue(vals.contains(p2));
         assertTrue(vals.contains(p3));
@@ -229,6 +308,26 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         Collection<JsonString> vals = map.values(Predicates.greaterEqual("inner.arr[2]", 20));
         assertEquals(1, vals.size());
         assertTrue(vals.contains(p2));
+    }
+
+    //json libraries generally do not support duplicate keys. we may not support it either
+    @Test
+    public void testObjectHasOneMatchingOneNonMatchingValueOnSamePath() {
+        JsonObject obj1 = Json.object();
+        obj1.add("data", createNameAgeOnDuty("a", 50, false));
+        obj1.add("data", createNameAgeOnDuty("a", 30, false));
+
+        Iterator<JsonObject.Member> it = obj1.iterator();
+        for (; it.hasNext();) {
+            JsonObject.Member m = it.next();
+            System.out.println(m.getValue().toString());
+        }
+        IMap<String, JsonString> map = instance.getMap(randomMapName());
+        JsonString p1 = putJsonString(map, "one", obj1);
+
+        Collection<JsonString> vals = map.values(Predicates.greaterThan("data.age", 40));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains(p1));
     }
 
     @Test
@@ -346,5 +445,242 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertEquals(2, vals.size());
         assertTrue(vals.contains(p1));
         assertTrue(vals.contains(p3));
+    }
+
+    @Test
+    public void testArrayInsideArray() {
+        JsonValue array1 = Json.array();
+        array1.asArray().add(Json.array(1, 2, 3, 4)).add(Json.array(10, 20, 30, 40));
+        JsonObject obj1 = Json.object();
+        obj1.add("arr", array1);
+
+        System.out.println(obj1);
+
+        IMap<String, JsonString> map = instance.getMap(randomMapName());
+        JsonString p1 = putJsonString(map, "one", obj1);
+
+        Collection<JsonString> vals = map.values(Predicates.greaterEqual("arr[1][3]", 20));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains(p1));
+    }
+
+    @Test
+    public void testJsonPredicateOnKey() {
+        JsonValue array1 = Json.array();
+        array1.asArray().add(createNameAgeOnDuty("a", 50, false))
+                .add(createNameAgeOnDuty("b", 30, true))
+                .add(createNameAgeOnDuty("c", 32, true))
+                .add(createNameAgeOnDuty("d", 17, false));
+        JsonValue array2 = Json.array();
+        array2.asArray().add(createNameAgeOnDuty("e", 10, false))
+                .add(createNameAgeOnDuty("f", 20, true))
+                .add(createNameAgeOnDuty("g", 30, true))
+                .add(createNameAgeOnDuty("h", 40, false));
+        JsonValue array3 = Json.array();
+        array3.asArray().add(createNameAgeOnDuty("i", 26, false))
+                .add(createNameAgeOnDuty("j", 24, true))
+                .add(createNameAgeOnDuty("k", 1, true))
+                .add(createNameAgeOnDuty("l", 90, false));
+        JsonObject obj1 = Json.object();
+        obj1.add("arr", array1);
+        JsonObject obj2 = Json.object();
+        obj2.add("arr", array2);
+        JsonObject obj3 = Json.object();
+        obj3.add("arr", array3);
+
+        IMap<JsonString, String> map = instance.getMap(randomMapName());
+        map.put(new JsonStringImpl(obj1), "one");
+        map.put(new JsonStringImpl(obj2), "two");
+        map.put(new JsonStringImpl(obj3), "three");
+
+        Collection<String> vals = map.values(Predicates.greaterEqual("__key.arr[2].age", 20));
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains("one"));
+        assertTrue(vals.contains("two"));
+    }
+
+    @Test
+    public void testPortableAny() {
+        LittlePortable lp1 = new LittlePortable(1);
+        LittlePortable lp2 = new LittlePortable(2);
+        LittlePortable lp3 = new LittlePortable(3);
+        LittlePortable lp4 = new LittlePortable(4);
+        LittlePortable lp5 = new LittlePortable(5);
+
+        LittlePortable[] lps1 = new LittlePortable[] {lp1, lp2, lp3};
+        LittlePortable[] lps2 = new LittlePortable[] {lp4, lp5};
+
+        MyPortable mp1 = new MyPortable(lps1);
+        MyPortable mp2 = new MyPortable(lps2);
+
+        IMap<String, MyPortable> map = instance.getMap(randomMapName());
+        map.put("one", mp1);
+        map.put("two", mp2);
+
+        Collection<MyPortable> vals = map.values(Predicates.lessEqual("littlePortables[any].real", 2));
+
+        assertEquals(1, vals.size());
+    }
+
+    @Test
+    public void testAny() {
+        Integer[] arr1 = new Integer[] {1, 2, 3, 4};
+        Integer[] arr2 = new Integer[] {4, 5, 6, 7};
+
+        IntStore ints1 = new IntStore();
+        IntStore ints2 = new IntStore();
+        ints1.ints = arr1;
+        ints2.ints = arr2;
+
+        IMap<String, IntStore> map = instance.getMap(randomMapName());
+        map.put("one", ints1);
+        map.put("two", ints2);
+
+        Collection<IntStore> vals = map.values(Predicates.lessEqual("ints[any]", 4));
+        assertEquals(2, vals.size());
+    }
+
+    @Test
+    public void testAny2() {
+        Integer[] arr1 = new Integer[] {1, 2, 3, 4};
+        Integer[] arr2 = new Integer[] {4, 5, 6, 7};
+
+        IntStore ints1 = new IntStore();
+        IntStore ints2 = new IntStore();
+        ints1.ints = arr1;
+        ints2.ints = arr2;
+
+        IMap<String, IntStore> map = instance.getMap(randomMapName());
+        map.put("one", ints1);
+        map.put("two", ints2);
+
+        Collection<IntStore> vals = map.values(Predicates.lessEqual("ints[2]", 4));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains(ints1));
+    }
+
+    @Test
+    public void testAny2OnKey() {
+        Integer[] arr1 = new Integer[] {1, 2, 3, 4};
+        Integer[] arr2 = new Integer[] {4, 5, 6, 7};
+
+        IntStore ints1 = new IntStore();
+        IntStore ints2 = new IntStore();
+        ints1.ints = arr1;
+        ints2.ints = arr2;
+
+        IMap<IntStore, String> map = instance.getMap(randomMapName());
+        map.put(ints1, "one");
+        map.put(ints2, "two");
+
+        Collection<String> vals = map.values(Predicates.lessEqual("__key.ints[2]", 4));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains("one"));
+    }
+
+    @Test
+    @Ignore
+    public void testArrayOnKey() {
+        Integer[] arr1 = new Integer[] {1, 2, 3, 4};
+        Integer[] arr2 = new Integer[] {4, 5, 6, 7};
+
+        IMap<Integer[], String> map = instance.getMap(randomMapName());
+        map.put(arr1, "one");
+        map.put(arr2, "two");
+
+        Collection<String> vals = map.values(Predicates.lessEqual("__key[2]", 4));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains("one"));
+    }
+
+
+    @Test
+    @Ignore
+    public void testArray() {
+        Integer[] arr1 = new Integer[] {1, 2, 3, 4};
+        Integer[] arr2 = new Integer[] {4, 5, 6, 7};
+
+        IMap<String, Integer[]> map = instance.getMap(randomMapName());
+        map.put("one", arr1);
+        map.put("two", arr2);
+
+        Collection<Integer[]> vals = map.values(Predicates.lessEqual("this[2]", 4));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains(arr1));
+    }
+
+    private static class IntStore implements Serializable {
+        private Integer[] ints;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            IntStore intStore = (IntStore) o;
+            return Arrays.equals(ints, intStore.ints);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(ints);
+        }
+    }
+
+    private static class MyPortable implements Portable {
+
+        private LittlePortable[] littlePortables;
+
+        public MyPortable(LittlePortable[] littlePortables) {
+            this.littlePortables = littlePortables;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 1;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writePortableArray("littlePortables", this.littlePortables);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            this.littlePortables = (LittlePortable[]) reader.readPortableArray("littlePortables");
+        }
+    }
+
+    private static class LittlePortable implements Portable {
+
+        private int real;
+
+        public LittlePortable(int real) {
+            this.real = real;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 2;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeInt("real", this.real);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            this.real = reader.readInt("real");
+        }
     }
 }

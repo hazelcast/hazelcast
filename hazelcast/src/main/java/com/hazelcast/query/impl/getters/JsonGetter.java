@@ -21,6 +21,8 @@ import com.hazelcast.core.JsonString;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,7 +31,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 
 public class JsonGetter extends Getter {
 
-    private static final Pattern ARRAY_PATTERN = Pattern.compile("(.*)\\[(\\d+)\\]");
+    private static final Pattern PATTERN = Pattern.compile("([^.\\[\\]]+)|(\\[\\d+\\])");
 
     public JsonGetter() {
         super(null);
@@ -47,27 +49,25 @@ public class JsonGetter extends Getter {
 
     @Override
     Object getValue(Object obj, String attributePath) {
-        String[] paths = getPath(attributePath);
+        List<String> paths = getPath(attributePath);
         JsonValue value = (JsonValue) getValue(obj);
         if (value.isObject()) {
             for (String path : paths) {
                 if (value == null) {
                     return null;
                 }
-                Map.Entry<String, Integer> arr = getPathAndIndexIfArray(path);
-                if (arr == null) {
-                    value = value.asObject().get(path);
-                } else {
-                    JsonValue jsonArray = value.asObject().get(arr.getKey());
-                    if (jsonArray == null || !jsonArray.isArray()) {
-                        return null;
+                try {
+                    if (path.startsWith("[")) {
+                        int index = Integer.parseInt(path.substring(1, path.length() - 1));
+                        if (value.isArray()) {
+                            value = value.asArray().get(index);
+                        }
+                    } else {
+                        value = value.asObject().get(path);
                     }
-                    try {
-                        value = jsonArray.asArray().get(arr.getValue());
-                    } catch (IndexOutOfBoundsException ex) {
-                        ignore(ex);
-                        return null;
-                    }
+                } catch (IndexOutOfBoundsException ex) {
+                    ignore(ex);
+                    return null;
                 }
             }
             return convertFromJsonValue(value);
@@ -100,17 +100,12 @@ public class JsonGetter extends Getter {
         return true;
     }
 
-    private String[] getPath(String attributePath) {
-        return attributePath.split("\\.");
-    }
-
-    private Map.Entry<String, Integer> getPathAndIndexIfArray(String path) {
-        Matcher matcher = ARRAY_PATTERN.matcher(path);
-        if (matcher.matches()) {
-            String withoutArg = matcher.group(1);
-            int index = Integer.parseInt(matcher.group(2));
-            return new AbstractMap.SimpleEntry<String, Integer>(withoutArg, index);
+    private List<String> getPath(String attributePath) {
+        List<String> paths = new ArrayList<String>();
+        Matcher matcher = PATTERN.matcher(attributePath);
+        while(matcher.find()) {
+            paths.add(matcher.group());
         }
-        return null;
+        return paths;
     }
 }
