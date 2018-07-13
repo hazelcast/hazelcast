@@ -44,6 +44,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -86,6 +87,7 @@ public class MapContainer {
     // on-heap indexes are global, meaning there is only one index per map, stored in the mapContainer,
     // so if globalIndexes is null it means that global index is not in use
     protected final Indexes globalIndexes;
+    protected final int maxEvictionsPerCycle;
 
     // RU_COMPAT_3_9
     /**
@@ -142,6 +144,7 @@ public class MapContainer {
         }
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
+        this.maxEvictionsPerCycle = nodeEngine.getProperties().getInteger(GroupProperty.MAX_EXPLICIT_EVICTIONS);
         initEvictor();
     }
 
@@ -154,7 +157,7 @@ public class MapContainer {
             MemoryInfoAccessor memoryInfoAccessor = getMemoryInfoAccessor();
             EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
             IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
-            evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService);
+            evictor = new EvictorImpl(mapEvictionPolicy, maxEvictionsPerCycle, evictionChecker, partitionService);
         }
     }
 

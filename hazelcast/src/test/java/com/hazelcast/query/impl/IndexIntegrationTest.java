@@ -76,6 +76,8 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         Config config = new Config();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(GroupProperty.MAX_EXPLICIT_EVICTIONS.getName(), "1");
+
         MapConfig mapConfig = config.getMapConfig(name);
         mapConfig.setEvictionPolicy(EvictionPolicy.LFU);
         mapConfig.setMinEvictionCheckMillis(0);

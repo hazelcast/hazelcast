@@ -997,6 +997,13 @@ public final class GroupProperty {
     public static final HazelcastProperty SEARCH_DYNAMIC_CONFIG_FIRST
             = new HazelcastProperty("hazelcast.data.search.dynamic.config.first.enabled", false);
 
+    /**
+     * Max number of evictions per eviction cycle.
+     * When eviction kicks-in we attempt that many evictions for the given record store.
+     */
+    public static final HazelcastProperty MAX_EXPLICIT_EVICTIONS
+            = new HazelcastProperty("hazelcast.evictor.max.evictions.per.cycle", 100);
+
     private GroupProperty() {
     }
 }
