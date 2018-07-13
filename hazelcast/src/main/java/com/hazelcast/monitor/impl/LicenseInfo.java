@@ -17,6 +17,26 @@ public class LicenseInfo {
         this.expiryDate = expiryDate;
     }
 
+    public int getAllowedNumberOfNodes() {
+        return allowedNumberOfNodes;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public long getExpiryDate() {
+        return expiryDate;
+    }
+
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("allowedNumberOfNodes", allowedNumberOfNodes);
