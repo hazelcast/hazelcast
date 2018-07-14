@@ -38,7 +38,7 @@ for some examples.
 
 ### Documentation
 
-See the [Jet Reference Manual](https://docs.hazelcast.org/docs/jet/0.6/).
+See the [Jet Reference Manual](https://jet.hazelcast.org/documentation/).
 
 ### Architecture
 
