@@ -29,6 +29,7 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -108,31 +109,44 @@ public class BatchInvalidator extends Invalidator {
             return;
         }
 
-        List<Invalidation> invalidations;
+        List<List<Invalidation>> batches = new LinkedList<List<Invalidation>>();
         try {
-            invalidations = pollInvalidations(invalidationQueue);
+            batches = pollInvalidationsInBatches(invalidationQueue, batches);
         } finally {
             invalidationQueue.release();
         }
 
-        sendInvalidations(dataStructureName, invalidations);
+        for (List<Invalidation> batch : batches) {
+            if (!batch.isEmpty()) {
+                sendInvalidations(dataStructureName, batch);
+            }
+        }
     }
 
-    private List<Invalidation> pollInvalidations(InvalidationQueue<Invalidation> invalidationQueue) {
-        final int size = invalidationQueue.size();
+    private List<List<Invalidation>> pollInvalidationsInBatches(InvalidationQueue<Invalidation> invalidationQueue,
+                                                                List<List<Invalidation>> batchCollection) {
 
-        List<Invalidation> invalidations = new ArrayList<Invalidation>(size);
-
-        for (int i = 0; i < size; i++) {
+        List<Invalidation> batch = new LinkedList<Invalidation>();
+        do {
             Invalidation invalidation = invalidationQueue.poll();
             if (invalidation == null) {
                 break;
             }
 
-            invalidations.add(invalidation);
+            batch.add(invalidation);
+
+            if (batch.size() == batchSize) {
+                batchCollection.add(batch);
+                batch = new ArrayList<Invalidation>(batchSize);
+            }
+
+        } while (true);
+
+        if (!batch.isEmpty()) {
+            batchCollection.add(batch);
         }
 
-        return invalidations;
+        return batchCollection;
     }
 
     private void sendInvalidations(String dataStructureName, List<Invalidation> invalidations) {
