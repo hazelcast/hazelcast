@@ -44,12 +44,13 @@ final class ProbeUtils {
     static final int TYPE_MAP = 6;
     static final int TYPE_COUNTER = 7;
     static final int TYPE_SEMAPHORE = 8;
+    static final int TYPE_BOOLEAN = 9;
 
     private static final Map<Class<?>, Integer> TYPES;
 
     static {
-        final Map<Class<?>, Integer> types = createHashMap(18);
-
+        final Map<Class<?>, Integer> types = createHashMap(19);
+        types.put(boolean.class, TYPE_BOOLEAN);
         types.put(byte.class, TYPE_PRIMITIVE_LONG);
         types.put(short.class, TYPE_PRIMITIVE_LONG);
         types.put(int.class, TYPE_PRIMITIVE_LONG);

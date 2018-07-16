@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_BOOLEAN;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COLLECTION;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COUNTER;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_NUMBER;
@@ -103,6 +104,8 @@ abstract class MethodProbe implements ProbeFunction {
         @Override
         public long get(S source) throws Exception {
             switch (type) {
+            	case TYPE_BOOLEAN:
+            		return (Boolean) method.invoke(source, EMPTY_ARGS) ? 1L : 0L;
                 case TYPE_PRIMITIVE_LONG:
                     return ((Number) method.invoke(source, EMPTY_ARGS)).longValue();
                 case TYPE_LONG_NUMBER:

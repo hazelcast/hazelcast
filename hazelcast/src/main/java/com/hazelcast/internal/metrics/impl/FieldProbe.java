@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_BOOLEAN;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COLLECTION;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COUNTER;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_NUMBER;
@@ -92,7 +93,9 @@ abstract class FieldProbe implements ProbeFunction {
         @Override
         public long get(S source) throws Exception {
             switch (type) {
-                case TYPE_PRIMITIVE_LONG:
+	            case TYPE_BOOLEAN:
+	            	return field.getBoolean(source) ? 1L : 0L;
+	            case TYPE_PRIMITIVE_LONG:
                     return field.getLong(source);
                 case TYPE_LONG_NUMBER:
                     Number longNumber = (Number) field.get(source);

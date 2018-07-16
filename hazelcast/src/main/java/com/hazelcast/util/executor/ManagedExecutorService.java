@@ -40,4 +40,8 @@ public interface ManagedExecutorService extends ExecutorService {
 
     @Probe
     int getRemainingQueueCapacity();
+    
+    @Probe
+    @Override
+    boolean isTerminated();
 }
