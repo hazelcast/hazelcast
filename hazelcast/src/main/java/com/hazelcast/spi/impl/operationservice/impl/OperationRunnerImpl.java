@@ -367,9 +367,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private void sendResponseAfterOperationError(Operation operation, Throwable e) {
         try {
             if (node.getState() != NodeState.SHUT_DOWN) {
-                operation.sendResponse(e);
+                operation.sendResponse(errorResponse(operation, e));
             } else if (operation.executedLocally()) {
-                operation.sendResponse(new HazelcastInstanceNotActiveException());
+                operation.sendResponse(errorResponse(operation, new HazelcastInstanceNotActiveException()));
             }
         } catch (Throwable t) {
             logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
@@ -423,6 +423,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         }
     }
 
+    private ErrorResponse errorResponse(Operation op, Throwable error) {
+        return new ErrorResponse(error, op.getCallId(), op.isUrgent());
+    }
     /**
      * This method has a direct dependency on how objects are serialized.
      * If the stream format is changed, this extraction method must be changed as well.

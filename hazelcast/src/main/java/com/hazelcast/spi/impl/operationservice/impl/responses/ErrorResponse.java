@@ -34,6 +34,10 @@ public class ErrorResponse extends Response {
         this.cause = cause;
     }
 
+    public void setCause(Throwable t) {
+        this.cause = t;
+    }
+
     public Throwable getCause() {
         return cause;
     }

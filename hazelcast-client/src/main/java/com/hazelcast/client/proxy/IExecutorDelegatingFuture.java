@@ -28,7 +28,6 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
 
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -86,7 +85,7 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
             throw rethrow(e);
         }
 
-        complete(new CancellationException());
+        super.cancel(mayInterruptIfRunning);
         return cancelSuccessful;
     }
 

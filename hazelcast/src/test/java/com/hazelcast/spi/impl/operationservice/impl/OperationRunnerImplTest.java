@@ -25,6 +25,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -34,6 +35,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -41,6 +44,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
@@ -145,7 +149,12 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         operationRunner.run(op);
 
         assertEquals(0, counter.get());
-        verify(responseHandler).sendResponse(same(op), any(IllegalStateException.class));
+        verify(responseHandler).sendResponse(same(op), argThat(new ArgumentMatcher<ErrorResponse>() {
+            @Override
+            public boolean matches(ErrorResponse response) {
+                return response.getCause().getClass().equals(IllegalStateException.class);
+            }
+        }));
     }
 
     @Test
@@ -161,7 +170,13 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         operationRunner.run(op);
 
-        verify(responseHandler).sendResponse(same(op), any(ExpectedRuntimeException.class));
+        ArgumentCaptor<ErrorResponse> captor = ArgumentCaptor.forClass(ErrorResponse.class);
+        verify(responseHandler).sendResponse(same(op), argThat(new ArgumentMatcher<ErrorResponse>() {
+            @Override
+            public boolean matches(ErrorResponse response) {
+                return response.getCause().getClass().equals(ExpectedRuntimeException.class);
+            }
+        }));
     }
 
     @Test
