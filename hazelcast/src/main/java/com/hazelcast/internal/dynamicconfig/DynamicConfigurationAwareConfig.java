@@ -117,7 +117,7 @@ public class DynamicConfigurationAwareConfig extends Config {
                 return staticConfig.getMapEventJournalConfigs();
             }
         };
-
+  
     private final ConfigSupplier<EventJournalConfig> cacheEventJournalConfigSupplier = new
             ConfigSupplier<EventJournalConfig>() {
                 @Override
