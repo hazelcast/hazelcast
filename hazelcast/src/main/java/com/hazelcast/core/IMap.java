@@ -2187,26 +2187,43 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * For each entry not found in memory {@link MapLoader#load(Object)}
      * is invoked to load the value from the map store backing the map.
-     * Exceptions thrown by load fail the operation and are propagated
-     * to the caller.
      * <p>
      * If write-through persistence mode is configured, for each entry
      * updated by the entryProcessor, before the updated value is stored
      * in memory, {@link MapStore#store(Object, Object)} is called to
-     * write the value into the map store. Exceptions thrown by store
-     * fail the operation and are propagated to the caller.
+     * write the value into the map store.
      * <p>
      * If write-through persistence mode is configured, for each entry
      * updated to null value, before the value is removed from the
      * memory, {@link MapStore#delete(Object)} is called to delete the
-     * value from the map store. Exceptions thrown by delete fail the
-     * operation and are propagated to the caller.
+     * value from the map store.
      * <p>
-     * If write-behind persistence mode is configured with
-     * write-coalescing turned off,
+     * Exceptions thrown by map store fail the operation and are propagated to
+     * the caller. If an exception happened, the operation might already
+     * succeeded on some of the keys. If write-behind persistence mode is
+     * configured with write-coalescing turned off,
      * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
      * if the write-behind queue has reached its per-node maximum
      * capacity.
+     *
+     * <h4>Performance note</h4>
+     * <p>Keep the state of {@code entryProcessor}
+     * small, it will be serialized and one copy will be sent to each member.
+     * Additionally, the {@linkplain EntryProcessor#getBackupProcessor() backup
+     * processor} will also be serialized once for each affected partition and
+     * sent to to each backup. For example, this usage is very inefficient; it
+     * will duplicate the entire {@code additions} map once for each member and
+     * once for each partition and backup:
+     * <pre>{@code
+     *   HashMap additions = ...;
+     *   iMap.executeOnKeys(map.keySet(), new AbstractEntryProcessor<Integer, Integer>() {
+     *             public Object process(Entry<Integer, Integer> entry) {
+     *                 Integer updateBy = additions.get(entry.getKey());
+     *                 entry.setValue(entry.getValue() + updateBy);
+     *                 return null;
+     *             }
+     *         });
+     * }</pre>
      *
      * @return results of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException     if the specified key is {@code null}

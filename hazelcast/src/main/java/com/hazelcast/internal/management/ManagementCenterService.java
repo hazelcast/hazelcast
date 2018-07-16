@@ -399,7 +399,7 @@ public class ManagementCenterService {
             } catch (Exception e) {
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
-                    log("Failed to connect to:" + url, e);
+                    log("Failed to connect to: " + url, e);
                 }
             } finally {
                 closeResource(writer);

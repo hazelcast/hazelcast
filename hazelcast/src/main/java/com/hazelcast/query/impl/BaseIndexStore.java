@@ -142,7 +142,7 @@ public abstract class BaseIndexStore implements IndexStore {
             }
             return value;
         } else {
-            throw new IllegalArgumentException("It is not allowed to used a type that is not Comparable: "
+            throw new IllegalArgumentException("It is not allowed to use a type that is not Comparable: "
                     + input.getClass());
         }
 
