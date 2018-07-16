@@ -18,6 +18,9 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 
+/**
+ * Value object for sending license information to Management Center.
+ */
 public class LicenseInfo {
     private final int allowedNumberOfNodes;
     private final int type;
