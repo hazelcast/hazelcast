@@ -31,9 +31,9 @@ import static com.hazelcast.jet.pipeline.Sources.batchFromProcessor;
  * directory (but not its subdirectories) and emits output object created by
  * {@code mapOutputFn}.
  *
- * @param <T> the type of the record read by {@code datumReaderSupplier}
+ * @param <D> the type of the datum read by {@code datumReaderSupplier}
  */
-public final class AvroSourceBuilder<T> {
+public final class AvroSourceBuilder<D> {
 
     private static final String GLOB_WILDCARD = "*";
 
@@ -42,16 +42,17 @@ public final class AvroSourceBuilder<T> {
     private String glob = GLOB_WILDCARD;
     private boolean sharedFileSystem;
 
-    private final DistributedSupplier<DatumReader<T>> datumReaderSupplier;
+    private final DistributedSupplier<? extends DatumReader<D>> datumReaderSupplier;
 
     /**
      * Use {@link AvroSources#filesBuilder}.
      */
-    AvroSourceBuilder(@Nonnull String directory,
-                      @Nonnull DistributedSupplier<DatumReader<T>> datumReaderSupplier) {
+    AvroSourceBuilder(
+            @Nonnull String directory,
+            @Nonnull DistributedSupplier<? extends DatumReader<D>> datumReaderSupplier
+    ) {
         this.directory = directory;
         this.datumReaderSupplier = datumReaderSupplier;
-
     }
 
     /**
@@ -59,7 +60,7 @@ public final class AvroSourceBuilder<T> {
      * java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
      * Default value is {@code "*"} which means all files.
      */
-    public AvroSourceBuilder<T> glob(@Nonnull String glob) {
+    public AvroSourceBuilder<D> glob(@Nonnull String glob) {
         this.glob = glob;
         return this;
     }
@@ -74,7 +75,7 @@ public final class AvroSourceBuilder<T> {
      * each member will read all files in the directory, assuming the are
      * local.
      */
-    public AvroSourceBuilder<T> sharedFileSystem(boolean sharedFileSystem) {
+    public AvroSourceBuilder<D> sharedFileSystem(boolean sharedFileSystem) {
         this.sharedFileSystem = sharedFileSystem;
         return this;
     }
@@ -95,9 +96,9 @@ public final class AvroSourceBuilder<T> {
      * @param mapOutputFn the function which creates output object from each
      *                    record. Gets the filename and record read by {@code
      *                    datumReader} as parameters
-     * @param <R>         the type of the items the source emits
+     * @param <T>         the type of the items the source emits
      */
-    public <R> BatchSource<R> build(@Nonnull DistributedBiFunction<String, T, R> mapOutputFn) {
+    public <T> BatchSource<T> build(@Nonnull DistributedBiFunction<String, ? super D, T> mapOutputFn) {
         return batchFromProcessor("avroFilesSource(" + new File(directory, glob) + ')',
                 AvroProcessors.readFilesP(directory, glob, sharedFileSystem, datumReaderSupplier, mapOutputFn));
     }
@@ -107,7 +108,7 @@ public final class AvroSourceBuilder<T> {
      * Source emits records read by {@code datumReader} to downstream without
      * any transformation.
      */
-    public BatchSource<T> build() {
-        return build((filename, record) -> record);
+    public BatchSource<D> build() {
+        return build((filename, datum) -> datum);
     }
 }

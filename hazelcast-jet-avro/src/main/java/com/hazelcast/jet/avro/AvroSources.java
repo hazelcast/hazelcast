@@ -42,29 +42,46 @@ public final class AvroSources {
      * from Apache Avro files in a directory (but not its subdirectories).
      *
      * @param directory           parent directory of the files
-     * @param datumReaderSupplier the supplier of datum reader which reads
-     *                            records from the files
-     * @param <T>                 the type of the records
+     * @param recordClass         the class to read
+     * @param <D>                 the type of the datum
      */
     @Nonnull
-    public static <T> AvroSourceBuilder<T> filesBuilder(
+    public static <D> AvroSourceBuilder<D> filesBuilder(
             @Nonnull String directory,
-            @Nonnull DistributedSupplier<DatumReader<T>> datumReaderSupplier
+            @Nonnull Class<D> recordClass
+    ) {
+        return filesBuilder(directory, () -> SpecificRecord.class.isAssignableFrom(recordClass) ?
+                new SpecificDatumReader<>(recordClass) : new ReflectDatumReader<>(recordClass));
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom Avro file source for the Pipeline API. The source reads records
+     * from Apache Avro files in a directory (but not its subdirectories).
+     *
+     * @param directory           parent directory of the files
+     * @param datumReaderSupplier the supplier of datum reader which reads
+     *                            records from the files
+     * @param <D>                 the type of the datum
+     */
+    @Nonnull
+    public static <D> AvroSourceBuilder<D> filesBuilder(
+            @Nonnull String directory,
+            @Nonnull DistributedSupplier<? extends DatumReader<D>> datumReaderSupplier
     ) {
         return new AvroSourceBuilder<>(directory, datumReaderSupplier);
     }
 
     /**
-     * Convenience for {@link #filesBuilder(String, DistributedSupplier)} which
+     * Convenience for {@link #filesBuilder(String, Class)} which
      * reads all the files in the supplied directory as specific records using
-     * supplied {@code recordClass}. If {@code recordClass} implements {@link
+     * supplied {@code datumClass}. If {@code datumClass} implements {@link
      * SpecificRecord}, {@link SpecificDatumReader} is used to read the records,
      * {@link ReflectDatumReader} is used otherwise.
      */
     @Nonnull
-    public static <R> BatchSource<R> files(@Nonnull String directory, @Nonnull Class<R> recordClass) {
-        return filesBuilder(directory, () -> SpecificRecord.class.isAssignableFrom(recordClass) ?
-                new SpecificDatumReader<>(recordClass) : new ReflectDatumReader<>(recordClass)).build();
+    public static <D> BatchSource<D> files(@Nonnull String directory, @Nonnull Class<D> datumClass) {
+        return filesBuilder(directory, datumClass).build();
     }
 
     /**
@@ -74,9 +91,9 @@ public final class AvroSources {
      * mapping function.
      */
     @Nonnull
-    public static <R> BatchSource<R> files(
+    public static <D> BatchSource<D> files(
             @Nonnull String directory,
-            @Nonnull DistributedBiFunction<String, GenericRecord, R> mapOutputFn
+            @Nonnull DistributedBiFunction<String, GenericRecord, D> mapOutputFn
     ) {
         return filesBuilder(directory, GenericDatumReader<GenericRecord>::new)
                 .build(mapOutputFn);

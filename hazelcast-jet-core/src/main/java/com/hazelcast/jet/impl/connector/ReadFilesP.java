@@ -46,23 +46,23 @@ import static com.hazelcast.jet.Traversers.traverseStream;
  * one file is only read by one thread, so extra parallelism won't improve
  * performance if there aren't enough files to read.
  */
-public final class ReadFilesP<T, R> extends AbstractProcessor {
+public final class ReadFilesP<R, T> extends AbstractProcessor {
 
     private final Path directory;
     private final String glob;
     private final boolean sharedFileSystem;
-    private final DistributedFunction<? super Path, ? extends Stream<T>> readFileFn;
-    private final DistributedBiFunction<? super String, ? super T, ? extends R> mapOutputFn;
+    private final DistributedFunction<? super Path, ? extends Stream<R>> readFileFn;
+    private final DistributedBiFunction<? super String, ? super R, ? extends T> mapOutputFn;
 
     private int processorIndex;
     private int parallelism;
     private DirectoryStream<Path> directoryStream;
-    private Traverser<? extends R> outputTraverser;
-    private Stream<T> currentStream;
+    private Traverser<? extends T> outputTraverser;
+    private Stream<R> currentStream;
 
     private ReadFilesP(@Nonnull String directory, @Nonnull String glob, boolean sharedFileSystem,
-                       @Nonnull DistributedFunction<? super Path, ? extends Stream<T>> readFileFn,
-                       @Nonnull DistributedBiFunction<? super String, ? super T, ? extends R> mapOutputFn) {
+                       @Nonnull DistributedFunction<? super Path, ? extends Stream<R>> readFileFn,
+                       @Nonnull DistributedBiFunction<? super String, ? super R, ? extends T> mapOutputFn) {
         this.directory = Paths.get(directory);
         this.glob = glob;
         this.readFileFn = readFileFn;
@@ -94,7 +94,7 @@ public final class ReadFilesP<T, R> extends AbstractProcessor {
         return ((hashCode & Integer.MAX_VALUE) % parallelism) == processorIndex;
     }
 
-    private Traverser<? extends R> processFile(Path file) {
+    private Traverser<? extends T> processFile(Path file) {
         if (getLogger().isFinestEnabled()) {
             getLogger().finest("Processing file " + file);
         }
@@ -135,12 +135,12 @@ public final class ReadFilesP<T, R> extends AbstractProcessor {
     /**
      * Private API. Use {@link SourceProcessors#readFilesP} instead.
      */
-    public static <W, R> ProcessorMetaSupplier metaSupplier(
+    public static <W, T> ProcessorMetaSupplier metaSupplier(
             @Nonnull String directory,
             @Nonnull String glob,
             boolean sharedFileSystem,
             @Nonnull DistributedFunction<Path, Stream<W>> readFileFn,
-            @Nonnull DistributedBiFunction<String, W, R> mapOutputFn
+            @Nonnull DistributedBiFunction<String, ? super W, T> mapOutputFn
     ) {
         return ProcessorMetaSupplier.of(() -> new ReadFilesP<>(
                 directory, glob, sharedFileSystem, readFileFn, mapOutputFn),

@@ -107,9 +107,9 @@ public final class FileSourceBuilder {
      *
      * @param mapOutputFn the function which creates output object from each
      *                    line. Gets the filename and line as parameters
-     * @param <R> the type of the items the source emits
+     * @param <T> the type of the items the source emits
      */
-    public <R> BatchSource<R> build(DistributedBiFunction<String, String, ? extends R> mapOutputFn) {
+    public <T> BatchSource<T> build(DistributedBiFunction<String, String, ? extends T> mapOutputFn) {
         return batchFromProcessor("filesSource(" + new File(directory, glob) + ')',
                 SourceProcessors.readFilesP(directory, charset, glob, sharedFileSystem, mapOutputFn));
     }
@@ -163,9 +163,9 @@ public final class FileSourceBuilder {
      *
      * @param mapOutputFn the function which creates output object from each
      *                    line. Gets the filename and line as parameters
-     * @param <R> the type of the items the source emits
+     * @param <T> the type of the items the source emits
      */
-    public <R> StreamSource<R> buildWatcher(DistributedBiFunction<String, String, ? extends R> mapOutputFn) {
+    public <T> StreamSource<T> buildWatcher(DistributedBiFunction<String, String, ? extends T> mapOutputFn) {
         return Sources.streamFromProcessor("fileWatcherSource(" + directory + '/' + glob + ')',
                 SourceProcessors.streamFilesP(directory, charset, glob, sharedFileSystem, mapOutputFn));
     }

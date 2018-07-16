@@ -18,8 +18,10 @@ package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.stream.DistributedCollectors;
 
 import javax.annotation.Nonnull;
+import java.util.stream.Collector;
 
 /**
  * Specialization of {@link AggregateOperation} to the "arity-1" case with
@@ -54,4 +56,12 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
     // Narrows the return type
     @Nonnull @Override
     <R_NEW> AggregateOperation1<T, A, R_NEW> andThen(DistributedFunction<? super R, ? extends R_NEW> thenFn);
+
+    /**
+     * Turns this aggregate operation into a collector which can be used in conjunction
+     * with {@link java.util.stream.Stream#collect(Collector)}.
+     */
+    default Collector<T, A, R> toCollector() {
+        return DistributedCollectors.aggregating(this);
+    }
 }
