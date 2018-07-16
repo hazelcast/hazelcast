@@ -93,4 +93,9 @@ public interface MerkleTree extends MerkleTreeView {
      */
     int footprint();
 
+    /**
+     * Clears the Merkle tree
+     */
+    void clear();
+
 }

@@ -29,7 +29,9 @@ import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -280,6 +282,35 @@ public class ArrayMerkleTreeTest {
         merkleTreeDeep.updateRemove(0xE0000000, 42);
 
         verifyTreesAreSameOnCommonLevels(merkleTreeShallow, merkleTreeDeep);
+    }
+
+    @Test
+    public void testClear() {
+        MerkleTree merkleTree = new ArrayMerkleTree(4);
+
+        merkleTree.updateAdd(0x80000000, 1); // leaf 7
+        merkleTree.updateAdd(0xA0000000, 2); // leaf 8
+        merkleTree.updateAdd(0xC0000000, 3); // leaf 9
+        merkleTree.updateAdd(0xE0000000, 4); // leaf 10
+        merkleTree.updateAdd(0x00000000, 5); // leaf 11
+        merkleTree.updateAdd(0x20000000, 6); // leaf 12
+        merkleTree.updateAdd(0x40000000, 7); // leaf 13
+        merkleTree.updateAdd(0x60000000, 8); // leaf 14
+
+        assertNotEquals(0, merkleTree.getNodeHash(0));
+
+        merkleTree.clear();
+
+        for (int nodeOrder = 0; nodeOrder < MerkleTreeUtil.getNumberOfNodes(merkleTree.depth()); nodeOrder++) {
+            assertEquals(0, merkleTree.getNodeHash(nodeOrder));
+        }
+
+        merkleTree.forEachKeyOfNode(0, new Consumer<Object>() {
+            @Override
+            public void accept(Object o) {
+                fail("Consumer is not expected to be invoked. Leaf keys should be empty.");
+            }
+        });
     }
 
     private void verifyTreesAreSameOnCommonLevels(MerkleTree merkleTreeShallow, MerkleTree merkleTreeDeep) {

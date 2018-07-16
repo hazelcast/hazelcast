@@ -19,6 +19,8 @@ package com.hazelcast.wan.merkletree;
 import com.hazelcast.util.collection.OAHashSet;
 import com.hazelcast.util.function.Consumer;
 
+import java.util.Arrays;
+
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -200,6 +202,14 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
                 + INT_SIZE_IN_BYTES // depth
                 + INT_SIZE_IN_BYTES // leafLevelOrder
                 + INT_SIZE_IN_BYTES; // leafLevel
+    }
+
+    @Override
+    public void clear() {
+        Arrays.fill(tree, 0);
+        for (OAHashSet<Object> leafKeys : this.leafKeys) {
+            leafKeys.clear();
+        }
     }
 
     /**
