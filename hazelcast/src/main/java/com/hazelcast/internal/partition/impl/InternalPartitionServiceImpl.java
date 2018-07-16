@@ -392,10 +392,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
             if (node.isMaster()) {
                 if (partitionStateManager.isInitialized()) {
-                    final ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
-                    if (clusterState.isMigrationAllowed()) {
-                        migrationManager.triggerControlTask();
-                    }
+                    migrationManager.triggerControlTask();
                 }
             }
         } finally {
@@ -449,7 +446,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         lock.lock();
         try {
-            if (partitionStateManager.isInitialized()) {
+            if (partitionStateManager.isInitialized()
+                    && migrationManager.shouldTriggerRepartitioningWhenClusterStateAllowsMigration()) {
                 migrationManager.triggerControlTask();
             }
         } finally {
