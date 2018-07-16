@@ -98,7 +98,7 @@ public class DynamicConfigurationAwareConfig extends Config {
             return staticConfig.getMapConfigs();
         }
     };
-  
+
     private final ConfigSupplier<EventJournalConfig> mapEventJournalConfigSupplier =
         new ConfigSupplier<EventJournalConfig>() {
             @Override
@@ -117,7 +117,7 @@ public class DynamicConfigurationAwareConfig extends Config {
                 return staticConfig.getMapEventJournalConfigs();
             }
         };
-  
+
     private final ConfigSupplier<EventJournalConfig> cacheEventJournalConfigSupplier = new
             ConfigSupplier<EventJournalConfig>() {
                 @Override
@@ -136,7 +136,7 @@ public class DynamicConfigurationAwareConfig extends Config {
                     return staticConfig.getCacheEventJournalConfigs();
                 }
             };
-  
+
     private final ConfigSupplier<MerkleTreeConfig> mapMerkleTreeConfigSupplier =
             new ConfigSupplier<MerkleTreeConfig>() {
                 @Override
@@ -292,7 +292,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     private <T> boolean checkStaticConfigDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
         Object existingConfiguration = staticConfigurations.get(configName);
-        if (existingConfiguration != null && !existingConfiguration.equals(newConfig)) {
+        if (existingConfiguration != null) {
             throw new ConfigurationException("Cannot add a new dynamic configuration " + newConfig
                 + " as static configuration already contains " + existingConfiguration);
         }
