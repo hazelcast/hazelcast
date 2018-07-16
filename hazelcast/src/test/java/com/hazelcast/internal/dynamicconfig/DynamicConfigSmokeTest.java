@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import static org.junit.Assert.assertEquals;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.ListenerConfig;
@@ -33,8 +34,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -215,5 +214,31 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
 
         MapConfig mapConfigOnLiteMember = i3.getConfig().getMapConfig(mapName);
         assertEquals(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT, mapConfigOnLiteMember.getBackupCount());
+    }
+
+    @Test
+    public void map_testNonConflictingStaticConfig() {
+        String mapName = "test_map";
+        Config config = new Config();
+        config.addMapConfig(getMapConfigWithTTL(mapName, 20));
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+        hz.getConfig().addMapConfig(getMapConfigWithTTL(mapName, 50));
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void map_testConflictingStaticConfig() {
+        String mapName = "test_map";
+        Config config = new Config();
+        config.addMapConfig(getMapConfigWithTTL(mapName, 20));
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+        hz.getConfig().addMapConfig(getMapConfigWithTTL(mapName, 20));
+    }
+
+    private MapConfig getMapConfigWithTTL(String mapName, int ttl) {
+        MapConfig mapConfig = new MapConfig(mapName);
+        mapConfig.setTimeToLiveSeconds(ttl);
+        return mapConfig;
     }
 }

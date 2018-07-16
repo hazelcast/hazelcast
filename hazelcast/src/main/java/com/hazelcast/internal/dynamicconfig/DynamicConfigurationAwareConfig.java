@@ -268,7 +268,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     private <T> void checkStaticConfigurationDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
         Object existingConfiguration = staticConfigurations.get(configName);
-        if (existingConfiguration != null) {
+        if (existingConfiguration != null && existingConfiguration.equals(newConfig)) {
             throw new ConfigurationException("Cannot add a new dynamic configuration " + newConfig
                     + " as static configuration already contains " + existingConfiguration);
         }
