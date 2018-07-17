@@ -20,6 +20,7 @@ import com.hazelcast.internal.networking.AbstractChannel;
 import com.hazelcast.internal.networking.OutboundFrame;
 
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.Executor;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 
@@ -37,9 +38,10 @@ public class NioChannel extends AbstractChannel {
         super(socketChannel, clientMode);
     }
 
-    public void init(NioInboundPipeline inboundPipeline, NioOutboundPipeline outboundPipeline) {
+    public void init(NioInboundPipeline inboundPipeline, NioOutboundPipeline outboundPipeline, Executor executor) {
         this.inboundPipeline = inboundPipeline;
         this.outboundPipeline = outboundPipeline;
+        this.executor = executor;
     }
 
     public NioOutboundPipeline outboundPipeline() {

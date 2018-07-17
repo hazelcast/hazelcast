@@ -49,6 +49,7 @@ import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -98,6 +99,7 @@ import static com.hazelcast.client.spi.properties.ClientProperty.IO_OUTPUT_THREA
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -256,6 +258,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             outputThreads = configuredOutputThreads;
         }
 
+        ExecutorService executor = newFixedThreadPool(1, new ThreadFactoryImpl("ChannelClose.thread-", true));
         return new NioEventLoopGroup(
                 new NioEventLoopGroup.Context()
                         .loggingService(client.getLoggingService())
@@ -265,6 +268,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         .inputThreadCount(inputThreads)
                         .outputThreadCount(outputThreads)
                         .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))
+                        .executor(executor)
                         .channelInitializer(new ClientChannelInitializer(getBufferSize(), directBuffer)));
     }
 

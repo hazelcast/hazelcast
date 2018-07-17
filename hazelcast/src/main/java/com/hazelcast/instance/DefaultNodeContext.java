@@ -24,6 +24,7 @@ import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -39,6 +40,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 
 @PrivateApi
 public class DefaultNodeContext implements NodeContext {
@@ -152,6 +157,10 @@ public class DefaultNodeContext implements NodeContext {
         ChannelErrorHandler errorHandler
                 = new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class));
 
+        String basename = createThreadPoolName(ioService.getHazelcastName(), "ChannelClose-");
+        @SuppressWarnings("checkstyle:magicnumber")
+        ExecutorService executor = newFixedThreadPool(4, new ThreadFactoryImpl(basename, true));
+
         return new NioEventLoopGroup(
                 new NioEventLoopGroup.Context()
                         .loggingService(loggingService)
@@ -161,6 +170,7 @@ public class DefaultNodeContext implements NodeContext {
                         .inputThreadCount(ioService.getInputSelectorThreadCount())
                         .outputThreadCount(ioService.getOutputSelectorThreadCount())
                         .balancerIntervalSeconds(ioService.getBalancerIntervalSeconds())
-                        .channelInitializer(initializer));
+                        .channelInitializer(initializer)
+                        .executor(executor));
     }
 }

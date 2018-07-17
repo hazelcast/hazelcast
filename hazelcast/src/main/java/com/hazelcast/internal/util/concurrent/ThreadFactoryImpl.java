@@ -22,13 +22,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ThreadFactoryImpl implements ThreadFactory {
     private final String basename;
     private final AtomicInteger id = new AtomicInteger();
+    private final boolean daemon;
 
     public ThreadFactoryImpl(String basename) {
+        this(basename, false);
+    }
+
+    public ThreadFactoryImpl(String basename, boolean daemon) {
         this.basename = basename;
+        this.daemon = daemon;
     }
 
     @Override
     public Thread newThread(Runnable r) {
-        return new Thread(r, basename + id.incrementAndGet());
+        Thread thread = new Thread(r, basename + id.incrementAndGet());
+        thread.setDaemon(daemon);
+        return thread;
     }
 }

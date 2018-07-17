@@ -319,6 +319,8 @@ public final class NioOutboundPipeline extends NioPipeline {
 
     @Override
     public void close() {
+        assert !(Thread.currentThread() instanceof NioThread);
+
         writeQueue.clear();
         priorityWriteQueue.clear();
 

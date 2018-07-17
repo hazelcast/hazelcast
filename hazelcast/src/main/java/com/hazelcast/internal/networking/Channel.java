@@ -174,11 +174,14 @@ public interface Channel extends Closeable {
     /**
      * Closes the Channel.
      *
+     * Closing is done asynchronously so that the calling thread (which
+     * could be an IO thread for example) isn't blocked.
+     *
      * This method is thread-safe.
      *
      * When the channel already is closed, the call is ignored.
      */
-    void close() throws IOException;
+    void close();
 
     /**
      * Checks if this Channel is closed. This method is very cheap to make.

@@ -27,12 +27,16 @@ import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 /**
  * An abstract {@link Channel} implementation. This class is a pure implementation
@@ -40,6 +44,22 @@ import static java.util.Collections.newSetFromMap;
  * channel is because the current Channel implementations need the SocketChannel.
  */
 public abstract class AbstractChannel implements Channel {
+
+    /**
+     * Executor only used for closing connections. This executor is only
+     * used when no executor has (yet) been set to make sure a valid
+     * executor is always available. If not used, no thread is created.
+     *
+     * It should not be used for any other purpose than closing a channel.
+     */
+    public static final ExecutorService CLOSE_EXECUTOR = newSingleThreadExecutor(new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, "CloseThread");
+            thread.setDaemon(true);
+            return thread;
+        }
+    });
 
     private static final int FALSE = 0;
     private static final int TRUE = 1;
@@ -51,6 +71,8 @@ public abstract class AbstractChannel implements Channel {
             = AtomicReferenceFieldUpdater.newUpdater(AbstractChannel.class, SocketAddress.class, "remoteAddress");
 
     protected final SocketChannel socketChannel;
+    // executor currently only uses to close the channel.
+    protected Executor executor = CLOSE_EXECUTOR;
 
     private final ConcurrentMap<?, ?> attributeMap = new ConcurrentHashMap<Object, Object>();
     private final Set<ChannelCloseListener> closeListeners
@@ -126,30 +148,15 @@ public abstract class AbstractChannel implements Channel {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (!CLOSED.compareAndSet(this, FALSE, TRUE)) {
             return;
         }
 
-        // we execute this in its own try/catch block because we don't want to skip closing the socketChannel in case of problems
         try {
-            onClose();
+            executor.execute(new CloseTask());
         } catch (Exception e) {
-            getLogger().severe(format("Failed to call 'onClose' on channel [%s]", this), e);
-        }
-
-        try {
-            socketChannel.close();
-        } finally {
-            for (ChannelCloseListener closeListener : closeListeners) {
-                // it is important we catch exceptions so that other listeners aren't obstructed when
-                // one of the listeners is throwing an exception
-                try {
-                    closeListener.onClose(this);
-                } catch (Exception e) {
-                    getLogger().severe(format("Failed to process closeListener [%s] on channel [%s]", closeListener, this), e);
-                }
-            }
+            getLogger().warning("Failed to schedule CloseTask on channel " + this, e);
         }
     }
 
@@ -169,5 +176,35 @@ public abstract class AbstractChannel implements Channel {
     @Override
     public void addCloseListener(ChannelCloseListener listener) {
         closeListeners.add(checkNotNull(listener, "listener"));
+    }
+
+    private class CloseTask implements Runnable {
+        @Override
+        public void run() {
+            // we execute this in its own try/catch block because we don't want to
+            // skip closing the socketChannel in case of problems
+            try {
+                onClose();
+            } catch (Exception e) {
+                getLogger().severe(format("Failed to call 'onClose' on channel [%s]", this), e);
+            }
+
+            try {
+                socketChannel.close();
+            } catch (IOException e) {
+                getLogger().severe(format("Failed to close [%s]", this), e);
+            } finally {
+                for (ChannelCloseListener closeListener : closeListeners) {
+                    // it is important we catch exceptions so that other listeners aren't obstructed when
+                    // one of the listeners is throwing an exception
+                    try {
+                        closeListener.onClose(AbstractChannel.this);
+                    } catch (Exception e) {
+                        getLogger().severe(format("Failed to process closeListener [%s] on channel [%s]",
+                                closeListener, this), e);
+                    }
+                }
+            }
+        }
     }
 }
