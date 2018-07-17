@@ -32,6 +32,7 @@ import java.io.StringReader;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
@@ -44,8 +45,9 @@ import com.hazelcast.internal.json.Location;
 import com.hazelcast.internal.json.ParseException;
 import com.hazelcast.internal.json.Json.DefaultHandler;
 import com.hazelcast.internal.json.TestUtil.RunnableEx;
+import com.hazelcast.test.annotation.QuickTest;
 
-
+@Category(QuickTest.class)
 public class JsonParser_Test {
 
   private TestHandler handler;

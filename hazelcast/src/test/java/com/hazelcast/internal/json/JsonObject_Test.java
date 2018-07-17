@@ -36,6 +36,7 @@ import java.util.NoSuchElementException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.InOrder;
 
 import com.hazelcast.internal.json.Json;
@@ -46,8 +47,9 @@ import com.hazelcast.internal.json.JsonWriter;
 import com.hazelcast.internal.json.ParseException;
 import com.hazelcast.internal.json.JsonObject.HashIndexTable;
 import com.hazelcast.internal.json.JsonObject.Member;
+import com.hazelcast.test.annotation.QuickTest;
 
-
+@Category(QuickTest.class)
 public class JsonObject_Test {
 
   private JsonObject object;

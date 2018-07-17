@@ -26,11 +26,13 @@ import static org.junit.Assert.assertSame;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import com.hazelcast.internal.json.Location;
 import com.hazelcast.internal.json.ParseException;
+import com.hazelcast.test.annotation.QuickTest;
 
-
+@Category(QuickTest.class)
 public class ParseException_Test {
 
   private Location location;

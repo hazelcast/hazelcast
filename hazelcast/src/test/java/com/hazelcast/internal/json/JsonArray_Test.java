@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.InOrder;
 
 import com.hazelcast.internal.json.Json;
@@ -43,8 +44,9 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.json.JsonWriter;
 import com.hazelcast.internal.json.ParseException;
+import com.hazelcast.test.annotation.QuickTest;
 
-
+@Category(QuickTest.class)
 public class JsonArray_Test {
 
   private JsonArray array;
