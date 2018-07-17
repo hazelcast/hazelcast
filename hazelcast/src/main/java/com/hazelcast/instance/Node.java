@@ -55,6 +55,7 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -606,6 +607,10 @@ public class Node {
         joiner.reset();
     }
 
+    public LoggingService getLoggingService() {
+        return loggingService;
+    }
+
     public ILogger getLogger(String name) {
         return loggingService.getLogger(name);
     }
@@ -632,6 +637,10 @@ public class Node {
 
     public NodeEngineImpl getNodeEngine() {
         return nodeEngine;
+    }
+
+    public ClientEngineImpl getClientEngine() {
+        return clientEngine;
     }
 
     public NodeExtension getNodeExtension() {

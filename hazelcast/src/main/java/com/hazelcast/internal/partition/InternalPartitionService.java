@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionReplicaStateChecker;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.nio.Address;
@@ -89,9 +90,8 @@ public interface InternalPartitionService extends IPartitionService {
      * </ul>
      * If this instance is not the master, it will trigger the master to assign the partitions.
      *
-     * @throws HazelcastException if the partition state generator failed to arrange the partitions
      * @return {@link PartitionRuntimeState} if this node is the master and the partition table is initialized
-     *
+     * @throws HazelcastException if the partition state generator failed to arrange the partitions
      * @see PartitionStateManager#initializePartitionAssignments(java.util.Set)
      */
     PartitionRuntimeState firstArrangement();
@@ -118,4 +118,13 @@ public interface InternalPartitionService extends IPartitionService {
      * @return partition ID list assigned to given target if partitions are assigned already
      */
     List<Integer> getMemberPartitionsIfAssigned(Address target);
+
+    /**
+     * Returns the {@link PartitionServiceProxy} of the partition service..
+     *
+     * @return the {@link PartitionServiceProxy}
+     */
+    PartitionServiceProxy getPartitionServiceProxy();
+
+    PartitionReplicaStateChecker getPartitionReplicaStateChecker();
 }
