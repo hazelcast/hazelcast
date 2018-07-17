@@ -35,6 +35,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -469,7 +470,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
             QueryEntry queryable = new QueryEntry(serializationService, keyData, value, Extractors.empty());
-            indexes.saveEntryIndex(queryable, null);
+            indexes.saveEntryIndex(queryable, null, Index.OperationSource.User);
         }
     }
 

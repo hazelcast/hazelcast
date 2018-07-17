@@ -70,7 +70,8 @@ public class IndexesTest {
         indexes.addOrGetIndex("salary", true);
         for (int i = 0; i < 100; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee, Extractors.empty()), null);
+            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee, Extractors.empty()), null,
+                    Index.OperationSource.User);
         }
         int count = 10;
         Set<String> ages = new HashSet<String>(count);
@@ -92,7 +93,8 @@ public class IndexesTest {
         indexes.addOrGetIndex("salary", true);
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee, Extractors.empty()), null);
+            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee, Extractors.empty()), null,
+                    Index.OperationSource.User);
         }
 
         for (int i = 0; i < 10; i++) {
@@ -106,15 +108,24 @@ public class IndexesTest {
     public void testIndex2() {
         Indexes indexes = Indexes.createStandaloneIndexes(serializationService, copyBehavior);
         indexes.addOrGetIndex("name", false);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(1), new Value("abc"), Extractors.empty()), null);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(2), new Value("xyz"), Extractors.empty()), null);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(3), new Value("aaa"), Extractors.empty()), null);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(4), new Value("zzz"), Extractors.empty()), null);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(5), new Value("klm"), Extractors.empty()), null);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(6), new Value("prs"), Extractors.empty()), null);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(7), new Value("prs"), Extractors.empty()), null);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(8), new Value("def"), Extractors.empty()), null);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(9), new Value("qwx"), Extractors.empty()), null);
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(1), new Value("abc"), Extractors.empty()), null,
+                Index.OperationSource.User);
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(2), new Value("xyz"), Extractors.empty()), null,
+                Index.OperationSource.User);
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(3), new Value("aaa"), Extractors.empty()), null,
+                Index.OperationSource.User);
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(4), new Value("zzz"), Extractors.empty()), null,
+                Index.OperationSource.User);
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(5), new Value("klm"), Extractors.empty()), null,
+                Index.OperationSource.User);
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(6), new Value("prs"), Extractors.empty()), null,
+                Index.OperationSource.User);
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(7), new Value("prs"), Extractors.empty()), null,
+                Index.OperationSource.User);
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(8), new Value("def"), Extractors.empty()), null,
+                Index.OperationSource.User);
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(9), new Value("qwx"), Extractors.empty()), null,
+                Index.OperationSource.User);
         assertEquals(8, new HashSet<QueryableEntry>(indexes.query(new SqlPredicate("name > 'aac'"))).size());
     }
 
@@ -141,7 +152,8 @@ public class IndexesTest {
     private void shouldReturnNull_whenQueryingOnKeys(Indexes indexes) {
         for (int i = 0; i < 50; i++) {
             // passing null value to QueryEntry
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, Extractors.empty()), null);
+            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, Extractors.empty()), null,
+                    Index.OperationSource.User);
         }
 
         Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
@@ -156,7 +168,8 @@ public class IndexesTest {
 
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, Extractors.empty()), null);
+            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, Extractors.empty()), null,
+                    Index.OperationSource.User);
         }
 
         Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));

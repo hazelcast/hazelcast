@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.MultiResult;
 
@@ -48,64 +49,69 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
-    abstract void newIndexInternal(Comparable newValue, QueryableEntry record);
+    abstract Object newIndexInternal(Comparable newValue, QueryableEntry record);
 
-    abstract void removeIndexInternal(Comparable oldValue, Data indexKey);
+    abstract Object removeIndexInternal(Comparable oldValue, Data indexKey);
 
     @Override
-    public final void newIndex(Object newValue, QueryableEntry record) {
+    public final void newIndex(Object newValue, QueryableEntry record, IndexOperationStats operationStats) {
         takeWriteLock();
         try {
-            unwrapAndAddToIndex(newValue, record);
+            unwrapAndAddToIndex(newValue, record, operationStats);
         } finally {
             releaseWriteLock();
         }
     }
 
-    private void unwrapAndAddToIndex(Object newValue, QueryableEntry record) {
+    private void unwrapAndAddToIndex(Object newValue, QueryableEntry record, IndexOperationStats operationStats) {
         if (newValue instanceof MultiResult) {
             multiResultHasToDetectDuplicates = true;
             List<Object> results = ((MultiResult) newValue).getResults();
             for (Object o : results) {
                 Comparable sanitizedValue = sanitizeValue(o);
-                newIndexInternal(sanitizedValue, record);
+                Object oldValue = newIndexInternal(sanitizedValue, record);
+                operationStats.onEntryAdded(oldValue, newValue);
             }
         } else {
             Comparable sanitizedValue = sanitizeValue(newValue);
-            newIndexInternal(sanitizedValue, record);
+            Object oldValue = newIndexInternal(sanitizedValue, record);
+            operationStats.onEntryAdded(oldValue, newValue);
         }
     }
 
     @Override
-    public final void removeIndex(Object oldValue, Data indexKey) {
+    public final void removeIndex(Object oldValue, Data indexKey, IndexOperationStats operationStats) {
         takeWriteLock();
         try {
-            unwrapAndRemoveFromIndex(oldValue, indexKey);
+            unwrapAndRemoveFromIndex(oldValue, indexKey, operationStats);
         } finally {
             releaseWriteLock();
         }
     }
 
-    private void unwrapAndRemoveFromIndex(Object oldValue, Data indexKey) {
+    private void unwrapAndRemoveFromIndex(Object oldValue, Data indexKey, IndexOperationStats operationStats) {
         if (oldValue instanceof MultiResult) {
             List<Object> results = ((MultiResult) oldValue).getResults();
             for (Object o : results) {
                 Comparable sanitizedValue = sanitizeValue(o);
-                removeIndexInternal(sanitizedValue, indexKey);
+                Object removedValue = removeIndexInternal(sanitizedValue, indexKey);
+                operationStats.onEntryRemoved(removedValue);
             }
         } else {
             Comparable sanitizedValue = sanitizeValue(oldValue);
-            removeIndexInternal(sanitizedValue, indexKey);
+            Object removedValue = removeIndexInternal(sanitizedValue, indexKey);
+            operationStats.onEntryRemoved(removedValue);
         }
     }
 
     @Override
-    public final void updateIndex(Object oldValue, Object newValue, QueryableEntry entry) {
+    public final void updateIndex(Object oldValue, Object newValue, QueryableEntry entry,
+                                  IndexOperationStats operationStats) {
         takeWriteLock();
         try {
             Data indexKey = entry.getKeyData();
-            unwrapAndRemoveFromIndex(oldValue, indexKey);
-            unwrapAndAddToIndex(newValue, entry);
+            unwrapAndRemoveFromIndex(oldValue, indexKey, operationStats);
+            unwrapAndAddToIndex(newValue, entry, operationStats);
         } finally {
             releaseWriteLock();
         }
@@ -182,6 +188,6 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     interface IndexFunctor<A, B> {
-        void invoke(A param1, B param2);
+        Object invoke(A param1, B param2);
     }
 }

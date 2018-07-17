@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexHeapMemoryCostUtil;
 import com.hazelcast.util.Clock;
 
@@ -184,32 +185,45 @@ public class GlobalIndexStats implements InternalIndexStats {
     }
 
     @Override
-    public void onEntryInserted(long timestamp, Object value) {
-        TOTAL_INSERT_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
-        INSERT_COUNT.incrementAndGet(this);
-        ENTRY_COUNT.incrementAndGet(this);
-        VALUES_MEMORY_COST.addAndGet(this, IndexHeapMemoryCostUtil.estimateValueCost(value));
+    public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        // XXX: AddIndexOperation may be invoked at any time by a user as a
+        // result of IMap.addIndex call and we can't tell for sure are we
+        // building a new index or rebuilding the existing one, so we are just
+        // ignoring the attempts to reinsert the entries.
+        if (operationStats.getEntryCountDelta() == 0) {
+            return;
+        }
+
+        if (operationSource == Index.OperationSource.User) {
+            TOTAL_INSERT_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
+            INSERT_COUNT.incrementAndGet(this);
+        }
+        ENTRY_COUNT.addAndGet(this, operationStats.getEntryCountDelta());
+        VALUES_MEMORY_COST.addAndGet(this, operationStats.getMemoryCostDelta());
     }
 
     @Override
-    public void onEntryUpdated(long timestamp, Object oldValue, Object newValue) {
-        TOTAL_UPDATE_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
-        UPDATE_COUNT.incrementAndGet(this);
-        long oldCost = IndexHeapMemoryCostUtil.estimateValueCost(oldValue);
-        long newCost = IndexHeapMemoryCostUtil.estimateValueCost(newValue);
-        VALUES_MEMORY_COST.addAndGet(this, newCost - oldCost);
+    public void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        if (operationSource == Index.OperationSource.User) {
+            TOTAL_UPDATE_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
+            UPDATE_COUNT.incrementAndGet(this);
+        }
+        ENTRY_COUNT.addAndGet(this, operationStats.getEntryCountDelta());
+        VALUES_MEMORY_COST.addAndGet(this, operationStats.getMemoryCostDelta());
     }
 
     @Override
-    public void onEntryRemoved(long timestamp, Object value) {
-        TOTAL_REMOVE_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
-        REMOVE_COUNT.incrementAndGet(this);
-        ENTRY_COUNT.decrementAndGet(this);
-        VALUES_MEMORY_COST.addAndGet(this, -IndexHeapMemoryCostUtil.estimateValueCost(value));
+    public void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        if (operationSource == Index.OperationSource.User) {
+            TOTAL_REMOVE_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
+            REMOVE_COUNT.incrementAndGet(this);
+        }
+        ENTRY_COUNT.addAndGet(this, operationStats.getEntryCountDelta());
+        VALUES_MEMORY_COST.addAndGet(this, operationStats.getMemoryCostDelta());
     }
 
     @Override
-    public void onEntriesCleared() {
+    public void onClear() {
         entryCount = 0;
         valuesMemoryCost = 0;
     }
@@ -246,6 +260,11 @@ public class GlobalIndexStats implements InternalIndexStats {
     @Override
     public MemoryAllocator wrapMemoryAllocator(MemoryAllocator memoryAllocator) {
         throw new UnsupportedOperationException("global indexes are not supposed to use native memory allocators");
+    }
+
+    @Override
+    public IndexOperationStats createOperationStats() {
+        return new GlobalIndexOperationStats();
     }
 
 }

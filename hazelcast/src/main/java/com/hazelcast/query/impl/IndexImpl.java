@@ -18,12 +18,12 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.monitor.impl.InternalIndexStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 
@@ -64,8 +64,9 @@ public class IndexImpl implements InternalIndex {
     }
 
     @Override
-    public void saveEntryIndex(QueryableEntry entry, Object oldRecordValue) throws QueryException {
+    public void saveEntryIndex(QueryableEntry entry, Object oldRecordValue, OperationSource operationSource) {
         long timestamp = stats.makeTimestamp();
+        IndexOperationStats operationStats = stats.createOperationStats();
 
         /*
          * At first, check if converter is not initialized, initialize it before saving an entry index
@@ -80,21 +81,23 @@ public class IndexImpl implements InternalIndex {
 
         Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getTargetObject(false));
         if (oldRecordValue == null) {
-            indexStore.newIndex(newAttributeValue, entry);
-            stats.onEntryInserted(timestamp, newAttributeValue);
+            indexStore.newIndex(newAttributeValue, entry, operationStats);
+            stats.onInsert(timestamp, operationStats, operationSource);
         } else {
             Object oldAttributeValue = extractAttributeValue(entry.getKeyData(), oldRecordValue);
-            indexStore.updateIndex(oldAttributeValue, newAttributeValue, entry);
-            stats.onEntryUpdated(timestamp, oldAttributeValue, newAttributeValue);
+            indexStore.updateIndex(oldAttributeValue, newAttributeValue, entry, operationStats);
+            stats.onUpdate(timestamp, operationStats, operationSource);
         }
     }
 
     @Override
-    public void removeEntryIndex(Data key, Object value) {
+    public void removeEntryIndex(Data key, Object value, OperationSource operationSource) {
         long timestamp = stats.makeTimestamp();
+        IndexOperationStats operationStats = stats.createOperationStats();
+
         Object attributeValue = extractAttributeValue(key, value);
-        indexStore.removeIndex(attributeValue, key);
-        stats.onEntryRemoved(timestamp, attributeValue);
+        indexStore.removeIndex(attributeValue, key, operationStats);
+        stats.onRemove(timestamp, operationStats, operationSource);
     }
 
     private Object extractAttributeValue(Data key, Object value) {
@@ -188,12 +191,12 @@ public class IndexImpl implements InternalIndex {
     public void clear() {
         indexStore.clear();
         converter = null;
-        stats.onEntriesCleared();
+        stats.onClear();
     }
 
     @Override
     public void destroy() {
-        stats.onEntriesCleared();
+        stats.onClear();
     }
 
     @Override

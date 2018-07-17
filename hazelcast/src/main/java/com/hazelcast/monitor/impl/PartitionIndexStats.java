@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -55,6 +56,11 @@ public class PartitionIndexStats implements InternalIndexStats {
             "totalRemoveLatency");
     private static final AtomicLongFieldUpdater<PartitionIndexStats> MEMORY_COST = newUpdater(PartitionIndexStats.class,
             "memoryCost");
+
+    // Per-operation stats may be safely reused/shared for operations on
+    // partitioned indexes since we know for sure only a single thread may
+    // mutate the index.
+    private final PartitionIndexOperationStats operationStats = new PartitionIndexOperationStats();
 
     private final long creationTime;
 
@@ -168,27 +174,42 @@ public class PartitionIndexStats implements InternalIndexStats {
     }
 
     @Override
-    public void onEntryInserted(long timestamp, Object value) {
-        TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (System.nanoTime() - timestamp));
-        INSERT_COUNT.lazySet(this, insertCount + 1);
-        ENTRY_COUNT.lazySet(this, entryCount + 1);
+    public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        // XXX: AddIndexOperation may be invoked at any time by a user as a
+        // result of IMap.addIndex call and we can't tell for sure are we
+        // building a new index or rebuilding the existing one, so we are just
+        // ignoring the attempts to reinsert the entries.
+        if (operationStats.getEntryCountDelta() == 0) {
+            return;
+        }
+
+        if (operationSource == Index.OperationSource.User) {
+            TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (System.nanoTime() - timestamp));
+            INSERT_COUNT.lazySet(this, insertCount + 1);
+        }
+        ENTRY_COUNT.lazySet(this, entryCount + operationStats.getEntryCountDelta());
     }
 
     @Override
-    public void onEntryUpdated(long timestamp, Object oldValue, Object newValue) {
-        TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (System.nanoTime() - timestamp));
-        UPDATE_COUNT.lazySet(this, updateCount + 1);
+    public void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        if (operationSource == Index.OperationSource.User) {
+            TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (System.nanoTime() - timestamp));
+            UPDATE_COUNT.lazySet(this, updateCount + 1);
+        }
+        ENTRY_COUNT.lazySet(this, entryCount + operationStats.getEntryCountDelta());
     }
 
     @Override
-    public void onEntryRemoved(long timestamp, Object value) {
-        TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (System.nanoTime() - timestamp));
-        REMOVE_COUNT.lazySet(this, removeCount + 1);
-        ENTRY_COUNT.lazySet(this, entryCount - 1);
+    public void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        if (operationSource == Index.OperationSource.User) {
+            TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (System.nanoTime() - timestamp));
+            REMOVE_COUNT.lazySet(this, removeCount + 1);
+        }
+        ENTRY_COUNT.lazySet(this, entryCount + operationStats.getEntryCountDelta());
     }
 
     @Override
-    public void onEntriesCleared() {
+    public void onClear() {
         ENTRY_COUNT.lazySet(this, 0);
     }
 
@@ -233,6 +254,12 @@ public class PartitionIndexStats implements InternalIndexStats {
     @Override
     public MemoryAllocator wrapMemoryAllocator(MemoryAllocator memoryAllocator) {
         return new MemoryAllocatorWithStats(memoryAllocator);
+    }
+
+    @Override
+    public IndexOperationStats createOperationStats() {
+        operationStats.reset();
+        return operationStats;
     }
 
     private class MemoryAllocatorWithStats implements MemoryAllocator {

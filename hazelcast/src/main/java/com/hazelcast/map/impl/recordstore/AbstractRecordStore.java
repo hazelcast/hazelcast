@@ -33,6 +33,7 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
@@ -161,7 +162,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.hasIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
-            indexes.saveEntryIndex(queryableEntry, oldValue);
+            indexes.saveEntryIndex(queryableEntry, oldValue, Index.OperationSource.User);
         }
     }
 
@@ -171,7 +172,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.hasIndex()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntryIndex(key, value);
+            indexes.removeEntryIndex(key, value, Index.OperationSource.User);
         }
     }
 

@@ -196,7 +196,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                         final Object valueToIndex = getValueOrCachedValue(newRecord, serializationService);
                         if (valueToIndex != null) {
                             final QueryableEntry queryableEntry = mapContainer.newQueryEntry(newRecord.getKey(), valueToIndex);
-                            indexes.saveEntryIndex(queryableEntry, null);
+                            indexes.saveEntryIndex(queryableEntry, null, Index.OperationSource.System);
                         }
                     }
 

@@ -104,13 +104,13 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public void saveEntryIndex(QueryableEntry entry, Object oldValue) {
-            delegate.saveEntryIndex(entry, oldValue);
+        public void saveEntryIndex(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
+            delegate.saveEntryIndex(entry, oldValue, operationSource);
         }
 
         @Override
-        public void removeEntryIndex(Data key, Object value) {
-            delegate.removeEntryIndex(key, value);
+        public void removeEntryIndex(Data key, Object value, OperationSource operationSource) {
+            delegate.removeEntryIndex(key, value, operationSource);
         }
 
         @Override

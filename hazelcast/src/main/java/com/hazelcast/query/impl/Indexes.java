@@ -29,7 +29,6 @@ import com.hazelcast.monitor.impl.PartitionIndexesStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 
@@ -186,14 +185,15 @@ public class Indexes {
      * Inserts a new queryable entry into this indexes instance or updates the
      * existing one.
      *
-     * @param queryableEntry the queryable entry to insert or update.
-     * @param oldValue       the old entry value to update, {@code null} if
-     *                       inserting the new entry.
+     * @param queryableEntry  the queryable entry to insert or update.
+     * @param oldValue        the old entry value to update, {@code null} if
+     *                        inserting the new entry.
+     * @param operationSource the operation source.
      */
-    public void saveEntryIndex(QueryableEntry queryableEntry, Object oldValue) throws QueryException {
+    public void saveEntryIndex(QueryableEntry queryableEntry, Object oldValue, Index.OperationSource operationSource) {
         InternalIndex[] indexes = getIndexes();
         for (InternalIndex index : indexes) {
-            index.saveEntryIndex(queryableEntry, oldValue);
+            index.saveEntryIndex(queryableEntry, oldValue, operationSource);
         }
     }
 
@@ -201,13 +201,14 @@ public class Indexes {
      * Removes the entry from this indexes instance identified by the given key
      * and value.
      *
-     * @param key   the key if the entry to remove.
-     * @param value the value of the entry to remove.
+     * @param key             the key if the entry to remove.
+     * @param value           the value of the entry to remove.
+     * @param operationSource the operation source.
      */
-    public void removeEntryIndex(Data key, Object value) throws QueryException {
+    public void removeEntryIndex(Data key, Object value, Index.OperationSource operationSource) {
         InternalIndex[] indexes = getIndexes();
         for (InternalIndex index : indexes) {
-            index.removeEntryIndex(key, value);
+            index.removeEntryIndex(key, value, operationSource);
         }
     }
 

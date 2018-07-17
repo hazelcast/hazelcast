@@ -52,13 +52,13 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    void newIndexInternal(Comparable newValue, QueryableEntry record) {
-        addFunctor.invoke(newValue, record);
+    Object newIndexInternal(Comparable newValue, QueryableEntry record) {
+        return addFunctor.invoke(newValue, record);
     }
 
     @Override
-    void removeIndexInternal(Comparable oldValue, Data indexKey) {
-        removeFunctor.invoke(oldValue, indexKey);
+    Object removeIndexInternal(Comparable oldValue, Data indexKey) {
+        return removeFunctor.invoke(oldValue, indexKey);
     }
 
     @Override
@@ -192,16 +192,16 @@ public class UnsortedIndexStore extends BaseIndexStore {
      */
     private class AddFunctor implements IndexFunctor<Comparable, QueryableEntry> {
         @Override
-        public void invoke(Comparable attribute, QueryableEntry entry) {
+        public Object invoke(Comparable attribute, QueryableEntry entry) {
             if (attribute instanceof IndexImpl.NullObject) {
-                recordsWithNullValue.put(entry.getKeyData(), entry);
+                return recordsWithNullValue.put(entry.getKeyData(), entry);
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(attribute);
                 if (records == null) {
                     records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
                     recordMap.put(attribute, records);
                 }
-                records.put(entry.getKeyData(), entry);
+                return records.put(entry.getKeyData(), entry);
             }
         }
     }
@@ -214,10 +214,11 @@ public class UnsortedIndexStore extends BaseIndexStore {
      */
     private class CopyOnWriteAddFunctor implements IndexFunctor<Comparable, QueryableEntry> {
         @Override
-        public void invoke(Comparable attribute, QueryableEntry entry) {
+        public Object invoke(Comparable attribute, QueryableEntry entry) {
+            Object oldValue;
             if (attribute instanceof IndexImpl.NullObject) {
                 HashMap<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
-                copy.put(entry.getKeyData(), entry);
+                oldValue = copy.put(entry.getKeyData(), entry);
                 recordsWithNullValue = copy;
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(attribute);
@@ -226,10 +227,12 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 }
 
                 records = new HashMap<Data, QueryableEntry>(records);
-                records.put(entry.getKeyData(), entry);
+                oldValue = records.put(entry.getKeyData(), entry);
 
                 recordMap.put(attribute, records);
             }
+
+            return oldValue;
         }
     }
 
@@ -241,18 +244,23 @@ public class UnsortedIndexStore extends BaseIndexStore {
      */
     private class RemoveFunctor implements IndexFunctor<Comparable, Data> {
         @Override
-        public void invoke(Comparable attribute, Data indexKey) {
+        public Object invoke(Comparable attribute, Data indexKey) {
+            Object oldValue;
             if (attribute instanceof IndexImpl.NullObject) {
-                recordsWithNullValue.remove(indexKey);
+                oldValue = recordsWithNullValue.remove(indexKey);
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(attribute);
                 if (records != null) {
-                    records.remove(indexKey);
+                    oldValue = records.remove(indexKey);
                     if (records.size() == 0) {
                         recordMap.remove(attribute);
                     }
+                } else {
+                    oldValue = null;
                 }
             }
+
+            return oldValue;
         }
     }
 
@@ -264,24 +272,29 @@ public class UnsortedIndexStore extends BaseIndexStore {
      */
     private class CopyOnWriteRemoveFunctor implements IndexFunctor<Comparable, Data> {
         @Override
-        public void invoke(Comparable attribute, Data indexKey) {
+        public Object invoke(Comparable attribute, Data indexKey) {
+            Object oldValue;
             if (attribute instanceof IndexImpl.NullObject) {
                 HashMap<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
-                copy.remove(indexKey);
+                oldValue = copy.remove(indexKey);
                 recordsWithNullValue = copy;
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(attribute);
                 if (records != null) {
                     records = new HashMap<Data, QueryableEntry>(records);
-                    records.remove(indexKey);
+                    oldValue = records.remove(indexKey);
 
                     if (records.isEmpty()) {
                         recordMap.remove(attribute);
                     } else {
                         recordMap.put(attribute, records);
                     }
+                } else {
+                    oldValue = null;
                 }
             }
+
+            return oldValue;
         }
     }
 

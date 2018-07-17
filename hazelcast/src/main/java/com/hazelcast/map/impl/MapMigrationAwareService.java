@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -258,7 +259,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 final Object value = Records.getValueOrCachedValue(record, serializationService);
                 if (value != null) {
                     QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-                    indexes.saveEntryIndex(queryEntry, null);
+                    indexes.saveEntryIndex(queryEntry, null, Index.OperationSource.System);
                 }
             }
         }
@@ -291,7 +292,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 final Data key = record.getKey();
 
                 final Object value = Records.getValueOrCachedValue(record, serializationService);
-                indexes.removeEntryIndex(key, value);
+                indexes.removeEntryIndex(key, value, Index.OperationSource.System);
             }
         }
     }

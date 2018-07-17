@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.MapIndexInfo;
@@ -104,7 +105,8 @@ public class SynchronizeIndexesForPartitionTask implements PartitionSpecificRunn
                 Object value = Records.getValueOrCachedValue(record, serializationService);
                 QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
                 for (IndexInfo missingIndex : missingIndexes) {
-                    indexes.getIndex(missingIndex.getAttributeName()).saveEntryIndex(queryEntry, null);
+                    indexes.getIndex(missingIndex.getAttributeName())
+                           .saveEntryIndex(queryEntry, null, Index.OperationSource.System);
                 }
             }
         }

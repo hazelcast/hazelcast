@@ -48,23 +48,25 @@ public interface Index {
     /**
      * Saves the given entry into this index.
      *
-     * @param entry    the entry to save.
-     * @param oldValue the previous old value associated with the entry or
-     *                 {@code null} if the entry is new.
+     * @param entry           the entry to save.
+     * @param oldValue        the previous old value associated with the entry or
+     *                        {@code null} if the entry is new.
+     * @param operationSource the operation source.
      * @throws QueryException if there were errors while extracting the
      *                        attribute value from the entry.
      */
-    void saveEntryIndex(QueryableEntry entry, Object oldValue);
+    void saveEntryIndex(QueryableEntry entry, Object oldValue, OperationSource operationSource);
 
     /**
      * Removes the entry having the given key and the value from this index.
      *
-     * @param key   the key of the entry to remove.
-     * @param value the value of the entry to remove.
+     * @param key             the key of the entry to remove.
+     * @param value           the value of the entry to remove.
+     * @param operationSource the operation source.
      * @throws QueryException if there were errors while extracting the
      *                        attribute value from the entry.
      */
-    void removeEntryIndex(Data key, Object value);
+    void removeEntryIndex(Data key, Object value, OperationSource operationSource);
 
     /**
      * @return the converter associated with this index; or {@code null} if the
@@ -124,5 +126,28 @@ public interface Index {
      * memory for the HD index.
      */
     void destroy();
+
+    /**
+     * Identifies an original source of an index operation.
+     * <p>
+     * Required for the index stats tracking to ignore index operations
+     * initiated internally by Hazelcast. We can't achieve the same behaviour
+     * on the pure stats level, e.g. by turning stats off during a partition
+     * migration, since global indexes and their stats are shared across
+     * partitions.
+     */
+    enum OperationSource {
+        /**
+         * Indicates that an index operation was initiated by a user; for
+         * instance, as a result of a new map entry insertion.
+         */
+        User,
+
+        /**
+         * Indicates that an index operation was initiated internally by
+         * Hazelcast; for instance, as a result of a partition migration.
+         */
+        System
+    }
 
 }

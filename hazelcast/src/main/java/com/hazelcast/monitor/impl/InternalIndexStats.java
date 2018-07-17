@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.query.impl.Index;
 
 /**
  * Provides internal per-index statistics for {@link com.hazelcast.query.impl.Index
@@ -111,22 +112,22 @@ public interface InternalIndexStats {
         }
 
         @Override
-        public void onEntryInserted(long timestamp, Object value) {
+        public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
             // do nothing
         }
 
         @Override
-        public void onEntryUpdated(long timestamp, Object oldValue, Object newValue) {
+        public void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
             // do nothing
         }
 
         @Override
-        public void onEntryRemoved(long timestamp, Object value) {
+        public void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
             // do nothing
         }
 
         @Override
-        public void onEntriesCleared() {
+        public void onClear() {
             // do nothing
         }
 
@@ -143,6 +144,11 @@ public interface InternalIndexStats {
         @Override
         public MemoryAllocator wrapMemoryAllocator(MemoryAllocator memoryAllocator) {
             return memoryAllocator;
+        }
+
+        @Override
+        public IndexOperationStats createOperationStats() {
+            return IndexOperationStats.EMPTY;
         }
 
     };
@@ -263,40 +269,42 @@ public interface InternalIndexStats {
     /**
      * Invoked by the associated index after every insert operation.
      *
-     * @param timestamp the time at which the insert operation was started.
-     * @param value     the value inserted to the index.
+     * @param timestamp       the time at which the insert operation was started.
+     * @param operationStats  the operation stats to track the stats.
+     * @param operationSource the operation source.
      * @see #makeTimestamp
      * @see com.hazelcast.query.impl.Index#saveEntryIndex
      */
-    void onEntryInserted(long timestamp, Object value);
+    void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource);
 
     /**
      * Invoked by the associated index after every update operation.
      *
-     * @param timestamp the time at which the update operation was started.
-     * @param oldValue  the old value replaced in the index.
-     * @param newValue  the new value inserted to the index.
+     * @param timestamp       the time at which the update operation was started.
+     * @param operationStats  the operation stats to track the stats.
+     * @param operationSource the operation source.
      * @see #makeTimestamp
      * @see com.hazelcast.query.impl.Index#saveEntryIndex
      */
-    void onEntryUpdated(long timestamp, Object oldValue, Object newValue);
+    void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource);
 
     /**
      * Invoked by the associated index after every remove operation.
      *
-     * @param timestamp the time at which the remove operation was started.
-     * @param value     the value removed from the index.
+     * @param timestamp       the time at which the remove operation was started.
+     * @param operationStats  the operation stats to track the stats.
+     * @param operationSource the operation source.
      * @see #makeTimestamp
      * @see com.hazelcast.query.impl.Index#removeEntryIndex
      */
-    void onEntryRemoved(long timestamp, Object value);
+    void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource);
 
     /**
      * Invoked by the associated index after the index was cleared.
      *
      * @see com.hazelcast.query.impl.Index#clear
      */
-    void onEntriesCleared();
+    void onClear();
 
     /**
      * Invoked by the associated index after every index hit.
@@ -331,5 +339,12 @@ public interface InternalIndexStats {
      * @return the wrapped memory allocator.
      */
     MemoryAllocator wrapMemoryAllocator(MemoryAllocator memoryAllocator);
+
+    /**
+     * Creates a new per-operation stats instance.
+     *
+     * @return the created per-operation stats instance.
+     */
+    IndexOperationStats createOperationStats();
 
 }
