@@ -113,21 +113,21 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
 
         Config config = super.config();
         config.getRingbufferConfig(ringbufferNameA)
-              .setInMemoryFormat(inMemoryFormat)
-              .setMergePolicyConfig(mergePolicyConfig)
-              .setRingbufferStoreConfig(new RingbufferStoreConfig()
-                      .setStoreImplementation(ringbufferStoreA))
-              .setBackupCount(1)
-              .setAsyncBackupCount(0)
-              .setTimeToLiveSeconds(0);
+                .setInMemoryFormat(inMemoryFormat)
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setRingbufferStoreConfig(new RingbufferStoreConfig()
+                        .setStoreImplementation(ringbufferStoreA))
+                .setBackupCount(1)
+                .setAsyncBackupCount(0)
+                .setTimeToLiveSeconds(0);
         config.getRingbufferConfig(ringbufferNameB)
-              .setInMemoryFormat(inMemoryFormat)
-              .setMergePolicyConfig(mergePolicyConfig)
-              .setRingbufferStoreConfig(new RingbufferStoreConfig()
-                      .setStoreImplementation(ringbufferStoreB))
-              .setBackupCount(1)
-              .setAsyncBackupCount(0)
-              .setTimeToLiveSeconds(0);
+                .setInMemoryFormat(inMemoryFormat)
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setRingbufferStoreConfig(new RingbufferStoreConfig()
+                        .setStoreImplementation(ringbufferStoreB))
+                .setBackupCount(1)
+                .setAsyncBackupCount(0)
+                .setTimeToLiveSeconds(0);
         return config;
     }
 
