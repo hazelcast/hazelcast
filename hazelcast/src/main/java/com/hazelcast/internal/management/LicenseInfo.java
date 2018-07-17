@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.monitor.impl;
+package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
 
