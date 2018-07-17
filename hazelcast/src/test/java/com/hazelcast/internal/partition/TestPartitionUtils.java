@@ -53,7 +53,7 @@ public final class TestPartitionUtils {
     public static PartitionServiceState getPartitionServiceState(HazelcastInstance instance) {
         try {
             Node node = getNode(instance);
-            InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) node.getPartitionService();
+            InternalPartitionService partitionService = node.getPartitionService();
             return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
         } catch (IllegalArgumentException e) {
             return PartitionServiceState.SAFE;

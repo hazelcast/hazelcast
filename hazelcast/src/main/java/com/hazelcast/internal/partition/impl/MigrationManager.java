@@ -120,7 +120,7 @@ public class MigrationManager {
 
     MigrationManager(Node node, InternalPartitionServiceImpl service, Lock partitionServiceLock) {
         this.node = node;
-        this.nodeEngine = node.nodeEngine;
+        this.nodeEngine = node.getNodeEngine();
         this.partitionService = service;
         this.logger = node.getLogger(getClass());
         this.partitionServiceLock = partitionServiceLock;
