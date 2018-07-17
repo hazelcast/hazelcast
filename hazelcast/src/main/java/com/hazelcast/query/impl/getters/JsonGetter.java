@@ -17,13 +17,10 @@
 package com.hazelcast.query.impl.getters;
 
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.core.JsonString;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,8 +40,8 @@ public class JsonGetter extends Getter {
 
     @Override
     Object getValue(Object obj) {
-        JsonString json = (JsonString) obj;
-        return json.asJsonValue();
+        JsonValue json = (JsonValue) obj;
+        return json;
     }
 
     @Override
@@ -103,7 +100,7 @@ public class JsonGetter extends Getter {
     private List<String> getPath(String attributePath) {
         List<String> paths = new ArrayList<String>();
         Matcher matcher = PATTERN.matcher(attributePath);
-        while(matcher.find()) {
+        while (matcher.find()) {
             paths.add(matcher.group());
         }
         return paths;

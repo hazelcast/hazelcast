@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.config.Config;
@@ -28,8 +29,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.JsonString;
-import com.hazelcast.core.JsonStringImpl;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.PostProcessingMapStore;
@@ -473,7 +472,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
 
-        IMap<String, JsonString> map = instance2.getMap(MAP_NAME);
+        IMap<String, JsonValue> map = instance2.getMap(MAP_NAME);
         Set<String> keys = new HashSet<String>();
         for (int i = 0; i < 4; i++) {
             final String key = generateKeyOwnedBy(instance1);
@@ -481,23 +480,55 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         for (String key : keys) {
-            JsonString jsonString = new JsonStringImpl("{ \"value\": \"" + key + "\" }");
+            JsonValue jsonString = Json.parse("{ \"value\": \"" + key + "\" }");
             map.put(key, jsonString);
         }
 
         map.executeOnKeys(keys, new JsonStringPropAdder());
 
         for (String key : keys) {
-            JsonObject jsonObject = map.get(key).asJsonValue().asObject();
+            JsonObject jsonObject = map.get(key).asObject();
             assertNotNull(jsonObject);
             assertTrue(jsonObject.get(JsonStringPropAdder.NEW_FIELD).asBoolean());
         }
 
         instance1.shutdown();
         for (Object key : keys) {
-            JsonObject jsonObject = map.get(key).asJsonValue().asObject();
+            JsonObject jsonObject = map.get(key).asObject();
             assertNotNull(jsonObject);
             assertTrue(jsonObject.get(JsonStringPropAdder.NEW_FIELD).asBoolean());
+        }
+    }
+
+    @Test
+    public void testPutJsonFromFromEntryProcessor() {
+        Config config = new Config();
+        String mapName = "map";
+        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, JsonValue> map = instance.getMap(mapName);
+
+        map.executeOnKey(1, new JsonPutEntryProcessor());
+
+    }
+
+    public static class JsonPutEntryProcessor implements EntryProcessor<Integer, JsonValue> {
+
+        @Override
+        public Object process(Map.Entry<Integer, JsonValue> entry) {
+            JsonValue jsonValue = Json.parse("{\"123\" : \"123\"}");
+            entry.setValue(jsonValue);
+            return "anyResult";
+        }
+
+        @Override
+        public EntryBackupProcessor<Integer, JsonValue> getBackupProcessor() {
+            return new EntryBackupProcessor<Integer, JsonValue>() {
+                @Override
+                public void processBackup(Map.Entry<Integer, JsonValue> entry) {
+                    process(entry);
+                }
+            };
         }
     }
 
@@ -1772,17 +1803,15 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-    private static class JsonStringPropAdder extends AbstractEntryProcessor<String, JsonString> {
+    private static class JsonStringPropAdder extends AbstractEntryProcessor<String, JsonValue> {
 
         private static final String NEW_FIELD = "addedField";
 
         @Override
-        public Object process(Map.Entry<String, JsonString> entry) {
-            JsonString jsonString = entry.getValue();
-            JsonValue value = jsonString.asJsonValue();
+        public Object process(Map.Entry<String, JsonValue> entry) {
+            JsonValue value = entry.getValue();
             value.asObject().add(NEW_FIELD, true);
-            jsonString.set(value);
-            entry.setValue(jsonString);
+            entry.setValue(value);
             return null;
         }
     }

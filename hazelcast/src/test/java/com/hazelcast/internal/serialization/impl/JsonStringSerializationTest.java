@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.core.JsonString;
-import com.hazelcast.core.JsonStringImpl;
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -44,18 +44,16 @@ public class JsonStringSerializationTest {
 
     @Test
     public void testSerializaeDeserializeJsonString() {
-        JsonString json = new JsonStringImpl("{ key: value }");
-        Data jsonData = serializationService.toData(json);
-        JsonString jsonDeserialized = serializationService.toObject(jsonData);
-        assertEquals(json, jsonDeserialized);
+        JsonValue jsonValue = Json.parse("{ \"key\": \"value\" }");
+        Data jsonData = serializationService.toData(jsonValue);
+        JsonValue jsonDeserialized = serializationService.toObject(jsonData);
+        assertEquals(jsonValue, jsonDeserialized);
     }
 
     @Test(expected = RuntimeException.class)
     public void testInvalidJsonStringFailsToDeserialize() {
-        JsonString jsonString = new JsonStringImpl("{");
-        Data jsonData = serializationService.toData(jsonString);
-        JsonString jsonDeserialized = serializationService.toObject(jsonData);
-
-        jsonDeserialized.asJsonValue();
+        JsonValue jsonValue = Json.parse("{");
+        Data jsonData = serializationService.toData(jsonValue);
+        serializationService.toObject(jsonData);
     }
 }

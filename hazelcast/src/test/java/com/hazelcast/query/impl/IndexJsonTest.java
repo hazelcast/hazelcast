@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 
-import com.hazelcast.core.JsonStringImpl;
+import com.eclipsesource.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.query.DefaultIndexProvider;
@@ -71,8 +71,7 @@ public class IndexJsonTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            JsonStringImpl jsonString1 = new JsonStringImpl(jsonString);
-            is.saveEntryIndex(new QueryEntry(ss, key, jsonString1, Extractors.empty()), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, Json.parse(jsonString), Extractors.empty()), null);
         }
 
         assertEquals(1, dIndex.getRecords(10).size());

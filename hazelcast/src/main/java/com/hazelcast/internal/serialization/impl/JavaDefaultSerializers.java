@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.core.JsonString;
-import com.hazelcast.core.JsonStringImpl;
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ClassNameFilter;
@@ -325,17 +325,17 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class JsonStringSerializer extends SingletonSerializer<JsonString> {
+    public static final class JsonStringSerializer extends SingletonSerializer<JsonValue> {
 
         @Override
-        public void write(ObjectDataOutput out, JsonString object) throws IOException {
-            String stringJson = object.asString();
+        public void write(ObjectDataOutput out, JsonValue object) throws IOException {
+            String stringJson = object.toString();
             out.writeUTF(stringJson);
         }
 
         @Override
-        public JsonString read(ObjectDataInput in) throws IOException {
-            return new JsonStringImpl(in.readUTF());
+        public JsonValue read(ObjectDataInput in) throws IOException {
+            return Json.parse(in.readUTF());
         }
 
         @Override

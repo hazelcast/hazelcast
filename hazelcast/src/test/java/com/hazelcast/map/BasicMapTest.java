@@ -28,8 +28,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IBiFunction;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.JsonString;
-import com.hazelcast.core.JsonStringImpl;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -1245,15 +1243,13 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testJsonPutGet() {
-        final IMap<String, JsonString> map = getInstance().getMap(randomMapName());
+        final IMap<String, JsonValue> map = getInstance().getMap(randomMapName());
         JsonValue value = Json.parse("{ \"age\": 4 }");
-        JsonString jsonString = new JsonStringImpl(value.toString());
-        map.put("item1", jsonString);
-        JsonString retrieved = map.get("item1");
+        map.put("item1", value);
+        JsonValue retrieved = map.get("item1");
 
-        assertEquals(jsonString, retrieved);
-        assertEquals(value, retrieved.asJsonValue());
-        assertEquals(4, retrieved.asJsonValue().asObject().get("age").asInt());
+        assertEquals(value, retrieved);
+        assertEquals(4, retrieved.asObject().get("age").asInt());
     }
 
     @Test

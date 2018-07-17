@@ -16,8 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.core.JsonString;
-import com.hazelcast.core.JsonStringImpl;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSerializer;
@@ -179,7 +178,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(Enum.class, new EnumSerializer());
         registerConstant(ArrayList.class, new ArrayListStreamSerializer());
         registerConstant(LinkedList.class, new LinkedListStreamSerializer());
-        registerConstant(JsonStringImpl.class, new JsonStringSerializer());
+        registerConstant(JsonValue.class, new JsonStringSerializer());
 
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);

@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.core.JsonString;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
@@ -110,17 +110,12 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     @Override
     public Record createRecord(Object value, long ttlMillis, long now) {
-        if (value instanceof JsonString) {
-            new Throwable(value + " is a JsonString").printStackTrace();
-        }
-        Record record = recordFactory.newRecord(value);
-        // JsonString is kept only in object form. All is good if recordFactory is ObjectRecordFactory
-        // We convert value to object if recordFactory is DataRecordFactory
-        if (record.getValue() instanceof Data) {
-            Data dataRecord = (Data) record.getValue();
-            if (dataRecord.getType() == SerializationConstants.JAVA_DEFAULT_TYPE_JSON_STRING) {
-                record = objectRecordFactory.newRecord(toObject(value));
-            }
+        Record record;
+        if (isJson(value)) {
+            // JsonString is kept only in object form
+            record = objectRecordFactory.newRecord(value);
+        } else {
+            record = recordFactory.newRecord(value);
         }
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
@@ -128,6 +123,18 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         setTTLAndUpdateExpiryTime(ttlMillis, record, mapContainer.getMapConfig(), true);
         updateStatsOnPut(false, now);
         return record;
+    }
+
+    private boolean isJson(Object value) {
+        if (value instanceof JsonValue) {
+            return true;
+        }
+
+        if (value instanceof Data
+                && ((Data) value).getType() == SerializationConstants.JAVA_DEFAULT_TYPE_JSON_STRING) {
+            return true;
+        }
+        return false;
     }
 
     @Override
