@@ -158,8 +158,8 @@ public class Json_Test {
 
   @Test
   public void array_int() {
-    assertEquals(new JsonArray().add(23), Json.array(23));
-    assertEquals(new JsonArray().add(23).add(42), Json.array(23, 42));
+    assertEquals(new JsonArray().add(23), Json.array(new int[] {23}));
+    assertEquals(new JsonArray().add(23).add(42), Json.array(new int[] {23, 42}));
   }
 
   @Test
@@ -173,8 +173,8 @@ public class Json_Test {
 
   @Test
   public void array_long() {
-    assertEquals(new JsonArray().add(23l), Json.array(23l));
-    assertEquals(new JsonArray().add(23l).add(42l), Json.array(23l, 42l));
+    assertEquals(new JsonArray().add(23l), Json.array(new long[] {23l}));
+    assertEquals(new JsonArray().add(23l).add(42l), Json.array(new long[] {23l, 42l}));
   }
 
   @Test
@@ -188,8 +188,8 @@ public class Json_Test {
 
   @Test
   public void array_float() {
-    assertEquals(new JsonArray().add(3.14f), Json.array(3.14f));
-    assertEquals(new JsonArray().add(3.14f).add(1.41f), Json.array(3.14f, 1.41f));
+    assertEquals(new JsonArray().add(3.14f), Json.array(new float[] {3.14f}));
+    assertEquals(new JsonArray().add(3.14f).add(1.41f), Json.array(new float[] {3.14f, 1.41f}));
   }
 
   @Test
