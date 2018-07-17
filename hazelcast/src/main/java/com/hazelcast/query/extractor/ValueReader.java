@@ -18,16 +18,18 @@ package com.hazelcast.query.extractor;
 
 /**
  * Enables reading the value of the attribute specified by the path
- * <p>
- * The path may be:
- * - simple -> it includes a single attribute only, like "name"
- * - nested -> it includes more then a single attribute separated with a dot (.), e.g. person.address.city
- * <p>
- * The path may also includes array cells:
- * - specific quantifier, like person.leg[1] -> returns the leg with index 1
- * - wildcard quantifier, like person.leg[any] -> returns all legs
- * <p>
- * The wildcard quantifier may be used a couple of times, like person.leg[any].finger[any] which returns all fingers
+ *
+ * <p>The path may be:<ol>
+ *   <li>simple -> it includes a single attribute only, like "name"
+ *   <li>nested -> it includes more than a single attribute separated with a dot (.), e.g. "person.address.city"
+ * </ol>
+ *
+ * The path may also include array elements:<ol>
+ *   <li>specific quantifier, like "person.leg[1]" -> returns the leg with index 1
+ *   <li>wildcard quantifier, like "person.leg[any]" -> returns all legs
+ * </ol>
+ *
+ * <p>The wildcard quantifier may be used multiple times, like "person.leg[any].finger[any]" which returns all fingers
  * from all legs.
  */
 public abstract class ValueReader {

@@ -55,7 +55,7 @@ final class PortablePositionNavigator {
      * Main method that enables navigating in the Portable byte stream to find the element specified in the path.
      * The path may be:
      * - simple -> which means that it includes a single attribute only, like "name"
-     * - nested -> which means that it includes more then a single attribute separated with a dot (.). like person.name
+     * - nested -> which means that it includes more than a single attribute separated with a dot (.). like person.name
      * <p>
      * The path may also includes array cells:
      * - specific quantifier, like person.leg[1] -> returns the leg with index 0
