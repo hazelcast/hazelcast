@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.management.LicenseInfo;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
@@ -77,6 +78,7 @@ public class MemberStateImpl implements MemberState {
     private HotRestartState hotRestartState = new HotRestartStateImpl();
     private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
     private WanSyncState wanSyncState = new WanSyncStateImpl();
+    private LicenseInfo licenseInfo;
 
     public MemberStateImpl() {
     }
@@ -282,6 +284,14 @@ public class MemberStateImpl implements MemberState {
         this.clientStats = clientStats;
     }
 
+    public LicenseInfo getLicenseInfo() {
+        return licenseInfo;
+    }
+
+    public void setLicenseInfo(LicenseInfo licenseInfo) {
+        this.licenseInfo = licenseInfo;
+    }
+
     @Override
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
@@ -323,6 +333,9 @@ public class MemberStateImpl implements MemberState {
             clientStatsObject.add(entry.getKey(), entry.getValue());
         }
         root.add("clientStats", clientStatsObject);
+        if (licenseInfo != null) {
+            root.add("licenseInfo", licenseInfo.toJson());
+        }
         return root;
     }
 

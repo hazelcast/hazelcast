@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -102,5 +103,14 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
         assertEquals(enabled, timedMemberState.sslEnabled);
+    }
+
+    @Test
+    public void testLicenseInfoIsNull() {
+        HazelcastInstance hz = createHazelcastInstance();
+        TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
+
+        TimedMemberState timedMemberState = factory.createTimedMemberState();
+        assertNull(timedMemberState.memberState.getLicenseInfo());
     }
 }
