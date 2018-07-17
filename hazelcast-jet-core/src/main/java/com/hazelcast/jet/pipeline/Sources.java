@@ -902,10 +902,10 @@ public final class Sources {
      *     p.drawFrom(Sources.jdbc(
      *         () -> DriverManager.getConnection(DB_CONNECTION_URL),
      *         (con, parallelism, index) -> {
-     *             return con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?);
-     *             stmt.setInt(1, parallelism);
-     *             stmt.setInt(2, index);
-     *             return stmt.executeQuery();
+     *              PreparedStatement stmt = con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?)");
+     *              stmt.setInt(1, parallelism);
+     *              stmt.setInt(2, index);
+     *              return stmt.executeQuery();
      *         },
      *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      * }</pre>
