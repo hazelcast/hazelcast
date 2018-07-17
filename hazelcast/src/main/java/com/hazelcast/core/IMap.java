@@ -2213,9 +2213,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * small, it will be serialized and one copy will be sent to each member.
      * Additionally, the {@linkplain EntryProcessor#getBackupProcessor() backup
      * processor} will also be serialized once for each affected partition and
-     * sent to to each backup. For example, this usage is very inefficient; it
-     * will duplicate the entire {@code additions} map once for each member and
-     * once for each partition and backup:
+     * sent to each backup. For example, in this usage the entire {@code
+     * additions} map will be duplicated once for each member and once for each
+     * partition and backup:
      * <pre>{@code
      *   HashMap additions = ...;
      *   iMap.executeOnKeys(map.keySet(), new AbstractEntryProcessor<Integer, Integer>() {
