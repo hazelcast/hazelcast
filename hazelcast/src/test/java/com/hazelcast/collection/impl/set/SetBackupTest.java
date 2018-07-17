@@ -17,7 +17,6 @@
 package com.hazelcast.collection.impl.set;
 
 import com.hazelcast.collection.impl.AbstractCollectionBackupTest;
-import com.hazelcast.collection.impl.collection.AbstractCollectionProxyImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -60,10 +59,5 @@ public class SetBackupTest extends AbstractCollectionBackupTest {
     @Override
     protected Collection<Integer> getBackupCollection(HazelcastInstance instance, String name) {
         return getBackupSet(instance, name);
-    }
-
-    @Override
-    protected int getPartitionId(Collection collection) {
-        return ((AbstractCollectionProxyImpl) collection).getPartitionId();
     }
 }
