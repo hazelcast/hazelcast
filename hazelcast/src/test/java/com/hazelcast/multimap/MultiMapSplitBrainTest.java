@@ -44,8 +44,8 @@ import java.util.Map;
 
 import static com.hazelcast.multimap.MultiMapTestUtil.getBackupMultiMap;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -120,14 +120,6 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
                 .setBackupCount(1)
                 .setAsyncBackupCount(0);
         return config;
-    }
-
-    @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
-        waitAllForSafeState(instances);
-
-        Map<Object, Collection<Object>> backupMap = getBackupMultiMap(instances, multiMapNameA);
-        assertEquals("backupMultiMap should contain 0 entries", 0, backupMap.size());
     }
 
     @Override
@@ -368,6 +360,9 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterMergeReturnPiCollectionMergePolicy() {
+        assertEqualsStringFormat("Expected backupMultiMapA to have %s keys, but was %s [" + backupMultiMapA + " ]",
+                2, backupMultiMapA.keySet().size());
+
         assertPiSet(multiMapA1.get("key1"));
         assertPiSet(multiMapA2.get("key1"));
         assertPiSet(backupMultiMapA.get("key1"));
@@ -422,22 +417,26 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
         Collection<Object> collection1 = multiMap1.get(key);
         Collection<Object> collection2 = multiMap2.get(key);
         Collection<Object> backupCollection = backupMultiMap.get(key);
-        if (expectedValues.length > 0) {
+        int expectedSize = expectedValues.length;
+        if (expectedSize > 0) {
+            assertEqualsStringFormat("multiMap1.valueCount() should be %s, but was %s", expectedSize, multiMap1.valueCount(key));
+            assertEqualsStringFormat("multiMap2.valueCount() should be %s, but was %s", expectedSize, multiMap2.valueCount(key));
+
+            assertNotNull("backupMultiMap should not be null for " + key + " [" + backupMultiMap + "]", backupCollection);
+            assertEqualsStringFormat("backupCollection.size() should be %s, but was %s", expectedSize, backupCollection.size());
+
             Collection<Object> expected = asList(expectedValues);
             assertContainsAll(collection1, expected);
             assertContainsAll(collection2, expected);
             assertContainsAll(backupCollection, expected);
-
-            assertEquals(expectedValues.length, multiMap1.valueCount(key));
-            assertEquals(expectedValues.length, multiMap2.valueCount(key));
-            assertEquals(expectedValues.length, backupCollection.size());
         } else {
-            assertTrue("multiMap1 should be empty for " + key + ", but was " + collection1, collection1.isEmpty());
-            assertTrue("multiMap2 should be empty for " + key + ", but was " + collection2, collection2.isEmpty());
+            assertEqualsStringFormat("multiMap1.valueCount() should be %s, but was %s", 0, multiMap1.valueCount(key));
+            assertEqualsStringFormat("multiMap2.valueCount() should be %s, but was %s", 0, multiMap2.valueCount(key));
+
             assertNull("backupMultiMap should be null for " + key + ", but was " + backupCollection, backupCollection);
 
-            assertEquals(0, multiMap1.valueCount(key));
-            assertEquals(0, multiMap2.valueCount(key));
+            assertTrue("multiMap1 should be empty for " + key + ", but was " + collection1, collection1.isEmpty());
+            assertTrue("multiMap2 should be empty for " + key + ", but was " + collection2, collection2.isEmpty());
         }
     }
 
