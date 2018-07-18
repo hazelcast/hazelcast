@@ -109,14 +109,15 @@
                 <hz:wan-publisher group-name="ankara" class-name="com.hazelcast.enterprise.wan.replication.WanBatchReplication">
                     <hz:queue-capacity>${wan.queue.capacity}</hz:queue-capacity>
                 </hz:wan-publisher>
-                <hz:wan-consumer class-name="com.hazelcast.wan.custom.WanConsumer">
+                <hz:wan-consumer class-name="com.hazelcast.wan.custom.WanConsumer"
+                                 persist-wan-replicated-data="true">
                     <hz:properties>
                         <hz:property name="custom.prop.consumer">prop.consumer</hz:property>
                     </hz:properties>
                 </hz:wan-consumer>
             </hz:wan-replication>
             <hz:wan-replication name="testWan2">
-                <hz:wan-consumer implementation="wanConsumer"/>
+                <hz:wan-consumer implementation="wanConsumer" persist-wan-replicated-data="false"/>
             </hz:wan-replication>
             <hz:network port="${cluster.port}" port-auto-increment="false" port-count="42">
                 <hz:outbound-ports>
@@ -463,7 +464,8 @@
             </hz:map>
 
             <hz:cache name="testCache" disable-per-entry-invalidation-events="true">
-                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT" republishing-enabled="false">
+                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT"
+                                        republishing-enabled="false">
                     <hz:filters>
                         <hz:filter-impl>com.example.SampleFilter</hz:filter-impl>
                     </hz:filters>

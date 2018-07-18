@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -34,11 +36,14 @@ import java.util.Map;
  * @see WanReplicationConfig#setWanConsumerConfig(WanConsumerConfig)
  * @see WanPublisherConfig#setClassName(String)
  */
-public class WanConsumerConfig implements IdentifiedDataSerializable {
+public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned {
 
-    private Map<String, Comparable> properties = new HashMap<String, Comparable>();
+    private static final boolean DEFAULT_PERSIST_WAN_REPLICATED_DATA = true;
+
     private String className;
     private Object implementation;
+    private Map<String, Comparable> properties = new HashMap<String, Comparable>();
+    private boolean persistWanReplicatedData = DEFAULT_PERSIST_WAN_REPLICATED_DATA;
 
     /**
      * Returns the properties for this WAN consumer.
@@ -101,12 +106,34 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * @return {@code true} when persistence of replicated data into backing
+     * store is enabled, otherwise returns {@code false}. By default this
+     * method returns {@value #DEFAULT_PERSIST_WAN_REPLICATED_DATA}.
+     */
+    public boolean isPersistWanReplicatedData() {
+        return persistWanReplicatedData;
+    }
+
+    /**
+     * @param persistWanReplicatedData set {@code true} to enable
+     *                                 persistence of replicated data into backing store, otherwise set
+     *                                 {@code false} to disable it. Default value is {@value
+     *                                 #DEFAULT_PERSIST_WAN_REPLICATED_DATA}. @return reference to this
+     *                                 {@link WanReplicationRef} object
+     */
+    public WanConsumerConfig setPersistWanReplicatedData(boolean persistWanReplicatedData) {
+        this.persistWanReplicatedData = persistWanReplicatedData;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "WanConsumerConfig{"
                 + "properties=" + properties
                 + ", className='" + className + '\''
                 + ", implementation=" + implementation
+                + ", persistWanReplicatedData=" + persistWanReplicatedData
                 + '}';
     }
 
@@ -130,6 +157,11 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
         }
         out.writeUTF(className);
         out.writeObject(implementation);
+
+        // RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
+            out.writeBoolean(persistWanReplicatedData);
+        }
     }
 
     @Override
@@ -140,5 +172,10 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
         }
         className = in.readUTF();
         implementation = in.readObject();
+
+        // RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
+            persistWanReplicatedData = in.readBoolean();
+        }
     }
 }

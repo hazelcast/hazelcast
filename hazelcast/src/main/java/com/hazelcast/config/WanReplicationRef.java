@@ -37,29 +37,28 @@ import java.util.List;
 @BinaryInterface
 public class WanReplicationRef implements DataSerializable, Serializable {
 
+    private boolean republishingEnabled = true;
     private String name;
     private String mergePolicy;
     private List<String> filters = new LinkedList<String>();
-    private boolean republishingEnabled = true;
 
     private WanReplicationRefReadOnly readOnly;
 
     public WanReplicationRef() {
     }
 
-    public WanReplicationRef(String name, String mergePolicy, List<String> filters, boolean republishingEnabled) {
+    public WanReplicationRef(WanReplicationRef ref) {
+        this(ref.name, ref.mergePolicy, ref.filters, ref.republishingEnabled);
+        this.readOnly = ref.readOnly;
+    }
+
+    public WanReplicationRef(String name, String mergePolicy, List<String> filters,
+                             boolean republishingEnabled) {
         this.name = name;
         this.mergePolicy = mergePolicy;
         this.filters = filters;
         this.republishingEnabled = republishingEnabled;
-    }
-
-    public WanReplicationRef(WanReplicationRef ref) {
-        this.name = ref.name;
-        this.mergePolicy = ref.mergePolicy;
-        this.filters = ref.filters;
-        this.republishingEnabled = ref.republishingEnabled;
-        this.readOnly = ref.readOnly;
+        this.readOnly = null;
     }
 
     /**

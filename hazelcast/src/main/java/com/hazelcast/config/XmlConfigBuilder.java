@@ -391,7 +391,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleCardinalityEstimator(node);
         } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
             handleFlakeIdGenerator(node);
-        }  else if (CRDT_REPLICATION.isEqual(nodeName)) {
+        } else if (CRDT_REPLICATION.isEqual(nodeName)) {
             handleCRDTReplication(node);
         } else if (PN_COUNTER.isEqual(nodeName)) {
             handlePNCounter(node);
@@ -683,6 +683,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             consumerConfig.setClassName(getTextContent(targetChild));
         } else if ("properties".equals(targetChildName)) {
             fillProperties(targetChild, consumerConfig.getProperties());
+        } else if ("persist-wan-replicated-data".equals(targetChildName)) {
+            consumerConfig.setPersistWanReplicatedData(getBooleanValue(getTextContent(targetChild)));
         }
     }
 

@@ -287,7 +287,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
-        assertFalse(wanRef.isRepublishingEnabled());
     }
 
     @Test
@@ -943,12 +942,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
         Map<String, Comparable> consumerProps = consumerConfig.getProperties();
         assertEquals("prop.consumer", consumerProps.get("custom.prop.consumer"));
+        assertTrue(consumerConfig.isPersistWanReplicatedData());
 
         WanReplicationConfig config2 = config.getWanReplicationConfig("testWan2");
         WanConsumerConfig consumerConfig2 = config2.getWanConsumerConfig();
         consumerConfig2.setProperties(consumerProps);
         assertInstanceOf(DummyWanConsumer.class, consumerConfig2.getImplementation());
         assertEquals("prop.consumer", consumerConfig2.getProperties().get("custom.prop.consumer"));
+        assertFalse(consumerConfig2.isPersistWanReplicatedData());
     }
 
     @Test

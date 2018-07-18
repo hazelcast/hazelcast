@@ -87,9 +87,9 @@ public class ConfigXmlGenerator {
     /**
      * Creates a ConfigXmlGenerator.
      *
-     * @param formatted {@code true} if the XML should be formatted, {@code false} otherwise
+     * @param formatted           {@code true} if the XML should be formatted, {@code false} otherwise
      * @param maskSensitiveFields {@code true} if the sensitive fields (like passwords) should be masked in the
-     *                                        output XML, {@code false} otherwise
+     *                            output XML, {@code false} otherwise
      */
     public ConfigXmlGenerator(boolean formatted, boolean maskSensitiveFields) {
         this.formatted = formatted;
@@ -261,13 +261,13 @@ public class ConfigXmlGenerator {
         }
 
         gen.open("security", "enabled", c.isEnabled())
-           .node("client-block-unmapped-actions", c.getClientBlockUnmappedActions());
+                .node("client-block-unmapped-actions", c.getClientBlockUnmappedActions());
 
         PermissionPolicyConfig ppc = c.getClientPolicyConfig();
         if (ppc.getClassName() != null) {
             gen.open("client-permission-policy", "class-name", ppc.getClassName())
-               .appendProperties(ppc.getProperties())
-               .close();
+                    .appendProperties(ppc.getProperties())
+                    .close();
         }
 
         appendLoginModules(gen, "client-login-modules", c.getClientLoginModuleConfigs());
@@ -276,8 +276,8 @@ public class ConfigXmlGenerator {
         CredentialsFactoryConfig cfc = c.getMemberCredentialsConfig();
         if (cfc.getClassName() != null) {
             gen.open("member-credentials-factory", "class-name", cfc.getClassName())
-               .appendProperties(cfc.getProperties())
-               .close();
+                    .appendProperties(cfc.getProperties())
+                    .close();
         }
 
         List<SecurityInterceptorConfig> sic = c.getSecurityInterceptorConfigs();
@@ -285,7 +285,7 @@ public class ConfigXmlGenerator {
             gen.open("security-interceptors");
             for (SecurityInterceptorConfig s : sic) {
                 gen.open("interceptor", "class-name", s.getClassName())
-                   .close();
+                        .close();
             }
             gen.close();
         }
@@ -340,8 +340,8 @@ public class ConfigXmlGenerator {
                     attrs.add(lm.getUsage().name());
                 }
                 gen.open("login-module", attrs.toArray())
-                   .appendProperties(lm.getProperties())
-                   .close();
+                        .appendProperties(lm.getProperties())
+                        .close();
             }
             gen.close();
         }
@@ -495,10 +495,10 @@ public class ConfigXmlGenerator {
     private static void pnCounterXmlGenerator(XmlGenerator gen, Config config) {
         for (PNCounterConfig counterConfig : config.getPNCounterConfigs().values()) {
             gen.open("pn-counter", "name", counterConfig.getName())
-               .node("replica-count", counterConfig.getReplicaCount())
-               .node("quorum-ref", counterConfig.getQuorumName())
-               .node("statistics-enabled", counterConfig.isStatisticsEnabled())
-               .close();
+                    .node("replica-count", counterConfig.getReplicaCount())
+                    .node("quorum-ref", counterConfig.getQuorumName())
+                    .node("statistics-enabled", counterConfig.isStatisticsEnabled())
+                    .close();
         }
     }
 
@@ -659,11 +659,11 @@ public class ConfigXmlGenerator {
             gen.open("wan-replication", "name", wan.getName());
             for (WanPublisherConfig p : wan.getWanPublisherConfigs()) {
                 gen.open("wan-publisher", "group-name", p.getGroupName())
-                   .node("class-name", p.getClassName())
-                   .node("queue-full-behavior", p.getQueueFullBehavior())
-                   .node("initial-publisher-state", p.getInitialPublisherState())
-                   .node("queue-capacity", p.getQueueCapacity())
-                   .appendProperties(p.getProperties());
+                        .node("class-name", p.getClassName())
+                        .node("queue-full-behavior", p.getQueueFullBehavior())
+                        .node("initial-publisher-state", p.getInitialPublisherState())
+                        .node("queue-capacity", p.getQueueCapacity())
+                        .appendProperties(p.getProperties());
                 awsConfigXmlGenerator(gen, p.getAwsConfig());
                 discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
                 gen.close();
@@ -672,10 +672,11 @@ public class ConfigXmlGenerator {
             WanConsumerConfig consumerConfig = wan.getWanConsumerConfig();
             if (consumerConfig != null) {
                 gen.open("wan-consumer")
-                   .node("class-name", classNameOrImplClass(consumerConfig.getClassName(),
-                           consumerConfig.getImplementation()))
-                   .appendProperties(consumerConfig.getProperties())
-                   .close();
+                        .node("class-name", classNameOrImplClass(consumerConfig.getClassName(),
+                                consumerConfig.getImplementation()))
+                        .node("persist-wan-replicated-data", consumerConfig.isPersistWanReplicatedData())
+                        .appendProperties(consumerConfig.getProperties())
+                        .close();
             }
             gen.close();
         }
@@ -992,12 +993,12 @@ public class ConfigXmlGenerator {
             MapStoreConfig.InitialLoadMode initialMode = s.getInitialLoadMode();
 
             gen.open("map-store", "enabled", s.isEnabled(), "initial-mode", initialMode.toString())
-               .node("class-name", clazz)
-               .node("factory-class-name", factoryClass)
-               .node("write-delay-seconds", s.getWriteDelaySeconds())
-               .node("write-batch-size", s.getWriteBatchSize())
-               .appendProperties(s.getProperties())
-               .close();
+                    .node("class-name", clazz)
+                    .node("factory-class-name", factoryClass)
+                    .node("write-delay-seconds", s.getWriteDelaySeconds())
+                    .node("write-batch-size", s.getWriteBatchSize())
+                    .appendProperties(s.getProperties())
+                    .close();
         }
     }
 
@@ -1011,13 +1012,13 @@ public class ConfigXmlGenerator {
             }
 
             gen.node("in-memory-format", n.getInMemoryFormat())
-               .node("invalidate-on-change", n.isInvalidateOnChange())
-               .node("time-to-live-seconds", n.getTimeToLiveSeconds())
-               .node("max-idle-seconds", n.getMaxIdleSeconds())
-               .node("serialize-keys", n.isSerializeKeys())
-               .node("cache-local-entries", n.isCacheLocalEntries())
-               .node("max-size", n.getMaxSize())
-               .node("eviction-policy", n.getEvictionPolicy());
+                    .node("invalidate-on-change", n.isInvalidateOnChange())
+                    .node("time-to-live-seconds", n.getTimeToLiveSeconds())
+                    .node("max-idle-seconds", n.getMaxIdleSeconds())
+                    .node("serialize-keys", n.isSerializeKeys())
+                    .node("cache-local-entries", n.isCacheLocalEntries())
+                    .node("max-size", n.getMaxSize())
+                    .node("eviction-policy", n.getEvictionPolicy());
 
             evictionConfigXmlGenerator(gen, n.getEvictionConfig());
             gen.close();
@@ -1205,13 +1206,13 @@ public class ConfigXmlGenerator {
 
         gen.open("failure-detector");
         gen.open("icmp", "enabled", icmpFailureDetectorConfig.isEnabled())
-           .node("ttl", icmpFailureDetectorConfig.getTtl())
-           .node("interval-milliseconds", icmpFailureDetectorConfig.getIntervalMilliseconds())
-           .node("max-attempts", icmpFailureDetectorConfig.getMaxAttempts())
-           .node("timeout-milliseconds", icmpFailureDetectorConfig.getTimeoutMilliseconds())
-           .node("fail-fast-on-startup", icmpFailureDetectorConfig.isFailFastOnStartup())
-           .node("parallel-mode", icmpFailureDetectorConfig.isParallelMode())
-           .close();
+                .node("ttl", icmpFailureDetectorConfig.getTtl())
+                .node("interval-milliseconds", icmpFailureDetectorConfig.getIntervalMilliseconds())
+                .node("max-attempts", icmpFailureDetectorConfig.getMaxAttempts())
+                .node("timeout-milliseconds", icmpFailureDetectorConfig.getTimeoutMilliseconds())
+                .node("fail-fast-on-startup", icmpFailureDetectorConfig.isFailFastOnStartup())
+                .node("parallel-mode", icmpFailureDetectorConfig.isParallelMode())
+                .close();
         gen.close();
     }
 
@@ -1250,7 +1251,7 @@ public class ConfigXmlGenerator {
         gen.open("crdt-replication");
         if (replicationConfig != null) {
             gen.node("replication-period-millis", replicationConfig.getReplicationPeriodMillis())
-               .node("max-concurrent-replication-targets", replicationConfig.getMaxConcurrentReplicationTargets());
+                    .node("max-concurrent-replication-targets", replicationConfig.getMaxConcurrentReplicationTargets());
         }
         gen.close();
     }

@@ -55,8 +55,8 @@ public abstract class CacheConfigHelper {
         cacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         cacheConfig.setBackupCount(3);
         cacheConfig.setAsyncBackupCount(2);
-        cacheConfig.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
-                Collections.singletonList("filter"), true));
+        cacheConfig.setWanReplicationRef(new WanReplicationRef(randomName(),
+                "com.hazelcast.MergePolicy", Collections.singletonList("filter"), true));
         cacheConfig.addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration(
                 new CacheConfigTest.EntryListenerFactory(), null, false, true));
         cacheConfig.setMergePolicy("mergePolicy");
