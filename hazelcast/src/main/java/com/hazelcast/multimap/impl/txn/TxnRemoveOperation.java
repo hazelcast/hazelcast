@@ -19,9 +19,7 @@ package com.hazelcast.multimap.impl.txn;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,10 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
-
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
 
 public class TxnRemoveOperation extends AbstractKeyBasedMultiMapOperation implements BackupAwareOperation, MutatingOperation {
 
@@ -54,26 +49,7 @@ public class TxnRemoveOperation extends AbstractKeyBasedMultiMapOperation implem
     public void run() throws Exception {
         startTimeNanos = System.nanoTime();
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
-        if (multiMapValue == null || !multiMapValue.containsRecordId(recordId)) {
-            response = false;
-            return;
-        }
-
-        response = true;
-        container.update();
-        Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
-        Iterator<MultiMapRecord> iter = coll.iterator();
-        while (iter.hasNext()) {
-            if (iter.next().getRecordId() == recordId) {
-                iter.remove();
-                container.decrementSize(1);
-                break;
-            }
-        }
-        if (coll.isEmpty()) {
-            container.delete(dataKey);
-        }
+        response = container.removeValue(dataKey, recordId);
     }
 
     @Override

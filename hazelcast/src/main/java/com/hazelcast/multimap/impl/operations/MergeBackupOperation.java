@@ -16,22 +16,20 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
+
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-
-import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Creates backups for merged {@link MultiMapRecord} after split-brain healing with a {@link SplitBrainMergePolicy}.
@@ -60,15 +58,7 @@ public class MergeBackupOperation extends AbstractMultiMapOperation implements B
             if (value.isEmpty()) {
                 container.remove(key, false);
             } else {
-                MultiMapValue containerValue = container.getOrCreateMultiMapValue(key);
-                Collection<MultiMapRecord> collection = containerValue.getCollection(false);
-                container.decrementSize(collection.size());
-                collection.clear();
-                if (!collection.addAll(value)) {
-                    response = false;
-                } else {
-                    container.incrementSize(value.size());
-                }
+                response = container.setValue(key, value);
             }
         }
     }

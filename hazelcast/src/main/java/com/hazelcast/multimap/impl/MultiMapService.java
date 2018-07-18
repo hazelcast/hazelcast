@@ -322,11 +322,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
             for (Map.Entry<Data, MultiMapValue> multiMapValueEntry : collections.entrySet()) {
                 MultiMapValue multiMapValue = multiMapValueEntry.getValue();
-                MultiMapValue prevValue = container.getMultiMapValues().put(multiMapValueEntry.getKey(), multiMapValue);
-                if (prevValue != null) {
-                    container.decrementSize(prevValue.size());
-                }
-                container.incrementSize(multiMapValue.size());
+                container.setValue(multiMapValueEntry.getKey(), multiMapValue);
                 long recordId = getMaxRecordId(multiMapValue);
                 maxRecordId = max(maxRecordId, recordId);
             }

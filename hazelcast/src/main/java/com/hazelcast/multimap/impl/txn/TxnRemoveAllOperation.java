@@ -21,7 +21,6 @@ import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,12 +28,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
 
 public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation implements BackupAwareOperation, MutatingOperation {
 
@@ -58,31 +54,8 @@ public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation imp
     public void run() throws Exception {
         startTimeNanos = System.nanoTime();
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
-        for (Long recordId : recordIds) {
-            if (!multiMapValue.containsRecordId(recordId)) {
-                response = false;
-                return;
-            }
-        }
-        response = true;
-        container.update();
-        Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
-        removed = new LinkedList<MultiMapRecord>();
-        for (Long recordId : recordIds) {
-            Iterator<MultiMapRecord> iter = coll.iterator();
-            while (iter.hasNext()) {
-                MultiMapRecord record = iter.next();
-                if (record.getRecordId() == recordId) {
-                    iter.remove();
-                    removed.add(record);
-                    break;
-                }
-            }
-        }
-        if (coll.isEmpty()) {
-            container.delete(dataKey);
-        }
+        removed = container.removeAllValues(dataKey, recordIds);
+        response = removed.size() > 0;
     }
 
     @Override
@@ -91,7 +64,6 @@ public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation imp
         MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
         if (removed != null) {
-            getOrCreateContainer().decrementSize(removed.size());
             for (MultiMapRecord record : removed) {
                 publishEvent(EntryEventType.REMOVED, dataKey, null, record.getObject());
             }

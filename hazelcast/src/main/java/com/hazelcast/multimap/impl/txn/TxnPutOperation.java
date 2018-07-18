@@ -29,9 +29,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
-
 import java.io.IOException;
-import java.util.Collection;
 
 public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implements BackupAwareOperation, MutatingOperation {
 
@@ -60,12 +58,8 @@ public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implement
         }
         response = true;
         container.update();
-        Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
-        boolean added = coll.add(record);
-        if (added) {
-            container.incrementSize(1);
-        }
+        container.addValue(dataKey, record);
     }
 
     @Override

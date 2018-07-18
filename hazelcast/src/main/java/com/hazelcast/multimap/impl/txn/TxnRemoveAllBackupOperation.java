@@ -19,17 +19,15 @@ package com.hazelcast.multimap.impl.txn;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.List;
 
 public class TxnRemoveAllBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
@@ -46,35 +44,8 @@ public class TxnRemoveAllBackupOperation extends AbstractKeyBasedMultiMapOperati
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainerWithoutAccess();
-        MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
-        for (Long recordId : recordIds) {
-            if (!multiMapValue.containsRecordId(recordId)) {
-                response = false;
-                return;
-            }
-        }
-
-        response = true;
-        int numOfRecsRemoved = 0;
-        Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
-        for (Long recordId : recordIds) {
-            Iterator<MultiMapRecord> iterator = coll.iterator();
-            while (iterator.hasNext()) {
-                MultiMapRecord record = iterator.next();
-                if (record.getRecordId() == recordId) {
-                    iterator.remove();
-                    ++numOfRecsRemoved;
-                    break;
-                }
-            }
-        }
-        if (numOfRecsRemoved > 0) {
-            container.decrementSize(numOfRecsRemoved);
-        }
-        if (coll.isEmpty()) {
-            container.delete(dataKey);
-        }
-
+        List<MultiMapRecord> removed = container.removeAllValues(dataKey, recordIds);
+        response = removed.size() > 0;
     }
 
     @Override

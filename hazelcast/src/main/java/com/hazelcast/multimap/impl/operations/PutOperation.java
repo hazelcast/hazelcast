@@ -25,10 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
-
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
 
 public class PutOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
@@ -50,25 +47,17 @@ public class PutOperation extends AbstractBackupAwareMultiMapOperation implement
         MultiMapContainer container = getOrCreateContainer();
         recordId = container.nextId();
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
-        Collection<MultiMapRecord> coll = container.getOrCreateMultiMapValue(dataKey).getCollection(false);
-        if (index == -1) {
-            response = coll.add(record);
-        } else {
-            try {
-                ((List<MultiMapRecord>) coll).add(index, record);
-                response = true;
-            } catch (IndexOutOfBoundsException e) {
-                response = e;
-            }
+        try {
+            response = container.addValue(dataKey, record, index);
+        } catch (IndexOutOfBoundsException e) {
+            response = e;
         }
     }
 
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            MultiMapContainer container = getOrCreateContainer();
-            container.update();
-            container.incrementSize(1);
+            getOrCreateContainer().update();
             publishEvent(EntryEventType.ADDED, dataKey, value, null);
         }
     }

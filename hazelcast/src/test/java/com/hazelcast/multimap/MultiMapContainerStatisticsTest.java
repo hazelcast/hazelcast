@@ -154,32 +154,26 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
         //Test put operation
         assertSize(0);
         multiMap.put(key, "value1");
-        sleepMillis(10);
         assertSize(1);
 
         multiMap.put(key, "value2");
         multiMap.put(key, "value3");
-        sleepMillis(10);
         assertSize(3);
 
         //Test remove operation
         multiMap.remove(key, "value1");
-        sleepMillis(10);
         assertSize(2);
 
         multiMap.remove(key, "invalid_value");
-        sleepMillis(10);
         assertSize(2);
 
         //Test clear operation
         multiMap.lock(key);
         multiMap.clear();
-        sleepMillis(10);
         assertSize(2);
 
         multiMap.unlock(key);
         multiMap.clear();
-        sleepMillis(10);
         assertSize(0);
     }
 

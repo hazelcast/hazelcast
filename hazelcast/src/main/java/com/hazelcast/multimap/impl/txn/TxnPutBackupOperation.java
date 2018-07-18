@@ -25,9 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
-import java.util.Collection;
 
 public class TxnPutBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
@@ -47,17 +45,13 @@ public class TxnPutBackupOperation extends AbstractKeyBasedMultiMapOperation imp
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainerWithoutAccess();
         MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
-        response = true;
         if (multiMapValue.containsRecordId(recordId)) {
             response = false;
             return;
         }
-        Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
+        response = true;
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
-        boolean added = coll.add(record);
-        if (added) {
-            container.incrementSize(1);
-        }
+        container.addValue(dataKey, record);
     }
 
     @Override

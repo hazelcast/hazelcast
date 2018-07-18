@@ -18,16 +18,11 @@ package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
 
 public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
@@ -43,32 +38,8 @@ public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation imp
 
     @Override
     public void run() throws Exception {
-        response = false;
         MultiMapContainer container = getOrCreateContainerWithoutAccess();
-        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
-        if (multiMapValue == null) {
-            return;
-        }
-        Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
-        Iterator<MultiMapRecord> iterator = coll.iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().getRecordId() == recordId) {
-                iterator.remove();
-                response = true;
-                if (coll.isEmpty()) {
-                    container.delete(dataKey);
-                }
-                break;
-            }
-        }
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        super.afterRun();
-        if (Boolean.TRUE.equals(response)) {
-            getOrCreateContainerWithoutAccess().decrementSize(1);
-        }
+        response = container.removeValue(dataKey, recordId);
     }
 
     @Override

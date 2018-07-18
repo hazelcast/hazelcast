@@ -20,16 +20,12 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
-
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
 
 public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
@@ -46,35 +42,21 @@ public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implem
 
     @Override
     public void run() throws Exception {
-        response = false;
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
-        if (multiMapValue == null) {
-            return;
-        }
-        Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(isBinary() ? value : toObject(value));
-        Iterator<MultiMapRecord> iterator = coll.iterator();
-        while (iterator.hasNext()) {
-            MultiMapRecord r = iterator.next();
-            if (r.equals(record)) {
-                iterator.remove();
-                recordId = r.getRecordId();
-                response = true;
-                if (coll.isEmpty()) {
-                    container.delete(dataKey);
-                }
-                break;
-            }
+        long recordId = container.removeValue(dataKey, record);
+        if (recordId >= 0) {
+            this.recordId = recordId;
+            response = true;
+        } else {
+            response = false;
         }
     }
 
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            MultiMapContainer container = getOrCreateContainer();
-            container.update();
-            container.decrementSize(1);
+            getOrCreateContainer().update();
             publishEvent(EntryEventType.REMOVED, dataKey, null, value);
         }
     }
