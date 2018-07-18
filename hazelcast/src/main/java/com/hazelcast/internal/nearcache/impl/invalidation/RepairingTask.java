@@ -24,6 +24,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,7 +32,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static java.lang.String.format;
 import static java.lang.System.nanoTime;
@@ -68,13 +69,14 @@ public final class RepairingTask implements Runnable {
     final long reconciliationIntervalNanos;
 
     private final int partitionCount;
-    private final String localUuid;
     private final ILogger logger;
+    private final String localUuid;
     private final TaskScheduler scheduler;
     private final MetaDataFetcher metaDataFetcher;
     private final SerializationService serializationService;
     private final MinimalPartitionService partitionService;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, RepairingHandler> handlers = new ConcurrentHashMap<String, RepairingHandler>();
 
     private volatile long lastAntiEntropyRunNanos;
@@ -182,7 +184,8 @@ public final class RepairingTask implements Runnable {
     }
 
     public <K, V> RepairingHandler registerAndGetHandler(String dataStructureName, NearCache<K, V> nearCache) {
-        RepairingHandler handler = getOrPutIfAbsent(handlers, dataStructureName, new HandlerConstructor(nearCache));
+        RepairingHandler handler = getOrPutSynchronized(handlers, dataStructureName,
+                contextMutexFactory, new HandlerConstructor(nearCache));
 
         if (running.compareAndSet(false, true)) {
             scheduleNextRun();
