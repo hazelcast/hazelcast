@@ -21,8 +21,11 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalWanPublisherStats;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.LocalWanStatsImpl;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
@@ -93,19 +96,18 @@ public class StatisticsAwareMetricsSet {
         private void registerAliveStats() {
             for (StatisticsAwareService statisticsAwareService : serviceManager.getServices(StatisticsAwareService.class)) {
                 Map<String, LocalInstanceStats> stats = statisticsAwareService.getStats();
+                System.out.println("service:"+statisticsAwareService);
                 if (stats == null) {
                     continue;
                 }
 
                 for (Map.Entry<String, LocalInstanceStats> entry : stats.entrySet()) {
-                    register(entry, statisticsAwareService);
+                    register(entry.getKey(), entry.getValue(), statisticsAwareService);
                 }
             }
         }
 
-        private void register(Map.Entry<String, LocalInstanceStats> entry, StatisticsAwareService statisticsAwareService) {
-            LocalInstanceStats localInstanceStats = entry.getValue();
-            String name = entry.getKey();
+        private void register(String name, LocalInstanceStats localInstanceStats, StatisticsAwareService statisticsAwareService) {
 
             currentStats.add(localInstanceStats);
 
@@ -120,6 +122,15 @@ public class StatisticsAwareMetricsSet {
             if (nearCacheStats != null) {
                 metricsRegistry.scanAndRegister(nearCacheStats,
                         baseName + "[" + name + "].nearcache");
+            }
+
+            if(localInstanceStats instanceof LocalWanStatsImpl){
+                LocalWanStatsImpl localWanStats = (LocalWanStatsImpl)localInstanceStats;
+                for(Map.Entry<String,LocalWanPublisherStats> entry: localWanStats.getLocalWanPublisherStats().entrySet()){
+                     String namePrefix = "wan[" + name + "][" + entry.getKey() + "]";
+                    System.out.println("registering "+namePrefix);
+                    metricsRegistry.scanAndRegister(entry.getValue(), namePrefix);
+                }
             }
 
             metricsRegistry.scanAndRegister(localInstanceStats,

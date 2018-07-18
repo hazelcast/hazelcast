@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.WanPublisherState;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
 
@@ -37,10 +38,14 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private static final AtomicLongFieldUpdater<LocalWanPublisherStatsImpl> TOTAL_PUBLISHED_EVENT_COUNT =
             newUpdater(LocalWanPublisherStatsImpl.class, "totalPublishedEventCount");
 
+    @Probe
     private volatile boolean connected;
     private volatile WanPublisherState state;
+    @Probe
     private volatile int outboundQueueSize;
+    @Probe
     private volatile long totalPublishLatency;
+    @Probe
     private volatile long totalPublishedEventCount;
     private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
     private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;
@@ -103,6 +108,16 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     public void incrementPublishedEventCount(long latency) {
         TOTAL_PUBLISHED_EVENT_COUNT.incrementAndGet(this);
         TOTAL_PUBLISH_LATENCY.addAndGet(this, latency);
+    }
+
+    @Probe
+    private boolean paused(){
+        return !state.isReplicateEnqueuedEvents();
+    }
+
+    @Probe
+    private boolean stopped(){
+        return !state.isEnqueueNewEvents();
     }
 
     @Override
