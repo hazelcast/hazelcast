@@ -16,10 +16,12 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.eclipsesource.json.JsonValue;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,7 +30,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 
 public class JsonGetter extends Getter {
 
-    private static final Pattern PATTERN = Pattern.compile("([^.\\[\\]]+)|(\\[\\d+\\])");
+    private static final Pattern PATTERN = Pattern.compile("([^.\\[\\]]+)|(\\[(\\d+|any)\\])");
 
     public JsonGetter() {
         super(null);
@@ -40,8 +42,7 @@ public class JsonGetter extends Getter {
 
     @Override
     Object getValue(Object obj) {
-        JsonValue json = (JsonValue) obj;
-        return json;
+        return convertFromJsonValue((JsonValue) obj);
     }
 
     @Override
@@ -49,15 +50,24 @@ public class JsonGetter extends Getter {
         List<String> paths = getPath(attributePath);
         JsonValue value = (JsonValue) getValue(obj);
         if (value.isObject()) {
-            for (String path : paths) {
+            for (int i = 0; i < paths.size(); i++) {
+                String path = paths.get(i);
                 if (value == null) {
                     return null;
                 }
                 try {
                     if (path.startsWith("[")) {
-                        int index = Integer.parseInt(path.substring(1, path.length() - 1));
-                        if (value.isArray()) {
-                            value = value.asArray().get(index);
+                        if (!value.isArray()) {
+                            return null;
+                        }
+                        JsonArray valueArray = value.asArray();
+                        String indexText = path.substring(1, path.length() - 1);
+                        if (indexText.equals("any")) {
+                            return getMultiValue(valueArray, paths, i+1);
+
+                        } else {
+                            int index = Integer.parseInt(indexText);
+                            value = valueArray.get(index);
                         }
                     } else {
                         value = value.asObject().get(path);
@@ -72,7 +82,29 @@ public class JsonGetter extends Getter {
         return null;
     }
 
-    private Object convertFromJsonValue(JsonValue value) {
+    MultiResult getMultiValue(JsonArray arr, List<String> paths, int index) {
+        MultiResult multiResult = new MultiResult();
+        Iterator<JsonValue> it = arr.iterator();
+        String attr = paths.size() > index ? paths.get(index): null;
+        while (it.hasNext()) {
+            JsonValue value = it.next();
+            if (attr != null) {
+                try {
+                    JsonValue found = value.asObject().get(attr);
+                    if (found != null) {
+                        multiResult.add(convertFromJsonValue(found));
+                    }
+                } catch (UnsupportedOperationException ex) {
+                    ignore(ex);
+                }
+            } else {
+                multiResult.add(convertFromJsonValue(value));
+            }
+        }
+        return multiResult;
+    }
+
+    public static Object convertFromJsonValue(JsonValue value) {
         if (value == null) {
             return null;
         } else if (value.isNumber()) {

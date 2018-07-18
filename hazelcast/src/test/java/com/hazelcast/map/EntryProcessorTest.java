@@ -16,9 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -32,6 +29,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;

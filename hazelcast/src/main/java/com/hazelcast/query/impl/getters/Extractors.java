@@ -16,9 +16,9 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;

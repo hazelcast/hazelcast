@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
@@ -25,6 +26,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.Extractable;
 import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.getters.JsonGetter;
 import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
@@ -62,7 +64,7 @@ public abstract class AbstractPredicate<K, V>
             throw new IllegalArgumentException(String.format(
                     "Cannot use %s predicate with an array or a collection attribute", getClass().getSimpleName()));
         }
-        return applyForSingleAttributeValue(mapEntry, (Comparable) attributeValue);
+        return convertAndApplyForSingleAttributeValue(mapEntry, attributeValue);
     }
 
 
@@ -71,12 +73,19 @@ public abstract class AbstractPredicate<K, V>
         for (Object o : results) {
             Comparable entryValue = (Comparable) convertEnumValue(o);
             // it's enough if there's only one result in the MultiResult that satisfies the predicate
-            boolean satisfied = applyForSingleAttributeValue(mapEntry, entryValue);
+            boolean satisfied = convertAndApplyForSingleAttributeValue(mapEntry, entryValue);
             if (satisfied) {
                 return true;
             }
         }
         return false;
+    }
+
+    protected boolean convertAndApplyForSingleAttributeValue(Map.Entry mapEntry, Object attributeValue) {
+        if (attributeValue instanceof JsonValue) {
+            return applyForSingleAttributeValue(mapEntry, (Comparable) JsonGetter.convertFromJsonValue((JsonValue) attributeValue));
+        }
+        return applyForSingleAttributeValue(mapEntry, (Comparable) attributeValue);
     }
 
     protected abstract boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue);

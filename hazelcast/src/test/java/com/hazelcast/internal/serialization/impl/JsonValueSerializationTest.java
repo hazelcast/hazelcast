@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -28,12 +28,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class JsonStringSerializationTest {
+public class JsonValueSerializationTest {
 
     private InternalSerializationService serializationService;
 
@@ -43,7 +42,7 @@ public class JsonStringSerializationTest {
     }
 
     @Test
-    public void testSerializaeDeserializeJsonString() {
+    public void testSerializaeDeserializeJsonValue() {
         JsonValue jsonValue = Json.parse("{ \"key\": \"value\" }");
         Data jsonData = serializationService.toData(jsonValue);
         JsonValue jsonDeserialized = serializationService.toObject(jsonData);

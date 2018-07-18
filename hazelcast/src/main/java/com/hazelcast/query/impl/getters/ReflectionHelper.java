@@ -16,6 +16,9 @@
 
 package com.hazelcast.query.impl.getters;
 
+import com.hazelcast.internal.json.JsonLiteral;
+import com.hazelcast.internal.json.JsonNumber;
+import com.hazelcast.internal.json.JsonString;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.IndexImpl;
@@ -87,6 +90,12 @@ public final class ReflectionHelper {
             return AttributeType.ENUM;
         } else if (klass == UUID.class) {
             return AttributeType.UUID;
+        } else if (klass == JsonNumber.class) {
+            return AttributeType.DOUBLE;
+        } else if (klass == JsonString.class) {
+            return AttributeType.STRING;
+        } else if (klass == JsonLiteral.class) {
+            return AttributeType.BOOLEAN;
         }
         return null;
     }

@@ -17,16 +17,18 @@
 package com.hazelcast.map;
 
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.json.JsonObjectEntry;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.json.Json;
 import com.hazelcast.json.JsonArray;
 import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonObjectEntry;
 import com.hazelcast.json.JsonValue;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -59,8 +61,25 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         factory = createHazelcastInstanceFactory(3);
-        factory.newInstances();
+        factory.newInstances(getConfig(), 3);
         instance = factory.getAllHazelcastInstances().iterator().next();
+    }
+
+    @Override
+    protected Config getConfig() {
+        Config config = super.getConfig();
+        config.getSerializationConfig().addPortableFactory(1, new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                if (classId == 1) {
+                    return new MyPortable();
+                } else if (classId == 2) {
+                    return new LittlePortable();
+                }
+                return null;
+            }
+        });
+        return config;
     }
 
     private JsonObject createNameAgeOnDuty(String name, int age, boolean onDuty) {
@@ -405,10 +424,52 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonValue p2 = putJsonString(map, "two", value2);
         JsonValue p3 = putJsonString(map, "three", value3);
 
-        Collection<JsonValue> vals = map.values(Predicates.greaterEqual("numbers[any]", 20));
+        Collection<JsonValue> vals = map.values(Predicates.greaterThan("numbers[any]", 20));
         assertEquals(2, vals.size());
-        assertTrue(vals.contains(p1));
         assertTrue(vals.contains(p2));
+        assertTrue(vals.contains(p3));
+    }
+
+    @Test
+    public void testJsonValueIsJustANumber() {
+        IMap<Integer, JsonValue> map = instance.getMap(randomMapName());
+        for (int i = 0; i < 10; i++) {
+            map.put(i, Json.value(i));
+        }
+        Collection<JsonValue> vals = map.values(Predicates.greaterEqual("this", 3));
+        assertEquals(7, vals.size());
+        for (JsonValue value: vals) {
+            assertTrue(value.asInt() >= 3);
+            assertGreaterOrEquals("predicate result ", value.asInt(), 3);
+        }
+    }
+
+    @Test
+    public void testJsonValueIsJustAString() {
+        IMap<Integer, JsonValue> map = instance.getMap(randomMapName());
+        for (int i = 0; i < 10; i++) {
+            map.put(i, Json.value("s" + i));
+        }
+        Collection<JsonValue> vals = map.values(Predicates.greaterEqual("this", "s3"));
+        assertEquals(7, vals.size());
+        for (JsonValue value: vals) {
+            assertTrue(value.asString().compareTo("s3") >= 0);
+        }
+    }
+
+    @Test
+    public void testJsonValueIsJustABoolean() {
+        IMap<Integer, JsonValue> map = instance.getMap(randomMapName());
+        for (int i = 0; i < 10; i++) {
+            map.put(i, Json.value(i < 7));
+        }
+        Collection<Map.Entry<Integer, JsonValue>> vals = map.entrySet(Predicates.equal("this", true));
+        assertEquals(7, vals.size());
+        for (Map.Entry<Integer, JsonValue> entry: vals) {
+            assertTrue(entry.getKey() < 7);
+            assertTrue(entry.getValue().asBoolean());
+        }
+
     }
 
     @Test
@@ -500,11 +561,11 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
     @Test
     public void testPortableAny() {
-        LittlePortable lp1 = new LittlePortable(1);
-        LittlePortable lp2 = new LittlePortable(2);
-        LittlePortable lp3 = new LittlePortable(3);
-        LittlePortable lp4 = new LittlePortable(4);
-        LittlePortable lp5 = new LittlePortable(5);
+        LittlePortable lp1 = new LittlePortable(1, new int[]{1});
+        LittlePortable lp2 = new LittlePortable(2, new int[]{1});
+        LittlePortable lp3 = new LittlePortable(3, new int[]{1});
+        LittlePortable lp4 = new LittlePortable(4, new int[]{1});
+        LittlePortable lp5 = new LittlePortable(5, new int[]{1});
 
         LittlePortable[] lps1 = new LittlePortable[]{lp1, lp2, lp3};
         LittlePortable[] lps2 = new LittlePortable[]{lp4, lp5};
@@ -519,6 +580,32 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         Collection<MyPortable> vals = map.values(Predicates.lessEqual("littlePortables[any].real", 2));
 
         assertEquals(1, vals.size());
+    }
+
+    @Test
+    public void testPortableAnyInAny() {
+        LittlePortable lp1 = new LittlePortable(1, new int[]{1, 2});
+        LittlePortable lp2 = new LittlePortable(2, new int[]{1});
+        LittlePortable lp3 = new LittlePortable(3, new int[]{1});
+        LittlePortable lp4 = new LittlePortable(4, new int[]{1});
+        LittlePortable lp5 = new LittlePortable(5, new int[]{1});
+
+        LittlePortable[] lps1 = new LittlePortable[]{lp1, lp2, lp3};
+        LittlePortable[] lps2 = new LittlePortable[]{lp4, lp5};
+
+        MyPortable mp1 = new MyPortable(lps1);
+        MyPortable mp2 = new MyPortable(lps2);
+
+
+        IMap<String, MyPortable> map = instance.getMap(randomMapName());
+        map.put("one", mp1);
+        map.put("two", mp2);
+
+        Collection<MyPortable> vals = map.values(Predicates.lessEqual("littlePortables[0].tempReals[0]", 2));
+
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(mp1));
+        assertTrue(vals.contains(mp2));
     }
 
     @Test
@@ -537,25 +624,6 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
         Collection<IntStore> vals = map.values(Predicates.lessEqual("ints[any]", 4));
         assertEquals(2, vals.size());
-    }
-
-    @Test
-    public void testAny2() {
-        Integer[] arr1 = new Integer[]{1, 2, 3, 4};
-        Integer[] arr2 = new Integer[]{4, 5, 6, 7};
-
-        IntStore ints1 = new IntStore();
-        IntStore ints2 = new IntStore();
-        ints1.ints = arr1;
-        ints2.ints = arr2;
-
-        IMap<String, IntStore> map = instance.getMap(randomMapName());
-        map.put("one", ints1);
-        map.put("two", ints2);
-
-        Collection<IntStore> vals = map.values(Predicates.lessEqual("ints[2]", 4));
-        assertEquals(1, vals.size());
-        assertTrue(vals.contains(ints1));
     }
 
     @Test
@@ -629,9 +697,13 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         }
     }
 
-    private static class MyPortable implements Portable {
+    public static class MyPortable implements Portable {
 
         private LittlePortable[] littlePortables;
+
+        public MyPortable() {
+
+        }
 
         public MyPortable(LittlePortable[] littlePortables) {
             this.littlePortables = littlePortables;
@@ -658,12 +730,18 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         }
     }
 
-    private static class LittlePortable implements Portable {
+    public static class LittlePortable implements Portable {
 
         private int real;
+        private int[] tempReals;
 
-        public LittlePortable(int real) {
+        public LittlePortable() {
+
+        }
+
+        public LittlePortable(int real, int[] tempReals) {
             this.real = real;
+            this.tempReals = tempReals;
         }
 
         @Override
@@ -679,11 +757,13 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("real", this.real);
+            writer.writeIntArray("tempReals", this.tempReals);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
             this.real = reader.readInt("real");
+            this.tempReals = reader.readIntArray("tempReals");
         }
     }
 }
