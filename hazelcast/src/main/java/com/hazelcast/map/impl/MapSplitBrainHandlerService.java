@@ -37,6 +37,11 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
 
     @Override
     protected Runnable newMergeRunnable(Collection<RecordStore> mergingStores) {
+
+        for (RecordStore mergingStore : mergingStores) {
+            mapServiceContext.removeMapContainer(mapServiceContext.getMapContainer(mergingStore.getName()));
+        }
+
         return new MapMergeRunnable(mergingStores, this, mapServiceContext);
     }
 
