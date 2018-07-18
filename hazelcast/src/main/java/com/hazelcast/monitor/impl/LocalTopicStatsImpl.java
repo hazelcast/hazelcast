@@ -17,7 +17,8 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.util.Clock;
 
@@ -86,7 +87,7 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("creationTime", creationTime);
         root.add("totalPublishes", totalPublishes);
         root.add("totalReceivedMessages", totalReceivedMessages);

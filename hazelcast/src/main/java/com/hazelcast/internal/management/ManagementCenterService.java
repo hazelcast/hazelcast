@@ -25,8 +25,6 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.internal.management.request.AsyncConsoleRequest;
 import com.hazelcast.internal.management.request.ChangeClusterStateRequest;
@@ -48,6 +46,8 @@ import com.hazelcast.internal.management.request.RunGcRequest;
 import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
 import com.hazelcast.internal.management.request.TriggerPartialStartRequest;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;
@@ -379,7 +379,7 @@ public class ManagementCenterService {
                 outputStream = connection.getOutputStream();
                 writer = new OutputStreamWriter(outputStream, "UTF-8");
 
-                JsonObject root = new JsonObject();
+                JsonObject root = Json.object();
                 root.add("identifier", identifier.toJson());
                 TimedMemberState memberState = timedMemberState.get();
                 if (memberState != null) {
@@ -518,7 +518,7 @@ public class ManagementCenterService {
             try {
                 inputStream = openTaskInputStream();
                 reader = new InputStreamReader(inputStream, "UTF-8");
-                JsonObject request = JsonValue.readFrom(reader).asObject();
+                JsonObject request = Json.parse(reader).asObject();
                 if (!request.isEmpty()) {
                     JsonObject innerRequest = getObject(request, "request");
                     final int type = getInt(innerRequest, "type");
@@ -558,7 +558,7 @@ public class ManagementCenterService {
             OutputStream outputStream = connection.getOutputStream();
             final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
             try {
-                JsonObject root = new JsonObject();
+                JsonObject root = Json.object();
                 root.add("identifier", identifier.toJson());
                 root.add("taskId", taskId);
                 root.add("type", task.getType());

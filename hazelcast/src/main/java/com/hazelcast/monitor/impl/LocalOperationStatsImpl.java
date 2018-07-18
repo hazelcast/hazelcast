@@ -18,9 +18,10 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.util.Clock;
 
@@ -67,9 +68,9 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("maxVisibleSlowOperationCount", maxVisibleSlowOperationCount);
-        JsonArray slowOperationArray = new JsonArray();
+        JsonArray slowOperationArray = Json.array();
         int logCount = 0;
         for (SlowOperationDTO slowOperation : slowOperations) {
             if (logCount++ < maxVisibleSlowOperationCount) {

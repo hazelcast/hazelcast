@@ -17,7 +17,8 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.monitor.LocalPNCounterStats;
 import com.hazelcast.util.Clock;
 
@@ -94,7 +95,7 @@ public class LocalPNCounterStatsImpl implements LocalPNCounterStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("creationTime", creationTime);
         root.add("value", value);
         root.add("totalIncrementOperationCount", totalIncrementOperationCount);

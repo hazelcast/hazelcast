@@ -19,8 +19,9 @@ package com.hazelcast.internal.management.dto;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
 
 import java.util.List;
 
@@ -38,9 +39,9 @@ public class WanReplicationConfigDTO implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("name", config.getName());
-        JsonArray publisherList = new JsonArray();
+        JsonArray publisherList = Json.array();
         for (WanPublisherConfig publisherConfig : config.getWanPublisherConfigs()) {
             WanPublisherConfigDTO dto = new WanPublisherConfigDTO(publisherConfig);
             publisherList.add(dto.toJson());

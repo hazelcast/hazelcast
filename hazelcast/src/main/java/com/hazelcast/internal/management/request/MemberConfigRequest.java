@@ -19,7 +19,8 @@ package com.hazelcast.internal.management.request;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 /**
  * Request for fetching member XML configuration.
@@ -33,7 +34,7 @@ public class MemberConfigRequest implements ConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject root) {
-        final JsonObject result = new JsonObject();
+        final JsonObject result = Json.object();
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true);
         Config config = mcs.getHazelcastInstance().getConfig();
         String configXmlString = configXmlGenerator.generate(config);

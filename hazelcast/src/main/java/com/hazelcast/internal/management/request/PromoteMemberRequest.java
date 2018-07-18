@@ -17,7 +17,8 @@
 package com.hazelcast.internal.management.request;
 
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 public class PromoteMemberRequest implements AsyncConsoleRequest {
     @Override
@@ -27,7 +28,7 @@ public class PromoteMemberRequest implements AsyncConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
-        JsonObject result = new JsonObject();
+        JsonObject result = Json.object();
 
         try {
             mcs.getHazelcastInstance().getCluster().promoteLocalLiteMember();

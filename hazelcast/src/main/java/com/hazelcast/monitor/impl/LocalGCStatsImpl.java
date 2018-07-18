@@ -16,13 +16,13 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.memory.GarbageCollectorStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.util.Clock;
 
 import static com.hazelcast.util.JsonUtil.getLong;
-
-import com.hazelcast.internal.json.JsonObject;
 
 public class LocalGCStatsImpl implements LocalGCStats {
 
@@ -108,7 +108,7 @@ public class LocalGCStatsImpl implements LocalGCStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("creationTime", creationTime);
         root.add("minorCount", minorCount);
         root.add("minorTime", minorTime);

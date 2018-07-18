@@ -20,7 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.request.ConsoleCommandRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -65,13 +66,13 @@ public class ConsoleCommandRequestTest extends HazelcastTestSupport {
         };
 
         for (String command : forbiddenCommands) {
-            JsonObject requestJson = new JsonObject();
+            JsonObject requestJson = Json.object();
             requestJson.add("command", command);
 
             ConsoleCommandRequest consoleCommandRequest = new ConsoleCommandRequest();
             consoleCommandRequest.fromJson(requestJson);
 
-            JsonObject responseJson = new JsonObject();
+            JsonObject responseJson = Json.object();
             consoleCommandRequest.writeResponse(managementCenterService, responseJson);
             assertContains(getString(getObject(responseJson, "result"), "output"), "is not allowed!");
             assertTrue(lifecycleService.isRunning());

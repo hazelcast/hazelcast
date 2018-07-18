@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;

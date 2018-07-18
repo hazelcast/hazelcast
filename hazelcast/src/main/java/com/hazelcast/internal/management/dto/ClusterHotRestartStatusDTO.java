@@ -18,9 +18,10 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 
 import java.util.Collections;
 import java.util.Map;
@@ -90,17 +91,17 @@ public class ClusterHotRestartStatusDTO implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("dataRecoveryPolicy", dataRecoveryPolicy.toString());
         root.add("hotRestartStatus", hotRestartStatus.toString());
         root.add("remainingValidationTimeMillis", remainingValidationTimeMillis);
         root.add("remainingDataLoadTimeMillis", remainingDataLoadTimeMillis);
 
-        JsonArray memberStatuses = new JsonArray();
+        JsonArray memberStatuses = Json.array();
         for (Map.Entry<String, MemberHotRestartStatus> entry : memberHotRestartStatusMap.entrySet()) {
             String member = entry.getKey();
             MemberHotRestartStatus status = entry.getValue();
-            JsonObject pair = new JsonObject();
+            JsonObject pair = Json.object();
             pair.add("member", member);
             pair.add("status", status.toString());
             memberStatuses.add(pair);

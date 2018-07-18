@@ -18,7 +18,8 @@ package com.hazelcast.internal.management.request;
 
 import com.hazelcast.internal.management.ConsoleCommandHandler;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -38,7 +39,7 @@ public class ConsoleCommandRequest implements ConsoleRequest {
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         ConsoleCommandHandler handler = mcs.getCommandHandler();
-        JsonObject result = new JsonObject();
+        JsonObject result = Json.object();
         try {
             final String output = handler.handleCommand(command);
             result.add("output", output);

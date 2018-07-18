@@ -16,15 +16,17 @@
 
 package com.hazelcast.map;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
+
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.json.JsonObjectEntry;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -314,9 +316,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         obj1.add("data", createNameAgeOnDuty("a", 50, false));
         obj1.add("data", createNameAgeOnDuty("a", 30, false));
 
-        Iterator<JsonObject.Member> it = obj1.iterator();
+        Iterator<JsonObjectEntry> it = obj1.iterator();
         for (; it.hasNext(); ) {
-            JsonObject.Member m = it.next();
+            JsonObjectEntry m = it.next();
             System.out.println(m.getValue().toString());
         }
         IMap<String, JsonValue> map = instance.getMap(randomMapName());

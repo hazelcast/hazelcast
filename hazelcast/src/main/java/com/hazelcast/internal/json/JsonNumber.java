@@ -21,17 +21,17 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import java.io.IOException;
-
 import com.hazelcast.nio.serialization.SerializableByConvention;
+
+import java.io.IOException;
 
 @SuppressWarnings("serial") // use default serial UID
 @SerializableByConvention
-class JsonNumber extends JsonValue {
+public class JsonNumber extends JsonValue {
 
   private final String string;
 
-  JsonNumber(String string) {
+  public JsonNumber(String string) {
     if (string == null) {
       throw new NullPointerException("string is null");
     }

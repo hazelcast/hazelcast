@@ -20,9 +20,11 @@ import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonObjectEntry;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -284,7 +286,7 @@ public class MemberStateImpl implements MemberState {
 
     @Override
     public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
+        final JsonObject root = Json.object();
         root.add("address", address);
         serializeMap(root, "mapStats", mapStats);
         serializeMap(root, "multiMapStats", multiMapStats);
@@ -298,13 +300,13 @@ public class MemberStateImpl implements MemberState {
         serializeMap(root, "wanStats", wanStats);
         serializeMap(root, "flakeIdStats", flakeIdGeneratorStats);
 
-        final JsonObject runtimePropsObject = new JsonObject();
+        final JsonObject runtimePropsObject = Json.object();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
             runtimePropsObject.add(entry.getKey(), entry.getValue());
         }
         root.add("runtimeProps", runtimePropsObject);
 
-        final JsonArray clientsArray = new JsonArray();
+        final JsonArray clientsArray = Json.array();
         for (ClientEndPointDTO client : clients) {
             clientsArray.add(client.toJson());
         }
@@ -318,7 +320,7 @@ public class MemberStateImpl implements MemberState {
         root.add("clusterHotRestartStatus", clusterHotRestartStatus.toJson());
         root.add("wanSyncState", wanSyncState.toJson());
 
-        JsonObject clientStatsObject = new JsonObject();
+        JsonObject clientStatsObject = Json.object();
         for (Map.Entry<String, String> entry : clientStats.entrySet()) {
             clientStatsObject.add(entry.getKey(), entry.getValue());
         }
@@ -327,7 +329,7 @@ public class MemberStateImpl implements MemberState {
     }
 
     private static void serializeMap(JsonObject root, String key, Map<String, ? extends JsonSerializable> map) {
-        final JsonObject jsonObject = new JsonObject();
+        final JsonObject jsonObject = Json.object();
         for (Entry<String, ? extends JsonSerializable> e : map.entrySet()) {
             jsonObject.add(e.getKey(), e.getValue().toJson());
         }
@@ -338,62 +340,62 @@ public class MemberStateImpl implements MemberState {
     @SuppressWarnings("checkstyle:methodlength")
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
-        for (JsonObject.Member next : getObject(json, "mapStats")) {
+        for (JsonObjectEntry next : getObject(json, "mapStats")) {
             LocalMapStatsImpl stats = new LocalMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             mapStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "multiMapStats")) {
+        for (JsonObjectEntry next : getObject(json, "multiMapStats")) {
             LocalMultiMapStatsImpl stats = new LocalMultiMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             multiMapStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "replicatedMapStats", new JsonObject())) {
+        for (JsonObjectEntry next : getObject(json, "replicatedMapStats", Json.object())) {
             LocalReplicatedMapStats stats = new LocalReplicatedMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             replicatedMapStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "queueStats")) {
+        for (JsonObjectEntry next : getObject(json, "queueStats")) {
             LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
             stats.fromJson(next.getValue().asObject());
             queueStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "topicStats")) {
+        for (JsonObjectEntry next : getObject(json, "topicStats")) {
             LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
             stats.fromJson(next.getValue().asObject());
             topicStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "reliableTopicStats")) {
+        for (JsonObjectEntry next : getObject(json, "reliableTopicStats")) {
             LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
             stats.fromJson(next.getValue().asObject());
             reliableTopicStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "pnCounterStats")) {
+        for (JsonObjectEntry next : getObject(json, "pnCounterStats")) {
             LocalPNCounterStatsImpl stats = new LocalPNCounterStatsImpl();
             stats.fromJson(next.getValue().asObject());
             pnCounterStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "executorStats")) {
+        for (JsonObjectEntry next : getObject(json, "executorStats")) {
             LocalExecutorStatsImpl stats = new LocalExecutorStatsImpl();
             stats.fromJson(next.getValue().asObject());
             executorStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "cacheStats", new JsonObject())) {
+        for (JsonObjectEntry next : getObject(json, "cacheStats", Json.object())) {
             LocalCacheStats stats = new LocalCacheStatsImpl();
             stats.fromJson(next.getValue().asObject());
             cacheStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "wanStats", new JsonObject())) {
+        for (JsonObjectEntry next : getObject(json, "wanStats", Json.object())) {
             LocalWanStats stats = new LocalWanStatsImpl();
             stats.fromJson(next.getValue().asObject());
             wanStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "flakeIdStats", new JsonObject())) {
+        for (JsonObjectEntry next : getObject(json, "flakeIdStats", Json.object())) {
             LocalFlakeIdGeneratorStats stats = new LocalFlakeIdGeneratorStatsImpl();
             stats.fromJson(next.getValue().asObject());
             flakeIdGeneratorStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "runtimeProps")) {
+        for (JsonObjectEntry next : getObject(json, "runtimeProps")) {
             runtimeProps.put(next.getName(), next.getValue().asLong());
         }
         final JsonArray jsonClients = getArray(json, "clients");
@@ -437,7 +439,7 @@ public class MemberStateImpl implements MemberState {
             wanSyncState = new WanSyncStateImpl();
             wanSyncState.fromJson(jsonWanSyncState);
         }
-        for (JsonObject.Member next : getObject(json, "clientStats")) {
+        for (JsonObjectEntry next : getObject(json, "clientStats")) {
             clientStats.put(next.getName(), next.getValue().asString());
         }
     }

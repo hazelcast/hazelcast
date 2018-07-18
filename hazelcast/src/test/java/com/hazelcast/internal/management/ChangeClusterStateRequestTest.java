@@ -20,7 +20,8 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.request.ChangeClusterStateRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -51,7 +52,7 @@ public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
     @Test
     public void testChangeClusterState() throws Exception {
         ChangeClusterStateRequest changeClusterStateRequest = new ChangeClusterStateRequest("FROZEN");
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         changeClusterStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
@@ -63,7 +64,7 @@ public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
     @Test
     public void testChangeClusterState_withInvalidState() throws Exception {
         ChangeClusterStateRequest changeClusterStateRequest = new ChangeClusterStateRequest("IN_TRANSITION");
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         changeClusterStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
@@ -74,7 +75,7 @@ public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
     @Test
     public void testChangeClusterState_withNonExistent() throws Exception {
         ChangeClusterStateRequest changeClusterStateRequest = new ChangeClusterStateRequest("MURAT");
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         changeClusterStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");

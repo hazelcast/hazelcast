@@ -18,7 +18,8 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.core.Client;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -42,7 +43,7 @@ public class ClientEndPointDTO implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
+        final JsonObject root = Json.object();
         root.add("uuid", uuid);
         root.add("address", address);
         root.add("clientType", clientType);

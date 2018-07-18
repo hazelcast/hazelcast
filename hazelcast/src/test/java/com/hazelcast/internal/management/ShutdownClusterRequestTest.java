@@ -20,7 +20,8 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.management.request.ShutdownClusterRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -56,7 +57,7 @@ public class ShutdownClusterRequestTest extends HazelcastTestSupport {
         ShutdownClusterRequest request = new ShutdownClusterRequest();
 
         cluster.getClusterState();
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");

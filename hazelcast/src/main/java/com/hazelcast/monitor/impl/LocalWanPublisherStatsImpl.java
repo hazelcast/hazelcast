@@ -17,8 +17,9 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.config.WanPublisherState;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
 
@@ -108,7 +109,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("isConnected", connected);
         root.add("totalPublishLatencies", totalPublishLatency);
         root.add("totalPublishedEventCount", totalPublishedEventCount);

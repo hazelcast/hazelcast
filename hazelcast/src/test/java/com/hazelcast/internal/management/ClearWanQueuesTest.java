@@ -20,7 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.request.ChangeWanStateRequest;
 import com.hazelcast.internal.management.request.ClearWanQueuesRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -49,7 +50,7 @@ public class ClearWanQueuesTest extends HazelcastTestSupport {
     @Test
     public void testClearWanQueue() throws Exception {
         ClearWanQueuesRequest clearWanQueuesRequest = new ClearWanQueuesRequest("schema", "publisher");
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         clearWanQueuesRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");

@@ -18,7 +18,8 @@ package com.hazelcast.internal.management;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -52,7 +53,7 @@ public class ThreadDumpRequestTest extends HazelcastTestSupport {
     public void testThreadDumpRequest() throws Exception {
         ThreadDumpRequest request = new ThreadDumpRequest(false);
 
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
@@ -64,7 +65,7 @@ public class ThreadDumpRequestTest extends HazelcastTestSupport {
     public void testThreadDumpRequest_withDeadlocks() throws Exception {
         ThreadDumpRequest request = new ThreadDumpRequest(true);
 
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");

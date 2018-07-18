@@ -18,7 +18,8 @@ package com.hazelcast.internal.management;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.request.ForceStartNodeRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -47,7 +48,7 @@ public class ForceStartNodeRequestTest extends HazelcastTestSupport {
     public void testForceStart_fails_withNoEnterprise() throws Exception {
         ForceStartNodeRequest request = new ForceStartNodeRequest();
 
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");

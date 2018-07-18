@@ -16,9 +16,9 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 
 /**
  * Utility class to deal with Json.

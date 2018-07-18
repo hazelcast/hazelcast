@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management.request;
-
-import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.json.JsonObject;
-
 /**
- *  Represents request sent from Management Center.
+ * Contains Json interface
+ *
  */
-public interface ConsoleRequest {
-    int getType();
-
-    void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception;
-
-    void fromJson(JsonObject json);
-}
+package com.hazelcast.json;

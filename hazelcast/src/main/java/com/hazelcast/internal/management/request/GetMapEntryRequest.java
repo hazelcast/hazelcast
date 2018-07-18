@@ -19,7 +19,8 @@ package com.hazelcast.internal.management.request;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -49,7 +50,7 @@ public class GetMapEntryRequest implements ConsoleRequest {
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         IMap map = mcs.getHazelcastInstance().getMap(mapName);
-        JsonObject result = new JsonObject();
+        JsonObject result = Json.object();
         EntryView entry = null;
         if (type.equals("string")) {
             entry = map.getEntryView(key);

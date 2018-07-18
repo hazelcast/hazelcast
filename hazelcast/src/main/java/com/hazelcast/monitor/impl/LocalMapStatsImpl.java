@@ -17,8 +17,9 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.util.Clock;
@@ -333,7 +334,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("getCount", getCount);
         root.add("putCount", putCount);
         root.add("removeCount", removeCount);

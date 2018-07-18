@@ -16,9 +16,10 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 
@@ -126,12 +127,12 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("master", master);
         root.add("time", time);
         root.add("clusterName", clusterName);
         if (memberList != null) {
-            JsonArray members = new JsonArray();
+            JsonArray members = Json.array();
             for (String member : memberList) {
                 members.add(member);
             }

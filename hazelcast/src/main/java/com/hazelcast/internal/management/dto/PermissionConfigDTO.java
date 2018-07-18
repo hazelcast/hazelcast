@@ -19,9 +19,10 @@ package com.hazelcast.internal.management.dto;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -49,7 +50,7 @@ public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSeri
 
     @Override
     public JsonObject toJson() {
-        JsonObject object = new JsonObject();
+        JsonObject object = Json.object();
         object.add("permissionType", permissionConfig.getType().getNodeName());
         object.add("name", permissionConfig.getName());
         if (StringUtil.isNullOrEmptyAfterTrim(permissionConfig.getPrincipal())) {
@@ -60,7 +61,7 @@ public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSeri
 
         Set<String> endpoints = permissionConfig.getEndpoints();
         if (endpoints != null) {
-            JsonArray endpointsArray = new JsonArray();
+            JsonArray endpointsArray = Json.array();
             for (String endpoint : endpoints) {
                 endpointsArray.add(endpoint);
             }
@@ -69,7 +70,7 @@ public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSeri
 
         Set<String> actions = permissionConfig.getActions();
         if (actions != null) {
-            JsonArray actionsArray = new JsonArray();
+            JsonArray actionsArray = Json.array();
             for (String action : actions) {
                 actionsArray.add(action);
             }

@@ -22,7 +22,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.request.GetCacheEntryRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -146,7 +147,7 @@ public class GetCacheEntryRequestTest extends CacheTestSupport {
 
     private JsonObject sendRequestToInstance(HazelcastInstance instance, GetCacheEntryRequest request) {
         ManagementCenterService managementCenterService = getNode(instance).getManagementCenterService();
-        JsonObject responseJson = new JsonObject();
+        JsonObject responseJson = Json.object();
         request.writeResponse(managementCenterService, responseJson);
         return (JsonObject) responseJson.get("result");
     }

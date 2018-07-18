@@ -17,7 +17,8 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.monitor.LocalCacheStats;
 
 import static com.hazelcast.util.JsonUtil.getFloat;
@@ -35,7 +36,7 @@ import static com.hazelcast.util.JsonUtil.getLong;
  * <p/>
  * No setter methods are provided, all class fields supposed to be populated either
  * by a {@link com.hazelcast.cache.CacheStatistics} or while deserialization process
- * ({@link #fromJson(com.hazelcast.internal.json.JsonObject)}.
+ * ({@link #fromJson(com.hazelcast.json.JsonObject)}.
  *
  * @see com.hazelcast.cache.CacheStatistics
  */
@@ -155,7 +156,7 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("creationTime", creationTime);
         root.add("lastAccessTime", lastAccessTime);
         root.add("lastUpdateTime", lastUpdateTime);

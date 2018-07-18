@@ -19,7 +19,8 @@ package com.hazelcast.internal.management;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.request.ConsoleRequest;
 import com.hazelcast.internal.management.request.TriggerPartialStartRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -46,7 +47,7 @@ public class TriggerPartialStartRequestTest extends HazelcastTestSupport {
     public static String triggerPartialStart(HazelcastInstance hz) throws Exception {
         ManagementCenterService managementCenterService = getNode(hz).getManagementCenterService();
         ConsoleRequest request = new TriggerPartialStartRequest();
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
         return String.valueOf(getString(jsonObject, "result"));
     }

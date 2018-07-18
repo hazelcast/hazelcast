@@ -16,9 +16,10 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.monitor.MemberPartitionState;
 
 import java.util.ArrayList;
@@ -64,8 +65,8 @@ public class MemberPartitionStateImpl implements MemberPartitionState {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        JsonArray partitionsArray = new JsonArray();
+        JsonObject root = Json.object();
+        JsonArray partitionsArray = Json.array();
         for (Integer lsPartition : partitions) {
             partitionsArray.add(lsPartition);
         }

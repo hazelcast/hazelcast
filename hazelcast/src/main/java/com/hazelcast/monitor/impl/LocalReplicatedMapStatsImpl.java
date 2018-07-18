@@ -17,7 +17,8 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.util.Clock;
 
@@ -311,7 +312,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("getCount", getCount);
         root.add("putCount", putCount);
         root.add("removeCount", removeCount);

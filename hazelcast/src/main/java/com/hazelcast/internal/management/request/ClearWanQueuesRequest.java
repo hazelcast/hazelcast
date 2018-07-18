@@ -18,7 +18,8 @@ package com.hazelcast.internal.management.request;
 
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ClearWanQueuesOperation;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
 import static com.hazelcast.util.JsonUtil.getString;
@@ -53,7 +54,7 @@ public class ClearWanQueuesRequest implements ConsoleRequest {
     public void writeResponse(ManagementCenterService mcs, JsonObject out) {
         ClearWanQueuesOperation operation = new ClearWanQueuesOperation(schemeName, publisherName);
         Object operationResult = resolveFuture(mcs.callOnThis(operation));
-        JsonObject result = new JsonObject();
+        JsonObject result = Json.object();
         if (operationResult == null) {
             result.add("result", SUCCESS);
         } else {

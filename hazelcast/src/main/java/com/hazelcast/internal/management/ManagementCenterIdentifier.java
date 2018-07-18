@@ -16,10 +16,11 @@
 
 package com.hazelcast.internal.management;
 
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.hazelcast.internal.json.JsonObject;
 
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getString;
@@ -74,7 +75,7 @@ public class ManagementCenterIdentifier implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("version", version);
         root.add("clusterName", clusterName);
         root.add("address", address);

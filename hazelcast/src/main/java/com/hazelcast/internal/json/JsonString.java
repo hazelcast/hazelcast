@@ -21,13 +21,13 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import java.io.IOException;
-
 import com.hazelcast.nio.serialization.SerializableByConvention;
+
+import java.io.IOException;
 
 @SuppressWarnings("serial") // use default serial UID
 @SerializableByConvention
-class JsonString extends JsonValue {
+public class JsonString extends JsonValue {
 
   private final String string;
 

@@ -16,10 +16,11 @@
 
 package com.hazelcast.internal.management.dto;
 
+import com.hazelcast.json.Json;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,11 +52,11 @@ public class SlowOperationDTO implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("operation", operation);
         root.add("stackTrace", stackTrace);
         root.add("totalInvocations", totalInvocations);
-        JsonArray invocationArray = new JsonArray();
+        JsonArray invocationArray = Json.array();
         for (SlowOperationInvocationDTO invocation : invocations) {
             JsonObject json = invocation.toJson();
             if (json != null) {

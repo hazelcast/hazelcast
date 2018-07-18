@@ -17,7 +17,8 @@
 package com.hazelcast.internal.management.request;
 
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.lang.management.ManagementFactory;
@@ -42,7 +43,7 @@ public class ClusterPropsRequest implements ConsoleRequest {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         IPartitionService partitionService = mcs.getHazelcastInstance().node.getPartitionService();
 
-        JsonObject properties = new JsonObject();
+        JsonObject properties = Json.object();
         properties.add("hazelcast.cl_version", mcs.getHazelcastInstance().node.getBuildInfo().getVersion());
         properties.add("date.cl_startTime", Long.toString(runtimeMxBean.getStartTime()));
         properties.add("seconds.cl_upTime", Long.toString(runtimeMxBean.getUptime()));

@@ -19,7 +19,8 @@ package com.hazelcast.internal.management;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.request.ChangeWanStateRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -64,7 +65,8 @@ public class ChangeWanStateRequestTest extends HazelcastTestSupport {
 
     private void testChangeState(WanPublisherState replicating) {
         ChangeWanStateRequest changeWanStateRequest = new ChangeWanStateRequest("schema", "publisher", replicating);
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
+
         changeWanStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");

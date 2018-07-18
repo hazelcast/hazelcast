@@ -17,7 +17,8 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.util.Clock;
 
@@ -119,7 +120,7 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("creationTime", creationTime);
         root.add("pending", pending);
         root.add("started", started);

@@ -21,20 +21,20 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import java.io.IOException;
-
 import com.hazelcast.nio.serialization.SerializableByConvention;
+
+import java.io.IOException;
 
 @SuppressWarnings("serial") // use default serial UID
 @SerializableByConvention
-class JsonLiteral extends JsonValue {
+public class JsonLiteral extends JsonValue {
 
   private final String value;
   private final boolean isNull;
   private final boolean isTrue;
   private final boolean isFalse;
 
-  JsonLiteral(String value) {
+  public JsonLiteral(String value) {
     this.value = value;
     isNull = "null".equals(value);
     isTrue = "true".equals(value);

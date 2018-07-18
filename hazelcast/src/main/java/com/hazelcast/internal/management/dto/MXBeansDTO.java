@@ -17,7 +17,9 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonObjectEntry;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -92,8 +94,8 @@ public class MXBeansDTO implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
-        JsonObject managedExecutors = new JsonObject();
+        final JsonObject root = Json.object();
+        JsonObject managedExecutors = Json.object();
         for (Map.Entry<String, ManagedExecutorDTO> entry : managedExecutorBeans.entrySet()) {
             managedExecutors.add(entry.getKey(), entry.getValue().toJson());
         }
@@ -108,9 +110,9 @@ public class MXBeansDTO implements JsonSerializable {
 
     @Override
     public void fromJson(JsonObject json) {
-        final Iterator<JsonObject.Member> managedExecutorsIteartor = getObject(json, "managedExecutorBeans").iterator();
+        final Iterator<JsonObjectEntry> managedExecutorsIteartor = getObject(json, "managedExecutorBeans").iterator();
         while (managedExecutorsIteartor.hasNext()) {
-            final JsonObject.Member next = managedExecutorsIteartor.next();
+            final JsonObjectEntry next = managedExecutorsIteartor.next();
             ManagedExecutorDTO managedExecutorBean = new ManagedExecutorDTO();
             managedExecutorBean.fromJson(next.getValue().asObject());
             managedExecutorBeans.put(next.getName(), managedExecutorBean);

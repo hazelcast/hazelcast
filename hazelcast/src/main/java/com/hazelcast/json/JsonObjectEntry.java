@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management.request;
-
-import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.json.JsonObject;
+package com.hazelcast.json;
 
 /**
- *  Represents request sent from Management Center.
+ * Represents a member of a JSON object, a pair of a name and a value.
  */
-public interface ConsoleRequest {
-    int getType();
+public interface JsonObjectEntry {
 
-    void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception;
+    /**
+     * Returns the name of this member.
+     *
+     * @return the name of this member, never <code>null</code>
+     */
+    String getName();
 
-    void fromJson(JsonObject json);
+    /**
+     * Returns the value of this member.
+     *
+     * @return the value of this member, never <code>null</code>
+     */
+    JsonValue getValue();
 }

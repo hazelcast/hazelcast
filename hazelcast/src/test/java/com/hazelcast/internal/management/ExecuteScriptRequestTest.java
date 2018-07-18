@@ -19,7 +19,8 @@ package com.hazelcast.internal.management;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.request.ExecuteScriptRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -72,7 +73,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         ExecuteScriptRequest request = new ExecuteScriptRequest("print('test');", "JavaScript",
                 singleton(nodeAddressWithoutBrackets));
 
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
@@ -86,7 +87,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         ExecuteScriptRequest request = new ExecuteScriptRequest("print('test');", "JavaScript",
                 Collections.<String>emptySet());
 
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
@@ -98,7 +99,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         ExecuteScriptRequest request = new ExecuteScriptRequest("script", "engine",
                 singleton(nodeAddressWithoutBrackets));
 
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
@@ -112,7 +113,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         ExecuteScriptRequest request = new ExecuteScriptRequest("print(;", "JavaScript",
                 singleton(nodeAddressWithoutBrackets));
 
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");

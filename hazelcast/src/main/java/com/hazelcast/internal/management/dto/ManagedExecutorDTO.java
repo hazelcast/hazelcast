@@ -17,7 +17,8 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
@@ -53,7 +54,7 @@ public class ManagedExecutorDTO implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
+        final JsonObject root = Json.object();
         root.add("name", name);
         root.add("queueSize", queueSize);
         root.add("poolSize", poolSize);

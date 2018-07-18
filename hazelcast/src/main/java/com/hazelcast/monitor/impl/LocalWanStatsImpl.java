@@ -17,7 +17,9 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonObjectEntry;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.util.Clock;
@@ -50,7 +52,7 @@ public class LocalWanStatsImpl implements LocalWanStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject wanStatsObject = new JsonObject();
+        JsonObject wanStatsObject = Json.object();
         for (Map.Entry<String, LocalWanPublisherStats> entry : localPublisherStatsMap.entrySet()) {
             wanStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
@@ -59,7 +61,7 @@ public class LocalWanStatsImpl implements LocalWanStats {
 
     @Override
     public void fromJson(JsonObject json) {
-        for (JsonObject.Member next : json) {
+        for (JsonObjectEntry next : json) {
             LocalWanPublisherStats localPublisherStats = new LocalWanPublisherStatsImpl();
             localPublisherStats.fromJson(next.getValue().asObject());
             localPublisherStatsMap.put(next.getName(), localPublisherStats);

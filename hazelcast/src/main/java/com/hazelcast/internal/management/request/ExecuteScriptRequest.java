@@ -18,9 +18,10 @@ package com.hazelcast.internal.management.request;
 
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.ExceptionUtil;
@@ -69,7 +70,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
             futures.put(targetAddress, mcs.callOnAddress(targetAddress, new ScriptExecutorOperation(engine, script)));
         }
 
-        JsonObject responseJson = new JsonObject();
+        JsonObject responseJson = Json.object();
         for (Map.Entry<Address, Future<Object>> entry : futures.entrySet()) {
             Address address = entry.getKey();
             Future<Object> future = entry.getValue();
@@ -84,7 +85,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
             }
         }
 
-        root.add("result",  responseJson);
+        root.add("result", responseJson);
     }
 
     private String prettyPrint(Object result) {
@@ -113,7 +114,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     public void fromJson(JsonObject json) {
         script = getString(json, "script", "");
         engine = getString(json, "engine", "");
-        final JsonArray array = getArray(json, "targets", new JsonArray());
+        final JsonArray array = getArray(json, "targets", Json.array());
         targets = createHashSet(array.size());
         for (JsonValue target : array) {
             targets.add(target.asString());
@@ -131,7 +132,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
 
     private static void addResponse(JsonObject root, Address address, boolean success, String result) {
 
-        JsonObject json = new JsonObject();
+        JsonObject json = Json.object();
         json.add("success", success);
         json.add("result", result);
         root.add(address.toString(), json);

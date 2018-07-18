@@ -19,7 +19,8 @@ package com.hazelcast.internal.management.dto;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.nio.Address;
 
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -60,7 +61,7 @@ public class PartitionServiceBeanDTO implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
+        final JsonObject root = Json.object();
         root.add("partitionCount", partitionCount);
         root.add("activePartitionCount", activePartitionCount);
         return root;

@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -55,7 +56,7 @@ public class MancenterServlet extends HttpServlet {
                 sb.append(str);
             }
             final String json = sb.toString();
-            final JsonObject object = JsonObject.readFrom(json);
+            final JsonObject object = Json.parse(json).asObject();
             process(object);
         }
     }

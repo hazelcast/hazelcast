@@ -17,7 +17,8 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.nio.ConnectionManager;
 
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -42,7 +43,7 @@ public class ConnectionManagerDTO implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
+        final JsonObject root = Json.object();
         root.add("clientConnectionCount", clientConnectionCount);
         root.add("activeConnectionCount", activeConnectionCount);
         root.add("connectionCount", connectionCount);

@@ -21,11 +21,11 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import static com.hazelcast.internal.json.TestUtil.assertException;
-import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.InOrder;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,18 +33,14 @@ import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.mockito.InOrder;
-
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.json.JsonWriter;
-import com.hazelcast.internal.json.ParseException;
-import com.hazelcast.test.annotation.QuickTest;
+import static com.hazelcast.internal.json.TestUtil.assertException;
+import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 public class JsonArray_Test {
@@ -164,7 +160,7 @@ public class JsonArray_Test {
   public void iterator_hasNextAfterAdd() {
     array.add(true);
 
-    Iterator<JsonValue> iterator = array.iterator();
+    Iterator<com.hazelcast.json.JsonValue> iterator = array.iterator();
     assertTrue(iterator.hasNext());
     assertEquals(Json.TRUE, iterator.next());
     assertFalse(iterator.hasNext());
@@ -173,14 +169,14 @@ public class JsonArray_Test {
   @Test(expected = UnsupportedOperationException.class)
   public void iterator_doesNotAllowModification() {
     array.add(23);
-    Iterator<JsonValue> iterator = array.iterator();
+    Iterator<com.hazelcast.json.JsonValue> iterator = array.iterator();
     iterator.next();
     iterator.remove();
   }
 
   @Test(expected = ConcurrentModificationException.class)
   public void iterator_detectsConcurrentModification() {
-    Iterator<JsonValue> iterator = array.iterator();
+    Iterator<com.hazelcast.json.JsonValue> iterator = array.iterator();
     array.add(23);
     iterator.next();
   }
@@ -200,7 +196,7 @@ public class JsonArray_Test {
 
   @Test
   public void values_reflectsChanges() {
-    List<JsonValue> values = array.values();
+    List<? extends com.hazelcast.json.JsonValue> values = array.values();
 
     array.add(true);
 
@@ -209,7 +205,7 @@ public class JsonArray_Test {
 
   @Test(expected = UnsupportedOperationException.class)
   public void values_preventsModification() {
-    List<JsonValue> values = array.values();
+    List<com.hazelcast.json.JsonValue> values = array.values();
 
     values.add(Json.TRUE);
   }

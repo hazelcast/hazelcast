@@ -17,7 +17,8 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -44,7 +45,7 @@ public class SlowOperationInvocationDTO implements JsonSerializable {
     }
 
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("id", id);
         root.add("details", operationDetails);
         root.add("startedAt", startedAt);

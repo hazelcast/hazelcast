@@ -20,7 +20,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.request.MapConfigRequest;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -61,7 +62,7 @@ public class MapConfigRequestTest extends HazelcastTestSupport {
     public void testGetMapConfig() {
         MapConfigRequest request = new MapConfigRequest(mapName, dto, false);
 
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
@@ -79,7 +80,7 @@ public class MapConfigRequestTest extends HazelcastTestSupport {
     public void testUpdateMapConfig() {
         MapConfigRequest request = new MapConfigRequest(mapName, dto, true);
 
-        JsonObject jsonObject = new JsonObject();
+        JsonObject jsonObject = Json.object();
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");

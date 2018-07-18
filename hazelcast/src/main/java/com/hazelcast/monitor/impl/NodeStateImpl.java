@@ -17,9 +17,11 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonObjectEntry;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
@@ -81,15 +83,15 @@ public class NodeStateImpl implements NodeState {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("clusterState", clusterState.name());
         root.add("nodeState", nodeState.name());
         root.add("clusterVersion", clusterVersion.toString());
         root.add("memberVersion", memberVersion.toString());
 
-        JsonObject weaknesses = new JsonObject();
+        JsonObject weaknesses = Json.object();
         for (Map.Entry<String, List<String>> entry : weakConfigs.entrySet()) {
-            JsonArray values = new JsonArray();
+            JsonArray values = Json.array();
             for (String value : entry.getValue()) {
                 values.add(value);
             }
@@ -123,7 +125,7 @@ public class NodeStateImpl implements NodeState {
         JsonValue jsonWeakConfigs = json.get("weakConfigs");
         if (jsonWeakConfigs != null) {
             JsonObject weakConfigsJsObj = jsonWeakConfigs.asObject();
-            for (JsonObject.Member member : weakConfigsJsObj) {
+            for (JsonObjectEntry member : weakConfigsJsObj) {
                 List<String> weaknesses = new ArrayList<String>();
                 for (JsonValue value : member.getValue().asArray()) {
                     weaknesses.add(value.asString());

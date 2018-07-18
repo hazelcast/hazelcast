@@ -18,7 +18,8 @@ package com.hazelcast.internal.management.request;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 /**
  * Request coming from Management Center for getting the {@link ClusterState}
@@ -33,7 +34,7 @@ public class GetClusterStateRequest implements ConsoleRequest {
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
         ClusterState clusterState = mcs.getHazelcastInstance().getCluster().getClusterState();
-        JsonObject result = new JsonObject();
+        JsonObject result = Json.object();
         result.add("result", clusterState.toString());
         out.add("result", result);
     }

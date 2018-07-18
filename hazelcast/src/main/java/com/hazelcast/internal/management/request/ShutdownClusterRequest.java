@@ -17,7 +17,8 @@
 package com.hazelcast.internal.management.request;
 
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.logging.ILogger;
 
 /**
@@ -41,7 +42,7 @@ public class ShutdownClusterRequest implements AsyncConsoleRequest {
             resultString = e.getMessage();
         }
 
-        JsonObject result = new JsonObject().add("result", resultString);
+        JsonObject result = Json.object().add("result", resultString);
         out.add("result", result);
     }
 

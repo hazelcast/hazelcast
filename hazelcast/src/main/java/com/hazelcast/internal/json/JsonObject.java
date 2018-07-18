@@ -21,6 +21,9 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
+import com.hazelcast.json.JsonObjectEntry;
+import com.hazelcast.nio.serialization.SerializableByConvention;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Reader;
@@ -28,9 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import com.hazelcast.internal.json.JsonObject.Member;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 
 
 /**
@@ -71,12 +71,12 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
  * </p>
  */
 @SerializableByConvention
-public class JsonObject extends JsonValue implements Iterable<Member> {
+public class JsonObject extends JsonValue implements com.hazelcast.json.JsonObject {
 
   private static final long serialVersionUID = -1139160206104439809L;
 
   private final List<String> names;
-  private final List<JsonValue> values;
+  private final List<com.hazelcast.json.JsonValue> values;
   private transient HashIndexTable table;
 
   /**
@@ -84,7 +84,7 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
    */
   public JsonObject() {
     names = new ArrayList<String>();
-    values = new ArrayList<JsonValue>();
+    values = new ArrayList<com.hazelcast.json.JsonValue>();
     table = new HashIndexTable();
   }
 
@@ -107,7 +107,7 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
       values = Collections.unmodifiableList(object.values);
     } else {
       names = new ArrayList<String>(object.names);
-      values = new ArrayList<JsonValue>(object.values);
+      values = new ArrayList<com.hazelcast.json.JsonValue>(object.values);
     }
     table = new HashIndexTable();
     updateHashIndex();
@@ -327,7 +327,7 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
    *          the value of the member to add, must not be <code>null</code>
    * @return the object itself, to enable method chaining
    */
-  public JsonObject add(String name, JsonValue value) {
+  public JsonObject add(String name, com.hazelcast.json.JsonValue value) {
     if (name == null) {
       throw new NullPointerException("name is null");
     }
@@ -488,7 +488,7 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
    *          the value of the member to add, must not be <code>null</code>
    * @return the object itself, to enable method chaining
    */
-  public JsonObject set(String name, JsonValue value) {
+  public JsonObject set(String name, com.hazelcast.json.JsonValue value) {
     if (name == null) {
       throw new NullPointerException("name is null");
     }
@@ -537,12 +537,12 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
    *          the object to merge
    * @return the object itself, to enable method chaining
    */
-  public JsonObject merge(JsonObject object) {
+  public JsonObject merge(com.hazelcast.json.JsonObject object) {
     if (object == null) {
       throw new NullPointerException("object is null");
     }
-    for (Member member : object) {
-      this.set(member.name, member.value);
+    for (JsonObjectEntry member : object) {
+      this.set(member.getName(), member.getValue());
     }
     return this;
   }
@@ -561,7 +561,7 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
       throw new NullPointerException("name is null");
     }
     int index = indexOf(name);
-    return index != -1 ? values.get(index) : null;
+    return index != -1 ? (JsonValue) values.get(index) : null;
   }
 
   /**
@@ -712,10 +712,10 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
    *
    * @return an iterator over the members of this object
    */
-  public Iterator<Member> iterator() {
+  public Iterator<com.hazelcast.json.JsonObjectEntry> iterator() {
     final Iterator<String> namesIterator = names.iterator();
-    final Iterator<JsonValue> valuesIterator = values.iterator();
-    return new Iterator<JsonObject.Member>() {
+    final Iterator<com.hazelcast.json.JsonValue> valuesIterator = values.iterator();
+    return new Iterator<JsonObjectEntry>() {
 
       public boolean hasNext() {
         return namesIterator.hasNext();
@@ -723,8 +723,8 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
 
       public Member next() {
         String name = namesIterator.next();
-        JsonValue value = valuesIterator.next();
-        return new Member(name, value);
+          com.hazelcast.json.JsonValue value = valuesIterator.next();
+        return new Member(name, (JsonValue) value);
       }
 
       public void remove() {
@@ -738,16 +738,16 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
   void write(JsonWriter writer) throws IOException {
     writer.writeObjectOpen();
     Iterator<String> namesIterator = names.iterator();
-    Iterator<JsonValue> valuesIterator = values.iterator();
+    Iterator<com.hazelcast.json.JsonValue> valuesIterator = values.iterator();
     if (namesIterator.hasNext()) {
       writer.writeMemberName(namesIterator.next());
       writer.writeMemberSeparator();
-      valuesIterator.next().write(writer);
+      ((JsonValue) valuesIterator.next()).write(writer);
       while (namesIterator.hasNext()) {
         writer.writeObjectSeparator();
         writer.writeMemberName(namesIterator.next());
         writer.writeMemberSeparator();
-        valuesIterator.next().write(writer);
+        ((JsonValue) valuesIterator.next()).write(writer);
       }
     }
     writer.writeObjectClose();
@@ -812,7 +812,7 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
   /**
    * Represents a member of a JSON object, a pair of a name and a value.
    */
-  public static class Member {
+  public static class Member implements com.hazelcast.json.JsonObjectEntry{
 
     private final String name;
     private final JsonValue value;

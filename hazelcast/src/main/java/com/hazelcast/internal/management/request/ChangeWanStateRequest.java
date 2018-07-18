@@ -19,7 +19,8 @@ package com.hazelcast.internal.management.request;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeWanStateOperation;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
 import static com.hazelcast.util.JsonUtil.getString;
@@ -54,9 +55,8 @@ public class ChangeWanStateRequest implements ConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) {
-        Object operationResult = resolveFuture(
-                mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, state)));
-        JsonObject result = new JsonObject();
+        Object operationResult = resolveFuture(mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, state)));
+        JsonObject result = Json.object();
         if (operationResult == null) {
             result.add("result", SUCCESS);
         } else {

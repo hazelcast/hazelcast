@@ -21,14 +21,14 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
+import com.hazelcast.nio.serialization.SerializableByConvention;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import com.hazelcast.nio.serialization.SerializableByConvention;
 
 /**
  * Represents a JSON array, an ordered collection of JSON values.
@@ -62,15 +62,15 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
  */
 @SuppressWarnings("serial") // use default serial UID
 @SerializableByConvention
-public class JsonArray extends JsonValue implements Iterable<JsonValue> {
+public class JsonArray extends JsonValue implements com.hazelcast.json.JsonArray {
 
-  private final List<JsonValue> values;
+  private final List<com.hazelcast.json.JsonValue> values;
 
   /**
    * Creates a new empty JsonArray.
    */
   public JsonArray() {
-    values = new ArrayList<JsonValue>();
+    values = new ArrayList<com.hazelcast.json.JsonValue>();
   }
 
   /**
@@ -90,7 +90,7 @@ public class JsonArray extends JsonValue implements Iterable<JsonValue> {
     if (unmodifiable) {
       values = Collections.unmodifiableList(array.values);
     } else {
-      values = new ArrayList<JsonValue>(array.values);
+      values = new ArrayList<com.hazelcast.json.JsonValue>(array.values);
     }
   }
 
@@ -235,7 +235,7 @@ public class JsonArray extends JsonValue implements Iterable<JsonValue> {
    *          the JsonValue to add to the array, must not be <code>null</code>
    * @return the array itself, to enable method chaining
    */
-  public JsonArray add(JsonValue value) {
+  public JsonArray add(com.hazelcast.json.JsonValue value) {
     if (value == null) {
       throw new NullPointerException("value is null");
     }
@@ -363,7 +363,7 @@ public class JsonArray extends JsonValue implements Iterable<JsonValue> {
    *           if the index is out of range, i.e. <code>index &lt; 0</code> or
    *           <code>index &gt;= size</code>
    */
-  public JsonArray set(int index, JsonValue value) {
+  public JsonArray set(int index, com.hazelcast.json.JsonValue  value) {
     if (value == null) {
       throw new NullPointerException("value is null");
     }
@@ -415,7 +415,7 @@ public class JsonArray extends JsonValue implements Iterable<JsonValue> {
    *           <code>index &gt;= size</code>
    */
   public JsonValue get(int index) {
-    return values.get(index);
+    return (JsonValue) values.get(index);
   }
 
   /**
@@ -425,7 +425,7 @@ public class JsonArray extends JsonValue implements Iterable<JsonValue> {
    *
    * @return a list of the values in this array
    */
-  public List<JsonValue> values() {
+  public List<com.hazelcast.json.JsonValue> values() {
     return Collections.unmodifiableList(values);
   }
 
@@ -435,16 +435,16 @@ public class JsonArray extends JsonValue implements Iterable<JsonValue> {
    *
    * @return an iterator over the values of this array
    */
-  public Iterator<JsonValue> iterator() {
-    final Iterator<JsonValue> iterator = values.iterator();
-    return new Iterator<JsonValue>() {
+  public Iterator<com.hazelcast.json.JsonValue> iterator() {
+    final Iterator<com.hazelcast.json.JsonValue> iterator = values.iterator();
+    return new Iterator<com.hazelcast.json.JsonValue>() {
 
       public boolean hasNext() {
         return iterator.hasNext();
       }
 
       public JsonValue next() {
-        return iterator.next();
+        return (JsonValue) iterator.next();
       }
 
       public void remove() {
@@ -456,12 +456,12 @@ public class JsonArray extends JsonValue implements Iterable<JsonValue> {
   @Override
   void write(JsonWriter writer) throws IOException {
     writer.writeArrayOpen();
-    Iterator<JsonValue> iterator = iterator();
+    Iterator<com.hazelcast.json.JsonValue> iterator = iterator();
     if (iterator.hasNext()) {
-      iterator.next().write(writer);
+      ((JsonValue) iterator.next()).write(writer);
       while (iterator.hasNext()) {
         writer.writeArraySeparator();
-        iterator.next().write(writer);
+        ((JsonValue) iterator.next()).write(writer);
       }
     }
     writer.writeArrayClose();

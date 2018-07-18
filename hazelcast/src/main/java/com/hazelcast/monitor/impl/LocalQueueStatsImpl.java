@@ -17,7 +17,8 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.util.Clock;
 
@@ -185,7 +186,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("ownedItemCount", ownedItemCount);
         root.add("backupItemCount", backupItemCount);
         root.add("minAge", minAge);

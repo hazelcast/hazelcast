@@ -16,7 +16,8 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.Clock;
 import com.hazelcast.wan.WanSyncStatus;
@@ -67,7 +68,7 @@ public class WanSyncStateImpl implements WanSyncState {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add("creationTime", creationTime);
         root.add("status", status.getStatus());
         root.add("syncedPartitionCount", syncedPartitionCount);

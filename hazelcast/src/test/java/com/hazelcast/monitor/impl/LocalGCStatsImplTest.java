@@ -16,7 +16,7 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.memory.GarbageCollectorStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;

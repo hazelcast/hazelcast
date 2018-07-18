@@ -22,7 +22,8 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 import java.util.Set;
 
@@ -56,7 +57,7 @@ public class MapConfigRequest implements ConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject root) {
-        final JsonObject result = new JsonObject();
+        final JsonObject result = Json.object();
         result.add("update", update);
         if (update) {
             final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();

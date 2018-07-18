@@ -18,7 +18,8 @@ package com.hazelcast.internal.management.request;
 
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ThreadDumpOperation;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -47,7 +48,7 @@ public class ThreadDumpRequest implements ConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject root) {
-        final JsonObject result = new JsonObject();
+        final JsonObject result = Json.object();
         InternalCompletableFuture<Object> future = mcs.callOnThis(new ThreadDumpOperation(dumpDeadlocks));
         try {
             String threadDump = (String) future.get();

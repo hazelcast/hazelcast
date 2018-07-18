@@ -18,7 +18,8 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.hotrestart.BackupTaskState;
 import com.hazelcast.hotrestart.BackupTaskStatus;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.util.JsonUtil;
 
@@ -50,7 +51,7 @@ public class HotRestartStateImpl implements HotRestartState {
 
     @Override
     public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
+        final JsonObject root = Json.object();
         if (backupTaskStatus != null) {
             root.add("backupTaskState", backupTaskStatus.getState().name());
             root.add("backupTaskCompleted", backupTaskStatus.getCompleted());

@@ -16,14 +16,14 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getObject;
-
-import com.hazelcast.internal.json.JsonObject;
 
 public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
@@ -203,7 +203,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        JsonObject root = Json.object();
         root.add(JSON_CREATION_TIME, creationTime);
         root.add(JSON_TOTAL_PHYSICAL, totalPhysical);
         root.add(JSON_FREE_PHYSICAL, freePhysical);

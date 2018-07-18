@@ -19,9 +19,10 @@ package com.hazelcast.internal.management.request;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.PermissionConfigDTO;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonArray;
+import com.hazelcast.json.JsonObject;
+import com.hazelcast.json.JsonValue;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -45,8 +46,8 @@ public class UpdatePermissionConfigRequest implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        JsonArray permissionConfigsArr = new JsonArray();
+        JsonObject root = Json.object();
+        JsonArray permissionConfigsArr = Json.array();
         for (PermissionConfig permissionConfig : permissionConfigs) {
             permissionConfigsArr.add(new PermissionConfigDTO(permissionConfig).toJson());
         }

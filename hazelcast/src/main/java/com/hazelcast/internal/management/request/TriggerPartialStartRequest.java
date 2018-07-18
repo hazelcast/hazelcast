@@ -19,7 +19,7 @@ package com.hazelcast.internal.management.request;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.JsonObject;
 
 /**
  * Request coming from Management Center to trigger partial start during Hot Restart process

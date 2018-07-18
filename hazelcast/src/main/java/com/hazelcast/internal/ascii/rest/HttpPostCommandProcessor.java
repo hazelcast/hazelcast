@@ -27,7 +27,7 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
-import com.hazelcast.internal.json.Json;
+import com.hazelcast.json.Json;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.InternalCompletableFuture;

@@ -17,8 +17,8 @@
 package com.hazelcast.internal.management.request;
 
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.json.JsonObject;
-
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
@@ -38,7 +38,7 @@ public class RunGcRequest implements ConsoleRequest {
     @SuppressFBWarnings(value = "DM_GC", justification = "Explicit GC is the point of this class")
     public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         System.gc();
-        root.add("result", new JsonObject());
+        root.add("result", Json.object());
     }
 
     @Override

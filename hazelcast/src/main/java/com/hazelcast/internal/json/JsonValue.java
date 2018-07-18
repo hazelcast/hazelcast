@@ -60,7 +60,7 @@ import java.io.Writer;
  * </p>
  */
 @SuppressWarnings("serial") // use default serial UID
-public abstract class JsonValue implements Serializable {
+public abstract class JsonValue implements Serializable, com.hazelcast.json.JsonValue {
 
   /**
    * Represents the JSON literal <code>true</code>.

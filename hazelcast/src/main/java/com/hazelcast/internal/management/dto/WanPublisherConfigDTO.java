@@ -19,8 +19,8 @@ package com.hazelcast.internal.management.dto;
 import com.hazelcast.config.WANQueueFullBehavior;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 
 import java.util.Map;
 
@@ -37,12 +37,12 @@ public class WanPublisherConfigDTO implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        JsonObject object = new JsonObject();
+        JsonObject object = Json.object();
         object.add("groupName", config.getGroupName());
         object.add("queueCapacity", config.getQueueCapacity());
         object.add("className", config.getClassName());
         object.add("queueFullBehavior", config.getQueueFullBehavior().getId());
-        JsonObject properties = new JsonObject();
+        JsonObject properties = Json.object();
         for (Map.Entry<String, Comparable> property : config.getProperties().entrySet()) {
             properties.add(property.getKey(), Json.value(property.getValue().toString()));
         }

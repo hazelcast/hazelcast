@@ -25,7 +25,8 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.instance.HazelcastInstanceCacheManager;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -78,7 +79,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         } else if ("integer".equals(type)) {
             cacheEntry = cache.invoke(Integer.valueOf(key), ENTRY_PROCESSOR);
         }
-        JsonObject result = new JsonObject();
+        JsonObject result = Json.object();
         if (cacheEntry != null) {
             Object value = serializationService.toObject(cacheEntry.getValue());
             result.add("cacheBrowse_value", value != null ? value.toString() : "null");
