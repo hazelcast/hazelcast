@@ -133,11 +133,11 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
             assertNotNull(indexStats2);
 
             LocalIndexStatsImpl combinedIndexStats = new LocalIndexStatsImpl();
-            assertEquals(indexStats1.getHitCount(), indexStats1.getHitCount());
+            assertEquals(indexStats1.getHitCount(), indexStats2.getHitCount());
             combinedIndexStats.setHitCount(indexStats1.getHitCount());
             combinedIndexStats.setEntryCount(indexStats1.getEntryCount() + indexStats2.getEntryCount());
 
-            assertEquals(indexStats1.getQueryCount(), indexStats1.getQueryCount());
+            assertEquals(indexStats1.getQueryCount(), indexStats2.getQueryCount());
             combinedIndexStats.setQueryCount(indexStats1.getQueryCount());
             combinedIndexStats.setAverageHitSelectivity(
                     (indexStats1.getAverageHitSelectivity() + indexStats2.getAverageHitSelectivity()) / 2.0);
