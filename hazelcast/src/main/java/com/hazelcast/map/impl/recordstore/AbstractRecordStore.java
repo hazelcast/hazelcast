@@ -23,7 +23,6 @@ import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
@@ -56,7 +55,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final LockStore lockStore;
     protected final MapContainer mapContainer;
     protected final RecordFactory recordFactory;
-    protected final MapEventJournal eventJournal;
     protected final InMemoryFormat inMemoryFormat;
     protected final MapStoreContext mapStoreContext;
     protected final RecordComparator recordComparator;
@@ -64,6 +62,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final SerializationService serializationService;
     protected final MapDataStore<Data, Object> mapDataStore;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
+    protected final RecordStoreMutationObserver<Record> mutationObserver;
 
     protected Storage<Data, Record> storage;
 
@@ -80,7 +79,9 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
-        this.eventJournal = mapServiceContext.getEventJournal();
+        Collection<RecordStoreMutationObserver<Record>> mutationObservers = mapServiceContext
+                .createRecordStoreMutationObservers(getName(), partitionId);
+        this.mutationObserver = new CompositeRecordStoreMutationObserver<Record>(mutationObservers);
     }
 
     protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
@@ -145,8 +146,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
             record.onAccess(now);
         }
         record.onUpdate(now);
-        eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                record.getKey(), record.getValue(), value);
+        mutationObserver.onUpdateRecord(key, record, value);
         storage.updateRecordValue(key, record, value);
     }
 

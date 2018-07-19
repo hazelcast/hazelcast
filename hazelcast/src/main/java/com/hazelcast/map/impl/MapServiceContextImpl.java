@@ -62,9 +62,12 @@ import com.hazelcast.map.impl.querycache.NodeQueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.record.DataRecordComparator;
 import com.hazelcast.map.impl.record.ObjectRecordComparator;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
+import com.hazelcast.map.impl.recordstore.EventJournalUpdaterRecordStoreMutationObserver;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -92,6 +95,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -306,8 +310,12 @@ class MapServiceContextImpl implements MapServiceContext {
     public void initPartitionsContainers() {
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
-            partitionContainers[i] = new PartitionContainer(getService(), i);
+            partitionContainers[i] = createPartitionContainer(getService(), i);
         }
+    }
+
+    protected PartitionContainer createPartitionContainer(MapService service, int partitionId) {
+        return new PartitionContainer(service, partitionId);
     }
 
     @Override
@@ -837,4 +845,20 @@ class MapServiceContextImpl implements MapServiceContext {
     public IndexCopyBehavior getIndexCopyBehavior() {
         return nodeEngine.getProperties().getEnum(INDEX_COPY_BEHAVIOR, IndexCopyBehavior.class);
     }
+
+    @Override
+    public Collection<RecordStoreMutationObserver<Record>> createRecordStoreMutationObservers(String mapName, int partitionId) {
+        Collection<RecordStoreMutationObserver<Record>> observers = new LinkedList<RecordStoreMutationObserver<Record>>();
+        addEventJournalUpdaterObserver(observers, mapName, partitionId);
+
+        return observers;
+    }
+
+    private void addEventJournalUpdaterObserver(Collection<RecordStoreMutationObserver<Record>> observers, String mapName, int
+            partitionId) {
+        RecordStoreMutationObserver<Record> observer = new EventJournalUpdaterRecordStoreMutationObserver(getEventJournal(),
+                getMapContainer(mapName), partitionId);
+        observers.add(observer);
+    }
+
 }

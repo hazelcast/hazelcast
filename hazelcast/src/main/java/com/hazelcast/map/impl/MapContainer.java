@@ -17,9 +17,12 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
@@ -71,7 +74,7 @@ import static java.lang.System.getProperty;
  * Map container for a map with a specific name. Contains config and supporting structures for
  * all of the maps' functionalities.
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity"})
 public class MapContainer {
 
     protected final String name;
@@ -206,11 +209,19 @@ public class MapContainer {
             return;
         }
         String wanReplicationRefName = wanReplicationRef.getName();
+        Config config = nodeEngine.getConfig();
+        if (!config.findMapMerkleTreeConfig(name).isEnabled()
+                && hasPublisherWithMerkleTreeSync(config, wanReplicationRefName)) {
+            throw new InvalidConfigurationException(
+                    "Map " + name + " has disabled merkle trees but the WAN replication scheme "
+                            + wanReplicationRefName + " has publishers that use merkle trees."
+                            + " Please enable merkle trees for the map.");
+        }
+
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
         wanMergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
 
-        Config config = nodeEngine.getConfig();
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
         if (wanReplicationConfig != null) {
             WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getWanConsumerConfig();
@@ -218,6 +229,28 @@ public class MapContainer {
                 persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
             }
         }
+    }
+
+    /**
+     * Returns {@code true} if at least one of the WAN publishers has
+     * Merkle tree consistency check configured for the given WAN
+     * replication configuration
+     *
+     * @param config                configuration
+     * @param wanReplicationRefName The name of the WAN replication
+     * @return {@code true} if there is at least one publisher has Merkle
+     * tree configured
+     */
+    private boolean hasPublisherWithMerkleTreeSync(Config config, String wanReplicationRefName) {
+        WanReplicationConfig replicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
+        for (WanPublisherConfig publisherConfig : replicationConfig.getWanPublisherConfigs()) {
+            if (publisherConfig.getWanSyncConfig() != null
+                    && ConsistencyCheckStrategy.MERKLE_TREES.equals(publisherConfig.getWanSyncConfig()
+                                                                                   .getConsistencyCheckStrategy())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
