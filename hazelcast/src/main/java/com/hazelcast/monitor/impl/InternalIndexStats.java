@@ -42,11 +42,6 @@ public interface InternalIndexStats {
         }
 
         @Override
-        public long getEntryCount() {
-            return 0;
-        }
-
-        @Override
         public long getQueryCount() {
             return 0;
         }
@@ -167,11 +162,6 @@ public interface InternalIndexStats {
      * milliseconds.
      */
     long getCreationTime();
-
-    /**
-     * Returns the current number of entries indexed by the index.
-     */
-    long getEntryCount();
 
     /**
      * Returns the total number of queries served by the index.

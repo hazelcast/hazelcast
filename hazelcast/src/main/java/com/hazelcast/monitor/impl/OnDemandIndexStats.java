@@ -70,22 +70,6 @@ public class OnDemandIndexStats {
     }
 
     /**
-     * Returns the entry count.
-     */
-    public long getEntryCount() {
-        return entryCount;
-    }
-
-    /**
-     * Sets the entry count to the given value.
-     *
-     * @param entryCount the entry count value to set.
-     */
-    public void setEntryCount(long entryCount) {
-        this.entryCount = entryCount;
-    }
-
-    /**
      * Returns the query count.
      */
     public long getQueryCount() {

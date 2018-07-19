@@ -31,9 +31,6 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
     private volatile long creationTime;
 
     @Probe
-    private volatile long entryCount;
-
-    @Probe
     private volatile long queryCount;
 
     @Probe
@@ -81,20 +78,6 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
      */
     public void setCreationTime(long creationTime) {
         this.creationTime = creationTime;
-    }
-
-    @Override
-    public long getEntryCount() {
-        return entryCount;
-    }
-
-    /**
-     * Sets the entry count of this stats to the given entry count.
-     *
-     * @param entryCount the entry count to set.
-     */
-    public void setEntryCount(long entryCount) {
-        this.entryCount = entryCount;
     }
 
     @Override
@@ -282,7 +265,6 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
         this.creationTime = onDemandStats.getCreationTime();
         this.hitCount = onDemandStats.getHitCount();
         this.queryCount = onDemandStats.getQueryCount();
-        this.entryCount = onDemandStats.getEntryCount();
         this.averageHitSelectivity = onDemandStats.getAverageHitSelectivity();
         this.averageHitLatency = onDemandStats.getAverageHitLatency();
         this.insertCount = onDemandStats.getInsertCount();
@@ -301,7 +283,6 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
         json.add("creationTime", creationTime);
         json.add("hitCount", hitCount);
         json.add("queryCount", queryCount);
-        json.add("entryCount", entryCount);
         json.add("averageHitSelectivity", averageHitSelectivity);
         json.add("averageHitLatency", averageHitLatency);
         json.add("insertCount", insertCount);
@@ -320,7 +301,6 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
         creationTime = json.getLong("creationTime", -1);
         hitCount = json.getLong("hitCount", -1);
         queryCount = json.getLong("queryCount", -1);
-        entryCount = json.getLong("entryCount", -1);
         averageHitSelectivity = json.getDouble("averageHitSelectivity", -1.0);
         averageHitLatency = json.getLong("averageHitLatency", -1);
         insertCount = json.getLong("insertCount", -1);
@@ -335,12 +315,12 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
 
     @Override
     public String toString() {
-        return "LocalIndexStatsImpl{" + "creationTime=" + creationTime + ", hitCount=" + hitCount + ", entryCount=" + entryCount
-                + ", queryCount=" + queryCount + ", averageHitSelectivity=" + averageHitSelectivity + ", averageHitLatency="
-                + averageHitLatency + ", insertCount=" + insertCount + ", totalInsertLatency=" + totalInsertLatency
-                + ", updateCount=" + updateCount + ", totalUpdateLatency=" + totalUpdateLatency + ", removeCount=" + removeCount
-                + ", totalRemoveLatency=" + totalRemoveLatency + ", onHeapMemoryCost=" + onHeapMemoryCost + ", offHeapMemoryCost="
-                + offHeapMemoryCost + '}';
+        return "LocalIndexStatsImpl{" + "creationTime=" + creationTime + ", hitCount=" + hitCount + ", queryCount=" + queryCount
+                + ", averageHitSelectivity=" + averageHitSelectivity + ", averageHitLatency=" + averageHitLatency
+                + ", insertCount=" + insertCount + ", totalInsertLatency=" + totalInsertLatency + ", updateCount=" + updateCount
+                + ", totalUpdateLatency=" + totalUpdateLatency + ", removeCount=" + removeCount + ", totalRemoveLatency="
+                + totalRemoveLatency + ", onHeapMemoryCost=" + onHeapMemoryCost + ", offHeapMemoryCost=" + offHeapMemoryCost
+                + '}';
     }
 
 }

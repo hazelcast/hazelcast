@@ -221,35 +221,6 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEntryCounting() {
-        map.addIndex("__key", false);
-        map.addIndex("this", true);
-        for (int i = 0; i < 100; ++i) {
-            map.put(i, i);
-        }
-        assertEquals(100, keyStats().getEntryCount());
-        assertEquals(100, valueStats().getEntryCount());
-
-        for (int i = 50; i < 100; ++i) {
-            map.remove(i);
-        }
-        assertEquals(50, keyStats().getEntryCount());
-        assertEquals(50, valueStats().getEntryCount());
-
-        for (int i = 0; i < 50; ++i) {
-            map.put(i, i * i);
-        }
-        assertEquals(50, keyStats().getEntryCount());
-        assertEquals(50, valueStats().getEntryCount());
-
-        for (int i = 50; i < 100; ++i) {
-            map.set(i, i);
-        }
-        assertEquals(100, keyStats().getEntryCount());
-        assertEquals(100, valueStats().getEntryCount());
-    }
-
-    @Test
     public void testAverageQuerySelectivityCalculation_WhenSomePartitionsAreEmpty() {
         testAverageQuerySelectivityCalculation(100);
     }
@@ -302,8 +273,6 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; ++i) {
             otherMap.put(i, i);
         }
-        assertEquals(0, keyStats().getEntryCount());
-        assertEquals(0, valueStats().getEntryCount());
 
         otherMap.entrySet(Predicates.equal("__key", 10));
         assertEquals(0, keyStats().getQueryCount());

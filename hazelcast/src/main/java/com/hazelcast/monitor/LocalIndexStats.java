@@ -23,15 +23,6 @@ package com.hazelcast.monitor;
 public interface LocalIndexStats extends LocalInstanceStats {
 
     /**
-     * Returns the current number of entries indexed by the index.
-     * <p>
-     * The returned value may be greater than the number of entries stored in
-     * the associated map if the index is built on top of a collection/array
-     * attribute.
-     */
-    long getEntryCount();
-
-    /**
      * Returns the total number of queries served by the index.
      * <p>
      * To calculate the index hit rate just divide the returned value by a value

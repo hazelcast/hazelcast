@@ -115,11 +115,6 @@ public class GlobalIndexStats implements InternalIndexStats {
     }
 
     @Override
-    public long getEntryCount() {
-        return entryCount;
-    }
-
-    @Override
     public long getQueryCount() {
         return queryCount;
     }
@@ -186,11 +181,8 @@ public class GlobalIndexStats implements InternalIndexStats {
 
     @Override
     public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
-        // XXX: AddIndexOperation may be invoked at any time by a user as a
-        // result of IMap.addIndex call and we can't tell for sure are we
-        // building a new index or rebuilding the existing one, so we are just
-        // ignoring the attempts to reinsert the entries.
         if (operationStats.getEntryCountDelta() == 0) {
+            // no entries were inserted
             return;
         }
 
@@ -198,7 +190,7 @@ public class GlobalIndexStats implements InternalIndexStats {
             TOTAL_INSERT_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
             INSERT_COUNT.incrementAndGet(this);
         }
-        ENTRY_COUNT.addAndGet(this, operationStats.getEntryCountDelta());
+        ENTRY_COUNT.incrementAndGet(this);
         VALUES_MEMORY_COST.addAndGet(this, operationStats.getMemoryCostDelta());
     }
 
@@ -208,17 +200,21 @@ public class GlobalIndexStats implements InternalIndexStats {
             TOTAL_UPDATE_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
             UPDATE_COUNT.incrementAndGet(this);
         }
-        ENTRY_COUNT.addAndGet(this, operationStats.getEntryCountDelta());
         VALUES_MEMORY_COST.addAndGet(this, operationStats.getMemoryCostDelta());
     }
 
     @Override
     public void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        if (operationStats.getEntryCountDelta() == 0) {
+            // no entries were removed
+            return;
+        }
+
         if (operationSource == Index.OperationSource.User) {
             TOTAL_REMOVE_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
             REMOVE_COUNT.incrementAndGet(this);
         }
-        ENTRY_COUNT.addAndGet(this, operationStats.getEntryCountDelta());
+        ENTRY_COUNT.decrementAndGet(this);
         VALUES_MEMORY_COST.addAndGet(this, operationStats.getMemoryCostDelta());
     }
 

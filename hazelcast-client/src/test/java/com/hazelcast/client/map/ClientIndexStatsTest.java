@@ -135,7 +135,6 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
             LocalIndexStatsImpl combinedIndexStats = new LocalIndexStatsImpl();
             assertEquals(indexStats1.getHitCount(), indexStats2.getHitCount());
             combinedIndexStats.setHitCount(indexStats1.getHitCount());
-            combinedIndexStats.setEntryCount(indexStats1.getEntryCount() + indexStats2.getEntryCount());
 
             assertEquals(indexStats1.getQueryCount(), indexStats2.getQueryCount());
             combinedIndexStats.setQueryCount(indexStats1.getQueryCount());

@@ -48,6 +48,9 @@ public interface IndexOperationStats {
 
     /**
      * Returns the entry count delta produced as a result of an index operation.
+     * <p>
+     * Includes the entries produced as result of indexing of collection/array
+     * attributes.
      */
     long getEntryCountDelta();
 

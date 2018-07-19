@@ -102,11 +102,6 @@ public class PartitionIndexStats implements InternalIndexStats {
     }
 
     @Override
-    public long getEntryCount() {
-        return entryCount;
-    }
-
-    @Override
     public long getQueryCount() {
         return queryCount;
     }
@@ -175,11 +170,8 @@ public class PartitionIndexStats implements InternalIndexStats {
 
     @Override
     public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
-        // XXX: AddIndexOperation may be invoked at any time by a user as a
-        // result of IMap.addIndex call and we can't tell for sure are we
-        // building a new index or rebuilding the existing one, so we are just
-        // ignoring the attempts to reinsert the entries.
         if (operationStats.getEntryCountDelta() == 0) {
+            // no entries were inserted
             return;
         }
 
@@ -187,7 +179,7 @@ public class PartitionIndexStats implements InternalIndexStats {
             TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (System.nanoTime() - timestamp));
             INSERT_COUNT.lazySet(this, insertCount + 1);
         }
-        ENTRY_COUNT.lazySet(this, entryCount + operationStats.getEntryCountDelta());
+        ENTRY_COUNT.lazySet(this, entryCount + 1);
     }
 
     @Override
@@ -201,11 +193,16 @@ public class PartitionIndexStats implements InternalIndexStats {
 
     @Override
     public void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        if (operationStats.getEntryCountDelta() == 0) {
+            // no entries were removed
+            return;
+        }
+
         if (operationSource == Index.OperationSource.User) {
             TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (System.nanoTime() - timestamp));
             REMOVE_COUNT.lazySet(this, removeCount + 1);
         }
-        ENTRY_COUNT.lazySet(this, entryCount + operationStats.getEntryCountDelta());
+        ENTRY_COUNT.lazySet(this, entryCount - 1);
     }
 
     @Override

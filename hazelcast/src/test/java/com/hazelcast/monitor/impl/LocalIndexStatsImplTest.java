@@ -40,7 +40,6 @@ public class LocalIndexStatsImplTest {
         stats.setCreationTime(1234);
         stats.setHitCount(20);
         stats.setQueryCount(11);
-        stats.setEntryCount(100);
         stats.setAverageHitSelectivity(0.5);
         stats.setAverageHitLatency(81273);
         stats.setInsertCount(91238);
@@ -58,7 +57,6 @@ public class LocalIndexStatsImplTest {
         assertEquals(1234, stats.getCreationTime());
         assertEquals(20, stats.getHitCount());
         assertEquals(11, stats.getQueryCount());
-        assertEquals(100, stats.getEntryCount());
         assertEquals(0.5, stats.getAverageHitSelectivity(), 0.01);
         assertEquals(81273, stats.getAverageHitLatency());
         assertEquals(91238, stats.getInsertCount());
@@ -80,7 +78,6 @@ public class LocalIndexStatsImplTest {
         assertEquals(1234, deserialized.getCreationTime());
         assertEquals(20, deserialized.getHitCount());
         assertEquals(11, deserialized.getQueryCount());
-        assertEquals(100, deserialized.getEntryCount());
         assertEquals(0.5, deserialized.getAverageHitSelectivity(), 0.01);
         assertEquals(81273, deserialized.getAverageHitLatency());
         assertEquals(91238, deserialized.getInsertCount());
