@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
+import com.hazelcast.internal.networking.ChannelConfig;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.nio.IOService;
@@ -115,7 +116,7 @@ public class ProtocolDecoder extends ChannelInboundHandler<ByteBuffer, Void> {
 
     private void initChannelForClient() {
         channel.config()
-                .setOption(SO_RCVBUF, KILO_BYTE * clientRcvBuf())
+                .setOption(SO_RCVBUF, clientRcvBuf())
                 // clients dont support direct buffers
                 .setOption(DIRECT_BUF, false);
 
@@ -124,8 +125,9 @@ public class ProtocolDecoder extends ChannelInboundHandler<ByteBuffer, Void> {
     }
 
     private void initChannelForText(String protocol) {
-        channel.config()
-                .setOption(SO_RCVBUF, clientRcvBuf());
+        ChannelConfig config = channel.config();
+
+        config.setOption(SO_RCVBUF, clientRcvBuf());
 
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
         connection.getConnectionManager().incrementTextConnections();
@@ -135,7 +137,7 @@ public class ProtocolDecoder extends ChannelInboundHandler<ByteBuffer, Void> {
         channel.attributeMap().put(TextEncoder.TEXT_ENCODER, encoder);
 
         TextDecoder decoder = new TextDecoder(connection, encoder);
-        decoder.src(newByteBuffer(channel.config().getOption(SO_RCVBUF), channel.config().getOption(DIRECT_BUF)));
+        decoder.src(newByteBuffer(config.getOption(SO_RCVBUF), config.getOption(DIRECT_BUF)));
         // we need to restore whatever is read
         decoder.src().put(stringToBytes(protocol));
 
@@ -147,6 +149,6 @@ public class ProtocolDecoder extends ChannelInboundHandler<ByteBuffer, Void> {
         if (rcvBuf == -1) {
             rcvBuf = props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE);
         }
-        return rcvBuf;
+        return rcvBuf * KILO_BYTE;
     }
 }
