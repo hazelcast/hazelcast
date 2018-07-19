@@ -33,8 +33,10 @@ import com.hazelcast.map.impl.query.PartitionScanRunner;
 import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -190,4 +192,17 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     String addLocalListenerAdapter(ListenerAdapter listenerAdaptor, String mapName);
 
     IndexCopyBehavior getIndexCopyBehavior();
+
+    /**
+     * Returns the collection of the {@link RecordStoreMutationObserver}s
+     * for the given map's partition that need to be added in record
+     * store construction time in order to ensure no {@link RecordStore}
+     * mutations are missed.
+     *
+     * @param mapName The name of the map
+     * @param partitionId The partition
+     *
+     * @return The collection of the observers
+     */
+    Collection<RecordStoreMutationObserver<Record>> getRecordStoreMutationObservers(String mapName, int partitionId);
 }
