@@ -16,11 +16,11 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;

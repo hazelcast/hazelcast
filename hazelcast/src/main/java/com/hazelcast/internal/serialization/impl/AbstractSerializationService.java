@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.BufferObjectDataInput;
@@ -497,6 +498,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
         if (Portable.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
+        }
+        if (JsonValue.class.isAssignableFrom(type)) {
+            return constantTypesMap.get(JsonValue.class);
         }
         return constantTypesMap.get(type);
     }

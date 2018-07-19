@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ClassNameFilter;

@@ -127,8 +127,6 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertEquals(2, vals.size());
         assertTrue(vals.contains(p1));
         assertTrue(vals.contains(p2));
-
-        vals = map.values(Predicates.greaterEqual("age", 20));
     }
 
     @Test

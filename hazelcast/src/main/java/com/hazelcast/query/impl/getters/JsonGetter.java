@@ -48,7 +48,7 @@ public class JsonGetter extends Getter {
     @Override
     Object getValue(Object obj, String attributePath) {
         List<String> paths = getPath(attributePath);
-        JsonValue value = (JsonValue) getValue(obj);
+        JsonValue value = (JsonValue) obj;
         if (value.isObject()) {
             for (int i = 0; i < paths.size(); i++) {
                 String path = paths.get(i);
