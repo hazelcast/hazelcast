@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
@@ -27,11 +28,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.Collection;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.Collection;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -304,9 +306,12 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
             map1.remove(i);
         }
 
-        assertEquals(2 * inserts, valueStats(map1).getInsertCount() + valueStats(map2).getInsertCount() + valueStats(map3).getInsertCount());
-        assertEquals(4 * updates, valueStats(map1).getUpdateCount() + valueStats(map2).getUpdateCount() + valueStats(map3).getUpdateCount());
-        assertEquals(2 * removes, valueStats(map1).getRemoveCount() + valueStats(map2).getRemoveCount() + valueStats(map3).getRemoveCount());
+        assertEquals(2 * inserts,
+                valueStats(map1).getInsertCount() + valueStats(map2).getInsertCount() + valueStats(map3).getInsertCount());
+        assertEquals(4 * updates,
+                valueStats(map1).getUpdateCount() + valueStats(map2).getUpdateCount() + valueStats(map3).getUpdateCount());
+        assertEquals(2 * removes,
+                valueStats(map1).getRemoveCount() + valueStats(map2).getRemoveCount() + valueStats(map3).getRemoveCount());
 
         originalMap1InsertCount = valueStats(map1).getInsertCount();
         originalMap1UpdateCount = valueStats(map1).getUpdateCount();
@@ -353,9 +358,12 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
             map3.remove(i);
         }
 
-        assertEquals(originalMap1Map3InsertCount + inserts, valueStats(map1).getInsertCount() + valueStats(map3).getInsertCount());
-        assertEquals(originalMap1Map3UpdateCount + 2 * updates, valueStats(map1).getUpdateCount() + valueStats(map3).getUpdateCount());
-        assertEquals(originalMap1Map3RemoveCount + removes, valueStats(map1).getRemoveCount() + valueStats(map3).getRemoveCount());
+        assertEquals(originalMap1Map3InsertCount + inserts,
+                valueStats(map1).getInsertCount() + valueStats(map3).getInsertCount());
+        assertEquals(originalMap1Map3UpdateCount + 2 * updates,
+                valueStats(map1).getUpdateCount() + valueStats(map3).getUpdateCount());
+        assertEquals(originalMap1Map3RemoveCount + removes,
+                valueStats(map1).getRemoveCount() + valueStats(map3).getRemoveCount());
     }
 
     protected LocalMapStats stats(IMap map) {
@@ -371,7 +379,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     }
 
     private double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount,
-            IMap<Integer, Integer>... maps) {
+                                               IMap<Integer, Integer>... maps) {
         long hits = initialHits;
         double totalSelectivityCount = initialTotalSelectivityCount;
 

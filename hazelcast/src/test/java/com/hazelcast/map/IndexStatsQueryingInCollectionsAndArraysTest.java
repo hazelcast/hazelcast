@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
@@ -27,18 +28,18 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.Serializable;
-import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
-import static java.util.Arrays.asList;
-import java.util.Collection;
-import static org.junit.Assert.assertEquals;
 import org.junit.runners.Parameterized;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -350,7 +351,7 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
 
     private static class Department implements Serializable {
 
-        private final Employee employees[];
+        private final Employee[] employees;
 
         private Department(Employee[] employees) {
             this.employees = employees;
