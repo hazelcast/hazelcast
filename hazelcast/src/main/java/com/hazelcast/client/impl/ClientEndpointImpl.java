@@ -58,6 +58,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     private LoginContext loginContext;
     private ClientPrincipal principal;
+    @Probe
     private boolean ownerConnection;
     private Credentials credentials;
     private volatile boolean authenticated;
