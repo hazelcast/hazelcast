@@ -494,10 +494,10 @@ public class ManagementCenterService {
                 long sendDuration = System.nanoTime()-sendStart;
 
                 long total = System.nanoTime();
-                logger.info("Building and sending metrics in "+NANOSECONDS.toMillis(total-l1)+" ms, " +
-                        "connection build "+NANOSECONDS.toMillis(connectionDuration)+"ms," +
-                        " metricsDuration "+NANOSECONDS.toMillis(metricsDuration)+"," +
-                        " sendDuration "+NANOSECONDS.toMillis(sendDuration)+" ms");
+				logger.info("Building and sending metrics in " + NANOSECONDS.toMillis(total - l1) + " ms, "
+						+ "connection build " + NANOSECONDS.toMillis(connectionDuration) + "ms," + " metricsDuration "
+						+ NANOSECONDS.toMillis(metricsDuration) + "," + " sendDuration "
+						+ NANOSECONDS.toMillis(sendDuration) + " ms");
 
             } catch (Exception e) {
                 if (!manCenterConnectionLost) {

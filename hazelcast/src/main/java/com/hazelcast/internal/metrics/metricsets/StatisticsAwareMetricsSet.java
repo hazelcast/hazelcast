@@ -17,6 +17,7 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalInstanceStats;
@@ -26,6 +27,7 @@ import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalWanStatsImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
@@ -71,8 +73,8 @@ public class StatisticsAwareMetricsSet {
     // it will register it.
     private final class Task implements Runnable {
         private final MetricsRegistry metricsRegistry;
-        private Set<LocalInstanceStats> previousStats = new HashSet<LocalInstanceStats>();
-        private Set<LocalInstanceStats> currentStats = new HashSet<LocalInstanceStats>();
+        private Set<Object> previousStats = new HashSet<Object>();
+        private Set<Object> currentStats = new HashSet<Object>();
 
         private Task(MetricsRegistry metricsRegistry) {
             this.metricsRegistry = metricsRegistry;
@@ -84,7 +86,7 @@ public class StatisticsAwareMetricsSet {
                 registerAliveStats();
                 purgeDeadStats();
 
-                Set<LocalInstanceStats> tmp = previousStats;
+                Set<Object> tmp = previousStats;
                 previousStats = currentStats;
                 currentStats = tmp;
                 currentStats.clear();
@@ -94,20 +96,19 @@ public class StatisticsAwareMetricsSet {
         }
 
         private void registerAliveStats() {
-            for (StatisticsAwareService statisticsAwareService : serviceManager.getServices(StatisticsAwareService.class)) {
-                Map<String, LocalInstanceStats> stats = statisticsAwareService.getStats();
-                System.out.println("service:"+statisticsAwareService);
+            for (StatisticsAwareService<?> statisticsAwareService : serviceManager.getServices(StatisticsAwareService.class)) {
+                Map<String, ?> stats = statisticsAwareService.getStats();
                 if (stats == null) {
                     continue;
                 }
 
-                for (Map.Entry<String, LocalInstanceStats> entry : stats.entrySet()) {
+                for (Map.Entry<String, ?> entry : stats.entrySet()) {
                     register(entry.getKey(), entry.getValue(), statisticsAwareService);
                 }
             }
         }
 
-        private void register(String name, LocalInstanceStats localInstanceStats, StatisticsAwareService statisticsAwareService) {
+        private void register(String name, Object localInstanceStats, StatisticsAwareService<?> statisticsAwareService) {
 
             currentStats.add(localInstanceStats);
 
@@ -118,26 +119,37 @@ public class StatisticsAwareMetricsSet {
 
             NearCacheStats nearCacheStats = getNearCacheStats(localInstanceStats);
             String baseName = toBaseName(localInstanceStats, statisticsAwareService);
-            System.out.println("registering :" + localInstanceStats.getClass() + "basename:" + baseName);
             if (nearCacheStats != null) {
                 metricsRegistry.scanAndRegister(nearCacheStats,
                         baseName + "[" + name + "].nearcache");
             }
 
-            if(localInstanceStats instanceof LocalWanStatsImpl){
-                LocalWanStatsImpl localWanStats = (LocalWanStatsImpl)localInstanceStats;
-                for(Map.Entry<String,LocalWanPublisherStats> entry: localWanStats.getLocalWanPublisherStats().entrySet()){
-                     String namePrefix = "wan[" + name + "][" + entry.getKey() + "]";
-                    System.out.println("registering "+namePrefix);
-                    metricsRegistry.scanAndRegister(entry.getValue(), namePrefix);
-                }
+			if (localInstanceStats instanceof LocalWanStatsImpl) {
+				LocalWanStatsImpl localWanStats = (LocalWanStatsImpl) localInstanceStats;
+				for (Map.Entry<String, LocalWanPublisherStats> entry : localWanStats.getLocalWanPublisherStats()
+						.entrySet()) {
+					String namePrefix = "wan[" + name + "][" + entry.getKey() + "]";
+					metricsRegistry.scanAndRegister(entry.getValue(), namePrefix);
+				}
+			}
+            
+            if (localInstanceStats instanceof ClientEndpoint) {
+            	scanAndRegisterClientEndpoint(name, (ClientEndpoint) localInstanceStats);
+            } else {
+	            metricsRegistry.scanAndRegister(localInstanceStats,
+	                    baseName + "[" + name + "]");
             }
-
-            metricsRegistry.scanAndRegister(localInstanceStats,
-                    baseName + "[" + name + "]");
         }
 
-        private String toBaseName(LocalInstanceStats localInstanceStats, StatisticsAwareService statisticsAwareService) {
+		private void scanAndRegisterClientEndpoint(String name, ClientEndpoint endpoint) {
+			String type = endpoint.getClientType().name().toLowerCase();
+			String address = endpoint.getSocketAddress().toString();
+			int version = endpoint.getClientVersion();
+			metricsRegistry.scanAndRegister(endpoint,
+					"client.endpoint." + type + "." + version + "." + address + "[" + name + "]");
+		}
+
+        private String toBaseName(Object localInstanceStats, StatisticsAwareService<?> statisticsAwareService) {
             String baseName = localInstanceStats.getClass().getSimpleName()
                     .replace("Stats", "")
                     .replace("Local", "")
@@ -154,7 +166,7 @@ public class StatisticsAwareMetricsSet {
             return baseName;
         }
 
-        private NearCacheStats getNearCacheStats(LocalInstanceStats localInstanceStats) {
+        private NearCacheStats getNearCacheStats(Object localInstanceStats) {
             if (localInstanceStats instanceof LocalMapStatsImpl) {
                 LocalMapStats localMapStats = (LocalMapStats) localInstanceStats;
                 return localMapStats.getNearCacheStats();
@@ -173,7 +185,7 @@ public class StatisticsAwareMetricsSet {
 
         private void purgeDeadStats() {
             // purge all dead stats; so whatever was there the previous time and can't be found anymore, will be deleted
-            for (LocalInstanceStats localInstanceStats : previousStats) {
+            for (Object localInstanceStats : previousStats) {
                 if (!currentStats.contains(localInstanceStats)) {
                     metricsRegistry.deregister(localInstanceStats);
 

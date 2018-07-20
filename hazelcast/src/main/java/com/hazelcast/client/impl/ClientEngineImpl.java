@@ -57,6 +57,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -77,6 +78,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -96,7 +98,8 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAwareService,
-        ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener> {
+        ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener>, 
+        StatisticsAwareService<ClientEndpoint> {
 
     /**
      * Service name to be used in requests.
@@ -149,6 +152,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
         this.partitionListenerService = new ClientPartitionListenerService(nodeEngine);
     }
+    
+    @Override
+	public Map<String, ClientEndpoint> getStats() {
+		Map<String, ClientEndpoint> endpointsByUuid = new HashMap<String, ClientEndpoint>();
+		for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
+			endpointsByUuid.put(endpoint.getUuid(), endpoint);
+		}
+    	return endpointsByUuid;
+	}
 
     private ClientExceptions initClientExceptionFactory() {
         boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(nodeEngine.getConfigClassLoader());
