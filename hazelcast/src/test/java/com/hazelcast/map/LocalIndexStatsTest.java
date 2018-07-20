@@ -45,6 +45,8 @@ import java.util.Collection;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
@@ -60,7 +62,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
-    private static final int PARTITIONS = 137;
+    protected static final int PARTITIONS = 137;
 
     private static final int QUERIES = 10;
 
@@ -574,6 +576,74 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertEquals(100, keyStats().getInsertCount());
         assertEquals(50, keyStats().getUpdateCount());
         assertEquals(20, keyStats().getRemoveCount());
+
+    }
+
+    @Test
+    public void testIndexStatsAfterMapDestroy() {
+        map.addIndex("this", true);
+        for (int i = 0; i < 100; ++i) {
+            map.put(i, i);
+        }
+        for (int i = 90; i < 100; ++i) {
+            map.remove(i, i);
+        }
+        for (int i = 70; i < 90; ++i) {
+            map.set(i, i * i);
+        }
+
+        map.entrySet(Predicates.equal("this", 10));
+        assertEquals(1, stats().getQueryCount());
+        assertEquals(1, stats().getIndexedQueryCount());
+        assertEquals(1, valueStats().getQueryCount());
+        assertEquals(100, valueStats().getInsertCount());
+        assertEquals(20, valueStats().getUpdateCount());
+        assertEquals(10, valueStats().getRemoveCount());
+        assertTrue(valueStats().getTotalInsertLatency() > 0);
+        assertTrue(valueStats().getTotalRemoveLatency() > 0);
+        assertTrue(valueStats().getTotalUpdateLatency() > 0);
+        assertTrue(valueStats().getAverageHitLatency() > 0);
+
+        map.destroy();
+        assertNull(valueStats());
+
+        map = instance.getMap(mapName);
+        assertNull(valueStats());
+        map.addIndex("this", true);
+        assertNotNull(valueStats());
+
+        assertEquals(0, stats().getQueryCount());
+        assertEquals(0, stats().getIndexedQueryCount());
+        assertEquals(0, valueStats().getQueryCount());
+        assertEquals(0, valueStats().getInsertCount());
+        assertEquals(0, valueStats().getUpdateCount());
+        assertEquals(0, valueStats().getRemoveCount());
+        assertEquals(0, valueStats().getTotalInsertLatency());
+        assertEquals(0, valueStats().getTotalRemoveLatency());
+        assertEquals(0, valueStats().getTotalUpdateLatency());
+        assertEquals(0, valueStats().getAverageHitLatency());
+
+        for (int i = 0; i < 50; ++i) {
+            map.put(i, i);
+        }
+        for (int i = 45; i < 50; ++i) {
+            map.remove(i, i);
+        }
+        for (int i = 35; i < 45; ++i) {
+            map.set(i, i * i);
+        }
+
+        map.entrySet(Predicates.equal("this", 10));
+        assertEquals(1, stats().getQueryCount());
+        assertEquals(1, stats().getIndexedQueryCount());
+        assertEquals(1, valueStats().getQueryCount());
+        assertEquals(50, valueStats().getInsertCount());
+        assertEquals(10, valueStats().getUpdateCount());
+        assertEquals(5, valueStats().getRemoveCount());
+        assertTrue(valueStats().getTotalInsertLatency() > 0);
+        assertTrue(valueStats().getTotalRemoveLatency() > 0);
+        assertTrue(valueStats().getTotalUpdateLatency() > 0);
+        assertTrue(valueStats().getAverageHitLatency() > 0);
 
     }
 
