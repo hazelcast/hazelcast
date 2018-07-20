@@ -52,6 +52,7 @@ public class PartitionStateManager {
     private final ILogger logger;
     private final InternalPartitionServiceImpl partitionService;
 
+    @Probe
     private final int partitionCount;
     private final InternalPartitionImpl[] partitions;
 

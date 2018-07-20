@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberAttributeOperationType;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
@@ -687,9 +688,16 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return masterAddress;
     }
 
+    @Probe
     @Override
     public boolean isMaster() {
         return node.getThisAddress().equals(masterAddress);
+    }
+    
+    @Probe
+    private boolean isSslEnabled() {
+    	SSLConfig sslConfig = node.getConfig().getNetworkConfig().getSSLConfig();
+		return sslConfig != null ? sslConfig.isEnabled() : false;
     }
 
     @Override
