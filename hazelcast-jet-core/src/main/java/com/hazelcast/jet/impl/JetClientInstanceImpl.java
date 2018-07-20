@@ -127,6 +127,11 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         );
     }
 
+    @Nonnull
+    public HazelcastClientInstanceImpl getHazelcastClient() {
+        return client;
+    }
+
     private List<Long> getJobIdsByName(String name) {
         ClientInvocation invocation = new ClientInvocation(
                 client, JetGetJobIdsByNameCodec.encodeRequest(name), null, masterAddress(client.getCluster())
