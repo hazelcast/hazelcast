@@ -181,6 +181,32 @@ public class BasicCacheLiteMemberTest
     }
 
     @Test
+    public void testExpiration() {
+        CacheManager cacheManager = liteCachingProvider.getCacheManager();
+
+        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        final SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<Integer, String>();
+        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
+                new MutableCacheEntryListenerConfiguration<Integer, String>(
+                        FactoryBuilder.factoryOf(listener), null, true, true);
+
+        config.addCacheEntryListenerConfiguration(listenerConfiguration);
+        config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new HazelcastExpiryPolicy(1, 1, 1)));
+
+        Cache<Integer, String> instanceCache = cacheManager.createCache(cacheName, config);
+
+        instanceCache.put(1, "value");
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(1, listener.expired.get());
+            }
+        });
+    }
+
+    @Test
     public void testCachesDestroy() {
         CacheManager cacheManager = instanceCachingProvider.getCacheManager();
         CacheManager cacheManager2 = liteCachingProvider.getCacheManager();

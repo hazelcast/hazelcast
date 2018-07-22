@@ -46,7 +46,7 @@ import java.util.Map;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_TASK_PERIOD_SECONDS;
+import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;

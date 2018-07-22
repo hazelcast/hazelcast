@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.LocalRetryableExecution;
@@ -29,7 +30,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;
-import com.hazelcast.map.impl.eviction.ExpirationManager;
+import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.journal.RingbufferMapEventJournalImpl;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
@@ -139,6 +140,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final InternalSerializationService serializationService;
     protected final ConstructorFunction<String, MapContainer> mapConstructor;
     protected final PartitionContainer[] partitionContainers;
+    protected final MapClearExpiredRecordsTask clearExpiredRecordsTask;
     protected final ExpirationManager expirationManager;
     protected final MapNearCacheManager mapNearCacheManager;
     protected final LocalMapStatsProvider localMapStatsProvider;
@@ -165,7 +167,8 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapConstructor = createMapConstructor();
         this.queryCacheContext = new NodeQueryCacheContext(this);
         this.partitionContainers = createPartitionContainers();
-        this.expirationManager = new ExpirationManager(partitionContainers, nodeEngine);
+        this.clearExpiredRecordsTask = new MapClearExpiredRecordsTask(nodeEngine, partitionContainers);
+        this.expirationManager = new ExpirationManager(clearExpiredRecordsTask, nodeEngine);
         this.mapNearCacheManager = createMapNearCacheManager();
         this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
@@ -593,6 +596,11 @@ class MapServiceContextImpl implements MapServiceContext {
                 interceptor.afterPut(newValue);
             }
         }
+    }
+
+    @Override
+    public MapClearExpiredRecordsTask getClearExpiredRecordsTask() {
+        return clearExpiredRecordsTask;
     }
 
     @Override

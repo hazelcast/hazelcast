@@ -22,7 +22,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.eviction.ExpirationManager;
+import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -153,6 +154,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     QueryOptimizer getQueryOptimizer();
 
     LocalMapStatsProvider getLocalMapStatsProvider();
+
+    MapClearExpiredRecordsTask getClearExpiredRecordsTask();
 
     MapOperationProvider getMapOperationProvider(String name);
 
