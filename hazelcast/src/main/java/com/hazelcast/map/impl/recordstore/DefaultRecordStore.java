@@ -124,7 +124,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void destroy() {
-        clearPartition(false);
+        clearPartition(false, true);
         storage.destroy(false);
         eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
     }
@@ -222,9 +222,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void clearPartition(boolean onShutdown) {
+    public void clearPartition(boolean onShutdown, boolean onRecordStoreDestroy) {
         clearLockStore();
-        clearIndexedData();
+        if (onRecordStoreDestroy) {
+            destroyIndexes();
+        } else {
+            clearIndexedData();
+        }
         clearMapStore();
         clearStorage(onShutdown);
     }
@@ -271,6 +275,22 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             // if index is partitioned, we can clear indexed
             // data with clearAll here.
             indexes.clearAll();
+        }
+    }
+
+    public void destroyIndexes() {
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        indexes.destroyIndexes();
+        if (indexes.isGlobal()) {
+            if (indexes.hasIndex()) {
+                // clears indexed data of this partition
+                // from shared global index.
+                fullScanLocalDataToClear(indexes);
+            }
+        } else {
+            // if index is partitioned, we can destroy indexed
+            // data with destroyIndexes here.
+            indexes.destroyIndexes();
         }
     }
 
