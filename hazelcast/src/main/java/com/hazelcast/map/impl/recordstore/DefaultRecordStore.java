@@ -131,7 +131,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void destroyInternals() {
-        clearIndexes();
         clearMapStore();
         clearStorage(false);
         storage.destroy(false);
@@ -225,7 +224,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void clearPartition(boolean onShutdown) {
         clearLockStore();
-        clearIndexes();
+        clearIndexedData();
         clearMapStore();
         clearStorage(onShutdown);
     }
@@ -257,18 +256,33 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mapDataStore.reset();
     }
 
-    protected void clearIndexes() {
+    /**
+     * Only indexed data will be removed, index info will stay.
+     */
+    public void clearIndexedData() {
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.isGlobal()) {
             if (indexes.hasIndex()) {
-                for (Record record : storage.values()) {
-                    Data key = record.getKey();
-                    Object value = Records.getValueOrCachedValue(record, serializationService);
-                    indexes.removeEntryIndex(key, value);
-                }
+                // clears indexed data of this partition
+                // from shared global index.
+                fullScanLocalDataToClear(indexes);
             }
         } else {
-            indexes.clearIndexes();
+            // if index is partitioned, we can clear indexed
+            // data with clearAll here.
+            indexes.clearAll();
+        }
+    }
+
+    /**
+     * Clears local data of this partition from global index by doing
+     * partition full-scan.
+     */
+    private void fullScanLocalDataToClear(Indexes indexes) {
+        for (Record record : storage.values()) {
+            Data key = record.getKey();
+            Object value = Records.getValueOrCachedValue(record, serializationService);
+            indexes.removeEntryIndex(key, value);
         }
     }
 

@@ -195,7 +195,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 continue;
             }
 
-            indexes.clearContents();
+            indexes.clearAll();
         }
     }
 
