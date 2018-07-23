@@ -60,8 +60,7 @@ abstract class MultiMapContainerSupport {
     }
 
     protected Collection<MultiMapRecord> getNewRecordsCollection() {
-        final MultiMapConfig.ValueCollectionType valueCollectionType = config.getValueCollectionType();
-        return createCollection(valueCollectionType);
+        return createCollection(config.getValueCollectionType());
     }
 
     public MultiMapValue getMultiMapValueOrNull(Data dataKey) {
@@ -207,11 +206,11 @@ abstract class MultiMapContainerSupport {
         return config;
     }
 
-    public void incSize(int by) {
+    private void incSize(int by) {
         size += by;
     }
 
-    public void decrSize(int by) {
+    private void decrSize(int by) {
         size -= by;
     }
 }
