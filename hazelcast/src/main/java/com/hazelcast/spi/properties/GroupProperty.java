@@ -22,7 +22,6 @@ import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
-import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
@@ -171,12 +170,16 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.event.sync.timeout.millis", 5000, MILLISECONDS);
 
 
+    // not used anymore.
     public static final HazelcastProperty HEALTH_MONITORING_LEVEL
-            = new HazelcastProperty("hazelcast.health.monitoring.level", HealthMonitorLevel.SILENT.toString());
+            = new HazelcastProperty("hazelcast.health.monitoring.level", "silent");
+    // not used anymore.
     public static final HazelcastProperty HEALTH_MONITORING_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.health.monitoring.delay.seconds", 20, SECONDS);
+    // not used anymore.
     public static final HazelcastProperty HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE
             = new HazelcastProperty("hazelcast.health.monitoring.threshold.memory.percentage", 70);
+    // not used anymore.
     public static final HazelcastProperty HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE
             = new HazelcastProperty("hazelcast.health.monitoring.threshold.cpu.percentage", 70);
 

@@ -45,7 +45,6 @@ import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
-import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -151,7 +150,6 @@ public class Node {
 
     private final HazelcastProperties properties;
     private final BuildInfo buildInfo;
-    private final HealthMonitor healthMonitor;
 
     private final Joiner joiner;
 
@@ -213,7 +211,6 @@ public class Node {
             config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
             metricsRegistry.collectMetrics(nodeExtension);
-            healthMonitor = new HealthMonitor(this);
 
             clientEngine = new ClientEngineImpl(this);
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
@@ -406,7 +403,6 @@ public class Node {
         }
         nodeExtension.afterStart();
         phoneHome.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
-        healthMonitor.start();
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
@@ -509,9 +505,6 @@ public class Node {
 
         if (nodeExtension != null) {
             nodeExtension.shutdown();
-        }
-        if (healthMonitor != null) {
-            healthMonitor.stop();
         }
     }
 
