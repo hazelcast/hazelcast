@@ -99,7 +99,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      * @param onShutdown {@code true} if {@code clearPartitions} is called during MapService shutdown,
      *                   {@code false} otherwise
      */
-    void clearPartitions(boolean onShutdown);
+    void clearPartitions(boolean onShutdown, boolean onRecordStoreDestroy);
 
     void destroyMapStores();
 
