@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.util.JsonUtil.getString;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
@@ -112,8 +113,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
         root.add("totalPublishLatencies", totalPublishLatency);
         root.add("totalPublishedEventCount", totalPublishedEventCount);
         root.add("outboundQueueSize", outboundQueueSize);
-        root.add("paused", !state.isReplicateEnqueuedEvents());
-        root.add("stopped", !state.isEnqueueNewEvents());
+        root.add("state", state.name());
         return root;
     }
 
@@ -123,15 +123,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
         totalPublishLatency = getLong(json, "totalPublishLatencies", -1);
         totalPublishedEventCount = getLong(json, "totalPublishedEventCount", -1);
         outboundQueueSize = getInt(json, "outboundQueueSize", -1);
-        final boolean paused = getBoolean(json, "paused");
-        final boolean stopped = getBoolean(json, "stopped");
-        if (stopped) {
-            state = WanPublisherState.STOPPED;
-        } else if (paused) {
-            state = WanPublisherState.PAUSED;
-        } else {
-            state = WanPublisherState.REPLICATING;
-        }
+        state = WanPublisherState.valueOf(getString(json, "state", WanPublisherState.REPLICATING.name()));
     }
 
     @Override
