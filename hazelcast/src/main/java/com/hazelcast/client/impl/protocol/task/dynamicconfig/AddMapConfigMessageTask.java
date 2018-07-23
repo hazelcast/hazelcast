@@ -109,6 +109,7 @@ public class AddMapConfigMessageTask
             }
             config.setQueryCacheConfigs(queryCacheConfigs);
         }
+        config.setWanReplicationRef(parameters.wanReplicationRef);
         return config;
     }
 

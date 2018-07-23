@@ -25,6 +25,7 @@ import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Test;
@@ -64,7 +65,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 @SuppressWarnings({"WeakerAccess", "deprecation"})
 public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
@@ -1114,7 +1115,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        WanReplicationRef wanRef = config.getMapConfig(mapName).getWanReplicationRef();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        WanReplicationRef wanRef = mapConfig.getWanReplicationRef();
 
         assertEquals(refName, wanRef.getName());
         assertEquals(mergePolicy, wanRef.getMergePolicy());
@@ -1395,6 +1397,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "         <properties>\n"
                 + "            <property name=\"custom.prop.consumer\">prop.consumer</property>\n"
                 + "         </properties>\n"
+                + "      <persist-wan-replicated-data>false</persist-wan-replicated-data>\n"
                 + "      </wan-consumer>\n"
                 + "   </wan-replication>"
                 + HAZELCAST_END_TAG;
@@ -1428,6 +1431,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
         Map<String, Comparable> consProperties = consumerConfig.getProperties();
         assertEquals("prop.consumer", consProperties.get("custom.prop.consumer"));
+        assertFalse(consumerConfig.isPersistWanReplicatedData());
     }
 
     private void assertDiscoveryConfig(DiscoveryConfig c) {

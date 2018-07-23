@@ -110,6 +110,7 @@
             <properties>
                 <property name="custom.prop.consumer">prop.consumer</property>
             </properties>
+            <persist-wan-replicated-data>true</persist-wan-replicated-data>
         </wan-consumer>
     </wan-replication>
     <network>

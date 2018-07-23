@@ -2738,6 +2738,15 @@
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                     <xs:attributeGroup ref="class-or-bean-name"/>
+                    <xs:attribute name="persist-wan-replicated-data" use="optional" type="parameterized-boolean" default="true">
+                        <xs:annotation>
+                            <xs:documentation>
+                                When true, an incoming event over WAN replication can be persisted to a
+                                database for example, otherwise it will not be persisted. Default value
+                                is true.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
                 </xs:complexType>
             </xs:element>
         </xs:sequence>

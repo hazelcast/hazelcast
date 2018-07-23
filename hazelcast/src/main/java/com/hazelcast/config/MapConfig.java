@@ -168,12 +168,11 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     private transient boolean optimizeQueryExplicitlyInvoked;
     private transient boolean setCacheDeserializedValuesExplicitlyInvoked;
 
+    public MapConfig() {
+    }
 
     public MapConfig(String name) {
         this.name = name;
-    }
-
-    public MapConfig() {
     }
 
     public MapConfig(MapConfig config) {

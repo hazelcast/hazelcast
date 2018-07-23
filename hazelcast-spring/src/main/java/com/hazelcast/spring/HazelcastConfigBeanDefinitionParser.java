@@ -443,11 +443,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     getAttribute(node, "heartbeat-interval-millis"),
                     ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
             quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
-                                              .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                                              .withSuspicionThreshold(threshold)
-                                              .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                                              .withMinStdDeviationMillis(minStdDeviation)
-                                              .withMaxSampleSize(maxSampleSize);
+                    .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                    .withSuspicionThreshold(threshold)
+                    .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                    .withMinStdDeviationMillis(minStdDeviation)
+                    .withMaxSampleSize(maxSampleSize);
             return quorumConfigBuilder;
         }
 
@@ -1279,12 +1279,17 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     wanPublishers.add(childBeanDefinition);
                 } else if ("wan-consumer".equals(nName)) {
                     BeanDefinitionBuilder consumerConfigBuilder = createBeanBuilder(WanConsumerConfig.class);
+
                     String className = getAttribute(n, "class-name");
                     String implementation = getAttribute(n, "implementation");
+                    boolean persistWanReplicatedData = getBooleanValue(getAttribute(n, "persist-wan-replicated-data"));
+
                     consumerConfigBuilder.addPropertyValue("className", className);
                     if (implementation != null) {
                         consumerConfigBuilder.addPropertyReference("implementation", implementation);
                     }
+                    consumerConfigBuilder.addPropertyValue("persistWanReplicatedData", persistWanReplicatedData);
+
                     isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation'"
                             + " attributes is required to create WanConsumerConfig!");
                     for (Node child : childElements(n)) {
