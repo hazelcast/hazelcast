@@ -182,7 +182,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 final boolean indexesMustBePopulated = indexesMustBePopulated(indexes, operation);
                 if (indexesMustBePopulated) {
                     // defensively clear possible stale leftovers in non-global indexes from the previous failed promotion attempt
-                    indexes.clearContents();
+                    indexes.clearAll();
                 }
 
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
