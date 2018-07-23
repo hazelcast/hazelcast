@@ -59,7 +59,6 @@ public class PlainChannelInitializer implements ChannelInitializer {
                 .setOption(SO_KEEPALIVE, props.getBoolean(SOCKET_KEEP_ALIVE))
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_SEND_BUFFER_SIZE) * KILO_BYTE)
                 .setOption(SO_RCVBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE)
-                .setOption(SO_RCVBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE)
                 .setOption(SO_LINGER, props.getSeconds(SOCKET_LINGER_SECONDS));
 
         ProtocolEncoder encoder = new ProtocolEncoder(ioService);
