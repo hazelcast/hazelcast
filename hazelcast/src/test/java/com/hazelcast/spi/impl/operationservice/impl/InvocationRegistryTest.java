@@ -18,6 +18,8 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation.Context;
@@ -38,6 +40,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -45,10 +48,13 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
     private ILogger logger;
+    private ClusterService clusterService;
 
     @Before
     public void setup() {
         logger = Mockito.mock(ILogger.class);
+        clusterService = Mockito.mock(ClusterService.class);
+        when(clusterService.getClusterVersion()).thenReturn(Versions.V3_11);
         final int capacity = 2;
         invocationRegistry = new InvocationRegistry(logger, new CallIdSequenceWithBackpressure(capacity, 1000));
     }
@@ -58,7 +64,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        Invocation.Context context = new Context(null, null, null, null, null,
+        Invocation.Context context = new Context(null, null, clusterService, null, null,
                 1000, invocationRegistry, null, logger, null, null, null, null, null, null, null, null, null);
         return new PartitionInvocation(context, op, 0, 0, 0, false, false);
     }

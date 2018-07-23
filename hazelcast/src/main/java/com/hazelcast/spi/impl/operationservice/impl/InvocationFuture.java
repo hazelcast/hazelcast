@@ -24,12 +24,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.version.Version;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.internal.cluster.Versions.V3_11;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
@@ -126,7 +128,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         }
 
         if (isErroneousState(value)) {
-            Throwable throwable = ((ErrorResponse) value).getCause();
+            Throwable throwable = unwrap(value);
 
             if (invocation.shouldFailOnIndeterminateOperationState()
                     && (throwable instanceof MemberLeftException)) {
@@ -144,9 +146,21 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
     /**
      * Any Object is considered a value-type response, even exceptions.
      * The only exception in the above rule, is responses of type {@link ErrorResponse}, which are thrown instead of returned.
+     *
+     * RU_COMPAT_3_10 For compatibility reasons, when the cluster version is less than 3.11, we keep treating Throwables, as
+     * proper Exceptions and not values.
      */
     private boolean isErroneousState(Object state) {
-        return state instanceof ErrorResponse;
+        Version version = invocation.context.clusterService.getClusterVersion();
+        return state instanceof ErrorResponse || (version.isLessThan(V3_11) && state instanceof Throwable);
+    }
+
+    private Throwable unwrap(Object error) {
+        if (error instanceof ErrorResponse) {
+            return ((ErrorResponse) error).getCause();
+        }
+
+        return (Throwable) error;
     }
 
     private Object newOperationTimeoutException(boolean heartbeatTimeout) {
