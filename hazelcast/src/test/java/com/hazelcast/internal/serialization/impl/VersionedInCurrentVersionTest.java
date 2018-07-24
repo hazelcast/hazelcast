@@ -49,6 +49,8 @@ import java.util.Set;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.internal.cluster.Versions.CURRENT_CLUSTER_VERSION;
 import static com.hazelcast.internal.cluster.Versions.PREVIOUS_CLUSTER_VERSION;
+import static com.hazelcast.test.HazelcastTestSupport.assumeThatNoJDK6;
+import static com.hazelcast.test.HazelcastTestSupport.assumeThatNoJDK7;
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
 import static org.junit.Assert.fail;
@@ -73,6 +75,9 @@ public class VersionedInCurrentVersionTest {
 
     @Before
     public void setup() throws IOException {
+        assumeThatNoJDK6();
+        assumeThatNoJDK7();
+
         versionedSincePreviousVersion = versionedClassesInPreviousVersion();
 
         Set<Class<? extends DataSerializable>> dsClasses = REFLECTIONS.getSubTypesOf(DataSerializable.class);
