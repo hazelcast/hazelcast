@@ -124,8 +124,6 @@ import static java.lang.Long.parseLong;
  */
 public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBuilder {
 
-    private static final int THOUSAND_FACTOR = 5;
-
     private static final ILogger LOGGER = Logger.getLogger(XmlConfigBuilder.class);
 
     private final Set<String> occurrenceSet = new HashSet<String>();
@@ -729,7 +727,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         handleViaReflection(node, config, durableExecutorConfig);
     }
 
-    private void handleScheduledExecutor(Node node) throws Exception {
+    private void handleScheduledExecutor(Node node) {
         ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
         scheduledExecutorConfig.setName(getTextContent(node.getAttributes().getNamedItem("name")));
 

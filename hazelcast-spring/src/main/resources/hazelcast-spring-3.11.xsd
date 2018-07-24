@@ -2723,7 +2723,7 @@
                     </xs:attribute>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="wan-consumer" minOccurs="0" maxOccurs="1">
+            <xs:element name="wan-consumer" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Config for processing WAN events received from a target cluster.
@@ -2755,7 +2755,7 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attributeGroup>
-                    <xs:attribute name="persist-wan-replicated-data" use="optional" type="parameterized-boolean" default="true">
+                    <xs:attribute name="persist-wan-replicated-data" type="parameterized-boolean" default="true">
                         <xs:annotation>
                             <xs:documentation>
                                 When true, an incoming event over WAN replication can be persisted to a
@@ -3655,7 +3655,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="merge-policy" use="optional" type="xs:string">
+        <xs:attribute name="merge-policy" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
                     Resolve conflicts that occurred when target cluster already has the replicated
@@ -3685,7 +3685,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="republishing-enabled" use="optional" type="parameterized-boolean" default="true">
+        <xs:attribute name="republishing-enabled" type="parameterized-boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     When enabled, an incoming event to a member is forwarded to the target cluster of that member.

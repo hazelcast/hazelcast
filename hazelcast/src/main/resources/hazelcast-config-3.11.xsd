@@ -2418,7 +2418,7 @@
     <xs:complexType name="wan-replication">
         <xs:sequence>
             <xs:element name="wan-publisher" type="wan-publisher" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="wan-consumer" type="wan-consumer" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="wan-consumer" type="wan-consumer" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
@@ -2494,7 +2494,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1">
+            <xs:element name="properties" type="properties" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Properties for the custom WAN consumer. These properties are
@@ -2502,7 +2502,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="persist-wan-replicated-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+            <xs:element name="persist-wan-replicated-data" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
                         When true, an incoming event over WAN replication can be persisted to a
