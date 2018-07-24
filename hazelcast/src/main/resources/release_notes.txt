@@ -1,5 +1,20 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for 3.10.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.10.4 ====
+
+1. Enhancements
+
+- License information should be sent to Hazelcast Management Center. [#13451]
+
+
+2. Fixes
+
+- There are inconsistencies in mapEventJournal calls from DefaultRecordStore. [#13470]
+- Index data loss after rolling upgrade: when a rolling update of an application is performed; first instance is turned off, updated and after it is done, the second instance takes place. After such a rolling update (without the downtime) some of the data is lost. It turned out that after the Split-Brain merge process, the index gets corrupted. [#13456]
+- During the change of cluster state, repartitioning must be triggered only when needed. [#13446]
+- Attribute extractor does not use User Code Deployment to search extractor implementation. [#13400]
+
+
 ==== 3.10.3 ====
 
 NOTE: Starting with Hazelcast 3.10.3, Hazelcast IMDG Enterprise license keys are required only for members. You do not need to set a license key for your Java clients for which you want to use Enterprise features.
