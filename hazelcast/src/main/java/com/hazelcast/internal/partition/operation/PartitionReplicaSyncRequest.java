@@ -54,7 +54,7 @@ import java.util.Collections;
  * </ul>
  * An empty response can be sent if the current replica version is 0.
  */
-// RU_COMPAT_39: Do not remove Versioned interface!
+// RU_COMPAT_3_9: Do not remove Versioned interface!
 // Version info is needed on 3.9 members while deserializing the operation.
 public final class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation, Versioned {

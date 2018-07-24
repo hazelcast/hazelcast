@@ -838,7 +838,7 @@ public class MembershipManager {
                         // we don't suspect from 'address' and we need to learn its response
                         done = false;
 
-                        // RU_COMPAT_39
+                        // RU_COMPAT_3_9
                         if (clusterService.getClusterVersion().isGreaterThan(Versions.V3_9)) {
                             // Mastership claim is idempotent.
                             // We will retry our claim to member until it explicitly rejects or accepts our claim.

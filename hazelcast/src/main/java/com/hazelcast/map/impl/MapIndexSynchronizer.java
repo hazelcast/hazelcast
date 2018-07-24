@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-// RU_COMPAT_V3_9
+// RU_COMPAT_3_9
 
 /**
  * This class is responsible for tracking cluster version changes and synchronizes indexes if needed.

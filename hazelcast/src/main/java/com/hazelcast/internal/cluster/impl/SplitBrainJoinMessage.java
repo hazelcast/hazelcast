@@ -30,7 +30,7 @@ import java.util.Collection;
  * A {@code JoinMessage} issued by the master node of a subcluster to the master of another subcluster
  * while searching for other clusters for split brain recovery.
  */
-// RU_COMPAT_39: Do not remove Versioned interface!
+// RU_COMPAT_3_9: Do not remove Versioned interface!
 // Version info is needed on 3.9 members while deserializing the operation.
 public class SplitBrainJoinMessage extends JoinMessage implements Versioned {
 

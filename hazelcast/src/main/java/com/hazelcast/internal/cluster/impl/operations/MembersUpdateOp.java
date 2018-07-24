@@ -37,7 +37,7 @@ import java.util.List;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
-// RU_COMPAT_39: Do not remove Versioned interface!
+// RU_COMPAT_3_9: Do not remove Versioned interface!
 // Version info is needed on 3.9 members while deserializing the operation.
 public class MembersUpdateOp extends AbstractClusterOperation implements Versioned {
     /** The master cluster clock time. */

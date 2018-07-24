@@ -95,7 +95,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     protected ClientAwareService clientAwareService;
     protected MapQuorumAwareService quorumAwareService;
     protected MapServiceContext mapServiceContext;
-    // RU_COMPAT_V3_9
+    // RU_COMPAT_3_9
     protected MapIndexSynchronizer mapIndexSynchronizer;
 
     public MapService() {
@@ -253,7 +253,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    // RU_COMPAT_V3_9
+    // RU_COMPAT_3_9
     // We wont need to sync the indexes in 3.10+ clusters.
     public void onClusterVersionChange(Version newVersion) {
         mapIndexSynchronizer.onClusterVersionChange(newVersion);

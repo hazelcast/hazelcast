@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.eviction.LFUEvictionPolicy;
 import com.hazelcast.map.eviction.LRUEvictionPolicy;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
@@ -1067,12 +1066,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         out.writeObject(nearCacheConfig);
         out.writeBoolean(readBackupData);
         out.writeUTF(cacheDeserializedValues.name());
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeObject(mergePolicyConfig);
-        } else {
-            out.writeUTF(mergePolicyConfig.getPolicy());
-        }
+        out.writeObject(mergePolicyConfig);
         out.writeUTF(inMemoryFormat.name());
         out.writeObject(wanReplicationRef);
         writeNullableList(entryListenerConfigs, out);
@@ -1100,12 +1094,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         nearCacheConfig = in.readObject();
         readBackupData = in.readBoolean();
         cacheDeserializedValues = CacheDeserializedValues.valueOf(in.readUTF());
-        // RU_COMPAT_3_9
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            mergePolicyConfig = in.readObject();
-        } else {
-            mergePolicyConfig.setPolicy(in.readUTF());
-        }
+        mergePolicyConfig = in.readObject();
         inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
         wanReplicationRef = in.readObject();
         entryListenerConfigs = readNullableList(in);

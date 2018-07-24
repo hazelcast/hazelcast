@@ -1344,7 +1344,7 @@ public class MigrationManager {
                 logger.warning("Destination " + destination + " is not a member anymore");
                 return false;
             }
-            // RU_COMPAT_39
+            // RU_COMPAT_3_9
             boolean idempotentRetry = node.getClusterService().getClusterVersion().isGreaterThan(Versions.V3_9);
             try {
                 if (logger.isFinestEnabled()) {

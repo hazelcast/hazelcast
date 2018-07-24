@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -227,10 +226,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, Versioned {
         out.writeInt(initialPermits);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeUTF(quorumName);
-        }
+        out.writeUTF(quorumName);
     }
 
     @Override
@@ -239,10 +235,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, Versioned {
         initialPermits = in.readInt();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
-        // RU_COMPAT_3_9
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            quorumName = in.readUTF();
-        }
+        quorumName = in.readUTF();
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")

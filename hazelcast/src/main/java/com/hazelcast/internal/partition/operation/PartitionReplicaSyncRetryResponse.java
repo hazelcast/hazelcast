@@ -38,7 +38,7 @@ import java.util.Collections;
  * The response to a {@link PartitionReplicaSyncRequest} that the replica should retry. This will reset the current ongoing
  * synchronization request state and retry the request if this node is still a replica of this partition.
  */
-// RU_COMPAT_39: Do not remove Versioned interface!
+// RU_COMPAT_3_9: Do not remove Versioned interface!
 // Version info is needed on 3.9 members while deserializing the operation.
 public class PartitionReplicaSyncRetryResponse
         extends AbstractPartitionOperation

@@ -248,7 +248,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        // RU_COMPAT_39
+        // RU_COMPAT_3_9
         Version inputversion = in.getVersion();
         // read index info when object input comes from 3.9 EE (version UNKNOWN)
         // or 3.10 EE on cluster version 3.9 (inputVersion < 3.10)

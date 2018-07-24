@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -286,11 +285,8 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
         out.writeBoolean(statisticsEnabled);
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeUTF(quorumName);
-            out.writeObject(mergePolicyConfig);
-        }
+        out.writeUTF(quorumName);
+        out.writeObject(mergePolicyConfig);
     }
 
     @Override
@@ -301,11 +297,8 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         asyncBackupCount = in.readInt();
         maxSize = in.readInt();
         statisticsEnabled = in.readBoolean();
-        // RU_COMPAT_3_9
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            quorumName = in.readUTF();
-            mergePolicyConfig = in.readObject();
-        }
+        quorumName = in.readUTF();
+        mergePolicyConfig = in.readObject();
     }
 
     @Override

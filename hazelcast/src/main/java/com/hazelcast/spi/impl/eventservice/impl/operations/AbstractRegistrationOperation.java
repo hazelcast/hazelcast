@@ -31,7 +31,7 @@ import java.io.IOException;
 
 import static java.lang.String.format;
 
-// RU_COMPAT_39: Do not remove Versioned interface!
+// RU_COMPAT_3_9: Do not remove Versioned interface!
 // Version info is needed on 3.9 members while deserializing the operation.
 abstract class AbstractRegistrationOperation extends Operation
         implements AllowedDuringPassiveState, IdentifiedDataSerializable, Versioned {

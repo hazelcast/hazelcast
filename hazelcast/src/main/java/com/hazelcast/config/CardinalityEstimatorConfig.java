@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -252,11 +251,8 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
         out.writeUTF(name);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeUTF(quorumName);
-            out.writeObject(mergePolicyConfig);
-        }
+        out.writeUTF(quorumName);
+        out.writeObject(mergePolicyConfig);
     }
 
     @Override
@@ -264,11 +260,8 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
         name = in.readUTF();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
-        // RU_COMPAT_3_9
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            quorumName = in.readUTF();
-            mergePolicyConfig = in.readObject();
-        }
+        quorumName = in.readUTF();
+        mergePolicyConfig = in.readObject();
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")

@@ -293,7 +293,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                                 @Override
                                 public void onResponse(Object response) {
                                     resetMasterTriggeredFlag();
-                                    // RU_COMPAT_310
+                                    // RU_COMPAT_3_10
                                     if (response instanceof PartitionRuntimeState) {
                                         PartitionRuntimeState partitionState = (PartitionRuntimeState) response;
                                         partitionState.setEndpoint(masterAddress);

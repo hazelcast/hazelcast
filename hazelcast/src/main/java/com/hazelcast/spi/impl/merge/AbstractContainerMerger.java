@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.merge;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -78,12 +77,6 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
 
     @Override
     public final void run() {
-        // we cannot merge into a 3.9 cluster, since not all members may understand the new merge operation
-        // RU_COMPAT_3_9
-        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
-            logger.info("Cluster needs to run version " + Versions.V3_10 + " to merge " + getLabel() + " instances");
-            return;
-        }
         int valueCount = collector.getMergingValueCount();
         if (valueCount == 0) {
             return;
