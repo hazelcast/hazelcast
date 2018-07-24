@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 
-import com.eclipsesource.json.Json;
+import com.hazelcast.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.query.DefaultIndexProvider;

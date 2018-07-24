@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.eclipsesource.json.JsonValue;
+import com.hazelcast.json.JsonValue;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.map;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonValue;
+import com.hazelcast.json.Json;
+import com.hazelcast.json.JsonValue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;

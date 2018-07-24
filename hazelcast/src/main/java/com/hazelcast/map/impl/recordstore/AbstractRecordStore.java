@@ -19,8 +19,6 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.internal.serialization.impl.SerializationConstants;
-import com.hazelcast.json.JsonValue;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -58,7 +56,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final LockStore lockStore;
     protected final MapContainer mapContainer;
     protected final RecordFactory recordFactory;
-    protected final RecordFactory objectRecordFactory;
     protected final MapEventJournal eventJournal;
     protected final InMemoryFormat inMemoryFormat;
     protected final MapStoreContext mapStoreContext;
@@ -79,7 +76,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.serializationService = nodeEngine.getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
-        this.objectRecordFactory = mapContainer.createObjectRecordFactory();
         this.recordComparator = mapServiceContext.getRecordComparator(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
@@ -110,31 +106,13 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     @Override
     public Record createRecord(Object value, long ttlMillis, long now) {
-        Record record;
-        if (isJson(value)) {
-            // JsonString is kept only in object form
-            record = objectRecordFactory.newRecord(value);
-        } else {
-            record = recordFactory.newRecord(value);
-        }
+        Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
 
         setTTLAndUpdateExpiryTime(ttlMillis, record, mapContainer.getMapConfig(), true);
         updateStatsOnPut(false, now);
         return record;
-    }
-
-    private boolean isJson(Object value) {
-        if (value instanceof JsonValue) {
-            return true;
-        }
-
-        if (value instanceof Data
-                && ((Data) value).getType() == SerializationConstants.JAVA_DEFAULT_TYPE_JSON_STRING) {
-            return true;
-        }
-        return false;
     }
 
     @Override
