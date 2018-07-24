@@ -27,6 +27,7 @@ import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -129,6 +130,11 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     @Override
     public void syncMap(String wanReplicationName, String targetGroupName, String mapName) {
         throw new UnsupportedOperationException("WAN sync for map is not supported.");
+    }
+
+    @Override
+    public <K> void syncMap(String wanReplicationName, String targetGroupName, String mapName, Collection<K> keys) {
+        throw new UnsupportedOperationException("WAN sync is not supported.");
     }
 
     @Override
