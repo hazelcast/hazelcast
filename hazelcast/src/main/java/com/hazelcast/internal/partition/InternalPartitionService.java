@@ -23,12 +23,12 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.GracefulShutdownAwareService;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-public interface InternalPartitionService extends IPartitionService {
+public interface InternalPartitionService extends IPartitionService, GracefulShutdownAwareService {
 
     /**
      * Retry count for migration operations.
@@ -73,8 +73,6 @@ public interface InternalPartitionService extends IPartitionService {
     void memberAdded(MemberImpl newMember);
 
     void memberRemoved(MemberImpl deadMember);
-
-    boolean prepareToSafeShutdown(long timeout, TimeUnit seconds);
 
     InternalPartition[] getInternalPartitions();
 
