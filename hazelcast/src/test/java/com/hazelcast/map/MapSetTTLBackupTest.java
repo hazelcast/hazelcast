@@ -21,13 +21,12 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.backup.BackupAccessor;
-import com.hazelcast.test.backup.TestBackupUtils;
 import com.hazelcast.test.environment.RuntimeAvailableProcessorsRule;
 import org.junit.After;
 import org.junit.Before;
@@ -36,51 +35,51 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryEqualsEventually;
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryNullEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.newMapAccessor;
 
-@Category({QuickTest.class, ParallelTest.class})
 @RunWith(Parameterized.class)
-
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MapSetTTLBackupTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory;
-    private final int NINSTANCE = 3;
-    private HazelcastInstance[] instances;
+    private static final int CLUSTER_SIZE = 3;
 
-    @Parameterized.Parameters(name = "inMemoryFormat: {0}")
+    @Parameters(name = "inMemoryFormat:{0}")
     public static Object[] memoryFormat() {
-        return new Object[] {InMemoryFormat.BINARY, InMemoryFormat.OBJECT};
+        return new Object[]{
+                InMemoryFormat.BINARY,
+                InMemoryFormat.OBJECT,
+        };
     }
 
-    @Parameterized.Parameter
+    @Parameter
     public InMemoryFormat inMemoryFormat;
 
     @Rule
     public RuntimeAvailableProcessorsRule runtimeAvailableProcessorsRule = new RuntimeAvailableProcessorsRule(4);
 
+    protected HazelcastInstance[] instances;
+    private TestHazelcastInstanceFactory factory;
+
     @Before
     public void setup() {
-        factory = createHazelcastInstanceFactory();
-        Config config = getConfig();
-        MapConfig mapConfig = new MapConfig("default");
-        mapConfig.setBackupCount(NINSTANCE - 1);
-        mapConfig.setInMemoryFormat(inMemoryFormat);
+        MapConfig mapConfig = new MapConfig("default")
+                .setBackupCount(CLUSTER_SIZE - 1)
+                .setInMemoryFormat(inMemoryFormat);
 
-        config.addMapConfig(mapConfig);
+        Config config = getConfig()
+                .addMapConfig(mapConfig);
 
-        instances = new HazelcastInstance[NINSTANCE];
-        for (int i = 0; i < NINSTANCE; i++) {
-            instances[i] = factory.newHazelcastInstance(config);
-        }
-    }
-
-    protected Config getConfig() {
-        return new Config();
+        factory = createHazelcastInstanceFactory(CLUSTER_SIZE);
+        instances = factory.newInstances(config);
     }
 
     @After
@@ -90,33 +89,38 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
 
     @Test
     public void testBackups() {
-        final String mapName = randomMapName();
+        String mapName = randomMapName();
         HazelcastInstance instance = instances[0];
 
         putKeys(instance, mapName, null, 0, 1000);
         setTTL(instance, mapName, 0, 1000, 1, TimeUnit.SECONDS);
 
         sleepAtLeastMillis(1001);
-        for (int i = 0; i < NINSTANCE; i++) {
+        for (int i = 0; i < CLUSTER_SIZE; i++) {
             assertKeysNotPresent(instances, mapName, 0, 1000);
         }
     }
 
     @Test
     public void testMakesTempBackupEntriesUnlimited() {
-        final String mapName = randomMapName();
+        String mapName = randomMapName();
         HazelcastInstance instance = instances[0];
 
         putKeys(instance, mapName, 10, 0, 20);
         setTTL(instance, mapName, 0, 20, 0, TimeUnit.SECONDS);
         sleepAtLeastMillis(10100);
-        for (int i = 0; i < NINSTANCE; i++) {
+        for (int i = 0; i < CLUSTER_SIZE; i++) {
             assertKeys(instances, mapName, 0, 20);
         }
     }
 
-    private void putKeys(HazelcastInstance instance, String mapName, Integer withTTL, int from, int to) {
-        IMap map = instance.getMap(mapName);
+    protected Config getConfig() {
+        return new Config();
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private static void putKeys(HazelcastInstance instance, String mapName, Integer withTTL, int from, int to) {
+        IMap<Integer, Integer> map = instance.getMap(mapName);
         for (int i = from; i < to; i++) {
             if (withTTL == null) {
                 map.put(i, i);
@@ -126,25 +130,28 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
         }
     }
 
-    private void setTTL(HazelcastInstance instance, String mapName, int from, int to, long ttl, TimeUnit timeUnit) {
-        IMap map = instance.getMap(mapName);
+    @SuppressWarnings("SameParameterValue")
+    private static void setTTL(HazelcastInstance instance, String mapName, int from, int to, long ttl, TimeUnit timeUnit) {
+        IMap<Integer, Integer> map = instance.getMap(mapName);
         for (int i = from; i < to; i++) {
             map.setTTL(i, ttl, timeUnit);
         }
     }
 
-    private void assertKeysNotPresent(HazelcastInstance[] instances, String mapName, int from, int to) {
-        for (int replicaIndex = 1; replicaIndex < NINSTANCE; replicaIndex++) {
-            BackupAccessor backupAccessor = TestBackupUtils.newMapAccessor(instances, mapName, replicaIndex);
+    @SuppressWarnings("SameParameterValue")
+    private static void assertKeysNotPresent(HazelcastInstance[] instances, String mapName, int from, int to) {
+        for (int replicaIndex = 1; replicaIndex < CLUSTER_SIZE; replicaIndex++) {
+            BackupAccessor backupAccessor = newMapAccessor(instances, mapName, replicaIndex);
             for (int i = from; i < to; i++) {
                 assertBackupEntryNullEventually(i, backupAccessor);
             }
         }
     }
 
-    private void assertKeys(HazelcastInstance[] instances, String mapName, int from, int to) {
-        for (int replicaIndex = 1; replicaIndex < NINSTANCE; replicaIndex++) {
-            BackupAccessor backupAccessor = TestBackupUtils.newMapAccessor(instances, mapName, replicaIndex);
+    @SuppressWarnings("SameParameterValue")
+    private static void assertKeys(HazelcastInstance[] instances, String mapName, int from, int to) {
+        for (int replicaIndex = 1; replicaIndex < CLUSTER_SIZE; replicaIndex++) {
+            BackupAccessor backupAccessor = newMapAccessor(instances, mapName, replicaIndex);
             for (int i = from; i < to; i++) {
                 assertBackupEntryEqualsEventually(i, i, backupAccessor);
             }
