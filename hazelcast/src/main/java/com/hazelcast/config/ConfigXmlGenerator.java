@@ -659,11 +659,11 @@ public class ConfigXmlGenerator {
             gen.open("wan-replication", "name", wan.getName());
             for (WanPublisherConfig p : wan.getWanPublisherConfigs()) {
                 gen.open("wan-publisher", "group-name", p.getGroupName())
-                        .node("class-name", p.getClassName())
-                        .node("queue-full-behavior", p.getQueueFullBehavior())
-                        .node("initial-publisher-state", p.getInitialPublisherState())
-                        .node("queue-capacity", p.getQueueCapacity())
-                        .appendProperties(p.getProperties());
+                   .node("class-name", p.getClassName())
+                   .node("queue-full-behavior", p.getQueueFullBehavior())
+                   .node("initial-publisher-state", p.getInitialPublisherState())
+                   .node("queue-capacity", p.getQueueCapacity())
+                   .appendProperties(p.getProperties());
                 awsConfigXmlGenerator(gen, p.getAwsConfig());
                 discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
                 gen.close();
@@ -671,12 +671,15 @@ public class ConfigXmlGenerator {
 
             WanConsumerConfig consumerConfig = wan.getWanConsumerConfig();
             if (consumerConfig != null) {
-                gen.open("wan-consumer")
-                        .node("class-name", classNameOrImplClass(consumerConfig.getClassName(),
-                                consumerConfig.getImplementation()))
-                        .node("persist-wan-replicated-data", consumerConfig.isPersistWanReplicatedData())
-                        .appendProperties(consumerConfig.getProperties())
-                        .close();
+                gen.open("wan-consumer");
+                String consumerClassName = classNameOrImplClass(
+                        consumerConfig.getClassName(), consumerConfig.getImplementation());
+                if (consumerClassName != null) {
+                    gen.node("class-name", consumerClassName);
+                }
+                gen.node("persist-wan-replicated-data", consumerConfig.isPersistWanReplicatedData())
+                   .appendProperties(consumerConfig.getProperties())
+                   .close();
             }
             gen.close();
         }
@@ -966,8 +969,12 @@ public class ConfigXmlGenerator {
 
     private static void wanReplicationConfigXmlGenerator(XmlGenerator gen, WanReplicationRef wan) {
         if (wan != null) {
-            gen.open("wan-replication-ref", "name", wan.getName())
-                    .node("merge-policy", wan.getMergePolicy());
+            gen.open("wan-replication-ref", "name", wan.getName());
+
+            String mergePolicy = wan.getMergePolicy();
+            if (!isNullOrEmpty(mergePolicy)) {
+                gen.node("merge-policy", mergePolicy);
+            }
 
             List<String> filters = wan.getFilters();
             if (CollectionUtil.isNotEmpty(filters)) {

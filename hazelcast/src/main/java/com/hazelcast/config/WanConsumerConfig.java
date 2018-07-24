@@ -27,11 +27,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Config to be used by WanReplicationConsumer instances (EE only). This
- * allows creating a custom WAN consumer which is usually used in
- * combination with a custom WAN publisher.
- * The WAN consumer is in charge of consuming (processing) incoming WAN
- * events.
+ * Config for processing WAN events received from a target cluster.
+ * You can configure certain behaviour when processing incoming WAN events
+ * or even configure your own implementation for a WAN consumer. A custom
+ * WAN consumer allows you to define custom processing logic and is usually
+ * used in combination with a custom WAN publisher.
+ * A custom consumer is optional and you may simply omit defining it which
+ * will cause the default processing logic to be used.
+ * <p>
+ * NOTE: EE only
  *
  * @see WanReplicationConfig#setWanConsumerConfig(WanConsumerConfig)
  * @see WanPublisherConfig#setClassName(String)
@@ -46,15 +50,15 @@ public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned 
     private boolean persistWanReplicatedData = DEFAULT_PERSIST_WAN_REPLICATED_DATA;
 
     /**
-     * Returns the properties for this WAN consumer.
+     * Returns the properties for the custome WAN consumer.
      */
     public Map<String, Comparable> getProperties() {
         return properties;
     }
 
     /**
-     * Sets the properties for the WAN consumer. These properties are accessible
-     * when initalizing the WAN consumer.
+     * Sets the properties for the custom WAN consumer. These properties are
+     * accessible when initalizing the WAN consumer.
      *
      * @param properties the properties for the WAN consumer
      * @return this config
@@ -75,10 +79,14 @@ public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned 
     }
 
     /**
-     * Sets the name of the class implementing WanReplicationConsumer.
+     * Sets the fully qualified class name of the class implementing
+     * WanReplicationConsumer.
+     * The class name may be {@code null} in which case the implementation or
+     * the default processing logic for incoming WAN events will be used.
      *
      * @param className fully qualified class name
      * @return this config
+     * @see #setImplementation(Object)
      */
     public WanConsumerConfig setClassName(String className) {
         this.className = className;
@@ -97,9 +105,12 @@ public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned 
     /**
      * Sets the implementation for this WAN consumer. The object must implement
      * WanReplicationConsumer.
+     * The implementation may be {@code null} in which case the class name or
+     * the default processing logic for incoming WAN events will be used.
      *
      * @param implementation the object implementing WanReplicationConsumer
      * @return this config
+     * @see #setClassName(String)
      */
     public WanConsumerConfig setImplementation(Object implementation) {
         this.implementation = implementation;

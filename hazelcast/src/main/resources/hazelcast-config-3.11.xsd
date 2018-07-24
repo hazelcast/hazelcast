@@ -309,7 +309,7 @@
             <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
             <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
             <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0"/>
             <xs:element name="indexes" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -568,7 +568,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1">
+            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Wan replication configuration for cache.
@@ -2472,15 +2472,36 @@
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="wan-consumer">
+        <xs:annotation>
+            <xs:documentation>
+                Config for processing WAN events received from a target cluster.
+                You can configure certain behaviour when processing incoming WAN events
+                or even configure your own implementation for a WAN consumer. A custom
+                WAN consumer allows you to define custom processing logic and is usually
+                used in combination with a custom WAN publisher.
+                A custom consumer is optional and you may simply omit defining it which
+                will cause the default processing logic to be used.
+            </xs:documentation>
+        </xs:annotation>
         <xs:all>
-            <xs:element name="class-name" type="xs:string" minOccurs="1" maxOccurs="1">
+            <xs:element name="class-name" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Name of the custom class implementation that is responsible for incoming WAN events.
+                        Sets the fully qualified class name of the class implementing
+                        a custom WAN consumer (WanReplicationConsumer).
+                        If you don't define a class name, the default processing logic for
+                        incoming WAN events will be used.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Properties for the custom WAN consumer. These properties are
+                        accessible when initalizing the WAN consumer.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="persist-wan-replicated-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>
                     <xs:documentation>
@@ -3380,7 +3401,7 @@
 
     <xs:complexType name="wan-replication-ref">
         <xs:all>
-            <xs:element name="merge-policy" type="xs:string" minOccurs="1" maxOccurs="1">
+            <xs:element name="merge-policy" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Resolve conflicts that occurred when target cluster already has the replicated
@@ -3410,8 +3431,15 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="republishing-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the list of class names implementing the CacheWanEventFilter or
+                        MapWanEventFilter for filtering outbound WAN replication events.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="republishing-enabled" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
                         When enabled, an incoming event to a member is forwarded to the target cluster of that member.

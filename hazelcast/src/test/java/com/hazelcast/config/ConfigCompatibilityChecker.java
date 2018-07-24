@@ -1013,6 +1013,7 @@ class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())
                     && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
+                    && nullSafeEqual(c1.isPersistWanReplicatedData(), c2.isPersistWanReplicatedData())
                     && nullSafeEqual(c1.getProperties(), c2.getProperties());
         }
     }

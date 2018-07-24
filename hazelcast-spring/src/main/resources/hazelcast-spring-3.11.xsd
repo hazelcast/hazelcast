@@ -618,8 +618,7 @@
                                     </xs:element>
                                     <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="1"/>
-                                    <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0"
-                                                maxOccurs="1">
+                                    <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0">
                                         <xs:annotation>
                                             <xs:documentation>
                                                 Hazelcast can replicate some or all of the cluster data. For example,
@@ -971,8 +970,7 @@
                                             <xs:attribute name="class-name"/>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0"
-                                                maxOccurs="1">
+                                    <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0">
                                         <xs:annotation>
                                             <xs:documentation>
                                                 Hazelcast can replicate some or all of the cluster data. For example,
@@ -2726,11 +2724,37 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="wan-consumer" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Config for processing WAN events received from a target cluster.
+                        You can configure certain behaviour when processing incoming WAN events
+                        or even configure your own implementation for a WAN consumer. A custom
+                        WAN consumer allows you to define custom processing logic and is usually
+                        used in combination with a custom WAN publisher.
+                        A custom consumer is optional and you may simply omit defining it which
+                        will cause the default processing logic to be used.
+                    </xs:documentation>
+                </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="properties" type="properties" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Properties for the custom WAN consumer. These properties are
+                                    accessible when initalizing the WAN consumer.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
                     </xs:sequence>
-                    <xs:attributeGroup ref="class-or-bean-name"/>
+                    <xs:attributeGroup ref="class-or-bean-name">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Defines a custom WAN consumer (WanReplicationConsumer).
+                                If you don't define a class name or implementation, the default processing
+                                logic for incoming WAN events will be used.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attributeGroup>
                     <xs:attribute name="persist-wan-replicated-data" use="optional" type="parameterized-boolean" default="true">
                         <xs:annotation>
                             <xs:documentation>
@@ -3615,11 +3639,59 @@
 
     <xs:complexType name="wan-replication-ref">
         <xs:all>
-            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the list of class names implementing the CacheWanEventFilter or
+                        MapWanEventFilter for filtering outbound WAN replication events.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
-        <xs:attribute name="name" use="required" type="xs:string"/>
-        <xs:attribute name="merge-policy" use="required" type="xs:string"/>
-        <xs:attribute name="republishing-enabled" use="optional" type="parameterized-boolean" default="true"/>
+        <xs:attribute name="name" use="required" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the wan-replication configuration. IMap or ICache instance uses this wan-replication config.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="merge-policy" use="optional" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Resolve conflicts that occurred when target cluster already has the replicated
+                    entry key.
+
+                    4 merge policy implementations for IMap and 2 merge policy implementations for
+                    ICache are provided out-of-the-box.
+
+                    IMap has the following merge policies:
+                    com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: Incoming entry merges from the
+                    source map to the target map if it does not exist in the target map.
+                    com.hazelcast.map.merge.HigherHitsMapMergePolicy: Incoming entry merges from the
+                    source map to the target map if the source entry has more hits than the target one.
+                    com.hazelcast.map.merge.PassThroughMergePolicy: Incoming entry merges from the
+                    source map to the target map unless the incoming entry is not null.
+                    com.hazelcast.map.merge.LatestUpdateMapMergePolicy: Incoming entry merges from the
+                    source map to the target map if the source entry has been updated more recently
+                    than the target entry. Please note that this merge policy can only be used when the
+                    clusters' clocks are in sync.
+
+                    ICache has the following merge policies:
+                    com.hazelcast.cache.merge.HigherHitsCacheMergePolicy: Incoming entry merges from
+                    the source cache to the target cache if the source entry has more hits than the
+                    target one.
+                    com.hazelcast.cache.merge.PassThroughCacheMergePolicy: Incoming entry merges from
+                    the source cache to the target cache unless the incoming entry is not null.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="republishing-enabled" use="optional" type="parameterized-boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    When enabled, an incoming event to a member is forwarded to the target cluster of that member.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="native-memory">
         <xs:all>

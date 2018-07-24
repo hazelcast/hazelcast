@@ -24,7 +24,7 @@
         http://www.hazelcast.com/schema/sample
         hazelcast-sample-service.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -118,6 +118,9 @@
             </hz:wan-replication>
             <hz:wan-replication name="testWan2">
                 <hz:wan-consumer implementation="wanConsumer" persist-wan-replicated-data="false"/>
+            </hz:wan-replication>
+            <hz:wan-replication name="testWan3">
+                <hz:wan-consumer persist-wan-replicated-data="false"/>
             </hz:wan-replication>
             <hz:network port="${cluster.port}" port-auto-increment="false" port-count="42">
                 <hz:outbound-ports>
@@ -360,6 +363,10 @@
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
                     <hz:entry-listener implementation="dummyEntryListener" local="true"/>
                 </hz:entry-listeners>
+            </hz:map>
+
+            <hz:map name="testMapNoWanMergePolicy">
+                <hz:wan-replication-ref name="testWan" />
             </hz:map>
 
             <hz:map name="lfuEvictionMap" eviction-policy="LFU"/>
