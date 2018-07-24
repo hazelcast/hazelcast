@@ -52,10 +52,10 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     @Parameterized.Parameter
     public InMemoryFormat inMemoryFormat;
 
-    private static final int NODE_COUNT = 3;
+    protected static final int NODE_COUNT = 3;
 
     @Test
-    public void testIndexStatsQueryingChangingNumberOfMembers() throws InterruptedException {
+    public void testIndexStatsQueryingChangingNumberOfMembers() {
         int queriesBulk = 100;
 
         int entryCount = 100;
@@ -100,8 +100,8 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         assertEquals(2 * queriesBulk, stats(map2).getIndexedQueryCount());
         assertEquals(2 * queriesBulk, valueStats(map2).getQueryCount());
 
-        double originalOverallAvarageHitSelectivity = calculateOverallSelectivity(map1, map2);
-        assertEquals((expectedEqual + expectedGreaterEqual) / 2, originalOverallAvarageHitSelectivity, 0.015);
+        double originalOverallAverageHitSelectivity = calculateOverallSelectivity(map1, map2);
+        assertEquals((expectedEqual + expectedGreaterEqual) / 2, originalOverallAverageHitSelectivity, 0.015);
 
         long originalMap1QueryCount = stats(map1).getQueryCount();
         long originalMap1IndexedQueryCount = stats(map1).getIndexedQueryCount();
@@ -132,7 +132,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         assertEquals(originalMap2IndexQueryCount, valueStats(map2).getQueryCount());
         assertEquals(originalMap2AverageHitLatency, valueStats(map2).getAverageHitLatency());
         assertEquals(originalMap2AverageHitSelectivity, valueStats(map2).getAverageHitSelectivity(), 0.001);
-        assertEquals(originalOverallAvarageHitSelectivity, calculateOverallSelectivity(map1, map2, map3), 0.001);
+        assertEquals(originalOverallAverageHitSelectivity, calculateOverallSelectivity(map1, map2, map3), 0.001);
 
         for (int i = 0; i < queriesBulk; i++) {
             map1.entrySet(Predicates.alwaysTrue());
@@ -150,8 +150,8 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         assertEquals(2 * queriesBulk, stats(map3).getIndexedQueryCount());
         assertEquals(2 * queriesBulk, valueStats(map3).getQueryCount());
 
-        originalOverallAvarageHitSelectivity = calculateOverallSelectivity(map1, map2, map3);
-        assertEquals((expectedEqual + expectedGreaterEqual) / 2, originalOverallAvarageHitSelectivity, 0.015);
+        originalOverallAverageHitSelectivity = calculateOverallSelectivity(map1, map2, map3);
+        assertEquals((expectedEqual + expectedGreaterEqual) / 2, originalOverallAverageHitSelectivity, 0.015);
 
         originalMap1QueryCount = stats(map1).getQueryCount();
         originalMap1IndexedQueryCount = stats(map1).getIndexedQueryCount();
@@ -185,7 +185,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         assertEquals(originalMap3AverageHitLatency, valueStats(map3).getAverageHitLatency());
         assertEquals(originalMap3AverageHitSelectivity, valueStats(map3).getAverageHitSelectivity(), 0.001);
 
-        assertEquals(originalOverallAvarageHitSelectivity,
+        assertEquals(originalOverallAverageHitSelectivity,
                 calculateOverallSelectivity(map2Hits, map2TotalHitSelectivity, map1, map3), 0.001);
 
         for (int i = 0; i < queriesBulk; i++) {
@@ -201,15 +201,15 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         assertEquals(4 * queriesBulk, stats(map3).getIndexedQueryCount());
         assertEquals(4 * queriesBulk, valueStats(map3).getQueryCount());
 
-        // This work correctly only due to we stored data from shutdowned member and uses this data for counting
-        // originalOverallAvarageHitSelectivity. However this not represent real scenario. This check is here just for ensure
+        // This work correctly only due to we stored data from shutdown member and uses this data for counting
+        // originalOverallAverageHitSelectivity. However this not represent real scenario. This check is here just for ensure
         // that AverageHitSelectivity is still counted correctly on live members.
-        originalOverallAvarageHitSelectivity = calculateOverallSelectivity(map2Hits, map2TotalHitSelectivity, map1, map3);
-        assertEquals((expectedEqual + expectedGreaterEqual) / 2, originalOverallAvarageHitSelectivity, 0.015);
+        originalOverallAverageHitSelectivity = calculateOverallSelectivity(map2Hits, map2TotalHitSelectivity, map1, map3);
+        assertEquals((expectedEqual + expectedGreaterEqual) / 2, originalOverallAverageHitSelectivity, 0.015);
     }
 
     @Test
-    public void testIndexStatsOperationChangingNumberOfMembers() throws InterruptedException {
+    public void testIndexStatsOperationChangingNumberOfMembers() {
         int inserts = 100;
         int updates = 20;
         int removes = 20;
@@ -374,16 +374,15 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         return stats(map).getIndexStats().get("this");
     }
 
-    private double calculateOverallSelectivity(IMap<Integer, Integer>... maps) {
+    protected double calculateOverallSelectivity(IMap... maps) {
         return calculateOverallSelectivity(0, 0.0, maps);
     }
 
-    private double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount,
-                                               IMap<Integer, Integer>... maps) {
+    protected double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount, IMap... maps) {
         long hits = initialHits;
         double totalSelectivityCount = initialTotalSelectivityCount;
 
-        for (IMap<Integer, Integer> map : maps) {
+        for (IMap map : maps) {
             double averageHitSelectivity = valueStats(map).getAverageHitSelectivity();
             long hitCount = valueStats(map).getHitCount();
             double totalSelectivity = averageHitSelectivity * hitCount;
