@@ -23,16 +23,24 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Contains native memory configuration.
+ * Configures native memory region.
+ * <p>
+ * Native memory is allocated outside JVM heap space and is not subject to JVM garbage collection.
+ * Therefore, hundreds of gigabytes of native memory can be allocated & used without introducing
+ * pressure on GC mechanism.
+ * <p>
+ * Data structures, such as {@link com.hazelcast.core.IMap} and {@link com.hazelcast.cache.ICache},
+ * store their data (entries, indexes etc.) in native memory region when they are configured with
+ * {@link InMemoryFormat#NATIVE}.
  */
 public class NativeMemoryConfig {
 
     /**
-     * Default minimum block size
+     * Default minimum block size in bytes
      */
     public static final int DEFAULT_MIN_BLOCK_SIZE = 16;
     /**
-     * Default page size
+     * Default page size in bytes
      */
     @SuppressWarnings("checkstyle:magicnumber")
     public static final int DEFAULT_PAGE_SIZE = 1 << 22;
@@ -57,55 +65,137 @@ public class NativeMemoryConfig {
     private int pageSize = DEFAULT_PAGE_SIZE;
     private float metadataSpacePercentage = DEFAULT_METADATA_SPACE_PERCENTAGE;
 
+    /**
+     * Returns size of the native memory region.
+     */
     public MemorySize getSize() {
         return size;
     }
 
-    public NativeMemoryConfig setSize(final MemorySize size) {
+    /**
+     * Sets size of the native memory region.
+     * <p>
+     * Total size of the memory blocks allocated in native memory region cannot exceed this memory size.
+     * When native memory region is completely allocated and in-use, further allocation requests will fail
+     * with {@link com.hazelcast.memory.NativeOutOfMemoryError}.
+     *
+     * @param size memory size
+     * @return this {@link NativeMemoryConfig} instance
+     */
+    public NativeMemoryConfig setSize(MemorySize size) {
         this.size = isNotNull(size, "size");
         return this;
     }
 
+    /**
+     * Returns {@code true} if native memory allocation is enabled, {@code false} otherwise.
+     */
     public boolean isEnabled() {
         return enabled;
     }
 
+    /**
+     * Enables or disables native memory allocation.
+     *
+     * @return this {@link NativeMemoryConfig} instance
+     */
     public NativeMemoryConfig setEnabled(final boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
+    /**
+     * Returns the {@link MemoryAllocatorType} to be used while allocating native memory.
+     */
     public MemoryAllocatorType getAllocatorType() {
         return allocatorType;
     }
 
+    /**
+     * Sets the {@link MemoryAllocatorType} to be used while allocating native memory.
+     *
+     * @param allocatorType {@code MemoryAllocatorType}
+     * @return this {@link NativeMemoryConfig} instance
+     */
     public NativeMemoryConfig setAllocatorType(MemoryAllocatorType allocatorType) {
         this.allocatorType = allocatorType;
         return this;
     }
 
+    /**
+     * Returns the minimum memory block size, in bytes, to be served by native memory manager.
+     * Allocation requests smaller than minimum block size are served with the minimum block size.
+     * Default value is {@link #DEFAULT_MIN_BLOCK_SIZE} bytes.
+     * <p>
+     * <strong>This configuration is used only by {@link MemoryAllocatorType#POOLED}, otherwise ignored.</strong>
+     */
     public int getMinBlockSize() {
         return minBlockSize;
     }
 
+    /**
+     * Sets the minimum memory block size, in bytes, to be served by native memory manager.
+     * Allocation requests smaller than minimum block size are served with the minimum block size.
+     * <p>
+     * <strong>This configuration is used only by {@link MemoryAllocatorType#POOLED}, otherwise ignored.</strong>
+     *
+     * @param minBlockSize minimum memory block size
+     * @return this {@link NativeMemoryConfig} instance
+     */
     public NativeMemoryConfig setMinBlockSize(int minBlockSize) {
         this.minBlockSize = checkPositive(minBlockSize, "Minimum block size should be positive");
         return this;
     }
 
+    /**
+     * Returns the page size, in bytes, to be allocated by native memory manager as a single block. These page blocks are
+     * split into smaller blocks to serve allocation requests.
+     * Allocation requests greater than the page size are allocated from system directly,
+     * instead of managed memory pool.
+     * Default value is {@link #DEFAULT_PAGE_SIZE} bytes.
+     * <p>
+     * <strong>This configuration is used only by {@link MemoryAllocatorType#POOLED}, otherwise ignored.</strong>
+     */
     public int getPageSize() {
         return pageSize;
     }
 
+    /**
+     * Sets the page size, in bytes, to be allocated by native memory manager as a single block. These page blocks are
+     * split into smaller blocks to serve allocation requests.
+     * Allocation requests greater than the page size are allocated from system directly,
+     * instead of managed memory pool.
+     * <p>
+     * <strong>This configuration is used only by {@link MemoryAllocatorType#POOLED}, otherwise ignored.</strong>
+     *
+     * @param pageSize size of the page
+     * @return this {@link NativeMemoryConfig} instance
+     */
     public NativeMemoryConfig setPageSize(int pageSize) {
         this.pageSize = checkPositive(pageSize, "Page size should be positive");
         return this;
     }
 
+    /**
+     * Returns the percentage of native memory space to be used to store metadata and internal memory structures
+     * by the native memory manager.
+     * Default value is {@link #DEFAULT_METADATA_SPACE_PERCENTAGE}.
+     * <p>
+     * <strong>This configuration is used only by {@link MemoryAllocatorType#POOLED}, otherwise ignored.</strong>
+     */
     public float getMetadataSpacePercentage() {
         return metadataSpacePercentage;
     }
 
+    /**
+     * Sets the percentage of native memory space to be used to store metadata and internal memory structures
+     * by the native memory manager.
+     * <p>
+     * <strong>This configuration is used only by {@link MemoryAllocatorType#POOLED}, otherwise ignored.</strong>
+     *
+     * @param metadataSpacePercentage percentage of metadata space
+     * @return this {@link NativeMemoryConfig} instance
+     */
     public NativeMemoryConfig setMetadataSpacePercentage(float metadataSpacePercentage) {
         this.metadataSpacePercentage = metadataSpacePercentage;
         return this;
