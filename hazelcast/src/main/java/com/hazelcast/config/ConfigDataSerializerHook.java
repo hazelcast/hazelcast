@@ -93,8 +93,10 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int MERGE_POLICY_CONFIG = 51;
     public static final int COUNT_DOWN_LATCH_CONFIG = 52;
     public static final int PN_COUNTER_CONFIG = 53;
+    public static final int MERKLE_TREE_CONFIG = 54;
+    public static final int WAN_SYNC_CONFIG = 55;
 
-    private static final int LEN = PN_COUNTER_CONFIG + 1;
+    private static final int LEN = WAN_SYNC_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -439,7 +441,20 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                         return new PNCounterConfig();
                     }
                 };
-
+        constructors[MERKLE_TREE_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new MerkleTreeConfig();
+                    }
+                };
+        constructors[WAN_SYNC_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new WanSyncConfig();
+                    }
+                };
         return new ArrayDataSerializableFactory(constructors);
     }
 }

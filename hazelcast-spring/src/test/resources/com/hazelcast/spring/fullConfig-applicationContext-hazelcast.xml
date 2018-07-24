@@ -117,6 +117,12 @@
                 </hz:wan-consumer>
             </hz:wan-replication>
             <hz:wan-replication name="testWan2">
+                <hz:wan-publisher group-name="tokyo" class-name="PublisherClassName">
+                    <hz:wan-sync>
+                        <hz:consistency-check-period-millis>12345</hz:consistency-check-period-millis>
+                        <hz:use-merkle-trees>true</hz:use-merkle-trees>
+                    </hz:wan-sync>
+                </hz:wan-publisher>
                 <hz:wan-consumer implementation="wanConsumer" persist-wan-replicated-data="false"/>
             </hz:wan-replication>
             <hz:wan-replication name="testWan3">
@@ -483,6 +489,8 @@
 
             <hz:event-journal map-name="mapName" cache-name="cacheName" enabled="true"
                               capacity="123" time-to-live-seconds="321"/>
+
+            <hz:merkle-tree map-name="mapName" enabled="true" depth="15"/>
 
             <hz:multimap name="testMultimap" value-collection-type="LIST" binary="false" statistics-enabled="false">
                 <hz:entry-listeners>

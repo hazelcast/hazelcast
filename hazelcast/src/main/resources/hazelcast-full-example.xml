@@ -205,17 +205,35 @@
                 The WAN queue size is checked before each supported mutating operation. If one of the queues of the target
                 cluster is full, WANReplicationQueueFullException is thrown and the operation is not allowed.
         * <initial-publisher-state>:
-            Defines the initial state in which a WAN publisher is started.
-            - REPLICATING (default):
-                State where both enqueuing new events is allowed, enqueued events are replicated to the target cluster
-                and WAN sync is enabled.
-            - PAUSED:
-                State where new events are enqueued but they not are dequeued. Some events which have been dequeued before
-                the state was switched may still be replicated to the target cluster but further events will not be
-                replicated. WAN sync is enabled.
-            - STOPPED:
-                State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events might
-                still be replicated after the publisher has switched to this state. WAN sync is enabled.
+        Defines the initial state in which a WAN publisher is started.
+        - REPLICATING (default):
+            State where both enqueuing new events is allowed, enqueued events are replicated to the target cluster
+            and WAN sync is enabled.
+        - PAUSED:
+            State where new events are enqueued but they not are dequeued. Some events which have been dequeued before
+            the state was switched may still be replicated to the target cluster but further events will not be
+            replicated. WAN sync is enabled.
+        - STOPPED:
+            State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events might
+            still be replicated after the publisher has switched to this state. WAN sync is enabled.
+        * <wan-sync>:
+        Configuration for the WAN sync mechanism. It has the following sub-elements:
+            - <use-merkle-trees>:
+                Boolean denoting if merkle trees should be used to optimise WAN sync.
+                For the check procedure to work properly, the target cluster should
+                support merkle trees and the data structures being synced should be
+                configured with merkle trees enabled both on the source and target cluster.
+                Default value is false.
+            - <consistency-check-period-millis>:
+                Period (in milliseconds) for checking consistency of data
+                between source and target cluster.
+                Any inconsistency will not be reconciled, it will be merely reported via
+                the usual mechanisms (e.g. statistics, diagnostics). The user must
+                initiate WAN sync to reconcile there differences.
+                For the check procedure to work properly, the target cluster should
+                support merkle trees and the data structures being synced should be
+                configured with merkle trees enabled both on the source and target cluster.
+                Default value is -1, which means the periodic check is disabled.
         * <aws>:
             Set its "enabled" attribute to true for discovery within Amazon EC2. It has the following sub-elements:
             - <access-key>:
@@ -268,6 +286,10 @@
             <queue-capacity>15000</queue-capacity>
             <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
             <initial-publisher-state>REPLICATING</initial-publisher-state>
+            <wan-sync>
+                <use-merkle-trees>false</use-merkle-trees>
+                <consistency-check-period-millis>-1</consistency-check-period-millis>
+            </wan-sync>
             <properties>
                 <property name="endpoints">10.3.5.1:5701,10.3.5.2:5701</property>
                 <property name="batch.size">1000</property>
@@ -1450,6 +1472,38 @@
         <capacity>10000</capacity>
         <time-to-live-seconds>0</time-to-live-seconds>
     </event-journal>
+
+    <!--
+    ===== HAZELCAST MERKLE TREE CONFIGURATION =====
+
+    Configuration element's name is <merkle-tree>.
+    It has the following attributes and sub-elements:
+    * enabled:
+    	Specifies whether the merkle tree is enabled.
+    * <mapName>:
+    	Map name to which this configuration applies. This attribute's default value is "default".
+    	Configuration for the merkle tree with name "default" applies to all maps without
+    	configuration for a specific named map. In another words, if you specify the default
+    	merkle tree config as enabled then all maps which don't have specific merkle tree
+    	will be also enabled.
+    * <depth>:
+    	The depth of the merkle tree.
+    	 A larger depth means that a data synchronization mechanism will be able
+    	 to pinpoint a smaller subset of the data structure contents in which a
+    	 change occurred. This causes the synchronization mechanism to be more
+    	 efficient. On the other hand, a larger tree depth means the merkle tree
+    	 will consume more memory.
+    	 A smaller depth means the data synchronization mechanism will have to
+    	 transfer larger chunks of the data structure in which a possible change
+    	 happened. On the other hand, a shallower tree consumes less memory.
+    	 The depth must be between 2 and 27 (exclusive). The default depth is 10.
+
+     -->
+
+    <merkle-tree enabled="false">
+        <mapName>default</mapName>
+        <depth>10</depth>
+    </merkle-tree>
 
     <!--
         ===== HAZELCAST LIST CONFIGURATION =====

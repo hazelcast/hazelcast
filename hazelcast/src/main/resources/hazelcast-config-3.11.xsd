@@ -45,6 +45,7 @@
                 <xs:element name="scheduled-executor-service" type="scheduled-executor-service" minOccurs="0"
                             maxOccurs="unbounded"/>
                 <xs:element name="event-journal" type="event-journal" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="merkle-tree" type="merkle-tree" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
@@ -2461,6 +2462,7 @@
             </xs:element>
             <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="wan-sync" type="wan-sync" minOccurs="0"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="group-name" type="xs:string" use="required">
@@ -2470,6 +2472,36 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="wan-sync">
+        <xs:all>
+            <xs:element name="use-merkle-trees" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Boolean denoting if merkle trees should be used to optimise WAN sync.
+                        For the check procedure to work properly, the target cluster should
+                        support merkle trees and the data structures being synced should be
+                        configured with merkle trees enabled both on the source and target cluster.
+                        Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="consistency-check-period-millis" type="xs:int" minOccurs="0" default="-1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Period (in milliseconds) for checking consistency of data
+                        between source and target cluster.
+                        Any inconsistency will not be reconciled, it will be merely reported via
+                        the usual mechanisms (e.g. statistics, diagnostics). The user must
+                        initiate WAN sync to reconcile there differences.
+                        For the check procedure to work properly, the target cluster should
+                        support merkle trees and the data structures being synced should be
+                        configured with merkle trees enabled both on the source and target cluster.
+                        Default value is -1, which means the periodic check is disabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
     </xs:complexType>
     <xs:complexType name="wan-consumer">
         <xs:annotation>
@@ -3845,6 +3877,65 @@
             <xs:annotation>
                 <xs:documentation>
                     True if the event journal is enabled, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="merkle-tree">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for a merkle tree.
+                The merkle tree is a data structure used for efficient comparison of the
+                difference in the contents of large data structures. The precision of
+                such a comparison mechanism is defined by the depth of the merkle tree.
+                A larger depth means that a data synchronization mechanism will be able
+                to pinpoint a smaller subset of the data structure contents in which a
+                change occurred. This causes the synchronization mechanism to be more
+                efficient. On the other hand, a larger tree depth means the merkle tree
+                will consume more memory.
+                A smaller depth means the data synchronization mechanism will have to
+                transfer larger chunks of the data structure in which a possible change
+                happened. On the other hand, a shallower tree consumes less memory.
+                The depth must be between 2 and 27 (exclusive).
+                As the comparison mechanism is iterative, a larger depth will also prolong
+                the duration of the comparison mechanism. Care must be taken to not have
+                large tree depths if the latency of the comparison operation is high.
+                The default depth is 10.
+                This configuration is not tied to a specific data structure and can be
+                reused.
+                See https://en.wikipedia.org/wiki/Merkle_tree.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="mapName" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The name of the map to which this config applies.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="depth" type="xs:unsignedInt" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The depth of the merkle tree.
+                        A larger depth means that a data synchronization mechanism will be able
+                        to pinpoint a smaller subset of the data structure contents in which a
+                        change occurred. This causes the synchronization mechanism to be more
+                        efficient. On the other hand, a larger tree depth means the merkle tree
+                        will consume more memory.
+                        A smaller depth means the data synchronization mechanism will have to
+                        transfer larger chunks of the data structure in which a possible change
+                        happened. On the other hand, a shallower tree consumes less memory.
+                        The depth must be between 2 and 27 (exclusive). The default depth is 10.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    True if the merkle tree is enabled, false otherwise.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

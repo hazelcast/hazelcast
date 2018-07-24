@@ -143,6 +143,7 @@ public class ConfigXmlGenerator {
         durableExecutorXmlGenerator(gen, config);
         scheduledExecutorXmlGenerator(gen, config);
         eventJournalXmlGenerator(gen, config);
+        merkleTreeXmlGenerator(gen, config);
         partitionGroupXmlGenerator(gen, config);
         cardinalityEstimatorXmlGenerator(gen, config);
         listenerXmlGenerator(gen, config);
@@ -658,30 +659,56 @@ public class ConfigXmlGenerator {
         for (WanReplicationConfig wan : config.getWanReplicationConfigs().values()) {
             gen.open("wan-replication", "name", wan.getName());
             for (WanPublisherConfig p : wan.getWanPublisherConfigs()) {
-                gen.open("wan-publisher", "group-name", p.getGroupName())
-                   .node("class-name", p.getClassName())
-                   .node("queue-full-behavior", p.getQueueFullBehavior())
-                   .node("initial-publisher-state", p.getInitialPublisherState())
-                   .node("queue-capacity", p.getQueueCapacity())
-                   .appendProperties(p.getProperties());
-                awsConfigXmlGenerator(gen, p.getAwsConfig());
-                discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
-                gen.close();
+                wanReplicationPublisherXmlGenerator(gen, p);
             }
 
             WanConsumerConfig consumerConfig = wan.getWanConsumerConfig();
             if (consumerConfig != null) {
-                gen.open("wan-consumer");
-                String consumerClassName = classNameOrImplClass(
-                        consumerConfig.getClassName(), consumerConfig.getImplementation());
-                if (consumerClassName != null) {
-                    gen.node("class-name", consumerClassName);
-                }
-                gen.node("persist-wan-replicated-data", consumerConfig.isPersistWanReplicatedData())
-                   .appendProperties(consumerConfig.getProperties())
-                   .close();
+                wanReplicationConsumerGenerator(gen, consumerConfig);
             }
             gen.close();
+        }
+    }
+
+    private static void wanReplicationConsumerGenerator(XmlGenerator gen, WanConsumerConfig consumerConfig) {
+        gen.open("wan-consumer");
+        String consumerClassName = classNameOrImplClass(
+                consumerConfig.getClassName(), consumerConfig.getImplementation());
+        if (consumerClassName != null) {
+            gen.node("class-name", consumerClassName);
+        }
+        gen.node("persist-wan-replicated-data", consumerConfig.isPersistWanReplicatedData())
+           .appendProperties(consumerConfig.getProperties())
+           .close();
+    }
+
+    private static void wanReplicationPublisherXmlGenerator(XmlGenerator gen, WanPublisherConfig p) {
+        gen.open("wan-publisher", "group-name", p.getGroupName())
+           .node("class-name", p.getClassName())
+           .node("queue-full-behavior", p.getQueueFullBehavior())
+           .node("initial-publisher-state", p.getInitialPublisherState())
+           .node("queue-capacity", p.getQueueCapacity())
+           .appendProperties(p.getProperties());
+        wanReplicationSyncGenerator(gen, p.getWanSync());
+        awsConfigXmlGenerator(gen, p.getAwsConfig());
+        discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
+        gen.close();
+    }
+
+    private static void wanReplicationSyncGenerator(XmlGenerator gen, WanSyncConfig c) {
+        gen.open("wan-sync")
+           .node("use-merkle-trees", c.isUseMerkleTrees())
+           .node("consistency-check-period-millis", c.getConsistencyCheckPeriodMillis())
+           .close();
+    }
+
+    private static void merkleTreeXmlGenerator(XmlGenerator gen, Config config) {
+        Collection<MerkleTreeConfig> mapMerkleTreeConfigs = config.getMapMerkleTreeConfigs().values();
+        for (MerkleTreeConfig c : mapMerkleTreeConfigs) {
+            gen.open("merkle-tree", "enabled", c.isEnabled())
+               .node("mapName", c.getMapName())
+               .node("depth", c.getDepth())
+               .close();
         }
     }
 

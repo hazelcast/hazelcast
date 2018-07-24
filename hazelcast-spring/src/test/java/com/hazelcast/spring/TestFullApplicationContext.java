@@ -56,6 +56,7 @@ import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -90,6 +91,7 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -146,6 +148,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -972,6 +975,31 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
+    public void testWanReplicationSyncConfig() {
+        final WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan2");
+        final WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
+        final Map<String, Comparable> consumerProps = new HashMap<String, Comparable>();
+        consumerProps.put("custom.prop.consumer", "prop.consumer");
+        consumerConfig.setProperties(consumerProps);
+        assertInstanceOf(DummyWanConsumer.class, consumerConfig.getImplementation());
+        assertEquals("prop.consumer", consumerConfig.getProperties().get("custom.prop.consumer"));
+        assertFalse(consumerConfig.isPersistWanReplicatedData());
+
+        final List<WanPublisherConfig> publisherConfigs = wcfg.getWanPublisherConfigs();
+        assertNotNull(publisherConfigs);
+        assertEquals(1, publisherConfigs.size());
+
+        final WanPublisherConfig publisherConfig = publisherConfigs.get(0);
+        assertEquals("tokyo", publisherConfig.getGroupName());
+        assertEquals("PublisherClassName", publisherConfig.getClassName());
+
+        final WanSyncConfig wanSyncConfig = publisherConfig.getWanSync();
+        assertNotNull(wanSyncConfig);
+        assertTrue(wanSyncConfig.isUseMerkleTrees());
+        assertEquals(12345, wanSyncConfig.getConsistencyCheckPeriodMillis());
+    }
+
+    @Test
     public void testConfigListeners() {
         assertNotNull(membershipListener);
         List<ListenerConfig> list = config.getListenerConfigs();
@@ -1297,6 +1325,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
         assertEquals(321, journalConfig.getTimeToLiveSeconds());
+    }
+
+    @Test
+    public void testMapMerkleTreeConfigIsWellParsed() {
+        MerkleTreeConfig treeConfig = config.getMapMerkleTreeConfig("mapName");
+
+        assertTrue(treeConfig.isEnabled());
+        assertEquals(15, treeConfig.getDepth());
     }
 
     @Test

@@ -108,6 +108,8 @@ class ConfigCompatibilityChecker {
                 new MapEventJournalConfigChecker());
         checkCompatibleConfigs("cache event journal", c1, c2, c1.getCacheEventJournalConfigs(), c2.getCacheEventJournalConfigs(),
                 new CacheEventJournalConfigChecker());
+        checkCompatibleConfigs("map merkle tree", c1, c2, c1.getMapMerkleTreeConfigs(), c2.getMapMerkleTreeConfigs(),
+                new MapMerkleTreeConfigChecker());
         checkCompatibleConfigs("multimap", c1, c2, c1.getMultiMapConfigs(), c2.getMultiMapConfigs(), new MultimapConfigChecker());
         checkCompatibleConfigs("replicated map", c1, c2, c1.getReplicatedMapConfigs(), c2.getReplicatedMapConfigs(),
                 new ReplicatedMapConfigChecker());
@@ -258,6 +260,22 @@ class ConfigCompatibilityChecker {
         @Override
         RingbufferConfig getDefault(Config c) {
             return c.getRingbufferConfig("default");
+        }
+    }
+
+    public static class MapMerkleTreeConfigChecker extends ConfigChecker<MerkleTreeConfig> {
+        @Override
+        boolean check(MerkleTreeConfig c1, MerkleTreeConfig c2) {
+            boolean c1Disabled = c1 == null || !c1.isEnabled();
+            boolean c2Disabled = c2 == null || !c2.isEnabled();
+            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getMapName(), c2.getMapName())
+                    && nullSafeEqual(c1.getDepth(), c2.getDepth()));
+        }
+
+        @Override
+        MerkleTreeConfig getDefault(Config c) {
+            return c.getMapMerkleTreeConfig("default");
         }
     }
 
@@ -876,6 +894,15 @@ class ConfigCompatibilityChecker {
         }
     }
 
+    private static class WanSyncConfigChecker extends ConfigChecker<WanSyncConfig> {
+        @Override
+        boolean check(WanSyncConfig c1, WanSyncConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.isUseMerkleTrees(), c2.isUseMerkleTrees())
+                    && nullSafeEqual(c1.getConsistencyCheckPeriodMillis(), c2.getConsistencyCheckPeriodMillis());
+        }
+    }
+
     private static class NetworkConfigChecker extends ConfigChecker<NetworkConfig> {
         @Override
         boolean check(NetworkConfig c1, NetworkConfig c2) {
@@ -1028,6 +1055,7 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getInitialPublisherState(), c2.getInitialPublisherState())
                     && new AwsConfigChecker().check(c1.getAwsConfig(), c2.getAwsConfig())
                     && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig())
+                    && new WanSyncConfigChecker().check(c1.getWanSync(), c2.getWanSync())
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())
                     && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
                     && nullSafeEqual(c1.getProperties(), c2.getProperties());
