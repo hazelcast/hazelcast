@@ -5,7 +5,7 @@ SETLOCAL
 if NOT DEFINED JAVA_HOME goto error
 set RUN_JAVA=%JAVA_HOME%\bin\java
 
-set CLASSPATH=%~dp0..\lib\hazelcast-jet-${project.version}.jar;%CLASSPATH%
+set CLASSPATH=%~dp0..\lib\${hazelcast.jet.artifact}-${project.version}.jar;%CLASSPATH%
 SET JAR_FILE=%1
 
 ECHO ########################################

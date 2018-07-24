@@ -18,7 +18,6 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <hadoop.version>2.8.3</hadoop.version>
     </properties>
 
     <build>

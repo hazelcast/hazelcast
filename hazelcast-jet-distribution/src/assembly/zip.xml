@@ -22,67 +22,88 @@
         <format>zip</format>
         <format>tar.gz</format>
     </formats>
+
     <dependencySets>
         <dependencySet>
             <includes>
                 <include>com.hazelcast.jet:hazelcast-jet</include>
-                <include>com.hazelcast.jet:hazelcast-jet-kafka</include>
-                <include>com.hazelcast.jet:hazelcast-jet-hadoop</include>
-                <include>com.hazelcast.jet:hazelcast-jet-spring</include>
                 <include>com.hazelcast.jet:hazelcast-jet-avro</include>
+                <include>com.hazelcast.jet:hazelcast-jet-hadoop</include>
+                <include>com.hazelcast.jet:hazelcast-jet-kafka</include>
+                <include>com.hazelcast.jet:hazelcast-jet-spring</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
         </dependencySet>
-        <dependencySet>
-            <includes>
-                <include>*:javadoc</include>
-            </includes>
-            <unpack>true</unpack>
-            <outputDirectory>docs/javadoc</outputDirectory>
-        </dependencySet>
     </dependencySets>
-
     <files>
         <file>
-            <source>${resource.dir}/hazelcast-jet-default.xml</source>
+            <source>${config.directory}/hazelcast-jet-default.xml</source>
             <destName>hazelcast-jet.xml</destName>
             <outputDirectory>config</outputDirectory>
         </file>
         <file>
-            <source>${resource.dir}/hazelcast-jet-full-example.xml</source>
-            <outputDirectory>config</outputDirectory>
-        </file>
-        <file>
-            <source>${resource.dir}/hazelcast-jet-member-default.xml</source>
+            <source>${config.directory}/hazelcast-jet-member-default.xml</source>
             <destName>hazelcast.xml</destName>
             <outputDirectory>config</outputDirectory>
         </file>
         <file>
-            <source>${resource.dir}/hazelcast-jet-client-default.xml</source>
+            <source>${config.directory}/hazelcast-jet-client-default.xml</source>
             <destName>hazelcast-client.xml</destName>
             <outputDirectory>config</outputDirectory>
+        </file>
+        <file>
+            <source>${config.directory}/hazelcast-jet-full-example.xml</source>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <!-- Example config files -->
+        <file>
+            <source>${config.directory}/hazelcast-jet-full-example.xml</source>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${config.directory}/hazelcast-full-example.xml</source>
+            <destName>hazelcast-full-example.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${config.directory}/hazelcast-client-full.xml</source>
+            <destName>hazelcast-client-full-example.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
         </file>
     </files>
     <fileSets>
         <fileSet>
-            <directory>target/classes</directory>
+            <directory>${project.build.directory}/apidocs</directory>
+            <outputDirectory>docs/javadoc</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.outputDirectory}/bin</directory>
             <includes>
                 <include>*.sh</include>
             </includes>
             <fileMode>0755</fileMode>
             <outputDirectory>bin</outputDirectory>
+            <filtered>true</filtered>
         </fileSet>
         <fileSet>
-            <directory>target/classes</directory>
+            <directory>${project.build.outputDirectory}/bin</directory>
             <includes>
                 <include>*.bat</include>
             </includes>
             <outputDirectory>bin</outputDirectory>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.outputDirectory}</directory>
+            <includes>
+                <include>*.txt</include>
+            </includes>
+            <outputDirectory/>
         </fileSet>
         <fileSet>
             <directory>src/dist</directory>
-            <outputDirectory></outputDirectory>
+            <outputDirectory/>
         </fileSet>
     </fileSets>
 </assembly>

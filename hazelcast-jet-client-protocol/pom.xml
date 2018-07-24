@@ -31,7 +31,6 @@
     </parent>
 
     <properties>
-        <hazelcast.protocol.version>1.4.0</hazelcast.protocol.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
@@ -55,20 +54,13 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
-            <scope>provided</scope>
             <version>${hazelcast.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client-protocol</artifactId>
-            <scope>provided</scope>
-            <version>${hazelcast.protocol.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-code-generator</artifactId>
-            <scope>provided</scope>
             <version>${hazelcast.protocol.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

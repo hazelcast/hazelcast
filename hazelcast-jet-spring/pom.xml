@@ -18,7 +18,6 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <spring.version>4.3.0.RELEASE</spring.version>
     </properties>
 
     <build>

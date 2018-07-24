@@ -30,10 +30,6 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
-
-        <!-- optional dependencies of hazelcast, required for Javadoc plugin to work -->
-        <log4j2.version>2.3</log4j2.version>
-        <slf4j.api.version>1.6.6</slf4j.api.version>
     </properties>
 
     <build>
@@ -75,7 +71,6 @@
                 <configuration>
                     <createSourcesJar>true</createSourcesJar>
                     <createDependencyReducedPom>true</createDependencyReducedPom>
-                    <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                     <transformers>
                         <transformer
                                 implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
@@ -87,57 +82,18 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <includeDependencySources>true</includeDependencySources>
-                    <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
                     <dependencySourceIncludes>
-                        <dependencySourceInclude>com.hazelcast</dependencySourceInclude>
-                        <dependencySourceInclude>com.hazelcast.jet</dependencySourceInclude>
+                        <dependencySourceInclude>com.hazelcast:hazelcast</dependencySourceInclude>
+                        <dependencySourceInclude>com.hazelcast:hazelcast-client</dependencySourceInclude>
+                        <dependencySourceInclude>com.hazelcast.jet:hazelcast-jet-core</dependencySourceInclude>
                     </dependencySourceIncludes>
                     <additionalDependencies>
-                        <!-- these dependencies are required by Java 9 javadoc tool to build javadocs for shaded classes-->
+                        <!-- This dependency is only referenced from some internal packages and not used during runtime
+                        but JDK9 seems to try to resolve the dependency anyway when building javadoc -->
                         <additionalDependency>
                             <groupId>com.hazelcast</groupId>
                             <artifactId>hazelcast-code-generator</artifactId>
-                            <version>1.4.0</version>
-                        </additionalDependency>
-                        <additionalDependency>
-                            <groupId>com.hazelcast</groupId>
-                            <artifactId>hazelcast-aws</artifactId>
-                            <version>2.0.0</version>
-                        </additionalDependency>
-                        <additionalDependency>
-                            <groupId>log4j</groupId>
-                            <artifactId>log4j</artifactId>
-                            <version>${log4j.version}</version>
-                        </additionalDependency>
-                        <additionalDependency>
-                            <groupId>org.apache.logging.log4j</groupId>
-                            <artifactId>log4j-api</artifactId>
-                            <version>${log4j2.version}</version>
-                        </additionalDependency>
-                        <additionalDependency>
-                            <groupId>org.apache.logging.log4j</groupId>
-                            <artifactId>log4j-core</artifactId>
-                            <version>${log4j2.version}</version>
-                        </additionalDependency>
-                        <additionalDependency>
-                            <groupId>org.slf4j</groupId>
-                            <artifactId>slf4j-api</artifactId>
-                            <version>${slf4j.api.version}</version>
-                        </additionalDependency>
-                        <additionalDependency>
-                            <groupId>javax.annotation</groupId>
-                            <artifactId>javax.annotation-api</artifactId>
-                            <version>1.2</version>
-                        </additionalDependency>
-                        <additionalDependency>
-                            <groupId>org.osgi</groupId>
-                            <artifactId>org.osgi.core</artifactId>
-                            <version>4.2.0</version>
-                        </additionalDependency>
-                        <additionalDependency>
-                            <groupId>javax.jms</groupId>
-                            <artifactId>javax.jms-api</artifactId>
-                            <version>${jms.api.version}</version>
+                            <version>${hazelcast.protocol.version}</version>
                         </additionalDependency>
                     </additionalDependencies>
                 </configuration>
@@ -191,10 +147,63 @@
             <artifactId>hazelcast-jet-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+
+        <!-- optional dependencies -->
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-aws</artifactId>
+            <version>${hazelcast.aws.version}</version>
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
             <version>${jsr107.api.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>javax.jms</groupId>
+            <artifactId>javax.jms-api</artifactId>
+            <version>${jms.api.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>${osgi.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>${jsr250.api.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- logging -->
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>${log4j.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.api.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>

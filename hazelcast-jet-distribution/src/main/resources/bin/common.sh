@@ -29,7 +29,7 @@ if [ "x$MAX_HEAP_SIZE" != "x" ]; then
 	JAVA_OPTS="$JAVA_OPTS -Xmx${MAX_HEAP_SIZE}"
 fi
 
-CLASSPATH="$JET_HOME/lib/hazelcast-jet-${project.version}.jar:$CLASSPATH"
+CLASSPATH="$JET_HOME/lib/${hazelcast.jet.artifact}-${project.version}.jar:$CLASSPATH"
 JAVA_OPTS="$JAVA_OPTS -Dhazelcast.config=$JET_HOME/config/hazelcast.xml \
 -Dhazelcast.client.config=$JET_HOME/config/hazelcast-client.xml \
 -Dhazelcast.jet.config=$JET_HOME/config/hazelcast-jet.xml"
