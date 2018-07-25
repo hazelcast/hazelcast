@@ -41,6 +41,7 @@ import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
+import static com.hazelcast.jet.impl.execution.init.VertexDef.isSnapshotVertex;
 import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.util.Collections.emptyList;
@@ -389,8 +390,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         Pattern stepPattern = Pattern.compile("(?<stepName>.+)-step[12]");
         int clusterCount = 0;
         for (Vertex v : this) {
+            // skip snapshot vertices
+            if (isSnapshotVertex(v.getName())) {
+                continue;
+            }
+
             List<Edge> out = getOutboundEdges(v.getName());
             List<Edge> in = getInboundEdges(v.getName());
+
             if (out.isEmpty() && in.isEmpty()) {
                 // dangling vertex
                 builder.append("\t")

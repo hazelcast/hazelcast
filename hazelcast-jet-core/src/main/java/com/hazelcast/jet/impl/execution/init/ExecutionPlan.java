@@ -179,7 +179,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         .withTag("exec", idToString(executionId))
                         .withTag("vertex", vertex.name());
 
-                if (vertex.inboundEdges().size() == 0) {
+                // ignore vertices which are only used for snapshot restore and do not
+                // consider snapshot restore edges for determining source tag
+                if (vertex.inboundEdges().stream().allMatch(EdgeDef::isSnapshotRestoreEdge)
+                        && !vertex.isSnapshotVertex()) {
                     probeBuilder = probeBuilder.withTag("source", "true");
                 }
                 if (vertex.outboundEdges().size() == 0) {

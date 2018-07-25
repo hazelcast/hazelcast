@@ -32,6 +32,7 @@ import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class DotTest {
@@ -74,6 +75,22 @@ public class DotTest {
         // can't assert, contains multiple sub-paths, order isn't stable
         System.out.println(p.toDotString());
         System.out.println(p.toDag().toDotString());
+    }
+
+    @Test
+    public void when_snapshotVertex_then_skip() {
+        DAG dag = new DAG();
+        Vertex snapshotA = dag.newVertex("__snapshot_read.a", noopP());
+        Vertex snapshotB = dag.newVertex("__snapshot_read.b", noopP());
+        Vertex a = dag.newVertex("a", noopP());
+        Vertex b = dag.newVertex("b", noopP());
+
+        dag.edge(from(a, 0).to(b, 0).broadcast().distributed());
+
+        dag.edge(from(snapshotA, 0).to(a, 0).partitioned(wholeItem()));
+        dag.edge(from(snapshotB, 0).to(b, 1).broadcast().distributed());
+
+        assertFalse("snapshot vertex should not be in output", dag.toDotString().contains("snapshot"));
     }
 
     @Test

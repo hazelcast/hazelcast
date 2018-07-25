@@ -130,8 +130,10 @@ public class OutboxImpl implements Outbox {
                 }
                 if (result.isDone()) {
                     broadcastTracker.set(i);
-                    // we are the only updating thread, no need for CAS operations
-                    lazyIncrement(counters, i);
+                    if (!(item instanceof BroadcastItem)) {
+                        // we are the only updating thread, no need for CAS operations
+                        lazyIncrement(counters, ordinals[i]);
+                    }
                 } else {
                     done = false;
                 }

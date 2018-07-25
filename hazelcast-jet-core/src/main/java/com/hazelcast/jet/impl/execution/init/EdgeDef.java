@@ -20,6 +20,7 @@ import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Partitioner;
+import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -95,6 +96,10 @@ public class EdgeDef implements IdentifiedDataSerializable {
 
     int priority() {
         return priority;
+    }
+
+    boolean isSnapshotRestoreEdge() {
+        return priority == MasterContext.SNAPSHOT_RESTORE_EDGE_PRIORITY;
     }
 
     boolean isDistributed() {

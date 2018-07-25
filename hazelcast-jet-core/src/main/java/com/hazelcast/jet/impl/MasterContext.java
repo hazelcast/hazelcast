@@ -92,6 +92,7 @@ import static java.util.stream.Collectors.toList;
 public class MasterContext {
 
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
+    public static final String SNAPSHOT_VERTEX_PREFIX = "__snapshot_";
 
     private final NodeEngineImpl nodeEngine;
     private final JobCoordinationService coordinationService;
@@ -232,8 +233,12 @@ public class MasterContext {
             // Processor.finishSnapshotRestore() method is always called on all vertices in
             // a job which is restored from a snapshot.
             String mapName = snapshotDataMapName(jobId, snapshotId, vertex.getName());
-            Vertex readSnapshotVertex = dag.newVertex("__snapshot_read." + vertex.getName(), readMapP(mapName));
-            Vertex explodeVertex = dag.newVertex("__snapshot_explode." + vertex.getName(), ExplodeSnapshotP::new);
+            Vertex readSnapshotVertex = dag.newVertex(
+                    SNAPSHOT_VERTEX_PREFIX + "read." + vertex.getName(), readMapP(mapName)
+            );
+            Vertex explodeVertex = dag.newVertex(
+                    SNAPSHOT_VERTEX_PREFIX + "explode." + vertex.getName(), ExplodeSnapshotP::new
+            );
 
             readSnapshotVertex.localParallelism(vertex.getLocalParallelism());
             explodeVertex.localParallelism(vertex.getLocalParallelism());
