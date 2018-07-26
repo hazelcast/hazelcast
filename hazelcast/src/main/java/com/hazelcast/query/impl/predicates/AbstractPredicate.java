@@ -83,7 +83,8 @@ public abstract class AbstractPredicate<K, V>
 
     protected boolean convertAndApplyForSingleAttributeValue(Map.Entry mapEntry, Object attributeValue) {
         if (attributeValue instanceof JsonValue) {
-            return applyForSingleAttributeValue(mapEntry, (Comparable) JsonGetter.convertFromJsonValue((JsonValue) attributeValue));
+            Object value = JsonGetter.convertFromJsonValue((JsonValue) attributeValue);
+            return applyForSingleAttributeValue(mapEntry, (Comparable) value);
         }
         return applyForSingleAttributeValue(mapEntry, (Comparable) attributeValue);
     }

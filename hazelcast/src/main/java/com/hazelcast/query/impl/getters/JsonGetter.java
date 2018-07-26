@@ -63,7 +63,7 @@ public class JsonGetter extends Getter {
                         JsonArray valueArray = value.asArray();
                         String indexText = path.substring(1, path.length() - 1);
                         if (indexText.equals("any")) {
-                            return getMultiValue(valueArray, paths, i+1);
+                            return getMultiValue(valueArray, paths, i + 1);
 
                         } else {
                             int index = Integer.parseInt(indexText);
@@ -85,7 +85,7 @@ public class JsonGetter extends Getter {
     MultiResult getMultiValue(JsonArray arr, List<String> paths, int index) {
         MultiResult multiResult = new MultiResult();
         Iterator<JsonValue> it = arr.iterator();
-        String attr = paths.size() > index ? paths.get(index): null;
+        String attr = paths.size() > index ? paths.get(index) : null;
         while (it.hasNext()) {
             JsonValue value = it.next();
             if (attr != null) {
