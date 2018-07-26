@@ -1125,7 +1125,7 @@ public class ConfigXmlGeneratorTest {
                 .setInitialPublisherState(WanPublisherState.STOPPED)
                 .setDiscoveryConfig(getDummyDiscoveryConfig());
         publisherConfig.getWanSync()
-                       .setUseMerkleTrees(true)
+                       .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES)
                        .setConsistencyCheckPeriodMillis(12345);
         WanConsumerConfig wanConsumerConfig = new WanConsumerConfig()
                 .setClassName("dummyClass")

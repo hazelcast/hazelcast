@@ -25,6 +25,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -995,7 +996,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         final WanSyncConfig wanSyncConfig = publisherConfig.getWanSync();
         assertNotNull(wanSyncConfig);
-        assertTrue(wanSyncConfig.isUseMerkleTrees());
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, wanSyncConfig.getConsistencyCheckStrategy());
         assertEquals(12345, wanSyncConfig.getConsistencyCheckPeriodMillis());
     }
 

@@ -218,12 +218,14 @@
             still be replicated after the publisher has switched to this state. WAN sync is enabled.
         * <wan-sync>:
         Configuration for the WAN sync mechanism. It has the following sub-elements:
-            - <use-merkle-trees>:
-                Boolean denoting if merkle trees should be used to optimise WAN sync.
-                For the check procedure to work properly, the target cluster should
-                support merkle trees and the data structures being synced should be
-                configured with merkle trees enabled both on the source and target cluster.
-                Default value is false.
+            - <consistency-check-strategy>:
+                Sets the strategy for checking consistency of data between source and
+                target cluster. Any inconsistency will not be reconciled, it will be
+                merely reported via the usual mechanisms (e.g. statistics, diagnostics).
+                The user must initiate WAN sync to reconcile there differences. For the
+                check procedure to work properly, the target cluster should support the
+                chosen strategy.
+                Default value is NONE, which means the check is disabled.
             - <consistency-check-period-millis>:
                 Period (in milliseconds) for checking consistency of data
                 between source and target cluster.
@@ -233,7 +235,8 @@
                 For the check procedure to work properly, the target cluster should
                 support merkle trees and the data structures being synced should be
                 configured with merkle trees enabled both on the source and target cluster.
-                Default value is -1, which means the periodic check is disabled.
+                Default value is 0, which means the periodic check is disabled.
+                The period must not be negative.
         * <aws>:
             Set its "enabled" attribute to true for discovery within Amazon EC2. It has the following sub-elements:
             - <access-key>:
@@ -287,8 +290,8 @@
             <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
             <initial-publisher-state>REPLICATING</initial-publisher-state>
             <wan-sync>
-                <use-merkle-trees>false</use-merkle-trees>
-                <consistency-check-period-millis>-1</consistency-check-period-millis>
+                <consistency-check-strategy>NONE</consistency-check-strategy>
+                <consistency-check-period-millis>0</consistency-check-period-millis>
             </wan-sync>
             <properties>
                 <property name="endpoints">10.3.5.1:5701,10.3.5.2:5701</property>

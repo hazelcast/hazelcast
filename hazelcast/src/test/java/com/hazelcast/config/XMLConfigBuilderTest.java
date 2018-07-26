@@ -1187,7 +1187,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "        <wan-publisher group-name=\"nyc\">\n"
                 + "            <class-name>PublisherClassName</class-name>\n"
                 + "            <wan-sync>\n"
-                + "                <use-merkle-trees>true</use-merkle-trees>\n"
+                + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
                 + "                <consistency-check-period-millis>12345</consistency-check-period-millis>\n"
                 + "            </wan-sync>\n"
                 + "        </wan-publisher>\n"
@@ -1203,7 +1203,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
         WanPublisherConfig publisherConfig = publishers.get(0);
-        assertTrue(publisherConfig.getWanSync().isUseMerkleTrees());
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSync().getConsistencyCheckStrategy());
         assertEquals(12345, publisherConfig.getWanSync().getConsistencyCheckPeriodMillis());
     }
 

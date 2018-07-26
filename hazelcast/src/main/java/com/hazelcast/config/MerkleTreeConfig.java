@@ -51,8 +51,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * <p>
  * This configuration is not tied to a specific data structure and can be
  * reused.
- *
+ * <p>
  * See https://en.wikipedia.org/wiki/Merkle_tree.
+ *
+ * @since 3.11
  */
 @Beta
 public class MerkleTreeConfig implements IdentifiedDataSerializable {

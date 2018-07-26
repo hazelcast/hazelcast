@@ -64,8 +64,8 @@
             <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
             <initial-publisher-state>REPLICATING</initial-publisher-state>
             <wan-sync>
+                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
                 <consistency-check-period-millis>10000</consistency-check-period-millis>
-                <use-merkle-trees>true</use-merkle-trees>
             </wan-sync>
             <properties>
                 <property name="batch.size">50</property>

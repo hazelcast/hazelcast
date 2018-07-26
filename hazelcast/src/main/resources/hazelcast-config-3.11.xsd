@@ -2475,14 +2475,16 @@
     </xs:complexType>
     <xs:complexType name="wan-sync">
         <xs:all>
-            <xs:element name="use-merkle-trees" type="xs:boolean" minOccurs="0" default="false">
+            <xs:element name="consistency-check-strategy" type="consistency-check-strategy" minOccurs="0" default="NONE">
                 <xs:annotation>
                     <xs:documentation>
-                        Boolean denoting if merkle trees should be used to optimise WAN sync.
-                        For the check procedure to work properly, the target cluster should
-                        support merkle trees and the data structures being synced should be
-                        configured with merkle trees enabled both on the source and target cluster.
-                        Default value is false.
+                        Sets the strategy for checking consistency of data between source and
+                        target cluster. Any inconsistency will not be reconciled, it will be
+                        merely reported via the usual mechanisms (e.g. statistics, diagnostics).
+                        The user must initiate WAN sync to reconcile there differences. For the
+                        check procedure to work properly, the target cluster should support the
+                        chosen strategy.
+                        Default value is NONE, which means the check is disabled.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2497,7 +2499,8 @@
                         For the check procedure to work properly, the target cluster should
                         support merkle trees and the data structures being synced should be
                         configured with merkle trees enabled both on the source and target cluster.
-                        Default value is -1, which means the periodic check is disabled.
+                        Default value is 0, which means the periodic check is disabled.
+                        The period must not be negative.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4092,6 +4095,12 @@
             <xs:enumeration value="REPLICATING"/>
             <xs:enumeration value="PAUSED"/>
             <xs:enumeration value="STOPPED"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="consistency-check-strategy">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="NONE"/>
+            <xs:enumeration value="MERKLE_TREES"/>
         </xs:restriction>
     </xs:simpleType>
 </xs:schema>
