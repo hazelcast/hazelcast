@@ -50,7 +50,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned 
     private boolean persistWanReplicatedData = DEFAULT_PERSIST_WAN_REPLICATED_DATA;
 
     /**
-     * Returns the properties for the custome WAN consumer.
+     * Returns the properties for the custom WAN consumer.
      */
     public Map<String, Comparable> getProperties() {
         return properties;
