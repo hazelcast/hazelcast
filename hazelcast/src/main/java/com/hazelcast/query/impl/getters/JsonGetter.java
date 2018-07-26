@@ -20,17 +20,13 @@ import com.hazelcast.json.JsonArray;
 import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 public class JsonGetter extends Getter {
 
-    private static final Pattern PATTERN = Pattern.compile("([^.\\[\\]]+)|(\\[(\\d+|any)\\])");
+    private static final String DELIMITER = "\\.";
 
     public JsonGetter() {
         super(null);
@@ -47,24 +43,25 @@ public class JsonGetter extends Getter {
 
     @Override
     Object getValue(Object obj, String attributePath) {
-        List<String> paths = getPath(attributePath);
+        String[] paths = getPath(attributePath);
         JsonValue value = (JsonValue) obj;
         if (value.isObject()) {
-            for (int i = 0; i < paths.size(); i++) {
-                String path = paths.get(i);
+            for (int i = 0; i < paths.length; i++) {
+                String path = paths[i];
                 if (value == null) {
                     return null;
                 }
                 try {
-                    if (path.startsWith("[")) {
-                        if (!value.isArray()) {
-                            return null;
+                    if (path.endsWith("]")) {
+                        int leftBracket = path.indexOf('[');
+                        if (leftBracket > 0) {
+                            String qualifier = path.substring(0, leftBracket);
+                            value = value.asObject().get(qualifier);
                         }
                         JsonArray valueArray = value.asArray();
-                        String indexText = path.substring(1, path.length() - 1);
+                        String indexText = path.substring(leftBracket + 1, path.length() - 1);
                         if (indexText.equals("any")) {
                             return getMultiValue(valueArray, paths, i + 1);
-
                         } else {
                             int index = Integer.parseInt(indexText);
                             value = valueArray.get(index);
@@ -82,10 +79,10 @@ public class JsonGetter extends Getter {
         return null;
     }
 
-    MultiResult getMultiValue(JsonArray arr, List<String> paths, int index) {
+    MultiResult getMultiValue(JsonArray arr, String[] paths, int index) {
         MultiResult multiResult = new MultiResult();
         Iterator<JsonValue> it = arr.iterator();
-        String attr = paths.size() > index ? paths.get(index) : null;
+        String attr = paths.length > index ? paths[index] : null;
         while (it.hasNext()) {
             JsonValue value = it.next();
             if (attr != null) {
@@ -129,12 +126,7 @@ public class JsonGetter extends Getter {
         return true;
     }
 
-    private List<String> getPath(String attributePath) {
-        List<String> paths = new ArrayList<String>();
-        Matcher matcher = PATTERN.matcher(attributePath);
-        while (matcher.find()) {
-            paths.add(matcher.group());
-        }
-        return paths;
+    private String[] getPath(String attributePath) {
+        return attributePath.split(DELIMITER);
     }
 }
