@@ -20,7 +20,6 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultArgumentParser;
@@ -76,12 +75,6 @@ public final class Extractors {
      */
     private static Object getTargetObject(InternalSerializationService serializationService, Object target) {
         Data targetData;
-        if (target instanceof Portable) {
-            targetData = serializationService.toData(target);
-            if (targetData.isPortable()) {
-                return targetData;
-            }
-        }
 
         if (target instanceof Data) {
             targetData = (Data) target;

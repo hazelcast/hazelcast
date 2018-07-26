@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
@@ -108,11 +107,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
                     targetObject = getValue();
                 }
             } else {
-                if (valueObject instanceof Portable) {
-                    targetObject = getValueData();
-                } else {
-                    targetObject = getValue();
-                }
+                targetObject = getValue();
             }
         }
         return targetObject;
