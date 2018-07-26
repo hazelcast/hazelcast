@@ -16,13 +16,11 @@
 
 package com.hazelcast.internal.management;
 
-import javax.servlet.ServletException;
+import com.hazelcast.internal.json.JsonObject;
+
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.hazelcast.internal.json.JsonObject;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 
@@ -32,32 +30,34 @@ public class MancenterServlet extends HttpServlet {
     private volatile String clusterName = "";
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (req.getPathInfo().contains("memberStateCheck")) {
             if (memberState != null) {
                 resp.getWriter().write(memberState.toJson().toString());
             } else {
                 resp.getWriter().write("");
             }
-        } else if (req.getPathInfo().contains("getTask.do")) {
-            clusterName = req.getParameter("cluster");
-            resp.getWriter().write("{}");
         } else if (req.getPathInfo().contains("getClusterName")) {
             resp.getWriter().write(clusterName);
         }
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        BufferedReader br = req.getReader();
-        StringBuilder sb = new StringBuilder();
-        String str;
-        while ((str = br.readLine()) != null) {
-            sb.append(str);
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (req.getPathInfo().contains("getTask.do")) {
+            clusterName = req.getParameter("cluster");
+            resp.getWriter().write("{}");
+        } else if (req.getPathInfo().contains("collector.do")) {
+            BufferedReader br = req.getReader();
+            StringBuilder sb = new StringBuilder();
+            String str;
+            while ((str = br.readLine()) != null) {
+                sb.append(str);
+            }
+            final String json = sb.toString();
+            final JsonObject object = JsonObject.readFrom(json);
+            process(object);
         }
-        final String json = sb.toString();
-        final JsonObject object = JsonObject.readFrom(json);
-        process(object);
     }
 
     public void process(JsonObject json) {
