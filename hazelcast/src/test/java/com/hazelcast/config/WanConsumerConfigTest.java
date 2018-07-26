@@ -45,6 +45,7 @@ public class WanConsumerConfigTest {
         config.setProperties(properties);
         config.setClassName("className");
         config.setImplementation("implementation");
+        config.setPersistWanReplicatedData(false);
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         Data serialized = serializationService.toData(config);
@@ -60,6 +61,7 @@ public class WanConsumerConfigTest {
         assertEquals(expected.getProperties(), actual.getProperties());
         assertEquals(expected.getClassName(), actual.getClassName());
         assertEquals(expected.getImplementation(), actual.getImplementation());
+        assertEquals(expected.isPersistWanReplicatedData(), actual.isPersistWanReplicatedData());
         assertEquals(expected.toString(), actual.toString());
     }
 }

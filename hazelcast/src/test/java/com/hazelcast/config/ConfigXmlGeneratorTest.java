@@ -1123,7 +1123,14 @@ public class ConfigXmlGeneratorTest {
                 .setAwsConfig(getDummyAwsConfig())
                 .setInitialPublisherState(WanPublisherState.STOPPED)
                 .setDiscoveryConfig(getDummyDiscoveryConfig());
-        wanConfig.setWanPublisherConfigs(Collections.singletonList(publisherConfig));
+        WanConsumerConfig wanConsumerConfig = new WanConsumerConfig()
+                .setClassName("dummyClass")
+                .setProperties(props)
+                .setPersistWanReplicatedData(false);
+
+        wanConfig
+                .setWanConsumerConfig(wanConsumerConfig)
+                .setWanPublisherConfigs(Collections.singletonList(publisherConfig));
 
         Config config = new Config().addWanReplicationConfig(wanConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);

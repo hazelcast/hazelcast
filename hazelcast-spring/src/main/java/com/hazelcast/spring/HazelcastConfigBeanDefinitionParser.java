@@ -1290,8 +1290,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     consumerConfigBuilder.addPropertyValue("persistWanReplicatedData", persistWanReplicatedData);
 
-                    isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation'"
-                            + " attributes is required to create WanConsumerConfig!");
                     for (Node child : childElements(n)) {
                         String nodeName = cleanNodeName(child);
                         if ("properties".equals(nodeName)) {

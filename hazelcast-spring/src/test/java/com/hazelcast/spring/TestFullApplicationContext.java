@@ -292,7 +292,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(26, config.getMapConfigs().size());
+        assertEquals(27, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -425,6 +425,17 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapWithPartitionStrategyConfig = config.getMapConfig("mapWithPartitionStrategy");
         assertEquals("com.hazelcast.spring.DummyPartitionStrategy",
                 testMapWithPartitionStrategyConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
+    }
+
+    @Test
+    public void testMapNoWanMergePolicy() {
+        MapConfig testMapConfig2 = config.getMapConfig("testMap2");
+
+
+        // test testMapConfig2's WanReplicationConfig
+        WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
+        assertEquals("testWan", wanReplicationRef.getName());
+        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicy());
     }
 
     @Test
@@ -943,12 +954,20 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         Map<String, Comparable> consumerProps = consumerConfig.getProperties();
         assertEquals("prop.consumer", consumerProps.get("custom.prop.consumer"));
         assertTrue(consumerConfig.isPersistWanReplicatedData());
+    }
 
+    @Test
+    public void testWanConsumerWithPersistDataFalse() {
         WanReplicationConfig config2 = config.getWanReplicationConfig("testWan2");
         WanConsumerConfig consumerConfig2 = config2.getWanConsumerConfig();
-        consumerConfig2.setProperties(consumerProps);
         assertInstanceOf(DummyWanConsumer.class, consumerConfig2.getImplementation());
-        assertEquals("prop.consumer", consumerConfig2.getProperties().get("custom.prop.consumer"));
+        assertFalse(consumerConfig2.isPersistWanReplicatedData());
+    }
+
+    @Test
+    public void testNoWanConsumerClass() {
+        WanReplicationConfig config2 = config.getWanReplicationConfig("testWan3");
+        WanConsumerConfig consumerConfig2 = config2.getWanConsumerConfig();
         assertFalse(consumerConfig2.isPersistWanReplicatedData());
     }
 
