@@ -20,15 +20,11 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
-import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordInfo;
-import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
@@ -112,10 +108,9 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         return true;
     }
 
-    public Operation getBackupOperation() {
-        final Record record = recordStore.getRecord(dataKey);
-        final RecordInfo replicationInfo = record != null ? Records.buildRecordInfo(record) : null;
-        return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, true, false);
+    @Override
+    protected boolean shouldUnlockKeyOnBackup() {
+        return true;
     }
 
     public void onWaitExpire() {
