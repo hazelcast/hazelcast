@@ -13,7 +13,7 @@ numbers in the square brackets refer to the issues in Hazelcast's GitHub reposit
 
 - Fixed inconsistencies in `mapEventJournal` calls coming from `DefaultRecordStore`. [#13470]
 - Fixed index data loss after rolling upgrade: when a rolling update of an application is performed; first instance is turned off, updated and after it is done, the second instance takes place. After such a rolling update (without the downtime) some of the data was lost. It turned out that after the Split-Brain merge process, the index gets corrupted. [#13456]
-- Changed repartitioning mechanism so that it is trigged only when needed during the change of cluster state. [#13446]
+- Changed repartitioning mechanism so that it is triggered only when needed during the change of cluster state. [#13446]
 - Made attribute extractor to use User Code Deployment for searching extractor implementation. [#13400]
 
 
