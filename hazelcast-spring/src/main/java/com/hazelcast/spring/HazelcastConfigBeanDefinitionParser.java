@@ -1298,7 +1298,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("discovery-strategies".equals(nodeName)) {
                     handleDiscoveryStrategies(child, publisherBuilder);
                 } else if ("wan-sync".equals(nodeName)) {
-                    createAndFillBeanBuilder(child, WanSyncConfig.class, "wanSync", publisherBuilder);
+                    createAndFillBeanBuilder(child, WanSyncConfig.class, "wanSyncConfig", publisherBuilder);
                 }
             }
             return childBeanDefinition;
