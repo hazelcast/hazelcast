@@ -101,7 +101,7 @@ public class VectorClock implements IdentifiedDataSerializable {
             }
         }
         // there is at least one local timestamp greater or local vector clock has additional timestamps
-        return anyTimestampGreater || !other.replicaTimestamps.keySet().containsAll(replicaTimestamps.keySet());
+        return anyTimestampGreater || other.replicaTimestamps.size() < replicaTimestamps.size();
     }
 
     /**
