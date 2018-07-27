@@ -994,7 +994,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("tokyo", publisherConfig.getGroupName());
         assertEquals("PublisherClassName", publisherConfig.getClassName());
 
-        final WanSyncConfig wanSyncConfig = publisherConfig.getWanSync();
+        final WanSyncConfig wanSyncConfig = publisherConfig.getWanSyncConfig();
         assertNotNull(wanSyncConfig);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, wanSyncConfig.getConsistencyCheckStrategy());
         assertEquals(12345, wanSyncConfig.getConsistencyCheckPeriodMillis());

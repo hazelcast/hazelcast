@@ -689,7 +689,7 @@ public class ConfigXmlGenerator {
            .node("initial-publisher-state", p.getInitialPublisherState())
            .node("queue-capacity", p.getQueueCapacity())
            .appendProperties(p.getProperties());
-        wanReplicationSyncGenerator(gen, p.getWanSync());
+        wanReplicationSyncGenerator(gen, p.getWanSyncConfig());
         awsConfigXmlGenerator(gen, p.getAwsConfig());
         discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
         gen.close();

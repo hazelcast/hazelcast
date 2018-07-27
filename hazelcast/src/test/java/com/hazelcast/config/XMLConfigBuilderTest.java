@@ -1203,8 +1203,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
         WanPublisherConfig publisherConfig = publishers.get(0);
-        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSync().getConsistencyCheckStrategy());
-        assertEquals(12345, publisherConfig.getWanSync().getConsistencyCheckPeriodMillis());
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
+                                                                           .getConsistencyCheckStrategy());
+        assertEquals(12345, publisherConfig.getWanSyncConfig()
+                                           .getConsistencyCheckPeriodMillis());
     }
 
     @Test

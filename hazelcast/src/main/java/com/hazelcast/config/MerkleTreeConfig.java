@@ -49,9 +49,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * large tree depths if the latency of the comparison operation is high.
  * The default depth is {@value DEFAULT_DEPTH}.
  * <p>
- * This configuration is not tied to a specific data structure and can be
- * reused.
- * <p>
  * See https://en.wikipedia.org/wiki/Merkle_tree.
  *
  * @since 3.11

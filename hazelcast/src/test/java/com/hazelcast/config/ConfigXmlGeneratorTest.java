@@ -1124,7 +1124,7 @@ public class ConfigXmlGeneratorTest {
                 .setAwsConfig(getDummyAwsConfig())
                 .setInitialPublisherState(WanPublisherState.STOPPED)
                 .setDiscoveryConfig(getDummyDiscoveryConfig());
-        publisherConfig.getWanSync()
+        publisherConfig.getWanSyncConfig()
                        .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES)
                        .setConsistencyCheckPeriodMillis(12345);
         WanConsumerConfig wanConsumerConfig = new WanConsumerConfig()

@@ -1055,7 +1055,7 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getInitialPublisherState(), c2.getInitialPublisherState())
                     && new AwsConfigChecker().check(c1.getAwsConfig(), c2.getAwsConfig())
                     && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig())
-                    && new WanSyncConfigChecker().check(c1.getWanSync(), c2.getWanSync())
+                    && new WanSyncConfigChecker().check(c1.getWanSyncConfig(), c2.getWanSyncConfig())
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())
                     && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
                     && nullSafeEqual(c1.getProperties(), c2.getProperties());

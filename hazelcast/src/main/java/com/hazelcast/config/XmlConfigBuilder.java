@@ -676,7 +676,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         } else if ("discovery-strategies".equals(targetChildName)) {
             handleDiscoveryStrategies(publisherConfig.getDiscoveryConfig(), targetChild);
         } else if ("wan-sync".equals(targetChildName)) {
-            handleWanSync(publisherConfig.getWanSync(), targetChild);
+            handleWanSync(publisherConfig.getWanSyncConfig(), targetChild);
         }
     }
 

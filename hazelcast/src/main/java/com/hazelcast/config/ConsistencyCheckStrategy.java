@@ -33,6 +33,7 @@ public enum ConsistencyCheckStrategy {
      */
     MERKLE_TREES((byte) 1);
 
+    private static final ConsistencyCheckStrategy[] VALUES = values();
     private final byte id;
 
     ConsistencyCheckStrategy(byte id) {
@@ -58,7 +59,7 @@ public enum ConsistencyCheckStrategy {
      * @throws IllegalArgumentException if no ConsistencyCheckStrategy was found
      */
     public static ConsistencyCheckStrategy getById(byte id) {
-        for (ConsistencyCheckStrategy type : values()) {
+        for (ConsistencyCheckStrategy type : VALUES) {
             if (type.id == id) {
                 return type;
             }
