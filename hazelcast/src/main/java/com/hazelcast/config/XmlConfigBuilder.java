@@ -85,6 +85,7 @@ import static com.hazelcast.config.XmlElements.LOCK;
 import static com.hazelcast.config.XmlElements.MANAGEMENT_CENTER;
 import static com.hazelcast.config.XmlElements.MAP;
 import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
+import static com.hazelcast.config.XmlElements.MERKLE_TREE;
 import static com.hazelcast.config.XmlElements.MULTIMAP;
 import static com.hazelcast.config.XmlElements.NATIVE_MEMORY;
 import static com.hazelcast.config.XmlElements.NETWORK;
@@ -327,6 +328,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleScheduledExecutor(node);
         } else if (EVENT_JOURNAL.isEqual(nodeName)) {
             handleEventJournal(node);
+        } else if (MERKLE_TREE.isEqual(nodeName)) {
+            handleMerkleTree(node);
         } else if (SERVICES.isEqual(nodeName)) {
             handleServices(node);
         } else if (QUEUE.isEqual(nodeName)) {
@@ -672,6 +675,22 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleAWS(publisherConfig.getAwsConfig(), targetChild);
         } else if ("discovery-strategies".equals(targetChildName)) {
             handleDiscoveryStrategies(publisherConfig.getDiscoveryConfig(), targetChild);
+        } else if ("wan-sync".equals(targetChildName)) {
+            handleWanSync(publisherConfig.getWanSyncConfig(), targetChild);
+        }
+    }
+
+    private void handleWanSync(WanSyncConfig wanSyncConfig, Node node) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("consistency-check-strategy".equals(nodeName)) {
+                String strategy = getTextContent(child);
+                wanSyncConfig.setConsistencyCheckStrategy(
+                        ConsistencyCheckStrategy.valueOf(upperCaseInternal(strategy)));
+            } else if ("consistency-check-period-millis".equalsIgnoreCase(nodeName)) {
+                wanSyncConfig.setConsistencyCheckPeriodMillis(getLongValue("consistency-check-period-millis", value));
+            }
         }
     }
 
@@ -2137,6 +2156,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         EventJournalConfig journalConfig = new EventJournalConfig();
         handleViaReflection(node, config, journalConfig);
         config.addEventJournalConfig(journalConfig);
+    }
+
+    private void handleMerkleTree(Node node) throws Exception {
+        MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
+        handleViaReflection(node, config, merkleTreeConfig);
+        config.addMerkleTreeConfig(merkleTreeConfig);
     }
 
     private void handleRingbuffer(Node node) {

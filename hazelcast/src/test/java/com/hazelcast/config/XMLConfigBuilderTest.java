@@ -55,6 +55,7 @@ import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
+import static com.hazelcast.config.WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
@@ -1126,6 +1127,89 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testWanReplicationConfig() {
+        String configName  = "test";
+        String xml = HAZELCAST_START_TAG
+                + "  <wan-replication name=\"" + configName + "\">\n"
+                + "        <wan-publisher group-name=\"nyc\">\n"
+                + "            <class-name>PublisherClassName</class-name>\n"
+                + "            <queue-capacity>15000</queue-capacity>\n"
+                + "            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>\n"
+                + "            <initial-publisher-state>STOPPED</initial-publisher-state>\n"
+                + "            <properties>\n"
+                + "                <property name=\"propName1\">propValue1</property>\n"
+                + "            </properties>\n"
+                + "        </wan-publisher>\n"
+                + "        <wan-consumer>\n"
+                + "            <class-name>ConsumerClassName</class-name>\n"
+                + "            <properties>\n"
+                + "                <property name=\"propName1\">propValue1</property>\n"
+                + "            </properties>\n"
+                + "        </wan-consumer>\n"
+                + "    </wan-replication>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(configName);
+
+        assertEquals(configName, wanReplicationConfig.getName());
+
+        WanConsumerConfig consumerConfig = wanReplicationConfig.getWanConsumerConfig();
+        assertNotNull(consumerConfig);
+        assertEquals("ConsumerClassName", consumerConfig.getClassName());
+
+        Map<String, Comparable> properties = consumerConfig.getProperties();
+        assertNotNull(properties);
+        assertEquals(1, properties.size());
+        assertEquals("propValue1", properties.get("propName1"));
+
+        List<WanPublisherConfig> publishers = wanReplicationConfig.getWanPublisherConfigs();
+        assertNotNull(publishers);
+        assertEquals(1, publishers.size());
+        WanPublisherConfig publisherConfig = publishers.get(0);
+        assertEquals("PublisherClassName", publisherConfig.getClassName());
+        assertEquals("nyc", publisherConfig.getGroupName());
+        assertEquals(15000, publisherConfig.getQueueCapacity());
+        assertEquals(DISCARD_AFTER_MUTATION, publisherConfig.getQueueFullBehavior());
+        assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
+
+        properties = publisherConfig.getProperties();
+        assertNotNull(properties);
+        assertEquals(1, properties.size());
+        assertEquals("propValue1", properties.get("propName1"));
+    }
+
+    @Test
+    public void testWanReplicationSyncConfig() {
+        String configName  = "test";
+        String xml = HAZELCAST_START_TAG
+                + "  <wan-replication name=\"" + configName + "\">\n"
+                + "        <wan-publisher group-name=\"nyc\">\n"
+                + "            <class-name>PublisherClassName</class-name>\n"
+                + "            <wan-sync>\n"
+                + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
+                + "                <consistency-check-period-millis>12345</consistency-check-period-millis>\n"
+                + "            </wan-sync>\n"
+                + "        </wan-publisher>\n"
+                + "    </wan-replication>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(configName);
+
+        assertEquals(configName, wanReplicationConfig.getName());
+
+        List<WanPublisherConfig> publishers = wanReplicationConfig.getWanPublisherConfigs();
+        assertNotNull(publishers);
+        assertEquals(1, publishers.size());
+        WanPublisherConfig publisherConfig = publishers.get(0);
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
+                                                                           .getConsistencyCheckStrategy());
+        assertEquals(12345, publisherConfig.getWanSyncConfig()
+                                           .getConsistencyCheckPeriodMillis());
+    }
+
+    @Test
     public void testMapEventJournalConfig() {
         String journalName = "mapName";
         String xml = HAZELCAST_START_TAG
@@ -1142,6 +1226,23 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(journalConfig.isEnabled());
         assertEquals(120, journalConfig.getCapacity());
         assertEquals(20, journalConfig.getTimeToLiveSeconds());
+    }
+
+    @Test
+    public void testMapMerkleTreeConfig() {
+        String mapName = "mapName";
+        String xml = HAZELCAST_START_TAG
+                + "<merkle-tree enabled=\"true\">\n"
+                + "    <mapName>" + mapName + "</mapName>\n"
+                + "    <depth>20</depth>\n"
+                + "</merkle-tree>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MerkleTreeConfig treeConfig = config.getMapMerkleTreeConfig(mapName);
+
+        assertTrue(treeConfig.isEnabled());
+        assertEquals(20, treeConfig.getDepth());
     }
 
     @Test

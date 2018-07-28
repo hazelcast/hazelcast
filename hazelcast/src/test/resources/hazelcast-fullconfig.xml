@@ -63,6 +63,10 @@
             <queue-capacity>1000</queue-capacity>
             <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
             <initial-publisher-state>REPLICATING</initial-publisher-state>
+            <wan-sync>
+                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
+                <consistency-check-period-millis>10000</consistency-check-period-millis>
+            </wan-sync>
             <properties>
                 <property name="batch.size">50</property>
                 <property name="batch.max.delay.millis">3000</property>
@@ -808,4 +812,9 @@
         <quorum-type>READ_WRITE</quorum-type>
         <recently-active-quorum heartbeat-tolerance-millis="60000" />
     </quorum>
+
+    <merkle-tree enabled="true">
+        <mapName>default</mapName>
+        <depth>5</depth>
+    </merkle-tree>
 </hazelcast>

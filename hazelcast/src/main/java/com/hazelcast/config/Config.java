@@ -121,6 +121,8 @@ public class Config {
 
     private final Map<String, EventJournalConfig> cacheEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
 
+    private final Map<String, MerkleTreeConfig> mapMerkleTreeConfigs = new ConcurrentHashMap<String, MerkleTreeConfig>();
+
     private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
@@ -380,7 +382,7 @@ public class Config {
      * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      * For non-default configurations and on-heap maps, it will also
-     * initialise the the Near Cache eviction if not previously set.
+     * initialise the Near Cache eviction if not previously set.
      *
      * @param name name of the map config
      * @return the map configuration
@@ -421,7 +423,7 @@ public class Config {
      * Returns the MapConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -549,7 +551,7 @@ public class Config {
      * Returns the CacheSimpleConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -661,7 +663,7 @@ public class Config {
      * Returns the QueueConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -773,7 +775,7 @@ public class Config {
      * Returns the LockConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -885,7 +887,7 @@ public class Config {
      * Returns the ListConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -997,7 +999,7 @@ public class Config {
      * Returns the SetConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -1109,7 +1111,7 @@ public class Config {
      * Returns the MultiMapConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -1221,7 +1223,7 @@ public class Config {
      * Returns the ReplicatedMapConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -1334,7 +1336,7 @@ public class Config {
      * Returns the RingbufferConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -1443,7 +1445,7 @@ public class Config {
      * Returns the AtomicLongConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -1551,7 +1553,7 @@ public class Config {
      * Returns the AtomicReferenceConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -1659,7 +1661,7 @@ public class Config {
      * Returns the CountDownLatchConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -1769,7 +1771,7 @@ public class Config {
      * Returns the TopicConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -1852,7 +1854,7 @@ public class Config {
      * Returns the ReliableTopicConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -2092,7 +2094,7 @@ public class Config {
      * Returns the ExecutorConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -2137,7 +2139,7 @@ public class Config {
      * Returns the DurableExecutorConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -2183,7 +2185,7 @@ public class Config {
      * Returns the ScheduledExecutorConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -2229,7 +2231,7 @@ public class Config {
      * Returns the CardinalityEstimatorConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -2275,7 +2277,7 @@ public class Config {
      * Returns the {@link PNCounterConfig} for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -2554,7 +2556,7 @@ public class Config {
      * Returns the SemaphoreConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -2724,7 +2726,7 @@ public class Config {
      * Returns the JobTrackerConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -2822,7 +2824,7 @@ public class Config {
      * Returns the QuorumConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -3081,7 +3083,7 @@ public class Config {
      * Returns the map event journal config for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -3127,7 +3129,7 @@ public class Config {
      * Returns the cache event journal config for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -3175,7 +3177,7 @@ public class Config {
      * means the configuration applies to maps and a non-empty value for
      * {@link EventJournalConfig#getCacheName()} means the configuration
      * applies to caches.
-     * The returned name may be a may be a pattern with which the configuration
+     * The returned name may be a pattern with which the configuration
      * will be obtained in the future.
      *
      * @param eventJournalConfig the event journal configuration
@@ -3197,6 +3199,95 @@ public class Config {
         if (!StringUtil.isNullOrEmpty(cacheName)) {
             cacheEventJournalConfigs.put(cacheName, eventJournalConfig);
         }
+        return this;
+    }
+
+    /**
+     * Returns a read-only map {@link MerkleTreeConfig} for the given name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code default}.
+     *
+     * @param name name of the map merkle tree config
+     * @return the map merkle tree configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public MerkleTreeConfig findMapMerkleTreeConfig(String name) {
+        name = getBaseName(name);
+        final MerkleTreeConfig config = lookupByPattern(configPatternMatcher, mapMerkleTreeConfigs, name);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getMapMerkleTreeConfig("default").getAsReadOnly();
+    }
+
+    /**
+     * Returns the map merkle tree config for the given name, creating one
+     * if necessary and adding it to the collection of known configurations.
+     * <p>
+     * The configuration is found by matching the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
+     * If no configuration matches, it will create one by cloning the
+     * {@code "default"} configuration and add it to the configuration
+     * collection.
+     * <p>
+     * If there is no default config as well, it will create one and disable
+     * the merkle tree by default.
+     * This method is intended to easily and fluently create and add
+     * configurations more specific than the default configuration without
+     * explicitly adding it by invoking
+     * {@link #addMerkleTreeConfig(MerkleTreeConfig)}.
+     * <p>
+     * Because it adds new configurations if they are not already present,
+     * this method is intended to be used before this config is used to
+     * create a hazelcast instance. Afterwards, newly added configurations
+     * may be ignored.
+     *
+     * @param name name of the map merkle tree config
+     * @return the map merkle tree configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public MerkleTreeConfig getMapMerkleTreeConfig(String name) {
+        name = getBaseName(name);
+        MerkleTreeConfig config = lookupByPattern(configPatternMatcher, mapMerkleTreeConfigs, name);
+        if (config != null) {
+            return config;
+        }
+        MerkleTreeConfig defConfig = mapMerkleTreeConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new MerkleTreeConfig().setMapName("default").setEnabled(false);
+            addMerkleTreeConfig(defConfig);
+        }
+        config = new MerkleTreeConfig(defConfig).setMapName(name);
+        addMerkleTreeConfig(config);
+        return config;
+    }
+
+    /**
+     * Adds the merkle tree configuration.
+     * The returned {@link MerkleTreeConfig#getMapName()} may be a
+     * pattern with which the configuration will be obtained in the future.
+     *
+     * @param merkleTreeConfig the merkle tree configuration
+     * @return this config instance
+     * @throws IllegalArgumentException if the {@link MerkleTreeConfig#getMapName()}
+     *                                  is empty
+     */
+    public Config addMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
+        final String mapName = merkleTreeConfig.getMapName();
+        if (StringUtil.isNullOrEmpty(mapName)) {
+            throw new IllegalArgumentException("Merkle tree config must define a map name");
+        }
+        mapMerkleTreeConfigs.put(mapName, merkleTreeConfig);
         return this;
     }
 
@@ -3239,7 +3330,7 @@ public class Config {
      * Returns the {@link FlakeIdGeneratorConfig} for the given name, creating
      * one if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the
@@ -3361,6 +3452,34 @@ public class Config {
         this.cacheEventJournalConfigs.putAll(eventJournalConfigs);
         for (Entry<String, EventJournalConfig> entry : eventJournalConfigs.entrySet()) {
             entry.getValue().setCacheName(entry.getKey());
+        }
+        return this;
+    }
+
+    /**
+     * Returns the map of map merkle tree configurations, mapped by config
+     * name. The config name may be a pattern with which the configuration was
+     * initially obtained.
+     *
+     * @return the map merkle tree configurations mapped by config name
+     */
+    public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
+        return mapMerkleTreeConfigs;
+    }
+
+    /**
+     * Sets the map of map merkle configurations, mapped by config name.
+     * The config name may be a pattern with which the configuration will be
+     * obtained in the future.
+     *
+     * @param merkleTreeConfigs the map merkle tree configuration map to set
+     * @return this config instance
+     */
+    public Config setMapMerkleTreeConfigs(Map<String, MerkleTreeConfig> merkleTreeConfigs) {
+        this.mapMerkleTreeConfigs.clear();
+        this.mapMerkleTreeConfigs.putAll(merkleTreeConfigs);
+        for (Entry<String, MerkleTreeConfig> entry : merkleTreeConfigs.entrySet()) {
+            entry.getValue().setMapName(entry.getKey());
         }
         return this;
     }

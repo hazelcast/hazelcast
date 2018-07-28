@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.EventJournalConfigChecker;
+import com.hazelcast.config.ConfigCompatibilityChecker.MapMerkleTreeConfigChecker;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.quorum.QuorumType;
@@ -1123,6 +1124,9 @@ public class ConfigXmlGeneratorTest {
                 .setAwsConfig(getDummyAwsConfig())
                 .setInitialPublisherState(WanPublisherState.STOPPED)
                 .setDiscoveryConfig(getDummyDiscoveryConfig());
+        publisherConfig.getWanSyncConfig()
+                       .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES)
+                       .setConsistencyCheckPeriodMillis(12345);
         WanConsumerConfig wanConsumerConfig = new WanConsumerConfig()
                 .setClassName("dummyClass")
                 .setProperties(props)
@@ -1135,7 +1139,24 @@ public class ConfigXmlGeneratorTest {
         Config config = new Config().addWanReplicationConfig(wanConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
-        ConfigCompatibilityChecker.checkWanConfigs(config.getWanReplicationConfigs(), xmlConfig.getWanReplicationConfigs());
+        ConfigCompatibilityChecker.checkWanConfigs(
+                config.getWanReplicationConfigs(),
+                xmlConfig.getWanReplicationConfigs());
+    }
+
+    @Test
+    public void testMapMerkleTree() {
+        String mapName = "mapName";
+        MerkleTreeConfig expectedConfig = new MerkleTreeConfig()
+                .setMapName(mapName)
+                .setEnabled(true)
+                .setDepth(10);
+        Config config = new Config().addMerkleTreeConfig(expectedConfig);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        MerkleTreeConfig actualConfig = xmlConfig.getMapMerkleTreeConfig(mapName);
+        assertTrue(new MapMerkleTreeConfigChecker().check(expectedConfig, actualConfig));
+        assertEquals(expectedConfig, actualConfig);
     }
 
     @Test
