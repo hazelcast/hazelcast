@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -213,8 +214,9 @@ public class LegacyCacheSplitBrainTest extends SplitBrainTestSupport {
         assertEquals(1, cache2.get("key"));
     }
 
-    private static Cache createCache(HazelcastInstance hazelcastInstance, CacheConfig cacheConfig) {
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
+    private static Cache createCache(HazelcastInstance hz, CacheConfig cacheConfig) {
+        HazelcastInstanceImpl hazelcastInstanceImpl = getHazelcastInstanceImpl(hz);
+        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstanceImpl);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         return cacheManager.createCache(cacheConfig.getName(), cacheConfig);
     }

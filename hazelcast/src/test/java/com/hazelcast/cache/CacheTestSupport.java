@@ -22,7 +22,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -115,7 +117,8 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
     }
 
     protected CachingProvider getCachingProvider(HazelcastInstance instance) {
-        return HazelcastServerCachingProvider.createCachingProvider(instance);
+        HazelcastInstanceImpl hazelcastInstanceImpl = TestUtil.getHazelcastInstanceImpl(instance);
+        return HazelcastServerCachingProvider.createCachingProvider(hazelcastInstanceImpl);
     }
 
     protected int getMaxCacheSizeWithoutEviction(CacheConfig cacheConfig) {
