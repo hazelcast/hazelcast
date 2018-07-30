@@ -24,6 +24,7 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -37,6 +38,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.spi.CachingProvider;
 import java.util.Map;
 
+import static com.hazelcast.test.HazelcastTestSupport.getHazelcastInstanceImpl;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static com.hazelcast.test.TestTaskExecutorUtil.runOnPartitionThread;
@@ -68,7 +70,8 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
             }
 
             HazelcastInstance hz = getInstanceWithAddress(replicaAddress);
-            CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hz);
+            HazelcastInstanceImpl hazelcastInstanceImpl = getHazelcastInstanceImpl(hz);
+            CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstanceImpl);
             HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
 
             NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
@@ -111,7 +114,8 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
     }
 
     private static String getCacheNameWithPrefix(HazelcastInstance hz, String cacheName) {
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hz);
+        HazelcastInstanceImpl hazelcastInstanceImpl = getHazelcastInstanceImpl(hz);
+        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstanceImpl);
         HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
         return cacheManager.getCacheNameWithPrefix(cacheName);
     }
