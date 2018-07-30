@@ -20,22 +20,23 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.starter.constructor.ConfigConstructor;
+import com.hazelcast.test.starter.constructor.DynamicConfigurationAwareConfigConstructor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Properties;
-
 import static com.hazelcast.test.HazelcastTestSupport.assertPropertiesEquals;
+import static com.hazelcast.test.starter.constructor.test.ConfigConstructorTest.buildPropertiesWithDefaults;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ConfigConstructorTest {
+public class DynamicConfigurationAwareConfigConstructorTest {
 
     @Test
     public void testConstructor() {
@@ -46,23 +47,19 @@ public class ConfigConstructorTest {
                 .addListenerConfig(new ListenerConfig("com.hazelcast.test.MyListenerConfig"))
                 .setProperties(buildPropertiesWithDefaults());
 
-        ConfigConstructor constructor = new ConfigConstructor(Config.class);
-        Config clonedConfig = (Config) constructor.createNew(config);
+        HazelcastProperties properties = new HazelcastProperties(config);
 
-        assertEquals(config.getInstanceName(), clonedConfig.getInstanceName());
-        assertEquals(config.getMapConfigs().size(), clonedConfig.getMapConfigs().size());
-        assertEquals(config.getListConfigs().size(), clonedConfig.getListConfigs().size());
-        assertEquals(config.getListenerConfigs().size(), clonedConfig.getListenerConfigs().size());
-        assertPropertiesEquals(config.getProperties(), clonedConfig.getProperties());
-    }
+        DynamicConfigurationAwareConfig dynamicConfig = new DynamicConfigurationAwareConfig(config, properties);
 
-    static Properties buildPropertiesWithDefaults() {
-        Properties defaults = new Properties();
-        defaults.setProperty("key1", "value1");
+        DynamicConfigurationAwareConfigConstructor constructor
+                = new DynamicConfigurationAwareConfigConstructor(DynamicConfigurationAwareConfig.class);
+        DynamicConfigurationAwareConfig clonedDynamicConfig
+                = (DynamicConfigurationAwareConfig) constructor.createNew(dynamicConfig);
 
-        Properties configProperties = new Properties(defaults);
-        configProperties.setProperty("key2", "value2");
-
-        return configProperties;
+        assertEquals(dynamicConfig.getInstanceName(), clonedDynamicConfig.getInstanceName());
+        assertEquals(dynamicConfig.getMapConfigs().size(), clonedDynamicConfig.getMapConfigs().size());
+        assertEquals(dynamicConfig.getListConfigs().size(), clonedDynamicConfig.getListConfigs().size());
+        assertEquals(dynamicConfig.getListenerConfigs().size(), clonedDynamicConfig.getListenerConfigs().size());
+        assertPropertiesEquals(dynamicConfig.getProperties(), clonedDynamicConfig.getProperties());
     }
 }
