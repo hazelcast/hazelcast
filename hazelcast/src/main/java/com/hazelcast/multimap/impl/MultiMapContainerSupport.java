@@ -18,6 +18,7 @@ package com.hazelcast.multimap.impl;
 
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
 import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -98,17 +99,17 @@ abstract class MultiMapContainerSupport {
 
     public boolean addValue(Data dataKey, MultiMapRecord value, int index) {
         MultiMapValue multiMapValue = getOrCreateMultiMapValue(dataKey);
-        boolean added;
         if (index < 0) {
-            added = multiMapValue.getCollection(false).add(value);
+            boolean added = multiMapValue.getCollection(false).add(value);
+            if (added) {
+                incSize(1);
+            }
+            return added;
         } else {
             ((List<MultiMapRecord>) multiMapValue.getCollection(false)).add(index, value);
-            added = true;
-        }
-        if (added) {
             incSize(1);
+            return true;
         }
-        return added;
     }
 
     public boolean removeValue(Data dataKey, long recordId) {
@@ -187,9 +188,8 @@ abstract class MultiMapContainerSupport {
         if (value != null) {
             decrSize(value.size());
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     public Collection<MultiMapRecord> remove(Data dataKey, boolean copyOf) {
@@ -197,9 +197,8 @@ abstract class MultiMapContainerSupport {
         if (multiMapValue != null) {
             decrSize(multiMapValue.size());
             return multiMapValue.getCollection(copyOf);
-        } else {
-            return null;
         }
+        return null;
     }
 
     public MultiMapConfig getConfig() {
