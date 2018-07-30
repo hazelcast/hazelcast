@@ -124,6 +124,52 @@ public class QueryRunner {
         return result;
     }
 
+    /**
+     * Performs the given query using indexes.
+     * <p>
+     * The method may return a special failure result, which has {@code null}
+     * {@link Result#getPartitionIds() partition IDs}, in the following
+     * situations:
+     * <ul>
+     * <li>If a partition migration is detected during the query execution.
+     * <li>If it's impossible to perform the given query using indexes.
+     * </ul>
+     * <p>
+     * The method may be invoked on any thread.
+     *
+     * @param query the query to perform.
+     * @return the result of the query; if the result has {@code null} {@link
+     * Result#getPartitionIds() partition IDs} this indicates a failure.
+     */
+    public Result runIndexQueryOnOwnedPartitions(Query query) {
+        int migrationStamp = getMigrationStamp();
+        Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
+
+        // to optimize the query we need to get any index instance
+        Indexes indexes = mapContainer.getIndexes();
+        if (indexes == null) {
+            indexes = mapContainer.getIndexes(initialPartitions.iterator().next());
+        }
+        // first we optimize the query
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
+
+        // then we try to run using an index
+        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer, migrationStamp);
+
+        Result result;
+        if (entries == null) {
+            // failed with index query because of ongoing migrations
+            result = populateEmptyResult(query, initialPartitions);
+        } else {
+            // success
+            result = populateResult(query, initialPartitions, entries);
+        }
+
+        updateStatistics(mapContainer);
+        return result;
+    }
+
     // MIGRATION UNSAFE QUERYING - MIGRATION STAMPS ARE NOT VALIDATED, so assumes a run on partition-thread
     // for a single partition. If the index is global it won't be asked
     public Result runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {

@@ -40,8 +40,10 @@ public abstract class PartitionAwareOperationFactory implements OperationFactory
      * this method can be used to create it. Otherwise, stateful factories may cause JMM problems.
      *
      * @param nodeEngine nodeEngine
+     * @param partitions the partitions provided to an operation which use this
+     *                   factory.
      */
-    public PartitionAwareOperationFactory createFactoryOnRunner(NodeEngine nodeEngine) {
+    public PartitionAwareOperationFactory createFactoryOnRunner(NodeEngine nodeEngine, int[] partitions) {
         return this;
     }
 
