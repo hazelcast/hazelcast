@@ -19,6 +19,7 @@ package com.hazelcast.test.starter.test;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.starter.ReflectionUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,6 +29,7 @@ import java.util.Map;
 
 import static com.hazelcast.test.starter.ReflectionUtils.getAllFieldsByName;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
+import static com.hazelcast.test.starter.ReflectionUtils.isInstanceOf;
 import static com.hazelcast.test.starter.ReflectionUtils.setFieldValueReflectively;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,6 +41,16 @@ import static org.junit.Assert.assertTrue;
 public class ReflectionUtilsTest {
 
     private ReflectionTestClass testClass = new ReflectionTestClass();
+
+    @Test
+    public void testGetClass() {
+        assertEquals(ReflectionTestClass.class, ReflectionUtils.getClass(testClass));
+    }
+
+    @Test
+    public void testIsInstanceOf() {
+        assertTrue("Expected testClass to be instanceOf ReflectionTestClass", isInstanceOf(testClass, ReflectionTestClass.class));
+    }
 
     @Test
     public void testGetFieldValueReflectively() throws Exception {
