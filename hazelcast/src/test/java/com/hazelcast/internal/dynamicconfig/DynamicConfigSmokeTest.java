@@ -223,7 +223,7 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
         config.addMapConfig(getMapConfigWithTTL(mapName, 20));
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        hz.getConfig().addMapConfig(getMapConfigWithTTL(mapName, 50));
+        hz.getConfig().addMapConfig(getMapConfigWithTTL(mapName, 20));
     }
 
     @Test(expected = HazelcastException.class)
@@ -233,7 +233,7 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
         config.addMapConfig(getMapConfigWithTTL(mapName, 20));
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        hz.getConfig().addMapConfig(getMapConfigWithTTL(mapName, 20));
+        hz.getConfig().addMapConfig(getMapConfigWithTTL(mapName, 50));
     }
 
     private MapConfig getMapConfigWithTTL(String mapName, int ttl) {
