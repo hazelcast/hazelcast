@@ -43,7 +43,9 @@ public class HazelcastVersionLocator {
     private static final String HAZELCAST_REPOSITORY_PREFIX;
 
     private static final String MEMBER_PATH = "/com/hazelcast/hazelcast/%1$s/hazelcast-%1$s.jar";
+    private static final String MEMBER_TESTS_PATH = "/com/hazelcast/hazelcast/%1$s/hazelcast-%1$s-tests.jar";
     private static final String EE_MEMBER_PATH = "/com/hazelcast/hazelcast-enterprise/%1$s/hazelcast-enterprise-%1$s.jar";
+    private static final String EE_MEMBER_TESTS_PATH = "/com/hazelcast/hazelcast-enterprise/%1$s/hazelcast-enterprise-%1$s-tests.jar";
     private static final String CLIENT_PATH = "/com/hazelcast/hazelcast-client/%1$s/hazelcast-client-%1$s.jar";
     private static final String EE_CLIENT_PATH
             = "/com/hazelcast/hazelcast-enterprise-client/%1$s/hazelcast-enterprise-client-%1$s.jar";
@@ -55,16 +57,15 @@ public class HazelcastVersionLocator {
     }
 
     public static File[] locateVersion(String version, File target, boolean enterprise) {
-        File[] files;
-        if (enterprise) {
-            files = new File[4];
-            files[2] = locateMember(version, target, true);
-            files[3] = locateClient(version, target, true);
-        } else {
-            files = new File[2];
-        }
+        File[] files = new File[enterprise ? 6 : 3];
         files[0] = locateMember(version, target, false);
-        files[1] = locateClient(version, target, false);
+        files[1] = locateMemberTests(version, target, false);
+        files[2] = locateClient(version, target, false);
+        if (enterprise) {
+            files[3] = locateMember(version, target, true);
+            files[4] = locateMemberTests(version, target, true);
+            files[5] = locateClient(version, target, true);
+        }
         return files;
     }
 
@@ -75,6 +76,16 @@ public class HazelcastVersionLocator {
             return artifact;
         } else {
             return downloadMember(version, target, enterprise);
+        }
+    }
+
+    // attempts to locate member tests artifact in local maven repository, then downloads
+    private static File locateMemberTests(String version, File target, boolean enterprise) {
+        File artifact = new File(LOCAL_M2_REPOSITORY_PREFIX + constructPathForMemberTests(version, enterprise));
+        if (artifact.exists()) {
+            return artifact;
+        } else {
+            return downloadMemberTests(version, target, enterprise);
         }
     }
 
@@ -97,6 +108,13 @@ public class HazelcastVersionLocator {
 
     private static File downloadMember(String version, File target, boolean enterprise) {
         String url = constructUrlForMember(version, enterprise);
+        String filename = extractFilenameFromUrl(url);
+        logWarningForArtifactDownload(version, true, enterprise);
+        return downloadFile(url, target, filename);
+    }
+
+    private static File downloadMemberTests(String version, File target, boolean enterprise) {
+        String url = constructUrlForMemberTests(version, enterprise);
         String filename = extractFilenameFromUrl(url);
         logWarningForArtifactDownload(version, true, enterprise);
         return downloadFile(url, target, filename);
@@ -147,12 +165,21 @@ public class HazelcastVersionLocator {
                 + constructPathForMember(version, enterprise);
     }
 
+    private static String constructUrlForMemberTests(String version, boolean enterprise) {
+        return (enterprise ? HAZELCAST_REPOSITORY_PREFIX : MAVEN_CENTRAL_PREFIX)
+                + constructPathForMemberTests(version, enterprise);
+    }
+
     private static String constructPathForClient(String version, boolean enterprise) {
         return format(enterprise ? EE_CLIENT_PATH : CLIENT_PATH, version);
     }
 
     private static String constructPathForMember(String version, boolean enterprise) {
         return format(enterprise ? EE_MEMBER_PATH : MEMBER_PATH, version);
+    }
+
+    private static String constructPathForMemberTests(String version, boolean enterprise) {
+        return format(enterprise ? EE_MEMBER_TESTS_PATH : MEMBER_TESTS_PATH, version);
     }
 
     private static void logWarningForArtifactDownload(String version, boolean member, boolean enterprise) {
