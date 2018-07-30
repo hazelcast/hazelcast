@@ -501,12 +501,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutJsonFromFromEntryProcessor() {
-        Config config = new Config();
-        String mapName = "map";
-        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
-        HazelcastInstance instance = createHazelcastInstance(config);
-        IMap<Integer, JsonValue> map = instance.getMap(mapName);
+    public void testPutJsonFromEntryProcessor() {
+        Config cfg = getConfig();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+        IMap<Integer, JsonValue> map = instance.getMap(MAP_NAME);
 
         map.executeOnKey(1, new JsonPutEntryProcessor());
 
