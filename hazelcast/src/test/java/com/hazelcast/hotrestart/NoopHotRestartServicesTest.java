@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -41,6 +42,7 @@ public class NoopHotRestartServicesTest {
         service.interruptLocalBackupTask();
         assertFalse(service.isHotBackupEnabled());
         assertEquals(new BackupTaskStatus(BackupTaskState.NO_TASK, 0, 0), service.getBackupTaskStatus());
+        assertNull(service.getBackupDirectory());
     }
 
     @Test
