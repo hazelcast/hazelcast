@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +44,11 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.instance.TestUtil.getNode;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
+import static com.hazelcast.test.starter.ReflectionUtils.getDelegateFromMock;
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
+import static java.lang.reflect.Proxy.isProxyClass;
 
 @SuppressWarnings("WeakerAccess")
 public final class TestPartitionUtils {
@@ -54,7 +60,21 @@ public final class TestPartitionUtils {
         try {
             Node node = getNode(instance);
             InternalPartitionService partitionService = node.getPartitionService();
-            return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
+            if (isProxyClass(instance.getClass())) {
+                try {
+                    // this is very ugly, but because of a direct field access to Node.nodeEngine in the MigrationManager
+                    // constructor, we cannot properly mock or proxy the PartitionReplicaStateChecker class
+                    Object delegate = getDelegateFromMock(partitionService);
+                    Object partitionReplicaStateChecker = getFieldValueReflectively(delegate, "partitionReplicaStateChecker");
+                    Method method = partitionReplicaStateChecker.getClass().getMethod("getPartitionServiceState");
+                    Object result = method.invoke(partitionReplicaStateChecker);
+                    return (PartitionServiceState) proxyObjectForStarter(TestPartitionUtils.class.getClassLoader(), result);
+                } catch (Exception e) {
+                    throw rethrowGuardianException(e);
+                }
+            } else {
+                return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
+            }
         } catch (IllegalArgumentException e) {
             return PartitionServiceState.SAFE;
         }

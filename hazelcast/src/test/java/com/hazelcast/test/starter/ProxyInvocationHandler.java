@@ -38,6 +38,10 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
         this.delegate = delegate;
     }
 
+    public Object getDelegate() {
+        return delegate;
+    }
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         debug("Proxy %s called. Method: %s", this, method);
@@ -49,7 +53,7 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
         Type delegateReturnType = methodDelegate.getGenericReturnType();
         ClassLoader delegateClassClassLoader = delegateClass.getClassLoader();
         Object[] newArgs = HazelcastProxyFactory.proxyArgumentsIfNeeded(args, delegateClassClassLoader);
-        Object delegateResult = invokeMethodDelegate(methodDelegate, newArgs);
+        Object delegateResult = invokeMethodDelegate(delegate, methodDelegate, newArgs);
         if (!shouldProxy(method, methodDelegate, delegateResult)) {
             return delegateResult;
         }
@@ -57,115 +61,50 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
         if (returnType instanceof ParameterizedType) {
             ParameterizedType parameterizedReturnType = (ParameterizedType) returnType;
             ParameterizedType parameterizedDelegateReturnType = (ParameterizedType) delegateReturnType;
-
             if (Collection.class.isAssignableFrom((Class) parameterizedDelegateReturnType.getRawType())) {
-                Collection result;
-                Collection delegateCollectionResult = (Collection) delegateResult;
-                // check if the raw types are equal: if yes, then return a collection of the same type
-                // otherwise proxy it
-                if (parameterizedDelegateReturnType.getRawType().equals(parameterizedReturnType.getRawType())) {
-                    result = delegateCollectionResult;
-                } else {
-                    result = (Collection) proxyReturnObject(targetClassLoader, delegateResult);
-                }
-
-                // if the parameter type is not equal, need to proxy it
-                Type returnParameterType = parameterizedReturnType.getActualTypeArguments()[0];
-                Type delegateParameterType = parameterizedDelegateReturnType.getActualTypeArguments()[0];
-                // if the type argument is equal, just return the result, otherwise proxy each item in the collection
-                if (returnParameterType.equals(delegateParameterType)) {
-                    return result;
-                } else {
-                    Collection temp = newCollectionFor((Class) parameterizedDelegateReturnType.getRawType());
-                    for (Object o : delegateCollectionResult) {
-                        temp.add(proxyReturnObject(targetClassLoader, o));
-                    }
-                    try {
-                        result.clear();
-                        result.addAll(temp);
-                        return result;
-                    } catch (UnsupportedOperationException e) {
-                        return temp;
-                    }
-                }
-            } else {
-                return proxyReturnObject(targetClassLoader, delegateResult);
+                return toCollection(targetClassLoader, delegateResult, parameterizedReturnType, parameterizedDelegateReturnType);
             }
-        } else {
-            // at this point we know the delegate returned something loaded by
-            // different classloader than the proxy -> we need to proxy the result
-            return proxyReturnObject(targetClassLoader, delegateResult);
         }
+        // at this point we know the delegate returned something loaded by
+        // different classloader than the proxy -> we need to proxy the result
+        return proxyReturnObject(targetClassLoader, delegateResult);
     }
 
-    /**
-     * @param targetClassLoader the classloader on which the proxy will be created
-     * @param delegate          the object to be delegated to by the proxy
-     * @return a proxy to delegate
-     */
-    private Object proxyReturnObject(ClassLoader targetClassLoader, Object delegate) {
-        Object resultingProxy;
+    private static Method getMethodDelegate(Method method, Class<?> delegateClass) {
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        for (int i = 0; i < parameterTypes.length; i++) {
+            Class<?> parameterType = parameterTypes[i];
+            ClassLoader parameterTypeClassloader = parameterType.getClassLoader();
+            ClassLoader delegateClassLoader = delegateClass.getClassLoader();
+            if (parameterTypeClassloader != String.class.getClassLoader()
+                    && parameterTypeClassloader != delegateClassLoader) {
+                try {
+                    Class<?> delegateParameterType = delegateClassLoader.loadClass(parameterType.getName());
+                    parameterTypes[i] = delegateParameterType;
+                } catch (ClassNotFoundException e) {
+                    throw rethrowGuardianException(e);
+                }
+            }
+        }
         try {
-            resultingProxy = HazelcastProxyFactory.proxyObjectForStarter(targetClassLoader, delegate);
-        } catch (Exception e) {
-            throw new GuardianException(e);
+            return delegateClass.getMethod(method.getName(), parameterTypes);
+        } catch (NoSuchMethodException e) {
+            throw rethrowGuardianException(e);
         }
-        printInfoAboutResultProxy(resultingProxy);
-        return resultingProxy;
     }
 
-    private Object invokeMethodDelegate(Method methodDelegate, Object[] args) throws Throwable {
-        Object delegateResult;
+    private static Object invokeMethodDelegate(Object delegate, Method methodDelegate, Object[] args) throws Throwable {
         try {
             methodDelegate.setAccessible(true);
-            delegateResult = methodDelegate.invoke(delegate, args);
+            return methodDelegate.invoke(delegate, args);
         } catch (IllegalAccessException e) {
             throw rethrowGuardianException(e);
         } catch (InvocationTargetException e) {
             throw transferThrowable(e.getTargetException());
         }
-        return delegateResult;
     }
 
-    private Method getMethodDelegate(Method method, Class<?> delegateClass) {
-        Method methodDelegate;
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        if (parameterTypes != null) {
-            for (int i = 0; i < parameterTypes.length; i++) {
-                Class<?> parameterType = parameterTypes[i];
-                ClassLoader parameterTypeClassloader = parameterType.getClassLoader();
-                ClassLoader delegateClassLoader = delegateClass.getClassLoader();
-                if (parameterTypeClassloader != String.class.getClassLoader()
-                        && parameterTypeClassloader != delegateClassLoader) {
-                    try {
-                        Class<?> delegateParameterType = delegateClassLoader.loadClass(parameterType.getName());
-                        parameterTypes[i] = delegateParameterType;
-                    } catch (ClassNotFoundException e) {
-                        throw rethrowGuardianException(e);
-                    }
-                }
-            }
-        }
-        try {
-            methodDelegate = delegateClass.getMethod(method.getName(), parameterTypes);
-        } catch (NoSuchMethodException e) {
-            throw rethrowGuardianException(e);
-        }
-        return methodDelegate;
-    }
-
-    private static void printInfoAboutResultProxy(Object resultingProxy) {
-        if (!isDebugEnabled()) {
-            return;
-        }
-        debug("Returning proxy %s, loaded by %s", resultingProxy, resultingProxy.getClass().getClassLoader());
-        debug("The proxy implements interfaces:");
-        for (Class<?> interfaceClass : resultingProxy.getClass().getInterfaces()) {
-            debug("%s, loaded by %s", interfaceClass, interfaceClass.getClassLoader());
-        }
-    }
-
-    private boolean shouldProxy(Method proxyMethod, Method delegateMethod, Object delegateResult) {
+    private static boolean shouldProxy(Method proxyMethod, Method delegateMethod, Object delegateResult) {
         if (delegateResult == null) {
             return false;
         }
@@ -180,5 +119,64 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
         Class<?> returnClass = proxyMethod.getReturnType();
         Class<?> delegateReturnClass = delegateMethod.getReturnType();
         return !(returnClass.equals(delegateReturnClass));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object toCollection(ClassLoader targetClassLoader, Object delegateResult,
+                                       ParameterizedType parameterizedReturnType,
+                                       ParameterizedType parameterizedDelegateReturnType) {
+        Collection<Object> result;
+        // if the raw types are equal then return a collection of the same type, otherwise proxy it
+        if (parameterizedDelegateReturnType.getRawType().equals(parameterizedReturnType.getRawType())) {
+            result = (Collection) delegateResult;
+        } else {
+            result = (Collection) proxyReturnObject(targetClassLoader, delegateResult);
+        }
+
+        // if the parameter type is not equal, we need to proxy it
+        Type returnParameterType = parameterizedReturnType.getActualTypeArguments()[0];
+        Type delegateParameterType = parameterizedDelegateReturnType.getActualTypeArguments()[0];
+        // if the type argument is equal, just return the result, otherwise proxy each item in the collection
+        if (returnParameterType.equals(delegateParameterType)) {
+            return result;
+        } else {
+            Collection<Object> collection = newCollectionFor((Class) parameterizedDelegateReturnType.getRawType());
+            for (Object item : (Collection) delegateResult) {
+                collection.add(proxyReturnObject(targetClassLoader, item));
+            }
+            try {
+                result.clear();
+                result.addAll(collection);
+                return result;
+            } catch (UnsupportedOperationException e) {
+                return collection;
+            }
+        }
+    }
+
+    /**
+     * @param targetClassLoader the classloader on which the proxy will be created
+     * @param delegate          the object to be delegated to by the proxy
+     * @return a proxy to delegate
+     */
+    private static Object proxyReturnObject(ClassLoader targetClassLoader, Object delegate) {
+        try {
+            Object resultingProxy = HazelcastProxyFactory.proxyObjectForStarter(targetClassLoader, delegate);
+            printInfoAboutResultProxy(resultingProxy);
+            return resultingProxy;
+        } catch (Exception e) {
+            throw new GuardianException(e);
+        }
+    }
+
+    private static void printInfoAboutResultProxy(Object resultingProxy) {
+        if (!isDebugEnabled()) {
+            return;
+        }
+        debug("Returning proxy %s, loaded by %s", resultingProxy, resultingProxy.getClass().getClassLoader());
+        debug("The proxy implements interfaces:");
+        for (Class<?> interfaceClass : resultingProxy.getClass().getInterfaces()) {
+            debug("%s, loaded by %s", interfaceClass, interfaceClass.getClassLoader());
+        }
     }
 }
