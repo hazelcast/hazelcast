@@ -28,10 +28,12 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -241,6 +243,10 @@ public abstract class HazelcastTestSupport {
 
     public static Node getNode(HazelcastInstance hz) {
         return TestUtil.getNode(hz);
+    }
+
+    public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance hz) {
+        return TestUtil.getHazelcastInstanceImpl(hz);
     }
 
     public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz) {
@@ -671,9 +677,10 @@ public abstract class HazelcastTestSupport {
 
     public static void suspectMember(Node suspectingNode, Node suspectedNode, String reason) {
         if (suspectingNode != null && suspectedNode != null) {
-            Member suspectedMember = suspectingNode.getClusterService().getMember(suspectedNode.getLocalMember().getAddress());
+            ClusterServiceImpl clusterService = suspectingNode.getClusterService();
+            Member suspectedMember = clusterService.getMember(suspectedNode.getLocalMember().getAddress());
             if (suspectedMember != null) {
-                suspectingNode.clusterService.suspectMember(suspectedMember, reason, true);
+                clusterService.suspectMember(suspectedMember, reason, true);
             }
         }
     }

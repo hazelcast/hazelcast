@@ -81,7 +81,7 @@ public class RootCauseMatcher extends TypeSafeMatcher<Throwable> {
         super.describeMismatchSafely(getRootCause(item), mismatchDescription);
     }
 
-    private Throwable getRootCause(Throwable item) {
+    public static Throwable getRootCause(Throwable item) {
         while (item.getCause() != null) {
             item = item.getCause();
         }
