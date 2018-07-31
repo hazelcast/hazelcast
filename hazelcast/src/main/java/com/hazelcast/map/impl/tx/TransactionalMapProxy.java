@@ -48,7 +48,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Proxy implementation of {@link com.hazelcast.core.TransactionalMap} interface.
+ * Proxy implementation of {@link com.hazelcast.core.TransactionalMap}
+ * interface.
  */
 public class TransactionalMapProxy extends TransactionalMapProxySupport implements TransactionalMap {
 
@@ -63,12 +64,13 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
-        Data keyData = mapServiceContext.toData(key, partitionStrategy);
-        TxnValueWrapper valueWrapper = txMap.get(keyData);
+        Data dataKey = ss.toData(key, partitionStrategy);
+
+        TxnValueWrapper valueWrapper = txMap.get(dataKey);
         if (valueWrapper != null) {
             return (valueWrapper.type != Type.REMOVED);
         }
-        return containsKeyInternal(keyData, key);
+        return containsKeyInternal(key, dataKey);
     }
 
     @Override
@@ -100,14 +102,13 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
-        Object nearCacheKey = toNearCacheKeyWithStrategy(key);
-        Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
+        Data dataKey = ss.toData(key, partitionStrategy);
 
-        TxnValueWrapper currentValue = txMap.get(keyData);
+        TxnValueWrapper currentValue = txMap.get(dataKey);
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
-        return toObjectIfNeeded(getInternal(nearCacheKey, keyData));
+        return toObjectIfNeeded(getInternal(key, dataKey));
     }
 
     @Override
@@ -115,14 +116,14 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
-        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        Data dataKey = ss.toData(key, partitionStrategy);
 
-        TxnValueWrapper currentValue = txMap.get(keyData);
+        TxnValueWrapper currentValue = txMap.get(dataKey);
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
 
-        return toObjectIfNeeded(getForUpdateInternal(keyData));
+        return toObjectIfNeeded(getForUpdateInternal(dataKey));
     }
 
     @Override
@@ -136,18 +137,17 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
 
-        Object nearCacheKey = toNearCacheKeyWithStrategy(key);
+        Data dataKey = ss.toData(key, partitionStrategy);
         try {
-            Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
-            Object valueBeforeTxn = toObjectIfNeeded(putInternal(keyData, mapServiceContext.toData(value), ttl, timeUnit));
+            Object valueBeforeTxn = toObjectIfNeeded(putInternal(dataKey, ss.toData(value), ttl, timeUnit));
 
-            TxnValueWrapper currentValue = txMap.get(keyData);
+            TxnValueWrapper currentValue = txMap.get(dataKey);
             Type type = valueBeforeTxn == null ? Type.NEW : Type.UPDATED;
             TxnValueWrapper wrapper = new TxnValueWrapper(value, type);
-            txMap.put(keyData, wrapper);
+            txMap.put(dataKey, wrapper);
             return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
         } finally {
-            invalidateNearCache(nearCacheKey);
+            invalidateNearCache(key, dataKey);
         }
     }
 
@@ -157,15 +157,14 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
 
-        Object nearCacheKey = toNearCacheKeyWithStrategy(key);
+        Data dataKey = ss.toData(key, partitionStrategy);
         try {
-            Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
-            Data dataBeforeTxn = putInternal(keyData, mapServiceContext.toData(value), -1, MILLISECONDS);
+            Data dataBeforeTxn = putInternal(dataKey, ss.toData(value), -1, MILLISECONDS);
             Type type = dataBeforeTxn == null ? Type.NEW : Type.UPDATED;
             TxnValueWrapper wrapper = new TxnValueWrapper(value, type);
-            txMap.put(keyData, wrapper);
+            txMap.put(dataKey, wrapper);
         } finally {
-            invalidateNearCache(nearCacheKey);
+            invalidateNearCache(key, dataKey);
         }
     }
 
@@ -175,27 +174,26 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
 
-        Object nearCacheKey = toNearCacheKeyWithStrategy(key);
+        Data dataKey = ss.toData(key, partitionStrategy);
         try {
-            Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
-            TxnValueWrapper wrapper = txMap.get(keyData);
+            TxnValueWrapper wrapper = txMap.get(dataKey);
             boolean haveTxnPast = wrapper != null;
             if (haveTxnPast) {
                 if (wrapper.type != Type.REMOVED) {
                     return wrapper.value;
                 }
-                putInternal(keyData, mapServiceContext.toData(value), -1, MILLISECONDS);
-                txMap.put(keyData, new TxnValueWrapper(value, Type.NEW));
+                putInternal(dataKey, ss.toData(value), -1, MILLISECONDS);
+                txMap.put(dataKey, new TxnValueWrapper(value, Type.NEW));
                 return null;
             } else {
-                Data oldValue = putIfAbsentInternal(keyData, mapServiceContext.toData(value));
+                Data oldValue = putIfAbsentInternal(dataKey, ss.toData(value));
                 if (oldValue == null) {
-                    txMap.put(keyData, new TxnValueWrapper(value, Type.NEW));
+                    txMap.put(dataKey, new TxnValueWrapper(value, Type.NEW));
                 }
                 return toObjectIfNeeded(oldValue);
             }
         } finally {
-            invalidateNearCache(nearCacheKey);
+            invalidateNearCache(key, dataKey);
         }
     }
 
@@ -205,28 +203,26 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
 
-        Object nearCacheKey = toNearCacheKeyWithStrategy(key);
+        Data dataKey = ss.toData(key, partitionStrategy);
         try {
-            Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
-
-            TxnValueWrapper wrapper = txMap.get(keyData);
+            TxnValueWrapper wrapper = txMap.get(dataKey);
             boolean haveTxnPast = wrapper != null;
             if (haveTxnPast) {
                 if (wrapper.type == Type.REMOVED) {
                     return null;
                 }
-                putInternal(keyData, mapServiceContext.toData(value), -1, MILLISECONDS);
-                txMap.put(keyData, new TxnValueWrapper(value, Type.UPDATED));
+                putInternal(dataKey, ss.toData(value), -1, MILLISECONDS);
+                txMap.put(dataKey, new TxnValueWrapper(value, Type.UPDATED));
                 return wrapper.value;
             } else {
-                Data oldValue = replaceInternal(keyData, mapServiceContext.toData(value));
+                Data oldValue = replaceInternal(dataKey, ss.toData(value));
                 if (oldValue != null) {
-                    txMap.put(keyData, new TxnValueWrapper(value, Type.UPDATED));
+                    txMap.put(dataKey, new TxnValueWrapper(value, Type.UPDATED));
                 }
                 return toObjectIfNeeded(oldValue);
             }
         } finally {
-            invalidateNearCache(nearCacheKey);
+            invalidateNearCache(key, dataKey);
         }
     }
 
@@ -237,29 +233,26 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkNotNull(oldValue, "oldValue can't be null");
         checkNotNull(newValue, "newValue can't be null");
 
-        Object nearCacheKey = toNearCacheKeyWithStrategy(key);
+        Data dataKey = ss.toData(key, partitionStrategy);
         try {
-            Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
-
-            TxnValueWrapper wrapper = txMap.get(keyData);
+            TxnValueWrapper wrapper = txMap.get(dataKey);
             boolean haveTxnPast = wrapper != null;
             if (haveTxnPast) {
                 if (!wrapper.value.equals(oldValue)) {
                     return false;
                 }
-                putInternal(keyData, mapServiceContext.toData(newValue), -1, MILLISECONDS);
-                txMap.put(keyData, new TxnValueWrapper(wrapper.value, Type.UPDATED));
+                putInternal(dataKey, ss.toData(newValue), -1, MILLISECONDS);
+                txMap.put(dataKey, new TxnValueWrapper(wrapper.value, Type.UPDATED));
                 return true;
             } else {
-                boolean success = replaceIfSameInternal(keyData,
-                        mapServiceContext.toData(oldValue), mapServiceContext.toData(newValue));
+                boolean success = replaceIfSameInternal(dataKey, ss.toData(oldValue), ss.toData(newValue));
                 if (success) {
-                    txMap.put(keyData, new TxnValueWrapper(newValue, Type.UPDATED));
+                    txMap.put(dataKey, new TxnValueWrapper(newValue, Type.UPDATED));
                 }
                 return success;
             }
         } finally {
-            invalidateNearCache(nearCacheKey);
+            invalidateNearCache(key, dataKey);
         }
     }
 
@@ -269,16 +262,14 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
 
-        Object nearCacheKey = toNearCacheKeyWithStrategy(key);
+        Data dataKey = ss.toData(key, partitionStrategy);
         try {
-            Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
-
-            TxnValueWrapper wrapper = txMap.get(keyData);
+            TxnValueWrapper wrapper = txMap.get(dataKey);
             // wrapper is null which means this entry is not touched by transaction
             if (wrapper == null) {
-                boolean removed = removeIfSameInternal(keyData, value);
+                boolean removed = removeIfSameInternal(dataKey, value);
                 if (removed) {
-                    txMap.put(keyData, new TxnValueWrapper(value, Type.REMOVED));
+                    txMap.put(dataKey, new TxnValueWrapper(value, Type.REMOVED));
                 }
                 return removed;
             }
@@ -291,13 +282,12 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 return false;
             }
             // wrapper value is equal to passed value, we call removeInternal just to add delete log
-            removeInternal(keyData);
-            txMap.put(keyData, new TxnValueWrapper(value, Type.REMOVED));
+            removeInternal(dataKey);
+            txMap.put(dataKey, new TxnValueWrapper(value, Type.REMOVED));
+            return true;
         } finally {
-            invalidateNearCache(nearCacheKey);
+            invalidateNearCache(key, dataKey);
         }
-
-        return true;
     }
 
     @Override
@@ -305,18 +295,17 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
-        Object nearCacheKey = toNearCacheKeyWithStrategy(key);
+        Data dataKey = ss.toData(key, partitionStrategy);
         try {
-            Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
-            Object valueBeforeTxn = toObjectIfNeeded(removeInternal(keyData));
+            Object valueBeforeTxn = toObjectIfNeeded(removeInternal(dataKey));
 
             TxnValueWrapper wrapper = null;
-            if (valueBeforeTxn != null || txMap.containsKey(keyData)) {
-                wrapper = txMap.put(keyData, new TxnValueWrapper(valueBeforeTxn, Type.REMOVED));
+            if (valueBeforeTxn != null || txMap.containsKey(dataKey)) {
+                wrapper = txMap.put(dataKey, new TxnValueWrapper(valueBeforeTxn, Type.REMOVED));
             }
             return wrapper == null ? valueBeforeTxn : checkIfRemoved(wrapper);
         } finally {
-            invalidateNearCache(nearCacheKey);
+            invalidateNearCache(key, dataKey);
         }
     }
 
@@ -325,15 +314,14 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
-        Object nearCacheKey = toNearCacheKeyWithStrategy(key);
+        Data dataKey = ss.toData(key, partitionStrategy);
         try {
-            Data keyData = mapServiceContext.toData(key, partitionStrategy);
-            Data data = removeInternal(keyData);
-            if (data != null || txMap.containsKey(keyData)) {
-                txMap.put(keyData, new TxnValueWrapper(toObjectIfNeeded(data), Type.REMOVED));
+            Data data = removeInternal(dataKey);
+            if (data != null || txMap.containsKey(dataKey)) {
+                txMap.put(dataKey, new TxnValueWrapper(toObjectIfNeeded(data), Type.REMOVED));
             }
         } finally {
-            invalidateNearCache(nearCacheKey);
+            invalidateNearCache(key, dataKey);
         }
     }
 
@@ -365,15 +353,15 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 // meanwhile remove keys which are not in txMap
                 returningKeySet.remove(toObjectIfNeeded(entry.getKey()));
             } else {
-                Data keyData = entry.getKey();
+                Data dataKey = entry.getKey();
 
                 if (predicate == TruePredicate.INSTANCE) {
-                    returningKeySet.add(toObjectIfNeeded(keyData));
+                    returningKeySet.add(toObjectIfNeeded(dataKey));
                 } else {
-                    cachedQueryEntry.init(ss, keyData, entry.getValue().value, extractors);
+                    cachedQueryEntry.init(ss, dataKey, entry.getValue().value, extractors);
                     // apply predicate on txMap
                     if (predicate.apply(cachedQueryEntry)) {
-                        returningKeySet.add(toObjectIfNeeded(keyData));
+                        returningKeySet.add(toObjectIfNeeded(dataKey));
                     }
                 }
             }
