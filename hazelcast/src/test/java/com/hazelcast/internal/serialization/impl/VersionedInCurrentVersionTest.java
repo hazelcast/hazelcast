@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -126,12 +125,11 @@ public class VersionedInCurrentVersionTest {
     }
 
     private <T extends Versioned> T createInstance(Class<T> klass) {
-        T instance = null;
         try {
-            instance = ClassLoaderUtil.newInstance(klass, null, klass.getName());
+            return klass.newInstance();
         } catch (Exception e) {
+            return null;
         }
-        return instance;
     }
 
     private Set<Class<? extends Versioned>> versionedClassesInPreviousVersion()

@@ -49,15 +49,15 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned {
 
     /**
-     * The number of minimum backup counter
+     * The minimum number of backups
      */
     public static final int MIN_BACKUP_COUNT = 0;
     /**
-     * The number of default backup counter
+     * The default number of backups
      */
     public static final int DEFAULT_BACKUP_COUNT = 1;
     /**
-     * The number of maximum backup counter
+     * The maximum number of backups
      */
     public static final int MAX_BACKUP_COUNT = IPartition.MAX_BACKUP_COUNT;
 
