@@ -24,16 +24,13 @@ import java.util.Iterator;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-public class JsonGetter extends Getter {
+public final class JsonGetter extends Getter {
 
+    public static final JsonGetter INSTANCE = new JsonGetter();
     private static final String DELIMITER = "\\.";
 
-    public JsonGetter() {
+    private JsonGetter() {
         super(null);
-    }
-
-    public JsonGetter(Getter parent) {
-        super(parent);
     }
 
     @Override
@@ -130,7 +127,7 @@ public class JsonGetter extends Getter {
 
     @Override
     boolean isCacheable() {
-        return true;
+        return false;
     }
 
     private String[] getPath(String attributePath) {

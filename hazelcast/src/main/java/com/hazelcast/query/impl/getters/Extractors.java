@@ -116,7 +116,7 @@ public final class Extractors {
                 }
                 return genericPortableGetter;
             } else if (targetObject instanceof JsonValue) {
-                return new JsonGetter();
+                return JsonGetter.INSTANCE;
             } else {
                 return ReflectionHelper.createGetter(targetObject, attributeName);
             }
