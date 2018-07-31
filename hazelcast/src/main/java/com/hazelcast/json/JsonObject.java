@@ -17,8 +17,6 @@
 package com.hazelcast.json;
 
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 
 /**
@@ -439,7 +437,5 @@ public interface JsonObject extends JsonValue, Iterable<JsonObjectEntry> {
      * @return a list of the names in this object
      */
     List<String> names();
-
-    void writeTo(Writer writer) throws IOException;
 
 }

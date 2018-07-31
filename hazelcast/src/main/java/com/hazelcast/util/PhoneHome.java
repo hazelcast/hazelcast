@@ -23,7 +23,6 @@ import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
-import com.hazelcast.json.Json;
 import com.hazelcast.json.JsonObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryUnit;
@@ -270,7 +269,7 @@ public final class PhoneHome {
             responseCode = connection.getResponseCode();
 
             reader = new InputStreamReader(inputStream, "UTF-8");
-            JsonObject mcPhoneHomeInfoJson = Json.parse(reader).asObject();
+            JsonObject mcPhoneHomeInfoJson = com.hazelcast.internal.json.Json.parse(reader).asObject();
             version = getString(mcPhoneHomeInfoJson, "mcVersion");
             license = getString(mcPhoneHomeInfoJson, "mcLicense", null);
         } catch (Exception ignored) {

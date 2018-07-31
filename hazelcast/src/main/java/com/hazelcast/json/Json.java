@@ -17,9 +17,6 @@
 package com.hazelcast.json;
 
 
-import java.io.IOException;
-import java.io.Reader;
-
 /**
  * This class serves as the entry point to the minimal-json API.
  * <p>
@@ -224,7 +221,4 @@ public final class Json {
         return com.hazelcast.internal.json.Json.parse(string);
     }
 
-    public static JsonValue parse(Reader reader) throws IOException {
-        return com.hazelcast.internal.json.Json.parse(reader);
-    }
 }

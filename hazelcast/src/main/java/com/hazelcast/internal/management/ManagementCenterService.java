@@ -384,7 +384,7 @@ public class ManagementCenterService {
                 TimedMemberState memberState = timedMemberState.get();
                 if (memberState != null) {
                     root.add("timedMemberState", memberState.toJson());
-                    root.writeTo(writer);
+                    ((com.hazelcast.internal.json.JsonObject) root).writeTo(writer);
 
                     writer.flush();
                     outputStream.flush();
@@ -518,7 +518,7 @@ public class ManagementCenterService {
             try {
                 inputStream = openTaskInputStream();
                 reader = new InputStreamReader(inputStream, "UTF-8");
-                JsonObject request = Json.parse(reader).asObject();
+                JsonObject request = com.hazelcast.internal.json.Json.parse(reader).asObject();
                 if (!request.isEmpty()) {
                     JsonObject innerRequest = getObject(request, "request");
                     final int type = getInt(innerRequest, "type");
@@ -563,7 +563,7 @@ public class ManagementCenterService {
                 root.add("taskId", taskId);
                 root.add("type", task.getType());
                 task.writeResponse(ManagementCenterService.this, root);
-                root.writeTo(writer);
+                ((com.hazelcast.internal.json.JsonObject) root).writeTo(writer);
                 writer.flush();
                 outputStream.flush();
                 return post(connection);
