@@ -59,7 +59,7 @@ public class DefaultNodeContext implements NodeContext {
 
         final ILogger addressPickerLogger = node.getLogger(AddressPicker.class);
         if (!memberAddressProviderConfig.isEnabled()) {
-            return new DefaultAddressPicker(config, node.getProperties(), addressPickerLogger);
+            return new DefaultAddressPicker(config, addressPickerLogger);
         }
 
         MemberAddressProvider implementation = memberAddressProviderConfig.getImplementation();
