@@ -51,11 +51,6 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
     private ValueObject value;
 
     @Override
-    protected int[] brains() {
-        return new int[]{1, 1};
-    }
-
-    @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         warmUpPartitions(instances);
         key = generateKeyOwnedBy(instances[0]);

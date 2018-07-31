@@ -70,8 +70,6 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("WeakerAccess")
 public class MapSplitBrainTest extends SplitBrainTestSupport {
 
-    private static final int[] BRAINS = new int[]{3, 3};
-
     @Parameters(name = "format:{0}, mergePolicy:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
@@ -103,11 +101,6 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     private BackupAccessor<Object, Object> backupMapA;
     private BackupAccessor<Object, Object> backupMapB;
     private MergeLifecycleListener mergeLifecycleListener;
-
-    @Override
-    protected int[] brains() {
-        return BRAINS;
-    }
 
     @Override
     protected Config config() {
