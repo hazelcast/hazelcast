@@ -336,8 +336,9 @@ public class AnswerTest extends HazelcastTestSupport {
 
         Object dataValue = recordStore.get(keyData, null);
         assertNotNull("dataValue should not be null", dataValue);
-        int value = serializationService.toObject(dataValue);
-        assertEquals("Expected the value to be 23", 23, value);
+        Integer value = serializationService.toObject(dataValue);
+        assertNotNull("Expected value not to be null", value);
+        assertEquals("Expected the value to be 23", 23, (int) value);
 
         // EntryProcessor invocation
         Map<String, EntryProcessorResult<Integer>> resultMap;
@@ -394,8 +395,9 @@ public class AnswerTest extends HazelcastTestSupport {
 
         Object dataValue = recordStore.get(keyData, true, null);
         assertNotNull("dataValue should not be null", dataValue);
-        int value = serializationService.toObject(dataValue);
-        assertEquals("Expected value to be 23", 23, value);
+        Integer value = serializationService.toObject(dataValue);
+        assertNotNull("Expected value not to be null", value);
+        assertEquals("Expected value to be 23", 23, (int) value);
 
         assertTrue("map should contain key", map.containsKey(key));
         map.clear();
