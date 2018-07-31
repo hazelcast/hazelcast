@@ -502,10 +502,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         OperationService operationService = nodeEngine.getOperationService();
         int backupReplicaCount = cacheConfig.getTotalBackupCount();
         for (int replicaIndex = 1; replicaIndex < backupReplicaCount + 1; replicaIndex++) {
-            if (canSendBackupExpiration(getPartitionId(), replicaIndex)) {
+            Address replicaAddress = nodeEngine.getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex);
+            if (replicaAddress != null && canSendBackupExpiration(replicaAddress)) {
                 Operation operation = new CacheExpireBatchBackupOperation(getName(), expiredKeys, size());
-                operationService.createInvocationBuilder(CacheService.SERVICE_NAME, operation, getPartitionId())
-                        .setReplicaIndex(replicaIndex).invoke();
+                operation.setReplicaIndex(replicaIndex);
+                operation.setPartitionId(getPartitionId());
+                operationService.invokeOnTarget(CacheService.SERVICE_NAME, operation, replicaAddress);
             }
         }
     }
@@ -526,11 +528,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return expiredKeys;
     }
 
-    protected boolean canSendBackupExpiration(int partitionId, int replicaIndex) {
-        Address replicaAddress = nodeEngine.getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex);
-        if (replicaAddress == null) {
-            return false;
-        }
+    protected boolean canSendBackupExpiration(Address replicaAddress) {
         // Previous versions did not remove expired entries until they are touched. Old members behave the same whereas
         // newer members still benefit from periodic removal of expired entries.
         //
