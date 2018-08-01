@@ -56,19 +56,25 @@ public final class JsonGetter extends Getter {
                     return null;
                 }
                 try {
-                    if (path.endsWith("]")) {
-                        int leftBracket = path.indexOf('[');
+                    if (path.charAt(path.length() - 1) == ']') {
+                        int from = 0;
+                        int leftBracket = path.indexOf('[', from);
                         if (leftBracket > 0) {
-                            String qualifier = path.substring(0, leftBracket);
+                            String qualifier = path.substring(from, leftBracket);
                             value = value.asObject().get(qualifier);
                         }
-                        JsonArray valueArray = value.asArray();
-                        String indexText = path.substring(leftBracket + 1, path.length() - 1);
-                        if (indexText.equals("any")) {
-                            return getMultiValue(valueArray, paths, i + 1);
-                        } else {
-                            int index = Integer.parseInt(indexText);
-                            value = valueArray.get(index);
+                        while (leftBracket > -1) {
+                            int rightBracket = path.indexOf(']', leftBracket);
+                            JsonArray valueArray = value.asArray();
+                            String indexText = path.substring(leftBracket + 1, rightBracket);
+                            if (indexText.equals("any")) {
+                                return getMultiValue(valueArray, paths, i + 1);
+                            } else {
+                                int index = Integer.parseInt(indexText);
+                                value = valueArray.get(index);
+                            }
+                            from = rightBracket + 1;
+                            leftBracket = path.indexOf('[', from);
                         }
                     } else {
                         value = value.asObject().get(path);
@@ -83,8 +89,8 @@ public final class JsonGetter extends Getter {
         return null;
     }
 
-    MultiResult getMultiValue(JsonArray arr, String[] paths, int index) {
-        MultiResult multiResult = new MultiResult();
+    private MultiResult getMultiValue(JsonArray arr, String[] paths, int index) {
+        MultiResult<Object> multiResult = new MultiResult<Object>();
         Iterator<JsonValue> it = arr.iterator();
         String attr = paths.length > index ? paths[index] : null;
         while (it.hasNext()) {

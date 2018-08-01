@@ -582,32 +582,6 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void TO_BE_REMOVED_testPortableAnyInAny() {
-        LittlePortable lp1 = new LittlePortable(1, new int[]{1, 2});
-        LittlePortable lp2 = new LittlePortable(2, new int[]{1});
-        LittlePortable lp3 = new LittlePortable(3, new int[]{1});
-        LittlePortable lp4 = new LittlePortable(4, new int[]{1});
-        LittlePortable lp5 = new LittlePortable(5, new int[]{1});
-
-        LittlePortable[] lps1 = new LittlePortable[]{lp1, lp2, lp3};
-        LittlePortable[] lps2 = new LittlePortable[]{lp4, lp5};
-
-        MyPortable mp1 = new MyPortable(lps1);
-        MyPortable mp2 = new MyPortable(lps2);
-
-
-        IMap<String, MyPortable> map = instance.getMap(randomMapName());
-        map.put("one", mp1);
-        map.put("two", mp2);
-
-        Collection<MyPortable> vals = map.values(Predicates.lessEqual("littlePortables[0].tempReals[0]", 2));
-
-        assertEquals(2, vals.size());
-        assertTrue(vals.contains(mp1));
-        assertTrue(vals.contains(mp2));
-    }
-
-    @Test
     public void TO_BE_REMOVED_testPortableAny() {
         Integer[] arr1 = new Integer[]{1, 2, 3, 4};
         Integer[] arr2 = new Integer[]{4, 5, 6, 7};
