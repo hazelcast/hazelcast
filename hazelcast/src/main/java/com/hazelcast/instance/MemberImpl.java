@@ -49,6 +49,7 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
     public static final int NA_MEMBER_LIST_JOIN_VERSION = -1;
 
     private boolean localMember;
+
     private volatile int memberListJoinVersion = NA_MEMBER_LIST_JOIN_VERSION;
     private volatile HazelcastInstanceImpl instance;
     private volatile ILogger logger;
@@ -64,26 +65,25 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
         this(address, version, localMember, uuid, null, false);
     }
 
-    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid,
-                      Map<String, Object> attributes, boolean liteMember) {
+    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid, Map<String, Object> attributes,
+                      boolean liteMember) {
         super(address, version, uuid, attributes, liteMember);
         this.localMember = localMember;
     }
 
-    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid,
-                      Map<String, Object> attributes, boolean liteMember,
-                      int memberListJoinVersion, HazelcastInstanceImpl instance) {
+    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid, Map<String, Object> attributes,
+                      boolean liteMember, int memberListJoinVersion, HazelcastInstanceImpl instance) {
         super(address, version, uuid, attributes, liteMember);
         this.localMember = localMember;
-        this.instance = instance;
         this.memberListJoinVersion = memberListJoinVersion;
+        this.instance = instance;
     }
 
     public MemberImpl(MemberImpl member) {
         super(member);
         this.localMember = member.localMember;
-        this.instance = member.instance;
         this.memberListJoinVersion = member.memberListJoinVersion;
+        this.instance = member.instance;
     }
 
     @Override
@@ -255,6 +255,7 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
     }
 
     private class MemberAttributeOperationSupplier implements Supplier<Operation> {
+
         private final MemberAttributeOperationType operationType;
         private final String key;
         private final Object value;

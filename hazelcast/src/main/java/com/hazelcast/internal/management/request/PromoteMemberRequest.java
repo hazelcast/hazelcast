@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.management.request;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.json.JsonObject;
 
 public class PromoteMemberRequest implements AsyncConsoleRequest {
     @Override

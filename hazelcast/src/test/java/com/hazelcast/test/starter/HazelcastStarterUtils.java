@@ -21,8 +21,19 @@ import com.hazelcast.logging.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static java.lang.String.format;
@@ -59,15 +70,27 @@ public class HazelcastStarterUtils {
     }
 
     /**
-     * Transfers the given throwable to the class loader hosting the
+     * Transfers the given {@link Throwable} to the classloader hosting the
      * compatibility tests.
      *
-     * @param throwable the throwable to transfer
-     * @return the transferred throwable
+     * @param throwable the Throwable to transfer
+     * @return the transferred Throwable
      */
     public static Throwable transferThrowable(Throwable throwable) {
-        if (throwable.getClass().getClassLoader() == HazelcastStarterUtils.class.getClassLoader()) {
-            return throwable;
+        return transferToCurrentClassloader(throwable);
+    }
+
+    /**
+     * Transfers the given object to the classloader hosting the compatibility
+     * tests.
+     *
+     * @param object the object to transfer
+     * @param <T>    the type of the object
+     * @return the transferred object
+     */
+    public static <T> T transferToCurrentClassloader(T object) {
+        if (object.getClass().getClassLoader() == HazelcastStarterUtils.class.getClassLoader()) {
+            return object;
         }
 
         ByteArrayOutputStream byteArrayOutputStream = null;
@@ -77,17 +100,68 @@ public class HazelcastStarterUtils {
         try {
             byteArrayOutputStream = new ByteArrayOutputStream();
             objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutputStream.writeObject(throwable);
-            byte[] serializedThrowable = byteArrayOutputStream.toByteArray();
+            objectOutputStream.writeObject(object);
+            byte[] serializedObject = byteArrayOutputStream.toByteArray();
 
-            byteArrayInputStream = new ByteArrayInputStream(serializedThrowable);
+            byteArrayInputStream = new ByteArrayInputStream(serializedObject);
             objectInputStream = new ObjectInputStream(byteArrayInputStream);
-            return (Throwable) objectInputStream.readObject();
+            //noinspection unchecked
+            return (T) objectInputStream.readObject();
         } catch (Exception e) {
-            throw new GuardianException("Throwable transfer failed for: " + throwable, e);
+            throw new GuardianException("Object transfer via serialization failed for: " + object, e);
         } finally {
             closeResource(objectInputStream);
             closeResource(byteArrayInputStream);
+            closeResource(objectOutputStream);
+            closeResource(byteArrayOutputStream);
+        }
+    }
+
+    /**
+     * Transfers the given object to the given target classloader.
+     *
+     * @param object            the object to transfer
+     * @param targetClassloader the given target classloader
+     * @param <T>               the type of the object
+     * @return the transferred object
+     */
+    public static <T> T transferToClassloader(T object, ClassLoader targetClassloader) throws Exception {
+        if (object.getClass().getClassLoader() == targetClassloader) {
+            return object;
+        }
+
+        Class<?> byteArrayInputStreamClass = targetClassloader.loadClass(ByteArrayInputStream.class.getName());
+        Class<?> objectInputStreamClass = targetClassloader.loadClass(ObjectInputStream.class.getName());
+        Class<?> inputStreamClass = targetClassloader.loadClass(InputStream.class.getName());
+        Constructor<?> byteArrayInputStreamConstructor = byteArrayInputStreamClass.getConstructor(byte[].class);
+        Constructor<?> objectInputStreamConstructor = objectInputStreamClass.getConstructor(inputStreamClass);
+        Method byteArrayInputStreamCloseMethod = byteArrayInputStreamClass.getMethod("close");
+        Method objectInputStreamCloseMethod = objectInputStreamClass.getMethod("close");
+        Method objectInputStreamReadObjectMethod = objectInputStreamClass.getMethod("readObject");
+
+        ByteArrayOutputStream byteArrayOutputStream = null;
+        ObjectOutputStream objectOutputStream = null;
+        Object byteArrayInputStream = null;
+        Object objectInputStream = null;
+        try {
+            byteArrayOutputStream = new ByteArrayOutputStream();
+            objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(object);
+            byte[] serializedObject = byteArrayOutputStream.toByteArray();
+
+            byteArrayInputStream = byteArrayInputStreamConstructor.newInstance(new Object[]{serializedObject});
+            objectInputStream = objectInputStreamConstructor.newInstance(byteArrayInputStream);
+            //noinspection unchecked
+            return (T) objectInputStreamReadObjectMethod.invoke(objectInputStream);
+        } catch (Exception e) {
+            throw new GuardianException("Object transfer via serialization failed for: " + object, e);
+        } finally {
+            if (objectInputStream != null) {
+                objectInputStreamCloseMethod.invoke(objectInputStream);
+            }
+            if (byteArrayInputStream != null) {
+                byteArrayInputStreamCloseMethod.invoke(byteArrayInputStream);
+            }
             closeResource(objectOutputStream);
             closeResource(byteArrayOutputStream);
         }
@@ -106,5 +180,26 @@ public class HazelcastStarterUtils {
      */
     public static void assertInstanceOfByClassName(String className, Object object) {
         assertEquals(className, object.getClass().getName());
+    }
+
+    /**
+     * Returns a {@link Collection} object for a given collection interface.
+     *
+     * @return a new Collection object of a class that is assignable from the given type
+     * @throws UnsupportedOperationException if the given interface is not implemented
+     */
+    public static Collection<Object> newCollectionFor(Class<?> type) {
+        if (Set.class.isAssignableFrom(type)) {
+            // original set might be ordered
+            return new LinkedHashSet<Object>();
+        } else if (List.class.isAssignableFrom(type)) {
+            return new ArrayList<Object>();
+        } else if (Queue.class.isAssignableFrom(type)) {
+            return new ConcurrentLinkedQueue<Object>();
+        } else if (Collection.class.isAssignableFrom(type)) {
+            return new LinkedList<Object>();
+        } else {
+            throw new UnsupportedOperationException("Cannot locate collection type for " + type);
+        }
     }
 }

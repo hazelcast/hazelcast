@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 
 import java.util.ArrayList;
 import java.util.List;

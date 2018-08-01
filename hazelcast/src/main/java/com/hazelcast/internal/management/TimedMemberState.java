@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.management;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 

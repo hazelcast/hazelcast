@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.management;
 
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
@@ -27,6 +25,8 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.internal.management.request.AsyncConsoleRequest;
 import com.hazelcast.internal.management.request.ChangeClusterStateRequest;
@@ -399,7 +399,7 @@ public class ManagementCenterService {
             } catch (Exception e) {
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
-                    log("Failed to connect to:" + url, e);
+                    log("Failed to connect to: " + url, e);
                 }
             } finally {
                 closeResource(writer);
@@ -583,11 +583,12 @@ public class ManagementCenterService {
             if (logger.isFinestEnabled()) {
                 logger.finest("Opening getTask connection:" + url);
             }
-            URLConnection connection = connectionFactory != null
-                                        ? connectionFactory.openConnection(url)
-                                        : url.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) (connectionFactory != null
+                    ? connectionFactory.openConnection(url)
+                    : url.openConnection());
 
             connection.setRequestProperty("Connection", "keep-alive");
+            connection.setRequestMethod("POST");
             return connection;
         }
 

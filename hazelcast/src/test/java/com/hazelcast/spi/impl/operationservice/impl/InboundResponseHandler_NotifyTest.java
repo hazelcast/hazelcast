@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -176,7 +177,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         invocationRegistry.register(invocation);
 
         long callId = invocation.op.getCallId();
-        inboundResponseHandler.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
+        inboundResponseHandler.notifyErrorResponse(callId, new ErrorResponse(new ExpectedRuntimeException(), 0, false), null);
 
         try {
             invocation.future.join();
@@ -194,7 +195,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
         invocationRegistry.deregister(invocation);
 
-        inboundResponseHandler.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
+        inboundResponseHandler.notifyErrorResponse(callId, new ErrorResponse(new ExpectedRuntimeException(), 0, false), null);
 
         assertInvocationDeregisteredEventually(callId);
     }

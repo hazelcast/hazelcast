@@ -110,6 +110,9 @@
     <!-- OSGI -->
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]osgi[\\/]impl[\\/]HazelcastOSGiInstanceImpl"/>
 
+    <!-- JSON -->
+    <suppress checks="" files="[\\/]com[\\/]hazelcast[\\/]internal[\\/]json[\\/]"/>
+
     <!-- Client -->
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]cache[\\/]impl[\\/]ClientCacheProxy"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]proxy[\\/]ClientAtomicReferenceProxy"/>
@@ -314,4 +317,8 @@
             files="[\\/]src[\\/]test[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]protocol[\\/]compatibility[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
+
+    <!-- module-info.java -->
+    <suppress checks="" files="[\\/]module-info"/>
+
 </suppressions>

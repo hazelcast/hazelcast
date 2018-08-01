@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.management.request;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.logging.ILogger;
 
 import static com.hazelcast.util.JsonUtil.getString;

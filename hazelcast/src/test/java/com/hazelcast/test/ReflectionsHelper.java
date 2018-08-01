@@ -59,7 +59,7 @@ public final class ReflectionsHelper {
         }
         HierarchyTraversingSubtypesScanner subtypesScanner = new HierarchyTraversingSubtypesScanner();
         subtypesScanner.setResultFilter(new FilterBuilder().exclude("java\\.lang\\.(Object|Enum)")
-                .exclude("com\\.hazelcast\\.com\\.eclipsesource.*"));
+                .exclude("com\\.hazelcast\\.internal\\.json.*"));
         REFLECTIONS = new ReflectionsTransitive(new ConfigurationBuilder().addUrls(comHazelcastPackageURLs)
                 .addScanners(subtypesScanner, new TypeAnnotationsScanner())
                 .setMetadataAdapter(new JavaReflectionAdapter()));

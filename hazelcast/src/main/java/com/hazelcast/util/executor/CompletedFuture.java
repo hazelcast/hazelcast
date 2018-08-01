@@ -80,6 +80,11 @@ public final class CompletedFuture<V> implements InternalCompletableFuture<V> {
     }
 
     @Override
+    public boolean completeExceptionally(Throwable error) {
+        return false;
+    }
+
+    @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         return false;
     }

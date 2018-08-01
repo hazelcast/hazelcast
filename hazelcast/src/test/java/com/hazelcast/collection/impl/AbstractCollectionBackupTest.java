@@ -57,14 +57,6 @@ public abstract class AbstractCollectionBackupTest extends HazelcastTestSupport 
      */
     protected abstract Collection<Integer> getBackupCollection(HazelcastInstance instance, String name);
 
-    /**
-     * Returns the partition ID of the given Hazelcast collection.
-     *
-     * @param collection the Hazelcast collection to retrieve the partition ID from
-     * @return the partition ID of the Hazelcast collection
-     */
-    protected abstract int getPartitionId(Collection collection);
-
     protected final void testBackupPromotionInternal() {
         HazelcastInstance[] instances = factory.newInstances(config, 3);
         HazelcastInstance ownerInstance = instances[0];
@@ -76,7 +68,7 @@ public abstract class AbstractCollectionBackupTest extends HazelcastTestSupport 
             collection.add(item);
         }
 
-        int partitionId = getPartitionId(collection);
+        int partitionId = getPartitionIdViaReflection(collection);
         LOGGER.info("Collection " + collectionName + " is stored in partition " + partitionId);
         HazelcastInstance promotedInstance = getBackupInstance(instances, partitionId, 1);
         HazelcastInstance backupInstance = getBackupInstance(instances, partitionId, 2);
@@ -111,7 +103,7 @@ public abstract class AbstractCollectionBackupTest extends HazelcastTestSupport 
             collection.add(item);
         }
 
-        int partitionId = getPartitionId(collection);
+        int partitionId = getPartitionIdViaReflection(collection);
         LOGGER.info("Collection " + collectionName + " is stored in partition " + partitionId);
 
         // scale up

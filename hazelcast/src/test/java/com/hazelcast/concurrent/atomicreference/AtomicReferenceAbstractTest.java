@@ -83,6 +83,17 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void setAndGet_exceptionValue() {
+        RuntimeException expected = new RuntimeException("my exception");
+        IAtomicReference<RuntimeException> ref = newInstance();
+
+        ref.set(expected);
+
+        RuntimeException actual = ref.get();
+        assertEquals("my exception", actual.getMessage());
+    }
+
+    @Test
     @SuppressWarnings("deprecation")
     public void setAndGet() {
         assertNull(ref.setAndGet(null));

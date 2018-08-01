@@ -60,9 +60,4 @@ public class QueueBackupTest extends AbstractCollectionBackupTest {
     protected Collection<Integer> getBackupCollection(HazelcastInstance instance, String name) {
         return getBackupQueue(instance, name);
     }
-
-    @Override
-    protected int getPartitionId(Collection collection) {
-        return ((QueueProxySupport) collection).getPartitionId();
-    }
 }

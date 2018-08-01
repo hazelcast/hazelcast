@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.management.request;
 
-import com.eclipsesource.json.JsonObject;
+import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeWanStateOperation;
+import com.hazelcast.internal.json.JsonObject;
 
 import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
-import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
@@ -36,15 +36,15 @@ public class ChangeWanStateRequest implements ConsoleRequest {
 
     private String schemeName;
     private String publisherName;
-    private boolean start;
+    private WanPublisherState state;
 
     public ChangeWanStateRequest() {
     }
 
-    public ChangeWanStateRequest(String schemeName, String publisherName, boolean start) {
+    public ChangeWanStateRequest(String schemeName, String publisherName, WanPublisherState state) {
         this.schemeName = schemeName;
         this.publisherName = publisherName;
-        this.start = start;
+        this.state = state;
     }
 
     @Override
@@ -55,7 +55,7 @@ public class ChangeWanStateRequest implements ConsoleRequest {
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) {
         Object operationResult = resolveFuture(
-                mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, start)));
+                mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, state)));
         JsonObject result = new JsonObject();
         if (operationResult == null) {
             result.add("result", SUCCESS);
@@ -69,6 +69,6 @@ public class ChangeWanStateRequest implements ConsoleRequest {
     public void fromJson(JsonObject json) {
         schemeName = getString(json, "schemeName");
         publisherName = getString(json, "publisherName");
-        start = getBoolean(json, "start");
+        state = WanPublisherState.valueOf(getString(json, "state"));
     }
 }

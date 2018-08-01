@@ -16,8 +16,8 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;

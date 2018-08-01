@@ -20,3 +20,7 @@ from the Tomcat project (https://github.com/apache/tomcat).
 
 com.hazelcast.internal.cluster.fd.PhiAccrualFailureDetector contains code originating
 from the Akka project (https://github.com/akka/akka/).
+
+The package com.hazelcast.internal.json contains code originating
+from minimal-json project (https://github.com/ralfstx/minimal-json).
+

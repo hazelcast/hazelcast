@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.management.request;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
@@ -26,6 +25,7 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.instance.HazelcastInstanceCacheManager;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

@@ -239,6 +239,17 @@
         <time-to-live-seconds>0</time-to-live-seconds>
     </event-journal>
 
+    <!--
+       Configuration for a merkle tree.
+       The merkle tree is a data structure used for efficient comparison of the
+       difference in the contents of large data structures. The precision of
+       such a comparison mechanism is defined by the depth of the merkle tree.
+    -->
+    <merkle-tree enabled="false">
+        <mapName>mapName</mapName>
+        <depth>10</depth>
+    </merkle-tree>
+
     <multimap name="default">
         <backup-count>1</backup-count>
         <value-collection-type>SET</value-collection-type>

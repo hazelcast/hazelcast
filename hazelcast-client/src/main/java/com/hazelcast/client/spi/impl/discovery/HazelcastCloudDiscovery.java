@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.spi.impl.discovery;
 
-import com.hazelcast.com.eclipsesource.json.Json;
-import com.hazelcast.com.eclipsesource.json.JsonValue;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;

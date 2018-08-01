@@ -41,6 +41,7 @@ public class CacheBasicServerTest extends CacheBasicAbstractTest {
 
     @Override
     protected HazelcastInstance getHazelcastInstance() {
-        return factory.newHazelcastInstance(createConfig());
+        HazelcastInstance instance = factory.newHazelcastInstance(createConfig());
+        return getHazelcastInstanceImpl(instance);
     }
 }

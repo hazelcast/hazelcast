@@ -16,9 +16,10 @@
 
 package com.hazelcast.internal.management;
 
-import com.eclipsesource.json.JsonObject;
+import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.request.ChangeWanStateRequest;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -28,6 +29,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.config.WanPublisherState.PAUSED;
+import static com.hazelcast.config.WanPublisherState.REPLICATING;
+import static com.hazelcast.config.WanPublisherState.STOPPED;
 import static com.hazelcast.util.JsonUtil.getString;
 import static org.junit.Assert.assertNotEquals;
 
@@ -44,18 +48,22 @@ public class ChangeWanStateRequestTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testResumingWanState() throws Exception {
-        ChangeWanStateRequest changeWanStateRequest = new ChangeWanStateRequest("schema", "publisher", true);
-        JsonObject jsonObject = new JsonObject();
-        changeWanStateRequest.writeResponse(managementCenterService, jsonObject);
-
-        JsonObject result = (JsonObject) jsonObject.get("result");
-        assertNotEquals(ChangeWanStateRequest.SUCCESS, getString(result, "result"));
+    public void testResumingWanState() {
+        testChangeState(REPLICATING);
     }
 
     @Test
-    public void testPausingWanState() throws Exception {
-        ChangeWanStateRequest changeWanStateRequest = new ChangeWanStateRequest("schema", "publisher", false);
+    public void testPausingWanState() {
+        testChangeState(PAUSED);
+    }
+
+    @Test
+    public void testStoppingWanState() {
+        testChangeState(STOPPED);
+    }
+
+    private void testChangeState(WanPublisherState replicating) {
+        ChangeWanStateRequest changeWanStateRequest = new ChangeWanStateRequest("schema", "publisher", replicating);
         JsonObject jsonObject = new JsonObject();
         changeWanStateRequest.writeResponse(managementCenterService, jsonObject);
 

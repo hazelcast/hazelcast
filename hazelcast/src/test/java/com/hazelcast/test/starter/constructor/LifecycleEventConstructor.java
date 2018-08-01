@@ -16,11 +16,14 @@
 
 package com.hazelcast.test.starter.constructor;
 
+import com.hazelcast.test.starter.HazelcastStarterConstructor;
+
 import java.lang.reflect.Constructor;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.core.LifecycleEvent"})
 public class LifecycleEventConstructor extends AbstractStarterObjectConstructor {
 
     public LifecycleEventConstructor(Class<?> targetClass) {
@@ -35,8 +38,8 @@ public class LifecycleEventConstructor extends AbstractStarterObjectConstructor 
 
         Object state = getFieldValueReflectively(delegate, "state");
         Object[] args = new Object[]{state};
-        Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
 
+        Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
         return constructor.newInstance(proxiedArgs);
     }
 }

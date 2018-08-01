@@ -56,7 +56,7 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
         @Override
         protected void onInterruptDetected() {
             interruptDetected = true;
-            complete(new InterruptedException());
+            completeExceptionally(new InterruptedException());
         }
 
         @Override
@@ -66,7 +66,9 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
 
         @Override
         protected Object resolveAndThrowIfException(Object state) throws ExecutionException, InterruptedException {
-            if (state instanceof Throwable) {
+            if (state instanceof AltResult) {
+                state = ((AltResult) state).getCause();
+
                 if (state instanceof Error) {
                     throw (Error) state;
                 } else if (state instanceof RuntimeException) {

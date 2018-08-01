@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.json.JsonObject;
 
 import java.util.HashMap;
 import java.util.Iterator;

@@ -86,6 +86,7 @@
         <mockito.version>2.19.0</mockito.version>
         <powermock.version>2.0.0-beta.5</powermock.version>
         <bytebuddy.version>1.6.12</bytebuddy.version>
+        <reflections.version>0.9.10</reflections.version>
         <jmh.version>1.16</jmh.version>
         <commons-lang3.version>3.4</commons-lang3.version>
         <felix.utils.version>1.10.0</felix.utils.version>
@@ -1009,7 +1010,7 @@
         <profile>
             <id>jdk-9</id>
             <activation>
-                <jdk>1.9</jdk>
+                <jdk>[9,)</jdk>
             </activation>
             <build>
                 <plugins>
@@ -1021,8 +1022,12 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
+                            <!--
+                            The jdk.xml.internal package export is added to workaround Powermock issue https://github.com/powermock/powermock/issues/905 in tests.
+                             -->
                             <argLine>
                                 ${vmHeapSettings}
+                                --add-exports java.xml/jdk.xml.internal=ALL-UNNAMED
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
@@ -1046,6 +1051,9 @@
                     </plugin>
                 </plugins>
             </build>
+            <modules>
+                <module>modulepath-tests</module>
+            </modules>
         </profile>
 
         <profile>
@@ -1171,6 +1179,22 @@
             <artifactId>powermock-module-junit4</artifactId>
             <version>${powermock.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>${reflections.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

@@ -45,6 +45,7 @@
                 <xs:element name="scheduled-executor-service" type="scheduled-executor-service" minOccurs="0"
                             maxOccurs="unbounded"/>
                 <xs:element name="event-journal" type="event-journal" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="merkle-tree" type="merkle-tree" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
@@ -309,7 +310,7 @@
             <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
             <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
             <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0"/>
             <xs:element name="indexes" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -568,7 +569,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1">
+            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Wan replication configuration for cache.
@@ -2418,7 +2419,7 @@
     <xs:complexType name="wan-replication">
         <xs:sequence>
             <xs:element name="wan-publisher" type="wan-publisher" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="wan-consumer" type="wan-consumer" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="wan-consumer" type="wan-consumer" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
@@ -2461,6 +2462,7 @@
             </xs:element>
             <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="wan-sync" type="wan-sync" minOccurs="0"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="group-name" type="xs:string" use="required">
@@ -2471,16 +2473,79 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    <xs:complexType name="wan-consumer">
+    <xs:complexType name="wan-sync">
         <xs:all>
-            <xs:element name="class-name" type="xs:string" minOccurs="1" maxOccurs="1">
+            <xs:element name="consistency-check-strategy" type="consistency-check-strategy" minOccurs="0" default="NONE">
                 <xs:annotation>
                     <xs:documentation>
-                        Name of the custom class implementation that is responsible for incoming WAN events.
+                        Sets the strategy for checking consistency of data between source and
+                        target cluster. Any inconsistency will not be reconciled, it will be
+                        merely reported via the usual mechanisms (e.g. statistics, diagnostics).
+                        The user must initiate WAN sync to reconcile there differences. For the
+                        check procedure to work properly, the target cluster should support the
+                        chosen strategy.
+                        Default value is NONE, which means the check is disabled.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="consistency-check-period-millis" type="xs:int" minOccurs="0" default="-1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Period (in milliseconds) for checking consistency of data
+                        between source and target cluster.
+                        Any inconsistency will not be reconciled, it will be merely reported via
+                        the usual mechanisms (e.g. statistics, diagnostics). The user must
+                        initiate WAN sync to reconcile there differences.
+                        For the check procedure to work properly, the target cluster should
+                        support merkle trees and the data structures being synced should be
+                        configured with merkle trees enabled both on the source and target cluster.
+                        Default value is 0, which means the periodic check is disabled.
+                        The period must not be negative.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="wan-consumer">
+        <xs:annotation>
+            <xs:documentation>
+                Config for processing WAN events received from a target cluster.
+                You can configure certain behaviour when processing incoming WAN events
+                or even configure your own implementation for a WAN consumer. A custom
+                WAN consumer allows you to define custom processing logic and is usually
+                used in combination with a custom WAN publisher.
+                A custom consumer is optional and you may simply omit defining it which
+                will cause the default processing logic to be used.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="class-name" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the fully qualified class name of the class implementing
+                        a custom WAN consumer (WanReplicationConsumer).
+                        If you don't define a class name, the default processing logic for
+                        incoming WAN events will be used.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="properties" type="properties" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Properties for the custom WAN consumer. These properties are
+                        accessible when initalizing the WAN consumer.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="persist-wan-replicated-data" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        When true, an incoming event over WAN replication can be persisted to a
+                        database for example, otherwise it will not be persisted. Default value
+                        is true.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="ssl">
@@ -3371,7 +3436,7 @@
 
     <xs:complexType name="wan-replication-ref">
         <xs:all>
-            <xs:element name="merge-policy" type="xs:string" minOccurs="1" maxOccurs="1">
+            <xs:element name="merge-policy" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Resolve conflicts that occurred when target cluster already has the replicated
@@ -3401,8 +3466,15 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="republishing-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the list of class names implementing the CacheWanEventFilter or
+                        MapWanEventFilter for filtering outbound WAN replication events.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="republishing-enabled" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
                         When enabled, an incoming event to a member is forwarded to the target cluster of that member.
@@ -3813,6 +3885,65 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="merkle-tree">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for a merkle tree.
+                The merkle tree is a data structure used for efficient comparison of the
+                difference in the contents of large data structures. The precision of
+                such a comparison mechanism is defined by the depth of the merkle tree.
+                A larger depth means that a data synchronization mechanism will be able
+                to pinpoint a smaller subset of the data structure contents in which a
+                change occurred. This causes the synchronization mechanism to be more
+                efficient. On the other hand, a larger tree depth means the merkle tree
+                will consume more memory.
+                A smaller depth means the data synchronization mechanism will have to
+                transfer larger chunks of the data structure in which a possible change
+                happened. On the other hand, a shallower tree consumes less memory.
+                The depth must be between 2 and 27 (exclusive).
+                As the comparison mechanism is iterative, a larger depth will also prolong
+                the duration of the comparison mechanism. Care must be taken to not have
+                large tree depths if the latency of the comparison operation is high.
+                The default depth is 10.
+                This configuration is not tied to a specific data structure and can be
+                reused.
+                See https://en.wikipedia.org/wiki/Merkle_tree.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="mapName" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The name of the map to which this config applies.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="depth" type="xs:unsignedInt" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The depth of the merkle tree.
+                        A larger depth means that a data synchronization mechanism will be able
+                        to pinpoint a smaller subset of the data structure contents in which a
+                        change occurred. This causes the synchronization mechanism to be more
+                        efficient. On the other hand, a larger tree depth means the merkle tree
+                        will consume more memory.
+                        A smaller depth means the data synchronization mechanism will have to
+                        transfer larger chunks of the data structure in which a possible change
+                        happened. On the other hand, a shallower tree consumes less memory.
+                        The depth must be between 2 and 27 (exclusive). The default depth is 10.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    True if the merkle tree is enabled, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="wan-replication-ref-filters">
         <xs:sequence>
             <xs:element name="filter-impl" type="xs:string" maxOccurs="unbounded"/>
@@ -3964,6 +4095,12 @@
             <xs:enumeration value="REPLICATING"/>
             <xs:enumeration value="PAUSED"/>
             <xs:enumeration value="STOPPED"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="consistency-check-strategy">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="NONE"/>
+            <xs:enumeration value="MERKLE_TREES"/>
         </xs:restriction>
     </xs:simpleType>
 </xs:schema>

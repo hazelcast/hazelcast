@@ -69,6 +69,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -93,6 +94,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.StringUtil;
 
 import java.io.File;
@@ -447,6 +449,34 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setCacheEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public MerkleTreeConfig findMapMerkleTreeConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public MerkleTreeConfig getMapMerkleTreeConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config addMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
+        final String mapName = merkleTreeConfig.getMapName();
+        Preconditions.checkHasText(mapName, "Merkle tree config must define a map name");
+        // TODO add client invocation
+        return this;
+    }
+
+    @Override
+    public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setMapMerkleTreeConfigs(Map<String, MerkleTreeConfig> merkleTreeConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

@@ -2109,8 +2109,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The {@code EntryProcessor} may implement the {@link Offloadable} and {@link ReadOnly} interfaces.
      * <p>
-     * If the EntryProcessor implements the {@link Offloadable} interface the processing will be offloaded to the given
-     * ExecutorService allowing unblocking of the partition-thread, which means that other partition-operations
+     * If the EntryProcessor implements the {@link Offloadable} interface, the processing will be offloaded to the given
+     * ExecutorService, allowing unblocking of the partition-thread, which means that other partition-operations
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
      * <ol>
@@ -2118,51 +2118,51 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <li>execution-thread (process)</li>
      * <li>partition-thread (set & unlock, or just unlock if no changes)</li>
      * </ol>
-     * If the EntryProcessor implements the Offloadable and ReadOnly interfaces the processing will be offloaded to the
+     * If the EntryProcessor implements the Offloadable and ReadOnly interfaces, the processing will be offloaded to the
      * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
-     * any changes to the Entry the key will NOT be locked for the time-span of the processing. In this case the threading
+     * any changes to the Entry, the key will NOT be locked for the time-span of the processing. In this case the threading
      * looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch)</li>
      * <li>execution-thread (process)</li>
      * </ol>
-     * In this case the EntryProcessor.getBackupProcessor() has to return null; otherwise an IllegalArgumentException
+     * In this case, the EntryProcessor.getBackupProcessor() has to return null; otherwise an IllegalArgumentException
      * exception is thrown.
      * <p>
-     * If the EntryProcessor implements only ReadOnly without implementing Offloadable the processing unit will not
+     * If the EntryProcessor implements only ReadOnly without implementing Offloadable, the processing unit will not
      * be offloaded, however, the EntryProcessor will not wait for the lock to be acquired, since the EP will not
      * do any modifications.
      * <p>
      * Using offloading is useful if the EntryProcessor encompasses heavy logic that may stall the partition-thread.
      * <p>
-     * If the EntryProcessor implements ReadOnly and modifies the entry it is processing an UnsupportedOperationException
+     * If the EntryProcessor implements ReadOnly and modifies the entry it is processing, an UnsupportedOperationException
      * will be thrown.
      * <p>
      * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
-     * The input allows providing context to the EntryBackupProcessor - for example the "delta"
+     * The input allows providing context to the EntryBackupProcessor, for example the "delta",
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
      * <p>
      * See {@link #submitToKey(Object, EntryProcessor)} for an async version of this method.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
-     * If value with {@code key} is not found in memory
+     * If value with {@code key} is not found in memory,
      * {@link MapLoader#load(Object)} is invoked to load the value from
-     * the map store backing the map. Exceptions thrown by load fail
-     * the operation and are propagated to the caller.
+     * the map store backing the map.
      * <p>
      * If the entryProcessor updates the entry and write-through
      * persistence mode is configured, before the value is stored
      * in memory, {@link MapStore#store(Object, Object)} is called to
-     * write the value into the map store. Exceptions thrown by store
-     * fail the operation are propagated to the caller.
+     * write the value into the map store.
      * <p>
      * If the entryProcessor updates the entry's value to null value and
      * write-through persistence mode is configured, before the value is
      * removed from the memory, {@link MapStore#delete(Object)} is
-     * called to delete the value from the map store. Exceptions thrown
-     * by delete fail the operation are propagated to the caller.
+     * called to delete the value from the map store.
+     * <p>
+     * Any exceptions thrown by the map store fail the operation and are
+     * propagated to the caller.
      * <p>
      * If write-behind persistence mode is configured with
      * write-coalescing turned off,
@@ -2187,26 +2187,45 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * For each entry not found in memory {@link MapLoader#load(Object)}
      * is invoked to load the value from the map store backing the map.
-     * Exceptions thrown by load fail the operation and are propagated
-     * to the caller.
      * <p>
      * If write-through persistence mode is configured, for each entry
      * updated by the entryProcessor, before the updated value is stored
      * in memory, {@link MapStore#store(Object, Object)} is called to
-     * write the value into the map store. Exceptions thrown by store
-     * fail the operation and are propagated to the caller.
+     * write the value into the map store.
      * <p>
      * If write-through persistence mode is configured, for each entry
      * updated to null value, before the value is removed from the
      * memory, {@link MapStore#delete(Object)} is called to delete the
-     * value from the map store. Exceptions thrown by delete fail the
-     * operation and are propagated to the caller.
+     * value from the map store.
      * <p>
-     * If write-behind persistence mode is configured with
-     * write-coalescing turned off,
+     * Any exceptions thrown by the map store fail the operation and are
+     * propagated to the caller. If an exception happened, the operation might
+     * already succeeded on some of the keys.
+     * <p>
+     * If write-behind persistence mode is
+     * configured with write-coalescing turned off,
      * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
      * if the write-behind queue has reached its per-node maximum
      * capacity.
+     *
+     * <h4>Performance note</h4>
+     * <p>Keep the state of {@code entryProcessor}
+     * small, it will be serialized and one copy will be sent to each member.
+     * Additionally, the {@linkplain EntryProcessor#getBackupProcessor() backup
+     * processor} will also be serialized once for each affected partition and
+     * sent to each backup. For example, in this usage the entire {@code
+     * additions} map will be duplicated once for each member and once for each
+     * partition and backup:
+     * <pre>{@code
+     *   HashMap additions = ...;
+     *   iMap.executeOnKeys(map.keySet(), new AbstractEntryProcessor<Integer, Integer>() {
+     *             public Object process(Entry<Integer, Integer> entry) {
+     *                 Integer updateBy = additions.get(entry.getKey());
+     *                 entry.setValue(entry.getValue() + updateBy);
+     *                 return null;
+     *             }
+     *         });
+     * }</pre>
      *
      * @return results of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException     if the specified key is {@code null}
@@ -2260,23 +2279,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * If value with {@code key} is not found in memory
      * {@link MapLoader#load(Object)} is invoked to load the value from
-     * the map store backing the map. Exceptions thrown by load fail
-     * the operation and are propagated to the provided callback via
-     * {@link ExecutionCallback#onFailure(Throwable)}.
+     * the map store backing the map.
      * <p>
      * If the entryProcessor updates the entry and write-through
      * persistence mode is configured, before the value is stored
      * in memory, {@link MapStore#store(Object, Object)} is called to
-     * write the value into the map store. Exceptions thrown by store
-     * fail the operation and are propagated to the provided callback via
-     * {@link ExecutionCallback#onFailure(Throwable)}.
+     * write the value into the map store.
      * <p>
      * If the entryProcessor updates the entry's value to null value and
      * write-through persistence mode is configured, before the value is
      * removed from the memory, {@link MapStore#delete(Object)} is
-     * called to delete the value from the map store. Exceptions thrown
-     * by delete fail the operation and are propagated to the provided
-     * callback via {@link ExecutionCallback#onFailure(Throwable)}.
+     * called to delete the value from the map store.
+     * <p>
+     * Any exception thrown by the map store fail the operation and are
+     * propagated to the provided callback via {@link
+     * ExecutionCallback#onFailure(Throwable)}.
      * <p>
      * If write-behind persistence mode is configured with
      * write-coalescing turned off,
@@ -2341,20 +2358,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * If value with {@code key} is not found in memory
      * {@link MapLoader#load(Object)} is invoked to load the value from
-     * the map store backing the map. Exceptions thrown by load fail
-     * the operation and are propagated to the caller.
+     * the map store backing the map.
      * <p>
      * If the entryProcessor updates the entry and write-through
      * persistence mode is configured, before the value is stored
      * in memory, {@link MapStore#store(Object, Object)} is called to
-     * write the value into the map store. Exceptions thrown by store
-     * fail the operation are propagated to the caller.
+     * write the value into the map store.
      * <p>
      * If the entryProcessor updates the entry's value to null value and
      * write-through persistence mode is configured, before the value is
      * removed from the memory, {@link MapStore#delete(Object)} is
-     * called to delete the value from the map store. Exceptions thrown
-     * by delete fail the operation are propagated to the caller.
+     * called to delete the value from the map store.
+     * <p>
+     * Any exception thrown by the map store fail the operation and are
+     * propagated to the provided callback via {@link
+     * ExecutionCallback#onFailure(Throwable)}.
      * <p>
      * If write-behind persistence mode is configured with
      * write-coalescing turned off,
@@ -2382,20 +2400,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * For each entry not found in memory {@link MapLoader#load(Object)}
      * is invoked to load the value from the map store backing the map.
-     * Exceptions thrown by load fail the operation and are propagated
-     * to the caller.
      * <p>
      * If write-through persistence mode is configured, for each entry
      * updated by the entryProcessor, before the updated value is stored
      * in memory, {@link MapStore#store(Object, Object)} is called to
-     * write the value into the map store. Exceptions thrown by store
-     * fail the operation and are propagated to the caller.
+     * write the value into the map store.
      * <p>
      * If write-through persistence mode is configured, for each entry
      * updated to null value, before the value is removed from the
      * memory, {@link MapStore#delete(Object)} is called to delete the
-     * value from the map store. Exceptions thrown by delete fail the
-     * operation and are propagated to the caller.
+     * value from the map store.
+     * <p>
+     * Any exceptions thrown by the map store fail the operation and are
+     * propagated to the caller. If an exception happened, the operation might
+     * already succeeded on some of the keys.
      * <p>
      * If write-behind persistence mode is configured with
      * write-coalescing turned off,
@@ -2416,20 +2434,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * For each entry not found in memory {@link MapLoader#load(Object)}
      * is invoked to load the value from the map store backing the map.
-     * Exceptions thrown by load fail the operation and are propagated
-     * to the caller.
      * <p>
      * If write-through persistence mode is configured, for each entry
      * updated by the entryProcessor, before the updated value is stored
      * in memory, {@link MapStore#store(Object, Object)} is called to
-     * write the value into the map store. Exceptions thrown by store
-     * fail the operation and are propagated to the caller.
+     * write the value into the map store.
      * <p>
      * If write-through persistence mode is configured, for each entry
      * updated to null value, before the value is removed from the
      * memory, {@link MapStore#delete(Object)} is called to delete the
-     * value from the map store. Exceptions thrown by delete fail the
-     * operation and are propagated to the caller.
+     * value from the map store.
+     * <p>
+     * Any exceptions thrown by the map store fail the operation and are
+     * propagated to the caller. If an exception happened, the operation might
+     * already succeeded on some of the keys.
      * <p>
      * If write-behind persistence mode is configured with
      * write-coalescing turned off,

@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.management.request;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.ExceptionUtil;

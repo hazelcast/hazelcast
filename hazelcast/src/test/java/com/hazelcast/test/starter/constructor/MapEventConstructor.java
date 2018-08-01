@@ -16,11 +16,14 @@
 
 package com.hazelcast.test.starter.constructor;
 
+import com.hazelcast.test.starter.HazelcastStarterConstructor;
+
 import java.lang.reflect.Constructor;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.core.MapEvent"})
 public class MapEventConstructor extends AbstractStarterObjectConstructor {
 
     public MapEventConstructor(Class<?> targetClass) {
@@ -42,7 +45,6 @@ public class MapEventConstructor extends AbstractStarterObjectConstructor {
         Object[] args = new Object[]{source, member, eventTypeId, numberOfKeysAffected};
 
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
-
         return constructor.newInstance(proxiedArgs);
     }
 }

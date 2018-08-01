@@ -42,6 +42,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -97,6 +98,7 @@ public class DynamicConfigurationAwareConfig extends Config {
             return staticConfig.getMapConfigs();
         }
     };
+  
     private final ConfigSupplier<EventJournalConfig> mapEventJournalConfigSupplier =
         new ConfigSupplier<EventJournalConfig>() {
             @Override
@@ -115,24 +117,44 @@ public class DynamicConfigurationAwareConfig extends Config {
                 return staticConfig.getMapEventJournalConfigs();
             }
         };
+  
     private final ConfigSupplier<EventJournalConfig> cacheEventJournalConfigSupplier = new
-        ConfigSupplier<EventJournalConfig>() {
-            @Override
-            public EventJournalConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
-                @Nonnull String name) {
-                return configurationService.findCacheEventJournalConfig(name);
-            }
+            ConfigSupplier<EventJournalConfig>() {
+                @Override
+                public EventJournalConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
+                                                           @Nonnull String name) {
+                    return configurationService.findCacheEventJournalConfig(name);
+                }
 
-            @Override
-            public EventJournalConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                return staticConfig.getCacheEventJournalConfig(name);
-            }
+                @Override
+                public EventJournalConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
+                    return staticConfig.getCacheEventJournalConfig(name);
+                }
 
-            @Override
-            public Map<String, EventJournalConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                return staticConfig.getCacheEventJournalConfigs();
-            }
-        };
+                @Override
+                public Map<String, EventJournalConfig> getStaticConfigs(@Nonnull Config staticConfig) {
+                    return staticConfig.getCacheEventJournalConfigs();
+                }
+            };
+  
+    private final ConfigSupplier<MerkleTreeConfig> mapMerkleTreeConfigSupplier =
+            new ConfigSupplier<MerkleTreeConfig>() {
+                @Override
+                public MerkleTreeConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
+                                                           @Nonnull String name) {
+                    return configurationService.findMapMerkleTreeConfig(name);
+                }
+
+                @Override
+                public MerkleTreeConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
+                    return staticConfig.getMapMerkleTreeConfig(name);
+                }
+
+                @Override
+                public Map<String, MerkleTreeConfig> getStaticConfigs(@Nonnull Config staticConfig) {
+                    return staticConfig.getMapMerkleTreeConfigs();
+                }
+            };
 
     private final Config staticConfig;
     private final ConfigPatternMatcher configPatternMatcher;
@@ -1087,6 +1109,45 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setCacheEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public MerkleTreeConfig findMapMerkleTreeConfig(String name) {
+        return getMapMerkleTreeConfigInternal(name, "default");
+    }
+
+    @Override
+    public MerkleTreeConfig getMapMerkleTreeConfig(String name) {
+        return getMapMerkleTreeConfigInternal(name, name);
+    }
+
+    private MerkleTreeConfig getMapMerkleTreeConfigInternal(String name, String fallbackName) {
+        return (MerkleTreeConfig) configSearcher.getConfig(name, fallbackName, mapMerkleTreeConfigSupplier);
+    }
+
+    @Override
+    public Config addMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
+        final String mapName = merkleTreeConfig.getMapName();
+        if (StringUtil.isNullOrEmpty(mapName)) {
+            throw new IllegalArgumentException("Merkle tree config must define a map name");
+        }
+
+        Map<String, MerkleTreeConfig> staticConfigs = staticConfig.getMapMerkleTreeConfigs();
+        checkStaticConfigurationDoesNotExist(staticConfigs, mapName, merkleTreeConfig);
+        configurationService.broadcastConfig(merkleTreeConfig);
+        return this;
+    }
+
+    @Override
+    public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
+        Map<String, MerkleTreeConfig> staticConfigs = staticConfig.getMapMerkleTreeConfigs();
+        Map<String, MerkleTreeConfig> dynamicConfigs = configurationService.getMapMerkleTreeConfigs();
+        return aggregate(staticConfigs, dynamicConfigs);
+    }
+
+    @Override
+    public Config setMapMerkleTreeConfigs(Map<String, MerkleTreeConfig> merkleTreeConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

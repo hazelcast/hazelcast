@@ -16,10 +16,13 @@
 
 package com.hazelcast.test.starter.constructor;
 
+import com.hazelcast.test.starter.HazelcastStarterConstructor;
+
 import java.lang.reflect.Constructor;
 
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.nio.Address"})
 public class AddressConstructor extends AbstractStarterObjectConstructor {
 
     public AddressConstructor(Class<?> targetClass) {

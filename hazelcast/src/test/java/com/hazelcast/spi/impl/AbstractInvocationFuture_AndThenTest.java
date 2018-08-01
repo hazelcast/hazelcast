@@ -125,7 +125,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
         verifyZeroInteractions(callback);
 
         final ExpectedRuntimeException ex = new ExpectedRuntimeException();
-        future.complete(ex);
+        future.completeExceptionally(ex);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -159,7 +159,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
         future.andThen(callback);
 
         final MemberLeftException ex = new MemberLeftException();
-        future.complete(ex);
+        future.completeExceptionally(ex);
 
         assertTrueEventually(new AssertTask() {
             @Override

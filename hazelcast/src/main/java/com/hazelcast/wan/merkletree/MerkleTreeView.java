@@ -14,7 +14,24 @@
  * limitations under the License.
  */
 
+package com.hazelcast.wan.merkletree;
+
 /**
- * <p>This package contains the serverside client functionality</p>
+ * Readonly view of a Merkle tree
  */
-package com.hazelcast.client;
+interface MerkleTreeView {
+    /**
+     * Returns the hash for the node with the given {@code nodeOrder}
+     *
+     * @param nodeOrder The order of the node
+     * @return the hash of the node
+     */
+    int getNodeHash(int nodeOrder);
+
+    /**
+     * Returns the depth of the tree
+     *
+     * @return the depth of the tree
+     */
+    int depth();
+}
