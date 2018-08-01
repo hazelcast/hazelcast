@@ -22,6 +22,11 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.EqualPredicate;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,7 +37,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
+import java.util.Set;
+
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
@@ -41,15 +51,16 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     private HazelcastInstance instance;
     private IMap<String, String> map;
     private QueryRunner queryRunner;
+    private MapService mapService;
 
     private int partitionId;
     private String key;
     private String value;
 
-
     @Before
     public void before() {
         instance = createHazelcastInstance();
+        mapService = getMapService();
         map = instance.getMap(randomName());
         queryRunner = getQueryRunner();
 
@@ -69,7 +80,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
     @Test
     public void assertSequentialQueryRunner() {
-        assertEquals(QueryRunner.class, getQueryRunner().getClass());
+        assertEquals(QueryRunner.class, queryRunner.getClass());
     }
 
     @Test
@@ -80,6 +91,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
+        assertArrayEquals(result.getPartitionIds().toArray(), mapService.getMapServiceContext().getOwnedPartitions().toArray());
     }
 
     @Test
@@ -90,11 +102,70 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
+        assertArrayEquals(result.getPartitionIds().toArray(), new Object[]{partitionId});
+    }
+
+    @Test
+    public void verifyIndexedQueryFailureWhileMigrating() {
+        map.addIndex("this", false);
+        Predicate predicate = new EqualPredicate("this", value);
+
+        mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+
+        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
+        QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
+        assertNull(result.getPartitionIds());
+    }
+
+    @Test
+    public void verifyIndexedQueryFailureWhileMigratingInFlight() {
+        map.addIndex("this", false);
+
+        Predicate predicate = new EqualPredicate("this", value) {
+            @Override
+            public Set<QueryableEntry> filter(QueryContext queryContext) {
+                // start a new migration while executing an indexed query
+                mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+                return super.filter(queryContext);
+            }
+        };
+        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
+        QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
+        assertNull(result.getPartitionIds());
+    }
+
+    @Test
+    public void verifyFullScanFailureWhileMigrating() {
+        Predicate predicate = new EqualPredicate("this", value);
+
+        mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+
+        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
+        QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
+        assertNull(result.getPartitionIds());
+    }
+
+    @Test
+    public void verifyFullScanFailureWhileMigratingInFlight() {
+        Predicate predicate = new EqualPredicate("this", value) {
+            @Override
+            protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+                // start a new migration while executing a full scan
+                mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+                return super.applyForSingleAttributeValue(mapEntry, attributeValue);
+            }
+        };
+        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
+        QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
+        assertNull(result.getPartitionIds());
+    }
+
+    private MapService getMapService() {
+        return getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
     }
 
     private QueryRunner getQueryRunner() {
-        MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
-        return mapService.getMapServiceContext().getMapQueryRunner("");
+        return mapService.getMapServiceContext().getMapQueryRunner(map.getName());
     }
 
     private Object toObject(Data data) {
