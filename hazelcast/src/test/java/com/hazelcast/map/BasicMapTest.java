@@ -1244,7 +1244,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testJsonPutGet() {
         final IMap<String, JsonValue> map = getInstance().getMap(randomMapName());
-        JsonValue value = Json.parse("{ \"age\": 4 }");
+        JsonValue value = Json.asJson("{ \"age\": 4 }");
         map.put("item1", value);
         JsonValue retrieved = map.get("item1");
 

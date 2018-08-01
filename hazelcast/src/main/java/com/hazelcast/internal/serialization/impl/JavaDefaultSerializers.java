@@ -339,7 +339,7 @@ public final class JavaDefaultSerializers {
 
         @Override
         public JsonValue read(ObjectDataInput in) throws IOException {
-            return Json.parse(in.readUTF());
+            return Json.asJson(in.readUTF());
         }
 
         @Override

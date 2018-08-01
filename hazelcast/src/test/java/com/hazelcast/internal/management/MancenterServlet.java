@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.json.Json;
-import com.hazelcast.json.JsonObject;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;

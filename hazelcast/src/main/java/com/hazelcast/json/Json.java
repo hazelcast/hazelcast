@@ -219,7 +219,7 @@ public final class Json {
      * @return a value that represents the parsed JSON
      * @throws IllegalArgumentException if the input is not valid JSON
      */
-    public static JsonValue parse(String string) {
+    public static JsonValue asJson(String string) {
         return new LazyJsonValue(string);
     }
 

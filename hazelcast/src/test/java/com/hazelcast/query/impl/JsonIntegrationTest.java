@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.json.Json;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.json.JsonValue;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;

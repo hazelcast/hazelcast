@@ -43,7 +43,7 @@ public class JsonValueSerializationTest {
 
     @Test
     public void testSerializaeDeserializeJsonValue() {
-        JsonValue jsonValue = Json.parse("{ \"key\": \"value\" }");
+        JsonValue jsonValue = Json.asJson("{ \"key\": \"value\" }");
         Data jsonData = serializationService.toData(jsonValue);
         JsonValue jsonDeserialized = serializationService.toObject(jsonData);
         assertEquals(jsonValue, jsonDeserialized);
@@ -51,7 +51,7 @@ public class JsonValueSerializationTest {
 
     @Test(expected = RuntimeException.class)
     public void testInvalidJsonStringFailsToDeserialize() {
-        JsonValue jsonValue = Json.parse("{");
+        JsonValue jsonValue = Json.asJson("{");
         Data jsonData = serializationService.toData(jsonValue);
         serializationService.toObject(jsonData);
     }

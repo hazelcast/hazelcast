@@ -480,7 +480,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         for (String key : keys) {
-            JsonValue jsonString = Json.parse("{ \"value\": \"" + key + "\" }");
+            JsonValue jsonString = Json.asJson("{ \"value\": \"" + key + "\" }");
             map.put(key, jsonString);
         }
 
@@ -515,7 +515,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         @Override
         public Object process(Map.Entry<Integer, JsonValue> entry) {
-            JsonValue jsonValue = Json.parse("{\"123\" : \"123\"}");
+            JsonValue jsonValue = Json.asJson("{\"123\" : \"123\"}");
             entry.setValue(jsonValue);
             return "anyResult";
         }

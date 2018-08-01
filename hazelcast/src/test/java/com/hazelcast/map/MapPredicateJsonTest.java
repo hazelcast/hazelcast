@@ -92,14 +92,14 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
     private JsonValue putJsonString(Map map, String name, int age, boolean onDuty) {
         String f = createNameAgeOnDuty(name, age, onDuty).toString();
-        JsonValue json = Json.parse(f);
+        JsonValue json = Json.asJson(f);
         map.put(name, json);
         return json;
     }
 
     private String putWithJsonStringKey(Map map, String name, int age, boolean onDuty) {
         String f = createNameAgeOnDuty(name, age, onDuty).toString();
-        JsonValue json = Json.parse(f);
+        JsonValue json = Json.asJson(f);
         map.put(json, name);
         return name;
     }
