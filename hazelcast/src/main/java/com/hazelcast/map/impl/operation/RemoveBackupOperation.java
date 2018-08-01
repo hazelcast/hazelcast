@@ -27,7 +27,6 @@ import java.io.IOException;
 public class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     protected boolean unlockKey;
-    protected boolean disableWanReplicationEvent;
 
     public RemoveBackupOperation() {
     }
@@ -49,7 +48,7 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
 
     @Override
     public void run() {
-        recordStore.removeBackup(dataKey);
+        recordStore.removeBackup(dataKey, getCallerProvenance());
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
         }
@@ -61,11 +60,6 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
         evict(dataKey);
 
         super.afterRun();
-    }
-
-    @Override
-    protected boolean canThisOpGenerateWANEvent() {
-        return !disableWanReplicationEvent;
     }
 
     @Override

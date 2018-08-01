@@ -33,6 +33,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.Iterator;
 import java.util.List;
@@ -66,16 +67,23 @@ public interface RecordStore<R extends Record> {
 
     Object putIfAbsent(Data dataKey, Object value, long ttl, Address callerAddress);
 
-    R putBackup(Data key, Object value);
+    /**
+     * @param key        the key
+     * @param value      the value to put backup
+     * @param provenance origin of call to this method.
+     * @return current record object associated to the key
+     */
+    R putBackup(Data key, Object value, CallerProvenance provenance);
 
     /**
      * @param key          the key to be processed.
      * @param value        the value to be processed.
      * @param ttl          milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
      * @param putTransient {@code true} if putting transient entry, otherwise {@code false}
+     * @param provenance   origin of call to this method.
      * @return previous record if exists otherwise null.
      */
-    R putBackup(Data key, Object value, long ttl, boolean putTransient);
+    R putBackup(Data key, Object value, long ttl, boolean putTransient, CallerProvenance provenance);
 
     /**
      * Does exactly the same thing as {@link #set(Data, Object, long)} except the invocation is not counted as
@@ -83,19 +91,29 @@ public interface RecordStore<R extends Record> {
      */
     boolean setWithUncountedAccess(Data dataKey, Object value, long ttl);
 
-    Object remove(Data dataKey);
+    /**
+     * @param key        the key to be removed
+     * @param provenance origin of call to this method.
+     * @return value of removed entry or null if there is no matching entry
+     */
+    Object remove(Data key, CallerProvenance provenance);
 
-    boolean delete(Data dataKey);
+    /**
+     * @param dataKey    the key to be removed
+     * @param provenance origin of call to this method.
+     * @return {@code true} if entry is deleted, otherwise returns {@code false}
+     */
+    boolean delete(Data dataKey, CallerProvenance provenance);
 
     boolean remove(Data dataKey, Object testValue);
 
     void setTTL(Data key, long ttl);
 
     /**
-     * Similar to {@link RecordStore#remove(com.hazelcast.nio.serialization.Data)}
+     * Similar to {@link RecordStore##remove(Data, CallerProvenance)}
      * except removeBackup doesn't touch mapstore since it does not return previous value.
      */
-    void removeBackup(Data dataKey);
+    void removeBackup(Data dataKey, CallerProvenance provenance);
 
     /**
      * Gets record from {@link RecordStore}.
@@ -170,23 +188,34 @@ public interface RecordStore<R extends Record> {
      */
     Object putFromLoadBackup(Data key, Object value);
 
+    boolean merge(MapMergeTypes mergingEntry,
+                  SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
+
     /**
      * Merges the given {@link MapMergeTypes} via the given {@link SplitBrainMergePolicy}.
      *
      * @param mergingEntry the {@link MapMergeTypes} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @param provenance   origin of call to this method.
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    boolean merge(MapMergeTypes mergingEntry, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
+    boolean merge(MapMergeTypes mergingEntry,
+                  SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                  CallerProvenance provenance);
+
+    boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy);
 
     /**
      * Merges the given {@link EntryView} via the given {@link MapMergePolicy}.
      *
+     * @param dataKey      the key to be merged
      * @param mergingEntry the {@link EntryView} instance to merge
      * @param mergePolicy  the {@link MapMergePolicy} instance to apply
+     * @param provenance   origin of call to this method.
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy);
+    boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy,
+                  CallerProvenance provenance);
 
     R getRecord(Data key);
 
