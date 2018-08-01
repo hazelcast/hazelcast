@@ -45,7 +45,6 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
 
     private List<MapMergeTypes> mergingEntries;
     private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
-    private boolean disableWanReplicationEvent;
 
     private transient boolean hasMapListener;
     private transient boolean hasWanReplication;
@@ -93,7 +92,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
         //noinspection unchecked
-        if (recordStore.merge(mergingEntry, mergePolicy)) {
+        if (recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance())) {
             hasMergedValues = true;
             Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));
             mapServiceContext.interceptAfterPut(name, dataValue);
@@ -160,7 +159,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
 
     @Override
     public Operation getBackupOperation() {
-        return new PutAllBackupOperation(name, mapEntries, backupRecordInfos);
+        return new PutAllBackupOperation(name, mapEntries, backupRecordInfos, disableWanReplicationEvent);
     }
 
     @Override

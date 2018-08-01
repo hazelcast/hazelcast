@@ -42,12 +42,15 @@ import java.util.Map;
  */
 public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned {
 
-    private static final boolean DEFAULT_PERSIST_WAN_REPLICATED_DATA = true;
+    /**
+     * @see #isPersistWanReplicatedData
+     */
+    public static final boolean DEFAULT_PERSIST_WAN_REPLICATED_DATA = false;
 
+    private boolean persistWanReplicatedData = DEFAULT_PERSIST_WAN_REPLICATED_DATA;
     private String className;
     private Object implementation;
     private Map<String, Comparable> properties = new HashMap<String, Comparable>();
-    private boolean persistWanReplicatedData = DEFAULT_PERSIST_WAN_REPLICATED_DATA;
 
     /**
      * Returns the properties for the custom WAN consumer.
@@ -130,8 +133,8 @@ public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned 
      * @param persistWanReplicatedData set {@code true} to enable
      *                                 persistence of replicated data into backing store, otherwise set
      *                                 {@code false} to disable it. Default value is {@value
-     *                                 #DEFAULT_PERSIST_WAN_REPLICATED_DATA}. @return reference to this
-     *                                 {@link WanReplicationRef} object
+     *                                 #DEFAULT_PERSIST_WAN_REPLICATED_DATA}.
+     * @return reference to this {@link WanReplicationRef} object
      */
     public WanConsumerConfig setPersistWanReplicatedData(boolean persistWanReplicatedData) {
         this.persistWanReplicatedData = persistWanReplicatedData;

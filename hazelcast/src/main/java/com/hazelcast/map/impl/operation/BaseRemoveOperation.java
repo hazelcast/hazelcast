@@ -22,15 +22,10 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
-public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
+public abstract class BaseRemoveOperation extends LockAwareOperation
+        implements BackupAwareOperation, MutatingOperation {
 
     protected transient Data dataOldValue;
-
-    /**
-     * Used by wan-replication-service to disable wan-replication event publishing
-     * otherwise in active-active scenarios infinite loop of event forwarding can be seen.
-     */
-    protected transient boolean disableWanReplicationEvent;
 
     public BaseRemoveOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
         super(name, dataKey);
@@ -51,11 +46,6 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         invalidateNearCache(dataKey);
         publishWanRemove(dataKey);
         evict(dataKey);
-    }
-
-    @Override
-    protected boolean canThisOpGenerateWANEvent() {
-        return !disableWanReplicationEvent;
     }
 
     @Override

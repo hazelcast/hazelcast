@@ -46,8 +46,6 @@ public interface MapOperationProvider {
 
     MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl);
 
-    MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent);
-
     MapOperation createSetTTLOperation(String name, Data key, long ttl);
 
     MapOperation createTryRemoveOperation(String name, Data dataKey, long timeout);
@@ -57,6 +55,8 @@ public interface MapOperationProvider {
     MapOperation createRemoveIfSameOperation(String name, Data dataKey, Data value);
 
     MapOperation createReplaceIfSameOperation(String name, Data dataKey, Data expect, Data update);
+
+    MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent);
 
     /**
      * Creates a delete operation for an entry with key equal to {@code key} from the map named {@code name}.

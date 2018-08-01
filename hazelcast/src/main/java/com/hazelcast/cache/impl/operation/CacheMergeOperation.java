@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
@@ -74,7 +75,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     private void merge(CacheMergeTypes mergingEntry) {
         Data dataKey = mergingEntry.getKey();
 
-        CacheRecord backupRecord = recordStore.merge(mergingEntry, mergePolicy);
+        CacheRecord backupRecord = recordStore.merge(mergingEntry, mergePolicy, NOT_WAN);
         if (backupRecord != null) {
             backupRecords.put(dataKey, backupRecord);
         }
