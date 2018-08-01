@@ -210,10 +210,13 @@ public class MapContainer {
         wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
         wanMergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
 
-        WanReplicationConfig wanReplicationConfig = nodeEngine.getConfig().getWanReplicationConfig(wanReplicationRefName);
-        WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getWanConsumerConfig();
-        if (wanConsumerConfig != null) {
-            persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
+        Config config = nodeEngine.getConfig();
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
+        if (wanReplicationConfig != null) {
+            WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getWanConsumerConfig();
+            if (wanConsumerConfig != null) {
+                persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
+            }
         }
     }
 
