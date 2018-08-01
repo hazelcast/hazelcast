@@ -17,8 +17,8 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import static org.junit.Assert.assertEquals;
+
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -155,24 +155,6 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
             mapConfig = instance.getConfig().findMapConfig(prefixWithWildcard + randomSuffix);
             assertEquals(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT, mapConfig.getBackupCount());
         }
-    }
-
-    @Test(expected = ConfigurationException.class)
-    public void map_whenConflictingWithStaticConfig_thenThrowConfigurationException() {
-        String mapName = randomMapName();
-        int initialClusterSize = 1;
-
-        Config config = new Config();
-        MapConfig mapConfig = new MapConfig(mapName);
-        config.addMapConfig(mapConfig);
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(initialClusterSize);
-        HazelcastInstance[] instances = factory.newInstances(config);
-        HazelcastInstance i1 = instances[0];
-
-        mapConfig = new MapConfig(mapName);
-        config = i1.getConfig();
-        config.addMapConfig(mapConfig);
     }
 
     @Test
