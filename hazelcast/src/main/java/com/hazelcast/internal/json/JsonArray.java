@@ -503,6 +503,9 @@ public class JsonArray extends JsonValue implements com.hazelcast.json.JsonArray
     if (object == null) {
       return false;
     }
+    if (object instanceof LazyJsonValue) {
+      object = ((LazyJsonValue) object).getObject();
+    }
     if (getClass() != object.getClass()) {
       return false;
     }

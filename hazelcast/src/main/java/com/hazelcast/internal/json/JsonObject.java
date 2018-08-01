@@ -779,6 +779,9 @@ public class JsonObject extends JsonValue implements com.hazelcast.json.JsonObje
     if (obj == null) {
       return false;
     }
+    if (obj instanceof LazyJsonValue) {
+      obj = ((LazyJsonValue) obj).getObject();
+    }
     if (getClass() != obj.getClass()) {
       return false;
     }

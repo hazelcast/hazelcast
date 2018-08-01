@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.json.LazyJsonValue;
 import com.hazelcast.json.Json;
 import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.BufferObjectDataInput;
@@ -329,8 +330,11 @@ public final class JavaDefaultSerializers {
 
         @Override
         public void write(ObjectDataOutput out, JsonValue object) throws IOException {
-            String stringJson = object.toString();
-            out.writeUTF(stringJson);
+            if (object instanceof LazyJsonValue) {
+                out.writeUTF(((LazyJsonValue) object).toSerializationString());
+            } else {
+                out.writeUTF(object.toString());
+            }
         }
 
         @Override

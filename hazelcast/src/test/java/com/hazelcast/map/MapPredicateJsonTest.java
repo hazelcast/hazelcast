@@ -229,10 +229,10 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonValue p2 = putJsonString(map, "two", value2);
         JsonValue p3 = putJsonString(map, "three", value3);
 
-        Collection<JsonValue> vals = map.values(Predicates.greaterEqual("numbers[1]", 20));
+        Collection<String> vals = map.keySet(Predicates.greaterEqual("numbers[1]", 20));
         assertEquals(2, vals.size());
-        assertTrue(vals.contains(p2));
-        assertTrue(vals.contains(p3));
+        assertTrue(vals.contains("two"));
+        assertTrue(vals.contains("three"));
     }
 
     @Test
@@ -328,6 +328,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
     //json libraries generally do not support duplicate keys. we may not support it either
     @Test
+    @Ignore
     public void testObjectHasOneMatchingOneNonMatchingValueOnSamePath() {
         JsonObject obj1 = Json.object();
         obj1.add("data", createNameAgeOnDuty("a", 50, false));
@@ -558,7 +559,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPortableAny() {
+    public void TO_BE_REMOVED_testPortableIntInAny() {
         LittlePortable lp1 = new LittlePortable(1, new int[]{1});
         LittlePortable lp2 = new LittlePortable(2, new int[]{1});
         LittlePortable lp3 = new LittlePortable(3, new int[]{1});
@@ -581,7 +582,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPortableAnyInAny() {
+    public void TO_BE_REMOVED_testPortableAnyInAny() {
         LittlePortable lp1 = new LittlePortable(1, new int[]{1, 2});
         LittlePortable lp2 = new LittlePortable(2, new int[]{1});
         LittlePortable lp3 = new LittlePortable(3, new int[]{1});
@@ -607,7 +608,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAny() {
+    public void TO_BE_REMOVED_testPortableAny() {
         Integer[] arr1 = new Integer[]{1, 2, 3, 4};
         Integer[] arr2 = new Integer[]{4, 5, 6, 7};
 
@@ -625,7 +626,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAny2OnKey() {
+    public void TO_BE_REMOVED_testPortableAny2OnKey() {
         Integer[] arr1 = new Integer[]{1, 2, 3, 4};
         Integer[] arr2 = new Integer[]{4, 5, 6, 7};
 
@@ -645,7 +646,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
     @Test
     @Ignore
-    public void testArrayOnKey() {
+    public void TO_BE_REMOVED_testPortableArrayOnKey() {
         Integer[] arr1 = new Integer[]{1, 2, 3, 4};
         Integer[] arr2 = new Integer[]{4, 5, 6, 7};
 
@@ -661,7 +662,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
     @Test
     @Ignore
-    public void testArray() {
+    public void TO_BE_REMOVED_testPortableArray() {
         Integer[] arr1 = new Integer[]{1, 2, 3, 4};
         Integer[] arr2 = new Integer[]{4, 5, 6, 7};
 

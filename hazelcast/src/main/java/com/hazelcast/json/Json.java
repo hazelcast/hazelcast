@@ -17,6 +17,8 @@
 package com.hazelcast.json;
 
 
+import com.hazelcast.internal.json.LazyJsonValue;
+
 /**
  * This class serves as the entry point to the minimal-json API.
  * <p>
@@ -218,7 +220,7 @@ public final class Json {
      * @throws IllegalArgumentException if the input is not valid JSON
      */
     public static JsonValue parse(String string) {
-        return com.hazelcast.internal.json.Json.parse(string);
+        return new LazyJsonValue(string);
     }
 
 }
