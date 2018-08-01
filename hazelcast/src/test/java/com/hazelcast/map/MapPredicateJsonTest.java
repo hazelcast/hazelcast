@@ -217,9 +217,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject value1 = Json.object();
         JsonObject value2 = Json.object();
         JsonObject value3 = Json.object();
-        JsonArray array1 = Json.array(1, 2, 3, 4, 5);
-        JsonArray array2 = Json.array(10, 20, 30, 40, 50);
-        JsonArray array3 = Json.array(100, 200, 300, 400, 500);
+        JsonArray array1 = Json.array(new int[]{1, 2, 3, 4, 5});
+        JsonArray array2 = Json.array(new int[]{10, 20, 30, 40, 50});
+        JsonArray array3 = Json.array(new int[]{100, 200, 300, 400, 500});
         value1.add("numbers", array1);
         value2.add("numbers", array2);
         value3.add("numbers", array3);
@@ -240,9 +240,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject value1 = Json.object();
         JsonObject value2 = Json.object();
         JsonObject value3 = Json.object();
-        JsonArray array1 = Json.array(1, 2, 3, 4, 5);
-        JsonArray array2 = Json.array(10, 20, 30, 40, 50);
-        JsonArray array3 = Json.array(100, 200, 300, 400, 500);
+        JsonArray array1 = Json.array(new int[]{1, 2, 3, 4, 5});
+        JsonArray array2 = Json.array(new int[]{10, 20, 30, 40, 50});
+        JsonArray array3 = Json.array(new int[]{100, 200, 300, 400, 500});
         value1.add("numbers", array1);
         value2.add("numbers", array2);
         value3.add("numbers", array3);
@@ -308,8 +308,8 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject nested1 = Json.object();
         JsonObject object2 = Json.object();
         JsonObject nested2 = Json.object();
-        JsonArray array1 = Json.array(1, 2, 3, 4, 5, 6);
-        JsonArray array2 = Json.array(10, 20, 30, 40, 50, 60);
+        JsonArray array1 = Json.array(new int[]{1, 2, 3, 4, 5, 6});
+        JsonArray array2 = Json.array(new int[]{10, 20, 30, 40, 50, 60});
 
         nested1.add("arr", array1);
         nested2.add("arr", array2);
@@ -352,8 +352,8 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject nested1 = Json.object();
         JsonObject object2 = Json.object();
         JsonObject nested2 = Json.object();
-        JsonArray array1 = Json.array(1, 2, 3, 4, 5, 6);
-        JsonArray array2 = Json.array(10);
+        JsonArray array1 = Json.array(new int[]{1, 2, 3, 4, 5, 6});
+        JsonArray array2 = Json.array(new int[]{10});
 
         nested1.add("arr", array1);
         nested2.add("arr", array2);
@@ -410,9 +410,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject value1 = Json.object();
         JsonObject value2 = Json.object();
         JsonObject value3 = Json.object();
-        JsonArray array1 = Json.array(1, 2, 3, 4, 20);
-        JsonArray array2 = Json.array(10, 20, 30);
-        JsonArray array3 = Json.array(100, 200, 300, 400);
+        JsonArray array1 = Json.array(new int[]{1, 2, 3, 4, 20});
+        JsonArray array2 = Json.array(new int[]{10, 20, 30});
+        JsonArray array3 = Json.array(new int[]{100, 200, 300, 400});
         value1.add("numbers", array1);
         value2.add("numbers", array2);
         value3.add("numbers", array3);
@@ -436,7 +436,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         }
         Collection<JsonValue> vals = map.values(Predicates.greaterEqual("this", 3));
         assertEquals(7, vals.size());
-        for (JsonValue value: vals) {
+        for (JsonValue value : vals) {
             assertTrue(value.asInt() >= 3);
             assertGreaterOrEquals("predicate result ", value.asInt(), 3);
         }
@@ -450,7 +450,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         }
         Collection<JsonValue> vals = map.values(Predicates.greaterEqual("this", "s3"));
         assertEquals(7, vals.size());
-        for (JsonValue value: vals) {
+        for (JsonValue value : vals) {
             assertTrue(value.asString().compareTo("s3") >= 0);
         }
     }
@@ -463,7 +463,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         }
         Collection<Map.Entry<Integer, JsonValue>> vals = map.entrySet(Predicates.equal("this", true));
         assertEquals(7, vals.size());
-        for (Map.Entry<Integer, JsonValue> entry: vals) {
+        for (Map.Entry<Integer, JsonValue> entry : vals) {
             assertTrue(entry.getKey() < 7);
             assertTrue(entry.getValue().asBoolean());
         }
@@ -508,7 +508,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     @Test
     public void testArrayInsideArray() {
         JsonValue array1 = Json.array();
-        array1.asArray().add(Json.array(1, 2, 3, 4)).add(Json.array(10, 20, 30, 40));
+        array1.asArray().add(Json.array(new int[]{1, 2, 3, 4})).add(Json.array(new int[]{10, 20, 30, 40}));
         JsonObject obj1 = Json.object();
         obj1.add("arr", array1);
 
