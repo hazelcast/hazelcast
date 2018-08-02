@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.json.Json;
+import com.hazelcast.json.Json;
 import com.hazelcast.json.JsonValue;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
@@ -78,7 +78,7 @@ public class JsonIntegrationTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            map.put(i, Json.parse(jsonString));
+            map.put(i, Json.asJson(jsonString));
         }
 
         Set<QueryableEntry> records = getRecords(instance, mapName, "age", 40);
@@ -127,7 +127,7 @@ public class JsonIntegrationTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            map.put(i, Json.parse(jsonString));
+            map.put(i, Json.asJson(jsonString));
         }
 
         assertEquals(500, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", "true"))).size());
@@ -172,7 +172,7 @@ public class JsonIntegrationTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            map.put(i, Json.parse(jsonString));
+            map.put(i, Json.asJson(jsonString));
         }
 
         assertEquals(500, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", "true"))).size());
@@ -195,7 +195,7 @@ public class JsonIntegrationTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            map.put(i, Json.parse(jsonString));
+            map.put(i, Json.asJson(jsonString));
         }
 
         assertEquals(500, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", "true"))).size());
