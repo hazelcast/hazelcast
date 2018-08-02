@@ -42,7 +42,10 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_PRIMARY_DRIVES_BACKUP;
 import static java.lang.String.format;
+import static java.lang.System.getProperty;
+import static java.lang.System.setProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -97,6 +100,19 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
                         hasClearExpiredRecordsTaskStarted(node));
             }
         }, 3);
+    }
+
+    @Test
+    public void testPrimaryDrivesEvictions_set_viaSystemProperty() {
+        String previous = getProperty(PROP_PRIMARY_DRIVES_BACKUP);
+        try {
+            setProperty(PROP_PRIMARY_DRIVES_BACKUP, "False");
+            MapClearExpiredRecordsTask task = (MapClearExpiredRecordsTask) newExpirationManager(createHazelcastInstance()).task;
+            boolean primaryDrivesEviction = task.canPrimaryDriveExpiration();
+            assertEquals(false, primaryDrivesEviction);
+        } finally {
+            restoreProperty(PROP_PRIMARY_DRIVES_BACKUP, previous);
+        }
     }
 
     @Test
