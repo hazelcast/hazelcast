@@ -85,15 +85,19 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     protected <K, V, M extends Serializable & ExpiryPolicy, T extends Serializable & CacheEntryListener<K, V>>
     CacheConfig<K, V> createCacheConfig(M expiryPolicy, T listener) {
+        CacheConfig<K, V> cacheConfig = createCacheConfig(expiryPolicy);
+        MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration = new MutableCacheEntryListenerConfiguration<K, V>(
+                FactoryBuilder.factoryOf(listener), null, true, true
+        );
+        cacheConfig.addCacheEntryListenerConfiguration(listenerConfiguration);
+        return cacheConfig;
+    }
+
+    protected <K, V, M extends Serializable & ExpiryPolicy>
+    CacheConfig<K, V> createCacheConfig(M expiryPolicy) {
         CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>();
         cacheConfig.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicy));
         cacheConfig.setName(randomName());
-        if (listener != null) {
-            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration = new MutableCacheEntryListenerConfiguration<K, V>(
-                    FactoryBuilder.factoryOf(listener), null, true, true
-            );
-            cacheConfig.addCacheEntryListenerConfiguration(listenerConfiguration);
-        }
         cacheConfig.setBackupCount(CLUSTER_SIZE - 1);
         return cacheConfig;
     }
@@ -127,7 +131,7 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_whenEntryIsAccessedBackupIsNotCleaned() {
-        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(FIVE_SECONDS, Duration.ETERNAL, FIVE_SECONDS), null);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(FIVE_SECONDS, Duration.ETERNAL, FIVE_SECONDS));
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
         for (int i = 0; i < KEY_RANGE; i++) {
@@ -147,7 +151,7 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_whenEntryIsUpdatedBackupIsNotCleaned() {
-        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(FIVE_SECONDS, FIVE_SECONDS, Duration.ETERNAL), null);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(FIVE_SECONDS, FIVE_SECONDS, Duration.ETERNAL));
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
         for (int i = 0; i < KEY_RANGE; i++) {
