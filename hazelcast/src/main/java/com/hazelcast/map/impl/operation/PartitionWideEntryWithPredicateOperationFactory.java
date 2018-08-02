@@ -18,22 +18,24 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.map.impl.query.QueryResult;
+import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
+import com.hazelcast.util.IterationType;
 import com.hazelcast.util.collection.InflatableSet;
+import com.hazelcast.util.collection.InflatableSet.Builder;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
 
 import java.io.IOException;
@@ -44,12 +46,10 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
 import static com.hazelcast.util.MapUtil.createInt2ObjectHashMap;
 import static com.hazelcast.util.MapUtil.isNullOrEmpty;
 import static com.hazelcast.util.collection.InflatableSet.newBuilder;
-import static java.util.Collections.emptySet;
 
 public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAwareOperationFactory {
 
@@ -57,6 +57,13 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     private EntryProcessor entryProcessor;
     private Predicate predicate;
 
+    /**
+     * Entry keys grouped by partition ID. This map is constructed from data
+     * fetched by querying the map from non-partition threads. Because of
+     * concurrent migrations, the query running on non-partition threads might
+     * fail. In this case, the map is {@code null}. In case the map is empty,
+     * the query was successful but returned no results.
+     */
     private transient Map<Integer, List<Data>> partitionIdToKeysMap;
 
     public PartitionWideEntryWithPredicateOperationFactory() {
@@ -77,7 +84,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
 
     @Override
     public PartitionAwareOperationFactory createFactoryOnRunner(NodeEngine nodeEngine) {
-        Set<Data> keys = getKeysFromIndex(nodeEngine);
+        Set<Data> keys = getKeys(nodeEngine);
         Map<Integer, List<Data>> partitionIdToKeysMap
                 = getPartitionIdToKeysMap(keys, ((InternalPartitionService) nodeEngine.getPartitionService()));
 
@@ -86,13 +93,14 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
 
     @Override
     public Operation createPartitionOperation(int partition) {
-        if (isNullOrEmpty(partitionIdToKeysMap)) {
-            // fallback here if we cannot find anything from indexes.
+        if (partitionIdToKeysMap == null) {
+            // index or partition-scan query failed to run because of ongoing migrations
             return new PartitionWideEntryWithPredicateOperation(name, entryProcessor, predicate);
         }
 
+        // query succeeded. At this point, the map can also be empty because there were no results.
         List<Data> keyList = partitionIdToKeysMap.get(partition);
-        InflatableSet<Data> keys = newBuilder(keyList).build();
+        Set<Data> keys = keyList != null ? newBuilder(keyList).build() : Collections.<Data>emptySet();
         return new MultipleEntryWithPredicateOperation(name, keys, entryProcessor, predicate);
     }
 
@@ -111,47 +119,49 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
         predicate = in.readObject();
     }
 
-    private Set<Data> getKeysFromIndex(NodeEngine nodeEngine) {
+    /**
+     * Attempts to get keys by runnning an index or partition scan query.
+     * This method may return {@code null} if there is an ongoing migration,
+     * which means that it is not safe to return results from a non-partition
+     * thread. The caller must then run a partition query to obtain the results.
+     *
+     * @param nodeEngine nodeEngine of this cluster node
+     * @return the set of keys or {@code null} if we failed to fetch the keys
+     * because of ongoing migrations
+     */
+    private Set<Data> getKeys(NodeEngine nodeEngine) {
         // Do not use index in this case, because it requires full-table-scan.
         if (predicate == TruePredicate.INSTANCE) {
-            return emptySet();
+            return null;
         }
 
-        // get indexes
         MapService mapService = nodeEngine.getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        Set<QueryableEntry> result = queryAllPartitions(mapServiceContext);
 
+        QueryRunner runner = mapServiceContext.getMapQueryRunner(name);
+        Query query = Query.of()
+                           .mapName(name)
+                           .predicate(predicate)
+                           .iterationType(IterationType.KEY)
+                           .build();
+        final QueryResult result = (QueryResult) runner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
         if (result == null) {
-            return emptySet();
+            // failed to run query because of ongoing migrations
+            return null;
         }
 
-        List<Data> keys = null;
-        for (QueryableEntry e : result) {
-            if (keys == null) {
-                keys = new ArrayList<Data>(result.size());
-            }
-            keys.add(e.getKeyData());
+        final Builder<Data> setBuilder = InflatableSet.newBuilder(result.size());
+        for (QueryResultRow row : result.getRows()) {
+            setBuilder.add(row.getKey());
         }
-
-        return keys == null ? Collections.<Data>emptySet() : newBuilder(keys).build();
-    }
-
-    private Set<QueryableEntry> queryAllPartitions(MapServiceContext mapServiceContext) {
-        QueryOptimizer queryOptimizer = mapServiceContext.getQueryOptimizer();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
-        Indexes indexes = mapContainer.getIndexes();
-        if (indexes != null) {
-            Predicate optimizedPredicate = queryOptimizer.optimize(predicate, indexes);
-            Set<QueryableEntry> querySet = indexes.query(optimizedPredicate);
-            return querySet;
-        } else {
-            throw new IllegalArgumentException("Partitioned index is not supported for on-heap usage");
-        }
+        return setBuilder.build();
     }
 
     private Map<Integer, List<Data>> getPartitionIdToKeysMap(Set<Data> keys, InternalPartitionService partitionService) {
-        if (isEmpty(keys)) {
+        if (keys == null) {
+            return null;
+        }
+        if (keys.isEmpty()) {
             return Collections.emptyMap();
         }
 
