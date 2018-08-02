@@ -71,8 +71,11 @@ public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBr
         }
     }
 
+    /**
+     * Collects store instances inside a partition to get data to merge
+     * and prepare merge operations.
+     */
     private class StoreCollector implements PartitionSpecificRunnable {
-
         private final int partitionId;
         private final CountDownLatch latch;
         private final ConcurrentLinkedQueue<Store> mergingStores;
@@ -102,6 +105,7 @@ public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBr
                     } else {
                         storesToDestroy.add(store);
                     }
+                    onStoreCollection(store);
                     iterator.remove();
                 }
                 asyncDestroyStores(storesToDestroy, partitionId);
@@ -129,6 +133,17 @@ public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBr
 
     private boolean isLocalPartition(int partitionId) {
         return partitionService.isPartitionOwner(partitionId);
+    }
+
+    /**
+     * Final cleanup before starting merge after {@link StoreCollector}
+     * collects a store. If we do this cleanup upon join of merging node,
+     * concurrently running merge and migration operations can cause
+     * inconsistency over shared data. For example, dropping of map
+     * indexes is done at this stage not to lose index data.
+     */
+    protected void onStoreCollection(Store store) {
+
     }
 
     /**

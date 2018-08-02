@@ -319,7 +319,7 @@ class MapServiceContextImpl implements MapServiceContext {
                 RecordStore recordStore = iter.next();
                 final MapContainer mapContainer = recordStore.getMapContainer();
                 if (backupCount > mapContainer.getTotalBackupCount()) {
-                    recordStore.clearPartition(false);
+                    recordStore.clearPartition(false, false);
                     iter.remove();
                 }
             }
@@ -331,7 +331,7 @@ class MapServiceContextImpl implements MapServiceContext {
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
             for (RecordStore mapPartition : container.getMaps().values()) {
-                mapPartition.clearPartition(false);
+                mapPartition.clearPartition(false, false);
             }
             container.getMaps().clear();
         }
@@ -348,10 +348,10 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void clearPartitions(boolean onShutdown) {
+    public void clearPartitions(boolean onShutdown, boolean onRecordStoreDestroy) {
         for (PartitionContainer container : partitionContainers) {
             if (container != null) {
-                container.clear(onShutdown);
+                container.clear(onShutdown, onRecordStoreDestroy);
             }
         }
     }
@@ -429,13 +429,13 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void reset() {
-        clearPartitions(false);
+        clearPartitions(false, false);
         mapNearCacheManager.reset();
     }
 
     @Override
     public void shutdown() {
-        clearPartitions(true);
+        clearPartitions(true, false);
         mapNearCacheManager.shutdown();
         mapContainers.clear();
     }

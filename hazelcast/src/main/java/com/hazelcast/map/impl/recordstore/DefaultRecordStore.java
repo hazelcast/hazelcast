@@ -131,14 +131,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void destroy() {
-        clearPartition(false);
+        clearPartition(false, true);
         storage.destroy(false);
         eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
     }
 
     @Override
     public void destroyInternals() {
-        clearIndexes();
         clearMapStore();
         clearStorage(false);
         storage.destroy(false);
@@ -234,9 +233,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void clearPartition(boolean onShutdown) {
+    public void clearPartition(boolean onShutdown, boolean onRecordStoreDestroy) {
         clearLockStore();
-        clearIndexes();
+        if (onRecordStoreDestroy) {
+            destroyIndexes();
+        } else {
+            clearIndexedData();
+        }
         clearMapStore();
         clearStorage(onShutdown);
     }
@@ -268,18 +271,49 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mapDataStore.reset();
     }
 
-    protected void clearIndexes() {
+    /**
+     * Only indexed data will be removed, index info will stay.
+     */
+    public void clearIndexedData() {
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.isGlobal()) {
             if (indexes.hasIndex()) {
-                for (Record record : storage.values()) {
-                    Data key = record.getKey();
-                    Object value = Records.getValueOrCachedValue(record, serializationService);
-                    indexes.removeEntryIndex(key, value);
-                }
+                // clears indexed data of this partition
+                // from shared global index.
+                fullScanLocalDataToClear(indexes);
             }
         } else {
-            indexes.clearIndexes();
+            // if index is partitioned, we can clear indexed
+            // data with clearAll here.
+            indexes.clearAll();
+        }
+    }
+
+    public void destroyIndexes() {
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        indexes.destroyIndexes();
+        if (indexes.isGlobal()) {
+            if (indexes.hasIndex()) {
+                // clears indexed data of this partition
+                // from shared global index.
+                fullScanLocalDataToClear(indexes);
+            }
+        } else {
+            // if index is partitioned, we can destroy indexed
+            // data with destroyIndexes here.
+            indexes.destroyIndexes();
+        }
+    }
+
+    /**
+     * Clears local data of this partition from global index by doing
+     * partition full-scan.
+     */
+    private void fullScanLocalDataToClear(Indexes indexes) {
+        for (Record record : storage.values()) {
+            Data key = record.getKey();
+            Object value = Records.getValueOrCachedValue(record, serializationService);
+            indexes.removeEntryIndex(key, value);
         }
     }
 
