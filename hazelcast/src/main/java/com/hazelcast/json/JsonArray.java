@@ -45,7 +45,7 @@ import java.util.List;
  * may lead to an inconsistent state.
  * </p>
  * <p>
- * This class is <strong>not supposed to be extended</strong> by clients.
+ * Implementing classes may be not thread-safe.
  * </p>
  */
 public interface JsonArray extends JsonValue, Iterable<JsonValue> {

@@ -116,9 +116,7 @@ public class LazyJsonValue implements JsonValue {
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + getObject().hashCode();
-        return result;
+        return getObject().hashCode();
     }
 
     @Override

@@ -40,7 +40,7 @@ package com.hazelcast.json;
  * appropriate target type.
  * </p>
  * <p>
- * This class is <strong>not supposed to be extended</strong> by clients.
+ * Implementing classes may be not thread-safe.
  * </p>
  */
 public interface JsonValue {
