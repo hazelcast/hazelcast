@@ -47,17 +47,14 @@ import static org.junit.Assert.assertTrue;
 public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport {
 
     private String mapName;
-
-    private TestHazelcastFactory factory;
-
     private HazelcastInstance lite;
     private HazelcastInstance client;
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Before
     public void init() {
         mapName = randomMapName();
 
-        factory = new TestHazelcastFactory();
         factory.newHazelcastInstance(createServerConfig(mapName, false));
 
         lite = factory.newHazelcastInstance(createServerConfig(mapName, true));
