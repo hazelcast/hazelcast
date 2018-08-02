@@ -21,6 +21,8 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Serializable;
@@ -60,6 +62,7 @@ import java.io.Writer;
  * </p>
  */
 @SuppressWarnings("serial") // use default serial UID
+@SuppressFBWarnings(value = "NM_SAME_SIMPLE_NAME_AS_INTERFACE", justification = "We need to distinguish internal JSON api and the public one")
 public abstract class JsonValue implements Serializable, com.hazelcast.json.JsonValue {
 
   /**

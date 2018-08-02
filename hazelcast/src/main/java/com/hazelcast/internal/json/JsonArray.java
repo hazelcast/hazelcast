@@ -22,6 +22,7 @@
 package com.hazelcast.internal.json;
 
 import com.hazelcast.nio.serialization.SerializableByConvention;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -61,6 +62,7 @@ import java.util.List;
  * </p>
  */
 @SuppressWarnings("serial") // use default serial UID
+@SuppressFBWarnings(value = "NM_SAME_SIMPLE_NAME_AS_INTERFACE", justification = "We need to distinguish internal JSON api and the public one")
 @SerializableByConvention
 public class JsonArray extends JsonValue implements com.hazelcast.json.JsonArray {
 
@@ -495,6 +497,7 @@ public class JsonArray extends JsonValue implements com.hazelcast.json.JsonArray
    * @return <tt>true</tt> if the specified object is equal to this JsonArray, <code>false</code>
    *         otherwise
    */
+  @SuppressFBWarnings(value = "EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS")
   @Override
   public boolean equals(Object object) {
     if (this == object) {

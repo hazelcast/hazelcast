@@ -22,6 +22,7 @@
 package com.hazelcast.internal.json;
 
 import com.hazelcast.nio.serialization.SerializableByConvention;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -81,6 +82,7 @@ public class JsonLiteral extends JsonValue {
     return isNull ? super.asBoolean() : isTrue;
   }
 
+  @SuppressFBWarnings(value = "EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS")
   @Override
   public boolean equals(Object object) {
     if (this == object) {
