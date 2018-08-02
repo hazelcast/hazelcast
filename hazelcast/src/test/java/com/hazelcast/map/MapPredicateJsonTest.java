@@ -23,7 +23,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.json.Json;
 import com.hazelcast.json.JsonArray;
 import com.hazelcast.json.JsonObject;
-import com.hazelcast.json.JsonObjectEntry;
 import com.hazelcast.json.JsonValue;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -36,7 +35,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,7 +43,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -326,27 +323,6 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertTrue(vals.contains(p2));
     }
 
-    //json libraries generally do not support duplicate keys. we may not support it either
-    @Test
-    @Ignore
-    public void testObjectHasOneMatchingOneNonMatchingValueOnSamePath() {
-        JsonObject obj1 = Json.object();
-        obj1.add("data", createNameAgeOnDuty("a", 50, false));
-        obj1.add("data", createNameAgeOnDuty("a", 30, false));
-
-        Iterator<JsonObjectEntry> it = obj1.iterator();
-        for (; it.hasNext(); ) {
-            JsonObjectEntry m = it.next();
-            System.out.println(m.getValue().toString());
-        }
-        IMap<String, JsonValue> map = instance.getMap(randomMapName());
-        JsonValue p1 = putJsonString(map, "one", obj1);
-
-        Collection<JsonValue> vals = map.values(Predicates.greaterThan("data.age", 40));
-        assertEquals(1, vals.size());
-        assertTrue(vals.contains(p1));
-    }
-
     @Test
     public void testArrayInNestedQuery_whenOneArrayIsShort_shouldNotThrow() {
         JsonObject object1 = Json.object();
@@ -364,7 +340,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
         IMap<String, JsonValue> map = instance.getMap(randomMapName());
         JsonValue p1 = putJsonString(map, "one", object1);
-        JsonValue p2 = putJsonString(map, "two", object2);
+        putJsonString(map, "two", object2);
 
         Collection<JsonValue> vals = map.values(Predicates.lessEqual("inner.arr[2]", 20));
         assertEquals(1, vals.size());
@@ -398,7 +374,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         IMap<String, JsonValue> map = instance.getMap(randomMapName());
         JsonValue p1 = putJsonString(map, "one", obj1);
         JsonValue p2 = putJsonString(map, "two", obj2);
-        JsonValue p3 = putJsonString(map, "three", obj3);
+        putJsonString(map, "three", obj3);
 
         Collection<JsonValue> vals = map.values(Predicates.greaterEqual("arr[2].age", 20));
         assertEquals(2, vals.size());
@@ -419,7 +395,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         value3.add("numbers", array3);
 
         IMap<String, JsonValue> map = instance.getMap(randomMapName());
-        JsonValue p1 = putJsonString(map, "one", value1);
+        putJsonString(map, "one", value1);
         JsonValue p2 = putJsonString(map, "two", value2);
         JsonValue p3 = putJsonString(map, "three", value3);
 
@@ -556,97 +532,6 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertEquals(2, vals.size());
         assertTrue(vals.contains("one"));
         assertTrue(vals.contains("two"));
-    }
-
-    @Test
-    public void TO_BE_REMOVED_testPortableIntInAny() {
-        LittlePortable lp1 = new LittlePortable(1, new int[]{1});
-        LittlePortable lp2 = new LittlePortable(2, new int[]{1});
-        LittlePortable lp3 = new LittlePortable(3, new int[]{1});
-        LittlePortable lp4 = new LittlePortable(4, new int[]{1});
-        LittlePortable lp5 = new LittlePortable(5, new int[]{1});
-
-        LittlePortable[] lps1 = new LittlePortable[]{lp1, lp2, lp3};
-        LittlePortable[] lps2 = new LittlePortable[]{lp4, lp5};
-
-        MyPortable mp1 = new MyPortable(lps1);
-        MyPortable mp2 = new MyPortable(lps2);
-
-        IMap<String, MyPortable> map = instance.getMap(randomMapName());
-        map.put("one", mp1);
-        map.put("two", mp2);
-
-        Collection<MyPortable> vals = map.values(Predicates.lessEqual("littlePortables[any].real", 2));
-
-        assertEquals(1, vals.size());
-    }
-
-    @Test
-    public void TO_BE_REMOVED_testPortableAny() {
-        Integer[] arr1 = new Integer[]{1, 2, 3, 4};
-        Integer[] arr2 = new Integer[]{4, 5, 6, 7};
-
-        IntStore ints1 = new IntStore();
-        IntStore ints2 = new IntStore();
-        ints1.ints = arr1;
-        ints2.ints = arr2;
-
-        IMap<String, IntStore> map = instance.getMap(randomMapName());
-        map.put("one", ints1);
-        map.put("two", ints2);
-
-        Collection<IntStore> vals = map.values(Predicates.lessEqual("ints[any]", 4));
-        assertEquals(2, vals.size());
-    }
-
-    @Test
-    public void TO_BE_REMOVED_testPortableAny2OnKey() {
-        Integer[] arr1 = new Integer[]{1, 2, 3, 4};
-        Integer[] arr2 = new Integer[]{4, 5, 6, 7};
-
-        IntStore ints1 = new IntStore();
-        IntStore ints2 = new IntStore();
-        ints1.ints = arr1;
-        ints2.ints = arr2;
-
-        IMap<IntStore, String> map = instance.getMap(randomMapName());
-        map.put(ints1, "one");
-        map.put(ints2, "two");
-
-        Collection<String> vals = map.values(Predicates.lessEqual("__key.ints[2]", 4));
-        assertEquals(1, vals.size());
-        assertTrue(vals.contains("one"));
-    }
-
-    @Test
-    @Ignore
-    public void TO_BE_REMOVED_testPortableArrayOnKey() {
-        Integer[] arr1 = new Integer[]{1, 2, 3, 4};
-        Integer[] arr2 = new Integer[]{4, 5, 6, 7};
-
-        IMap<Integer[], String> map = instance.getMap(randomMapName());
-        map.put(arr1, "one");
-        map.put(arr2, "two");
-
-        Collection<String> vals = map.values(Predicates.lessEqual("__key[2]", 4));
-        assertEquals(1, vals.size());
-        assertTrue(vals.contains("one"));
-    }
-
-
-    @Test
-    @Ignore
-    public void TO_BE_REMOVED_testPortableArray() {
-        Integer[] arr1 = new Integer[]{1, 2, 3, 4};
-        Integer[] arr2 = new Integer[]{4, 5, 6, 7};
-
-        IMap<String, Integer[]> map = instance.getMap(randomMapName());
-        map.put("one", arr1);
-        map.put("two", arr2);
-
-        Collection<Integer[]> vals = map.values(Predicates.lessEqual("this[2]", 4));
-        assertEquals(1, vals.size());
-        assertTrue(vals.contains(arr1));
     }
 
     private static class IntStore implements Serializable {

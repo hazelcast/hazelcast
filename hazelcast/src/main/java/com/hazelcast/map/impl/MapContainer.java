@@ -402,10 +402,6 @@ public class MapContainer {
         return persistWanReplicatedData;
     }
 
-    public RecordFactory<Object> createObjectRecordFactory() {
-        return new ObjectRecordFactory(mapConfig, serializationService);
-    }
-
     @SerializableByConvention
     private class ObjectToData implements IFunction<Object, Data> {
         @Override

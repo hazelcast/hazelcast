@@ -38,6 +38,8 @@ public final class JsonGetter extends Getter {
         return convertFromJsonValue((JsonValue) obj);
     }
 
+    //TODO: reduce n-path complexity here
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
     @Override
     Object getValue(Object obj, String attributePath) {
         JsonValue value = (JsonValue) obj;
