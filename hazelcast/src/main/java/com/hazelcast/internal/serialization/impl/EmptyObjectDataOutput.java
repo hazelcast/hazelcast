@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -145,7 +145,7 @@ final class EmptyObjectDataOutput extends VersionedObjectDataOutput implements O
     }
 
     @Override
-    public InternalSerializationService getSerializationService() {
+    public SerializationService getSerializationService() {
         return null;
     }
 }

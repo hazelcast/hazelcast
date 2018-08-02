@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.DataOutput;
 import java.io.IOException;
@@ -113,5 +113,5 @@ public interface ObjectDataOutput extends DataOutput, VersionAware {
     /**
      * @return serialization service for this object
      */
-    InternalSerializationService getSerializationService();
+    SerializationService getSerializationService();
 }
