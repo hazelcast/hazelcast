@@ -1180,6 +1180,23 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void default_value_of_persist_wan_replicated_data_is_false() {
+        String configName  = "test";
+        String xml = HAZELCAST_START_TAG
+                + "  <wan-replication name=\"" + configName + "\">\n"
+                + "        <wan-consumer>\n"
+                + "        </wan-consumer>\n"
+                + "    </wan-replication>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(configName);
+        WanConsumerConfig consumerConfig = wanReplicationConfig.getWanConsumerConfig();
+        assertFalse(consumerConfig.isPersistWanReplicatedData());
+    }
+
+
+    @Test
     public void testWanReplicationSyncConfig() {
         String configName  = "test";
         String xml = HAZELCAST_START_TAG

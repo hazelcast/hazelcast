@@ -2854,7 +2854,7 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attributeGroup>
-                    <xs:attribute name="persist-wan-replicated-data" type="parameterized-boolean" default="true">
+                    <xs:attribute name="persist-wan-replicated-data" type="parameterized-boolean" default="false">
                         <xs:annotation>
                             <xs:documentation>
                                 When true, an incoming event over WAN replication can be persisted to a
