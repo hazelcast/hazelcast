@@ -178,10 +178,10 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(Enum.class, new EnumSerializer());
         registerConstant(ArrayList.class, new ArrayListStreamSerializer());
         registerConstant(LinkedList.class, new LinkedListStreamSerializer());
-        registerConstant(JsonValue.class, new JsonStringSerializer());
 
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);
+        safeRegister(JsonValue.class, new JsonStringSerializer());
     }
 
     public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
