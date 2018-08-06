@@ -30,14 +30,6 @@ public interface LocalIndexStats extends LocalInstanceStats {
      * <p>
      * The returned value may be less than the one returned by {@link
      * #getHitCount()} since a single query may hit the same index more than once.
-     * <p>
-     * Following operations counted as a query:
-     * <ul>
-     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable) Index.getRecords(Comparable)}
-     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable[]) Index.getRecords(Comparable[])}
-     * <li>{@link com.hazelcast.query.impl.Index#getSubRecords Index.getSubRecords}
-     * <li>{@link com.hazelcast.query.impl.Index#getSubRecordsBetween Index.getSubRecordsBetween}
-     * </ul>
      */
     long getQueryCount();
 
@@ -46,14 +38,6 @@ public interface LocalIndexStats extends LocalInstanceStats {
      * <p>
      * The returned value may be greater than the one returned by {@link
      * #getQueryCount} since a single query may hit the same index more than once.
-     * <p>
-     * Following operations generate a hit:
-     * <ul>
-     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable) Index.getRecords(Comparable)}
-     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable[]) Index.getRecords(Comparable[])}
-     * <li>{@link com.hazelcast.query.impl.Index#getSubRecords Index.getSubRecords}
-     * <li>{@link com.hazelcast.query.impl.Index#getSubRecordsBetween Index.getSubRecordsBetween}
-     * </ul>
      */
     long getHitCount();
 
