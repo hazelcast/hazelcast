@@ -94,7 +94,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param mapName            the map name
      * @throws UnsupportedOperationException if the operation is not supported (not EE)
      * @throws InvalidConfigurationException if there is no WAN replication config for {@code wanReplicationName}
-     * @throws SyncFailedException           if there is a sync request in progress
+     * @throws SyncFailedException           if there is a anti-entropy request in progress
      */
     void syncMap(String wanReplicationName, String targetGroupName, String mapName);
 
@@ -109,7 +109,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param <K>                key type
      * @throws UnsupportedOperationException if the operation is not supported (not EE)
      * @throws InvalidConfigurationException if there is no WAN replication config for {@code wanReplicationName}
-     * @throws SyncFailedException           if there is a sync request in progress
+     * @throws SyncFailedException           if there is a anti-entropy request in progress
      */
     <K> void syncMap(String wanReplicationName, String targetGroupName, String mapName,
                      Collection<K> keys);
@@ -122,9 +122,22 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param targetGroupName    the group name on the target cluster
      * @throws UnsupportedOperationException if the operation is not supported (not EE)
      * @throws InvalidConfigurationException if there is no WAN replication config for {@code wanReplicationName}
-     * @throws SyncFailedException           if there is a sync request in progress
+     * @throws SyncFailedException           if there is a anti-entropy request in progress
      */
     void syncAllMaps(String wanReplicationName, String targetGroupName);
+
+    /**
+     * Initiate WAN consistency check for a specific map.
+     * NOTE: not supported on OS, only on EE
+     *
+     * @param wanReplicationName the name of the wan replication config
+     * @param targetGroupName    the group name on the target cluster
+     * @param mapName            the map name
+     * @throws UnsupportedOperationException if the operation is not supported (not EE)
+     * @throws InvalidConfigurationException if there is no WAN replication config for {@code wanReplicationName}
+     * @throws SyncFailedException           if there is a anti-entropy request in progress
+     */
+    void consistencyCheck(String wanReplicationName, String targetGroupName, String mapName);
 
     /**
      * Clears WAN replication queues of the given wanReplicationName for the given target.

@@ -387,7 +387,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     @Override
-    public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
+    public <T> Map<Integer, T> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
 
         Map<Address, List<Integer>> memberPartitions = createHashMap(3);

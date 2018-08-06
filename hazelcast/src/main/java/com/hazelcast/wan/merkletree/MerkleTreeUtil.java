@@ -29,7 +29,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 /**
  * Utility methods for Merkle tree implementation
  */
-final class MerkleTreeUtil {
+public final class MerkleTreeUtil {
     static final int HUGE_PRIME = 2038079003;
     @SuppressWarnings("checkstyle:magicnumber")
     private static final long INT_RANGE = 1L << 32;
@@ -168,7 +168,7 @@ final class MerkleTreeUtil {
      *                  to be calculated
      * @return the level which the node with {@code order} is on
      */
-    static int getLevelOfNode(int nodeOrder) {
+    public static int getLevelOfNode(int nodeOrder) {
         return QuickMath.log2(nodeOrder + 1);
     }
 
@@ -213,7 +213,7 @@ final class MerkleTreeUtil {
      *                  order to be calculated
      * @return the order of the left child node
      */
-    static int getLeftChildOrder(int nodeOrder) {
+    public static int getLeftChildOrder(int nodeOrder) {
         return (nodeOrder << 1) + 1;
     }
 
@@ -225,7 +225,7 @@ final class MerkleTreeUtil {
      *                  order to be calculated
      * @return the order of the right child node
      */
-    static int getRightChildOrder(int nodeOrder) {
+    public static int getRightChildOrder(int nodeOrder) {
         return (nodeOrder << 1) + 2;
     }
 
