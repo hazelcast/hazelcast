@@ -48,8 +48,7 @@ public class LocalIndexStatsImplTest {
         stats.setTotalUpdateLatency(34623);
         stats.setRemoveCount(749274);
         stats.setTotalRemoveLatency(1454957);
-        stats.setOnHeapMemoryCost(2345);
-        stats.setOffHeapMemoryCost(3456);
+        stats.setMemoryCost(2345);
     }
 
     @Test
@@ -65,8 +64,7 @@ public class LocalIndexStatsImplTest {
         assertEquals(34623, stats.getTotalUpdateLatency());
         assertEquals(749274, stats.getRemoveCount());
         assertEquals(1454957, stats.getTotalRemoveLatency());
-        assertEquals(2345, stats.getOnHeapMemoryCost());
-        assertEquals(3456, stats.getOffHeapMemoryCost());
+        assertEquals(2345, stats.getMemoryCost());
         assertNotNull(stats.toString());
     }
 
@@ -86,8 +84,7 @@ public class LocalIndexStatsImplTest {
         assertEquals(34623, deserialized.getTotalUpdateLatency());
         assertEquals(749274, deserialized.getRemoveCount());
         assertEquals(1454957, deserialized.getTotalRemoveLatency());
-        assertEquals(2345, deserialized.getOnHeapMemoryCost());
-        assertEquals(3456, deserialized.getOffHeapMemoryCost());
+        assertEquals(2345, deserialized.getMemoryCost());
         assertNotNull(deserialized.toString());
     }
 

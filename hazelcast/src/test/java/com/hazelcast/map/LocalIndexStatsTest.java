@@ -373,48 +373,38 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
     public void testMemoryCostTracking() {
         map.addIndex("__key", false);
         map.addIndex("this", true);
-        long keyEmptyCost = keyStats().getOnHeapMemoryCost();
-        long valueEmptyCost = valueStats().getOnHeapMemoryCost();
+        long keyEmptyCost = keyStats().getMemoryCost();
+        long valueEmptyCost = valueStats().getMemoryCost();
         assertTrue(keyEmptyCost > 0);
         assertTrue(valueEmptyCost > 0);
-        assertEquals(0, keyStats().getOffHeapMemoryCost());
-        assertEquals(0, valueStats().getOffHeapMemoryCost());
 
         for (int i = 0; i < 100; ++i) {
             map.put(i, i);
         }
-        long keyFullCost = keyStats().getOnHeapMemoryCost();
-        long valueFullCost = valueStats().getOnHeapMemoryCost();
+        long keyFullCost = keyStats().getMemoryCost();
+        long valueFullCost = valueStats().getMemoryCost();
         assertTrue(keyFullCost > keyEmptyCost);
         assertTrue(valueFullCost > valueEmptyCost);
-        assertEquals(0, keyStats().getOffHeapMemoryCost());
-        assertEquals(0, valueStats().getOffHeapMemoryCost());
 
         for (int i = 0; i < 50; ++i) {
             map.remove(i);
         }
-        long keyHalfFullCost = keyStats().getOnHeapMemoryCost();
-        long valueHalfFullCost = valueStats().getOnHeapMemoryCost();
+        long keyHalfFullCost = keyStats().getMemoryCost();
+        long valueHalfFullCost = valueStats().getMemoryCost();
         assertTrue(keyHalfFullCost > keyEmptyCost && keyHalfFullCost < keyFullCost);
         assertTrue(valueHalfFullCost > valueEmptyCost && valueHalfFullCost < valueFullCost);
-        assertEquals(0, keyStats().getOffHeapMemoryCost());
-        assertEquals(0, valueStats().getOffHeapMemoryCost());
 
         for (int i = 0; i < 50; ++i) {
             map.put(i, i);
         }
-        assertTrue(keyStats().getOnHeapMemoryCost() > keyHalfFullCost);
-        assertTrue(valueStats().getOnHeapMemoryCost() > valueHalfFullCost);
-        assertEquals(0, keyStats().getOffHeapMemoryCost());
-        assertEquals(0, valueStats().getOffHeapMemoryCost());
+        assertTrue(keyStats().getMemoryCost() > keyHalfFullCost);
+        assertTrue(valueStats().getMemoryCost() > valueHalfFullCost);
 
         for (int i = 0; i < 50; ++i) {
             map.set(i, i * i);
         }
-        assertTrue(keyStats().getOnHeapMemoryCost() > keyHalfFullCost);
-        assertTrue(valueStats().getOnHeapMemoryCost() > valueHalfFullCost);
-        assertEquals(0, keyStats().getOffHeapMemoryCost());
-        assertEquals(0, valueStats().getOffHeapMemoryCost());
+        assertTrue(keyStats().getMemoryCost() > keyHalfFullCost);
+        assertTrue(valueStats().getMemoryCost() > valueHalfFullCost);
     }
 
     @Test

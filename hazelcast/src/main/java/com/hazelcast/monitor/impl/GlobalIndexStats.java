@@ -170,13 +170,8 @@ public class GlobalIndexStats implements InternalIndexStats {
     }
 
     @Override
-    public long getOnHeapMemoryCost() {
+    public long getMemoryCost() {
         return IndexHeapMemoryCostUtil.estimateMapCost(entryCount, ordered, queryableEntriesAreCached) + valuesMemoryCost;
-    }
-
-    @Override
-    public long getOffHeapMemoryCost() {
-        return 0;
     }
 
     @Override

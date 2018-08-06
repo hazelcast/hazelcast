@@ -152,8 +152,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
             combinedIndexStats.setRemoveCount(indexStats1.getRemoveCount() + indexStats2.getRemoveCount());
             combinedIndexStats.setTotalRemoveLatency(indexStats1.getTotalRemoveLatency() + indexStats2.getTotalRemoveLatency());
 
-            combinedIndexStats.setOnHeapMemoryCost(indexStats1.getOnHeapMemoryCost() + indexStats2.getOnHeapMemoryCost());
-            combinedIndexStats.setOffHeapMemoryCost(indexStats1.getOffHeapMemoryCost() + indexStats2.getOffHeapMemoryCost());
+            combinedIndexStats.setMemoryCost(indexStats1.getMemoryCost() + indexStats2.getMemoryCost());
 
             combinedIndexStatsMap.put(indexEntry.getKey(), combinedIndexStats);
         }

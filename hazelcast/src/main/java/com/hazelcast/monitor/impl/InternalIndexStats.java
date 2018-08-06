@@ -97,12 +97,7 @@ public interface InternalIndexStats {
         }
 
         @Override
-        public long getOnHeapMemoryCost() {
-            return 0;
-        }
-
-        @Override
-        public long getOffHeapMemoryCost() {
+        public long getMemoryCost() {
             return 0;
         }
 
@@ -241,20 +236,13 @@ public interface InternalIndexStats {
     long getTotalRemoveLatency();
 
     /**
-     * Returns the on-heap memory cost of the index in bytes.
+     * Returns the memory cost of the index in bytes.
      * <p>
-     * Currently, the returned value is just a best-effort approximation and
-     * doesn't indicate the precise on-heap memory usage of the index.
+     * Currently, for on-heap indexes (OBJECT and BINARY storages), the returned
+     * value is just a best-effort approximation and doesn't indicate a precise
+     * on-heap memory usage of the index.
      */
-    long getOnHeapMemoryCost();
-
-    /**
-     * Returns the off-heap memory cost of the index in bytes.
-     * <p>
-     * The returned value includes all active off-heap allocations associated
-     * with the index.
-     */
-    long getOffHeapMemoryCost();
+    long getMemoryCost();
 
     /**
      * Invoked by the associated index after every insert operation.

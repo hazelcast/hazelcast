@@ -159,12 +159,7 @@ public class PartitionIndexStats implements InternalIndexStats {
     }
 
     @Override
-    public long getOnHeapMemoryCost() {
-        return 0;
-    }
-
-    @Override
-    public long getOffHeapMemoryCost() {
+    public long getMemoryCost() {
         return memoryCost;
     }
 

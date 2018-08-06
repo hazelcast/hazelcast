@@ -61,10 +61,7 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
     private volatile long totalRemoveLatency;
 
     @Probe
-    private volatile long onHeapMemoryCost;
-
-    @Probe
-    private volatile long offHeapMemoryCost;
+    private volatile long memoryCost;
 
     @Override
     public long getCreationTime() {
@@ -226,33 +223,17 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
     }
 
     @Override
-    public long getOnHeapMemoryCost() {
-        return onHeapMemoryCost;
+    public long getMemoryCost() {
+        return memoryCost;
     }
 
     /**
-     * Sets the on-heap memory cost of this stats to the given on-heap memory
-     * cost value.
+     * Sets the memory cost of this stats to the given memory cost value.
      *
-     * @param onHeapMemoryCost the on-heap memory cost value to set.
+     * @param memoryCost the memory cost value to set.
      */
-    public void setOnHeapMemoryCost(long onHeapMemoryCost) {
-        this.onHeapMemoryCost = onHeapMemoryCost;
-    }
-
-    @Override
-    public long getOffHeapMemoryCost() {
-        return offHeapMemoryCost;
-    }
-
-    /**
-     * Sets the off-heap memory cost of this stats to the given off-heap memory
-     * cost value.
-     *
-     * @param offHeapMemoryCost the off-heap memory cost value to set.
-     */
-    public void setOffHeapMemoryCost(long offHeapMemoryCost) {
-        this.offHeapMemoryCost = offHeapMemoryCost;
+    public void setMemoryCost(long memoryCost) {
+        this.memoryCost = memoryCost;
     }
 
     /**
@@ -273,8 +254,7 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
         this.totalUpdateLatency = onDemandStats.getTotalUpdateLatency();
         this.removeCount = onDemandStats.getRemoveCount();
         this.totalRemoveLatency = onDemandStats.getTotalRemoveLatency();
-        this.onHeapMemoryCost = onDemandStats.getOnHeapMemoryCost();
-        this.offHeapMemoryCost = onDemandStats.getOffHeapMemoryCost();
+        this.memoryCost = onDemandStats.getMemoryCost();
     }
 
     @Override
@@ -291,8 +271,7 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
         json.add("totalUpdateLatency", totalUpdateLatency);
         json.add("removeCount", removeCount);
         json.add("totalRemoveLatency", totalRemoveLatency);
-        json.add("onHeapMemoryCost", onHeapMemoryCost);
-        json.add("offHeapMemoryCost", offHeapMemoryCost);
+        json.add("memoryCost", memoryCost);
         return json;
     }
 
@@ -309,8 +288,7 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
         totalUpdateLatency = json.getLong("totalUpdateLatency", -1);
         removeCount = json.getLong("removeCount", -1);
         totalRemoveLatency = json.getLong("totalRemoveLatency", -1);
-        onHeapMemoryCost = json.getLong("onHeapMemoryCost", -1);
-        offHeapMemoryCost = json.getLong("offHeapMemoryCost", -1);
+        memoryCost = json.getLong("memoryCost", -1);
     }
 
     @Override
@@ -319,8 +297,7 @@ public class LocalIndexStatsImpl implements LocalIndexStats {
                 + ", averageHitSelectivity=" + averageHitSelectivity + ", averageHitLatency=" + averageHitLatency
                 + ", insertCount=" + insertCount + ", totalInsertLatency=" + totalInsertLatency + ", updateCount=" + updateCount
                 + ", totalUpdateLatency=" + totalUpdateLatency + ", removeCount=" + removeCount + ", totalRemoveLatency="
-                + totalRemoveLatency + ", onHeapMemoryCost=" + onHeapMemoryCost + ", offHeapMemoryCost=" + offHeapMemoryCost
-                + '}';
+                + totalRemoveLatency + ", memoryCost=" + memoryCost + '}';
     }
 
 }

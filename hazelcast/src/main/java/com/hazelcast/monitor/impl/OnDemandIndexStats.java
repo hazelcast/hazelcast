@@ -47,9 +47,7 @@ public class OnDemandIndexStats {
 
     private long totalRemoveLatency;
 
-    private long onHeapMemoryCost;
-
-    private long offHeapMemoryCost;
+    private long memoryCost;
 
     private long totalHitCount;
 
@@ -230,35 +228,19 @@ public class OnDemandIndexStats {
     }
 
     /**
-     * Returns the on-heap memory cost.
+     * Returns the memory cost.
      */
-    public long getOnHeapMemoryCost() {
-        return onHeapMemoryCost;
+    public long getMemoryCost() {
+        return memoryCost;
     }
 
     /**
-     * Sets the on-heap memory cost to the given value.
+     * Sets the memory cost to the given value.
      *
-     * @param onHeapMemoryCost the on-heap memory cost value to set.
+     * @param memoryCost the memory cost value to set.
      */
-    public void setOnHeapMemoryCost(long onHeapMemoryCost) {
-        this.onHeapMemoryCost = onHeapMemoryCost;
-    }
-
-    /**
-     * Returns the off-heap memory cost.
-     */
-    public long getOffHeapMemoryCost() {
-        return offHeapMemoryCost;
-    }
-
-    /**
-     * Sets the off-heap memory cost to the given value.
-     *
-     * @param offHeapMemoryCost the off-heap memory cost value to set.
-     */
-    public void setOffHeapMemoryCost(long offHeapMemoryCost) {
-        this.offHeapMemoryCost = offHeapMemoryCost;
+    public void setMemoryCost(long memoryCost) {
+        this.memoryCost = memoryCost;
     }
 
     /**
@@ -283,8 +265,8 @@ public class OnDemandIndexStats {
                 + ", queryCount=" + queryCount + ", averageHitSelectivity=" + averageHitSelectivity + ", averageHitLatency="
                 + averageHitLatency + ", insertCount=" + insertCount + ", totalInsertLatency=" + totalInsertLatency
                 + ", updateCount=" + updateCount + ", totalUpdateLatency=" + totalUpdateLatency + ", removeCount=" + removeCount
-                + ", totalRemoveLatency=" + totalRemoveLatency + ", onHeapMemoryCost=" + onHeapMemoryCost + ", offHeapMemoryCost="
-                + offHeapMemoryCost + ", totalHitCount=" + totalHitCount + '}';
+                + ", totalRemoveLatency=" + totalRemoveLatency + ", memoryCost=" + memoryCost + ", totalHitCount=" + totalHitCount
+                + '}';
     }
 
 }

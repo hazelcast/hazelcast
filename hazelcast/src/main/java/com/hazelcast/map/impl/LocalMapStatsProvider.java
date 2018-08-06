@@ -373,8 +373,7 @@ public class LocalMapStatsProvider {
             long hitCount = indexStats.getHitCount();
             freshIndexStats.setHitCount(Math.max(freshIndexStats.getHitCount(), hitCount));
             freshIndexStats.setQueryCount(Math.max(freshIndexStats.getQueryCount(), indexStats.getQueryCount()));
-            freshIndexStats.setOnHeapMemoryCost(freshIndexStats.getOnHeapMemoryCost() + indexStats.getOnHeapMemoryCost());
-            freshIndexStats.setOffHeapMemoryCost(freshIndexStats.getOffHeapMemoryCost() + indexStats.getOffHeapMemoryCost());
+            freshIndexStats.setMemoryCost(freshIndexStats.getMemoryCost() + indexStats.getMemoryCost());
 
             freshIndexStats.setAverageHitSelectivity(
                     freshIndexStats.getAverageHitSelectivity() + indexStats.getTotalNormalizedHitCardinality());
