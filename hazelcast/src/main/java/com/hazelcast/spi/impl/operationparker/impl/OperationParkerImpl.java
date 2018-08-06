@@ -30,6 +30,7 @@ import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
 import com.hazelcast.util.ConstructorFunction;
@@ -132,16 +133,14 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     // invalidated waiting ops will removed from queue eventually by notifiers.
     public void onMemberLeft(MemberImpl leftMember) {
-        invalidateWaitingOps(leftMember.getUuid());
+        for (WaitSet waitSet : waitSetMap.values()) {
+            waitSet.invalidateAll(leftMember.getUuid());
+        }
     }
 
     public void onClientDisconnected(String clientUuid) {
-        invalidateWaitingOps(clientUuid);
-    }
-
-    private void invalidateWaitingOps(String callerUuid) {
         for (WaitSet waitSet : waitSetMap.values()) {
-            waitSet.invalidateAll(callerUuid);
+            waitSet.cancelAll(clientUuid, new TargetDisconnectedException("Client disconnected: " + clientUuid));
         }
     }
 
