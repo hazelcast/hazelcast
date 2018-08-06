@@ -1134,8 +1134,10 @@ public class DynamicConfigurationAwareConfig extends Config {
         }
 
         Map<String, MerkleTreeConfig> staticConfigs = staticConfig.getMapMerkleTreeConfigs();
-        checkStaticConfigurationDoesNotExist(staticConfigs, mapName, merkleTreeConfig);
-        configurationService.broadcastConfig(merkleTreeConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfigs, mapName, merkleTreeConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(merkleTreeConfig);
+        }
         return this;
     }
 
