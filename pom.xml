@@ -1041,6 +1041,11 @@
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/mapreduce/**.java</exclude>
+                                <!--
+                                  An outdated PaxRunner used by the OSGi test prevents executing on Java 9+.
+                                  TODO: remove this exclude once we have a proper fix in the test class.
+                                -->
+                                <exclude>**/HazelcastOSGiIntegrationTest.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
