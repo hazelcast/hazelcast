@@ -193,16 +193,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.outboundPortCount = outboundPorts.size();
         this.heartbeat = new HeartbeatManager(this, client);
         this.authenticationTimeout = heartbeat.getHeartbeatTimeout();
-        checkSslAllowed();
-    }
-
-    private void checkSslAllowed() {
-        SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
-        if (sslConfig != null && sslConfig.isEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
-            }
-        }
     }
 
     private Collection<Integer> getOutboundPorts(ClientNetworkConfig networkConfig) {

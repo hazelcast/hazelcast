@@ -80,6 +80,7 @@ import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
@@ -231,6 +232,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExtension = createClientInitializer(classLoader);
         clientExtension.beforeStart(this);
 
+        checkEnterpriseFeaturesAllowed();
+
         credentials = initCredentials(config);
         lifecycleService = new LifecycleServiceImpl(this);
         properties = new HazelcastProperties(config.getProperties());
@@ -265,6 +268,19 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExceptionFactory = initClientExceptionFactory();
         statistics = new Statistics(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
+    }
+
+    private void checkEnterpriseFeaturesAllowed() {
+        checkSslAllowed();
+    }
+
+    private void checkSslAllowed() {
+        SSLConfig sslConfig = this.getClientConfig().getNetworkConfig().getSSLConfig();
+        if (sslConfig != null && sslConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
+            }
+        }
     }
 
     private int getConnectionTimeoutMillis() {
