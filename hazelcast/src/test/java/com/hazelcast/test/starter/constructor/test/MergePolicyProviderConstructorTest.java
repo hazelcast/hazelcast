@@ -47,7 +47,7 @@ public class MergePolicyProviderConstructorTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         Config config = new Config();
-        hz = HazelcastStarter.newHazelcastInstance("3.11-SNAPSHOT", config, false);
+        hz = HazelcastStarter.newHazelcastInstance("3.10", config, false);
     }
 
     @After
@@ -57,6 +57,8 @@ public class MergePolicyProviderConstructorTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor() throws Exception {
+        //this is testing the Hazelcast Started can create an instances of merge policies
+
         NodeEngine nodeEngine = getNodeEngineImpl(hz);
         CacheService service = nodeEngine.getService(CacheService.SERVICE_NAME);
         CacheMergePolicyProvider mergePolicyProvider = service.getMergePolicyProvider();
