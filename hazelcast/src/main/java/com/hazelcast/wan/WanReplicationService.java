@@ -24,6 +24,8 @@ import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
 
+import java.util.Collection;
+
 /**
  * This is the WAN replications service API core interface. The WanReplicationService needs to
  * be capable of creating the actual {@link com.hazelcast.wan.WanReplicationPublisher} instances
@@ -95,6 +97,22 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @throws SyncFailedException           if there is a sync request in progress
      */
     void syncMap(String wanReplicationName, String targetGroupName, String mapName);
+
+    /**
+     * Initiate sync for a single map and specific collection of keys.
+     * NOTE: not supported on OS, only on EE
+     *
+     * @param wanReplicationName the name of the wan replication config
+     * @param targetGroupName    the group name on the target cluster
+     * @param mapName            the map name
+     * @param keys               keys to sync
+     * @param <K>                key type
+     * @throws UnsupportedOperationException if the operation is not supported (not EE)
+     * @throws InvalidConfigurationException if there is no WAN replication config for {@code wanReplicationName}
+     * @throws SyncFailedException           if there is a sync request in progress
+     */
+    <K> void syncMap(String wanReplicationName, String targetGroupName, String mapName,
+                     Collection<K> keys);
 
     /**
      * Initiate wan sync for all maps.
