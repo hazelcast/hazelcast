@@ -86,4 +86,28 @@ public final class ThreadUtil {
     public static void assertRunningOnPartitionThread() {
         assert Thread.currentThread().getName().contains("partition-operation");
     }
+
+    /**
+     * Returns the provided stack trace as a string
+     *
+     * @param stackTraceElements The stack trace
+     * @return the stack trace as string
+     */
+    public static String stackTraceToString(StackTraceElement[] stackTraceElements) {
+        StringBuilder stringBuilder = new StringBuilder();
+        appendStackTrace(stringBuilder, stackTraceElements);
+        return stringBuilder.toString();
+    }
+
+    /**
+     * Appends the provided stack trace to the provided {@link StringBuilder}
+     *
+     * @param stringBuilder      The builder the stack trace to append to
+     * @param stackTraceElements The stack trace to append
+     */
+    public static void appendStackTrace(StringBuilder stringBuilder, StackTraceElement[] stackTraceElements) {
+        for (StackTraceElement stackTraceElement : stackTraceElements) {
+            stringBuilder.append("\tat ").append(stackTraceElement.toString()).append('\n');
+        }
+    }
 }

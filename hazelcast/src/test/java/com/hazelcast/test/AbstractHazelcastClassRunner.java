@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.compatibility.CompatibilityTestUtils;
+import com.hazelcast.util.ThreadUtil;
 import org.junit.After;
 import org.junit.AssumptionViolatedException;
 import org.junit.Before;
@@ -312,6 +313,8 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                     throw new IllegalStateException(message);
                 }
 
+                detectThreadLeak();
+
                 // check for leftover CachingProvider instances
                 int registrySize = getCachingProviderRegistrySize();
                 if (registrySize > 0) {
@@ -321,6 +324,28 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 }
             }
         };
+    }
+
+    private void detectThreadLeak() {
+        boolean threadLeak = false;
+        Set<Thread> threads = Thread.getAllStackTraces().keySet();
+        StringBuilder leakingThreads = new StringBuilder();
+
+        for (Thread thread : threads) {
+            if (thread.getName().toLowerCase().contains("hz") && thread.isAlive()) {
+                leakingThreads.append('\n').append(thread.getName()).append('\n');
+                ThreadUtil.appendStackTrace(leakingThreads, thread.getStackTrace());
+                threadLeak = true;
+            }
+        }
+
+        if (threadLeak) {
+            String threadLeakMessage = "Alive Hazelcast thread(s) detected after test completion";
+            String causeMessage = threadLeakMessage + ": \n" + leakingThreads;
+            // local stack trace comes first, cause with potentially long message goes after it
+            IllegalStateException cause = new IllegalStateException(causeMessage);
+            throw new IllegalStateException(threadLeakMessage, cause);
+        }
     }
 
     private String generateThreadDump() {
