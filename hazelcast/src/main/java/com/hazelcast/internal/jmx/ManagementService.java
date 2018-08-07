@@ -66,7 +66,7 @@ public class ManagementService implements DistributedObjectListener {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         InstanceMBean instanceMBean;
         try {
-            instanceMBean = new InstanceMBean(instance, this);
+            instanceMBean = createInstanceMBean(instance);
             mbs.registerMBean(instanceMBean, instanceMBean.objectName);
         } catch (Exception e) {
             instanceMBean = null;
@@ -78,6 +78,10 @@ public class ManagementService implements DistributedObjectListener {
         for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
             registerDistributedObject(distributedObject);
         }
+    }
+
+    protected InstanceMBean createInstanceMBean(HazelcastInstanceImpl instance) {
+        return new InstanceMBean(instance, this);
     }
 
     public InstanceMBean getInstanceMBean() {

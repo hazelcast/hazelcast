@@ -51,7 +51,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
 
     protected final long updateIntervalSec;
 
-    final T managedObject;
+    protected final T managedObject;
     final ManagementService service;
 
     String description;

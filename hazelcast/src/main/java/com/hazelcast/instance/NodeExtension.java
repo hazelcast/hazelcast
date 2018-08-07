@@ -19,10 +19,12 @@ package com.hazelcast.instance;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
+import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
+import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.networking.ChannelFactory;
@@ -246,6 +248,10 @@ public interface NodeExtension {
     TimedMemberStateFactory createTimedMemberStateFactory(HazelcastInstanceImpl instance);
 
     ManagementCenterConnectionFactory getManagementCenterConnectionFactory();
+
+    ManagementService createJMXManagementService(HazelcastInstanceImpl instance);
+
+    TextCommandService createTextCommandService();
 
     /** Returns a byte array processor for incoming data on the Multicast joiner */
     ByteArrayProcessor createMulticastInputProcessor(IOService ioService);

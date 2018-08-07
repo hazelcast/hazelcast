@@ -126,6 +126,11 @@ public class HTTPCommunicator {
         return doGet(url).response;
     }
 
+    public String getLicenseInfo() throws IOException {
+        String url = address + "license";
+        return doGet(url).response;
+    }
+
     public int getFailingClusterHealthWithTrailingGarbage() throws IOException {
         String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
         String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
