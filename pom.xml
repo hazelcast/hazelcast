@@ -86,7 +86,7 @@
         <mockito.version>1.10.19</mockito.version>
         <powermock.version>1.6.6</powermock.version>
         <jmh.version>1.16</jmh.version>
-        <bytebuddy.version>1.6.12</bytebuddy.version>
+        <bytebuddy.version>1.8.17</bytebuddy.version>
         <commons-lang3.version>3.4</commons-lang3.version>
         <felix.utils.version>1.10.0</felix.utils.version>
         <findbugs.annotations.version>3.0.0</findbugs.annotations.version>
