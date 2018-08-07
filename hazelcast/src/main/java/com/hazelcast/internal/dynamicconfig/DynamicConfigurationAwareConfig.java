@@ -16,6 +16,10 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
+import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
+import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
+
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
@@ -65,8 +69,6 @@ import com.hazelcast.internal.dynamicconfig.search.Searcher;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.StringUtil;
-
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -75,10 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
-import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
-import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
+import javax.annotation.Nonnull;
 
 @SuppressWarnings({"unchecked", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class DynamicConfigurationAwareConfig extends Config {
@@ -99,24 +98,26 @@ public class DynamicConfigurationAwareConfig extends Config {
             return staticConfig.getMapConfigs();
         }
     };
+
     private final ConfigSupplier<EventJournalConfig> mapEventJournalConfigSupplier =
-            new ConfigSupplier<EventJournalConfig>() {
-                @Override
-                public EventJournalConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
-                                                           @Nonnull String name) {
-                    return configurationService.findMapEventJournalConfig(name);
-                }
+        new ConfigSupplier<EventJournalConfig>() {
+            @Override
+            public EventJournalConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
+                @Nonnull String name) {
+                return configurationService.findMapEventJournalConfig(name);
+            }
 
-                @Override
-                public EventJournalConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                    return staticConfig.getMapEventJournalConfig(name);
-                }
+            @Override
+            public EventJournalConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
+                return staticConfig.getMapEventJournalConfig(name);
+            }
 
-                @Override
-                public Map<String, EventJournalConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                    return staticConfig.getMapEventJournalConfigs();
-                }
-            };
+            @Override
+            public Map<String, EventJournalConfig> getStaticConfigs(@Nonnull Config staticConfig) {
+                return staticConfig.getMapEventJournalConfigs();
+            }
+        };
+
     private final ConfigSupplier<EventJournalConfig> cacheEventJournalConfigSupplier = new
             ConfigSupplier<EventJournalConfig>() {
                 @Override
@@ -135,6 +136,7 @@ public class DynamicConfigurationAwareConfig extends Config {
                     return staticConfig.getCacheEventJournalConfigs();
                 }
             };
+
     private final ConfigSupplier<MerkleTreeConfig> mapMerkleTreeConfigSupplier =
             new ConfigSupplier<MerkleTreeConfig>() {
                 @Override
@@ -280,17 +282,21 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addMapConfig(MapConfig mapConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getMapConfigs(), mapConfig.getName(), mapConfig);
-        configurationService.broadcastConfig(mapConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getMapConfigs(),
+            mapConfig.getName(), mapConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(mapConfig);
+        }
         return this;
     }
 
-    private <T> void checkStaticConfigurationDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
+    private <T> boolean checkStaticConfigDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
         Object existingConfiguration = staticConfigurations.get(configName);
-        if (existingConfiguration != null) {
+        if (existingConfiguration != null && !existingConfiguration.equals(newConfig)) {
             throw new ConfigurationException("Cannot add a new dynamic configuration " + newConfig
-                    + " as static configuration already contains " + existingConfiguration);
+                + " as static configuration already contains " + existingConfiguration);
         }
+        return existingConfiguration == null;
     }
 
     @Override
@@ -331,8 +337,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addCacheConfig(CacheSimpleConfig cacheConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getCacheConfigs(), cacheConfig.getName(), cacheConfig);
-        configurationService.broadcastConfig(cacheConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getCacheConfigs(),
+            cacheConfig.getName(), cacheConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(cacheConfig);
+        }
         return this;
     }
 
@@ -365,8 +374,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addQueueConfig(QueueConfig queueConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getQueueConfigs(), queueConfig.getName(), queueConfig);
-        configurationService.broadcastConfig(queueConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getQueueConfigs(),
+            queueConfig.getName(), queueConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(queueConfig);
+        }
         return this;
     }
 
@@ -398,8 +410,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addLockConfig(LockConfig lockConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getLockConfigs(), lockConfig.getName(), lockConfig);
-        configurationService.broadcastConfig(lockConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getLockConfigs(),
+            lockConfig.getName(), lockConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(lockConfig);
+        }
         return this;
     }
 
@@ -431,8 +446,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addListConfig(ListConfig listConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getListConfigs(), listConfig.getName(), listConfig);
-        configurationService.broadcastConfig(listConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getListConfigs(),
+            listConfig.getName(), listConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(listConfig);
+        }
         return this;
     }
 
@@ -465,8 +483,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addSetConfig(SetConfig setConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getSetConfigs(), setConfig.getName(), setConfig);
-        configurationService.broadcastConfig(setConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getSetConfigs(),
+            setConfig.getName(), setConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(setConfig);
+        }
         return this;
     }
 
@@ -498,8 +519,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addMultiMapConfig(MultiMapConfig multiMapConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getMultiMapConfigs(), multiMapConfig.getName(), multiMapConfig);
-        configurationService.broadcastConfig(multiMapConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getMultiMapConfigs(),
+            multiMapConfig.getName(), multiMapConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(multiMapConfig);
+        }
         return this;
     }
 
@@ -532,9 +556,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getReplicatedMapConfigs(), replicatedMapConfig.getName(),
-                replicatedMapConfig);
-        configurationService.broadcastConfig(replicatedMapConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getReplicatedMapConfigs(),
+            replicatedMapConfig.getName(), replicatedMapConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(replicatedMapConfig);
+        }
         return this;
     }
 
@@ -567,9 +593,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addRingBufferConfig(RingbufferConfig ringbufferConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getRingbufferConfigs(), ringbufferConfig.getName(),
-                ringbufferConfig);
-        configurationService.broadcastConfig(ringbufferConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getRingbufferConfigs(),
+            ringbufferConfig.getName(), ringbufferConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(ringbufferConfig);
+        }
         return this;
     }
 
@@ -598,8 +626,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getAtomicLongConfigs(), atomicLongConfig.getName(), atomicLongConfig);
-        configurationService.broadcastConfig(atomicLongConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getAtomicLongConfigs(),
+            atomicLongConfig.getName(), atomicLongConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(atomicLongConfig);
+        }
         return this;
     }
 
@@ -632,9 +663,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getAtomicReferenceConfigs(), atomicReferenceConfig.getName(),
-                atomicReferenceConfig);
-        configurationService.broadcastConfig(atomicReferenceConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getAtomicReferenceConfigs(),
+            atomicReferenceConfig.getName(), atomicReferenceConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(atomicReferenceConfig);
+        }
         return this;
     }
 
@@ -667,9 +700,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getCountDownLatchConfigs(), countDownLatchConfig.getName(),
-                countDownLatchConfig);
-        configurationService.broadcastConfig(countDownLatchConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getCountDownLatchConfigs(),
+            countDownLatchConfig.getName(), countDownLatchConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(countDownLatchConfig);
+        }
         return this;
     }
 
@@ -706,9 +741,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addTopicConfig(TopicConfig topicConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getTopicConfigs(), topicConfig.getName(),
-                topicConfig);
-        configurationService.broadcastConfig(topicConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getTopicConfigs(),
+            topicConfig.getName(), topicConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(topicConfig);
+        }
         return this;
     }
 
@@ -749,9 +786,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addReliableTopicConfig(ReliableTopicConfig reliableTopicConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getReliableTopicConfigs(), reliableTopicConfig.getName(),
-                reliableTopicConfig);
-        configurationService.broadcastConfig(reliableTopicConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getReliableTopicConfigs(),
+            reliableTopicConfig.getName(), reliableTopicConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(reliableTopicConfig);
+        }
         return this;
     }
 
@@ -776,9 +815,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addExecutorConfig(ExecutorConfig executorConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getExecutorConfigs(), executorConfig.getName(),
-                executorConfig);
-        configurationService.broadcastConfig(executorConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getExecutorConfigs(),
+            executorConfig.getName(), executorConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(executorConfig);
+        }
         return this;
     }
 
@@ -811,9 +852,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addDurableExecutorConfig(DurableExecutorConfig durableExecutorConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getDurableExecutorConfigs(), durableExecutorConfig.getName(),
-                durableExecutorConfig);
-        configurationService.broadcastConfig(durableExecutorConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getDurableExecutorConfigs(),
+            durableExecutorConfig.getName(), durableExecutorConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(durableExecutorConfig);
+        }
         return this;
     }
 
@@ -855,9 +898,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addScheduledExecutorConfig(ScheduledExecutorConfig scheduledExecutorConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getScheduledExecutorConfigs(), scheduledExecutorConfig.getName(),
-                scheduledExecutorConfig);
-        configurationService.broadcastConfig(scheduledExecutorConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getScheduledExecutorConfigs(),
+            scheduledExecutorConfig.getName(), scheduledExecutorConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(scheduledExecutorConfig);
+        }
         return this;
     }
 
@@ -878,15 +923,17 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     private CardinalityEstimatorConfig getCardinalityEstimatorConfigInternal(String name, String fallbackName) {
         return (CardinalityEstimatorConfig) configSearcher.getConfig(name, fallbackName,
-                supplierFor(CardinalityEstimatorConfig.class));
+            supplierFor(CardinalityEstimatorConfig.class));
     }
 
 
     @Override
     public Config addCardinalityEstimatorConfig(CardinalityEstimatorConfig cardinalityEstimatorConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getCardinalityEstimatorConfigs(),
-                cardinalityEstimatorConfig.getName(), cardinalityEstimatorConfig);
-        configurationService.broadcastConfig(cardinalityEstimatorConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getCardinalityEstimatorConfigs(),
+            cardinalityEstimatorConfig.getName(), cardinalityEstimatorConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(cardinalityEstimatorConfig);
+        }
         return this;
     }
 
@@ -919,8 +966,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addPNCounterConfig(PNCounterConfig pnCounterConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getPNCounterConfigs(), pnCounterConfig.getName(), pnCounterConfig);
-        configurationService.broadcastConfig(pnCounterConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getPNCounterConfigs(),
+            pnCounterConfig.getName(), pnCounterConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(pnCounterConfig);
+        }
         return this;
     }
 
@@ -953,9 +1003,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getSemaphoreConfigsAsMap(),
-                semaphoreConfig.getName(), semaphoreConfig);
-        configurationService.broadcastConfig(semaphoreConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getSemaphoreConfigsAsMap(),
+            semaphoreConfig.getName(), semaphoreConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(semaphoreConfig);
+        }
         return this;
     }
 
@@ -1034,15 +1086,19 @@ public class DynamicConfigurationAwareConfig extends Config {
             throw new IllegalArgumentException("Event journal config should have non-empty map name and/or cache name");
         }
 
+        boolean staticConfigDoesNotExist = false;
         if (!StringUtil.isNullOrEmpty(mapName)) {
             Map<String, EventJournalConfig> staticConfigs = staticConfig.getMapEventJournalConfigs();
-            checkStaticConfigurationDoesNotExist(staticConfigs, mapName, eventJournalConfig);
+            staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfigs, mapName, eventJournalConfig);
         }
         if (!StringUtil.isNullOrEmpty(cacheName)) {
             Map<String, EventJournalConfig> staticConfigs = staticConfig.getCacheEventJournalConfigs();
-            checkStaticConfigurationDoesNotExist(staticConfigs, cacheName, eventJournalConfig);
+            staticConfigDoesNotExist = staticConfigDoesNotExist
+                | checkStaticConfigDoesNotExist(staticConfigs, cacheName, eventJournalConfig);
         }
-        configurationService.broadcastConfig(eventJournalConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(eventJournalConfig);
+        }
         return this;
     }
 
@@ -1078,8 +1134,10 @@ public class DynamicConfigurationAwareConfig extends Config {
         }
 
         Map<String, MerkleTreeConfig> staticConfigs = staticConfig.getMapMerkleTreeConfigs();
-        checkStaticConfigurationDoesNotExist(staticConfigs, mapName, merkleTreeConfig);
-        configurationService.broadcastConfig(merkleTreeConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfigs, mapName, merkleTreeConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(merkleTreeConfig);
+        }
         return this;
     }
 
@@ -1118,8 +1176,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig config) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getFlakeIdGeneratorConfigs(), config.getName(), config);
-        configurationService.broadcastConfig(config);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getFlakeIdGeneratorConfigs(),
+            config.getName(), config);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(config);
+        }
         return this;
     }
 
