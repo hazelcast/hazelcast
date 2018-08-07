@@ -67,4 +67,11 @@ public interface HotRestartService {
      * @return {@code true} if hot backup is enabled, {@code false} otherwise
      */
     boolean isHotBackupEnabled();
+
+    /**
+     * Returns the hot restart backup directory.
+     *
+     * @return hot restart backup directory if hot backup is enabled, {@code null} otherwise.
+     */
+    String getBackupDirectory();
 }

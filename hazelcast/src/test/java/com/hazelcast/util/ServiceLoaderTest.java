@@ -96,10 +96,10 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
 
     @Test
     public void testHookDeduplication() {
-        ClassLoader parentClassloader = PortableHook.class.getClassLoader();
-
         Class<?> hook = newClassImplementingInterface("com.hazelcast.internal.serialization.SomeHook",
-                PortableHook.class, parentClassloader);
+                PortableHook.class, PortableHook.class.getClassLoader());
+
+        ClassLoader parentClassloader = hook.getClassLoader();
 
         //child classloader delegating everything to its parent
         URLClassLoader childClassloader = new URLClassLoader(new URL[]{}, parentClassloader);

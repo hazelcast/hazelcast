@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.recordstore;
-
-import com.hazelcast.nio.serialization.Data;
+package com.hazelcast.wan.merkletree;
 
 /**
- * Holds expired key and related metadata.
+ * Readonly view of a Merkle tree
  */
-public final class ExpiredKey {
-    private final Data key;
-    private final long creationTime;
+interface MerkleTreeView {
+    /**
+     * Returns the hash for the node with the given {@code nodeOrder}
+     *
+     * @param nodeOrder The order of the node
+     * @return the hash of the node
+     */
+    int getNodeHash(int nodeOrder);
 
-    public ExpiredKey(Data key, long creationTime) {
-        this.key = key;
-        this.creationTime = creationTime;
-    }
-
-    public Data getKey() {
-        return key;
-    }
-
-    public long getCreationTime() {
-        return creationTime;
-    }
+    /**
+     * Returns the depth of the tree
+     *
+     * @return the depth of the tree
+     */
+    int depth();
 }

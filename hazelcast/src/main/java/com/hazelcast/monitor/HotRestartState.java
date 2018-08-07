@@ -30,4 +30,6 @@ public interface HotRestartState extends JsonSerializable {
     BackupTaskStatus getBackupTaskStatus();
 
     boolean isHotBackupEnabled();
+
+    String getBackupDirectory();
 }

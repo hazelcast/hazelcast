@@ -54,6 +54,25 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
     private Object implementation;
     private AwsConfig awsConfig = new AwsConfig();
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
+    private WanSyncConfig wanSyncConfig = new WanSyncConfig();
+
+    /**
+     * Returns the config for the WAN sync mechanism.
+     */
+    public WanSyncConfig getWanSyncConfig() {
+        return wanSyncConfig;
+    }
+
+    /**
+     * Sets the config for the WAN sync mechanism.
+     *
+     * @param wanSyncConfig the WAN sync config
+     * @return this config
+     */
+    public WanPublisherConfig setWanSyncConfig(WanSyncConfig wanSyncConfig) {
+        this.wanSyncConfig = wanSyncConfig;
+        return this;
+    }
 
     /**
      * Returns the group name of this publisher. The group name is used for
@@ -270,6 +289,8 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
                 + "groupName='" + groupName + '\''
                 + ", queueCapacity=" + queueCapacity
                 + ", queueFullBehavior=" + queueFullBehavior
+                + ", initialPublisherState=" + initialPublisherState
+                + ", wanSyncConfig=" + wanSyncConfig
                 + ", properties=" + properties
                 + ", className='" + className + '\''
                 + ", implementation=" + implementation
@@ -302,8 +323,10 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         out.writeUTF(className);
         out.writeObject(implementation);
 
+        // RU_COMPAT_3_10
         if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             out.writeByte(initialPublisherState.getId());
+            out.writeObject(wanSyncConfig);
         }
     }
 
@@ -319,8 +342,10 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         className = in.readUTF();
         implementation = in.readObject();
 
+        // RU_COMPAT_3_10
         if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             initialPublisherState = WanPublisherState.getByType(in.readByte());
+            wanSyncConfig = in.readObject();
         }
     }
 }

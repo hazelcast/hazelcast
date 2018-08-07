@@ -38,7 +38,9 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.wan.impl.CallerProvenance;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
@@ -70,7 +72,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapContainer = mapContainer;
         this.partitionId = partitionId;
         this.mapServiceContext = mapContainer.getMapServiceContext();
-        this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.serializationService = nodeEngine.getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
         this.recordComparator = mapServiceContext.getRecordComparator(inMemoryFormat);
@@ -78,6 +81,17 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
         this.eventJournal = mapServiceContext.getEventJournal();
+    }
+
+    protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
+        switch (provenance) {
+            case WAN:
+                return mapContainer.isPersistWanReplicatedData();
+            case NOT_WAN:
+                return true;
+            default:
+                throw new IllegalArgumentException("Unexpected provenance: `" + provenance + "`");
+        }
     }
 
     @Override

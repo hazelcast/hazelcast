@@ -873,7 +873,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     @Override
-    public boolean prepareToSafeShutdown(long timeout, TimeUnit unit) {
+    public boolean onShutdown(long timeout, TimeUnit unit) {
         if (!node.getClusterService().isJoined()) {
             return true;
         }
@@ -1053,12 +1053,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         reset();
     }
 
-    @Override
     @Probe
+    @Override
     public long getMigrationQueueSize() {
         return migrationManager.getMigrationQueueSize();
     }
 
+    @Override
     public PartitionServiceProxy getPartitionServiceProxy() {
         return proxy;
     }
@@ -1156,6 +1157,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return replicaManager;
     }
 
+    @Override
     public PartitionReplicaStateChecker getPartitionReplicaStateChecker() {
         return partitionReplicaStateChecker;
     }

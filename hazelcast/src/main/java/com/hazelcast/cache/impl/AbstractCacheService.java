@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
+import com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
@@ -32,6 +33,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
@@ -57,6 +59,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -142,6 +145,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     protected RingbufferCacheEventJournalImpl eventJournal;
     protected CacheMergePolicyProvider mergePolicyProvider;
     protected CacheSplitBrainHandlerService splitBrainHandlerService;
+    protected CacheClearExpiredRecordsTask clearExpiredRecordsTask;
+    protected ExpirationManager expirationManager;
 
     @Override
     public final void init(NodeEngine nodeEngine, Properties properties) {
@@ -151,6 +156,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         for (int i = 0; i < partitionCount; i++) {
             segments[i] = newPartitionSegment(i);
         }
+        this.clearExpiredRecordsTask = new CacheClearExpiredRecordsTask(nodeEngine, this.segments);
+        this.expirationManager = new ExpirationManager(this.clearExpiredRecordsTask, nodeEngine);
         this.cacheEventHandler = new CacheEventHandler(nodeEngine);
         this.splitBrainHandlerService = new CacheSplitBrainHandlerService(nodeEngine, segments);
         this.logger = nodeEngine.getLogger(getClass());
@@ -213,6 +220,12 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             cacheEventHandler.shutdown();
             reset(true);
         }
+    }
+
+    @Override
+    @SuppressFBWarnings({"EI_EXPOSE_REP"})
+    public CachePartitionSegment[] getPartitionSegments() {
+        return segments;
     }
 
     @Override
@@ -390,6 +403,11 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             logger.info("Removed cache config: " + config);
         }
         return config;
+    }
+
+    @Override
+    public ExpirationManager getExpirationManager() {
+        return expirationManager;
     }
 
     @Override

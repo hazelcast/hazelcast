@@ -102,45 +102,38 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final Node node;
 
-    final ILogger logger;
-
-    final String name;
-
-    final ManagementService managementService;
-
-    final LifecycleServiceImpl lifecycleService;
-
-    final ManagedContext managedContext;
-
     final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
+    final ILogger logger;
+    final String name;
+    final ManagementService managementService;
+    final LifecycleServiceImpl lifecycleService;
+    final ManagedContext managedContext;
     final HazelcastInstanceCacheManager hazelcastCacheManager;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
-    protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
-            throws Exception {
+    protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) {
         this.name = name;
         this.lifecycleService = new LifecycleServiceImpl(this);
 
         ManagedContext configuredManagedContext = config.getManagedContext();
-        managedContext = new HazelcastManagedContext(this, configuredManagedContext);
+        this.managedContext = new HazelcastManagedContext(this, configuredManagedContext);
 
-        //we are going to copy the user-context map of the Config so that each HazelcastInstance will get its own
-        //user-context map instance instead of having a shared map instance. So changes made to the user-context map
-        //in one HazelcastInstance will not reflect on other the user-context of other HazelcastInstances.
-        userContext.putAll(config.getUserContext());
-        node = createNode(config, nodeContext);
+        // we are going to copy the user-context map of the Config so that each HazelcastInstance will get its own
+        // user-context map instance instead of having a shared map instance. So changes made to the user-context map
+        // in one HazelcastInstance will not reflect on other the user-context of other HazelcastInstances
+        this.userContext.putAll(config.getUserContext());
+        this.node = createNode(config, nodeContext);
 
         try {
-            logger = node.getLogger(getClass().getName());
+            this.logger = node.getLogger(getClass().getName());
 
             node.start();
-
             if (!node.isRunning()) {
                 throw new IllegalStateException("Node failed to start!");
             }
 
-            managementService = node.getNodeExtension().createJMXManagementService(this);
+            this.managementService = node.getNodeExtension().createJMXManagementService(this);
             initManagedContext(configuredManagedContext);
 
             this.hazelcastCacheManager = new HazelcastInstanceCacheManager(this);
@@ -150,8 +143,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
             }
         } catch (Throwable e) {
             try {
-                // Terminate the node by terminating node engine,
-                // connection manager, multicast service, operation threads, etc... if they exist
+                // terminate the node by terminating the NodeEngine, ConnectionManager, services, operation threads etc.
                 node.shutdown(true);
             } catch (Throwable ignored) {
                 ignore(ignored);
@@ -250,7 +242,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task)
             throws TransactionException {
-        TransactionManagerService transactionManagerService = node.nodeEngine.getTransactionManagerService();
+        TransactionManagerService transactionManagerService = node.getNodeEngine().getTransactionManagerService();
         return transactionManagerService.executeTransaction(options, task);
     }
 
@@ -261,7 +253,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        TransactionManagerService transactionManagerService = node.nodeEngine.getTransactionManagerService();
+        TransactionManagerService transactionManagerService = node.getNodeEngine().getTransactionManagerService();
         return transactionManagerService.newTransactionContext(options);
     }
 
@@ -326,7 +318,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Override
     public Cluster getCluster() {
-        return node.clusterService;
+        return node.getClusterService();
     }
 
     @Override
@@ -336,7 +328,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
-        ProxyService proxyService = node.nodeEngine.getProxyService();
+        ProxyService proxyService = node.getNodeEngine().getProxyService();
         return proxyService.getAllDistributedObjects();
     }
 
@@ -352,12 +344,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Override
     public PartitionService getPartitionService() {
-        return node.partitionService.getPartitionServiceProxy();
+        return node.getPartitionService().getPartitionServiceProxy();
     }
 
     @Override
     public QuorumService getQuorumService() {
-        return node.nodeEngine.getQuorumService();
+        return node.getNodeEngine().getQuorumService();
     }
 
     @Override
@@ -367,7 +359,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Override
     public LoggingService getLoggingService() {
-        return node.loggingService;
+        return node.getLoggingService();
     }
 
     @Override
@@ -383,19 +375,19 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     @SuppressWarnings("unchecked")
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
-        ProxyService proxyService = node.nodeEngine.getProxyService();
+        ProxyService proxyService = node.getNodeEngine().getProxyService();
         return (T) proxyService.getDistributedObject(serviceName, name);
     }
 
     @Override
     public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        final ProxyService proxyService = node.nodeEngine.getProxyService();
+        final ProxyService proxyService = node.getNodeEngine().getProxyService();
         return proxyService.addProxyListener(distributedObjectListener);
     }
 
     @Override
     public boolean removeDistributedObjectListener(String registrationId) {
-        final ProxyService proxyService = node.nodeEngine.getProxyService();
+        final ProxyService proxyService = node.getNodeEngine().getProxyService();
         return proxyService.removeProxyListener(registrationId);
     }
 
@@ -436,10 +428,9 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof HazelcastInstance)) {
+        if (!(o instanceof HazelcastInstance)) {
             return false;
         }
-
         HazelcastInstance that = (HazelcastInstance) o;
         return !(name != null ? !name.equals(that.getName()) : that.getName() != null);
     }

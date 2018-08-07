@@ -20,7 +20,10 @@ import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.wan.impl.CallerProvenance;
+import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -171,9 +174,14 @@ public interface ICacheRecordStore {
      * @param origin       Source of the call
      * @param completionId User generated id which shall be received as a field of the cache event upon completion of
      *                     the request in the cluster.
+     * @param provenance   caller operation provenance
      * @return returns false if there was no matching key.
      */
+    boolean remove(Data key, String caller, String origin, int completionId, CallerProvenance provenance);
+
     boolean remove(Data key, String caller, String origin, int completionId);
+
+
 
     /**
      * Atomically removes the mapping for a key only if currently mapped to the
@@ -276,8 +284,8 @@ public interface ICacheRecordStore {
      * Sets expiry policy for the records with given keys if and only if there is a
      * value currently mapped by the key
      *
-     * @param keys          keys for the entries
-     * @param expiryPolicy  custom expiry policy or null to use configured default value
+     * @param keys         keys for the entries
+     * @param expiryPolicy custom expiry policy or null to use configured default value
      */
     void setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source);
 
@@ -397,6 +405,8 @@ public interface ICacheRecordStore {
      */
     Map<Data, CacheRecord> getReadOnlyRecords();
 
+    boolean isExpirable();
+
     /**
      * Gets internal record of the store by key.
      *
@@ -409,8 +419,9 @@ public interface ICacheRecordStore {
      * Associates the specified record with the specified key.
      * This is simply a put operation on the internal map data
      * without any CacheLoad. It also <b>DOES</b> trigger eviction!
-     *  @param key    the key to the entry.
-     * @param record the value to be associated with the specified key.
+     *
+     * @param key           the key to the entry.
+     * @param record        the value to be associated with the specified key.
      * @param updateJournal when true an event is appended to related event-journal
      */
     void putRecord(Data key, CacheRecord record, boolean updateJournal);
@@ -488,6 +499,8 @@ public interface ICacheRecordStore {
      */
     boolean evictIfRequired();
 
+    boolean evictOneEntry();
+
     /**
      * Determines whether wan replication is enabled or not for this record store.
      *
@@ -507,9 +520,11 @@ public interface ICacheRecordStore {
      *
      * @param mergingEntry the {@link CacheMergeTypes} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @param callerProvenance
      * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
      */
-    CacheRecord merge(CacheMergeTypes mergingEntry, SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy);
+    CacheRecord merge(CacheMergeTypes mergingEntry,
+                      SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy, CallerProvenance callerProvenance);
 
     /**
      * Merges the given {@link CacheEntryView} via the given {@link CacheMergePolicy}.
@@ -517,16 +532,26 @@ public interface ICacheRecordStore {
      * @param cacheEntryView the {@link CacheEntryView} instance to merge
      * @param mergePolicy    the {@link CacheMergePolicy} instance to apply
      * @param caller         the UUID of the caller
+     * @param origin         source of the call
      * @param completionId   User generated id which shall be received as a field of the cache event upon completion of
      *                       the request in the cluster.
-     * @param origin         source of the call
+     * @param callerProvenance
      * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
      */
     CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy,
-                      String caller, String origin, int completionId);
+                      String caller, String origin, int completionId, CallerProvenance callerProvenance);
 
     /**
      * @return partition ID of this store
      */
     int getPartitionId();
+
+    /**
+     * Do expiration operations.
+     *
+     * @param percentage of max expirables according to the record store size.
+     */
+    void evictExpiredEntries(int percentage);
+
+    InvalidationQueue<ExpiredKey> getExpiredKeys();
 }

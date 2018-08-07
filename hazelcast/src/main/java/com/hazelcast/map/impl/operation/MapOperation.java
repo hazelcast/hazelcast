@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.wan.impl.CallerProvenance;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -50,6 +51,12 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
 
     protected transient boolean createRecordStoreOnDemand = true;
 
+    /**
+     * Used by wan-replication-service to disable wan-replication event publishing
+     * otherwise in active-active scenarios infinite loop of event forwarding can be seen.
+     */
+    protected boolean disableWanReplicationEvent;
+
     public MapOperation() {
     }
 
@@ -65,6 +72,10 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     // for testing only
     public void setMapContainer(MapContainer mapContainer) {
         this.mapContainer = mapContainer;
+    }
+
+    protected final CallerProvenance getCallerProvenance() {
+        return disableWanReplicationEvent ? CallerProvenance.WAN : CallerProvenance.NOT_WAN;
     }
 
     @Override
@@ -187,8 +198,8 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
      * @return {@code true} if this operation can generate WAN event, otherwise return {@code false}
      * to indicate WAN event generation is not allowed for this operation
      */
-    protected boolean canThisOpGenerateWANEvent() {
-        return true;
+    protected final boolean canThisOpGenerateWANEvent() {
+        return !disableWanReplicationEvent;
     }
 
     protected final void publishWanUpdate(Data dataKey, Object value) {

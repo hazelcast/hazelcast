@@ -111,6 +111,7 @@ public class CacheRecordStore
     protected CacheRecord createRecord(Object value, long creationTime, long expiryTime) {
         evictIfRequired();
 
+        markExpirable(expiryTime);
         return cacheRecordFactory.newRecordWithExpiry(value, creationTime, expiryTime);
     }
 

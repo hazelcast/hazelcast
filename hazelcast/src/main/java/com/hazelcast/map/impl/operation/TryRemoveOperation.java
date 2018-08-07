@@ -37,7 +37,7 @@ public class TryRemoveOperation extends BaseRemoveOperation {
 
     @Override
     public void run() {
-        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey));
+        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey, getCallerProvenance()));
         successful = dataOldValue != null;
     }
 

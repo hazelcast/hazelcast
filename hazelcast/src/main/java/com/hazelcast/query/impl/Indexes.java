@@ -78,7 +78,7 @@ public class Indexes {
         return indexes.get();
     }
 
-    public void clearIndexes() {
+    public void destroyIndexes() {
         for (Index index : getIndexes()) {
             index.destroy();
         }
@@ -91,7 +91,7 @@ public class Indexes {
     /**
      * Clears contents of indexes managed by this instance.
      */
-    public void clearContents() {
+    public void clearAll() {
         for (Index index : getIndexes()) {
             index.clear();
         }

@@ -44,7 +44,8 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
  * <p>
  * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
  */
-public class PutAllOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
+public class PutAllOperation extends MapOperation
+        implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
 
     private MapEntries mapEntries;
 
@@ -162,7 +163,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     @Override
     public Operation getBackupOperation() {
-        return new PutAllBackupOperation(name, mapEntries, backupRecordInfos);
+        return new PutAllBackupOperation(name, mapEntries, backupRecordInfos, false);
     }
 
     @Override

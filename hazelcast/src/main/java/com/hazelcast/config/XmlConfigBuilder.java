@@ -85,6 +85,7 @@ import static com.hazelcast.config.XmlElements.LOCK;
 import static com.hazelcast.config.XmlElements.MANAGEMENT_CENTER;
 import static com.hazelcast.config.XmlElements.MAP;
 import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
+import static com.hazelcast.config.XmlElements.MERKLE_TREE;
 import static com.hazelcast.config.XmlElements.MULTIMAP;
 import static com.hazelcast.config.XmlElements.NATIVE_MEMORY;
 import static com.hazelcast.config.XmlElements.NETWORK;
@@ -123,8 +124,6 @@ import static java.lang.Long.parseLong;
  * A XML {@link ConfigBuilder} implementation.
  */
 public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBuilder {
-
-    private static final int THOUSAND_FACTOR = 5;
 
     private static final ILogger LOGGER = Logger.getLogger(XmlConfigBuilder.class);
 
@@ -329,6 +328,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleScheduledExecutor(node);
         } else if (EVENT_JOURNAL.isEqual(nodeName)) {
             handleEventJournal(node);
+        } else if (MERKLE_TREE.isEqual(nodeName)) {
+            handleMerkleTree(node);
         } else if (SERVICES.isEqual(nodeName)) {
             handleServices(node);
         } else if (QUEUE.isEqual(nodeName)) {
@@ -391,7 +392,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleCardinalityEstimator(node);
         } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
             handleFlakeIdGenerator(node);
-        }  else if (CRDT_REPLICATION.isEqual(nodeName)) {
+        } else if (CRDT_REPLICATION.isEqual(nodeName)) {
             handleCRDTReplication(node);
         } else if (PN_COUNTER.isEqual(nodeName)) {
             handlePNCounter(node);
@@ -674,6 +675,22 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleAWS(publisherConfig.getAwsConfig(), targetChild);
         } else if ("discovery-strategies".equals(targetChildName)) {
             handleDiscoveryStrategies(publisherConfig.getDiscoveryConfig(), targetChild);
+        } else if ("wan-sync".equals(targetChildName)) {
+            handleWanSync(publisherConfig.getWanSyncConfig(), targetChild);
+        }
+    }
+
+    private void handleWanSync(WanSyncConfig wanSyncConfig, Node node) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("consistency-check-strategy".equals(nodeName)) {
+                String strategy = getTextContent(child);
+                wanSyncConfig.setConsistencyCheckStrategy(
+                        ConsistencyCheckStrategy.valueOf(upperCaseInternal(strategy)));
+            } else if ("consistency-check-period-millis".equalsIgnoreCase(nodeName)) {
+                wanSyncConfig.setConsistencyCheckPeriodMillis(getLongValue("consistency-check-period-millis", value));
+            }
         }
     }
 
@@ -683,6 +700,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             consumerConfig.setClassName(getTextContent(targetChild));
         } else if ("properties".equals(targetChildName)) {
             fillProperties(targetChild, consumerConfig.getProperties());
+        } else if ("persist-wan-replicated-data".equals(targetChildName)) {
+            consumerConfig.setPersistWanReplicatedData(getBooleanValue(getTextContent(targetChild)));
         }
     }
 
@@ -727,7 +746,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         handleViaReflection(node, config, durableExecutorConfig);
     }
 
-    private void handleScheduledExecutor(Node node) throws Exception {
+    private void handleScheduledExecutor(Node node) {
         ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
         scheduledExecutorConfig.setName(getTextContent(node.getAttributes().getNamedItem("name")));
 
@@ -2137,6 +2156,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         EventJournalConfig journalConfig = new EventJournalConfig();
         handleViaReflection(node, config, journalConfig);
         config.addEventJournalConfig(journalConfig);
+    }
+
+    private void handleMerkleTree(Node node) throws Exception {
+        MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
+        handleViaReflection(node, config, merkleTreeConfig);
+        config.addMerkleTreeConfig(merkleTreeConfig);
     }
 
     private void handleRingbuffer(Node node) {

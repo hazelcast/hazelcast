@@ -56,7 +56,7 @@ public class ConfigConstructorTest {
         assertPropertiesEquals(config.getProperties(), clonedConfig.getProperties());
     }
 
-    private static Properties buildPropertiesWithDefaults() {
+    static Properties buildPropertiesWithDefaults() {
         Properties defaults = new Properties();
         defaults.setProperty("key1", "value1");
 

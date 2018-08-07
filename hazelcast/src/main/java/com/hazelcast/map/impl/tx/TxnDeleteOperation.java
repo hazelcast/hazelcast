@@ -60,7 +60,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
         recordStore.unlock(dataKey, ownerUuid, getThreadId(), getCallId());
         Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()) {
-            dataOldValue = getNodeEngine().toData(recordStore.remove(dataKey));
+            dataOldValue = getNodeEngine().toData(recordStore.remove(dataKey, getCallerProvenance()));
             successful = dataOldValue != null;
         }
     }

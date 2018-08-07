@@ -19,6 +19,8 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
@@ -74,19 +76,25 @@ public class MapContainer {
 
     protected final String name;
     protected final String quorumName;
-    protected final MapServiceContext mapServiceContext;
+    // on-heap indexes are global, meaning there is only one index per map,
+    // stored in the mapContainer, so if globalIndexes is null it means that
+    // global index is not in use
+    protected final Indexes globalIndexes;
     protected final Extractors extractors;
-    protected final PartitioningStrategy partitioningStrategy;
     protected final MapStoreContext mapStoreContext;
-    protected final SerializationService serializationService;
+    protected final ObjectNamespace objectNamespace;
+    protected final MapServiceContext mapServiceContext;
     protected final QueryEntryFactory queryEntryFactory;
+    protected final EventJournalConfig eventJournalConfig;
+    protected final PartitioningStrategy partitioningStrategy;
+    protected final SerializationService serializationService;
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
-    // on-heap indexes are global, meaning there is only one index per map, stored in the mapContainer,
-    // so if globalIndexes is null it means that global index is not in use
-    protected final Indexes globalIndexes;
-
+    /**
+     * Holds number of registered {@link InvalidationListener} from clients.
+     */
+    protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
     // RU_COMPAT_3_9
     /**
      * Definitions of indexes that need to be added on partition threads
@@ -98,20 +106,13 @@ public class MapContainer {
      */
     protected final Set<IndexInfo> partitionIndexesToAdd = new ConcurrentSkipListSet<IndexInfo>();
 
-    /**
-     * Holds number of registered {@link InvalidationListener} from clients.
-     */
-    protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
-
-    protected final ObjectNamespace objectNamespace;
-
-    protected WanReplicationPublisher wanReplicationPublisher;
     protected Object wanMergePolicy;
+    protected WanReplicationPublisher wanReplicationPublisher;
 
     protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
-    protected final EventJournalConfig eventJournalConfig;
 
+    private boolean persistWanReplicatedData;
 
     /**
      * Operations which are done in this constructor should obey the rules defined
@@ -140,6 +141,7 @@ public class MapContainer {
         } else {
             this.globalIndexes = null;
         }
+
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
         initEvictor();
@@ -207,6 +209,15 @@ public class MapContainer {
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
         wanMergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
+
+        Config config = nodeEngine.getConfig();
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
+        if (wanReplicationConfig != null) {
+            WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getWanConsumerConfig();
+            if (wanConsumerConfig != null) {
+                persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
+            }
+        }
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
@@ -385,6 +396,10 @@ public class MapContainer {
 
     public void clearPartitionIndexesToAdd() {
         partitionIndexesToAdd.clear();
+    }
+
+    public boolean isPersistWanReplicatedData() {
+        return persistWanReplicatedData;
     }
 
     @SerializableByConvention

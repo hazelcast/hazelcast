@@ -18,10 +18,12 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Map;
@@ -34,8 +36,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  *
  * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperation
  */
-public class CachePutAllBackupOperation
-        extends CacheOperation implements BackupOperation {
+public class CachePutAllBackupOperation extends CacheOperation implements BackupOperation {
 
     private Map<Data, CacheRecord> cacheRecords;
 
@@ -60,6 +61,19 @@ public class CachePutAllBackupOperation
                 publishWanUpdate(entry.getKey(), record);
             }
         }
+    }
+
+    @Override
+    protected boolean requiresExplicitServiceName() {
+        // RU_COMPAT_3_10
+        // We are not checking target member version here since this requires
+        // the operation to be target-aware and that breaks the multi-member
+        // broadcast serialization optimization in OperationBackupHandler. It's
+        // cheaper just to transfer an additional service name string in
+        // mixed-version clusters than serializing the operation for each member
+        // individually.
+        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
+        return clusterVersion.isUnknownOrLessThan(Versions.V3_11);
     }
 
     @Override

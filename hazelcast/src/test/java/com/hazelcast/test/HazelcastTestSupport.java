@@ -28,10 +28,12 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -122,6 +124,7 @@ public abstract class HazelcastTestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
+    private static final String COMPAT_HZ_INSTANCE_FACTORY = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
     private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
 
@@ -222,9 +225,8 @@ public abstract class HazelcastTestSupport {
     private static TestHazelcastInstanceFactory createHazelcastInstanceFactory0(Integer nodeCount) {
         if (isRunningCompatibilityTest() && BuildInfoProvider.getBuildInfo().isEnterprise()) {
             try {
-                String className = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
                 Class<? extends TestHazelcastInstanceFactory> compatibilityTestFactoryClass
-                        = (Class<? extends TestHazelcastInstanceFactory>) Class.forName(className);
+                        = (Class<? extends TestHazelcastInstanceFactory>) Class.forName(COMPAT_HZ_INSTANCE_FACTORY);
                 // nodeCount is ignored when constructing compatibility test factory
                 return compatibilityTestFactoryClass.getConstructor().newInstance();
             } catch (Exception e) {
@@ -243,24 +245,28 @@ public abstract class HazelcastTestSupport {
         return TestUtil.getNode(hz);
     }
 
+    public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance hz) {
+        return TestUtil.getHazelcastInstanceImpl(hz);
+    }
+
     public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz) {
-        return getNode(hz).nodeEngine;
+        return getNode(hz).getNodeEngine();
     }
 
     public static ClientEngineImpl getClientEngineImpl(HazelcastInstance instance) {
-        return getNode(instance).clientEngine;
+        return getNode(instance).getClientEngine();
     }
 
     public static ConnectionManager getConnectionManager(HazelcastInstance hz) {
-        return getNode(hz).connectionManager;
+        return getNode(hz).getConnectionManager();
     }
 
     public static ClusterService getClusterService(HazelcastInstance hz) {
-        return getNode(hz).clusterService;
+        return getNode(hz).getClusterService();
     }
 
     public static InternalPartitionService getPartitionService(HazelcastInstance hz) {
-        return getNode(hz).partitionService;
+        return getNode(hz).getPartitionService();
     }
 
     public static InternalSerializationService getSerializationService(HazelcastInstance hz) {
@@ -540,7 +546,7 @@ public abstract class HazelcastTestSupport {
             }
         }
         if (partitions.isEmpty()) {
-            throw new IllegalStateException("No partitions found for HazelcastInstance:" + hz.getName());
+            throw new IllegalStateException("No partitions found for HazelcastInstance: " + hz.getName());
         }
         return partitions.get((int) (Math.random() * partitions.size()));
     }
@@ -661,21 +667,22 @@ public abstract class HazelcastTestSupport {
         suspectMember(n2, n1);
     }
 
-    public static void suspectMember(Node suspectingNode, Node suspectedNode, String reason) {
-        if (suspectingNode != null && suspectedNode != null) {
-            Member suspectedMember = suspectingNode.getClusterService().getMember(suspectedNode.getLocalMember().getAddress());
-            if (suspectedMember != null) {
-                suspectingNode.clusterService.suspectMember(suspectedMember, reason, true);
-            }
-        }
-    }
-
     public static void suspectMember(HazelcastInstance source, HazelcastInstance target) {
         suspectMember(getNode(source), getNode(target));
     }
 
     public static void suspectMember(Node suspectingNode, Node suspectedNode) {
         suspectMember(suspectingNode, suspectedNode, null);
+    }
+
+    public static void suspectMember(Node suspectingNode, Node suspectedNode, String reason) {
+        if (suspectingNode != null && suspectedNode != null) {
+            ClusterServiceImpl clusterService = suspectingNode.getClusterService();
+            Member suspectedMember = clusterService.getMember(suspectedNode.getLocalMember().getAddress());
+            if (suspectedMember != null) {
+                clusterService.suspectMember(suspectedMember, reason, true);
+            }
+        }
     }
 
     private static void checkMemberCount(boolean generateOwnedKey, Cluster cluster) {
@@ -1058,7 +1065,8 @@ public abstract class HazelcastTestSupport {
         for (int i = 0; i < instances.length; i++) {
             int clusterSize = getClusterSize(instances[i]);
             if (expectedSize != clusterSize) {
-                fail(format("Cluster size is not correct. Expected: %d, actual: %d, instance index: %d", expectedSize, clusterSize, i));
+                fail(format("Cluster size is not correct. Expected: %d, actual: %d, instance index: %d",
+                        expectedSize, clusterSize, i));
             }
         }
     }
@@ -1543,6 +1551,10 @@ public abstract class HazelcastTestSupport {
 
     public static void assumeThatNoJDK6() {
         assumeFalse("Java 6 used", JAVA_VERSION.startsWith("1.6."));
+    }
+
+    public static void assumeThatNoJDK7() {
+        assumeFalse("Java 7 used", JAVA_VERSION.startsWith("1.7."));
     }
 
     public static void assumeThatJDK8() {

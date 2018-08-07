@@ -202,6 +202,6 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     @Override
     public void clear() {
         recordStore.clear();
-        indexes.clearIndexes();
+        indexes.destroyIndexes();
     }
 }

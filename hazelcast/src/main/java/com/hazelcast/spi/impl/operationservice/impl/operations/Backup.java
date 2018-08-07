@@ -55,6 +55,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     private Data backupOpData;
 
     private transient Throwable validationFailure;
+    private transient boolean backupOperationInitialized;
 
     public Backup() {
     }
@@ -132,7 +133,8 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     }
 
     private void ensureBackupOperationInitialized() {
-        if (backupOp.getNodeEngine() == null) {
+        if (!backupOperationInitialized) {
+            backupOperationInitialized = true;
             backupOp.setNodeEngine(getNodeEngine());
             backupOp.setPartitionId(getPartitionId());
             backupOp.setReplicaIndex(getReplicaIndex());

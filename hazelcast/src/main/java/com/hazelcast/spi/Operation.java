@@ -640,6 +640,16 @@ public abstract class Operation implements DataSerializable {
         // It is used to return deserialization exceptions to the caller.
         out.writeLong(callId);
 
+        // Adjust the flags and the service name if an explicit service name is
+        // required.
+        if (!isFlagSet(BITMASK_SERVICE_NAME_SET) && requiresExplicitServiceName()) {
+            String explicitServiceName = getServiceName();
+            if (explicitServiceName != null) {
+                this.serviceName = explicitServiceName;
+                setFlag(true, BITMASK_SERVICE_NAME_SET);
+            }
+        }
+
         // write state next, so that it is first available on reading.
         out.writeShort(flags);
 
@@ -716,6 +726,22 @@ public abstract class Operation implements DataSerializable {
         }
 
         readInternal(in);
+    }
+
+    /**
+     * Returns {@code true} to force the explicit service name serialization
+     * for this operation, {@code false} otherwise.
+     * <p>
+     * Usually, the method should be overridden if {@link #getServiceName} is
+     * also overridden, but it was not overridden in the previous HZ version,
+     * i.e. the service name was provided using an explicit external call to
+     * {@link #setServiceName}. This mechanism is required to maintain the
+     * backward compatibility of the serialized representation of the operation
+     * since the service name is not serialized if it matches the one returned
+     * by {@link #getServiceName}.
+     */
+    protected boolean requiresExplicitServiceName() {
+        return false;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

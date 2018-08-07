@@ -16,24 +16,24 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.spi.AbstractLocalOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.wan.WanReplicationService;
 
 /**
- * Enables/Disable publishing events to target cluster in WAN Replication {@link com.hazelcast.wan.WanReplicationService}
- * on a node. This operation does not block adding new events to event queue.
+ * Stop, pause or resume WAN replication for the given {@code wanReplicationName} and {@code targetGroupName}.
  */
 public class ChangeWanStateOperation extends AbstractLocalOperation {
 
     private String schemeName;
     private String publisherName;
-    private boolean start;
+    private WanPublisherState state;
 
-    public ChangeWanStateOperation(String schemeName, String publisherName, boolean start) {
+    public ChangeWanStateOperation(String schemeName, String publisherName, WanPublisherState state) {
         this.schemeName = schemeName;
         this.publisherName = publisherName;
-        this.start = start;
+        this.state = state;
     }
 
     @Override
@@ -41,10 +41,18 @@ public class ChangeWanStateOperation extends AbstractLocalOperation {
         NodeEngine nodeEngine = getNodeEngine();
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
 
-        if (start) {
-            wanReplicationService.resume(schemeName, publisherName);
-        } else {
-            wanReplicationService.pause(schemeName, publisherName);
+        switch (state) {
+            case REPLICATING:
+                wanReplicationService.resume(schemeName, publisherName);
+                break;
+            case PAUSED:
+                wanReplicationService.pause(schemeName, publisherName);
+                break;
+            case STOPPED:
+                wanReplicationService.stop(schemeName, publisherName);
+                break;
+            default:
+                break;
         }
     }
 }

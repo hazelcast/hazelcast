@@ -34,7 +34,6 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     private boolean unlockKey;
     private RecordInfo recordInfo;
     private boolean putTransient;
-    private boolean disableWanReplicationEvent;
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
         this(name, dataKey, dataValue, recordInfo, false, false);
@@ -65,10 +64,13 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     @Override
     public void run() {
         ttl = recordInfo != null ? recordInfo.getTtl() : ttl;
-        final Record record = recordStore.putBackup(dataKey, dataValue, ttl, putTransient);
+
+        Record record = recordStore.putBackup(dataKey, dataValue, ttl, putTransient, getCallerProvenance());
+
         if (recordInfo != null) {
             Records.applyRecordInfo(record, recordInfo);
         }
+
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
         }
@@ -80,11 +82,6 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             evict(dataKey);
         }
         publishWanUpdate(dataKey, dataValue);
-    }
-
-    @Override
-    protected boolean canThisOpGenerateWANEvent() {
-        return !disableWanReplicationEvent;
     }
 
     @Override

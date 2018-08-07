@@ -18,12 +18,17 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.version.Version;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
@@ -35,19 +40,20 @@ import java.util.Map;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class CachePutAllOperation extends CacheOperation
-        implements BackupAwareOperation, MutableOperation, MutatingOperation {
+        implements BackupAwareOperation, MutableOperation, MutatingOperation, TargetAware {
 
     private List<Map.Entry<Data, Data>> entries;
     private ExpiryPolicy expiryPolicy;
     private int completionId;
 
     private transient Map<Data, CacheRecord> backupRecords;
+    private transient Address target;
 
     public CachePutAllOperation() {
     }
 
-    public CachePutAllOperation(String cacheNameWithPrefix, List<Map.Entry<Data, Data>> entries,
-                                ExpiryPolicy expiryPolicy, int completionId) {
+    public CachePutAllOperation(String cacheNameWithPrefix, List<Map.Entry<Data, Data>> entries, ExpiryPolicy expiryPolicy,
+                                int completionId) {
         super(cacheNameWithPrefix);
         this.entries = entries;
         this.expiryPolicy = expiryPolicy;
@@ -96,6 +102,22 @@ public class CachePutAllOperation extends CacheOperation
     @Override
     public int getId() {
         return CacheDataSerializerHook.PUT_ALL;
+    }
+
+    @Override
+    public void setTarget(Address address) {
+        this.target = address;
+    }
+
+    @Override
+    protected boolean requiresExplicitServiceName() {
+        // RU_COMPAT_3_10
+        Member member = getNodeEngine().getClusterService().getMember(target);
+        if (member == null) {
+            return false;
+        }
+        Version memberVersion = member.getVersion().asVersion();
+        return memberVersion.isLessThan(Versions.V3_11);
     }
 
     @Override

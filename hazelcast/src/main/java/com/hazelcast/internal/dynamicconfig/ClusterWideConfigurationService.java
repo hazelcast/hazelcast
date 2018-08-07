@@ -30,6 +30,7 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
@@ -71,6 +72,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.Versions.V3_10;
+import static com.hazelcast.internal.cluster.Versions.V3_11;
 import static com.hazelcast.internal.cluster.Versions.V3_8;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
@@ -132,6 +134,8 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, EventJournalConfig>();
     private final ConcurrentMap<String, EventJournalConfig> mapEventJournalConfigs =
             new ConcurrentHashMap<String, EventJournalConfig>();
+    private final ConcurrentMap<String, MerkleTreeConfig> mapMerkleTreeConfigs =
+            new ConcurrentHashMap<String, MerkleTreeConfig>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs =
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
@@ -161,6 +165,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             cacheSimpleConfigs,
             cacheEventJournalConfigs,
             mapEventJournalConfigs,
+            mapMerkleTreeConfigs,
             flakeIdGeneratorConfigs,
             pnCounterConfigs,
     };
@@ -345,6 +350,9 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof EventJournalConfig) {
             EventJournalConfig eventJournalConfig = (EventJournalConfig) newConfig;
             registerEventJournalConfig(eventJournalConfig, configCheckMode);
+        } else if (newConfig instanceof MerkleTreeConfig) {
+            MerkleTreeConfig config = (MerkleTreeConfig) newConfig;
+            currentConfig = mapMerkleTreeConfigs.putIfAbsent(config.getMapName(), config);
         } else if (newConfig instanceof SemaphoreConfig) {
             SemaphoreConfig semaphoreConfig = (SemaphoreConfig) newConfig;
             currentConfig = semaphoreConfigs.putIfAbsent(semaphoreConfig.getName(), semaphoreConfig);
@@ -633,6 +641,16 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
+    public MerkleTreeConfig findMapMerkleTreeConfig(String name) {
+        return lookupByPattern(configPatternMatcher, mapMerkleTreeConfigs, name);
+    }
+
+    @Override
+    public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
+        return mapMerkleTreeConfigs;
+    }
+
+    @Override
     public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String baseName) {
         return lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigs, baseName);
     }
@@ -708,6 +726,9 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         configToVersion.put(CountDownLatchConfig.class, V3_10);
         configToVersion.put(FlakeIdGeneratorConfig.class, V3_10);
         configToVersion.put(PNCounterConfig.class, V3_10);
+
+        // Since 3.11
+        configToVersion.put(MerkleTreeConfig.class, V3_11);
 
         return Collections.unmodifiableMap(configToVersion);
     }

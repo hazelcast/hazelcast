@@ -25,6 +25,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -56,6 +57,7 @@ import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -90,6 +92,7 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -146,6 +149,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -287,13 +291,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
-        assertFalse(wanRef.isRepublishingEnabled());
     }
 
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(26, config.getMapConfigs().size());
+        assertEquals(27, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -426,6 +429,17 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapWithPartitionStrategyConfig = config.getMapConfig("mapWithPartitionStrategy");
         assertEquals("com.hazelcast.spring.DummyPartitionStrategy",
                 testMapWithPartitionStrategyConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
+    }
+
+    @Test
+    public void testMapNoWanMergePolicy() {
+        MapConfig testMapConfig2 = config.getMapConfig("testMap2");
+
+
+        // test testMapConfig2's WanReplicationConfig
+        WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
+        assertEquals("testWan", wanReplicationRef.getName());
+        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicy());
     }
 
     @Test
@@ -943,12 +957,47 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
         Map<String, Comparable> consumerProps = consumerConfig.getProperties();
         assertEquals("prop.consumer", consumerProps.get("custom.prop.consumer"));
+        assertTrue(consumerConfig.isPersistWanReplicatedData());
+    }
 
+    @Test
+    public void testWanConsumerWithPersistDataFalse() {
         WanReplicationConfig config2 = config.getWanReplicationConfig("testWan2");
         WanConsumerConfig consumerConfig2 = config2.getWanConsumerConfig();
-        consumerConfig2.setProperties(consumerProps);
         assertInstanceOf(DummyWanConsumer.class, consumerConfig2.getImplementation());
-        assertEquals("prop.consumer", consumerConfig2.getProperties().get("custom.prop.consumer"));
+        assertFalse(consumerConfig2.isPersistWanReplicatedData());
+    }
+
+    @Test
+    public void testNoWanConsumerClass() {
+        WanReplicationConfig config2 = config.getWanReplicationConfig("testWan3");
+        WanConsumerConfig consumerConfig2 = config2.getWanConsumerConfig();
+        assertFalse(consumerConfig2.isPersistWanReplicatedData());
+    }
+
+    @Test
+    public void testWanReplicationSyncConfig() {
+        final WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan2");
+        final WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
+        final Map<String, Comparable> consumerProps = new HashMap<String, Comparable>();
+        consumerProps.put("custom.prop.consumer", "prop.consumer");
+        consumerConfig.setProperties(consumerProps);
+        assertInstanceOf(DummyWanConsumer.class, consumerConfig.getImplementation());
+        assertEquals("prop.consumer", consumerConfig.getProperties().get("custom.prop.consumer"));
+        assertFalse(consumerConfig.isPersistWanReplicatedData());
+
+        final List<WanPublisherConfig> publisherConfigs = wcfg.getWanPublisherConfigs();
+        assertNotNull(publisherConfigs);
+        assertEquals(1, publisherConfigs.size());
+
+        final WanPublisherConfig publisherConfig = publisherConfigs.get(0);
+        assertEquals("tokyo", publisherConfig.getGroupName());
+        assertEquals("PublisherClassName", publisherConfig.getClassName());
+
+        final WanSyncConfig wanSyncConfig = publisherConfig.getWanSyncConfig();
+        assertNotNull(wanSyncConfig);
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, wanSyncConfig.getConsistencyCheckStrategy());
+        assertEquals(12345, wanSyncConfig.getConsistencyCheckPeriodMillis());
     }
 
     @Test
@@ -1277,6 +1326,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
         assertEquals(321, journalConfig.getTimeToLiveSeconds());
+    }
+
+    @Test
+    public void testMapMerkleTreeConfigIsWellParsed() {
+        MerkleTreeConfig treeConfig = config.getMapMerkleTreeConfig("mapName");
+
+        assertTrue(treeConfig.isEnabled());
+        assertEquals(15, treeConfig.getDepth());
     }
 
     @Test
