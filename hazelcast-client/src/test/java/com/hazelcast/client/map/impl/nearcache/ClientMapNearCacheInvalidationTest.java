@@ -34,6 +34,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
@@ -192,6 +194,38 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
         assertNearCacheSizeEventually(clientMap, 0);
     }
 
+    @Test
+    public void expired_entries_generate_invalidations() {
+        Config config = getConfig();
+
+        ClientConfig clientConfig = getClientConfig(mapName);
+
+        HazelcastInstance server1 = factory.newHazelcastInstance(config);
+        HazelcastInstance server2 = factory.newHazelcastInstance(config);
+        HazelcastInstance server3 = factory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> serverMap = server1.getMap(mapName);
+
+        int size = 1000;
+
+        // fill serverMap
+        for (int i = 0; i < size; i++) {
+            serverMap.put(i, i, 1, TimeUnit.SECONDS);
+        }
+
+        // create client
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+
+        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+
+        // fill Near Cache on client
+        for (int i = 0; i < size; i++) {
+            clientMap.get(i);
+        }
+
+        assertNearCacheSizeEventually(clientMap, 0);
+    }
+
     @Override
     protected Config getConfig() {
         return getBaseConfig();
@@ -206,8 +240,8 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
 
     protected NearCacheConfig getNearCacheConfig(String mapName) {
         return new NearCacheConfig(mapName)
-                    .setInMemoryFormat(OBJECT)
-                    .setInvalidateOnChange(true);
+                .setInMemoryFormat(OBJECT)
+                .setInvalidateOnChange(true);
     }
 
     private static void configureBatching(Config config, int batchSize, int period) {
