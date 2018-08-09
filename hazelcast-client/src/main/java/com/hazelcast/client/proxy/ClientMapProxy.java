@@ -623,7 +623,19 @@ public class ClientMapProxy<K, V> extends ClientProxy
         Data keyData = toData(key);
         ClientMessage request = MapLockCodec.encodeRequest(name, keyData, getThreadId(), getTimeInMillis(leaseTime, timeUnit),
                 lockReferenceIdGenerator.getNextReferenceId());
-        invoke(request, keyData);
+        invoke(request, keyData, Long.MAX_VALUE);
+    }
+
+    private <T> T invoke(ClientMessage clientMessage, Object key, long invocationTimeoutSeconds) {
+        final int partitionId = getContext().getPartitionService().getPartitionId(key);
+        try {
+            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId);
+            clientInvocation.setInvocationTimeoutMillis(invocationTimeoutSeconds);
+            final Future future = clientInvocation.invoke();
+            return (T) future.get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     @Override
@@ -660,7 +672,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage request = MapTryLockCodec.encodeRequest(name, keyData, getThreadId(), leaseTimeMillis, timeoutMillis,
                 lockReferenceIdGenerator.getNextReferenceId());
 
-        ClientMessage response = invoke(request, keyData);
+        ClientMessage response = invoke(request, keyData, Long.MAX_VALUE);
         MapTryLockCodec.ResponseParameters resultParameters = MapTryLockCodec.decodeResponse(response);
         return resultParameters.response;
     }
