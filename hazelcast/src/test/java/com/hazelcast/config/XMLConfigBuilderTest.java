@@ -1205,7 +1205,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "            <class-name>PublisherClassName</class-name>\n"
                 + "            <wan-sync>\n"
                 + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
-                + "                <consistency-check-period-millis>12345</consistency-check-period-millis>\n"
                 + "            </wan-sync>\n"
                 + "        </wan-publisher>\n"
                 + "    </wan-replication>\n"
@@ -1222,8 +1221,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         WanPublisherConfig publisherConfig = publishers.get(0);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
                                                                            .getConsistencyCheckStrategy());
-        assertEquals(12345, publisherConfig.getWanSyncConfig()
-                                           .getConsistencyCheckPeriodMillis());
     }
 
     @Test

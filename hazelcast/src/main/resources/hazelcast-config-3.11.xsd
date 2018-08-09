@@ -2488,22 +2488,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="consistency-check-period-millis" type="xs:int" minOccurs="0" default="-1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Period (in milliseconds) for checking consistency of data
-                        between source and target cluster.
-                        Any inconsistency will not be reconciled, it will be merely reported via
-                        the usual mechanisms (e.g. statistics, diagnostics). The user must
-                        initiate WAN sync to reconcile there differences.
-                        For the check procedure to work properly, the target cluster should
-                        support merkle trees and the data structures being synced should be
-                        configured with merkle trees enabled both on the source and target cluster.
-                        Default value is 0, which means the periodic check is disabled.
-                        The period must not be negative.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="wan-consumer">
