@@ -64,6 +64,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final SerializationService serializationService;
     protected final MapDataStore<Data, Object> mapDataStore;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
+    protected final RecordStoreMutationObserver<Record> mutationObserver;
 
     protected Storage<Data, Record> storage;
 
@@ -81,6 +82,9 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
         this.eventJournal = mapServiceContext.getEventJournal();
+        Collection<RecordStoreMutationObserver<Record>> mutationObservers = mapServiceContext
+                .getRecordStoreMutationObservers(getName(), partitionId);
+        this.mutationObserver = new CompositeRecordStoreMutationObserver<Record>(mutationObservers);
     }
 
     protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
@@ -147,6 +151,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         record.onUpdate(now);
         eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                 record.getKey(), record.getValue(), value);
+        mutationObserver.onUpdateRecord(key, record, value);
         storage.updateRecordValue(key, record, value);
     }
 

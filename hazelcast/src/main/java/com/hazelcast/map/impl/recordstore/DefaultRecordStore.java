@@ -134,6 +134,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         clearPartition(false, true);
         storage.destroy(false);
         eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
+        mutationObserver.onClear();
     }
 
     @Override
@@ -141,6 +142,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         clearMapStore();
         clearStorage(false);
         storage.destroy(false);
+        mutationObserver.onClear();
     }
 
     @Override
@@ -172,6 +174,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void putRecord(Data key, Record record) {
         markRecordStoreExpirable(record.getTtl());
         storage.put(key, record);
+        mutationObserver.onPutRecord(key, record);
         updateStatsOnPut(record.getHits());
     }
 
@@ -190,8 +193,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             record = createRecord(value, ttl, now);
             storage.put(key, record);
-            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(),
-                    mapContainer.getObjectNamespace(), partitionId, key, record.getValue());
+            mutationObserver.onPutRecord(key, record);
+            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                    key, record.getValue());
         } else {
             updateRecord(key, record, value, now, true);
         }
@@ -265,6 +269,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             storage.clear(false);
         }
+        mutationObserver.onClear();
     }
 
     protected void clearMapStore() {
@@ -429,6 +434,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(key, record);
             eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(),
                     mapContainer.getObjectNamespace(), partitionId, key, record.getValue());
+            mutationObserver.onPutRecord(key, record);
             if (!backup) {
                 saveIndex(record, null);
                 mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED,
@@ -485,9 +491,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (eviction) {
                 eventJournal.writeEvictEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
                         partitionId, record.getKey(), record.getValue());
+                mutationObserver.onEvictRecord(record.getKey(), record);
             } else {
                 eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
                         partitionId, record.getKey(), record.getValue());
+                mutationObserver.onRemoveRecord(record.getKey(), record);
             }
             storage.removeRecord(record);
             iterator.remove();
@@ -524,6 +532,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         clearMapStore();
         storage.clear(false);
         stats.reset();
+        mutationObserver.onClear();
     }
 
     @Override
@@ -536,6 +545,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             removeIndex(record);
             eventJournal.writeEvictEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     key, value);
+            mutationObserver.onEvictRecord(key, record);
             storage.removeRecord(record);
             if (!backup) {
                 mapServiceContext.interceptRemove(name, value);
@@ -562,8 +572,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             return;
         }
-        eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(),
-                mapContainer.getObjectNamespace(), partitionId, record.getKey(), record.getValue());
+        eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                record.getKey(), record.getValue());
+        mutationObserver.onRemoveRecord(key, record);
         storage.removeRecord(record);
         if (persistenceEnabledFor(provenance)) {
             mapDataStore.removeBackup(key, now);
@@ -625,8 +636,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             removeIndex(record);
             mapDataStore.remove(key, now);
             onStore(record);
-            eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(),
-                    mapContainer.getObjectNamespace(), partitionId, key, oldValue);
+            eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                    key, oldValue);
+            mutationObserver.onRemoveRecord(record.getKey(), record);
             storage.removeRecord(record);
             removed = true;
         }
@@ -820,6 +832,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             record = createRecord(value, ttl, now);
             storage.put(key, record);
+            mutationObserver.onPutRecord(key, record);
             eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     record.getKey(), record.getValue());
         } else {
@@ -859,8 +872,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             record = createRecord(newValue, DEFAULT_TTL, now);
             mergeRecordExpiration(record, mergingEntry);
             storage.put(key, record);
-            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(),
-                    mapContainer.getObjectNamespace(), partitionId, key, record.getValue());
+            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                    key, record.getValue());
+            mutationObserver.onPutRecord(key, record);
         } else {
             oldValue = record.getValue();
             MapMergeTypes existingEntry = createMergingEntry(serializationService, record);
@@ -872,8 +886,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     mapDataStore.remove(key, now);
                 }
                 onStore(record);
-                eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(),
-                        mapContainer.getObjectNamespace(), partitionId, key, oldValue);
+                eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
+                        partitionId, key, oldValue);
+                mutationObserver.onRemoveRecord(key, record);
                 storage.removeRecord(record);
                 return true;
             }
@@ -886,8 +901,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             newValue = persistenceEnabledFor(provenance) ? mapDataStore.add(key, newValue, now) : newValue;
             onStore(record);
-            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(),
-                    mapContainer.getObjectNamespace(), partitionId, key, oldValue, newValue);
+            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                    key, oldValue, newValue);
+            mutationObserver.onUpdateRecord(key, record, newValue);
             storage.updateRecordValue(key, record, newValue);
         }
         saveIndex(record, oldValue);
@@ -920,8 +936,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             record = createRecord(newValue, DEFAULT_TTL, now);
             mergeRecordExpiration(record, mergingEntry);
             storage.put(key, record);
-            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(),
-                    mapContainer.getObjectNamespace(), partitionId, key, record.getValue());
+            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                    key, record.getValue());
+            mutationObserver.onPutRecord(key, record);
         } else {
             oldValue = record.getValue();
             EntryView existingEntry = EntryViews.createLazyEntryView(record.getKey(), record.getValue(),
@@ -934,8 +951,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     mapDataStore.remove(key, now);
                 }
                 onStore(record);
-                eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(),
-                        mapContainer.getObjectNamespace(), partitionId, key, oldValue);
+                eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
+                        partitionId, key, oldValue);
+                mutationObserver.onRemoveRecord(key, record);
                 storage.removeRecord(record);
                 return true;
             }
@@ -948,8 +966,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             newValue = persistenceEnabledFor(provenance) ? mapDataStore.add(key, newValue, now) : newValue;
             onStore(record);
-            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(),
-                    mapContainer.getObjectNamespace(), partitionId, key, oldValue, newValue);
+            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                    key, oldValue, newValue);
+            mutationObserver.onUpdateRecord(key, record, newValue);
             storage.updateRecordValue(key, record, newValue);
         }
         saveIndex(record, oldValue);
@@ -1013,6 +1032,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(key, record);
             eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     record.getKey(), record.getValue());
+            mutationObserver.onPutRecord(key, record);
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
@@ -1058,6 +1078,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(key, record);
             eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(),
                     mapContainer.getObjectNamespace(), partitionId, record.getKey(), record.getValue());
+            mutationObserver.onPutRecord(key, record);
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
@@ -1130,6 +1151,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
                 eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                         record.getKey(), record.getValue());
+                mutationObserver.onPutRecord(key, record);
                 mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED, key, null, oldValue);
             }
         } else {
@@ -1142,8 +1164,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             onStore(record);
             record = createRecord(value, ttl, now);
             storage.put(key, record);
-            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(),
-                    mapContainer.getObjectNamespace(), partitionId, record.getKey(), record.getValue());
+            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                    record.getKey(), record.getValue());
+            mutationObserver.onPutRecord(key, record);
             setTTLAndUpdateExpiryTime(ttl, record, mapContainer.getMapConfig(), false);
         }
         saveIndex(record, oldValue);
@@ -1161,8 +1184,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             onStore(record);
         }
-        eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(),
-                mapContainer.getObjectNamespace(), partitionId, record.getKey(), record.getValue());
+        eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                record.getKey(), record.getValue());
+        mutationObserver.onRemoveRecord(key, record);
         storage.removeRecord(record);
         return oldValue;
     }

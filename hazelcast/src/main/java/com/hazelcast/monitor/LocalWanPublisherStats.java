@@ -20,6 +20,7 @@ package com.hazelcast.monitor;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
+import com.hazelcast.wan.merkletree.MerkleTreeComparisonResult;
 
 import java.util.Map;
 
@@ -74,4 +75,10 @@ public interface LocalWanPublisherStats extends JsonSerializable {
      * Returns the counter for the successfully transfered cache WAN events.
      */
     Map<String, DistributedObjectWanEventCounters> getSentCacheEventCounter();
+
+    /**
+     * Returns the last results of the merkle tree root comparison results,
+     * mapped by map name.
+     */
+    Map<String, MerkleTreeComparisonResult> getLastMerkleTreeRootComparisonResults();
 }
