@@ -345,7 +345,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         assertTrue(lock1.tryLock());
         lock1.unlock();
         lock1.unlock();
-        assertOpenEventually(latch, 10);
+        assertOpenEventually(latch);
     }
 
     @Test(timeout = 100000)

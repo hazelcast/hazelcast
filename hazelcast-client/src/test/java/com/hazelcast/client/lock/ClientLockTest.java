@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.lock;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -65,7 +67,7 @@ public class ClientLockTest extends HazelcastTestSupport {
                 }
             }
         }.start();
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         lock.forceUnlock();
     }
 
@@ -361,5 +363,79 @@ public class ClientLockTest extends HazelcastTestSupport {
         }).get();
 
         assertTrue("Lock should have been released after lease expires", lock.tryLock(2, TimeUnit.MINUTES));
+    }
+
+    @Test
+    public void testKeyOwnerTerminates_afterInvocationTimeout() throws Exception {
+        HazelcastInstance keyOwner = factory.newHazelcastInstance();
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        warmUpPartitions(keyOwner, instance);
+
+        ClientConfig clientConfig = new ClientConfig();
+        long invocationTimeoutMillis = 1000;
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(),
+                String.valueOf(TimeUnit.MILLISECONDS.toSeconds(invocationTimeoutMillis)));
+        final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+
+        final String key = generateKeyOwnedBy(keyOwner);
+        ILock serverLock = instance.getLock(key);
+        serverLock.lock();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                final ILock lock = client.getLock(key);
+                lock.lock();
+                lock.unlock();
+                latch.countDown();
+            }
+        }).start();
+
+        Thread.sleep(invocationTimeoutMillis * 2);
+        keyOwner.getLifecycleService().terminate();
+
+        assertTrue(serverLock.isLocked());
+        assertTrue(serverLock.isLockedByCurrentThread());
+        assertTrue(serverLock.tryLock());
+        serverLock.unlock();
+        serverLock.unlock();
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testKeyOwnerShutsDown_afterInvocationTimeout() throws Exception {
+        HazelcastInstance keyOwner = factory.newHazelcastInstance();
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        warmUpPartitions(keyOwner, instance);
+
+        ClientConfig clientConfig = new ClientConfig();
+        long invocationTimeoutMillis = 1000;
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(),
+                String.valueOf(TimeUnit.MILLISECONDS.toSeconds(invocationTimeoutMillis)));
+        final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+
+        final String key = generateKeyOwnedBy(keyOwner);
+        ILock serverLock = instance.getLock(key);
+        serverLock.lock();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                final ILock lock = client.getLock(key);
+                lock.lock();
+                lock.unlock();
+                latch.countDown();
+            }
+        }).start();
+
+        Thread.sleep(invocationTimeoutMillis * 2);
+        keyOwner.shutdown();
+
+        assertTrue(serverLock.isLocked());
+        assertTrue(serverLock.isLockedByCurrentThread());
+        assertTrue(serverLock.tryLock());
+        serverLock.unlock();
+        serverLock.unlock();
+        assertOpenEventually(latch);
     }
 }
