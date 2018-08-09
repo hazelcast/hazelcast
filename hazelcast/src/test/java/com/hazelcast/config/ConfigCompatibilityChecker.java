@@ -898,8 +898,7 @@ class ConfigCompatibilityChecker {
         @Override
         boolean check(WanSyncConfig c1, WanSyncConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getConsistencyCheckStrategy(), c2.getConsistencyCheckStrategy())
-                    && nullSafeEqual(c1.getConsistencyCheckPeriodMillis(), c2.getConsistencyCheckPeriodMillis());
+                    && nullSafeEqual(c1.getConsistencyCheckStrategy(), c2.getConsistencyCheckStrategy());
         }
     }
 

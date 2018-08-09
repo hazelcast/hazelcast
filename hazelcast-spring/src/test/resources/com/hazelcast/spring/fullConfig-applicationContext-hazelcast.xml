@@ -120,7 +120,6 @@
                 <hz:wan-publisher group-name="tokyo" class-name="PublisherClassName">
                     <hz:wan-sync>
                         <hz:consistency-check-strategy>MERKLE_TREES</hz:consistency-check-strategy>
-                        <hz:consistency-check-period-millis>12345</hz:consistency-check-period-millis>
                     </hz:wan-sync>
                 </hz:wan-publisher>
                 <hz:wan-consumer implementation="wanConsumer" persist-wan-replicated-data="false"/>

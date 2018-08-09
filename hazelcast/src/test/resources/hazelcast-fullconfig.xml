@@ -65,7 +65,6 @@
             <initial-publisher-state>REPLICATING</initial-publisher-state>
             <wan-sync>
                 <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
-                <consistency-check-period-millis>10000</consistency-check-period-millis>
             </wan-sync>
             <properties>
                 <property name="batch.size">50</property>

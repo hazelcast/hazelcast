@@ -683,13 +683,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private void handleWanSync(WanSyncConfig wanSyncConfig, Node node) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if ("consistency-check-strategy".equals(nodeName)) {
                 String strategy = getTextContent(child);
                 wanSyncConfig.setConsistencyCheckStrategy(
                         ConsistencyCheckStrategy.valueOf(upperCaseInternal(strategy)));
-            } else if ("consistency-check-period-millis".equalsIgnoreCase(nodeName)) {
-                wanSyncConfig.setConsistencyCheckPeriodMillis(getLongValue("consistency-check-period-millis", value));
             }
         }
     }
