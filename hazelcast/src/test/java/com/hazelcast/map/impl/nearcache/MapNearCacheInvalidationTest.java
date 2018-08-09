@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
@@ -224,39 +223,6 @@ public class MapNearCacheInvalidationTest extends HazelcastTestSupport {
                 NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
                 NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
                 assertEquals(0, nearCache1.size() + nearCache2.size());
-            }
-        });
-    }
-
-    @Test
-    public void expired_entries_generate_invalidations() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-
-        HazelcastInstance node1 = factory.newHazelcastInstance(getBaseConfig());
-        HazelcastInstance node2 = factory.newHazelcastInstance(getBaseConfig());
-        // this node has near-cache config
-        HazelcastInstance node3 = factory.newHazelcastInstance(getConfig(mapName));
-
-        final IMap<Integer, Integer> map = node1.getMap(mapName);
-
-        int size = 1000;
-
-        // fill map
-        for (int i = 0; i < size; i++) {
-            map.put(i, i, 1, TimeUnit.SECONDS);
-        }
-
-        // fill Near Cache on node-3
-        final IMap<Object, Object> node3Map = node3.getMap(mapName);
-        for (int i = 0; i < size; i++) {
-            node3Map.get(i);
-        }
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                NearCache nearCache1 = ((NearCachedMapProxyImpl) node3Map).getNearCache();
-                assertEquals(0, nearCache1.size());
             }
         });
     }

@@ -711,6 +711,41 @@ public class NearCacheTest extends NearCacheTestSupport {
         assertNull(map.getAsync(1).get());
     }
 
+    /**
+     * Near Cache has its own eviction/expiration mechanism, so eviction/expiration on an IMap
+     * should not force any Near Cache eviction/expiration. Exceptions from this rule are direct calls to
+     * <ul>
+     * <li>{@link IMap#evict(Object)}</li>
+     * <li>{@link IMap#evictAll()}</li>
+     * </ul>
+     */
+    @Test
+    public void testNearCacheEntriesNotExpired_afterIMapExpiration() {
+        int mapSize = 3;
+        String mapName = randomMapName();
+
+        Config config = createNearCachedMapConfig(mapName);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = instance.getMap(mapName);
+
+        CountDownLatch latch = new CountDownLatch(mapSize);
+        addEntryEvictedListener(map, latch);
+
+        populateMapWithExpirableEntries(map, mapSize, 3, TimeUnit.SECONDS);
+        populateNearCache(map, mapSize);
+
+        int nearCacheSizeBeforeExpiration = getNearCacheSize(map);
+        waitUntilEvictionEventsReceived(latch);
+        // wait some extra time for possible events
+        sleepSeconds(2);
+        int nearCacheSizeAfterExpiration = getNearCacheSize(map);
+
+        NearCacheStats stats = getNearCacheStats(map);
+        assertEquals(0, stats.getExpirations());
+        assertEquals(0, stats.getEvictions());
+        assertEquals(nearCacheSizeBeforeExpiration, nearCacheSizeAfterExpiration);
+    }
+
     @Test
     public void testMapEvictAll_clearsLocalNearCache() {
         int size = 1000;
