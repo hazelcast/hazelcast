@@ -2098,6 +2098,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * Since this stats are only for the local portion of this map, if you
      * need the cluster-wide MapStats then you need to get the LocalMapStats
      * from all members of the cluster and combine them.
+     * <p>
+     * It's guaranteed that the returned {@link LocalMapStats} instance contains
+     * an up-to-date statistics. But over the time some parts of the returned
+     * instance may become stale while others may be updated. To obtain a fresh
+     * up-to-date instance invoke the method one more time.
      *
      * @return this map's local statistics
      */
