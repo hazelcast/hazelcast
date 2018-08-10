@@ -59,11 +59,11 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
 
     private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private IMap map1;
-    private IMap map2;
+    protected IMap map1;
+    protected IMap map2;
 
-    private IMap noStatsMap1;
-    private IMap noStatsMap2;
+    protected IMap noStatsMap1;
+    protected IMap noStatsMap2;
 
     @Override
     protected HazelcastInstance createInstance(Config config) {
