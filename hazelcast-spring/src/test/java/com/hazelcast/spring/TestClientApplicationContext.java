@@ -23,6 +23,7 @@ import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
+import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
@@ -116,6 +117,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client12-hazelcast-cloud")
     private HazelcastClientProxy hazelcastCloudClient;
+
+    @Resource(name = "client13-exponential-connection-retry")
+    private HazelcastClientProxy connectionRetryClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -411,6 +415,18 @@ public class TestClientApplicationContext {
                 .getNetworkConfig().getCloudConfig();
         assertEquals(false, cloudConfig.isEnabled());
         assertEquals("EXAMPLE_TOKEN", cloudConfig.getDiscoveryToken());
+    }
+
+    @Test
+    public void testConnectionRetry() {
+        ConnectionRetryConfig connectionRetryConfig = connectionRetryClient
+                .getClientConfig().getConnectionStrategyConfig().getConnectionRetryConfig();
+        assertTrue(connectionRetryConfig.isEnabled());
+        assertTrue(connectionRetryConfig.isFailOnMaxBackoff());
+        assertEquals(0.5, connectionRetryConfig.getJitter(), 0);
+        assertEquals(2000, connectionRetryConfig.getInitialBackoffMillis());
+        assertEquals(60000, connectionRetryConfig.getMaxBackoffMillis());
+        assertEquals(3, connectionRetryConfig.getMultiplier(), 0);
     }
 
     private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {
