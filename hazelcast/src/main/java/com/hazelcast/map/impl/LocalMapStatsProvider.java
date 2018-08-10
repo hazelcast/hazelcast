@@ -86,6 +86,10 @@ public class LocalMapStatsProvider {
         this.localAddress = clusterService.getThisAddress();
     }
 
+    protected MapServiceContext getMapServiceContext() {
+        return mapServiceContext;
+    }
+
     public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, constructorFunction);
     }
@@ -131,6 +135,7 @@ public class LocalMapStatsProvider {
             LocalMapOnDemandCalculatedStats onDemand = ((LocalMapOnDemandCalculatedStats) entry.getValue());
             addNearCacheStats(mapName, existingStats, onDemand);
             addIndexStats(mapName, existingStats);
+            addStructureStats(mapName, onDemand);
 
             LocalMapStatsImpl updatedStats = onDemand.updateAndGet(existingStats);
             entry.setValue(updatedStats);
@@ -183,6 +188,18 @@ public class LocalMapStatsProvider {
                 addReplicaStatsOf(partitionContainer.getExistingRecordStore(mapName), onDemandStats);
             }
         }
+        addStructureStats(mapName, onDemandStats);
+    }
+
+    /**
+     * Adds stats related to the data structure itself that should be
+     * reported even if the map or some of its {@link RecordStore} is empty
+     *
+     * @param mapName       The name of the map
+     * @param onDemandStats The on-demand map statistics
+     */
+    protected void addStructureStats(String mapName, LocalMapOnDemandCalculatedStats onDemandStats) {
+        // NOP
     }
 
     private static void addPrimaryStatsOf(RecordStore recordStore, LocalMapOnDemandCalculatedStats onDemandStats) {
@@ -415,7 +432,7 @@ public class LocalMapStatsProvider {
         }
     }
 
-    private static class LocalMapOnDemandCalculatedStats {
+    protected static class LocalMapOnDemandCalculatedStats {
 
         private int backupCount;
         private long hits;
@@ -423,8 +440,9 @@ public class LocalMapStatsProvider {
         private long backupEntryCount;
         private long ownedEntryMemoryCost;
         private long backupEntryMemoryCost;
-        // Holds total heap cost of map & Near Cache & backups.
+        // Holds total heap cost of map & Near Cache & backups & merkle trees.
         private long heapCost;
+        private long merkleTreesCost;
         private long lockedEntryCount;
         private long dirtyEntryCount;
         private long lastAccessTime;
@@ -466,6 +484,10 @@ public class LocalMapStatsProvider {
             this.heapCost += heapCost;
         }
 
+        public void incrementMerkleTreesCost(long merkleTreeCost) {
+            this.merkleTreesCost += merkleTreeCost;
+        }
+
         public LocalMapStatsImpl updateAndGet(LocalMapStatsImpl stats) {
             stats.setBackupCount(backupCount);
             stats.setHits(hits);
@@ -474,6 +496,7 @@ public class LocalMapStatsProvider {
             stats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
             stats.setBackupEntryMemoryCost(backupEntryMemoryCost);
             stats.setHeapCost(heapCost);
+            stats.setMerkleTreesCost(merkleTreesCost);
             stats.setLockedEntryCount(lockedEntryCount);
             stats.setDirtyEntryCount(dirtyEntryCount);
             stats.setLastAccessTime(lastAccessTime);

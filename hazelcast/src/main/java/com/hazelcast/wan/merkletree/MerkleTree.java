@@ -91,7 +91,7 @@ public interface MerkleTree extends MerkleTreeView {
      *
      * @return the memory footprint of the Merkle Tree in bytes
      */
-    int footprint();
+    long footprint();
 
     /**
      * Clears the Merkle tree
