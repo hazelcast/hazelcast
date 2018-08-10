@@ -113,10 +113,15 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Probe
     private volatile long backupEntryMemoryCost;
     /**
-     * Holds total heap cost of map & Near Cache & backups.
+     * Holds total heap cost of map & Near Cache & backups & Merkle trees.
      */
     @Probe
     private volatile long heapCost;
+    /**
+     * Holds the total memory footprint of the Merkle trees
+     */
+    @Probe
+    private volatile long merkleTreesCost;
     @Probe
     private volatile long lockedEntryCount;
     @Probe
@@ -304,6 +309,15 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     @Override
+    public long getMerkleTreesCost() {
+        return merkleTreesCost;
+    }
+
+    public void setMerkleTreesCost(long merkleTreeCost) {
+        this.merkleTreesCost = merkleTreeCost;
+    }
+
+    @Override
     public NearCacheStats getNearCacheStats() {
         return nearCacheStats;
     }
@@ -444,6 +458,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         root.add("maxRemoveLatency", NANOSECONDS.toMillis(maxRemoveLatency));
 
         root.add("heapCost", heapCost);
+        root.add("merkleTreesCost", merkleTreesCost);
         if (nearCacheStats != null) {
             root.add("nearCacheStats", nearCacheStats.toJson());
         }
@@ -490,6 +505,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         lockedEntryCount = getLong(json, "lockedEntryCount", -1L);
         dirtyEntryCount = getLong(json, "dirtyEntryCount", -1L);
         heapCost = getLong(json, "heapCost", -1L);
+        merkleTreesCost = getLong(json, "merkleTreesCost", -1L);
         JsonValue jsonNearCacheStats = json.get("nearCacheStats");
         if (jsonNearCacheStats != null) {
             nearCacheStats = new NearCacheStatsImpl();
@@ -538,6 +554,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", lockedEntryCount=" + lockedEntryCount
                 + ", dirtyEntryCount=" + dirtyEntryCount
                 + ", heapCost=" + heapCost
+                + ", merkleTreesCost=" + merkleTreesCost
                 + ", nearCacheStats=" + (nearCacheStats != null ? nearCacheStats : "")
                 + ", queryCount=" + queryCount
                 + ", indexedQueryCount=" + indexedQueryCount

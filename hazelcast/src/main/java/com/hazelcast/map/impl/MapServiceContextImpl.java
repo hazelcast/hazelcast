@@ -226,7 +226,7 @@ class MapServiceContextImpl implements MapServiceContext {
         return new RingbufferMapEventJournalImpl(getNodeEngine(), this);
     }
 
-    private LocalMapStatsProvider createLocalMapStatsProvider() {
+    protected LocalMapStatsProvider createLocalMapStatsProvider() {
         return new LocalMapStatsProvider(this);
     }
 

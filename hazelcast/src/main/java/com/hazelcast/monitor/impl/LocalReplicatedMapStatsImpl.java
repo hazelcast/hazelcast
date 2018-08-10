@@ -301,6 +301,16 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     @Probe
     @Override
+    public long getMerkleTreesCost() {
+        return 0;
+    }
+
+    // TODO: unused
+    public void setMerkleTreesCost(long merkleTreesCost) {
+    }
+
+    @Probe
+    @Override
     public long getReplicationEventCount() {
         return 0;
     }
