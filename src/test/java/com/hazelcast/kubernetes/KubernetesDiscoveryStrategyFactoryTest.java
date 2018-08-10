@@ -30,12 +30,12 @@ public class KubernetesDiscoveryStrategyFactoryTest {
     DiscoveryNode discoveryNode;
 
     @Mock
-    private KubernetesClient client;
+    private DefaultKubernetesClient client;
 
     @Before
     public void setup()
             throws Exception {
-        PowerMockito.whenNew(KubernetesClient.class).withAnyArguments().thenReturn(client);
+        PowerMockito.whenNew(DefaultKubernetesClient.class).withAnyArguments().thenReturn(client);
     }
 
     @Test
