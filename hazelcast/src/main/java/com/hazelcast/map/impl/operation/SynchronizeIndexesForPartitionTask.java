@@ -106,7 +106,7 @@ public class SynchronizeIndexesForPartitionTask implements PartitionSpecificRunn
                 QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
                 for (IndexInfo missingIndex : missingIndexes) {
                     indexes.getIndex(missingIndex.getAttributeName())
-                           .saveEntryIndex(queryEntry, null, Index.OperationSource.System);
+                           .saveEntryIndex(queryEntry, null, Index.OperationSource.SYSTEM);
                 }
             }
         }

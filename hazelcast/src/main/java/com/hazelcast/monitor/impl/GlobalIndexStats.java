@@ -181,7 +181,7 @@ public class GlobalIndexStats implements InternalIndexStats {
             return;
         }
 
-        if (operationSource == Index.OperationSource.User) {
+        if (operationSource == Index.OperationSource.USER) {
             TOTAL_INSERT_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
             INSERT_COUNT.incrementAndGet(this);
         }
@@ -191,7 +191,7 @@ public class GlobalIndexStats implements InternalIndexStats {
 
     @Override
     public void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
-        if (operationSource == Index.OperationSource.User) {
+        if (operationSource == Index.OperationSource.USER) {
             TOTAL_UPDATE_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
             UPDATE_COUNT.incrementAndGet(this);
         }
@@ -205,7 +205,7 @@ public class GlobalIndexStats implements InternalIndexStats {
             return;
         }
 
-        if (operationSource == Index.OperationSource.User) {
+        if (operationSource == Index.OperationSource.USER) {
             TOTAL_REMOVE_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
             REMOVE_COUNT.incrementAndGet(this);
         }

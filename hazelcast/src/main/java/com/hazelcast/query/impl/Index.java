@@ -141,13 +141,13 @@ public interface Index {
          * Indicates that an index operation was initiated by a user; for
          * instance, as a result of a new map entry insertion.
          */
-        User,
+        USER,
 
         /**
          * Indicates that an index operation was initiated internally by
          * Hazelcast; for instance, as a result of a partition migration.
          */
-        System
+        SYSTEM
     }
 
 }

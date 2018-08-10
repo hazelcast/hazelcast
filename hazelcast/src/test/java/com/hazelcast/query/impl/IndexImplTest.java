@@ -55,7 +55,7 @@ public class IndexImplTest {
     @Test
     public void saveEntryIndex_doNotDeserializeKey() {
         QueryableEntry entry = createMockQueryableEntry();
-        index.saveEntryIndex(entry, null, Index.OperationSource.User);
+        index.saveEntryIndex(entry, null, Index.OperationSource.USER);
         verify(entry, never()).getKey();
     }
 

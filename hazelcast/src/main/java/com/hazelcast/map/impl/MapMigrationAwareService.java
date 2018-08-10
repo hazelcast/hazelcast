@@ -259,7 +259,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 final Object value = Records.getValueOrCachedValue(record, serializationService);
                 if (value != null) {
                     QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-                    indexes.saveEntryIndex(queryEntry, null, Index.OperationSource.System);
+                    indexes.saveEntryIndex(queryEntry, null, Index.OperationSource.SYSTEM);
                 }
             }
         }
@@ -292,7 +292,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 final Data key = record.getKey();
 
                 final Object value = Records.getValueOrCachedValue(record, serializationService);
-                indexes.removeEntryIndex(key, value, Index.OperationSource.System);
+                indexes.removeEntryIndex(key, value, Index.OperationSource.SYSTEM);
             }
         }
     }

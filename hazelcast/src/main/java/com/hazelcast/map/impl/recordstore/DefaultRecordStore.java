@@ -314,7 +314,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         for (Record record : storage.values()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntryIndex(key, value, Index.OperationSource.System);
+            indexes.removeEntryIndex(key, value, Index.OperationSource.SYSTEM);
         }
     }
 

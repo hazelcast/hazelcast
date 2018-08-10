@@ -170,7 +170,7 @@ public class PartitionIndexStats implements InternalIndexStats {
             return;
         }
 
-        if (operationSource == Index.OperationSource.User) {
+        if (operationSource == Index.OperationSource.USER) {
             TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (System.nanoTime() - timestamp));
             INSERT_COUNT.lazySet(this, insertCount + 1);
         }
@@ -179,7 +179,7 @@ public class PartitionIndexStats implements InternalIndexStats {
 
     @Override
     public void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
-        if (operationSource == Index.OperationSource.User) {
+        if (operationSource == Index.OperationSource.USER) {
             TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (System.nanoTime() - timestamp));
             UPDATE_COUNT.lazySet(this, updateCount + 1);
         }
@@ -193,7 +193,7 @@ public class PartitionIndexStats implements InternalIndexStats {
             return;
         }
 
-        if (operationSource == Index.OperationSource.User) {
+        if (operationSource == Index.OperationSource.USER) {
             TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (System.nanoTime() - timestamp));
             REMOVE_COUNT.lazySet(this, removeCount + 1);
         }

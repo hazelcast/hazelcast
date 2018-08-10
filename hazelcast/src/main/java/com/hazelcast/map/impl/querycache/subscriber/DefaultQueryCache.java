@@ -470,7 +470,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
             QueryEntry queryable = new QueryEntry(serializationService, keyData, value, Extractors.empty());
-            indexes.saveEntryIndex(queryable, null, Index.OperationSource.User);
+            indexes.saveEntryIndex(queryable, null, Index.OperationSource.USER);
         }
     }
 

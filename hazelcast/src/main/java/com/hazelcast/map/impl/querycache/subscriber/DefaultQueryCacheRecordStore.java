@@ -95,7 +95,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
             Object currentValue = currentRecord.getValue();
             QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, Extractors.empty());
             Object oldValue = oldRecord == null ? null : oldRecord.getValue();
-            indexes.saveEntryIndex(queryEntry, oldValue, Index.OperationSource.User);
+            indexes.saveEntryIndex(queryEntry, oldValue, Index.OperationSource.USER);
         }
     }
 
@@ -116,7 +116,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
 
     private void removeIndex(Data keyData, Object value) {
         if (indexes.hasIndex()) {
-            indexes.removeEntryIndex(keyData, value, Index.OperationSource.User);
+            indexes.removeEntryIndex(keyData, value, Index.OperationSource.USER);
         }
     }
 

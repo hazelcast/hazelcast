@@ -162,7 +162,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.hasIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
-            indexes.saveEntryIndex(queryableEntry, oldValue, Index.OperationSource.User);
+            indexes.saveEntryIndex(queryableEntry, oldValue, Index.OperationSource.USER);
         }
     }
 
@@ -172,7 +172,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.hasIndex()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntryIndex(key, value, Index.OperationSource.User);
+            indexes.removeEntryIndex(key, value, Index.OperationSource.USER);
         }
     }
 
