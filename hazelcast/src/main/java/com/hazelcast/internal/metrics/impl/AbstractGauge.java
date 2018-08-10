@@ -22,7 +22,7 @@ abstract class AbstractGauge implements Metric {
 
     protected final MetricsRegistryImpl metricsRegistry;
     protected final String name;
-    private volatile ProbeInstance probeInstance;
+    private volatile ProbeInstance<?> probeInstance;
 
     AbstractGauge(MetricsRegistryImpl metricsRegistry, String name) {
         this.metricsRegistry = metricsRegistry;
@@ -38,8 +38,8 @@ abstract class AbstractGauge implements Metric {
         probeInstance = null;
     }
 
-    ProbeInstance getProbeInstance() {
-        ProbeInstance probeInstance = this.probeInstance;
+    ProbeInstance<?> getProbeInstance() {
+        ProbeInstance<?> probeInstance = this.probeInstance;
         if (probeInstance == null) {
             probeInstance = metricsRegistry.getProbeInstance(name);
             this.probeInstance = probeInstance;

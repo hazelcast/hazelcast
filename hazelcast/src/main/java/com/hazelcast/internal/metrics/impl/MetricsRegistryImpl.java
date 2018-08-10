@@ -53,9 +53,9 @@ import static java.lang.String.format;
  */
 public class MetricsRegistryImpl implements MetricsRegistry {
 
-    private static final Comparator<ProbeInstance> COMPARATOR = new Comparator<ProbeInstance>() {
+    private static final Comparator<ProbeInstance<?>> COMPARATOR = new Comparator<ProbeInstance<?>>() {
         @Override
-        public int compare(ProbeInstance o1, ProbeInstance o2) {
+        public int compare(ProbeInstance<?> o1, ProbeInstance<?> o2) {
             return o1.name.compareTo(o2.name);
         }
     };
@@ -64,7 +64,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     private final ProbeLevel minimumLevel;
 
     private final ScheduledExecutorService scheduledExecutorService;
-    private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
+    private final ConcurrentMap<String, ProbeInstance<?>> probeInstances = new ConcurrentHashMap<String, ProbeInstance<?>>();
 
     // use ConcurrentReferenceHashMap to allow unreferenced Class instances to be garbage collected
     private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap
@@ -169,10 +169,10 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         registerInternal(source, name, level, function);
     }
 
-    ProbeInstance getProbeInstance(String name) {
+    @SuppressWarnings("unchecked") <S> ProbeInstance<S> getProbeInstance(String name) {
         checkNotNull(name, "name can't be null");
 
-        return probeInstances.get(name);
+        return (ProbeInstance<S>) probeInstances.get(name);
     }
 
     <S> void registerInternal(S source, String name, ProbeLevel probeLevel, ProbeFunction function) {
@@ -181,7 +181,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
 
         synchronized (lockStripe.getLock(source)) {
-            ProbeInstance probeInstance = probeInstances.get(name);
+			ProbeInstance<S> probeInstance =  getProbeInstance(name);
             if (probeInstance == null) {
                 probeInstance = new ProbeInstance<S>(name, source, function);
                 probeInstances.put(name, probeInstance);
@@ -210,7 +210,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
     }
 
-    private void logOverwrite(ProbeInstance probeInstance) {
+    private void logOverwrite(ProbeInstance<?> probeInstance) {
         if (probeInstance.function != null || probeInstance.source != null) {
             logger.warning(format("Overwriting existing probe '%s'", probeInstance.name));
         }
@@ -237,8 +237,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
 
         boolean changed = false;
-        for (Map.Entry<String, ProbeInstance> entry : probeInstances.entrySet()) {
-            ProbeInstance probeInstance = entry.getValue();
+        for (Map.Entry<String, ProbeInstance<?>> entry : probeInstances.entrySet()) {
+            ProbeInstance<?> probeInstance = entry.getValue();
 
             if (probeInstance.source != source) {
                 continue;
@@ -271,7 +271,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     public void render(ProbeRenderer renderer) {
         checkNotNull(renderer, "renderer can't be null");
 
-        for (ProbeInstance probeInstance : getSortedProbeInstances()) {
+        for (ProbeInstance<?> probeInstance : getSortedProbeInstances()) {
             render(renderer, probeInstance);
         }
     }
@@ -294,14 +294,14 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
     }
 
-    List<ProbeInstance> getSortedProbeInstances() {
+    List<ProbeInstance<?>> getSortedProbeInstances() {
         for (; ; ) {
             SortedProbeInstances current = sortedProbeInstancesRef.get();
             if (current.probeInstances != null) {
                 return current.probeInstances;
             }
 
-            List<ProbeInstance> probeInstanceList = new ArrayList<ProbeInstance>(probeInstances.values());
+            List<ProbeInstance<?>> probeInstanceList = new ArrayList<ProbeInstance<?>>(probeInstances.values());
             Collections.sort(probeInstanceList, COMPARATOR);
 
             SortedProbeInstances update = new SortedProbeInstances(current.mod, probeInstanceList);
@@ -311,7 +311,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
     }
 
-    private void render(ProbeRenderer renderer, ProbeInstance probeInstance) {
+    private void render(ProbeRenderer renderer, ProbeInstance<?> probeInstance) {
         ProbeFunction function = probeInstance.function;
         Object source = probeInstance.source;
         String name = probeInstance.name;
@@ -345,14 +345,14 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     private static class SortedProbeInstances {
         private final long mod;
-        private final List<ProbeInstance> probeInstances;
+        private final List<ProbeInstance<?>> probeInstances;
 
         private SortedProbeInstances(long mod) {
             this.mod = mod;
             this.probeInstances = null;
         }
 
-        SortedProbeInstances(long mod, List<ProbeInstance> probeInstances) {
+        SortedProbeInstances(long mod, List<ProbeInstance<?>> probeInstances) {
             this.mod = mod;
             this.probeInstances = probeInstances;
         }

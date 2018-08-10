@@ -131,20 +131,20 @@ public class RenderTest {
 
     @Test
     public void getSortedProbes_whenProbeAdded() {
-        List<ProbeInstance> instances1 = metricsRegistry.getSortedProbeInstances();
+        List<ProbeInstance<?>> instances1 = metricsRegistry.getSortedProbeInstances();
 
         registerLongMetric("foo", 10);
 
-        List<ProbeInstance> instances2 = metricsRegistry.getSortedProbeInstances();
+        List<ProbeInstance<?>> instances2 = metricsRegistry.getSortedProbeInstances();
 
         Assert.assertNotSame(instances1, instances2);
     }
 
     @Test
     public void getSortedProbes_whenNoChange() {
-        List<ProbeInstance> instances1 = metricsRegistry.getSortedProbeInstances();
+        List<ProbeInstance<?>> instances1 = metricsRegistry.getSortedProbeInstances();
 
-        List<ProbeInstance> instances2 = metricsRegistry.getSortedProbeInstances();
+        List<ProbeInstance<?>> instances2 = metricsRegistry.getSortedProbeInstances();
 
         assertSame(instances1, instances2);
     }

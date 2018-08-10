@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.client.impl.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalInstanceStats;
@@ -38,6 +39,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.client.impl.ClientEndpointImpl.getEndpointPrefix;
 import static com.hazelcast.util.StringUtil.lowerCaseFirstChar;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -103,7 +105,15 @@ public class StatisticsAwareMetricsSet {
                 }
 
                 for (Map.Entry<String, ?> entry : stats.entrySet()) {
-                    register(entry.getKey(), entry.getValue(), statisticsAwareService);
+                    Object localStats = entry.getValue();
+					register(entry.getKey(), localStats, statisticsAwareService);
+                    // the below is a hack to allows a stats object to have further list of sub-objects
+					if (localStats instanceof StatisticsAwareService) {
+                    	StatisticsAwareService<?> subService = (StatisticsAwareService<?>) localStats;
+						for (Map.Entry<String, ?> subStats : subService.getStats().entrySet()) {
+                    		register(subStats.getKey(), subStats.getValue(), subService);
+                    	}
+                    }
                 }
             }
         }
@@ -134,20 +144,11 @@ public class StatisticsAwareMetricsSet {
 			}
             
             if (localInstanceStats instanceof ClientEndpoint) {
-            	scanAndRegisterClientEndpoint(name, (ClientEndpoint) localInstanceStats);
+            	metricsRegistry.scanAndRegister(localInstanceStats, getEndpointPrefix((ClientEndpoint) localInstanceStats));
             } else {
-	            metricsRegistry.scanAndRegister(localInstanceStats,
-	                    baseName + "[" + name + "]");
-            }
+				metricsRegistry.scanAndRegister(localInstanceStats, baseName + "[" + name + "]");
+			}
         }
-
-		private void scanAndRegisterClientEndpoint(String name, ClientEndpoint endpoint) {
-			String type = endpoint.getClientType().name().toLowerCase();
-			String address = endpoint.getSocketAddress().toString();
-			int version = endpoint.getClientVersion();
-			metricsRegistry.scanAndRegister(endpoint,
-					"client.endpoint." + type + "." + version + "." + address + "[" + name + "]");
-		}
 
         private String toBaseName(Object localInstanceStats, StatisticsAwareService<?> statisticsAwareService) {
             String baseName = localInstanceStats.getClass().getSimpleName()
@@ -185,10 +186,9 @@ public class StatisticsAwareMetricsSet {
 
         private void purgeDeadStats() {
             // purge all dead stats; so whatever was there the previous time and can't be found anymore, will be deleted
-            for (Object localInstanceStats : previousStats) {
-                if (!currentStats.contains(localInstanceStats)) {
-                    metricsRegistry.deregister(localInstanceStats);
-
+        	for (Object localInstanceStats : previousStats) {
+        		if (!currentStats.contains(localInstanceStats)) {
+        			metricsRegistry.deregister(localInstanceStats);
                     NearCacheStats nearCacheStats = getNearCacheStats(localInstanceStats);
                     if (nearCacheStats != null) {
                         metricsRegistry.deregister(nearCacheStats);

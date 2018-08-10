@@ -16,6 +16,24 @@
 
 package com.hazelcast.client.impl;
 
+import static com.hazelcast.client.impl.ClientStatsUtil.splitKeyValuePair;
+import static com.hazelcast.client.impl.ClientStatsUtil.splitStats;
+
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -26,24 +44,16 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
 
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
  */
-public final class ClientEndpointImpl implements ClientEndpoint {
+public final class ClientEndpointImpl implements ClientEndpoint, StatisticsAwareService<Object> {
 
     private final ClientEngineImpl clientEngine;
     private final NodeEngineImpl nodeEngine;
@@ -63,9 +73,14 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private Credentials credentials;
     private volatile boolean authenticated;
     private int clientVersion;
-    private String clientVersionString;
+    private String clientVersionString = "?";
     private long authenticationCorrelationId;
-    private volatile String stats;
+    
+    private volatile String statsString;
+    private final ClientStats stats = new ClientStats();
+    private final ClientOSStats osStats = new ClientOSStats();
+    private final ClientRuntimeStats runtimeStats = new ClientRuntimeStats();
+    private final ConcurrentMap<String, ClientNearCacheStats> nearCacheStats = new ConcurrentHashMap<String, ClientNearCacheStats>();
 
     public ClientEndpointImpl(ClientEngineImpl clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
@@ -138,23 +153,71 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     public int getClientVersion() {
         return clientVersion;
     }
+    
+    private String getClientVersionString() {
+		return clientVersionString;
+	}
 
     @Override
     public void setClientVersion(String version) {
         clientVersionString = version;
         clientVersion = BuildInfo.calculateVersion(version);
     }
+    
+	public static String getEndpointPrefix(ClientEndpoint endpoint) {
+		String type = endpoint.getClientType().name().toLowerCase();
+		String address = endpoint.getSocketAddress().toString().replace("/", "");
+		String version = endpoint instanceof ClientEndpointImpl ? ((ClientEndpointImpl) endpoint).getClientVersionString() : "" + endpoint.getClientVersion();
+		return "client.endpoint[" + type + "][" + version + "][" + address + "][" + endpoint.getUuid() + "]";
+	}
 
     @Override
     public void setClientStatistics(String stats) {
-        this.stats = stats;
+    	this.statsString = stats;
+        Map<String, String> statMap = new HashMap<String, String>();
+        if (stats != null) {
+        	for (String keyValuePair : splitStats(stats)) {
+        		List<String> keyAndValue = splitKeyValuePair(keyValuePair);
+        		if (keyAndValue != null && keyAndValue.size() == 2) {
+        			statMap.put(keyAndValue.get(0), keyAndValue.get(1));
+        		}
+        	}
+        }
+        this.stats.updateFrom(statMap);
+        osStats.updateFrom(statMap);
+        runtimeStats.updateFrom(statMap);
+        Set<String> ncNames = ClientNearCacheStats.getNearCacheStatsDataStructureNames(statMap);
+        nearCacheStats.keySet().retainAll(ncNames);
+        for (String name : ncNames) {
+        	if (nearCacheStats.containsKey(name)) {
+        		nearCacheStats.get(name).updateFrom(statMap);
+        	} else {
+        		nearCacheStats.put(name, new ClientNearCacheStats(name));
+        	}
+        }
     }
 
     @Override
     public String getClientStatistics() {
-        return stats;
+        return statsString;
     }
 
+    @Override
+    public Map<String, Object> getStats() {
+    	if (!ownerConnection) {
+    		return Collections.emptyMap();
+    	}
+		Map<String, Object> res = new HashMap<String, Object>();
+		String uuid = "[" + getUuid() + "]";
+		res.put(uuid + "[" + stats.getName() + "]", stats);
+		res.put("os" + uuid, osStats);
+		res.put("runtime" + uuid, runtimeStats);
+		for (ClientNearCacheStats ncStats : nearCacheStats.values()) {
+			res.put(ncStats.getType() + "." + ncStats.getName() + ".nearcache" + uuid, ncStats);
+		}
+		return res;
+    }
+    
     @Override
     public InetSocketAddress getSocketAddress() {
         return (InetSocketAddress) socketAddress;
@@ -287,7 +350,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersionString
                 + ", creationTime=" + creationTime
-                + ", latest statistics=" + stats
+                + ", latest statistics=" + statsString
                 + '}';
     }
 
