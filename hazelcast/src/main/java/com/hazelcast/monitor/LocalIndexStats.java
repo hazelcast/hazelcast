@@ -42,7 +42,7 @@ public interface LocalIndexStats extends LocalInstanceStats {
     long getHitCount();
 
     /**
-     * Returns the average hit latency for the index.
+     * Returns the average hit latency (in nanoseconds) for the index.
      */
     long getAverageHitLatency();
 
