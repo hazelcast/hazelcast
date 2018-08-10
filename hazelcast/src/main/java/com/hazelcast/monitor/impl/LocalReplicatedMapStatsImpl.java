@@ -22,7 +22,6 @@ import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.util.Clock;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -314,20 +313,17 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     @Override
     public long getQueryCount() {
-        // there is no query support for replicated maps
-        return 0;
+        throw new UnsupportedOperationException("Queries on replicated maps are not supported.");
     }
 
     @Override
     public long getIndexedQueryCount() {
-        // there is no query support for replicated maps
-        return 0;
+        throw new UnsupportedOperationException("Queries on replicated maps are not supported.");
     }
 
     @Override
     public Map<String, LocalIndexStats> getIndexStats() {
-        // there is no query support for replicated maps
-        return Collections.emptyMap();
+        throw new UnsupportedOperationException("Queries on replicated maps are not supported.");
     }
 
     @Override
