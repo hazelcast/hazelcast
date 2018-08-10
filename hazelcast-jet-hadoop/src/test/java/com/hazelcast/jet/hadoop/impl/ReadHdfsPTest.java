@@ -17,28 +17,14 @@
 package com.hazelcast.jet.hadoop.impl;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.hadoop.HdfsSources;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
-import com.hazelcast.jet.stream.DistributedCollectors;
-import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.stream.IntStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -58,6 +44,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
@@ -126,15 +123,6 @@ public class ReadHdfsPTest extends HdfsTestSupport {
         IList list = instance.getList("sink");
         assertEquals(expectedSinkSize(), list.size());
         assertTrue(list.get(0).toString().contains("value"));
-    }
-
-    @Test
-    public void testJus() {
-        IListJet sink = DistributedStream
-                .fromSource(instance, HdfsSources.hdfs(jobConf, mapperType.mapper), false)
-                .collect(DistributedCollectors.toIList("sink"));
-
-        assertEquals(expectedSinkSize(), sink.size());
     }
 
     private int expectedSinkSize() {

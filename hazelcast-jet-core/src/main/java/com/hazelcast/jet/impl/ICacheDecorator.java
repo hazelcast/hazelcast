@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl;
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.ICache;

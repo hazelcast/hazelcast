@@ -25,8 +25,6 @@ import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.stream.impl.IListDecorator;
-import com.hazelcast.jet.stream.impl.IMapDecorator;
 
 import javax.annotation.Nonnull;
 import java.util.function.Supplier;

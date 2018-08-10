@@ -18,7 +18,6 @@ package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.stream.DistributedCollectors;
 
 import javax.annotation.Nonnull;
 import java.util.stream.Collector;
@@ -61,7 +60,19 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
      * Turns this aggregate operation into a collector which can be used in conjunction
      * with {@link java.util.stream.Stream#collect(Collector)}.
      */
+    @Nonnull
     default Collector<T, A, R> toCollector() {
-        return DistributedCollectors.aggregating(this);
+        DistributedBiConsumer<? super A, ? super A> combineFn = combineFn();
+        if (combineFn == null) {
+            throw new IllegalArgumentException("This aggregate operation doesn't implement combineFn()");
+        }
+        return Collector.of(
+                createFn(),
+                (acc, t) -> accumulateFn().accept(acc, t),
+                (l, r) -> {
+                    combineFn.accept(l, r);
+                    return l;
+                },
+                a -> finishFn().apply(a));
     }
 }

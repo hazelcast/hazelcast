@@ -16,35 +16,27 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobClassLoaderFactory;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.deployment.LoadPersonIsolated.LoadPersonIsolatedMetaSupplier;
 import com.hazelcast.jet.impl.deployment.LoadResource.LoadResourceMetaSupplier;
-import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.test.IgnoredForCoverage;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
-import static com.hazelcast.jet.stream.DistributedCollectors.toList;
 import static java.util.Collections.emptyEnumeration;
 import static java.util.Collections.enumeration;
 import static java.util.Collections.singleton;
-import static java.util.stream.IntStream.range;
-import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
@@ -64,29 +56,6 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         jobConfig.addJar(this.getClass().getResource("/deployment/sample-pojo-1.0-person.jar"));
 
         executeAndPeel(jetInstance.newJob(dag, jobConfig));
-    }
-
-    /**
-     * The test is excluded from the test coverage since JaCoCo instrumentation messes up with the
-     * class internals which generates different serialVersionUid's for same classes.
-     * This leads test to fail with InvalidClassException
-     */
-    @Test
-    @Category(IgnoredForCoverage.class)
-    public void testStream() {
-        createCluster();
-
-        IMapJet<Integer, Integer> map = getJetInstance().getMap(randomString());
-        range(0, 10).parallel().forEach(i -> map.put(i, i));
-
-        JobConfig jobConfig = new JobConfig();
-        jobConfig.addClass(MyMapper.class);
-        List<Integer> list = DistributedStream
-                .fromMap(map)
-                .configure(jobConfig)
-                .map(new MyMapper())
-                .collect(toList());
-        assertEquals(10, list.size());
     }
 
     @Test

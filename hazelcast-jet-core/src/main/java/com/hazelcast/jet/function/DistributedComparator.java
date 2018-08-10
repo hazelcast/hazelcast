@@ -16,9 +16,8 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.function.DistributedComparators.NullComparator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
-import com.hazelcast.jet.stream.impl.distributed.DistributedComparators;
-import com.hazelcast.jet.stream.impl.distributed.DistributedComparators.NullComparator;
 
 import java.io.Serializable;
 import java.util.Comparator;

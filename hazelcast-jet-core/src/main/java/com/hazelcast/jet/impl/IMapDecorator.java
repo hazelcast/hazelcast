@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl;
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.core.EntryListener;

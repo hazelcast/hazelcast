@@ -69,7 +69,6 @@ import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
-import static com.hazelcast.jet.stream.DistributedCollectors.aggregating;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -545,7 +544,7 @@ public class AggregateOperationsTest {
 
         Tuple2<Double, Integer> result = stream
                 .boxed()
-                .collect(aggregating(allOf(averageOp, maxOp)));
+                .collect(allOf(averageOp, maxOp).toCollector());
 
         assertEquals((Double) 499.5d, result.f0());
         assertEquals((Integer) 999, result.f1());

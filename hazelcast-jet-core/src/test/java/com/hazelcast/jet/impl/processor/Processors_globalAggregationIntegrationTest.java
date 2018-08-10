@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream;
+package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.JetInstance;

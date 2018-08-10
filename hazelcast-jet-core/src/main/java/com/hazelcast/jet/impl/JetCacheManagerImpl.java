@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.jet.ICacheJet;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.stream.impl.ICacheDecorator;
 
 /**
  * Hazelcast Jet {@code JetCacheManager} implementation accessible via {@code JetInstance} that provides access to JSR-107

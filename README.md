@@ -13,8 +13,6 @@ about the architecture and use cases.
 
 * Low-latency, high-throughput distributed data processing framework.
 * Highly parallel and distributed stream and batch processing of data.
-* Distributed java.util.stream API support for Hazelcast data
-structures such as IMap and IList.
 * Connectors allowing high-velocity ingestion of data from Apache
 Kafka, HDFS, Hazelcast IMDG, sockets and local data files (such as
 logs or CSVs).

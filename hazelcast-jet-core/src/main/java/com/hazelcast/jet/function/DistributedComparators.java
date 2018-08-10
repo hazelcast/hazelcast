@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl.distributed;
+package com.hazelcast.jet.function;
 
-import com.hazelcast.jet.function.DistributedComparator;
+final class DistributedComparators {
 
-public final class DistributedComparators {
-
-    public static final DistributedComparator<Comparable<Object>> NATURAL_ORDER = new NaturalOrderComparator();
-    public static final DistributedComparator<Comparable<Object>> REVERSE_ORDER = new ReverseOrderComparator();
+    static final DistributedComparator<Comparable<Object>> NATURAL_ORDER = new NaturalOrderComparator();
+    static final DistributedComparator<Comparable<Object>> REVERSE_ORDER = new ReverseOrderComparator();
 
     private DistributedComparators() {
     }
@@ -56,7 +54,7 @@ public final class DistributedComparators {
         private final boolean isNullFirst;
 
         @SuppressWarnings("unchecked")
-        public NullComparator(boolean isNullFirst) {
+        NullComparator(boolean isNullFirst) {
             this.isNullFirst = isNullFirst;
         }
 
