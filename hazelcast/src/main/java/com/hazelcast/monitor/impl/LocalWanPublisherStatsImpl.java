@@ -17,10 +17,11 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.config.WanPublisherState;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
+import com.hazelcast.wan.merkletree.ConsistencyCheckResult;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -45,6 +46,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private volatile long totalPublishedEventCount;
     private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
     private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;
+    private volatile Map<String, ConsistencyCheckResult> lastConsistencyCheckResults;
 
     @Override
     public boolean isConnected() {
@@ -99,6 +101,16 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     public void setSentCacheEventCounter(Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter) {
         this.sentCacheEventCounter = sentCacheEventCounter;
+    }
+
+    public void setLastConsistencyCheckResults(
+            Map<String, ConsistencyCheckResult> lastMerkleTreeRootComparisonResults) {
+        this.lastConsistencyCheckResults = lastMerkleTreeRootComparisonResults;
+    }
+
+    @Override
+    public Map<String, ConsistencyCheckResult> getLastConsistencyCheckResults() {
+        return lastConsistencyCheckResults;
     }
 
     public void incrementPublishedEventCount(long latency) {
