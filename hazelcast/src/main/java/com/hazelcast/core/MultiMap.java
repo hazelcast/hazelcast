@@ -53,15 +53,7 @@ import java.util.concurrent.TimeUnit;
  * @see IMap
  */
 @SuppressWarnings("checkstyle:methodcount")
-public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
-
-    /**
-     * Returns the name of this multimap.
-     *
-     * @return the name of this multimap
-     */
-    String getName();
-
+public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
     /**
      * Stores a key-value pair in the multimap.
      * <p>
