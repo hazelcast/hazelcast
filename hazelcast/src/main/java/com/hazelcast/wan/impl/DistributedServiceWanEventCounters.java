@@ -44,7 +44,16 @@ public class DistributedServiceWanEventCounters {
      * Increment the number of sync events for the {@code distributedObjectName}.
      */
     public void incrementSync(String distributedObjectName) {
-        getOrPutIfAbsent(eventCounterMap, distributedObjectName, EVENT_COUNTER_CONSTRUCTOR_FN).incrementSyncCount();
+        incrementSync(distributedObjectName, 1);
+    }
+
+    /**
+     * Increment the number of sync events for the {@code distributedObjectName}
+     * by {@code count}.
+     */
+    public void incrementSync(String distributedObjectName, int count) {
+        getOrPutIfAbsent(eventCounterMap, distributedObjectName, EVENT_COUNTER_CONSTRUCTOR_FN)
+                .incrementSyncCount(count);
     }
 
     /**
@@ -95,8 +104,8 @@ public class DistributedServiceWanEventCounters {
         }
 
         /** Increment the counter for entry sync events */
-        private void incrementSyncCount() {
-            syncCount.incrementAndGet();
+        private void incrementSyncCount(int count) {
+            syncCount.addAndGet(count);
         }
 
         /** Increment the counter for entry update events */
