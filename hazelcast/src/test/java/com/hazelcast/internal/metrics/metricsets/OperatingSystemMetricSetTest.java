@@ -19,10 +19,13 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.metrics.impl.TestMetricsReader;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+
+import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,6 +39,7 @@ import static com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet
 import static com.hazelcast.logging.Logger.getLogger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
@@ -62,8 +66,16 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testComSunManagementUnixOperatingSystem() {
-        assumeOperatingSystemMXBean("com.sun.management.UnixOperatingSystem");
+    public void testComSunManagementUnixOperatingSystemMXBean() {
+        assumeOperatingSystemMXBeanType("com.sun.management.UnixOperatingSystemMXBean");
+        assertContainsSensor("os.maxFileDescriptorCount");
+        assertContainsSensor("os.openFileDescriptorCount");
+
+    }
+
+    @Test
+    public void testComSunManagementOperatingSystemMXBean() {
+        assumeOperatingSystemMXBeanType("com.sun.management.OperatingSystemMXBean");
 
         assertContainsSensor("os.committedVirtualMemorySize");
         assertContainsSensor("os.freePhysicalMemorySize");
@@ -71,8 +83,6 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
         assertContainsSensor("os.processCpuTime");
         assertContainsSensor("os.totalPhysicalMemorySize");
         assertContainsSensor("os.totalSwapSpaceSize");
-        assertContainsSensor("os.maxFileDescriptorCount");
-        assertContainsSensor("os.openFileDescriptorCount");
 
         assumeThatNoJDK6();
         // only available in JDK 7+
@@ -80,35 +90,26 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
         assertContainsSensor("os.systemCpuLoad");
     }
 
-    @Test
-    public void testSunManagementOperatingSystemImpl() {
-        assumeOperatingSystemMXBean("sun.management.OperatingSystemImpl");
-
-        assertContainsSensor("os.committedVirtualMemorySize");
-        assertContainsSensor("os.freePhysicalMemorySize");
-        assertContainsSensor("os.freeSwapSpaceSize");
-        assertContainsSensor("os.processCpuTime");
-        assertContainsSensor("os.totalPhysicalMemorySize");
-        assertContainsSensor("os.totalSwapSpaceSize");
-        assertContainsSensor("os.processCpuLoad");
-        assertContainsSensor("os.systemCpuLoad");
-
-        assumeThatNoWindowsOS();
-        // not implemented on Windows
-        assertContainsSensor("os.maxFileDescriptorCount");
-        assertContainsSensor("os.openFileDescriptorCount");
-    }
-
     private void assertContainsSensor(String parameter) {
         boolean contains = metricsRegistry.getNames().contains(parameter);
         assertTrue("sensor: " + parameter + " is not found", contains);
+        TestMetricsReader reader = new TestMetricsReader(metricsRegistry, parameter);
+        try {
+            Number value = reader.read();
+            assertNotNull(value);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to get a metric " + parameter, e);
+        }
     }
 
-    private void assumeOperatingSystemMXBean(String expected) {
+    private void assumeOperatingSystemMXBeanType(String expected) {
         OperatingSystemMXBean bean = ManagementFactory.getOperatingSystemMXBean();
-        String foundClass = bean.getClass().getName();
-
-        assumeTrue(foundClass + " is not usable", expected.equals(foundClass));
+        try {
+            Class<?> expectedInterface = Class.forName(expected);
+            assumeTrue(expectedInterface.isAssignableFrom(bean.getClass()));
+        } catch (ClassNotFoundException e) {
+            throw new AssumptionViolatedException("MXBean interface " + expected + " was not found");
+        }
     }
 
     @Test
@@ -142,13 +143,13 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
         assertFalse(parameterExist);
     }
 
-    public class FakeOperatingSystemBean {
+    public static class FakeOperatingSystemBean {
 
-        double doubleMethod() {
+        public double doubleMethod() {
             return 10;
         }
 
-        long longMethod() {
+        public long longMethod() {
             return 10;
         }
     }
