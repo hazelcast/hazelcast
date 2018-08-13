@@ -48,6 +48,7 @@ import com.hazelcast.internal.management.request.RunGcRequest;
 import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
 import com.hazelcast.internal.management.request.TriggerPartialStartRequest;
+import com.hazelcast.internal.management.request.WanCheckConsistencyRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;
@@ -446,25 +447,39 @@ public class ManagementCenterService {
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
             register(new ConsoleCommandRequest());
-            register(new MapConfigRequest());
-            register(new ChangeWanStateRequest());
-            register(new MemberConfigRequest());
-            register(new ClusterPropsRequest());
             register(new RunGcRequest());
-            register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
             if (JCacheDetector.isJCacheAvailable(instance.node.getNodeEngine().getConfigClassLoader(), logger)) {
                 register(new GetCacheEntryRequest());
             } else {
                 logger.finest("javax.cache api is not detected on classpath.Skip registering GetCacheEntryRequest...");
             }
+            register(new TriggerPartialStartRequest());
+
+            registerConfigRequests();
+            registerClusterManagementRequests();
+            registerWanRequests();
+        }
+
+        private void registerConfigRequests() {
+            register(new GetMemberSystemPropertiesRequest());
+            register(new MapConfigRequest());
+            register(new MemberConfigRequest());
+        }
+
+        private void registerClusterManagementRequests() {
+            register(new ClusterPropsRequest());
             register(new GetClusterStateRequest());
             register(new ChangeClusterStateRequest());
             register(new ShutdownClusterRequest());
-            register(new ForceStartNodeRequest());
-            register(new TriggerPartialStartRequest());
-            register(new ClearWanQueuesRequest());
             register(new PromoteMemberRequest());
+            register(new ForceStartNodeRequest());
+        }
+
+        private void registerWanRequests() {
+            register(new ChangeWanStateRequest());
+            register(new ClearWanQueuesRequest());
+            register(new WanCheckConsistencyRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {
