@@ -18,6 +18,10 @@ package com.hazelcast.monitor.impl;
 
 /**
  * Provides per-operation statistics tracking for indexes.
+ * <p>
+ * Instances of implementing classes are assumed to be used by a single thread
+ * at any given time. Therefore, implementations are not required to be
+ * thread-safe.
  */
 public interface IndexOperationStats {
 
