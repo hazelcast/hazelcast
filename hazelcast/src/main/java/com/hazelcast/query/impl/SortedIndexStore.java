@@ -59,8 +59,8 @@ public class SortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    Object removeIndexInternal(Comparable oldValue, Data indexKey) {
-        return removeFunctor.invoke(oldValue, indexKey);
+    Object removeIndexInternal(Comparable oldValue, Data recordKey) {
+        return removeFunctor.invoke(oldValue, recordKey);
     }
 
     @Override

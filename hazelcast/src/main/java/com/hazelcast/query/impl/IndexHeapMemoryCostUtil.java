@@ -74,7 +74,7 @@ public final class IndexHeapMemoryCostUtil {
     }
 
     /**
-     * Estimates the on-heap of the given value.
+     * Estimates the on-heap memory cost of the given value.
      *
      * @param value the value to estimate the cost of.
      * @return the estimated value cost.

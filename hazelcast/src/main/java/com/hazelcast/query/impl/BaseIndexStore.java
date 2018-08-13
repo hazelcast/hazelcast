@@ -49,9 +49,32 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
+    /**
+     * Associates the given value in this index store with the given record.
+     * <p>
+     * Despite the name the given value acts as a key into this index store. In
+     * other words, it's a value of an attribute this index store is built for.
+     *
+     * @param newValue the value of an attribute this index store is built for.
+     * @param record   the record to associate with the given value.
+     * @return the record that was associated with the given value before the
+     * operation, if there was any, {@code null} otherwise.
+     */
     abstract Object newIndexInternal(Comparable newValue, QueryableEntry record);
 
-    abstract Object removeIndexInternal(Comparable oldValue, Data indexKey);
+    /**
+     * Removes the association between the given value and a record identified
+     * by the given record key.
+     * <p>
+     * Despite the name the given value acts as a key into this index store. In
+     * other words, it's a value of an attribute this index store is built for.
+     *
+     * @param oldValue  the value of an attribute this index store is built for.
+     * @param recordKey the key of a record to dissociate from the given value.
+     * @return the record that was associated with the given value before the
+     * operation, if there was any, {@code null} otherwise.
+     */
+    abstract Object removeIndexInternal(Comparable oldValue, Data recordKey);
 
     @Override
     public final void newIndex(Object newValue, QueryableEntry record, IndexOperationStats operationStats) {
