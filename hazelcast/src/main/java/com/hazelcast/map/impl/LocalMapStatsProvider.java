@@ -391,6 +391,14 @@ public class LocalMapStatsProvider {
         return freshStats;
     }
 
+    /**
+     * Finalizes the aggregation of the freshly obtained on-demand index
+     * statistics by computing the final average values which are accumulated
+     * as total sums in {@link #aggregateFreshIndexStats}.
+     *
+     * @param freshStats the fresh stats to finalize, can be {@code null} if no
+     *                   stats was produced during the aggregation.
+     */
     private static void finalizeFreshIndexStats(Map<String, OnDemandIndexStats> freshStats) {
         if (freshStats == null) {
             return;
