@@ -214,12 +214,22 @@ public interface LocalMapStats extends LocalInstanceStats {
     NearCacheStats getNearCacheStats();
 
     /**
-     * Returns the number of queries performed on the map.
+     * Returns the total number of queries performed on the map.
+     * <p>
+     * The returned value includes queries processed with and without indexes.
+     *
+     * @see #getIndexedQueryCount()
      */
     long getQueryCount();
 
     /**
-     * Returns the number of indexed queries performed on the map.
+     * Returns the total number of indexed queries performed on the map.
+     * <p>
+     * The returned value includes only queries processed using indexes. If
+     * there are no indexes associated with the map, the returned value is
+     * {@code 0}.
+     *
+     * @see #getQueryCount()
      */
     long getIndexedQueryCount();
 
