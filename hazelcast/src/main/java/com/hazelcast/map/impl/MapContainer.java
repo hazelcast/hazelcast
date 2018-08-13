@@ -243,11 +243,13 @@ public class MapContainer {
      */
     private boolean hasPublisherWithMerkleTreeSync(Config config, String wanReplicationRefName) {
         WanReplicationConfig replicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
-        for (WanPublisherConfig publisherConfig : replicationConfig.getWanPublisherConfigs()) {
-            if (publisherConfig.getWanSyncConfig() != null
-                    && ConsistencyCheckStrategy.MERKLE_TREES.equals(publisherConfig.getWanSyncConfig()
-                                                                                   .getConsistencyCheckStrategy())) {
-                return true;
+        if (replicationConfig != null) {
+            for (WanPublisherConfig publisherConfig : replicationConfig.getWanPublisherConfigs()) {
+                if (publisherConfig.getWanSyncConfig() != null
+                        && ConsistencyCheckStrategy.MERKLE_TREES.equals(publisherConfig.getWanSyncConfig()
+                                                                                       .getConsistencyCheckStrategy())) {
+                    return true;
+                }
             }
         }
         return false;
