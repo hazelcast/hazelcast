@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.metrics.impl.TestMetricsReader;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -38,6 +39,7 @@ import static com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet
 import static com.hazelcast.logging.Logger.getLogger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
@@ -91,6 +93,13 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
     private void assertContainsSensor(String parameter) {
         boolean contains = metricsRegistry.getNames().contains(parameter);
         assertTrue("sensor: " + parameter + " is not found", contains);
+        TestMetricsReader reader = new TestMetricsReader(metricsRegistry, parameter);
+        try {
+            Number value = reader.read();
+            assertNotNull(value);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to get a metric " + parameter, e);
+        }
     }
 
     private void assumeOperatingSystemMXBeanType(String expected) {

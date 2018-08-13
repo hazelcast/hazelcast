@@ -117,6 +117,7 @@ public final class OperatingSystemMetricSet {
     private static Method getMethod(Object source, String methodName, String name) {
         try {
             Method method = source.getClass().getMethod(methodName);
+            method.setAccessible(true);
             return method;
         } catch (Exception e) {
             if (LOGGER.isFinestEnabled()) {
