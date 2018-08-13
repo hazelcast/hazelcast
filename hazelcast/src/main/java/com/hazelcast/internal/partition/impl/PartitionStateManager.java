@@ -98,6 +98,11 @@ public class PartitionStateManager {
         }
         return count;
     }
+    
+    @Probe
+    private boolean isMemberStateSafe() {
+    	return partitionService.isMemberStateSafe();
+    }
 
     private Collection<MemberGroup> createMemberGroups(final Set<Address> excludedAddresses) {
         MemberSelector exclude = new MemberSelector() {
