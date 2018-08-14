@@ -16,6 +16,8 @@
 
 package com.hazelcast.monitor;
 
+import java.util.Map;
+
 /**
  * Local map statistics to be used by {@link MemberState} implementations.
  * <p>
@@ -210,4 +212,30 @@ public interface LocalMapStats extends LocalInstanceStats {
      * @return statistics object for the Near Cache
      */
     NearCacheStats getNearCacheStats();
+
+    /**
+     * Returns the total number of queries performed on the map.
+     * <p>
+     * The returned value includes queries processed with and without indexes.
+     *
+     * @see #getIndexedQueryCount()
+     */
+    long getQueryCount();
+
+    /**
+     * Returns the total number of indexed queries performed on the map.
+     * <p>
+     * The returned value includes only queries processed using indexes. If
+     * there are no indexes associated with the map, the returned value is
+     * {@code 0}.
+     *
+     * @see #getQueryCount()
+     */
+    long getIndexedQueryCount();
+
+    /**
+     * Returns the per-index statistics map keyed by the index name.
+     */
+    Map<String, LocalIndexStats> getIndexStats();
+
 }

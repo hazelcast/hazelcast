@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
@@ -116,6 +117,14 @@ public class StatisticsAwareMetricsSet {
                     if (nearCacheStats != null) {
                         metricsRegistry.scanAndRegister(nearCacheStats,
                                 baseName + "[" + name + "].nearcache");
+                    }
+
+                    if (localInstanceStats instanceof LocalMapStatsImpl) {
+                        Map<String, LocalIndexStats> indexStats = ((LocalMapStatsImpl) localInstanceStats).getIndexStats();
+                        for (Map.Entry<String, LocalIndexStats> indexEntry : indexStats.entrySet()) {
+                            metricsRegistry.scanAndRegister(indexEntry.getValue(),
+                                    baseName + "[" + name + "].index[" + indexEntry.getKey() + "]");
+                        }
                     }
 
                     metricsRegistry.scanAndRegister(localInstanceStats,

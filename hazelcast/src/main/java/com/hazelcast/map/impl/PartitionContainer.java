@@ -19,11 +19,8 @@ package com.hazelcast.map.impl;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
@@ -116,11 +113,8 @@ public class PartitionContainer {
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
 
-        InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig);
         if (!mapContainer.isGlobalIndexEnabled()) {
-            Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), false,
-                    serviceContext.getIndexCopyBehavior());
+            Indexes indexesForMap = Indexes.createPartitionIndexes(mapContainer);
             indexes.putIfAbsent(name, indexesForMap);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
@@ -261,11 +255,7 @@ public class PartitionContainer {
                 throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
             }
 
-            InternalSerializationService ss = (InternalSerializationService)
-                    mapServiceContext.getNodeEngine().getSerializationService();
-            Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
-            IndexProvider indexProvider = mapServiceContext.getIndexProvider(mapContainer.getMapConfig());
-            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, false, mapServiceContext.getIndexCopyBehavior());
+            Indexes indexesForMap = Indexes.createPartitionIndexes(mapContainer);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

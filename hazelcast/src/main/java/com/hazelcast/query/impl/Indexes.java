@@ -16,13 +16,21 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.query.DefaultIndexProvider;
 import com.hazelcast.map.impl.query.IndexProvider;
+import com.hazelcast.monitor.impl.GlobalIndexesStats;
+import com.hazelcast.monitor.impl.IndexesStats;
+import com.hazelcast.monitor.impl.PartitionIndexesStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,54 +40,122 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Contains all indexes for a data-structure, e.g. an IMap.
  */
+@SuppressWarnings("checkstyle:finalclass")
 public class Indexes {
-    private static final Index[] EMPTY_INDEX = {};
-    private final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
-    private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>(EMPTY_INDEX);
-    private final IndexCopyBehavior copyBehavior;
-    private volatile boolean hasIndex;
+    private static final InternalIndex[] EMPTY_INDEX = {};
+
     private final InternalSerializationService serializationService;
     private final IndexProvider indexProvider;
     private final Extractors extractors;
     private final boolean global;
+    private final IndexCopyBehavior copyBehavior;
+    private final boolean queryableEntriesAreCached;
+    private final QueryContextProvider queryContextProvider;
+    private final IndexesStats stats;
 
+    private final ConcurrentMap<String, InternalIndex> mapIndexes = new ConcurrentHashMap<String, InternalIndex>(3);
+    private final AtomicReference<InternalIndex[]> indexes = new AtomicReference<InternalIndex[]>(EMPTY_INDEX);
 
-    public Indexes(InternalSerializationService serializationService, IndexProvider indexProvider,
-                   Extractors extractors, boolean global, IndexCopyBehavior copyBehavior) {
-        this.serializationService = serializationService;
-        this.indexProvider = indexProvider;
-        this.extractors = extractors;
+    private volatile boolean hasIndex;
+
+    private Indexes(MapContainer mapContainer, boolean global) {
+        MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
+        this.indexProvider = mapServiceContext.getIndexProvider(mapConfig);
+        this.extractors = mapContainer.getExtractors();
         this.global = global;
+        this.copyBehavior = mapServiceContext.getIndexCopyBehavior();
+        this.queryableEntriesAreCached = mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER;
+        this.queryContextProvider = createQueryContextProvider(mapConfig, global);
+        this.stats = createStats(mapConfig, global);
+    }
+
+    private Indexes(InternalSerializationService serializationService, IndexCopyBehavior copyBehavior) {
+        this.serializationService = serializationService;
+        this.indexProvider = new DefaultIndexProvider();
+        this.extractors = Extractors.empty();
+        this.global = true;
         this.copyBehavior = copyBehavior;
+        this.queryableEntriesAreCached = false;
+        this.queryContextProvider = new GlobalQueryContextProvider();
+        this.stats = IndexesStats.EMPTY;
     }
 
-    public synchronized Index destroyIndex(String attribute) {
-        return mapIndexes.remove(attribute);
+    /**
+     * Creates a new indexes instance for use as a global indexes for the given
+     * map container.
+     *
+     * @param mapContainer the container of the map.
+     * @return the constructed indexes.
+     */
+    public static Indexes createGlobalIndexes(MapContainer mapContainer) {
+        return new Indexes(mapContainer, true);
     }
 
-    public synchronized Index addOrGetIndex(String attribute, boolean ordered) {
-        Index index = mapIndexes.get(attribute);
+    /**
+     * Creates a new indexes instance for use as a partition indexes for the
+     * given map container.
+     *
+     * @param mapContainer the container of the map.
+     * @return the constructed indexes.
+     */
+    public static Indexes createPartitionIndexes(MapContainer mapContainer) {
+        return new Indexes(mapContainer, false);
+    }
+
+    /**
+     * Creates a new stand-alone (not attached to any map container) indexes
+     * instance for the given serialization service and with the given index
+     * copy behaviour.
+     *
+     * @param serializationService the serialization service to be used by the
+     *                             new indexes.
+     * @param copyBehavior         the desired copy behaviour of the new indexes.
+     * @return the constructed indexes.
+     */
+    public static Indexes createStandaloneIndexes(InternalSerializationService serializationService,
+                                                  IndexCopyBehavior copyBehavior) {
+        return new Indexes(serializationService, copyBehavior);
+    }
+
+    /**
+     * Obtains the existing index or creates a new one (if an index doesn't exist
+     * yet) for the given attribute in this indexes instance.
+     *
+     * @param attribute the attribute to index.
+     * @param ordered   {@code true} if the new index should be ordered, {@code
+     *                  false} otherwise.
+     * @return the existing or created index.
+     */
+    public synchronized InternalIndex addOrGetIndex(String attribute, boolean ordered) {
+        InternalIndex index = mapIndexes.get(attribute);
         if (index != null) {
             return index;
         }
-        index = indexProvider.createIndex(attribute, ordered, extractors, serializationService, copyBehavior);
+
+        index = indexProvider.createIndex(attribute, ordered, extractors, serializationService, copyBehavior,
+                stats.createPerIndexStats(ordered, queryableEntriesAreCached));
         mapIndexes.put(attribute, index);
-        Object[] indexObjects = mapIndexes.values().toArray();
-        Index[] newIndexes = new Index[indexObjects.length];
-        for (int i = 0; i < indexObjects.length; i++) {
-            newIndexes[i] = (Index) indexObjects[i];
-        }
-        indexes.set(newIndexes);
+        indexes.set(mapIndexes.values().toArray(EMPTY_INDEX));
         hasIndex = true;
         return index;
     }
 
-    public Index[] getIndexes() {
+    /**
+     * Returns all the indexes known to this indexes instance.
+     */
+    public InternalIndex[] getIndexes() {
         return indexes.get();
     }
 
+    /**
+     * Destroys and then removes all the indexes from this indexes instance.
+     */
     public void destroyIndexes() {
-        for (Index index : getIndexes()) {
+        for (InternalIndex index : getIndexes()) {
             index.destroy();
         }
 
@@ -92,26 +168,47 @@ public class Indexes {
      * Clears contents of indexes managed by this instance.
      */
     public void clearAll() {
-        for (Index index : getIndexes()) {
+        for (InternalIndex index : getIndexes()) {
             index.clear();
         }
     }
 
-    public void removeEntryIndex(Data key, Object value) throws QueryException {
-        Index[] indexes = getIndexes();
-        for (Index index : indexes) {
-            index.removeEntryIndex(key, value);
-        }
-    }
-
+    /**
+     * Returns {@code true} if this indexes instance contains at least one index,
+     * {@code false} otherwise.
+     */
     public boolean hasIndex() {
         return hasIndex;
     }
 
-    public void saveEntryIndex(QueryableEntry queryableEntry, Object oldValue) throws QueryException {
-        Index[] indexes = getIndexes();
-        for (Index index : indexes) {
-            index.saveEntryIndex(queryableEntry, oldValue);
+    /**
+     * Inserts a new queryable entry into this indexes instance or updates the
+     * existing one.
+     *
+     * @param queryableEntry  the queryable entry to insert or update.
+     * @param oldValue        the old entry value to update, {@code null} if
+     *                        inserting the new entry.
+     * @param operationSource the operation source.
+     */
+    public void saveEntryIndex(QueryableEntry queryableEntry, Object oldValue, Index.OperationSource operationSource) {
+        InternalIndex[] indexes = getIndexes();
+        for (InternalIndex index : indexes) {
+            index.saveEntryIndex(queryableEntry, oldValue, operationSource);
+        }
+    }
+
+    /**
+     * Removes the entry from this indexes instance identified by the given key
+     * and value.
+     *
+     * @param key             the key if the entry to remove.
+     * @param value           the value of the entry to remove.
+     * @param operationSource the operation source.
+     */
+    public void removeEntryIndex(Data key, Object value, Index.OperationSource operationSource) {
+        InternalIndex[] indexes = getIndexes();
+        for (InternalIndex index : indexes) {
+            index.removeEntryIndex(key, value, operationSource);
         }
     }
 
@@ -129,23 +226,64 @@ public class Indexes {
     /**
      * Get index for a given attribute. If the index does not exist then returns null.
      *
-     * @param attribute
+     * @param attribute the attribute name to get the index of.
      * @return Index for attribute or null if the index does not exist.
      */
-    public Index getIndex(String attribute) {
+    public InternalIndex getIndex(String attribute) {
         return mapIndexes.get(attribute);
     }
 
+    /**
+     * Performs a query on this indexes instance using the given predicate.
+     *
+     * @param predicate the predicate to evaluate.
+     * @return the produced result set or {@code null} if the query can't be
+     * performed using the indexes known to this indexes instance.
+     */
+    @SuppressWarnings("unchecked")
     public Set<QueryableEntry> query(Predicate predicate) {
-        if (hasIndex) {
-            QueryContext queryContext = new QueryContext(this);
-            if (predicate instanceof IndexAwarePredicate) {
-                IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                if (iap.isIndexed(queryContext)) {
-                    return iap.filter(queryContext);
-                }
-            }
+        stats.incrementQueryCount();
+
+        if (!hasIndex || !(predicate instanceof IndexAwarePredicate)) {
+            return null;
         }
-        return null;
+
+        IndexAwarePredicate indexAwarePredicate = (IndexAwarePredicate) predicate;
+        QueryContext queryContext = queryContextProvider.obtainContextFor(this);
+        if (!indexAwarePredicate.isIndexed(queryContext)) {
+            return null;
+        }
+
+        Set<QueryableEntry> result = indexAwarePredicate.filter(queryContext);
+        if (result != null) {
+            stats.incrementIndexedQueryCount();
+            queryContext.applyPerQueryStats();
+        }
+
+        return result;
     }
+
+    /**
+     * Returns the indexes stats of this indexes instance.
+     */
+    public IndexesStats getIndexesStats() {
+        return stats;
+    }
+
+    private QueryContextProvider createQueryContextProvider(MapConfig mapConfig, boolean global) {
+        if (mapConfig.isStatisticsEnabled()) {
+            return global ? new GlobalQueryContextProviderWithStats() : new PartitionQueryContextProviderWithStats(this);
+        } else {
+            return global ? new GlobalQueryContextProvider() : new PartitionQueryContextProvider(this);
+        }
+    }
+
+    private IndexesStats createStats(MapConfig mapConfig, boolean global) {
+        if (mapConfig.isStatisticsEnabled()) {
+            return global ? new GlobalIndexesStats() : new PartitionIndexesStats();
+        } else {
+            return IndexesStats.EMPTY;
+        }
+    }
+
 }

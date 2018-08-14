@@ -45,6 +45,7 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
@@ -317,7 +318,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         for (Record record : storage.values()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntryIndex(key, value);
+            indexes.removeEntryIndex(key, value, Index.OperationSource.SYSTEM);
         }
     }
 

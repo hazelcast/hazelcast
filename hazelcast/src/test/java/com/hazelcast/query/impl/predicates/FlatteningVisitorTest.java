@@ -18,8 +18,8 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,12 +45,12 @@ public class FlatteningVisitorTest {
 
     private FlatteningVisitor visitor;
     private Indexes mockIndexes;
-    private Index mockIndex;
+    private InternalIndex mockIndex;
 
     @Before
     public void setUp() {
         mockIndexes = mock(Indexes.class);
-        mockIndex = mock(Index.class);
+        mockIndex = mock(InternalIndex.class);
         when(mockIndexes.getIndex(anyString())).thenReturn(mockIndex);
         visitor = new FlatteningVisitor();
         useConverter(INTEGER_CONVERTER);
