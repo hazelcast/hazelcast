@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.hazelcast.internal.metrics.Probe;
+
 import static com.hazelcast.client.impl.ClientStatsMetadata.*;
 import static com.hazelcast.client.impl.ClientStatsUtil.getLongOrNull;
 import static com.hazelcast.client.impl.ClientStatsUtil.splitStatName;
@@ -13,16 +15,27 @@ import static com.hazelcast.client.impl.ClientStatsUtil.unescapeSpecialCharacter
 public class ClientNearCacheStats {
 
 	private final String name;
+	@Probe
     private volatile Long creationTime;
-    private volatile Long evictions;
-    private volatile Long hits;
+	@Probe
+	private volatile Long evictions;
+	@Probe
+	private volatile Long hits;
+	@Probe
     private volatile Long misses;
+	@Probe
     private volatile Long ownedEntryCount;
+	@Probe
     private volatile Long expirations;
+	@Probe
     private volatile Long ownedEntryMemoryCost;
+	@Probe
     private volatile Long lastPersistenceDuration;
+	@Probe
     private volatile Long lastPersistenceKeyCount;
+	@Probe
     private volatile Long lastPersistenceTime;
+	@Probe
     private volatile Long lastPersistenceWrittenBytes;
 
     public ClientNearCacheStats(String name) {
