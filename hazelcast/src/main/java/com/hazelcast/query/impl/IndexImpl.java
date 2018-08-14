@@ -210,7 +210,7 @@ public class IndexImpl implements InternalIndex {
     }
 
     @Override
-    public PerIndexStats getIndexStats() {
+    public PerIndexStats getPerIndexStats() {
         return stats;
     }
 

@@ -57,7 +57,7 @@ public class PartitionQueryContextWithStats extends QueryContext {
             return null;
         }
 
-        trackedStats.add(index.getIndexStats());
+        trackedStats.add(index.getPerIndexStats());
 
         return index;
     }

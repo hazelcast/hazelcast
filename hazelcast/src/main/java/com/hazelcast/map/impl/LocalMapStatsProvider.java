@@ -368,7 +368,7 @@ public class LocalMapStatsProvider {
                 freshStats.put(indexName, freshIndexStats);
             }
 
-            PerIndexStats indexStats = index.getIndexStats();
+            PerIndexStats indexStats = index.getPerIndexStats();
             freshIndexStats.setCreationTime(Math.min(freshIndexStats.getCreationTime(), indexStats.getCreationTime()));
             long hitCount = indexStats.getHitCount();
             freshIndexStats.setHitCount(Math.max(freshIndexStats.getHitCount(), hitCount));

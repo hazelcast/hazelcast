@@ -26,6 +26,6 @@ public interface InternalIndex extends Index {
     /**
      * Returns the index stats associated with this index.
      */
-    PerIndexStats getIndexStats();
+    PerIndexStats getPerIndexStats();
 
 }

@@ -89,7 +89,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
 
         public void incrementQueryCount() {
             if (hasQueries) {
-                delegate.getIndexStats().incrementQueryCount();
+                delegate.getPerIndexStats().incrementQueryCount();
             }
         }
 
@@ -157,8 +157,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public PerIndexStats getIndexStats() {
-            return delegate.getIndexStats();
+        public PerIndexStats getPerIndexStats() {
+            return delegate.getPerIndexStats();
         }
 
     }
