@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.hadoop.impl;
+package com.hazelcast.jet.impl.exception;
 
-import com.hazelcast.jet.core.JetTestSupport;
-import org.junit.Before;
+import com.hazelcast.jet.JetException;
 
-public class HdfsTestSupport extends JetTestSupport {
-
-    @Before
-    public void before() {
-        // Tests fail on windows. If you want to run them, comment out this line and
-        // follow this instructions: https://stackoverflow.com/a/35652866/952135
-        assumeThatNoWindowsOS();
-    }
-
+/**
+ * Exception thrown internally from member that completed the execution as a
+ * result of a terminal snapshot.
+ */
+public class TerminatedWithSnapshotException extends JetException {
 }

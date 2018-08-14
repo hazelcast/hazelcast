@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
-import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
@@ -27,8 +26,9 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec;
-import com.hazelcast.client.impl.protocol.codec.JetRestartJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.metrics.mancenter.JetReadMetricsMessageTask;
@@ -47,7 +47,7 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
 
     public void initFactories() {
         factories[JetSubmitJobCodec.RequestParameters.TYPE.id()] = toFactory(JetSubmitJobMessageTask::new);
-        factories[JetCancelJobCodec.RequestParameters.TYPE.id()] = toFactory(JetCancelJobMessageTask::new);
+        factories[JetTerminateJobCodec.RequestParameters.TYPE.id()] = toFactory(JetTerminateJobMessageTask::new);
         factories[JetGetJobStatusCodec.RequestParameters.TYPE.id()] = toFactory(JetGetJobStatusMessageTask::new);
         factories[JetGetJobIdsCodec.RequestParameters.TYPE.id()] = toFactory(JetGetJobIdsMessageTask::new);
         factories[JetJoinSubmittedJobCodec.RequestParameters.TYPE.id()] = toFactory(JetJoinSubmittedJobMessageTask::new);
@@ -55,8 +55,8 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
         factories[JetGetJobSubmissionTimeCodec.RequestParameters.TYPE.id()] =
                 toFactory(JetGetJobSubmissionTimeMessageTask::new);
         factories[JetGetJobConfigCodec.REQUEST_TYPE.id()] = toFactory(JetGetJobConfigMessageTask::new);
-        factories[JetRestartJobCodec.REQUEST_TYPE.id()] = toFactory(JetRestartJobMessageTask::new);
         factories[JetReadMetricsCodec.REQUEST_TYPE.id()] = toFactory(JetReadMetricsMessageTask::new);
+        factories[JetResumeJobCodec.REQUEST_TYPE.id()] = toFactory(JetResumeJobMessageTask::new);
     }
 
     @Override

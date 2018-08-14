@@ -81,10 +81,6 @@ public class VertexDef implements IdentifiedDataSerializable {
     }
 
     boolean isSnapshotVertex() {
-        return isSnapshotVertex(name);
-    }
-
-    public static boolean isSnapshotVertex(String name) {
         return name.startsWith(MasterContext.SNAPSHOT_VERTEX_PREFIX);
     }
 

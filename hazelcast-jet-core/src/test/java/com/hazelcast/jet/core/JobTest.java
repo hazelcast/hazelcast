@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
-import static com.hazelcast.jet.core.JobStatus.NOT_STARTED;
+import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
@@ -100,7 +100,7 @@ public class JobTest extends JetTestSupport {
         Job job = submitter.newJob(dag);
         JobStatus status = job.getStatus();
 
-        assertTrue(status == NOT_STARTED || status == STARTING);
+        assertTrue(status == NOT_RUNNING || status == STARTING);
 
         PSThatWaitsOnInit.initLatch.countDown();
 

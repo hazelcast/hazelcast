@@ -24,6 +24,7 @@ import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.UuidUtil;
 
@@ -439,7 +440,12 @@ public class Edge implements IdentifiedDataSerializable {
         priority = in.readInt();
         isDistributed = in.readBoolean();
         routingPolicy = in.readObject();
-        partitioner = CustomClassLoadedObject.read(in);
+        try {
+            partitioner = CustomClassLoadedObject.read(in);
+        } catch (HazelcastSerializationException e) {
+            throw new HazelcastSerializationException("Error deserializing edge '" + sourceName + "' -> '"
+                    + destName + "': " + e, e);
+        }
         config = in.readObject();
     }
 

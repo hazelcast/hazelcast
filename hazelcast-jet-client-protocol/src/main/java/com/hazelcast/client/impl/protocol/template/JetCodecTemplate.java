@@ -28,7 +28,7 @@ public interface JetCodecTemplate {
     void submitJob(long jobId, Data dag, Data jobConfig);
 
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
-    void cancelJob(long jobId);
+    void terminateJob(long jobId, int terminateMode);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)
     Object getJobStatus(long jobId);
@@ -48,9 +48,9 @@ public interface JetCodecTemplate {
     @Request(id = 8, retryable = false, response = ResponseMessageConst.DATA)
     Object getJobConfig(long jobId);
 
-    @Request(id = 9, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    boolean restartJob(long jobId);
-
-    @Request(id = 10, retryable = true, response = ResponseMessageConst.DATA)
+    @Request(id = 9, retryable = true, response = ResponseMessageConst.DATA)
     Object readMetrics(String uuid, long fromSequence);
+
+    @Request(id = 10, retryable = false, response = ResponseMessageConst.VOID)
+    void resumeJob(long jobId);
 }

@@ -36,6 +36,11 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
+/**
+ * Operation sent from master to members to initialize execution of a job.
+ * After it is successfully handled on all members, {@link
+ * StartExecutionOperation} is sent.
+ */
 public class InitExecutionOperation extends AbstractJobOperation {
 
     private long executionId;
@@ -64,9 +69,8 @@ public class InitExecutionOperation extends AbstractJobOperation {
         logger.fine("Initializing execution plan for " + jobIdAndExecutionId(jobId(), executionId) + " from " + caller);
 
         ExecutionPlan plan = deserializePlan(serializedPlan);
-        service.getJobExecutionService().initExecution(
-                jobId(), executionId, caller, coordinatorMemberListVersion, participants, plan
-        );
+        service.getJobExecutionService().initExecution(jobId(), executionId, caller,
+                coordinatorMemberListVersion, participants, plan);
     }
 
     @Override

@@ -62,6 +62,7 @@ public final class TestProcessors {
 
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(totalParallelism);
+        StuckProcessor.initCount.set(0);
     }
 
     public static class Identity extends AbstractProcessor {
@@ -74,6 +75,7 @@ public final class TestProcessors {
     public static final class StuckProcessor implements Processor {
         public static volatile CountDownLatch executionStarted;
         public static volatile CountDownLatch proceedLatch;
+        public static final AtomicInteger initCount = new AtomicInteger();
 
         // how long time to wait during calls to complete()
         private final long timeoutMillis;
@@ -84,6 +86,11 @@ public final class TestProcessors {
 
         public StuckProcessor(long timeoutMillis) {
             this.timeoutMillis = timeoutMillis;
+        }
+
+        @Override
+        public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+            initCount.incrementAndGet();
         }
 
         @Override

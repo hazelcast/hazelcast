@@ -45,7 +45,7 @@ public class SubmitJobOperation extends AbstractJobOperation implements Identifi
     public void run() {
         JetService service = getService();
         JobCoordinationService coordinationService = service.getJobCoordinationService();
-        coordinationService.submitOrJoinJob(jobId(), dag, config);
+        coordinationService.submitJob(jobId(), dag, config);
     }
 
     @Override

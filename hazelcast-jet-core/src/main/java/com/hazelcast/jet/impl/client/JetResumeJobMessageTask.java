@@ -17,27 +17,26 @@
 package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.CancelJobOperation;
+import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class JetCancelJobMessageTask extends AbstractJetMessageTask<RequestParameters> {
-    protected JetCancelJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetCancelJobCodec::decodeRequest,
-                o -> JetCancelJobCodec.encodeResponse());
+public class JetResumeJobMessageTask extends AbstractJetMessageTask<JetResumeJobCodec.RequestParameters> {
+    protected JetResumeJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        super(clientMessage, node, connection, JetResumeJobCodec::decodeRequest,
+                o -> JetResumeJobCodec.encodeResponse());
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new CancelJobOperation(parameters.jobId);
+        return new ResumeJobOperation(parameters.jobId);
     }
 
     @Override
     public String getMethodName() {
-        return "cancelJob";
+        return "resumeJob";
     }
 
     @Override

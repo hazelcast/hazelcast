@@ -21,10 +21,10 @@ import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * A wrapper processor to throttle the output of a processor.
@@ -90,7 +90,7 @@ public final class ThrottleWrappedP implements Processor {
     private final class ThrottlingOutbox implements Outbox {
         private final Outbox wrappedOutbox;
         private long emitCount;
-        private long ts;
+        private long startTs = Long.MIN_VALUE;
 
         private ThrottlingOutbox(Outbox wrappedOutbox) {
             this.wrappedOutbox = wrappedOutbox;
@@ -103,22 +103,16 @@ public final class ThrottleWrappedP implements Processor {
 
         @Override
         public boolean offer(int ordinal, @Nonnull Object item) {
-            long currentTs = System.nanoTime();
-            long elapsed = currentTs - ts;
-            if (TimeUnit.NANOSECONDS.toSeconds(elapsed) >= 1) {
-                ts = currentTs;
-                emitCount = 0;
-            } else {
-                double emitRate = TimeUnit.SECONDS.toNanos(1) * (double) emitCount / elapsed;
-                if (emitRate > itemsPerSecond) {
-                    return false;
-                }
+            if (startTs == Long.MIN_VALUE) {
+                startTs = System.nanoTime();
             }
-            boolean offered = wrappedOutbox.offer(ordinal, item);
-            if (offered) {
-                emitCount++;
+            long elapsed = System.nanoTime() - startTs;
+            if (NANOSECONDS.toSeconds(elapsed * itemsPerSecond) <= emitCount
+                    || !wrappedOutbox.offer(ordinal, item)) {
+                return false;
             }
-            return offered;
+            emitCount++;
+            return true;
         }
 
         @Override

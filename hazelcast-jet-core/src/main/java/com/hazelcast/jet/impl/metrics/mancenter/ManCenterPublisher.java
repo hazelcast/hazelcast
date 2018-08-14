@@ -35,7 +35,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import static com.hazelcast.internal.metrics.MetricsUtil.escapeMetricNamePart;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static java.lang.Math.multiplyExact;
 
 /**
@@ -144,7 +144,7 @@ public class ManCenterPublisher implements MetricsPublisher {
     public void whenComplete() {
         byte[] blob = getRenderedBlob();
         consumer.accept(blob, System.currentTimeMillis());
-        logFine(logger, "Collected %,d metrics, %,d bytes", getCount(), blob.length);
+        logFinest(logger, "Collected %,d metrics, %,d bytes", getCount(), blob.length);
         reset(blob.length * SIZE_FACTOR_NUMERATOR / SIZE_FACTOR_DENOMINATOR);
     }
 

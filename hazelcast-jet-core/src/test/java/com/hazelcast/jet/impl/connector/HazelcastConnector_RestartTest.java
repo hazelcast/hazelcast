@@ -82,7 +82,7 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
         dag.edge(between(source, sink));
         source.localParallelism(1);
 
-        instance1.newJob(dag, new JobConfig().setAutoRestartOnMemberFailure(true));
+        instance1.newJob(dag, new JobConfig().setAutoScaling(true));
         // wait for the job to start producing
         IList<Integer> sinkList = instance1.getHazelcastInstance().getList("sink");
         assertTrueEventually(() -> assertTrue("no output to sink", sinkList.size() >= 4), 5);

@@ -32,7 +32,6 @@ public class JoinSubmittedJobOperation extends AsyncJobOperation {
 
     public JoinSubmittedJobOperation(long jobId) {
         super(jobId);
-
     }
 
     @Override
@@ -47,5 +46,4 @@ public class JoinSubmittedJobOperation extends AsyncJobOperation {
     public int getId() {
         return JetInitDataSerializerHook.JOIN_SUBMITTED_JOB;
     }
-
 }

@@ -161,7 +161,7 @@ public class StreamFilesPTest extends JetTestSupport {
     public void when_preExistingFile_then_seeAppendedLines() throws Exception {
         // Test will fail because Windows does not notify the watcher
         // if the file is appended to, but not closed.
-        assumeNotWindows();
+        assumeThatNoWindowsOS();
 
         // Given
         try (PrintWriter w = new PrintWriter(new FileWriter(new File(workDir, "a.txt")))) {

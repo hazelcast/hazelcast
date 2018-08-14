@@ -17,50 +17,48 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JobExecutionService;
+import com.hazelcast.jet.impl.TerminationMode;
+import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
-import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
-public class CompleteExecutionOperation extends Operation implements IdentifiedDataSerializable {
+/**
+ * Operation sent from master to members to terminate execution of particular
+ * job. See also {@link TerminateJobOperation}, which is sent from client to
+ * coordinator to initiate the termination.
+ */
+public class TerminateExecutionOperation extends AbstractJobOperation {
 
     private long executionId;
-    private Throwable error;
+    private TerminationMode mode;
 
-    public CompleteExecutionOperation() {
+    public TerminateExecutionOperation() {
     }
 
-    public CompleteExecutionOperation(long executionId, Throwable error) {
+    public TerminateExecutionOperation(long jobId, long executionId, @Nullable TerminationMode mode) {
+        super(jobId);
         this.executionId = executionId;
-        this.error = error;
+        this.mode = mode;
     }
 
     @Override
     public void run() {
-        ILogger logger = getLogger();
         JetService service = getService();
-
+        JobExecutionService executionService = service.getJobExecutionService();
         Address callerAddress = getCallerAddress();
-        logger.fine("Completing execution " + idToString(executionId) + " from caller " + callerAddress
-                + ", error=" + error);
-
-        Address masterAddress = getNodeEngine().getMasterAddress();
-        if (!callerAddress.equals(masterAddress)) {
-            throw new IllegalStateException("Caller " + callerAddress + " cannot complete execution "
-                    + idToString(executionId) + " because it is not master. Master is: " + masterAddress);
-        }
-
-        service.getJobExecutionService().completeExecution(executionId, error);
+        ExecutionContext ctx = executionService.assertExecutionContext(callerAddress, jobId(), executionId,
+                getClass().getSimpleName());
+        ctx.terminateExecution(mode);
     }
 
     @Override
@@ -69,26 +67,22 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
     }
 
     @Override
-    public int getFactoryId() {
-        return JetInitDataSerializerHook.FACTORY_ID;
-    }
-
-    @Override
     public int getId() {
-        return JetInitDataSerializerHook.COMPLETE_EXECUTION_OP;
+        return JetInitDataSerializerHook.TERMINATE_EXECUTION_OP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(executionId);
-        out.writeObject(error);
+        out.writeByte(mode != null ? mode.ordinal() : -1);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         executionId = in.readLong();
-        error = in.readObject();
+        byte modeOrdinal = in.readByte();
+        mode = modeOrdinal < 0 ? null : TerminationMode.values()[modeOrdinal];
     }
 }

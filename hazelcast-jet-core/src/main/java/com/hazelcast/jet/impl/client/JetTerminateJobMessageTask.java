@@ -17,27 +17,27 @@
 package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetRestartJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetRestartJobCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.RestartJobOperation;
+import com.hazelcast.jet.impl.TerminationMode;
+import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class JetRestartJobMessageTask extends AbstractJetMessageTask<RequestParameters> {
-    protected JetRestartJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetRestartJobCodec::decodeRequest,
-                o -> JetRestartJobCodec.encodeResponse((Boolean) o));
+public class JetTerminateJobMessageTask extends AbstractJetMessageTask<JetTerminateJobCodec.RequestParameters> {
+    protected JetTerminateJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        super(clientMessage, node, connection, JetTerminateJobCodec::decodeRequest,
+                o -> JetTerminateJobCodec.encodeResponse());
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new RestartJobOperation(parameters.jobId);
+        return new TerminateJobOperation(parameters.jobId, TerminationMode.values()[parameters.terminateMode]);
     }
 
     @Override
     public String getMethodName() {
-        return "restartJob";
+        return "terminateJob";
     }
 
     @Override

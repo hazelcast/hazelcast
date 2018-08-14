@@ -78,4 +78,14 @@ public class InstanceConfigTest {
         // Then
         assertEquals(500, instanceConfig.getFlowControlPeriodMs());
     }
+
+    @Test
+    public void when_upscaleDelay_then_returnsDelay() {
+        // When
+        InstanceConfig config = new InstanceConfig();
+        config.setUpscaleDelayMillis(123);
+
+        // Then
+        assertEquals(123L, config.getUpscaleDelayMillis());
+    }
 }

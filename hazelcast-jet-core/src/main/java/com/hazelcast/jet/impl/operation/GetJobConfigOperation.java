@@ -34,7 +34,7 @@ public class GetJobConfigOperation extends AbstractJobOperation {
     @Override
     public void run() {
         JetService service = getService();
-        response = service.getJobCoordinationService().getJobConfig(jobId());
+        response = service.getJobConfig(jobId());
     }
 
     @Override

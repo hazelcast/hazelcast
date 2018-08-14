@@ -94,6 +94,10 @@ public class KafkaTestSupport extends JetTestSupport {
         }
     }
 
+    private boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().contains("windows");
+    }
+
     public final String createKafkaCluster() throws IOException {
         System.setProperty("zookeeper.preAllocSize", Integer.toString(128));
         zkServer = new EmbeddedZookeeper();

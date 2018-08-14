@@ -25,31 +25,42 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 public class SnapshotOperation extends AsyncJobOperation {
 
+    /** If set to true, responses to SnapshotOperation will be postponed until set back to false. */
+    // for test
+    public static volatile boolean postponeResponses;
+    private static final int RETRY_MS = 100;
+
     private long executionId;
     private long snapshotId;
+    private boolean isTerminal;
 
     // for deserialization
     public SnapshotOperation() {
     }
 
-    public SnapshotOperation(long jobId, long executionId, long snapshotId) {
+    public SnapshotOperation(long jobId, long executionId, long snapshotId, boolean isTerminal) {
         super(jobId);
         this.executionId = executionId;
         this.snapshotId = snapshotId;
+        this.isTerminal = isTerminal;
     }
 
     @Override
     protected void doRun() {
         JetService service = getService();
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
-                getCallerAddress(), jobId(), executionId, this
+                getCallerAddress(), jobId(), executionId, getClass().getSimpleName()
         );
-        ctx.beginSnapshot(snapshotId).thenAccept(result -> {
+        ctx.beginSnapshot(snapshotId, isTerminal).whenComplete((result, exc) -> {
+            if (exc != null) {
+                result = new SnapshotOperationResult(0, 0, 0, exc);
+            }
             if (result.getError() == null) {
                 logFine(getLogger(),
                         "Snapshot %s for %s finished successfully on member",
@@ -60,9 +71,18 @@ public class SnapshotOperation extends AsyncJobOperation {
                 // wrap the exception
                 result.error = new JetException("Exception during snapshot: " + result.error, result.error);
             }
-            doSendResponse(result);
+            maybeSendResponse(result);
         });
+    }
 
+    private void maybeSendResponse(SnapshotOperationResult result) {
+        if (postponeResponses) {
+            getNodeEngine().getExecutionService()
+                           .schedule(() -> maybeSendResponse(result), RETRY_MS, TimeUnit.MILLISECONDS);
+            return;
+        }
+
+        doSendResponse(result);
     }
 
     @Override
@@ -75,6 +95,7 @@ public class SnapshotOperation extends AsyncJobOperation {
         super.writeInternal(out);
         out.writeLong(executionId);
         out.writeLong(snapshotId);
+        out.writeBoolean(isTerminal);
     }
 
     @Override
@@ -82,6 +103,7 @@ public class SnapshotOperation extends AsyncJobOperation {
         super.readInternal(in);
         executionId = in.readLong();
         snapshotId = in.readLong();
+        isTerminal = in.readBoolean();
     }
 
     /**

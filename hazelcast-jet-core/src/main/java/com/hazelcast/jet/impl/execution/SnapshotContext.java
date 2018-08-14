@@ -17,9 +17,11 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
 import com.hazelcast.logging.ILogger;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -44,6 +46,11 @@ public class SnapshotContext {
     private final AtomicLong lastSnapshotId;
 
     /**
+     * If true, the job should terminate after the snapshot is processed.
+     */
+    private volatile boolean isTerminal;
+
+    /**
      * Current number of {@link StoreSnapshotTasklet}s in the job. It's
      * decremented as the tasklets complete (this is when they receive
      * DONE_ITEM and after all pending async ops completed).
@@ -62,7 +69,7 @@ public class SnapshotContext {
      * snapshot. When it is decremented to 0, the snapshot is complete and new
      * one can start.
      * <p>
-     * It can have negative value in case described in {@link #startNewSnapshot(long)}.
+     * It can have negative value in case described in {@link #startNewSnapshot}.
      */
     private final AtomicInteger numRemainingTasklets = new AtomicInteger();
 
@@ -78,12 +85,16 @@ public class SnapshotContext {
      */
     private boolean snapshotPostponed;
 
-    /** Future which will be completed when the current snapshot completes. */
+    /**
+     * Future which will be created when a snapshot starts and completed and
+     * nulled out when the snapshot completes.
+     */
     private volatile CompletableFuture<SnapshotOperationResult> future;
 
     private final AtomicLong totalBytes = new AtomicLong();
     private final AtomicLong totalKeys = new AtomicLong();
     private final AtomicLong totalChunks = new AtomicLong();
+    private boolean isCancelled;
 
     SnapshotContext(ILogger logger, String jobNameAndExecutionId, long lastSnapshotId,
                     ProcessingGuarantee guarantee
@@ -99,6 +110,10 @@ public class SnapshotContext {
      */
     long lastSnapshotId() {
         return lastSnapshotId.get();
+    }
+
+    boolean isTerminalSnapshot() {
+        return isTerminal;
     }
 
     ProcessingGuarantee processingGuarantee() {
@@ -127,11 +142,14 @@ public class SnapshotContext {
      * {@code SnapshotOperation} and send barriers to such processor before
      * the {@code SnapshotOperation} is called on this member.
      */
-    synchronized CompletableFuture<SnapshotOperationResult> startNewSnapshot(long snapshotId) {
+    synchronized CompletableFuture<SnapshotOperationResult> startNewSnapshot(long snapshotId, boolean isTerminal) {
         assert snapshotId == lastSnapshotId.get() + 1
                 : "new snapshotId not incremented by 1. Previous=" + lastSnapshotId + ", new=" + snapshotId;
         assert numTasklets >= 0 : "numTasklets=" + numTasklets;
-
+        if (isCancelled) {
+            throw new CancellationException("execution cancelled");
+        }
+        this.isTerminal = isTerminal;
         int newNumRemainingTasklets = numRemainingTasklets.addAndGet(numTasklets);
         assert newNumRemainingTasklets - numTasklets <= 0 :
                 "previous snapshot was not finished, numRemainingTasklets=" + (newNumRemainingTasklets - numTasklets);
@@ -145,8 +163,8 @@ public class SnapshotContext {
             snapshotPostponed = true;
         }
         if (numTasklets == 0) {
-            // member is already done with the job and master didn't know it yet - we are immediately done.
-            return completedFuture(null);
+            // member is already done with the job and master didn't know it yet - we are immediately successful
+            return completedFuture(new SnapshotOperationResult(0, 0, 0, null));
         }
         CompletableFuture<SnapshotOperationResult> res = future = new CompletableFuture<>();
         if (newNumRemainingTasklets == 0) {
@@ -191,10 +209,9 @@ public class SnapshotContext {
      * operations are done).
      * <p>
      * This method can be called before the snapshot was started with {@link
-     * #startNewSnapshot(long)}. This can happen, if the processor only has
-     * input queues from remote members, from which it can possibly receive
-     * barriers before {@link com.hazelcast.jet.impl.operation.SnapshotOperation}
-     * is handled on this member.
+     * #startNewSnapshot}. This can happen, if the processor only has input
+     * queues from remote members, from which it can possibly receive barriers
+     * before {@link SnapshotOperation} is handled on this member.
      */
     void snapshotDoneForTasklet(long numBytes, long numKeys, long numChunks) {
         totalBytes.addAndGet(numBytes);
@@ -206,7 +223,24 @@ public class SnapshotContext {
         }
     }
 
-    private void handleSnapshotDone() {
+    /**
+     * Method is called when execution is cancelled/terminated. The existing
+     * ongoing snapshot will be completed with failure and no more snapshots
+     * will be allowed to start.
+     */
+    synchronized void cancel() {
+        if (future != null) {
+            reportError(new CancellationException("execution cancelled"));
+            handleSnapshotDone();
+        }
+        isCancelled = true;
+    }
+
+    private synchronized void handleSnapshotDone() {
+        if (isCancelled) {
+            assert future == null : "future=" + future;
+            return;
+        }
         future.complete(
                 new SnapshotOperationResult(totalBytes.get(), totalKeys.get(), totalChunks.get(), snapshotError.get()));
 

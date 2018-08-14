@@ -129,7 +129,8 @@ public final class WatermarkPolicies {
      * when there is a guarantee that each substream will emit at least one
      * event that will initialize the timestamp. Otherwise the empty substream
      * will hold back the processing of all other substreams by keeping the
-     * watermark below any realistic value.
+     * watermark below any realistic value. Configuring {@link
+     * WatermarkGenerationParams#idleTimeoutMillis()} will cope with this.
      *
      * @param lag the desired difference between the top observed timestamp
      *               and the watermark

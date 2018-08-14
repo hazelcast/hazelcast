@@ -180,7 +180,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
             // Bring down one member. Job should restart and drain additional items (and maybe
             // some of the previous duplicately).
-            instances[1].shutdown();
+            instances[1].getHazelcastInstance().getLifecycleService().terminate();
             Thread.sleep(500);
 
             for (int i = messageCount; i < 2 * messageCount; i++) {

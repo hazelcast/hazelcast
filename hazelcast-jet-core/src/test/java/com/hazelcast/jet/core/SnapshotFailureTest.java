@@ -26,7 +26,8 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsMetaSupplier;
+import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsGeneratorP;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
@@ -91,7 +92,7 @@ public class SnapshotFailureTest extends JetTestSupport {
         IMapJet<Object, Object> results = instance1.getMap("results");
 
         DAG dag = new DAG();
-        SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(numPartitions, numElements, false);
+        DistributedSupplier<Processor> sup = () -> new SequencesInPartitionsGeneratorP(numPartitions, numElements, false);
         Vertex generator = dag.newVertex("generator", peekOutputP(throttle(sup, 2)))
                               .localParallelism(1);
         Vertex writeMap = dag.newVertex("writeMap", writeMapP(results.getName())).localParallelism(1);

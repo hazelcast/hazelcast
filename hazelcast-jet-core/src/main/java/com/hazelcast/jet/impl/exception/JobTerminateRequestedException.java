@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.hadoop.impl;
+package com.hazelcast.jet.impl.exception;
 
-import com.hazelcast.jet.core.JetTestSupport;
-import org.junit.Before;
+import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.impl.TerminationMode;
 
-public class HdfsTestSupport extends JetTestSupport {
+import javax.annotation.Nonnull;
 
-    @Before
-    public void before() {
-        // Tests fail on windows. If you want to run them, comment out this line and
-        // follow this instructions: https://stackoverflow.com/a/35652866/952135
-        assumeThatNoWindowsOS();
+public class JobTerminateRequestedException extends JetException {
+    private final TerminationMode mode;
+
+    public JobTerminateRequestedException(@Nonnull TerminationMode mode) {
+        this.mode = mode;
     }
 
+    @Nonnull
+    public TerminationMode mode() {
+        return mode;
+    }
 }

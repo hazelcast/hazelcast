@@ -57,15 +57,14 @@ public class JobConfigTest {
     }
 
     @Test
-    public void when_enableAutoRestartOnMember_thenReturnsEnabled() {
+    public void when_enableAutoScaling_thenReturnsEnabled() {
         // When
         JobConfig config = new JobConfig();
-        config.setAutoRestartOnMemberFailure(true);
+        config.setAutoScaling(true);
 
         // Then
-        assertTrue(config.isAutoRestartOnMemberFailureEnabled());
+        assertTrue(config.isAutoScaling());
     }
-
 
     @Test
     public void when_setProcessingGuarantee_thenReturnsProcessingGuarantee() {
@@ -226,7 +225,7 @@ public class JobConfigTest {
         assertEquals("my.txt", resourceConfig.getId());
     }
 
-    public ResourceConfig assertAndGet(JobConfig config) {
+    private ResourceConfig assertAndGet(JobConfig config) {
         List<ResourceConfig> resourceConfigs = config.getResourceConfigs();
         assertNotNull(resourceConfigs);
         assertEquals(1, resourceConfigs.size());

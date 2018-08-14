@@ -141,7 +141,7 @@ public final class ExecutionPlanBuilder {
             MemberInfo member;
             if ((member = membersView.getMember(address)) == null) {
                 // Address in partition table doesn't exist in member list,
-                // it has just left the cluster.
+                // it has just joined the cluster.
                 throw new TopologyChangedException("Topology changed, " + address + " is not in original member list");
             }
 

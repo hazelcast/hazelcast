@@ -17,64 +17,51 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.JobExecutionService;
-import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
-import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
-
 /**
- * Operation sent from master to members to cancel their execution.
- * See also {@link CancelJobOperation}.
+ * Operation sent from client to coordinator member to terminate particular
+ * job. See also {@link TerminateExecutionOperation}, which is sent from
+ * coordinator to members to terminate execution.
  */
-public class CancelExecutionOperation extends AbstractJobOperation {
+public class TerminateJobOperation extends AbstractJobOperation implements IdentifiedDataSerializable {
 
-    private long executionId;
+    private TerminationMode terminationMode;
 
-    public CancelExecutionOperation() {
+    public TerminateJobOperation() {
     }
 
-    public CancelExecutionOperation(long jobId, long executionId) {
+    public TerminateJobOperation(long jobId, TerminationMode mode) {
         super(jobId);
-        this.executionId = executionId;
+        this.terminationMode = mode;
     }
 
     @Override
     public void run() {
         JetService service = getService();
-        JobExecutionService executionService = service.getJobExecutionService();
-        Address callerAddress = getCallerAddress();
-        ExecutionContext ctx = executionService.assertExecutionContext(callerAddress, jobId(), executionId, this);
-        ctx.cancelExecution();
-    }
-
-    @Override
-    public ExceptionAction onInvocationException(Throwable throwable) {
-        return isRestartableException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
+        service.getJobCoordinationService().terminateJob(jobId(), terminationMode);
     }
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.CANCEL_EXECUTION_OP;
+        return JetInitDataSerializerHook.TERMINATE_JOB_OP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(executionId);
+        out.writeByte(terminationMode.ordinal());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        executionId = in.readLong();
+        terminationMode = TerminationMode.values()[in.readByte()];
     }
-
 }

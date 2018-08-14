@@ -38,8 +38,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 
@@ -60,7 +61,6 @@ public abstract class AbstractJobProxy<T> implements Job {
 
     // Flag which indicates if this proxy has sent a request to join the job result or not
     private final AtomicBoolean joinedJob = new AtomicBoolean();
-    private final AtomicBoolean cancelledJob = new AtomicBoolean();
     private final ExecutionCallback<Void> joinJobCallback = new JoinJobCallback();
 
     private volatile JobConfig jobConfig;
@@ -135,13 +135,33 @@ public abstract class AbstractJobProxy<T> implements Job {
     }
 
     @Override
-    public boolean cancel() {
-        boolean cancelled = cancelledJob.compareAndSet(false, true);
-        if (cancelled) {
-            logger.fine("Sending cancel request for job " + idAndName());
-            invokeCancelJob().andThen(new CancelJobCallback());
+    public void cancel() {
+        terminate(TerminationMode.CANCEL);
+    }
+
+    @Override
+    public void restart() {
+        terminate(TerminationMode.RESTART_GRACEFUL);
+    }
+
+    @Override
+    public void suspend() {
+        terminate(TerminationMode.SUSPEND_GRACEFUL);
+    }
+
+    private void terminate(TerminationMode mode) {
+        logger.fine("Sending " + mode + " request for job " + idAndName());
+        while (true) {
+            try {
+                invokeTerminateJob(mode).get();
+                break;
+            } catch (Exception e) {
+                if (!isRestartable(e)) {
+                    throw rethrow(e);
+                }
+                logger.fine("Re-sending " + mode + " request for job " + idAndName());
+            }
         }
-        return cancelled;
     }
 
     @Override
@@ -163,7 +183,7 @@ public abstract class AbstractJobProxy<T> implements Job {
      */
     protected abstract ICompletableFuture<Void> invokeJoinJob();
 
-    protected abstract ICompletableFuture<Void> invokeCancelJob();
+    protected abstract ICompletableFuture<Void> invokeTerminateJob(TerminationMode mode);
 
     protected abstract long doGetJobSubmissionTime();
 
@@ -284,25 +304,6 @@ public abstract class AbstractJobProxy<T> implements Job {
                     + " split-brain merge and coordinator is not known";
             logger.warning(msg, t);
             future.internalCompleteExceptionally(new CancellationException(msg));
-        }
-    }
-
-    private class CancelJobCallback implements ExecutionCallback<Void> {
-
-        @Override
-        public void onResponse(Void response) {
-            logger.fine("Job " + idAndName() + " is cancelled.");
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            Throwable ex = peel(t);
-            if (isRestartable(ex)) {
-                logger.fine("Re-sending cancel request for job " + idAndName());
-                invokeCancelJob().andThen(this);
-            } else {
-                logger.severe("Cancellation of job " + idAndName() + " failed.", t);
-            }
         }
     }
 }

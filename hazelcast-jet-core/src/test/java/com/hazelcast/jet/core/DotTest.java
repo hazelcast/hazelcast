@@ -26,13 +26,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class DotTest {
@@ -48,8 +49,15 @@ public class DotTest {
         dag.edge(from(a, 0).to(c, 0).partitioned(wholeItem()));
         dag.edge(from(a, 1).to(b, 0).broadcast().distributed());
 
-        // can't assert, contains multiple subgraphs, order isn't stable
-        System.out.println(dag.toDotString());
+        String actual = dag.toDotString();
+        System.out.println(actual);
+        // contains multiple subgraphs, order isn't stable, we'll assert individual lines and the length
+        assertTrue(actual.startsWith("digraph DAG {"));
+        assertTrue(actual.contains("\"a\" -> \"c\" [label=\"partitioned\"];"));
+        assertTrue(actual.contains("\"a\" -> \"b\" [label=\"distributed-broadcast\"]"));
+        assertTrue(actual.contains("\"d\";"));
+        assertTrue(actual.endsWith("\n}"));
+        assertEquals(101, actual.length());
     }
 
     @Test
@@ -72,25 +80,38 @@ public class DotTest {
         source.filter(alwaysTrue())
               .drainTo(Sinks.logger());
 
-        // can't assert, contains multiple sub-paths, order isn't stable
-        System.out.println(p.toDotString());
-        System.out.println(p.toDag().toDotString());
+        String actualPipeline = p.toDotString();
+        assertEquals(actualPipeline, "digraph Pipeline {\n" +
+                "\t\"mapSource(source1)\" -> \"aggregateToCount\";\n" +
+                "\t\"mapSource(source1)\" -> \"aggregateToSet\";\n" +
+                "\t\"mapSource(source1)\" -> \"filter\";\n" +
+                "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
+                "\t\"aggregateToSet\" -> \"loggerSink-2\";\n" +
+                "\t\"filter\" -> \"loggerSink-3\";\n" +
+                "}");
+
+        String actualDag = p.toDag().toDotString();
+        System.out.println(actualDag);
+        // contains multiple subgraphs, order isn't stable, we'll assert individual lines and the length
+        assertTrue(actualDag.startsWith("digraph DAG {"));
+        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToCount-step1\" [label=\"partitioned\"];"));
+        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"filter\";"));
+        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToSet-step1\" [label=\"partitioned\"];"));
+        assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n" +
+                "\t\t\"aggregateToCount-step1\" -> \"aggregateToCount-step2\" \\[label=\"distributed-partitioned\"];\n" +
+                "\t}"));
+
+        assertTrue(regexContains(actualDag, "\"aggregateToCount-step2\" -> \"loggerSink(-[23])?\";"));
+        assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n" +
+                "\t\t\"aggregateToSet-step1\" -> \"aggregateToSet-step2\" \\[label=\"distributed-partitioned\"];\n" +
+                "\t}"));
+        assertTrue(regexContains(actualDag, "\"aggregateToSet-step2\" -> \"loggerSink(-[23])?\";"));
+        assertTrue(regexContains(actualDag, "\"filter\" -> \"loggerSink(-[23])?\";"));
+        assertTrue(actualDag.endsWith("\n}"));
     }
 
-    @Test
-    public void when_snapshotVertex_then_skip() {
-        DAG dag = new DAG();
-        Vertex snapshotA = dag.newVertex("__snapshot_read.a", noopP());
-        Vertex snapshotB = dag.newVertex("__snapshot_read.b", noopP());
-        Vertex a = dag.newVertex("a", noopP());
-        Vertex b = dag.newVertex("b", noopP());
-
-        dag.edge(from(a, 0).to(b, 0).broadcast().distributed());
-
-        dag.edge(from(snapshotA, 0).to(a, 0).partitioned(wholeItem()));
-        dag.edge(from(snapshotB, 0).to(b, 1).broadcast().distributed());
-
-        assertFalse("snapshot vertex should not be in output", dag.toDotString().contains("snapshot"));
+    private boolean regexContains(String str, String regex) {
+        return Pattern.compile(regex).matcher(str).find();
     }
 
     @Test

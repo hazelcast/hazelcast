@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -93,7 +94,7 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
 
     @After
     public void after() {
-        es.shutdown();
+        es.shutdown(false);
     }
 
     @Test
@@ -166,10 +167,10 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         es.beginExecute(singletonList(new MockTasklet()), new CompletableFuture<>(), classLoaderMock);
 
         // When
-        es.shutdown();
+        es.shutdown(false);
 
         // Then
-        exceptionRule.expect(IllegalStateException.class);
+        exceptionRule.expect(ShutdownInProgressException.class);
         es.beginExecute(singletonList(new MockTasklet()), new CompletableFuture<>(), classLoaderMock);
     }
 
@@ -338,9 +339,10 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         final MockTasklet t = new MockTasklet().callsBeforeDone(Integer.MAX_VALUE);
         CompletableFuture<Void> f = es.beginExecute(singletonList(t), cancellationFuture, classLoaderMock);
 
-        // When - Then
+        // When
         cancellationFuture.complete(null);
 
+        // Then
         exceptionRule.expect(IllegalStateException.class);
         try {
             f.join();

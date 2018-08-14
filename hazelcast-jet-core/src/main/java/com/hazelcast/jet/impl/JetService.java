@@ -17,19 +17,20 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.core.TopologyChangedException;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
+import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.LiveOperations;
@@ -39,13 +40,18 @@ import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class JetService
         implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, MembershipAwareService,
@@ -54,10 +60,12 @@ public class JetService
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
+    private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final LiveOperationRegistry liveOperationRegistry;
+    private final AtomicBoolean shutdownInitiated = new AtomicBoolean();
 
     private JetConfig config;
     private JetInstance jetInstance;
@@ -97,9 +105,9 @@ public class JetService
         SnapshotRepository snapshotRepository = new SnapshotRepository(jetInstance);
         jobRepository = new JobRepository(jetInstance, snapshotRepository);
 
-        jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService);
-        jobCoordinationService = new JobCoordinationService(nodeEngine, config, jobRepository,
-                jobExecutionService, snapshotRepository);
+        jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
+        jobCoordinationService = new JobCoordinationService(nodeEngine, this, config, jobRepository,
+                snapshotRepository);
         networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
 
         ClientEngineImpl clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
@@ -122,17 +130,61 @@ public class JetService
         logger.info("Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.");
     }
 
+    /**
+     * Gracefully shuts down jobs on this member. Blocks until all are down.
+     */
+    void shutDownJobs() {
+        if (!shutdownInitiated.compareAndSet(false, true)) {
+            logger.info("Shutdown requested, but already shut down or being shut down");
+            return;
+        }
+        // this will prevent accepting more jobs
+        jobCoordinationService.shutdown();
+        jobExecutionService.shutdown(true);
+        taskletExecutionService.shutdown(true);
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        notifyMasterWeAreShuttingDown(future);
+        // We initiated shutdown on this member, it won't accept any new jobs. After all
+        // tasklets running locally are done, we can continue the shutdown.
+        taskletExecutionService.awaitWorkerTermination();
+        future.join();
+    }
+
+    private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> result) {
+        Operation op = new NotifyMemberShutdownOperation();
+        nodeEngine.getOperationService()
+                  .invokeOnTarget(JetService.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
+                  .andThen(new ExecutionCallback<Object>() {
+                      @Override
+                      public void onResponse(Object response) {
+                          result.complete(null);
+                      }
+
+                      @Override
+                      public void onFailure(Throwable t) {
+                          logger.warning("Failed to notify master member that this member is shutting down, will retry in "
+                                  + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds");
+                          // recursive call
+                          nodeEngine.getExecutionService().schedule(
+                                  () -> notifyMasterWeAreShuttingDown(result), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
+                      }
+                  });
+    }
+
     @Override
-    public void shutdown(boolean terminate) {
-        jobExecutionService.reset("shutdown", HazelcastInstanceNotActiveException::new);
+    public void shutdown(boolean forceful) {
+        jobCoordinationService.shutdown();
+        jobExecutionService.shutdown(false);
+        taskletExecutionService.shutdown(false);
+        taskletExecutionService.awaitWorkerTermination();
         networking.shutdown();
-        taskletExecutionService.shutdown();
     }
 
     @Override
     public void reset() {
+        jobExecutionService.reset();
         jobCoordinationService.reset();
-        jobExecutionService.reset("reset", TopologyChangedException::new);
     }
 
     public JetInstance getJetInstance() {
@@ -155,8 +207,26 @@ public class JetService
         return jobExecutionService;
     }
 
+    /**
+     * Returns the job config or fails with {@link JobNotFoundException}
+     * if the requested job is not found.
+     */
+    public JobConfig getJobConfig(long jobId) {
+        JobRecord jobRecord = jobRepository.getJobRecord(jobId);
+        if (jobRecord != null) {
+            return jobRecord.getConfig();
+        }
+
+        JobResult jobResult = jobRepository.getJobResult(jobId);
+        if (jobResult != null) {
+            return jobResult.getJobConfig();
+        }
+
+        throw new JobNotFoundException(jobId);
+    }
+
     public ClassLoader getClassLoader(long jobId) {
-        return jobCoordinationService.getClassLoader(jobId);
+        return getJobExecutionService().getClassLoader(getJobConfig(jobId), jobId);
     }
 
     @Override
@@ -166,13 +236,13 @@ public class JetService
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        Address address = event.getMember().getAddress();
-        jobExecutionService.onMemberLeave(address);
+        jobExecutionService.onMemberLeave(event.getMember().getAddress());
+        jobCoordinationService.onMemberLeave(event.getMember().getUuid());
     }
 
     @Override
     public void memberAdded(MembershipServiceEvent event) {
-        jobCoordinationService.updateQuorumValues();
+        jobCoordinationService.onMemberAdded(event.getMember());
     }
 
     @Override

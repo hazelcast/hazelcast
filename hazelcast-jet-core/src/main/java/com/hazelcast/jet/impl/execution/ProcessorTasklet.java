@@ -100,6 +100,7 @@ public class ProcessorTasklet implements Tasklet {
     private final AtomicLongArray emittedCounts;
     private final AtomicLong queuesSize = new AtomicLong();
     private final AtomicLong queuesCapacity = new AtomicLong();
+    private boolean doneAfterTerminalSnapshot;
 
     public ProcessorTasklet(@Nonnull Processor.Context context,
                             @Nonnull SerializationService serializationService,
@@ -144,7 +145,7 @@ public class ProcessorTasklet implements Tasklet {
             justification = "jetInstance() can be null in TestProcessorContext")
     private ILogger getLogger(@Nonnull Context context) {
         return context.jetInstance() != null
-                ? context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(getClass())
+                ? context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(getClass() + "." + toString())
                 : Logger.getLogger(getClass());
     }
 
@@ -311,9 +312,15 @@ public class ProcessorTasklet implements Tasklet {
 
                 progTracker.notDone();
                 if (outbox.offerToEdgesAndSnapshot(new SnapshotBarrier(pendingSnapshotId))) {
-                    receivedBarriers.clear();
-                    pendingSnapshotId++;
-                    state = initialProcessingState();
+                    progTracker.madeProgress();
+                    if (ssContext.isTerminalSnapshot()) {
+                        doneAfterTerminalSnapshot = true;
+                        state = EMIT_DONE_ITEM;
+                    } else {
+                        receivedBarriers.clear();
+                        pendingSnapshotId++;
+                        state = initialProcessingState();
+                    }
                 }
                 return;
 
@@ -348,6 +355,11 @@ public class ProcessorTasklet implements Tasklet {
                 // note ProcessorState.END goes here
                 throw new JetException("Unexpected state: " + state);
         }
+    }
+
+    @Override
+    public boolean doneAfterTerminalSnapshot() {
+        return doneAfterTerminalSnapshot;
     }
 
     private void fillInbox(long now) {

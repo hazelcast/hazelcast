@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.jet.Job;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -29,21 +30,21 @@ import java.util.List;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains the configuration specific to one Hazelcast Jet job.
  */
 public class JobConfig implements Serializable {
 
-    private static final int SNAPSHOT_INTERVAL_MILLIS_DEFAULT = 10_000;
+    private static final long SNAPSHOT_INTERVAL_MILLIS_DEFAULT = SECONDS.toMillis(10);
 
     private String name;
     private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
     private long snapshotIntervalMillis = SNAPSHOT_INTERVAL_MILLIS_DEFAULT;
-
+    private boolean autoScaling = true;
     private boolean splitBrainProtectionEnabled;
     private final List<ResourceConfig> resourceConfigs = new ArrayList<>();
-    private boolean autoRestartEnabled = true;
     private int maxWatermarkRetainMillis = -1;
     private JobClassLoaderFactory classLoaderFactory;
 
@@ -57,10 +58,10 @@ public class JobConfig implements Serializable {
 
     /**
      * Sets the name for the job. Job names do not have to be unique but it's
-     * good to keep them unique to be able to distinguish them in logs or
+     * good to keep them unique to be able to distinguish them in logs and the
      * Management Center.
      * <p>
-     * Default value is {@code null}.
+     * The default value is {@code null}.
      *
      * @return {@code this} instance for fluent API
      */
@@ -99,9 +100,9 @@ public class JobConfig implements Serializable {
      * <p>
      * Split-brain protection is disabled by default.
      * <p>
-     * This setting has no effect if
-     * {@link #setAutoRestartOnMemberFailure(boolean) auto restart on member
-     * failure} is disabled.
+     * If {@linkplain #setAutoScaling(boolean) auto scaling} is disabled and
+     * you manually {@link Job#resume} the job, the job won't start executing
+     * until the quorum is met, but will remain in the resumed state.
      *
      * @return {@code this} instance for fluent API
      */
@@ -112,29 +113,33 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Tells whether {@link #setAutoRestartOnMemberFailure(boolean) auto
-     * restart after member failure} is enabled.
-     */
-    public boolean isAutoRestartOnMemberFailureEnabled() {
-        return this.autoRestartEnabled;
-    }
-
-    /**
-     * Sets whether the job should automatically restart after a
-     * participating member leaves the cluster. When enabled and a member
-     * fails, the job will automatically restart on the remaining members.
+     * Sets whether Jet will scale the job up/down when a member is
+     * added/removed from the cluster.
      * <p>
-     * If snapshotting is enabled, the job state will be restored from the
-     * latest snapshot.
+     * If enabled and a member is added or removed, the job will automatically
+     * restart, see {@link Job#restart} for more details.
+     * <p>
+     * If disabled and a <em>member is added</em>, Jet takes no action and the
+     * job will not use the added member; you have to manually {@linkplain
+     * Job#restart() restart} it. If a <em>member is removed</em> (after a
+     * shutdown or a failure), Jet suspends the job. You have to manually
+     * {@linkplain Job#resume() resume} it.
      * <p>
      * By default, auto-restart is enabled.
      *
      * @return {@code this} instance for fluent API
      */
-    @Nonnull
-    public JobConfig setAutoRestartOnMemberFailure(boolean isEnabled) {
-        this.autoRestartEnabled = isEnabled;
+    public JobConfig setAutoScaling(boolean enabled) {
+        this.autoScaling = enabled;
         return this;
+    }
+
+    /**
+     * Returns whether auto scaling is enabled, see {@link
+     * #setAutoScaling(boolean)}.
+     */
+    public boolean isAutoScaling() {
+        return autoScaling;
     }
 
     /**
@@ -173,9 +178,9 @@ public class JobConfig implements Serializable {
 
     /**
      * Sets the snapshot interval in milliseconds &mdash; the interval between
-     * the completion of the previous snapshot and the start of a new one.
-     * Must be set to a positive value. This setting is only relevant when
-     * <i>>at-least-once</i> or <i>exactly-once</i> processing guarantees are used.
+     * the completion of the previous snapshot and the start of a new one. Must
+     * be set to a positive value. This setting is only relevant with
+     * <i>at-least-once</i> or <i>exactly-once</i> processing guarantees.
      * <p>
      * Default value is set to 10 seconds.
      *
@@ -214,7 +219,7 @@ public class JobConfig implements Serializable {
      * Limiting the watermark retention time allows it to advance, and therefore
      * the processing to continue, in the face of exceedingly large stream skew.
      * However, since any event with a timestamp less than the current watermark
-     * is categorized as a <em>late event </em> and dropped, this limit can
+     * is categorized as a <em>late event</em> and dropped, this limit can
      * result in data loss.
      *
      * @param retainMillis maximum time to retain watermarks for delayed queues

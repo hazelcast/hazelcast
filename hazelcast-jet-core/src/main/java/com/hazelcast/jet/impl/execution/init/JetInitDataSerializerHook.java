@@ -23,12 +23,12 @@ import com.hazelcast.jet.impl.JobRepository.FilterExecutionIdByJobIdPredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobIdPredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobRecordByNamePredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobResultByNamePredicate;
-import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordQuorumEntryBackupProcessor;
-import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordQuorumEntryProcessor;
+import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordEntryBackupProcessor;
+import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordEntryProcessor;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
-import com.hazelcast.jet.impl.operation.CancelExecutionOperation;
-import com.hazelcast.jet.impl.operation.CancelJobOperation;
+import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
+import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
@@ -37,11 +37,12 @@ import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
-import com.hazelcast.jet.impl.operation.RestartJobOperation;
+import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
+import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SnapshotKey;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
@@ -71,19 +72,20 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int SLIDING_WINDOW_P_SNAPSHOT_KEY = 15;
     public static final int GET_JOB_IDS = 16;
     public static final int JOIN_SUBMITTED_JOB = 17;
-    public static final int UPDATE_JOB_QUORUM = 18;
+    public static final int UPDATE_JOB_RECORD = 18;
     public static final int UPDATE_JOB_QUORUM_BACKUP = 19;
-    public static final int CANCEL_JOB_OP = 20;
-    public static final int CANCEL_EXECUTION_OP = 21;
-    public static final int FILTER_JOB_RECORD_BY_NAME = 22;
-    public static final int FILTER_JOB_RESULT_BY_NAME = 23;
-    public static final int GET_JOB_IDS_BY_NAME_OP = 24;
-    public static final int GET_JOB_SUBMISSION_TIME_OP = 25;
-    public static final int GET_JOB_CONFIG_OP = 26;
-    public static final int RESTART_JOB_OP = 27;
-    public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_KEY = 28;
-    public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR = 29;
-    public static final int SNAPSHOT_OPERATION_RESULT = 30;
+    public static final int TERMINATE_EXECUTION_OP = 20;
+    public static final int FILTER_JOB_RECORD_BY_NAME = 21;
+    public static final int FILTER_JOB_RESULT_BY_NAME = 22;
+    public static final int GET_JOB_IDS_BY_NAME_OP = 23;
+    public static final int GET_JOB_SUBMISSION_TIME_OP = 24;
+    public static final int GET_JOB_CONFIG_OP = 25;
+    public static final int TERMINATE_JOB_OP = 26;
+    public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_KEY = 27;
+    public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR = 28;
+    public static final int SNAPSHOT_OPERATION_RESULT = 29;
+    public static final int RESUME_JOB_OP = 30;
+    public static final int NOTIFY_MEMBER_SHUTDOWN_OP = 31;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -139,14 +141,12 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new GetJobIdsOperation();
                 case JOIN_SUBMITTED_JOB:
                     return new JoinSubmittedJobOperation();
-                case UPDATE_JOB_QUORUM:
-                    return new UpdateJobRecordQuorumEntryProcessor();
+                case UPDATE_JOB_RECORD:
+                    return new UpdateJobRecordEntryProcessor();
                 case UPDATE_JOB_QUORUM_BACKUP:
-                    return new UpdateJobRecordQuorumEntryBackupProcessor();
-                case CANCEL_JOB_OP:
-                    return new CancelJobOperation();
-                case CANCEL_EXECUTION_OP:
-                    return new CancelExecutionOperation();
+                    return new UpdateJobRecordEntryBackupProcessor();
+                case TERMINATE_EXECUTION_OP:
+                    return new TerminateExecutionOperation();
                 case FILTER_JOB_RECORD_BY_NAME:
                     return new FilterJobRecordByNamePredicate();
                 case FILTER_JOB_RESULT_BY_NAME:
@@ -157,14 +157,18 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new GetJobSubmissionTimeOperation();
                 case GET_JOB_CONFIG_OP:
                     return new GetJobConfigOperation();
-                case RESTART_JOB_OP:
-                    return new RestartJobOperation();
+                case TERMINATE_JOB_OP:
+                    return new TerminateJobOperation();
                 case ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_KEY:
                     return new AsyncSnapshotWriterImpl.SnapshotDataKey();
                 case ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR:
                     return AsyncSnapshotWriterImpl.SnapshotDataValueTerminator.INSTANCE;
                 case SNAPSHOT_OPERATION_RESULT:
                     return new SnapshotOperationResult();
+                case RESUME_JOB_OP:
+                    return new ResumeJobOperation();
+                case NOTIFY_MEMBER_SHUTDOWN_OP:
+                    return new NotifyMemberShutdownOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

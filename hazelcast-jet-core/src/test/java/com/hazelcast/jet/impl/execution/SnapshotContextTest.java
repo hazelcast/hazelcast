@@ -78,7 +78,7 @@ public class SnapshotContextTest {
         ssContext.initTaskletCount(taskletCount, numHigherPriority);
         CompletableFuture<SnapshotOperationResult> future = null;
         if (snapshotStarted == SnapshotStarted.BEFORE) {
-            future = ssContext.startNewSnapshot(10);
+            future = ssContext.startNewSnapshot(10, false);
             assertEquals("lastSnapshotId initially", numHigherPriority > 0 ? 9 : 10, ssContext.lastSnapshotId());
         }
 
@@ -92,7 +92,7 @@ public class SnapshotContextTest {
         }
 
         if (snapshotStarted == SnapshotStarted.AFTER) {
-            future = ssContext.startNewSnapshot(10);
+            future = ssContext.startNewSnapshot(10, false);
         }
 
         assertNotNull("future == null", future);

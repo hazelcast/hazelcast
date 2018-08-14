@@ -104,4 +104,10 @@ public class JetInstanceImpl extends AbstractJetInstance {
         return uncheckCall(future::get);
     }
 
+    @Override
+    public void shutdown() {
+        JetService jetService = nodeEngine.getService(JetService.SERVICE_NAME);
+        jetService.shutDownJobs();
+        super.shutdown();
+    }
 }

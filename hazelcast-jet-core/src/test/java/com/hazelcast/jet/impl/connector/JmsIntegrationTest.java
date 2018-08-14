@@ -26,7 +26,6 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.junit.EmbeddedActiveMQBroker;
-import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -49,6 +48,7 @@ import static java.util.Collections.synchronizedList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static javax.jms.Session.AUTO_ACKNOWLEDGE;
+import static org.junit.Assert.assertEquals;
 
 public class JmsIntegrationTest extends PipelineTestSupport {
 
@@ -61,22 +61,19 @@ public class JmsIntegrationTest extends PipelineTestSupport {
     private String destinationName = randomString();
     private Job job;
 
-    @After
-    public void cleanup() {
-        cancelJob();
-    }
-
     @Test
     public void sourceQueue() {
         p.drawFrom(Sources.jmsQueue(() -> broker.createConnectionFactory(), destinationName))
          .map(TEXT_MESSAGE_FN)
          .drainTo(sink);
 
-        startJob();
+        startJob(true);
 
         List<Object> messages = sendMessages(true);
         assertEqualsEventually(sinkList::size, messages.size());
         assertContainsAll(sinkList, messages);
+
+        cancelJob();
     }
 
     @Test
@@ -85,12 +82,14 @@ public class JmsIntegrationTest extends PipelineTestSupport {
          .map(TEXT_MESSAGE_FN)
          .drainTo(sink);
 
-        startJob();
+        startJob(true);
         sleepSeconds(1);
 
         List<Object> messages = sendMessages(false);
         assertEqualsEventually(sinkList::size, MESSAGE_COUNT);
         assertContainsAll(sinkList, messages);
+
+        cancelJob();
     }
 
     @Test
@@ -102,7 +101,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
 
         List<Object> messages = consumeMessages(true);
 
-        startJob();
+        startJob(false);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -118,7 +117,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         List<Object> messages = consumeMessages(false);
         sleepSeconds(1);
 
-        startJob();
+        startJob(false);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -134,11 +133,13 @@ public class JmsIntegrationTest extends PipelineTestSupport {
          .map(TEXT_MESSAGE_FN)
          .drainTo(sink);
 
-        startJob();
+        startJob(true);
 
         List<Object> messages = sendMessages(true);
         assertEqualsEventually(sinkList::size, messages.size());
         assertContainsAll(sinkList, messages);
+
+        cancelJob();
     }
 
     @Test
@@ -153,11 +154,13 @@ public class JmsIntegrationTest extends PipelineTestSupport {
 
         p.drawFrom(source).drainTo(sink);
 
-        startJob();
+        startJob(true);
 
         List<Object> messages = sendMessages(true);
         assertEqualsEventually(sinkList::size, messages.size());
         assertContainsAll(sinkList, messages);
+
+        cancelJob();
     }
 
     @Test
@@ -168,12 +171,14 @@ public class JmsIntegrationTest extends PipelineTestSupport {
 
         p.drawFrom(source).drainTo(sink);
 
-        startJob();
+        startJob(true);
         sleepSeconds(1);
 
         List<Object> messages = sendMessages(false);
         assertEqualsEventually(sinkList::size, messages.size());
         assertContainsAll(sinkList, messages);
+
+        cancelJob();
     }
 
     @Test
@@ -186,12 +191,14 @@ public class JmsIntegrationTest extends PipelineTestSupport {
 
         p.drawFrom(source).drainTo(sink);
 
-        startJob();
+        startJob(true);
         sleepSeconds(1);
 
         List<Object> messages = sendMessages(false);
         assertEqualsEventually(sinkList::size, messages.size());
         assertContainsAll(sinkList, messages);
+
+        cancelJob();
     }
 
     @Test
@@ -207,7 +214,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
 
         List<Object> messages = consumeMessages(true);
 
-        startJob();
+        startJob(false);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -231,7 +238,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
 
         List<Object> messages = consumeMessages(true);
 
-        startJob();
+        startJob(false);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -251,7 +258,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         List<Object> messages = consumeMessages(false);
         sleepSeconds(1);
 
-        startJob();
+        startJob(false);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -273,7 +280,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         List<Object> messages = consumeMessages(false);
         sleepSeconds(1);
 
-        startJob();
+        startJob(false);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -301,7 +308,6 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         return messages;
     }
 
-
     private List<Object> sendMessages(boolean isQueue) {
         return range(0, MESSAGE_COUNT)
                 .mapToObj(i -> uncheckCall(() -> sendMessage(destinationName, isQueue)))
@@ -312,9 +318,12 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         range(0, MESSAGE_COUNT).mapToObj(i -> randomString()).forEach(srcList::add);
     }
 
-    private void startJob() {
+    private void startJob(boolean waitForRunning) {
         job = start();
-        waitForJobStatus(JobStatus.RUNNING);
+        // batch jobs can be completed before we observe RUNNING status
+        if (waitForRunning) {
+            waitForJobStatus(JobStatus.RUNNING);
+        }
     }
 
     private void cancelJob() {
@@ -322,11 +331,8 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         waitForJobStatus(JobStatus.COMPLETED);
     }
 
-
     private void waitForJobStatus(JobStatus status) {
-        while (job.getStatus() != status) {
-            sleepMillis(1);
-        }
+        assertTrueEventually(() -> assertEquals(status, job.getStatus()), 10);
     }
 
     private String sendMessage(String destinationName, boolean isQueue) throws Exception {
@@ -345,5 +351,4 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         connection.close();
         return message;
     }
-
 }

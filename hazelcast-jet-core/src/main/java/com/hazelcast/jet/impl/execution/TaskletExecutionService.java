@@ -16,9 +16,10 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
+import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
@@ -31,23 +32,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.Thread.currentThread;
+import static java.util.Collections.emptyList;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -70,21 +73,35 @@ public class TaskletExecutionService {
     private final String hzInstanceName;
     private final ILogger logger;
     private final AtomicInteger cooperativeThreadIndex = new AtomicInteger();
-    private final MetricsRegistry metricsRegistry;
     @Probe
     private final AtomicInteger blockingWorkerCount = new AtomicInteger();
 
-    private volatile boolean isShutdown;
+    // tri-state boolean:
+    // - null: not shut down
+    // - FALSE: shut down forcefully: break the execution loop, don't wait for tasklets to finish
+    // - TRUE: shut down gracefully: run normally, don't accept more tasklets
+    private final AtomicReference<Boolean> gracefulShutdown = new AtomicReference<>(null);
 
     public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount) {
         this.hzInstanceName = nodeEngine.getHazelcastInstance().getName();
         this.cooperativeWorkers = new CooperativeWorker[threadCount];
         this.cooperativeThreadPool = new Thread[threadCount];
         this.logger = nodeEngine.getLoggingService().getLogger(TaskletExecutionService.class);
-        this.metricsRegistry = nodeEngine.getMetricsRegistry();
-        metricsRegistry.newProbeBuilder()
+
+        nodeEngine.getMetricsRegistry().newProbeBuilder()
                        .withTag("module", "jet")
                        .scanAndRegister(this);
+
+        Arrays.setAll(cooperativeWorkers, i -> new CooperativeWorker(cooperativeWorkers));
+        Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
+                String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
+        Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
+        for (int i = 0; i < cooperativeWorkers.length; i++) {
+            nodeEngine.getMetricsRegistry().newProbeBuilder()
+                           .withTag("module", "jet")
+                           .withTag("cooperativeWorker", String.valueOf(i))
+                           .scanAndRegister(cooperativeWorkers[i]);
+        }
     }
 
     /**
@@ -103,7 +120,9 @@ public class TaskletExecutionService {
             @Nonnull CompletableFuture<Void> cancellationFuture,
             @Nonnull ClassLoader jobClassLoader
     ) {
-        ensureStillRunning();
+        if (gracefulShutdown.get() != null) {
+            throw new ShutdownInProgressException();
+        }
         final ExecutionTracker executionTracker = new ExecutionTracker(tasklets.size(), cancellationFuture);
         try {
             final Map<Boolean, List<Tasklet>> byCooperation =
@@ -116,14 +135,13 @@ public class TaskletExecutionService {
         return executionTracker.future;
     }
 
-    public void shutdown() {
-        isShutdown = true;
-        blockingTaskletExecutor.shutdownNow();
-    }
-
-    private void ensureStillRunning() {
-        if (isShutdown) {
-            throw new IllegalStateException("Execution service was already ordered to shut down");
+    public void shutdown(boolean graceful) {
+        if (gracefulShutdown.compareAndSet(null, graceful)) {
+            if (graceful) {
+                blockingTaskletExecutor.shutdown();
+            } else {
+                blockingTaskletExecutor.shutdownNow();
+            }
         }
     }
 
@@ -145,7 +163,6 @@ public class TaskletExecutionService {
     private void submitCooperativeTasklets(
             ExecutionTracker executionTracker, ClassLoader jobClassLoader, List<Tasklet> tasklets
     ) {
-        ensureThreadsStarted();
         final List<TaskletTracker>[] trackersByThread = new List[cooperativeWorkers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList());
         for (Tasklet t : tasklets) {
@@ -159,22 +176,6 @@ public class TaskletExecutionService {
         Arrays.stream(cooperativeThreadPool).forEach(LockSupport::unpark);
     }
 
-    private synchronized void ensureThreadsStarted() {
-        if (cooperativeWorkers[0] != null) {
-            return;
-        }
-        Arrays.setAll(cooperativeWorkers, i -> new CooperativeWorker(cooperativeWorkers));
-        Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
-                String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
-        Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
-        for (int i = 0; i < cooperativeWorkers.length; i++) {
-            metricsRegistry.newProbeBuilder()
-                           .withTag("module", "jet")
-                           .withTag("cooperativeWorker", String.valueOf(i))
-                           .scanAndRegister(cooperativeWorkers[i]);
-        }
-    }
-
     private String trackersToString() {
         return Arrays.stream(cooperativeWorkers)
                      .flatMap(w -> w.trackers.stream())
@@ -182,6 +183,23 @@ public class TaskletExecutionService {
                      .sorted()
                      .collect(joining("\n"))
                 + "\n-----------------";
+    }
+
+    /**
+     * Blocks until all workers terminate (cooperative & blocking).
+     */
+    public void awaitWorkerTermination() {
+        assert gracefulShutdown.get() != null : "Not shut down";
+        try {
+            while (!blockingTaskletExecutor.awaitTermination(1, TimeUnit.MINUTES)) {
+                logger.warning("Blocking tasklet executor did not terminate in 1 minute");
+            }
+            for (Thread t : cooperativeThreadPool) {
+                t.join();
+            }
+        } catch (InterruptedException e) {
+            sneakyThrow(e);
+        }
     }
 
     private final class BlockingWorker implements Runnable {
@@ -197,15 +215,15 @@ public class TaskletExecutionService {
         public void run() {
             final ClassLoader clBackup = currentThread().getContextClassLoader();
             final Tasklet t = tracker.tasklet;
+            final String oldName = currentThread().getName();
             currentThread().setContextClassLoader(tracker.jobClassLoader);
 
             // swap the thread name by replacing the ".thread-NN" part at the end
-            final String oldName = currentThread().getName();
-            currentThread().setName(oldName.replaceAll(".thread-[0-9]+$", quoteReplacement("." + tracker.tasklet)));
-            assert !oldName.equals(currentThread().getName()) : "unexpected thread name pattern: " + oldName;
-            blockingWorkerCount.incrementAndGet();
-
             try {
+                currentThread().setName(oldName.replaceAll(".thread-[0-9]+$", quoteReplacement("." + tracker.tasklet)));
+                assert !oldName.equals(currentThread().getName()) : "unexpected thread name pattern: " + oldName;
+                blockingWorkerCount.incrementAndGet();
+
                 startedLatch.countDown();
                 t.init();
                 long idleCount = 0;
@@ -219,7 +237,7 @@ public class TaskletExecutionService {
                     }
                 } while (!result.isDone()
                         && !tracker.executionTracker.executionCompletedExceptionally()
-                        && !isShutdown);
+                        && !Boolean.FALSE.equals(gracefulShutdown.get()));
             } catch (Throwable e) {
                 logger.warning("Exception in " + t, e);
                 tracker.executionTracker.exception(new JetException("Exception in " + t + ": " + e, e));
@@ -227,7 +245,7 @@ public class TaskletExecutionService {
                 blockingWorkerCount.decrementAndGet();
                 currentThread().setContextClassLoader(clBackup);
                 currentThread().setName(oldName);
-                tracker.executionTracker.taskletDone();
+                tracker.executionTracker.taskletDone(tracker.tasklet.doneAfterTerminalSnapshot());
             }
         }
     }
@@ -249,9 +267,13 @@ public class TaskletExecutionService {
         @Override
         public void run() {
             final Thread thread = currentThread();
-            final ClassLoader clBackup = thread.getContextClassLoader();
             long idleCount = 0;
-            while (!isShutdown) {
+            while (true) {
+                Boolean gracefulShutdownLocal = gracefulShutdown.get();
+                // exit condition
+                if (gracefulShutdownLocal != null && (!gracefulShutdownLocal || trackers.isEmpty())) {
+                    break;
+                }
                 boolean madeProgress = false;
                 for (TaskletTracker t : trackers) {
                     long start = 0;
@@ -294,18 +316,17 @@ public class TaskletExecutionService {
                 if (madeProgress) {
                     idleCount = 0;
                 } else {
-                    thread.setContextClassLoader(clBackup);
                     IDLER_COOPERATIVE.idle(++idleCount);
                 }
             }
             // Best-effort attempt to release all tasklets. A tasklet can still be added
             // to a dead worker through work stealing.
-            trackers.forEach(t -> t.executionTracker.taskletDone());
+            trackers.forEach(t -> t.executionTracker.taskletDone(t.tasklet.doneAfterTerminalSnapshot()));
             trackers.clear();
         }
 
         private void dismissTasklet(TaskletTracker t) {
-            t.executionTracker.taskletDone();
+            t.executionTracker.taskletDone(t.tasklet.doneAfterTerminalSnapshot());
             trackers.remove(t);
             stealWork();
         }
@@ -369,19 +390,17 @@ public class TaskletExecutionService {
     private final class ExecutionTracker {
 
         final NonCompletableFuture future = new NonCompletableFuture();
-        List<Future> blockingFutures;
+        volatile List<Future> blockingFutures = emptyList();
 
         private final AtomicInteger completionLatch;
         private final AtomicReference<Throwable> executionException = new AtomicReference<>();
+        private volatile boolean someProcessorTerminatedAfterSnapshot;
 
         ExecutionTracker(int taskletCount, CompletableFuture<Void> cancellationFuture) {
             this.completionLatch = new AtomicInteger(taskletCount);
-
             cancellationFuture.whenComplete(withTryCatch(logger, (r, e) -> {
-                if (!(e instanceof CancellationException)) {
-                    exception(new IllegalStateException("cancellationFuture was completed with something " +
-                            "other than CancellationException: " + e, e));
-                    return;
+                if (e == null) {
+                    e = new IllegalStateException("cancellationFuture should be completed exceptionally");
                 }
                 exception(e);
                 blockingFutures.forEach(f -> f.cancel(true)); // CompletableFuture.cancel ignores the flag
@@ -392,11 +411,18 @@ public class TaskletExecutionService {
             executionException.compareAndSet(null, t);
         }
 
-        void taskletDone() {
+        void taskletDone(boolean terminatedAfterSnapshot) {
+            if (terminatedAfterSnapshot) {
+                someProcessorTerminatedAfterSnapshot = true;
+            }
             if (completionLatch.decrementAndGet() == 0) {
                 Throwable ex = executionException.get();
                 if (ex == null) {
-                    future.internalComplete();
+                    if (someProcessorTerminatedAfterSnapshot) {
+                        future.internalCompleteExceptionally(new TerminatedWithSnapshotException());
+                    } else {
+                        future.internalComplete();
+                    }
                 } else {
                     future.internalCompleteExceptionally(ex);
                 }

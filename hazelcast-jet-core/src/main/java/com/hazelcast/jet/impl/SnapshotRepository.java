@@ -103,13 +103,12 @@ public class SnapshotRepository {
     /**
      * Updates status of the given snapshot. Returns the elapsed time for the snapshot.
      */
-    long setSnapshotStatus(long jobId, long snapshotId, SnapshotStatus status) {
+    private void setSnapshotStatus(long jobId, long snapshotId, SnapshotStatus status) {
         IMap<Long, SnapshotRecord> snapshots = getSnapshotMap(jobId);
-        SnapshotRecord record = compute(snapshots, snapshotId, (k, r) -> {
+        compute(snapshots, snapshotId, (k, r) -> {
             r.setStatus(status);
-            return r;
+            return null;
         });
-        return System.currentTimeMillis() - record.startTime();
     }
 
     /**
@@ -119,9 +118,18 @@ public class SnapshotRepository {
                                long numBytes, long numKeys, long numChunks) {
         IMap<Long, SnapshotRecord> snapshots = getSnapshotMap(jobId);
         SnapshotRecord record = compute(snapshots, snapshotId, (k, r) -> {
+            // It's possible that the SnapshotRecord is deleted at this time if the job didn't terminate with a
+            // terminal snapshot, but one was just being completed at the time job completed. We ignore this.
+            if (r == null) {
+                return null;
+            }
             r.snapshotComplete(status, numBytes, numKeys, numChunks);
             return r;
         });
+        if (record == null) {
+            logger.fine("Not marking SnapshotRecord as complete, already deleted");
+            return -1;
+        }
         return System.currentTimeMillis() - record.startTime();
     }
 

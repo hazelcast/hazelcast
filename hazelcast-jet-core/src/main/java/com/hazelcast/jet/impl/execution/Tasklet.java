@@ -34,4 +34,12 @@ public interface Tasklet {
 
     default void close() {
     }
+
+    /**
+     * Method that can be called after {@link #call()} returned a DONE state to
+     * see if it was because of terminating after a terminal snapshot.
+     */
+    default boolean doneAfterTerminalSnapshot() {
+        return false;
+    }
 }

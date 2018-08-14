@@ -297,6 +297,7 @@ public class CancellationTest extends JetTestSupport {
                 long last = previous[0];
                 previous[0] = current;
                 assertTrue("Call counter should eventually stop being incremented.", current == last);
+                sleepMillis(200);
             }, 3);
     }
 

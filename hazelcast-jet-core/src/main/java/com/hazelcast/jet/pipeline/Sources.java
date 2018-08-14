@@ -174,6 +174,9 @@ public final class Sources {
      * to create the predicate. In this case Jet can test the predicate and
      * apply the projection without deserializing the whole object.
      * <p>
+     * Due to the current limitations in the way Jet reads the map it can't use
+     * any indexes on the map. It will always scan the map in full.
+     * <p>
      * The source leverages data locality by making each of the underlying
      * processors fetch only those entries that are stored on the member where
      * it is running.
@@ -346,6 +349,9 @@ public final class Sources {
      * {@link PredicateBuilder PredicateBuilder} to create
      * the predicate. In this case Jet can test the predicate and apply the
      * projection without deserializing the whole object.
+     * <p>
+     * Due to the current limitations in the way Jet reads the map it can't use
+     * any indexes on the map. It will always scan the map in full.
      * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.

@@ -24,6 +24,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.EntryBackupProcessor;
@@ -108,7 +109,7 @@ public class JobRepository {
     /**
      * @param snapshotRepository Can be {@code null} if used on client to upload resources.
      */
-    JobRepository(JetInstance jetInstance, @Nullable SnapshotRepository snapshotRepository) {
+    public JobRepository(JetInstance jetInstance, @Nullable SnapshotRepository snapshotRepository) {
         this.instance = jetInstance.getHazelcastInstance();
         this.snapshotRepository = snapshotRepository;
 
@@ -225,9 +226,22 @@ public class JobRepository {
 
     /**
      * Updates the job quorum size if it is only larger than the current quorum size of the given job
+     *
+     * @return true, if the quorum size was changed
      */
     boolean updateJobQuorumSizeIfLargerThanCurrent(long jobId, int newQuorumSize) {
-        return (boolean) jobRecords.executeOnKey(jobId, new UpdateJobRecordQuorumEntryProcessor(newQuorumSize));
+        return (boolean) jobRecords.executeOnKey(jobId, new UpdateJobRecordEntryProcessor(
+                r -> newQuorumSize > r.getQuorumSize() ? r.withQuorumSize(newQuorumSize) : null));
+    }
+
+    /**
+     * Updates the job suspension status.
+     *
+     * @return true, if the record existed
+     */
+    boolean updateJobSuspendedStatus(long jobId, boolean suspendedStatus) {
+        return (boolean) jobRecords.executeOnKey(jobId,
+                new UpdateJobRecordEntryProcessor(r -> r.withSuspended(suspendedStatus)));
     }
 
     /**
@@ -431,17 +445,17 @@ public class JobRepository {
         }
     }
 
-    public static class UpdateJobRecordQuorumEntryProcessor
+    public static class UpdateJobRecordEntryProcessor
             implements EntryProcessor<Long, JobRecord>, IdentifiedDataSerializable {
 
-        private int newQuorumSize;
+        private DistributedFunction<JobRecord, JobRecord> updateFn;
         private boolean updated;
 
-        public UpdateJobRecordQuorumEntryProcessor() {
+        public UpdateJobRecordEntryProcessor() {
         }
 
-        UpdateJobRecordQuorumEntryProcessor(int newQuorumSize) {
-            this.newQuorumSize = newQuorumSize;
+        UpdateJobRecordEntryProcessor(DistributedFunction<JobRecord, JobRecord> updateFn) {
+            this.updateFn = updateFn;
         }
 
         @Override
@@ -451,19 +465,17 @@ public class JobRepository {
                 return false;
             }
 
-            updated = (newQuorumSize > jobRecord.getQuorumSize());
+            JobRecord newJobRecord = updateFn.apply(jobRecord);
+            updated = newJobRecord != null;
             if (updated) {
-                JobRecord newJobRecord = new JobRecord(jobRecord.getJobId(), jobRecord.getCreationTime(),
-                        jobRecord.getDag(), jobRecord.getDagJson(), jobRecord.getConfig(), newQuorumSize);
                 entry.setValue(newJobRecord);
             }
-
             return updated;
         }
 
         @Override
         public EntryBackupProcessor<Long, JobRecord> getBackupProcessor() {
-            return updated ? new UpdateJobRecordQuorumEntryBackupProcessor(newQuorumSize) : null;
+            return updated ? new UpdateJobRecordEntryBackupProcessor(updateFn) : null;
         }
 
         @Override
@@ -473,30 +485,30 @@ public class JobRepository {
 
         @Override
         public int getId() {
-            return JetInitDataSerializerHook.UPDATE_JOB_QUORUM;
+            return JetInitDataSerializerHook.UPDATE_JOB_RECORD;
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(newQuorumSize);
+            out.writeObject(updateFn);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            newQuorumSize = in.readInt();
+            updateFn = in.readObject();
         }
     }
 
-    public static class UpdateJobRecordQuorumEntryBackupProcessor
+    public static class UpdateJobRecordEntryBackupProcessor
             implements EntryBackupProcessor<Long, JobRecord>, IdentifiedDataSerializable {
 
-        private int newQuorumSize;
+        private DistributedFunction<JobRecord, JobRecord> updateFn;
 
-        public UpdateJobRecordQuorumEntryBackupProcessor() {
+        public UpdateJobRecordEntryBackupProcessor() {
         }
 
-        UpdateJobRecordQuorumEntryBackupProcessor(int newQuorumSize) {
-            this.newQuorumSize = newQuorumSize;
+        UpdateJobRecordEntryBackupProcessor(DistributedFunction<JobRecord, JobRecord> updateFn) {
+            this.updateFn = updateFn;
         }
 
         @Override
@@ -506,9 +518,10 @@ public class JobRepository {
                 return;
             }
 
-            JobRecord newJobRecord = new JobRecord(jobRecord.getJobId(), jobRecord.getCreationTime(),
-                    jobRecord.getDag(), jobRecord.getDagJson(), jobRecord.getConfig(), newQuorumSize);
-            entry.setValue(newJobRecord);
+            JobRecord newJobRecord = updateFn.apply(jobRecord);
+            if (newJobRecord != null) {
+                entry.setValue(newJobRecord);
+            }
         }
 
         @Override
@@ -523,12 +536,12 @@ public class JobRepository {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(newQuorumSize);
+            out.writeObject(updateFn);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            newQuorumSize = in.readInt();
+            updateFn = in.readObject();
         }
     }
 

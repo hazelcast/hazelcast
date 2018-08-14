@@ -24,6 +24,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -55,6 +57,8 @@ import static java.util.stream.Collectors.toList;
 public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
     static final int PARALLELISM = 4;
+
+    private static final ILogger LOGGER = Logger.getLogger(JetSplitBrainTestSupport.class);
 
     /**
      * If new nodes have been created during split brain via
@@ -108,14 +112,18 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
             beforeSplit.accept(instances);
         }
 
+        LOGGER.info("Going to create split-brain...");
         createSplitBrain(instances, firstSubClusterSize, secondSubClusterSize);
         Brains brains = getBrains(instances, firstSubClusterSize, secondSubClusterSize);
+        LOGGER.info("Split-brain created");
 
         if (onSplit != null) {
             onSplit.accept(brains.firstSubCluster, brains.secondSubCluster);
         }
 
+        LOGGER.info("Going to heal split-brain...");
         healSplitBrain(instances, firstSubClusterSize);
+        LOGGER.info("Split-brain healed");
 
         if (afterMerge != null) {
             afterMerge.accept(instances);

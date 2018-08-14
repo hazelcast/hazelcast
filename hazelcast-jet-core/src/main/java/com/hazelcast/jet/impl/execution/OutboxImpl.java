@@ -120,6 +120,10 @@ public class OutboxImpl implements Outbox {
         if (numRemainingInBatch == -1) {
             done = false;
         } else {
+            if (ordinals.length == 0) {
+                // edge case - emitting to outbox with 0 ordinals is a progress
+                progTracker.madeProgress();
+            }
             for (int i = 0; i < ordinals.length; i++) {
                 if (broadcastTracker.get(i)) {
                     continue;

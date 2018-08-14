@@ -77,11 +77,11 @@ public class JobResult implements IdentifiedDataSerializable {
     }
 
     public boolean isSuccessful() {
-        return (failure == null);
+        return failure == null;
     }
 
     public boolean isSuccessfulOrCancelled() {
-        return (failure == null || failure instanceof CancellationException);
+        return failure == null || failure instanceof CancellationException;
     }
 
     public Throwable getFailure() {
@@ -137,5 +137,4 @@ public class JobResult implements IdentifiedDataSerializable {
         completionTime = in.readLong();
         failure = in.readObject();
     }
-
 }

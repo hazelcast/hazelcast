@@ -21,13 +21,13 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.impl.operation.CancelJobOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
-import com.hazelcast.jet.impl.operation.RestartJobOperation;
+import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
+import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -36,7 +36,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -64,15 +63,6 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     @Override
-    public boolean restart() {
-        try {
-            return this.<Boolean>invokeOp(new RestartJobOperation(getId())).get();
-        } catch (ExecutionException | InterruptedException e) {
-            throw rethrow(e);
-        }
-    }
-
-    @Override
     protected ICompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         return invokeOp(new SubmitJobOperation(getId(), dag, config));
     }
@@ -83,8 +73,17 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     @Override
-    protected ICompletableFuture<Void> invokeCancelJob() {
-        return invokeOp(new CancelJobOperation(getId()));
+    protected ICompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
+        return invokeOp(new TerminateJobOperation(getId(), mode));
+    }
+
+    @Override
+    public void resume() {
+        try {
+            invokeOp(new ResumeJobOperation(getId())).get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     @Override

@@ -22,13 +22,14 @@ package com.hazelcast.jet.core;
 public enum JobStatus {
 
     /**
-     * The job is submitted but not started yet.
+     * The job is submitted but hasn't started yet. A job also enters this
+     * state when its execution was interrupted (e.g., due to a cluster member
+     * failing), before it is started again.
      */
-    NOT_STARTED,
+    NOT_RUNNING,
 
     /**
-     * The job is in the initialization phase on new coordinator, in which it
-     * starts the execution.
+     * The job is in the initialization phase on a new coordinator.
      */
     STARTING,
 
@@ -38,10 +39,9 @@ public enum JobStatus {
     RUNNING,
 
     /**
-     * The job is performing a restart by the same coordinator, because a job
-     * participant has left while the job was running.
+     * The job is suspended and it can be manually resumed.
      */
-    RESTARTING,
+    SUSPENDED,
 
     /**
      * The job is currently being completed.
@@ -49,12 +49,12 @@ public enum JobStatus {
     COMPLETING,
 
     /**
-     * The job is failed with an exception.
+     * The job has failed with an exception.
      */
     FAILED,
 
     /**
-     * The job is completed successfully.
+     * The job has completed successfully.
      */
     COMPLETED
 

@@ -37,17 +37,20 @@ public class JobRecord implements IdentifiedDataSerializable {
     private String dagJson;
     private JobConfig config;
     private int quorumSize;
+    private boolean suspended;
 
     public JobRecord() {
     }
 
-    public JobRecord(long jobId, long creationTime, Data dag, String dagJson, JobConfig config, int quorumSize) {
+    public JobRecord(long jobId, long creationTime, Data dag, String dagJson, JobConfig config, int quorumSize,
+                     boolean suspended) {
         this.jobId = jobId;
         this.creationTime = creationTime;
         this.dag = dag;
         this.dagJson = dagJson;
         this.config = config;
         this.quorumSize = quorumSize;
+        this.suspended = suspended;
     }
 
     public long getJobId() {
@@ -78,6 +81,24 @@ public class JobRecord implements IdentifiedDataSerializable {
         return quorumSize;
     }
 
+    public boolean isSuspended() {
+        return suspended;
+    }
+
+    public JobRecord withQuorumSize(int newQuorumSize) {
+        if (newQuorumSize <= quorumSize) {
+            throw new IllegalArgumentException("New quorum size: " + newQuorumSize
+                    + " must be bigger than current quorum size of " + this);
+        }
+        return new JobRecord(getJobId(), getCreationTime(), getDag(), getDagJson(), getConfig(), newQuorumSize,
+                isSuspended());
+    }
+
+    public JobRecord withSuspended(boolean suspended) {
+        return new JobRecord(getJobId(), getCreationTime(), getDag(), getDagJson(), getConfig(), getQuorumSize(),
+                suspended);
+    }
+
     @Override
     public int getFactoryId() {
         return JetInitDataSerializerHook.FACTORY_ID;
@@ -96,6 +117,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         out.writeUTF(dagJson);
         out.writeObject(config);
         out.writeInt(quorumSize);
+        out.writeBoolean(suspended);
     }
 
     @Override
@@ -106,6 +128,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         dagJson = in.readUTF();
         config = in.readObject();
         quorumSize = in.readInt();
+        suspended = in.readBoolean();
     }
 
     @Override
@@ -117,6 +140,7 @@ public class JobRecord implements IdentifiedDataSerializable {
                 ", dagJson=" + dagJson +
                 ", config=" + config +
                 ", quorumSize=" + quorumSize +
+                ", suspended=" + suspended +
                 '}';
     }
 }

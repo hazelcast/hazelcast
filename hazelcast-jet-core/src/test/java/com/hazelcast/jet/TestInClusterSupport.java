@@ -35,6 +35,10 @@ import java.util.function.Supplier;
 
 import static java.lang.Math.max;
 
+/**
+ * Extends {@link JetTestSupport} in such a way that one cluster is used for
+ * all tests in the class.
+ */
 @RunWith(Parameterized.class)
 @Category(ParallelTest.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -43,7 +47,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
 
     protected static final String JOURNALED_MAP_PREFIX = "journaledMap.";
     protected static final String JOURNALED_CACHE_PREFIX = "journaledCache.";
-    private static final int MEMBER_COUNT = 2;
+    protected static final int MEMBER_COUNT = 2;
 
     private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
     private static JetInstance[] allJetInstances;
@@ -53,6 +57,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
 
     private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> member);
     private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
+    protected static int parallelism;
 
     @Parameter
     public TestMode testMode;
@@ -64,7 +69,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
 
     @BeforeClass
     public static void setupCluster() {
-        int parallelism = Runtime.getRuntime().availableProcessors() / MEMBER_COUNT / 2;
+        parallelism = Runtime.getRuntime().availableProcessors() / MEMBER_COUNT / 2;
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(max(2, parallelism));
         Config hzConfig = config.getHazelcastConfig();

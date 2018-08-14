@@ -150,7 +150,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, lastSnapshotId, true, -1,
                             "ssFrom:" + vertex.name()),
                     new AsyncSnapshotWriterImpl(nodeEngine, memberIndex, memberCount),
-                    nodeEngine.getLogger(StoreSnapshotTasklet.class),
+                    nodeEngine.getLogger(StoreSnapshotTasklet.class.getName() + "." + vertex.name()),
                     vertex.name(), vertex.isHigherPriorityUpstream());
             tasklets.add(ssTasklet);
 
