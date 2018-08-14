@@ -41,7 +41,7 @@ import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Address;
@@ -1531,7 +1531,7 @@ public abstract class HazelcastTestSupport {
             SerializationService ss = getNode(instance).getSerializationService();
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
-            MapOperation get = getMapOperationProvider().createGetOperation(mapName, ss.toData(key));
+            MapOperation get = getMapOperationProvider(instance, mapName).createGetOperation(mapName, ss.toData(key));
             get.setPartitionId(partitionId);
             get.setReplicaIndex(replicaIndex);
 
@@ -1541,8 +1541,9 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    protected MapOperationProvider getMapOperationProvider() {
-        return new DefaultMapOperationProvider();
+    protected MapOperationProvider getMapOperationProvider(HazelcastInstance instance, String mapName) {
+        MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
+        return mapService.getMapServiceContext().getMapOperationProvider(mapName);
     }
 
     // ######################################
