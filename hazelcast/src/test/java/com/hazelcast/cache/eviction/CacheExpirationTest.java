@@ -18,6 +18,7 @@ package com.hazelcast.cache.eviction;
 
 import com.hazelcast.cache.CacheTestSupport;
 import com.hazelcast.cache.HazelcastExpiryPolicy;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -40,8 +41,11 @@ import javax.cache.event.CacheEntryExpiredListener;
 import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryListenerException;
 import javax.cache.expiry.Duration;
+import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -103,11 +107,97 @@ public class CacheExpirationTest extends CacheTestSupport {
     }
 
     @Test
-    public void testSimpleExpiration() {
+    public void testSimpleExpiration_put() {
         SimpleExpiryListener listener = new SimpleExpiryListener();
-        CacheConfig cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(1, 1, 1), listener);
-        Cache cache = createCache(cacheConfig);
+        CacheConfig<String, String> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(1, 1, 1), listener);
+        Cache<String, String> cache = createCache(cacheConfig);
         cache.put("key", "value");
+
+        assertEqualsEventually(1, listener.getExpirationCount());
+    }
+
+    @Test
+    public void testSimpleExpiration_putAsync() {
+        SimpleExpiryListener listener = new SimpleExpiryListener();
+        CacheConfig<String, String> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(1, 1, 1), listener);
+        Cache<String, String> cache = createCache(cacheConfig);
+        ((ICache<String, String>) cache).putAsync("key", "value");
+
+        assertEqualsEventually(1, listener.getExpirationCount());
+    }
+
+    @Test
+    public void testSimpleExpiration_putAll() {
+        SimpleExpiryListener listener = new SimpleExpiryListener();
+        CacheConfig<String, String> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(1, 1, 1), listener);
+        Cache<String, String> cache = createCache(cacheConfig);
+
+        Map<String, String> entries = new HashMap<String, String>();
+        entries.put("key1", "value1");
+        entries.put("key2", "value2");
+        cache.putAll(entries);
+
+        assertEqualsEventually(2, listener.getExpirationCount());
+    }
+
+    @Test
+    public void testSimpleExpiration_getAndPut() {
+        SimpleExpiryListener listener = new SimpleExpiryListener();
+        CacheConfig<String, String> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(1, 1, 1), listener);
+        Cache<String, String> cache = createCache(cacheConfig);
+        cache.getAndPut("key", "value");
+
+        assertEqualsEventually(1, listener.getExpirationCount());
+    }
+
+    @Test
+    public void testSimpleExpiration_getAndPutAsync() {
+        SimpleExpiryListener listener = new SimpleExpiryListener();
+        CacheConfig<String, String> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(1, 1, 1), listener);
+        Cache<String, String> cache = createCache(cacheConfig);
+        ((ICache<String, String>) cache).getAndPutAsync("key", "value");
+
+        assertEqualsEventually(1, listener.getExpirationCount());
+    }
+
+    @Test
+    public void testSimpleExpiration_getAndReplace() {
+        SimpleExpiryListener listener = new SimpleExpiryListener();
+        CacheConfig<String, String> cacheConfig = createCacheConfig(new EternalExpiryPolicy(), listener);
+        Cache<String, String> cache = createCache(cacheConfig);
+        cache.put("key", "value");
+        cache.unwrap(ICache.class).getAndReplace("key", "value", new HazelcastExpiryPolicy(1, 1, 1));
+
+        assertEqualsEventually(1, listener.getExpirationCount());
+    }
+
+    @Test
+    public void testSimpleExpiration_getAndReplaceAsync() {
+        SimpleExpiryListener listener = new SimpleExpiryListener();
+        CacheConfig<String, String> cacheConfig = createCacheConfig(new EternalExpiryPolicy(), listener);
+        Cache<String, String> cache = createCache(cacheConfig);
+        cache.put("key", "value");
+        cache.unwrap(ICache.class).getAndReplaceAsync("key", "value", new HazelcastExpiryPolicy(1, 1, 1));
+
+        assertEqualsEventually(1, listener.getExpirationCount());
+    }
+
+    @Test
+    public void testSimpleExpiration_putIfAbsent() {
+        SimpleExpiryListener listener = new SimpleExpiryListener();
+        CacheConfig<String, String> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(1, 1, 1), listener);
+        Cache<String, String> cache = createCache(cacheConfig);
+        cache.putIfAbsent("key", "value");
+
+        assertEqualsEventually(1, listener.getExpirationCount());
+    }
+
+    @Test
+    public void testSimpleExpiration_putIfAbsentAsync() {
+        SimpleExpiryListener listener = new SimpleExpiryListener();
+        CacheConfig<String, String> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(1, 1, 1), listener);
+        Cache<String, String> cache = createCache(cacheConfig);
+        ((ICache<String, String>) cache).putIfAbsentAsync("key", "value");
 
         assertEqualsEventually(1, listener.getExpirationCount());
     }

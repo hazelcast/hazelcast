@@ -1116,6 +1116,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected R doPutRecord(Data key, R record, String source, boolean updateJournal) {
+        markExpirable(record.getExpirationTime());
         R oldRecord = records.put(key, record);
         if (updateJournal) {
             if (oldRecord != null) {
