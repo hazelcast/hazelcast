@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.monitor.impl.InternalIndexStats;
+import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.InternalIndex;
@@ -30,7 +30,7 @@ public class DefaultIndexProvider implements IndexProvider {
 
     @Override
     public InternalIndex createIndex(String attributeName, boolean ordered, Extractors extractors,
-                                     InternalSerializationService ss, IndexCopyBehavior copyBehavior, InternalIndexStats stats) {
+                                     InternalSerializationService ss, IndexCopyBehavior copyBehavior, PerIndexStats stats) {
         return new IndexImpl(attributeName, ordered, ss, extractors, copyBehavior, stats);
     }
 

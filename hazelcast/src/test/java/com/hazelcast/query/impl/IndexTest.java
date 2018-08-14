@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.record.AbstractRecord;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.monitor.impl.InternalIndexStats;
+import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -470,7 +470,7 @@ public class IndexTest {
 
     private void testIt(boolean ordered) {
         IndexImpl index = new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), ordered, ss, Extractors.empty(),
-                copyBehavior, InternalIndexStats.EMPTY);
+                copyBehavior, PerIndexStats.EMPTY);
         assertEquals(0, index.getRecords(0L).size());
         assertEquals(0, index.getSubRecordsBetween(0L, 1000L).size());
         QueryRecord record5 = newRecord(5L, 55L);

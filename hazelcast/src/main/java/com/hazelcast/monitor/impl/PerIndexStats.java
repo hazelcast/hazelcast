@@ -24,12 +24,12 @@ import com.hazelcast.query.impl.Index;
  * Index}.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:anoninnerlength"})
-public interface InternalIndexStats {
+public interface PerIndexStats {
 
     /**
      * Empty no-op internal index stats instance.
      */
-    InternalIndexStats EMPTY = new InternalIndexStats() {
+    PerIndexStats EMPTY = new PerIndexStats() {
 
         @Override
         public long makeTimestamp() {

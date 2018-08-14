@@ -19,7 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.monitor.impl.IndexOperationStats;
-import com.hazelcast.monitor.impl.InternalIndexStats;
+import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -44,12 +44,12 @@ public class IndexImpl implements InternalIndex {
     private final boolean ordered;
     private final Extractors extractors;
     private final IndexCopyBehavior copyBehavior;
-    private final InternalIndexStats stats;
+    private final PerIndexStats stats;
 
     private volatile TypeConverter converter;
 
     public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors,
-                     IndexCopyBehavior copyBehavior, InternalIndexStats stats) {
+                     IndexCopyBehavior copyBehavior, PerIndexStats stats) {
         this.attributeName = attributeName;
         this.ordered = ordered;
         this.ss = ss;
@@ -59,7 +59,7 @@ public class IndexImpl implements InternalIndex {
         this.stats = stats;
     }
 
-    protected IndexStore createIndexStore(boolean ordered, InternalIndexStats stats) {
+    protected IndexStore createIndexStore(boolean ordered, PerIndexStats stats) {
         return ordered ? new SortedIndexStore(copyBehavior) : new UnsortedIndexStore(copyBehavior);
     }
 
@@ -210,7 +210,7 @@ public class IndexImpl implements InternalIndex {
     }
 
     @Override
-    public InternalIndexStats getIndexStats() {
+    public PerIndexStats getIndexStats() {
         return stats;
     }
 

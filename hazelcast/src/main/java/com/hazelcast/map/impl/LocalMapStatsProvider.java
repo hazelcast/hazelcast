@@ -24,8 +24,8 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.InternalIndexStats;
-import com.hazelcast.monitor.impl.InternalIndexesStats;
+import com.hazelcast.monitor.impl.PerIndexStats;
+import com.hazelcast.monitor.impl.IndexesStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.OnDemandIndexStats;
 import com.hazelcast.nio.Address;
@@ -332,7 +332,7 @@ public class LocalMapStatsProvider {
                     continue;
                 }
                 assert !partitionIndexes.isGlobal();
-                InternalIndexesStats indexesStats = partitionIndexes.getIndexesStats();
+                IndexesStats indexesStats = partitionIndexes.getIndexesStats();
 
                 // Partitions may have different query stats due to migrations
                 // (partition stats is not preserved while migrating) and/or
@@ -368,7 +368,7 @@ public class LocalMapStatsProvider {
                 freshStats.put(indexName, freshIndexStats);
             }
 
-            InternalIndexStats indexStats = index.getIndexStats();
+            PerIndexStats indexStats = index.getIndexStats();
             freshIndexStats.setCreationTime(Math.min(freshIndexStats.getCreationTime(), indexStats.getCreationTime()));
             long hitCount = indexStats.getHitCount();
             freshIndexStats.setHitCount(Math.max(freshIndexStats.getHitCount(), hitCount));

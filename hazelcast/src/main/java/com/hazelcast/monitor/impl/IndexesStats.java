@@ -20,12 +20,12 @@ package com.hazelcast.monitor.impl;
  * Provides internal statistics for {@link com.hazelcast.query.impl.Indexes
  * Indexes}.
  */
-public interface InternalIndexesStats {
+public interface IndexesStats {
 
     /**
      * Empty no-op internal indexes stats.
      */
-    InternalIndexesStats EMPTY = new InternalIndexesStats() {
+    IndexesStats EMPTY = new IndexesStats() {
         @Override
         public long getQueryCount() {
             return 0;
@@ -47,8 +47,8 @@ public interface InternalIndexesStats {
         }
 
         @Override
-        public InternalIndexStats createIndexStats(boolean ordered, boolean queryableEntriesAreCached) {
-            return InternalIndexStats.EMPTY;
+        public PerIndexStats createPerIndexStats(boolean ordered, boolean queryableEntriesAreCached) {
+            return PerIndexStats.EMPTY;
         }
     };
 
@@ -82,6 +82,6 @@ public interface InternalIndexesStats {
      *                                  cached, {@code false} otherwise.
      * @return the created internal per-index stats instance.
      */
-    InternalIndexStats createIndexStats(boolean ordered, boolean queryableEntriesAreCached);
+    PerIndexStats createPerIndexStats(boolean ordered, boolean queryableEntriesAreCached);
 
 }

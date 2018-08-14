@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.monitor.impl.InternalIndexStats;
+import com.hazelcast.monitor.impl.PerIndexStats;
 
 import java.util.HashSet;
 
@@ -26,7 +26,7 @@ import java.util.HashSet;
  */
 public class PartitionQueryContextWithStats extends QueryContext {
 
-    private final HashSet<InternalIndexStats> trackedStats = new HashSet<InternalIndexStats>(8);
+    private final HashSet<PerIndexStats> trackedStats = new HashSet<PerIndexStats>(8);
 
     /**
      * Constructs a new partition query context with stats for the given indexes.
@@ -40,7 +40,7 @@ public class PartitionQueryContextWithStats extends QueryContext {
     @Override
     void attachTo(Indexes indexes) {
         assert indexes == this.indexes;
-        for (InternalIndexStats stats : trackedStats) {
+        for (PerIndexStats stats : trackedStats) {
             stats.resetPerQueryStats();
         }
         trackedStats.clear();
@@ -64,7 +64,7 @@ public class PartitionQueryContextWithStats extends QueryContext {
 
     @Override
     void applyPerQueryStats() {
-        for (InternalIndexStats stats : trackedStats) {
+        for (PerIndexStats stats : trackedStats) {
             stats.incrementQueryCount();
         }
     }

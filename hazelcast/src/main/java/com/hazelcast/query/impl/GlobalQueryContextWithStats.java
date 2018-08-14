@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.monitor.impl.InternalIndexStats;
+import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.HashMap;
@@ -157,7 +157,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public InternalIndexStats getIndexStats() {
+        public PerIndexStats getIndexStats() {
             return delegate.getIndexStats();
         }
 

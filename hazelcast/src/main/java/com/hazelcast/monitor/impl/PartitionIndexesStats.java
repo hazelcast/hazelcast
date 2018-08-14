@@ -27,7 +27,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * The main trait of the implementation is the lack of concurrency support since
  * partitioned indexes and their stats are updated from a single thread only.
  */
-public class PartitionIndexesStats implements InternalIndexesStats {
+public class PartitionIndexesStats implements IndexesStats {
 
     private static final AtomicLongFieldUpdater<PartitionIndexesStats> QUERY_COUNT = newUpdater(PartitionIndexesStats.class,
             "queryCount");
@@ -58,8 +58,8 @@ public class PartitionIndexesStats implements InternalIndexesStats {
     }
 
     @Override
-    public InternalIndexStats createIndexStats(boolean ordered, boolean queryableEntriesAreCached) {
-        return new PartitionIndexStats();
+    public PerIndexStats createPerIndexStats(boolean ordered, boolean queryableEntriesAreCached) {
+        return new PartitionPerIndexStats();
     }
 
 }

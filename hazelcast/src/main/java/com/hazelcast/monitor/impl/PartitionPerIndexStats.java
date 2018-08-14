@@ -30,31 +30,31 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * The main trait of the implementation is the lack of concurrency support since
  * partitioned indexes and their stats are updated from a single thread only.
  */
-public class PartitionIndexStats implements InternalIndexStats {
+public class PartitionPerIndexStats implements PerIndexStats {
 
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> ENTRY_COUNT = newUpdater(PartitionIndexStats.class,
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> ENTRY_COUNT = newUpdater(PartitionPerIndexStats.class,
             "entryCount");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> QUERY_COUNT = newUpdater(PartitionIndexStats.class,
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> QUERY_COUNT = newUpdater(PartitionPerIndexStats.class,
             "queryCount");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> HIT_COUNT = newUpdater(PartitionIndexStats.class,
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> HIT_COUNT = newUpdater(PartitionPerIndexStats.class,
             "hitCount");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> TOTAL_HIT_LATENCY = newUpdater(PartitionIndexStats.class,
-            "totalHitLatency");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> TOTAL_NORMALIZED_HIT_CARDINALITY = newUpdater(
-            PartitionIndexStats.class, "totalNormalizedHitCardinality");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> INSERT_COUNT = newUpdater(PartitionIndexStats.class,
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> TOTAL_HIT_LATENCY = newUpdater(
+            PartitionPerIndexStats.class, "totalHitLatency");
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> TOTAL_NORMALIZED_HIT_CARDINALITY = newUpdater(
+            PartitionPerIndexStats.class, "totalNormalizedHitCardinality");
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> INSERT_COUNT = newUpdater(PartitionPerIndexStats.class,
             "insertCount");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> TOTAL_INSERT_LATENCY = newUpdater(PartitionIndexStats.class,
-            "totalInsertLatency");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> UPDATE_COUNT = newUpdater(PartitionIndexStats.class,
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> TOTAL_INSERT_LATENCY = newUpdater(
+            PartitionPerIndexStats.class, "totalInsertLatency");
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> UPDATE_COUNT = newUpdater(PartitionPerIndexStats.class,
             "updateCount");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> TOTAL_UPDATE_LATENCY = newUpdater(PartitionIndexStats.class,
-            "totalUpdateLatency");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> REMOVE_COUNT = newUpdater(PartitionIndexStats.class,
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> TOTAL_UPDATE_LATENCY = newUpdater(
+            PartitionPerIndexStats.class, "totalUpdateLatency");
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> REMOVE_COUNT = newUpdater(PartitionPerIndexStats.class,
             "removeCount");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> TOTAL_REMOVE_LATENCY = newUpdater(PartitionIndexStats.class,
-            "totalRemoveLatency");
-    private static final AtomicLongFieldUpdater<PartitionIndexStats> MEMORY_COST = newUpdater(PartitionIndexStats.class,
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> TOTAL_REMOVE_LATENCY = newUpdater(
+            PartitionPerIndexStats.class, "totalRemoveLatency");
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> MEMORY_COST = newUpdater(PartitionPerIndexStats.class,
             "memoryCost");
 
     // Per-operation stats may be safely reused/shared for operations on
@@ -79,7 +79,7 @@ public class PartitionIndexStats implements InternalIndexStats {
 
     private boolean hasQueries;
 
-    public PartitionIndexStats() {
+    public PartitionPerIndexStats() {
         this.creationTime = Clock.currentTimeMillis();
     }
 
@@ -88,7 +88,7 @@ public class PartitionIndexStats implements InternalIndexStats {
     }
 
     private void resetMemoryCost() {
-        MEMORY_COST.lazySet(PartitionIndexStats.this, 0);
+        MEMORY_COST.lazySet(PartitionPerIndexStats.this, 0);
     }
 
     @Override

@@ -31,7 +31,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * The main trait of the implementation is the concurrency support, which is
  * required for global indexes because they are shared among partitions.
  */
-public class GlobalIndexStats implements InternalIndexStats {
+public class GlobalPerIndexStats implements PerIndexStats {
 
     // To compute the average hit cardinality we need to track the total
     // cardinality of all of the hits and then divide it by the number of hits.
@@ -48,26 +48,29 @@ public class GlobalIndexStats implements InternalIndexStats {
     private static final long PRECISION_SCALE = 7;
     private static final long PRECISION = 1 << PRECISION_SCALE;
 
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> ENTRY_COUNT = newUpdater(GlobalIndexStats.class, "entryCount");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> QUERY_COUNT = newUpdater(GlobalIndexStats.class, "queryCount");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> HIT_COUNT = newUpdater(GlobalIndexStats.class, "hitCount");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> TOTAL_HIT_LATENCY = newUpdater(GlobalIndexStats.class,
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> ENTRY_COUNT = newUpdater(GlobalPerIndexStats.class,
+            "entryCount");
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> QUERY_COUNT = newUpdater(GlobalPerIndexStats.class,
+            "queryCount");
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> HIT_COUNT = newUpdater(GlobalPerIndexStats.class,
+            "hitCount");
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> TOTAL_HIT_LATENCY = newUpdater(GlobalPerIndexStats.class,
             "totalHitLatency");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> TOTAL_NORMALIZED_HIT_CARDINALITY = newUpdater(
-            GlobalIndexStats.class, "totalNormalizedHitCardinality");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> INSERT_COUNT = newUpdater(GlobalIndexStats.class,
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> TOTAL_NORMALIZED_HIT_CARDINALITY = newUpdater(
+            GlobalPerIndexStats.class, "totalNormalizedHitCardinality");
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> INSERT_COUNT = newUpdater(GlobalPerIndexStats.class,
             "insertCount");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> TOTAL_INSERT_LATENCY = newUpdater(GlobalIndexStats.class,
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> TOTAL_INSERT_LATENCY = newUpdater(GlobalPerIndexStats.class,
             "totalInsertLatency");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> UPDATE_COUNT = newUpdater(GlobalIndexStats.class,
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> UPDATE_COUNT = newUpdater(GlobalPerIndexStats.class,
             "updateCount");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> TOTAL_UPDATE_LATENCY = newUpdater(GlobalIndexStats.class,
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> TOTAL_UPDATE_LATENCY = newUpdater(GlobalPerIndexStats.class,
             "totalUpdateLatency");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> REMOVE_COUNT = newUpdater(GlobalIndexStats.class,
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> REMOVE_COUNT = newUpdater(GlobalPerIndexStats.class,
             "removeCount");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> TOTAL_REMOVE_LATENCY = newUpdater(GlobalIndexStats.class,
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> TOTAL_REMOVE_LATENCY = newUpdater(GlobalPerIndexStats.class,
             "totalRemoveLatency");
-    private static final AtomicLongFieldUpdater<GlobalIndexStats> VALUES_MEMORY_COST = newUpdater(GlobalIndexStats.class,
+    private static final AtomicLongFieldUpdater<GlobalPerIndexStats> VALUES_MEMORY_COST = newUpdater(GlobalPerIndexStats.class,
             "valuesMemoryCost");
 
     private final boolean ordered;
@@ -98,7 +101,7 @@ public class GlobalIndexStats implements InternalIndexStats {
      *                                  cached, {@code false} otherwise. Affects the
      *                                  on-heap memory cost calculation.
      */
-    public GlobalIndexStats(boolean ordered, boolean queryableEntriesAreCached) {
+    public GlobalPerIndexStats(boolean ordered, boolean queryableEntriesAreCached) {
         this.ordered = ordered;
         this.queryableEntriesAreCached = queryableEntriesAreCached;
         this.creationTime = Clock.currentTimeMillis();

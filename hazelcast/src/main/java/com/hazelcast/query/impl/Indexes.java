@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.DefaultIndexProvider;
 import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.monitor.impl.GlobalIndexesStats;
-import com.hazelcast.monitor.impl.InternalIndexesStats;
+import com.hazelcast.monitor.impl.IndexesStats;
 import com.hazelcast.monitor.impl.PartitionIndexesStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
@@ -51,7 +51,7 @@ public class Indexes {
     private final IndexCopyBehavior copyBehavior;
     private final boolean queryableEntriesAreCached;
     private final QueryContextProvider queryContextProvider;
-    private final InternalIndexesStats stats;
+    private final IndexesStats stats;
 
     private final ConcurrentMap<String, InternalIndex> mapIndexes = new ConcurrentHashMap<String, InternalIndex>(3);
     private final AtomicReference<InternalIndex[]> indexes = new AtomicReference<InternalIndex[]>(EMPTY_INDEX);
@@ -81,7 +81,7 @@ public class Indexes {
         this.copyBehavior = copyBehavior;
         this.queryableEntriesAreCached = false;
         this.queryContextProvider = new GlobalQueryContextProvider();
-        this.stats = InternalIndexesStats.EMPTY;
+        this.stats = IndexesStats.EMPTY;
     }
 
     /**
@@ -137,7 +137,7 @@ public class Indexes {
         }
 
         index = indexProvider.createIndex(attribute, ordered, extractors, serializationService, copyBehavior,
-                stats.createIndexStats(ordered, queryableEntriesAreCached));
+                stats.createPerIndexStats(ordered, queryableEntriesAreCached));
         mapIndexes.put(attribute, index);
         indexes.set(mapIndexes.values().toArray(EMPTY_INDEX));
         hasIndex = true;
@@ -266,7 +266,7 @@ public class Indexes {
     /**
      * Returns the indexes stats of this indexes instance.
      */
-    public InternalIndexesStats getIndexesStats() {
+    public IndexesStats getIndexesStats() {
         return stats;
     }
 
@@ -278,11 +278,11 @@ public class Indexes {
         }
     }
 
-    private InternalIndexesStats createStats(MapConfig mapConfig, boolean global) {
+    private IndexesStats createStats(MapConfig mapConfig, boolean global) {
         if (mapConfig.isStatisticsEnabled()) {
             return global ? new GlobalIndexesStats() : new PartitionIndexesStats();
         } else {
-            return InternalIndexesStats.EMPTY;
+            return IndexesStats.EMPTY;
         }
     }
 
