@@ -175,6 +175,20 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         }
 
         @Override
+        public void info(String message, Throwable thrown) {
+            long startTime = System.nanoTime();
+            delegate.info(message, thrown);
+            logOnSlowLogging(startTime);
+        }
+
+        @Override
+        public void info(Throwable thrown) {
+            long startTime = System.nanoTime();
+            delegate.fine(thrown);
+            logOnSlowLogging(startTime);
+        }
+
+        @Override
         public boolean isInfoEnabled() {
             return true;
         }
@@ -224,6 +238,11 @@ public class TestLoggerFactory extends LoggerFactorySupport {
             long startTime = System.nanoTime();
             delegate.severe(message, thrown);
             logOnSlowLogging(startTime);
+        }
+
+        @Override
+        public boolean isSevereEnabled() {
+            return true;
         }
 
         @Override

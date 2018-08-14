@@ -860,23 +860,23 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static <E> void assertNotContains(Collection<E> collection, E expected) {
-        if (collection.contains(expected)) {
-            fail(format("Collection %s (%d) contained unexpected '%s'", collection, collection.size(), expected));
+    public static <E> void assertNotContains(Collection<E> actual, E notExpected) {
+        if (actual.contains(notExpected)) {
+            fail(format("Collection %s (%d) contained unexpected '%s'", actual, actual.size(), notExpected));
         }
     }
 
-    public static <E> void assertContainsAll(Collection<E> collection, Collection<E> expected) {
-        if (!collection.containsAll(expected)) {
+    public static <E> void assertContainsAll(Collection<E> actual, Collection<E> expected) {
+        if (!actual.containsAll(expected)) {
             fail(format("Collection %s (%d) didn't contain expected %s (%d)",
-                    collection, collection.size(), expected, expected.size()));
+                    actual, actual.size(), expected, expected.size()));
         }
     }
 
-    public static <E> void assertNotContainsAll(Collection<E> collection, Collection<E> expected) {
-        if (collection.containsAll(expected)) {
+    public static <E> void assertNotContainsAll(Collection<E> actual, Collection<E> expected) {
+        if (actual.containsAll(expected)) {
             fail(format("Collection %s (%d) contained unexpected %s (%d)",
-                    collection, collection.size(), expected, expected.size()));
+                    actual, actual.size(), expected, expected.size()));
         }
     }
 
@@ -944,10 +944,10 @@ public abstract class HazelcastTestSupport {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E> E assertInstanceOf(Class<E> clazz, Object object) {
-        assertNotNull(object);
-        assertTrue(object + " is not an instanceof " + clazz.getName(), clazz.isAssignableFrom(object.getClass()));
-        return (E) object;
+    public static <E> E assertInstanceOf(Class<E> expected, Object actual) {
+        assertNotNull(actual);
+        assertTrue(actual + " is not an instanceof " + expected.getName(), expected.isAssignableFrom(actual.getClass()));
+        return (E) actual;
     }
 
     public static void assertJoinable(Thread... threads) {
