@@ -43,12 +43,12 @@ public class ServiceEndpointResolverTest {
     private static final String API_TOKEN = "token";
 
     @Mock
-    private KubernetesClient client;
+    private RetryKubernetesClient client;
 
     @Before
     public void setup()
             throws Exception {
-        PowerMockito.whenNew(KubernetesClient.class).withAnyArguments().thenReturn(client);
+        PowerMockito.whenNew(RetryKubernetesClient.class).withAnyArguments().thenReturn(client);
     }
 
     @Test

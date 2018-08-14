@@ -65,7 +65,7 @@ class ServiceEndpointResolver
             token = getAccountToken();
         }
         logger.info("Kubernetes Discovery: Bearer Token { " + token + " }");
-        return new KubernetesClient(kubernetesMaster, token);
+        return new RetryKubernetesClient(new DefaultKubernetesClient(kubernetesMaster, token));
     }
 
     @Override
@@ -91,7 +91,7 @@ class ServiceEndpointResolver
         }
     }
 
-    private void resolveAddresses(List<DiscoveryNode> discoveredNodes, List<KubernetesClient.EntrypointAddress> addresses) {
+    private void resolveAddresses(List<DiscoveryNode> discoveredNodes, List<EntrypointAddress> addresses) {
         for (EntrypointAddress address : addresses) {
             addAddress(discoveredNodes, address);
         }

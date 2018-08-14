@@ -18,6 +18,7 @@ package com.hazelcast.kubernetes;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoints;
+import com.hazelcast.kubernetes.KubernetesClient.EntrypointAddress;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -34,7 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertTrue;
 
-public class KubernetesClientTest {
+public class DefaultKubernetesClientTest {
     private static final String KUBERNETES_MASTER_IP = "localhost";
     private static final int KUBERNETES_MASTER_PORT = 8089;
     private static final String KUBERNETES_MASTER_URL = String
@@ -55,7 +56,7 @@ public class KubernetesClientTest {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(KUBERNETES_MASTER_PORT);
 
-    private final KubernetesClient kubernetesClient = new KubernetesClient(KUBERNETES_MASTER_URL, TOKEN);
+    private final DefaultKubernetesClient kubernetesClient = new DefaultKubernetesClient(KUBERNETES_MASTER_URL, TOKEN);
 
     @Test
     public void endpointsByNamespace() {
@@ -304,9 +305,9 @@ public class KubernetesClientTest {
         return "malformed response";
     }
 
-    private static List<String> extractIpPort(List<KubernetesClient.EntrypointAddress> addresses) {
+    private static List<String> extractIpPort(List<EntrypointAddress> addresses) {
         List<String> result = new ArrayList<String>();
-        for (KubernetesClient.EntrypointAddress address : addresses) {
+        for (EntrypointAddress address : addresses) {
             String ip = address.getIp();
             String port = String.valueOf(address.getAdditionalProperties().get("hazelcast-service-port"));
             result.add(ipPort(ip, port));

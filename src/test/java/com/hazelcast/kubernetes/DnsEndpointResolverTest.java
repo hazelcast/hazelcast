@@ -31,7 +31,7 @@ public class DnsEndpointResolverTest {
     private static final int SERVICE_DNS_TIMEOUT = 5;
 
     @Mock
-    private KubernetesClient client;
+    private DefaultKubernetesClient client;
 
     @Mock
     private Lookup lookup;
@@ -42,7 +42,7 @@ public class DnsEndpointResolverTest {
     @Before
     public void setup()
             throws Exception {
-        PowerMockito.whenNew(KubernetesClient.class).withAnyArguments().thenReturn(client);
+        PowerMockito.whenNew(DefaultKubernetesClient.class).withAnyArguments().thenReturn(client);
         PowerMockito.whenNew(SRVRecord.class).withAnyArguments().thenReturn(srvRecord);
         when(srvRecord.getTarget()).thenReturn(Name.fromString("127.0.0.1"));
     }
