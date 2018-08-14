@@ -28,7 +28,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.query.Query;
-import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicates;
@@ -187,14 +186,13 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         });
     }
 
-    private int numberOfPartitionQueryResults(OperationService operationService, int partitionId,
-                                              String attribute, Comparable value) {
-        QueryPartitionOperation queryOp = new QueryPartitionOperation(
-                Query.of().mapName(mapName)
-                     .iterationType(IterationType.KEY)
-                     .predicate(Predicates.equal(attribute, value)).build());
+    private int numberOfPartitionQueryResults(HazelcastInstance instance, int partitionId, String attribute, Comparable value) {
+        OperationService operationService = getOperationService(instance);
+        Query query = Query.of().mapName(mapName).iterationType(IterationType.KEY).predicate(Predicates.equal(attribute, value))
+                           .build();
+        Operation queryOperation = getMapOperationProvider(instance, mapName).createQueryPartitionOperation(query);
         InternalCompletableFuture<QueryResult> future = operationService
-                .invokeOnPartition(MapService.SERVICE_NAME, queryOp, partitionId);
+                .invokeOnPartition(MapService.SERVICE_NAME, queryOperation, partitionId);
         return future.join().size();
     }
 
@@ -218,7 +216,6 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         int partitionCount = getPartitionCount(instance);
         final AtomicInteger authorRecordsCounter = new AtomicInteger();
         final AtomicInteger yearRecordsCounter = new AtomicInteger();
-        final OperationService operationService = getOperationService(instance);
         boolean isNativeMemoryFormat = context.getMapContainer(mapName).getMapConfig().getInMemoryFormat().equals(NATIVE);
 
         String authorOwned = findAuthorOwnedBy(instance);
@@ -244,8 +241,8 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
                 assertNotNull("There should be a partition index for attribute 'author'", index.getIndex("author"));
                 assertNotNull("There should be a partition index for attribute 'year'", index.getIndex("year"));
 
-                authorRecordsCounter.getAndAdd(numberOfPartitionQueryResults(operationService, i, "author", authorOwned));
-                yearRecordsCounter.getAndAdd(numberOfPartitionQueryResults(operationService, i, "year", yearOwned));
+                authorRecordsCounter.getAndAdd(numberOfPartitionQueryResults(instance, i, "author", authorOwned));
+                yearRecordsCounter.getAndAdd(numberOfPartitionQueryResults(instance, i, "year", yearOwned));
             }
         }
 
