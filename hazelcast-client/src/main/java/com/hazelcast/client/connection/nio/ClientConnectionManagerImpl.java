@@ -20,7 +20,6 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -46,7 +45,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -89,14 +87,12 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
-import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 import static com.hazelcast.client.spi.properties.ClientProperty.ALLOW_INVOCATIONS_WHEN_DISCONNECTED;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
-import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -114,14 +110,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected volatile boolean alive;
 
-
     private final ILogger logger;
     private final int connectionTimeoutMillis;
 
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
-    private final SocketOptions socketOptions;
-    private final ChannelFactory channelFactory;
 
     private final ClientExecutionServiceImpl executionService;
     private final AddressTranslator addressTranslator;
@@ -165,19 +158,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.connectionTimeoutMillis = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
-        this.socketOptions = networkConfig.getSocketOptions();
 
         this.eventLoopGroup = initEventLoopGroup(client);
 
-        this.channelFactory = client.getClientExtension().createSocketChannelWrapperFactory();
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
-
         this.credentials = client.getCredentials();
         this.connectionStrategy = initializeStrategy(client);
         this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.addressProviders = addressProviders;
-        this.connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+
+        connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
 
         int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         boolean isAsync = client.getClientConfig().getConnectionStrategyConfig().isAsyncStart();
@@ -193,16 +184,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.outboundPortCount = outboundPorts.size();
         this.heartbeat = new HeartbeatManager(this, client);
         this.authenticationTimeout = heartbeat.getHeartbeatTimeout();
-        checkSslAllowed();
-    }
-
-    private void checkSslAllowed() {
-        SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
-        if (sslConfig != null && sslConfig.isEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
-            }
-        }
     }
 
     private Collection<Integer> getOutboundPorts(ClientNetworkConfig networkConfig) {
@@ -234,7 +215,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected NioEventLoopGroup initEventLoopGroup(HazelcastClientInstanceImpl client) {
         HazelcastProperties properties = client.getProperties();
-        boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
 
         SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
         boolean sslEnabled = sslConfig != null && sslConfig.isEnabled();
@@ -265,7 +245,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         .inputThreadCount(inputThreads)
                         .outputThreadCount(outputThreads)
                         .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))
-                        .channelInitializer(new ClientChannelInitializer(getBufferSize(), directBuffer)));
+                        .channelInitializer(client.getClientExtension().createChannelInitializer()));
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
@@ -292,8 +272,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         alive = true;
         startEventLoopGroup();
-
         heartbeat.start();
+
         connectionStrategy.init(clientContext);
         connectionStrategy.start();
     }
@@ -464,7 +444,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onConnectToCluster();
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + address + ", exception " + e);
+            logger.warning("Exception during initial connection to " + address + ", exception " + e, e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
@@ -558,7 +538,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    protected ClientConnection createSocketConnection(final Address address) throws IOException {
+    protected ClientConnection createSocketConnection(final Address remoteAddress) throws IOException {
         if (!alive) {
             throw new HazelcastException("ConnectionManager is not active!");
         }
@@ -566,45 +546,26 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         try {
             socketChannel = SocketChannel.open();
             Socket socket = socketChannel.socket();
-            socket.setKeepAlive(socketOptions.isKeepAlive());
-            socket.setTcpNoDelay(socketOptions.isTcpNoDelay());
-            socket.setReuseAddress(socketOptions.isReuseAddress());
-            if (socketOptions.getLingerSeconds() > 0) {
-                socket.setSoLinger(true, socketOptions.getLingerSeconds());
-            }
-            int bufferSize = getBufferSize();
-            socket.setSendBufferSize(bufferSize);
-            socket.setReceiveBufferSize(bufferSize);
-            InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
+
             bindSocketToPort(socket);
-            socketChannel.socket().connect(inetSocketAddress, connectionTimeoutMillis);
 
-            HazelcastProperties properties = client.getProperties();
-            boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
+            Channel channel = eventLoopGroup.register(socketChannel, true);
+            channel.connect(remoteAddress.getInetSocketAddress(), connectionTimeoutMillis);
 
-            Channel channel = channelFactory.create(socketChannel, true, directBuffer);
+            ClientConnection connection
+                    = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
 
-            final ClientConnection clientConnection = new ClientConnection(
-                    client, connectionIdGen.incrementAndGet(), channel);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
             }
-            socket.setSoTimeout(0);
 
-            eventLoopGroup.register(channel);
-            return clientConnection;
+            channel.start();
+            return connection;
         } catch (Exception e) {
-            if (socketChannel != null) {
-                socketChannel.close();
-            }
+            closeResource(socketChannel);
             throw rethrow(e, IOException.class);
         }
-    }
-
-    private int getBufferSize() {
-        int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
-        return bufferSize <= 0 ? DEFAULT_BUFFER_SIZE_BYTE : bufferSize;
     }
 
     void onClose(Connection connection) {
@@ -781,19 +742,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private class ClientConnectionChannelErrorHandler implements ChannelErrorHandler {
         @Override
-        public void onError(Channel channel, Throwable cause) {
+        public void onError(Channel channel, Throwable error) {
             if (channel == null) {
-                logger.severe(cause);
+                logger.severe(error);
             } else {
-                if (cause instanceof OutOfMemoryError) {
-                    logger.severe(cause);
+                if (error instanceof OutOfMemoryError) {
+                    logger.severe(error);
                 }
 
                 ClientConnection connection = (ClientConnection) channel.attributeMap().get(ClientConnection.class);
-                if (cause instanceof EOFException) {
-                    connection.close("Connection closed by the other side", cause);
+                if (error instanceof EOFException) {
+                    connection.close("Connection closed by the other side", error);
                 } else {
-                    connection.close("Exception in " + connection + ", thread=" + Thread.currentThread().getName(), cause);
+                    connection.close("Exception in " + connection + ", thread=" + Thread.currentThread().getName(), error);
                 }
             }
         }

@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -28,10 +27,10 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Collection;
 
 @PrivateApi
@@ -40,6 +39,8 @@ public interface IOService {
     int KILO_BYTE = 1024;
 
     boolean isActive();
+
+    HazelcastProperties properties();
 
     String getHazelcastName();
 
@@ -57,12 +58,6 @@ public interface IOService {
 
     TextCommandService getTextCommandService();
 
-    boolean isMemcacheEnabled();
-
-    boolean isRestEnabled();
-
-    boolean isHealthcheckEnabled();
-
     void removeEndpoint(Address endpoint);
 
     void onSuccessfulConnection(Address address);
@@ -75,46 +70,15 @@ public interface IOService {
 
     boolean isSocketBindAny();
 
-    int getSocketReceiveBufferSize();
-
-    int getSocketSendBufferSize();
-
-    boolean useDirectSocketBuffer();
-
-    /**
-     * Size of receive buffers for connections opened by clients
-     *
-     * @return size in bytes
-     */
-    int getSocketClientReceiveBufferSize();
-
-    /**
-     * Size of send buffers for connections opened by clients
-     *
-     * @return size in bytes
-     */
-    int getSocketClientSendBufferSize();
-
-    void configureSocket(Socket socket) throws SocketException;
-
     void interceptSocket(Socket socket, boolean onAccept) throws IOException;
 
     boolean isSocketInterceptorEnabled();
 
     int getSocketConnectTimeoutSeconds();
 
-    int getInputSelectorThreadCount();
-
-    int getOutputSelectorThreadCount();
-
     long getConnectionMonitorInterval();
 
     int getConnectionMonitorMaxFaults();
-
-    /**
-     * @return Time interval between two I/O imbalance checks.
-     */
-    int getBalancerIntervalSeconds();
 
     void onDisconnect(Address endpoint, Throwable cause);
 
@@ -126,11 +90,9 @@ public interface IOService {
 
     InternalSerializationService getSerializationService();
 
-    ChannelFactory getChannelFactory();
-
     MemberSocketInterceptor getMemberSocketInterceptor();
 
-    ChannelInboundHandler createInboundHandler(TcpIpConnection connection);
+    ChannelInboundHandler[] createMemberInboundHandlers(TcpIpConnection connection);
 
-    ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection);
+    ChannelOutboundHandler[] createMemberOutboundHandlers(TcpIpConnection connection);
 }

@@ -26,7 +26,6 @@ import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -37,11 +36,11 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
@@ -56,6 +55,11 @@ public class NodeIOService implements IOService {
     public NodeIOService(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
         this.nodeEngine = nodeEngine;
+    }
+
+    @Override
+    public HazelcastProperties properties() {
+        return node.getProperties();
     }
 
     @Override
@@ -111,21 +115,6 @@ public class NodeIOService implements IOService {
     @Override
     public TextCommandService getTextCommandService() {
         return node.getTextCommandService();
-    }
-
-    @Override
-    public boolean isMemcacheEnabled() {
-        return node.getProperties().getBoolean(GroupProperty.MEMCACHE_ENABLED);
-    }
-
-    @Override
-    public boolean isRestEnabled() {
-        return node.getProperties().getBoolean(GroupProperty.REST_ENABLED);
-    }
-
-    @Override
-    public boolean isHealthcheckEnabled() {
-        return node.getProperties().getBoolean(GroupProperty.HTTP_HEALTHCHECK_ENABLED);
     }
 
     @Override
@@ -188,45 +177,9 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public int getSocketReceiveBufferSize() {
-        return node.getProperties().getInteger(GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE);
-    }
-
-    @Override
-    public int getSocketSendBufferSize() {
-        return node.getProperties().getInteger(GroupProperty.SOCKET_SEND_BUFFER_SIZE);
-    }
-
-    @Override
-    public boolean useDirectSocketBuffer() {
-        return node.getProperties().getBoolean(GroupProperty.SOCKET_BUFFER_DIRECT);
-    }
-
-    @Override
-    public int getSocketClientReceiveBufferSize() {
-        int clientSendBuffer = node.getProperties().getInteger(GroupProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE);
-        return clientSendBuffer != -1 ? clientSendBuffer : getSocketReceiveBufferSize();
-    }
-
-    @Override
-    public int getSocketClientSendBufferSize() {
-        int clientReceiveBuffer = node.getProperties().getInteger(GroupProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE);
-        return clientReceiveBuffer != -1 ? clientReceiveBuffer : getSocketReceiveBufferSize();
-    }
-
-    @Override
-    public void configureSocket(Socket socket) throws SocketException {
-        if (getSocketLingerSeconds() > 0) {
-            socket.setSoLinger(true, getSocketLingerSeconds());
-        }
-        socket.setKeepAlive(getSocketKeepAlive());
-        socket.setTcpNoDelay(getSocketNoDelay());
-        socket.setReceiveBufferSize(getSocketReceiveBufferSize() * KILO_BYTE);
-        socket.setSendBufferSize(getSocketSendBufferSize() * KILO_BYTE);
-    }
-
-    @Override
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
+        socket.getChannel().configureBlocking(true);
+
         if (!isSocketInterceptorEnabled()) {
             return;
         }
@@ -249,31 +202,9 @@ public class NodeIOService implements IOService {
         return socketInterceptorConfig != null && socketInterceptorConfig.isEnabled();
     }
 
-    private int getSocketLingerSeconds() {
-        return node.getProperties().getSeconds(GroupProperty.SOCKET_LINGER_SECONDS);
-    }
-
     @Override
     public int getSocketConnectTimeoutSeconds() {
         return node.getProperties().getSeconds(GroupProperty.SOCKET_CONNECT_TIMEOUT_SECONDS);
-    }
-
-    private boolean getSocketKeepAlive() {
-        return node.getProperties().getBoolean(GroupProperty.SOCKET_KEEP_ALIVE);
-    }
-
-    private boolean getSocketNoDelay() {
-        return node.getProperties().getBoolean(GroupProperty.SOCKET_NO_DELAY);
-    }
-
-    @Override
-    public int getInputSelectorThreadCount() {
-        return node.getProperties().getInteger(GroupProperty.IO_INPUT_THREAD_COUNT);
-    }
-
-    @Override
-    public int getOutputSelectorThreadCount() {
-        return node.getProperties().getInteger(GroupProperty.IO_OUTPUT_THREAD_COUNT);
     }
 
     @Override
@@ -284,11 +215,6 @@ public class NodeIOService implements IOService {
     @Override
     public int getConnectionMonitorMaxFaults() {
         return node.getProperties().getInteger(GroupProperty.CONNECTION_MONITOR_MAX_FAULTS);
-    }
-
-    @Override
-    public int getBalancerIntervalSeconds() {
-        return node.getProperties().getSeconds(GroupProperty.IO_BALANCER_INTERVAL_SECONDS);
     }
 
     @Override
@@ -307,23 +233,18 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public ChannelFactory getChannelFactory() {
-        return node.getNodeExtension().getChannelFactory();
-    }
-
-    @Override
     public MemberSocketInterceptor getMemberSocketInterceptor() {
         return node.getNodeExtension().getMemberSocketInterceptor();
     }
 
     @Override
-    public ChannelInboundHandler createInboundHandler(TcpIpConnection connection) {
-        return node.getNodeExtension().createInboundHandler(connection, this);
+    public ChannelInboundHandler[] createMemberInboundHandlers(TcpIpConnection connection) {
+        return node.getNodeExtension().createInboundHandlers(connection, this);
     }
 
     @Override
-    public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection) {
-        return node.getNodeExtension().createOutboundHandler(connection, this);
+    public ChannelOutboundHandler[] createMemberOutboundHandlers(TcpIpConnection connection) {
+        return node.getNodeExtension().createOutboundHandlers(connection, this);
     }
 
     @Override
@@ -333,7 +254,6 @@ public class NodeIOService implements IOService {
         final Collection<String> outboundPortDefinitions = networkConfig.getOutboundPortDefinitions();
         return AddressUtil.getOutboundPorts(outboundPorts, outboundPortDefinitions);
     }
-
 
     private class ReconnectionTask implements Runnable {
         private final Address endpoint;

@@ -16,15 +16,17 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.nio.NioChannel;
-import com.hazelcast.internal.networking.nio.NioInboundPipeline;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.function.Consumer;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,97 +37,89 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
-public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
+public class PacketDecoderTest extends HazelcastTestSupport {
 
-    private MockPacketDispatcher dispatcher;
-    private PacketDecoder packetDecoder;
-    private long oldPriorityPacketsRead;
-    private long oldNormalPacketsRead;
-    private NioInboundPipeline channelReader;
+    private ConsumerStub dispatcher;
+    private PacketDecoder decoder;
+    private InternalSerializationService serializationService;
+    private Counter normalPacketCounter = SwCounter.newSwCounter();
+    private Counter priorityPacketCounter = SwCounter.newSwCounter();
 
     @Before
     public void setup() throws Exception {
-        super.setup();
+        TcpIpConnection connection = mock(TcpIpConnection.class);
 
-        connManagerA.start();
-        connManagerB.start();
+        dispatcher = new ConsumerStub();
+        decoder = new PacketDecoder(connection, dispatcher);
+        decoder.setNormalPacketsRead(normalPacketCounter);
+        decoder.setPriorityPacketsRead(priorityPacketCounter);
 
-        // currently the tcpIpConnection relies heavily on tcpipconnectionmanager/io-service. So mocking is nightmare.
-        // we we create a real connection.
-        TcpIpConnection connection = connect(connManagerA, addressB);
-
-        dispatcher = new MockPacketDispatcher();
-        packetDecoder = new PacketDecoder(connection, dispatcher);
-
-        channelReader = ((NioChannel) connection.getChannel()).inboundPipeline();
-        oldNormalPacketsRead = channelReader.getNormalFramesReadCounter().get();
-        oldPriorityPacketsRead = channelReader.getPriorityFramesReadCounter().get();
+        serializationService = new DefaultSerializationServiceBuilder().build();
     }
 
     @Test
     public void whenPriorityPacket() throws Exception {
-        ByteBuffer buffer = ByteBuffer.allocate(1000);
-        Packet packet = new Packet(serializationService.toBytes("foobar"));
-        packet.raiseFlags(Packet.FLAG_URGENT);
-        new PacketIOHelper().writeTo(packet, buffer);
+        ByteBuffer src = ByteBuffer.allocate(1000);
+        Packet packet = new Packet(serializationService.toBytes("foobar"))
+                .raiseFlags(Packet.FLAG_URGENT);
+        new PacketIOHelper().writeTo(packet, src);
 
-
-        buffer.flip();
-        packetDecoder.onRead(buffer);
+        decoder.src(src);
+        decoder.onRead();
 
         assertEquals(1, dispatcher.packets.size());
         Packet found = dispatcher.packets.get(0);
         assertEquals(packet, found);
-        assertEquals(oldNormalPacketsRead, channelReader.getNormalFramesReadCounter().get());
-        assertEquals(oldPriorityPacketsRead + 1, channelReader.getPriorityFramesReadCounter().get());
+        assertEquals(0, normalPacketCounter.get());
+        assertEquals(1, priorityPacketCounter.get());
     }
 
     @Test
     public void whenNormalPacket() throws Exception {
-        ByteBuffer buffer = ByteBuffer.allocate(1000);
+        ByteBuffer src = ByteBuffer.allocate(1000);
         Packet packet = new Packet(serializationService.toBytes("foobar"));
-        new PacketIOHelper().writeTo(packet, buffer);
+        new PacketIOHelper().writeTo(packet, src);
 
-        buffer.flip();
-        packetDecoder.onRead(buffer);
+        decoder.src(src);
+        decoder.onRead();
 
         assertEquals(1, dispatcher.packets.size());
         Packet found = dispatcher.packets.get(0);
         assertEquals(packet, found);
-        assertEquals(oldNormalPacketsRead + 1, channelReader.getNormalFramesReadCounter().get());
-        assertEquals(oldPriorityPacketsRead, channelReader.getPriorityFramesReadCounter().get());
+        assertEquals(1, normalPacketCounter.get());
+        assertEquals(0, priorityPacketCounter.get());
     }
 
     @Test
     public void whenMultiplePackets() throws Exception {
-        ByteBuffer buffer = ByteBuffer.allocate(1000);
+        ByteBuffer src = ByteBuffer.allocate(1000);
 
         Packet packet1 = new Packet(serializationService.toBytes("packet1"));
-        new PacketIOHelper().writeTo(packet1, buffer);
+        new PacketIOHelper().writeTo(packet1, src);
 
         Packet packet2 = new Packet(serializationService.toBytes("packet2"));
-        new PacketIOHelper().writeTo(packet2, buffer);
+        new PacketIOHelper().writeTo(packet2, src);
 
         Packet packet3 = new Packet(serializationService.toBytes("packet3"));
-        new PacketIOHelper().writeTo(packet3, buffer);
+        new PacketIOHelper().writeTo(packet3, src);
 
         Packet packet4 = new Packet(serializationService.toBytes("packet4"));
         packet4.raiseFlags(Packet.FLAG_URGENT);
-        new PacketIOHelper().writeTo(packet4, buffer);
+        new PacketIOHelper().writeTo(packet4, src);
 
-        buffer.flip();
-        packetDecoder.onRead(buffer);
+        decoder.src(src);
+        decoder.onRead();
 
         assertEquals(asList(packet1, packet2, packet3, packet4), dispatcher.packets);
-        assertEquals(oldNormalPacketsRead + 3, channelReader.getNormalFramesReadCounter().get());
-        assertEquals(oldPriorityPacketsRead + 1, channelReader.getPriorityFramesReadCounter().get());
+        assertEquals(3, normalPacketCounter.get());
+        assertEquals(1, priorityPacketCounter.get());
     }
 
-    class MockPacketDispatcher implements Consumer<Packet> {
+    class ConsumerStub implements Consumer<Packet> {
         private List<Packet> packets = new LinkedList<Packet>();
 
         @Override

@@ -18,16 +18,51 @@ package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.HandlerStatus;
+import com.hazelcast.util.function.Supplier;
 
 import java.nio.ByteBuffer;
+
+import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
 
 /**
  * A {@link ChannelOutboundHandler} for the new-client. It writes ClientMessages to the ByteBuffer.
  */
-public class ClientMessageEncoder implements ChannelOutboundHandler<ClientMessage> {
+public class ClientMessageEncoder extends ChannelOutboundHandler<Supplier<ClientMessage>, ByteBuffer> {
+
+    private ClientMessage message;
 
     @Override
-    public boolean onWrite(ClientMessage message, ByteBuffer dst) {
-        return message.writeTo(dst);
+    public void handlerAdded() {
+        initDstBuffer();
+    }
+
+    @Override
+    public HandlerStatus onWrite() {
+        compactOrClear(dst);
+        try {
+            for (; ; ) {
+                if (message == null) {
+                    message = src.get();
+
+                    if (message == null) {
+                        // everything is processed, so we are done
+                        return CLEAN;
+                    }
+                }
+
+                if (message.writeTo(dst)) {
+                    // message got written, lets see if another message can be written
+                    message = null;
+                } else {
+                    // the message didn't get written completely, so we are done.
+                    return DIRTY;
+                }
+            }
+        } finally {
+            dst.flip();
+        }
     }
 }
