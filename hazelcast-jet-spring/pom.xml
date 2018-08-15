@@ -54,7 +54,6 @@
                 <configuration>
                     <createSourcesJar>true</createSourcesJar>
                     <createDependencyReducedPom>true</createDependencyReducedPom>
-                    <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                     <transformers>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                             <resource>META-INF/spring.handlers</resource>
@@ -90,19 +89,18 @@
             <version>${spring.version}</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-spring</artifactId>
             <version>${hazelcast.version}</version>
-            <type>test-jar</type>
+            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-core</artifactId>
             <version>${project.parent.version}</version>
-            <type>test-jar</type>
+            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>
