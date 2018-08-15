@@ -16,13 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.config.CacheDeserializedValues;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.query.DefaultIndexProvider;
-import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.monitor.impl.GlobalIndexesStats;
 import com.hazelcast.monitor.impl.IndexesStats;
 import com.hazelcast.monitor.impl.PartitionIndexesStats;
@@ -30,12 +24,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Contains all indexes for a data-structure, e.g. an IMap.
@@ -44,81 +40,52 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Indexes {
     private static final InternalIndex[] EMPTY_INDEX = {};
 
-    private final InternalSerializationService serializationService;
-    private final IndexProvider indexProvider;
-    private final Extractors extractors;
     private final boolean global;
-    private final IndexCopyBehavior copyBehavior;
-    private final boolean queryableEntriesAreCached;
-    private final QueryContextProvider queryContextProvider;
+    private final boolean usesCachedQueryableEntries;
     private final IndexesStats stats;
+    private final Extractors extractors;
+    private final IndexProvider indexProvider;
+    private final IndexCopyBehavior indexCopyBehavior;
+    private final QueryContextProvider queryContextProvider;
+    private final InternalSerializationService serializationService;
 
     private final ConcurrentMap<String, InternalIndex> mapIndexes = new ConcurrentHashMap<String, InternalIndex>(3);
     private final AtomicReference<InternalIndex[]> indexes = new AtomicReference<InternalIndex[]>(EMPTY_INDEX);
 
     private volatile boolean hasIndex;
 
-    private Indexes(MapContainer mapContainer, boolean global) {
-        MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-        MapConfig mapConfig = mapContainer.getMapConfig();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+    private Indexes(InternalSerializationService serializationService,
+                    IndexCopyBehavior indexCopyBehavior,
+                    Extractors extractors,
+                    IndexProvider indexProvider,
+                    boolean usesCachedQueryableEntries,
+                    boolean statisticsEnabled,
+                    boolean global) {
 
-        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.indexProvider = mapServiceContext.getIndexProvider(mapConfig);
-        this.extractors = mapContainer.getExtractors();
         this.global = global;
-        this.copyBehavior = mapServiceContext.getIndexCopyBehavior();
-        this.queryableEntriesAreCached = mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER;
-        this.queryContextProvider = createQueryContextProvider(mapConfig, global);
-        this.stats = createStats(mapConfig, global);
-    }
-
-    private Indexes(InternalSerializationService serializationService, IndexCopyBehavior copyBehavior) {
+        this.indexCopyBehavior = indexCopyBehavior;
         this.serializationService = serializationService;
-        this.indexProvider = new DefaultIndexProvider();
-        this.extractors = Extractors.empty();
-        this.global = true;
-        this.copyBehavior = copyBehavior;
-        this.queryableEntriesAreCached = false;
-        this.queryContextProvider = new GlobalQueryContextProvider();
-        this.stats = IndexesStats.EMPTY;
+        this.usesCachedQueryableEntries = usesCachedQueryableEntries;
+        this.stats = createStats(global, statisticsEnabled);
+        this.extractors = extractors == null ? Extractors.empty() : extractors;
+        this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
+        this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
     }
 
-    /**
-     * Creates a new indexes instance for use as a global indexes for the given
-     * map container.
-     *
-     * @param mapContainer the container of the map.
-     * @return the constructed indexes.
-     */
-    public static Indexes createGlobalIndexes(MapContainer mapContainer) {
-        return new Indexes(mapContainer, true);
+    private static QueryContextProvider createQueryContextProvider(Indexes indexes, boolean global, boolean statisticsEnabled) {
+        if (statisticsEnabled) {
+            return global ? new GlobalQueryContextProviderWithStats() : new PartitionQueryContextProviderWithStats(indexes);
+        } else {
+            return global ? new GlobalQueryContextProvider() : new PartitionQueryContextProvider(indexes);
+        }
     }
 
-    /**
-     * Creates a new indexes instance for use as a partition indexes for the
-     * given map container.
-     *
-     * @param mapContainer the container of the map.
-     * @return the constructed indexes.
-     */
-    public static Indexes createPartitionIndexes(MapContainer mapContainer) {
-        return new Indexes(mapContainer, false);
-    }
-
-    /**
-     * Creates a new stand-alone (not attached to any map container) indexes
-     * instance for the given serialization service and with the given index
-     * copy behaviour.
-     *
-     * @param serializationService the serialization service to be used by the
-     *                             new indexes.
-     * @param copyBehavior         the desired copy behaviour of the new indexes.
-     * @return the constructed indexes.
-     */
-    public static Indexes createStandaloneIndexes(InternalSerializationService serializationService,
-                                                  IndexCopyBehavior copyBehavior) {
-        return new Indexes(serializationService, copyBehavior);
+    private static IndexesStats createStats(boolean global, boolean statisticsEnabled) {
+        if (statisticsEnabled) {
+            return global ? new GlobalIndexesStats() : new PartitionIndexesStats();
+        } else {
+            return IndexesStats.EMPTY;
+        }
     }
 
     /**
@@ -136,8 +103,10 @@ public class Indexes {
             return index;
         }
 
-        index = indexProvider.createIndex(attribute, ordered, extractors, serializationService, copyBehavior,
-                stats.createPerIndexStats(ordered, queryableEntriesAreCached));
+        index = indexProvider.createIndex(attribute, ordered, extractors,
+                serializationService, indexCopyBehavior,
+                stats.createPerIndexStats(ordered, usesCachedQueryableEntries));
+
         mapIndexes.put(attribute, index);
         indexes.set(mapIndexes.values().toArray(EMPTY_INDEX));
         hasIndex = true;
@@ -270,20 +239,89 @@ public class Indexes {
         return stats;
     }
 
-    private QueryContextProvider createQueryContextProvider(MapConfig mapConfig, boolean global) {
-        if (mapConfig.isStatisticsEnabled()) {
-            return global ? new GlobalQueryContextProviderWithStats() : new PartitionQueryContextProviderWithStats(this);
-        } else {
-            return global ? new GlobalQueryContextProvider() : new PartitionQueryContextProvider(this);
-        }
+    /**
+     * @param ss                the serializationService
+     * @param indexCopyBehavior the indexCopyBehavior
+     * @return new builder instance which will be used to create Indexes object.
+     * @see IndexCopyBehavior
+     */
+    public static Builder newBuilder(SerializationService ss, IndexCopyBehavior indexCopyBehavior) {
+        return new Builder(ss, indexCopyBehavior);
     }
 
-    private IndexesStats createStats(MapConfig mapConfig, boolean global) {
-        if (mapConfig.isStatisticsEnabled()) {
-            return global ? new GlobalIndexesStats() : new PartitionIndexesStats();
-        } else {
-            return IndexesStats.EMPTY;
+    /**
+     * Builder which is used to create a new Indexes object.
+     */
+    public static final class Builder {
+        private boolean global = true;
+        private boolean statsEnabled;
+        private boolean usesCachedQueryableEntries;
+        private Extractors extractors;
+        private IndexProvider indexProvider;
+
+        private final IndexCopyBehavior indexCopyBehavior;
+        private final InternalSerializationService serializationService;
+
+        Builder(SerializationService ss, IndexCopyBehavior indexCopyBehavior) {
+            this.serializationService = checkNotNull((InternalSerializationService) ss, "serializationService cannot be null");
+            this.indexCopyBehavior = checkNotNull(indexCopyBehavior, "indexCopyBehavior cannot be null");
+        }
+
+        /**
+         * @param global set {@code true} to create global indexes, otherwise set
+         *               {@code false} to have partitioned indexes.
+         *               Default value is true.
+         * @return this builder instance
+         */
+        public Builder global(boolean global) {
+            this.global = global;
+            return this;
+        }
+
+        /**
+         * @param indexProvider the index provider
+         * @return this builder instance
+         */
+        public Builder indexProvider(IndexProvider indexProvider) {
+            this.indexProvider = indexProvider;
+            return this;
+        }
+
+        /**
+         * @param extractors the extractors
+         * @return this builder instance
+         */
+        public Builder extractors(Extractors extractors) {
+            this.extractors = extractors;
+            return this;
+        }
+
+        /**
+         * @param usesCachedQueryableEntries set {@code true} if cached entries are
+         *                                   used for queryable entries, otherwise set {@code false}
+         * @return this builder instance
+         */
+        public Builder usesCacheQueryableEntries(boolean usesCachedQueryableEntries) {
+            this.usesCachedQueryableEntries = usesCachedQueryableEntries;
+            return this;
+        }
+
+        /**
+         * @param statsEnabled set {@code true} if stats will be collected for the
+         *                     indexes, otherwise set {@code false}
+         * @return this builder instance
+         */
+        public Builder statsEnabled(boolean statsEnabled) {
+            this.statsEnabled = statsEnabled;
+            return this;
+        }
+
+        /**
+         * @return a new instance of Indexes
+         */
+        public Indexes build() {
+            return new Indexes(serializationService, indexCopyBehavior, extractors,
+                    indexProvider, usesCachedQueryableEntries, statsEnabled, global);
         }
     }
-
 }

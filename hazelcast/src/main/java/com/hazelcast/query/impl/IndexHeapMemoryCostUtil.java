@@ -127,12 +127,12 @@ public final class IndexHeapMemoryCostUtil {
      * @param ordered                   {@code true} if the index managing the
      *                                  map being estimated is ordered, {@code
      *                                  false} otherwise.
-     * @param queryableEntriesAreCached {@code true} if queryable entries indexed
+     * @param usesCachedQueryableEntries {@code true} if queryable entries indexed
      *                                  by the associated index are cached, {@code
      *                                  false} otherwise.
      * @return the estimated map cost.
      */
-    public static long estimateMapCost(long size, boolean ordered, boolean queryableEntriesAreCached) {
+    public static long estimateMapCost(long size, boolean ordered, boolean usesCachedQueryableEntries) {
         long mapCost;
         if (ordered) {
             mapCost = BASE_CONCURRENT_SKIP_LIST_MAP_COST + size * CONCURRENT_SKIP_LIST_MAP_ENTRY_COST;
@@ -141,7 +141,7 @@ public final class IndexHeapMemoryCostUtil {
         }
 
         long queryableEntriesCost;
-        if (queryableEntriesAreCached) {
+        if (usesCachedQueryableEntries) {
             queryableEntriesCost = size * CACHED_QUERYABLE_ENTRY_COST;
         } else {
             queryableEntriesCost = size * QUERY_ENTRY_COST;

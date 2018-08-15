@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.EventJournalConfig;
@@ -138,7 +139,7 @@ public class MapContainer {
         ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), classloader);
         if (shouldUseGlobalIndex(mapConfig)) {
-            this.globalIndexes = Indexes.createGlobalIndexes(this);
+            this.globalIndexes = createIndexes(true);
         } else {
             this.globalIndexes = null;
         }
@@ -146,6 +147,21 @@ public class MapContainer {
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
         initEvictor();
+    }
+
+    /**
+     * @param global set {@code true} to create global indexes, otherwise set
+     *               {@code false} to have partitioned indexes
+     * @return a new Indexes object
+     */
+    public Indexes createIndexes(boolean global) {
+        return Indexes.newBuilder(serializationService, mapServiceContext.getIndexCopyBehavior())
+                .global(global)
+                .extractors(extractors)
+                .statsEnabled(mapConfig.isStatisticsEnabled())
+                .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
+                .usesCacheQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
+                .build();
     }
 
     // this method is overridden
@@ -245,7 +261,7 @@ public class MapContainer {
             for (WanPublisherConfig publisherConfig : replicationConfig.getWanPublisherConfigs()) {
                 if (publisherConfig.getWanSyncConfig() != null
                         && ConsistencyCheckStrategy.MERKLE_TREES.equals(publisherConfig.getWanSyncConfig()
-                                                                                       .getConsistencyCheckStrategy())) {
+                        .getConsistencyCheckStrategy())) {
                     return true;
                 }
             }

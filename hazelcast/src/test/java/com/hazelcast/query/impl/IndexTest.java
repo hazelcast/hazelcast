@@ -103,7 +103,7 @@ public class IndexTest {
 
     @Test
     public void testRemoveEnumIndex() {
-        Indexes is = Indexes.createStandaloneIndexes(ss, copyBehavior);
+        Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
@@ -117,7 +117,7 @@ public class IndexTest {
 
     @Test
     public void testUpdateEnumIndex() {
-        Indexes is = Indexes.createStandaloneIndexes(ss, copyBehavior);
+        Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
@@ -132,7 +132,7 @@ public class IndexTest {
 
     @Test
     public void testIndex() throws QueryException {
-        Indexes is = Indexes.createStandaloneIndexes(ss, copyBehavior);
+        Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
         Index dIndex = is.addOrGetIndex("d", false);
         Index boolIndex = is.addOrGetIndex("bool", false);
         Index strIndex = is.addOrGetIndex("str", false);
@@ -194,7 +194,7 @@ public class IndexTest {
 
     @Test
     public void testIndexWithNull() throws QueryException {
-        Indexes is = Indexes.createStandaloneIndexes(ss, copyBehavior);
+        Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
         Index strIndex = is.addOrGetIndex("str", true);
 
         Data value = ss.toData(new MainPortable(false, 1, null));
@@ -357,10 +357,7 @@ public class IndexTest {
             if (s != that.s) {
                 return false;
             }
-            if (str != null ? !str.equals(that.str) : that.str != null) {
-                return false;
-            }
-            return true;
+            return str != null ? str.equals(that.str) : that.str == null;
         }
 
         @Override

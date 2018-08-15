@@ -74,7 +74,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
             "valuesMemoryCost");
 
     private final boolean ordered;
-    private final boolean queryableEntriesAreCached;
+    private final boolean usesCachedQueryableEntries;
     private final long creationTime;
 
     private volatile long entryCount;
@@ -96,14 +96,14 @@ public class GlobalPerIndexStats implements PerIndexStats {
      * @param ordered                   {@code true} if the stats are being created
      *                                  for an ordered index, {@code false} otherwise.
      *                                  Affects the on-heap memory cost calculation.
-     * @param queryableEntriesAreCached {@code true} if the stats are being created
+     * @param usesCachedQueryableEntries {@code true} if the stats are being created
      *                                  for an index for which queryable entries are
      *                                  cached, {@code false} otherwise. Affects the
      *                                  on-heap memory cost calculation.
      */
-    public GlobalPerIndexStats(boolean ordered, boolean queryableEntriesAreCached) {
+    public GlobalPerIndexStats(boolean ordered, boolean usesCachedQueryableEntries) {
         this.ordered = ordered;
-        this.queryableEntriesAreCached = queryableEntriesAreCached;
+        this.usesCachedQueryableEntries = usesCachedQueryableEntries;
         this.creationTime = Clock.currentTimeMillis();
     }
 
@@ -174,7 +174,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
 
     @Override
     public long getMemoryCost() {
-        return IndexHeapMemoryCostUtil.estimateMapCost(entryCount, ordered, queryableEntriesAreCached) + valuesMemoryCost;
+        return IndexHeapMemoryCostUtil.estimateMapCost(entryCount, ordered, usesCachedQueryableEntries) + valuesMemoryCost;
     }
 
     @Override
