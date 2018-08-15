@@ -63,6 +63,19 @@ public class ArrayMerkleTreeTest {
     }
 
     @Test
+    public void testFootprintChanges() {
+        MerkleTree merkleTree = new ArrayMerkleTree(3, 10);
+
+        long footprintBeforeAdd = merkleTree.footprint();
+        for (int i = 0; i < 100; i++) {
+            merkleTree.updateAdd(i, i);
+        }
+        long footprintAfterAdd = merkleTree.footprint();
+
+        assertTrue(footprintAfterAdd > footprintBeforeAdd);
+    }
+
+    @Test
     public void testUpdateAdd() {
         MerkleTree merkleTree = new ArrayMerkleTree(3);
 
