@@ -252,7 +252,6 @@ public class GracefulShutdownTest extends JetTestSupport {
         BlockingMapStore.shouldBlock = false;
         BlockingMapStore.wasBlocked = false;
 
-
         DAG dag = new DAG();
         int numItems = 5000;
         Vertex source = dag.newVertex("source", throttle(() -> new EmitIntegersP(numItems), 500));
@@ -275,14 +274,14 @@ public class GracefulShutdownTest extends JetTestSupport {
         assertTrueEventually(() -> assertTrue("blocking did not happen", BlockingMapStore.wasBlocked), 5);
 
         Future shutdownFuture = spawn(() -> instances[1].shutdown());
+        logger.info("savedCounters=" + EmitIntegersP.savedCounters);
+        int minCounter = EmitIntegersP.savedCounters.values().stream().mapToInt(Integer::intValue).min().getAsInt();
         BlockingMapStore.shouldBlock = false;
         shutdownFuture.get();
 
         // Then
         job.join();
 
-        logger.info("savedCounters=" + EmitIntegersP.savedCounters);
-        int minCounter = EmitIntegersP.savedCounters.values().stream().mapToInt(Integer::intValue).min().getAsInt();
         Map<Integer, Integer> actual = new ArrayList<>(instances[0].<Integer>getList("sink")).stream()
                 .collect(Collectors.toMap(Function.identity(), item -> 1, Integer::sum));
         Map<Integer, Integer> expected = IntStream.range(0, numItems).boxed()
