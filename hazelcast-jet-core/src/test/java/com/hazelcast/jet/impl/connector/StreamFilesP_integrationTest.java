@@ -286,9 +286,9 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     private void finishDirectory(Future<Void> jobFuture, File ... files) throws Exception {
         for (File file : files) {
-            System.out.println("deleting " + file + "...");
+            logger.info("deleting " + file + "...");
             assertTrueEventually(() -> assertTrue("Failed to delete " + file, file.delete()));
-            System.out.println("deleted " + file);
+            logger.info("deleted " + file);
         }
         assertTrueEventually(() -> assertTrue("Failed to delete " + directory, directory.delete()));
         assertTrueEventually(() -> assertTrue("job should complete eventually", jobFuture.isDone()));

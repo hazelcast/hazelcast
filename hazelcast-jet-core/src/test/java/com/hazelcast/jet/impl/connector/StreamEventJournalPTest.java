@@ -176,7 +176,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         List<Entry> snapshotItems = new ArrayList<>();
         outbox.drainSnapshotQueueAndReset(snapshotItems, false);
 
-        System.out.println("Restoring journal");
+        logger.info("Restoring journal");
         // restore from snapshot
         assertRestore(snapshotItems);
     }

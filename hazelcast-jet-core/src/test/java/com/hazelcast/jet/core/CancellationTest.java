@@ -259,13 +259,26 @@ public class CancellationTest extends JetTestSupport {
     }
 
     @Test
-    public void when_shutdown_then_jobFuturesCanceled() {
+    public void when_shutdownGracefully_then_jobFuturesCanceled() {
+        when_shutdown_then_jobFuturesCanceled(true);
+    }
+
+    @Test
+    public void when_shutdownForcefully_then_jobFuturesCanceled() {
+        when_shutdown_then_jobFuturesCanceled(false);
+    }
+
+    private void when_shutdown_then_jobFuturesCanceled(boolean graceful) {
         JetInstance jet = newInstance();
         DAG dag = new DAG();
         dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);
         jet.newJob(dag);
         assertTrueEventually(() -> assertTrue(BlockingProcessor.hasStarted), 3);
-        jet.shutdown();
+        if (graceful) {
+            jet.shutdown();
+        } else {
+            jet.getHazelcastInstance().shutdown();
+        }
         assertBlockingProcessorEventuallyNotRunning();
     }
 

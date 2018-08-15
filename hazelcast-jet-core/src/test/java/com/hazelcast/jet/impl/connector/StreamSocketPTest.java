@@ -90,7 +90,7 @@ public class StreamSocketPTest extends JetTestSupport {
         // split at any place: between \r\n, between the bytes of utf-16 sequence etc
         byte[] inputBytes = input.getBytes(UTF_16);
         for (int splitIndex = 0; splitIndex < inputBytes.length; splitIndex++) {
-            System.out.println("--------- runTest(" + splitIndex + ") ---------");
+            logger.info("--------- runTest(" + splitIndex + ") ---------");
             runTest(inputBytes, splitIndex);
         }
     }

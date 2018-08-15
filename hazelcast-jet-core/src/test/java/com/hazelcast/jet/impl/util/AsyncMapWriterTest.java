@@ -56,7 +56,6 @@ public class AsyncMapWriterTest extends JetTestSupport {
     private IMapJet<Object, Object> map;
     private NodeEngineImpl nodeEngine;
 
-
     @Before
     public void setup() {
         JetConfig jetConfig = new JetConfig();
@@ -227,7 +226,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
         boolean flushed = writer.tryFlushAsync(future);
 
         // Then
-        assertTrue("tryFlush() returned false", flushed);
+        assertTrue("tryFlushAsync() returned false", flushed);
 
         Throwable actual = future.handle((r, e) -> e).join();
         assertNotNull("No exception was thrown", actual);
@@ -254,14 +253,14 @@ public class AsyncMapWriterTest extends JetTestSupport {
         boolean flushed = writer.tryFlushAsync(future);
 
         // Then
-        assertTrue("tryFlush() returned false", flushed);
+        assertTrue("tryFlushAsync() returned false", flushed);
         future.join();
         for (int i = 0; i < 100; i++) {
             assertEquals(i, map.get(i));
         }
     }
 
-    public static class AlwaysFailingMapStore extends AMapStore implements Serializable {
+    static class AlwaysFailingMapStore extends AMapStore implements Serializable {
 
         @Override
         public void store(Object o, Object o2) {
@@ -269,7 +268,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
         }
     }
 
-    public static class RetryableMapStore extends AMapStore implements Serializable {
+    private static class RetryableMapStore extends AMapStore implements Serializable {
 
         private static volatile boolean failOnNext;
 

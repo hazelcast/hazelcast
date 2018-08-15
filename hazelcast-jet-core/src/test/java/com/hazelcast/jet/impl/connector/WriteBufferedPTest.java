@@ -91,23 +91,19 @@ public class WriteBufferedPTest extends JetTestSupport {
     @Test
     public void when_writeBufferedJobFailed_then_bufferDisposed() throws Exception {
         JetInstance instance = createJetMember();
-        try {
-            DAG dag = new DAG();
-            Vertex source = dag.newVertex("source", StuckForeverSourceP::new);
-            Vertex sink = dag.newVertex("sink", getLoggingBufferedWriter()).localParallelism(1);
+        DAG dag = new DAG();
+        Vertex source = dag.newVertex("source", StuckForeverSourceP::new);
+        Vertex sink = dag.newVertex("sink", getLoggingBufferedWriter()).localParallelism(1);
 
-            dag.edge(Edge.between(source, sink));
+        dag.edge(Edge.between(source, sink));
 
-            Job job = instance.newJob(dag);
-            // wait for the job to initialize
-            Thread.sleep(5000);
-            job.cancel();
+        Job job = instance.newJob(dag);
+        // wait for the job to initialize
+        Thread.sleep(5000);
+        job.cancel();
 
-            assertTrueEventually(() -> assertTrue("No \"dispose\", only: " + events, events.contains("dispose")), 60);
-            System.out.println(events);
-        } finally {
-            instance.shutdown();
-        }
+        assertTrueEventually(() -> assertTrue("No \"dispose\", only: " + events, events.contains("dispose")), 60);
+        System.out.println(events);
     }
 
     // returns a processor that will not write anywhere, just log the events

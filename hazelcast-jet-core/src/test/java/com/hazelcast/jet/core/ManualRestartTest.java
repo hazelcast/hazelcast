@@ -136,7 +136,7 @@ public class ManualRestartTest extends JetTestSupport {
             job.join();
             fail();
         } catch (CancellationException ignored) {
-            System.out.println("Cancellation exception caught");
+            logger.info("Cancellation exception caught");
         }
 
         // Then, the job cannot restart
