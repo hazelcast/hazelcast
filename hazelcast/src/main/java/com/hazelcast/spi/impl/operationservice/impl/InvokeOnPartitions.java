@@ -65,7 +65,7 @@ final class InvokeOnPartitions {
     /**
      * Executes all the operations on the partitions.
      */
-    Map<Integer, Object> invoke() throws Exception {
+    <T> Map<Integer, T> invoke() throws Exception {
         ensureNotCallingFromPartitionOperationThread();
 
         invokeOnAllPartitions();
@@ -74,7 +74,7 @@ final class InvokeOnPartitions {
 
         retryFailedPartitions();
 
-        return partitionResults;
+        return (Map<Integer, T>) partitionResults;
     }
 
     private void ensureNotCallingFromPartitionOperationThread() {

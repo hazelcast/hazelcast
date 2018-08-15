@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MerkleTreeNodeEntries;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
@@ -262,6 +263,12 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     public OperationFactory createMergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
                                                         SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
         return new MergeOperationFactory(name, partitions, mergingEntries, mergePolicy);
+    }
+
+    @Override
+    public MapOperation createMerkleTreeNodeMergeOperation(String mapName, MerkleTreeNodeEntries entries) {
+        // TODO
+        return null;
     }
 
     @Override
