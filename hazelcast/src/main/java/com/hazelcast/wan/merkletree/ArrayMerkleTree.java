@@ -89,6 +89,14 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
 
     private final OAHashSet<Object>[] leafKeys;
     private final int leafLevel;
+
+    /**
+     * Footprint holds the total memory footprint of the Merkle tree and
+     * the leaf data blocks.
+     * <p/>
+     * Note that this field leverages a single-writer and a non-atomic
+     * operation is executed on the field. See {@link #adjustFootprintWithLeafKeySetChange}
+     */
     private volatile long footprint;
 
     public ArrayMerkleTree(int depth) {
@@ -110,7 +118,8 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
         for (int i = 0; i < leaves; i++) {
             leafKeys[i] = new OAHashSet<Object>(leafKeysSetCapacity);
         }
-        updateFootprint();
+
+        initializeFootprint();
     }
 
     @Override
@@ -197,8 +206,8 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
     @Override
     public void clear() {
         Arrays.fill(tree, 0);
-        for (OAHashSet<Object> leafKeys : this.leafKeys) {
-            leafKeys.clear();
+        for (OAHashSet<Object> leafKeysSet : this.leafKeys) {
+            leafKeysSet.clear();
         }
     }
 
@@ -227,19 +236,34 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
 
     private void addKeyToLeaf(int leafOrder, int keyHash, Object key) {
         int relativeLeafOrder = leafOrder - leafLevelOrder;
-        leafKeys[relativeLeafOrder].add(key, keyHash);
-        updateFootprint();
+        OAHashSet<Object> leafKeySet = leafKeys[relativeLeafOrder];
+        long leafKeysFootprintBefore = leafKeySet.footprint();
+        leafKeySet.add(key, keyHash);
+
+        adjustFootprintWithLeafKeySetChange(leafKeySet.footprint(), leafKeysFootprintBefore);
     }
 
     private void removeKeyFromLeaf(int leafOrder, int keyHash, Object key) {
         int relativeLeafOrder = leafOrder - leafLevelOrder;
-        leafKeys[relativeLeafOrder].remove(key, keyHash);
-        updateFootprint();
+        OAHashSet<Object> leafKeySet = leafKeys[relativeLeafOrder];
+        long leafKeysFootprintBefore = leafKeySet.footprint();
+        leafKeySet.remove(key, keyHash);
+
+        adjustFootprintWithLeafKeySetChange(leafKeySet.footprint(), leafKeysFootprintBefore);
+    }
+
+    private void adjustFootprintWithLeafKeySetChange(long currentFootprint, long footprintBeforeUpdate) {
+        long footprintDelta = currentFootprint - footprintBeforeUpdate;
+
+        if (footprintDelta != 0) {
+            //noinspection NonAtomicOperationOnVolatileField
+            footprint += footprintDelta;
+        }
     }
 
     @SuppressWarnings("checkstyle:trailingcomment")
-    private void updateFootprint() {
-        int leafKeysSetsFootprint = 0;
+    private void initializeFootprint() {
+        long leafKeysSetsFootprint = 0;
         for (OAHashSet leafKeysSet : leafKeys) {
             leafKeysSetsFootprint += leafKeysSet.footprint();
         }

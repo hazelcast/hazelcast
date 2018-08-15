@@ -472,11 +472,11 @@ public class OAHashSetTest {
     @Test
     public void testFootprintReflectsCapacityIncrease() {
         final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
-        final int originalFootprint = set.footprint();
+        final long originalFootprint = set.footprint();
 
         populateSet(set, 10);
 
-        final int footprintAfterCapacityIncrease = set.footprint();
+        final long footprintAfterCapacityIncrease = set.footprint();
         assertTrue(footprintAfterCapacityIncrease > originalFootprint);
     }
 

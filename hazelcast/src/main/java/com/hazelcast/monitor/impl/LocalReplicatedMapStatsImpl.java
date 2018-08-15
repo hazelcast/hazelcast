@@ -290,7 +290,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
-    @Probe
+    @Override
     public long getHeapCost() {
         return 0;
     }
@@ -299,7 +299,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     public void setHeapCost(long heapCost) {
     }
 
-    @Probe
     @Override
     public long getMerkleTreesCost() {
         return 0;

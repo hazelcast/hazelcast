@@ -312,7 +312,7 @@ public class OAHashSet<E> extends AbstractSet<E> {
      * @return the current memory consumption
      */
     @SuppressWarnings("checkstyle:trailingcomment")
-    public int footprint() {
+    public long footprint() {
         return
                 INT_SIZE_IN_BYTES * hashes.length // size of hashes array
                 + REFERENCE_COST_IN_BYTES * table.length // size of table array
