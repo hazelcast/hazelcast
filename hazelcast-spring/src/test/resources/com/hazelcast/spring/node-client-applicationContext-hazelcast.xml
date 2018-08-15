@@ -322,6 +322,19 @@
         </hz:connection-strategy>
     </hz:client>
 
+    <hz:client id="client14-reliable-topic" credentials-ref="credentials">
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+
+        <!--<hz:reliable-topic name="rel-topic" topic-overload-policy="DISCARD_NEWEST" read-batch-size="100"/>-->
+        <hz:reliable-topic name="rel-topic">
+            <hz:topic-overload-policy>DISCARD_NEWEST</hz:topic-overload-policy>
+            <hz:read-batch-size>100</hz:read-batch-size>
+        </hz:reliable-topic>
+    </hz:client>
+
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
         <property name="username" value="spring-group"/>
         <property name="password" value="spring-group-pass"/>
@@ -341,6 +354,7 @@
     <hz:atomicReference id="atomicReference" instance-ref="client" name="atomicReference"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="client" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="client" name="semaphore"/>
+    <hz:reliableTopic id="reliableTopic" instance-ref="client" name="reliableTopic"/>
 
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
 

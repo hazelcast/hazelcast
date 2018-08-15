@@ -239,6 +239,11 @@
         </connection-retry>
     </connection-strategy>
 
+    <reliable-topic name="rel-topic">
+        <read-batch-size>100</read-batch-size>
+        <topic-overload-policy>DISCARD_NEWEST</topic-overload-policy>
+    </reliable-topic>
+
     <user-code-deployment enabled="true">
         <jarPaths>
             <jarPath>/User/test/sample.jar</jarPath>

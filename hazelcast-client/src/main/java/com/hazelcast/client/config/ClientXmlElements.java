@@ -35,7 +35,8 @@ enum ClientXmlElements {
     INSTANCE_NAME("instance-name", false),
     CONNECTION_STRATEGY("connection-strategy", false),
     USER_CODE_DEPLOYMENT("user-code-deployment", false),
-    FLAKE_ID_GENERATOR("flake-id-generator", true);
+    FLAKE_ID_GENERATOR("flake-id-generator", true),
+    RELIABLE_TOPIC("reliable-topic", true);
 
     final String name;
     final boolean multipleOccurrence;

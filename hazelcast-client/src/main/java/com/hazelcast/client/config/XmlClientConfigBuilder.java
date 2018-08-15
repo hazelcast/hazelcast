@@ -37,6 +37,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -70,6 +71,7 @@ import static com.hazelcast.client.config.ClientXmlElements.NETWORK;
 import static com.hazelcast.client.config.ClientXmlElements.PROPERTIES;
 import static com.hazelcast.client.config.ClientXmlElements.PROXY_FACTORIES;
 import static com.hazelcast.client.config.ClientXmlElements.QUERY_CACHES;
+import static com.hazelcast.client.config.ClientXmlElements.RELIABLE_TOPIC;
 import static com.hazelcast.client.config.ClientXmlElements.SECURITY;
 import static com.hazelcast.client.config.ClientXmlElements.SERIALIZATION;
 import static com.hazelcast.client.config.ClientXmlElements.USER_CODE_DEPLOYMENT;
@@ -259,6 +261,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             handleUserCodeDeployment(node);
         } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
             handleFlakeIdGenerator(node);
+        } else if (RELIABLE_TOPIC.isEqual(nodeName)) {
+            handleReliableTopic(node);
         }
     }
 
@@ -394,6 +398,21 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             }
         }
         clientConfig.addFlakeIdGeneratorConfig(config);
+    }
+
+    private void handleReliableTopic(Node node) {
+        String name = getAttribute(node, "name");
+        ClientReliableTopicConfig config = new ClientReliableTopicConfig(name);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("topic-overload-policy".equals(nodeName)) {
+                config.setTopicOverloadPolicy(TopicOverloadPolicy.valueOf(value));
+            } else if ("read-batch-size".equalsIgnoreCase(nodeName)) {
+                config.setReadBatchSize(Integer.parseInt(value));
+            }
+        }
+        clientConfig.addReliableTopicConfig(config);
     }
 
     private EvictionConfig getEvictionConfig(Node node) {
