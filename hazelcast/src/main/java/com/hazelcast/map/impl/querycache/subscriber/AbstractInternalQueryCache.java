@@ -29,7 +29,6 @@ import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -38,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
+import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
 
 /**
  * Contains helper methods for {@link InternalQueryCache} main implementation.
@@ -75,7 +75,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         // We are not using injected index provider since we're not supporting off-heap indexes in CQC due
         // to threading incompatibility. If we injected the IndexProvider from the MapServiceContext
         // the EE side would create HD indexes which is undesired.
-        this.indexes = Indexes.createStandaloneIndexes(serializationService, IndexCopyBehavior.COPY_ON_READ);
+        this.indexes = Indexes.newBuilder(serializationService, COPY_ON_READ).build();
         this.includeValue = isIncludeValue();
         this.partitioningStrategy = getPartitioningStrategy();
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes,

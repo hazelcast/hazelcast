@@ -57,8 +57,8 @@ public class GlobalIndexesStats implements IndexesStats {
     }
 
     @Override
-    public PerIndexStats createPerIndexStats(boolean ordered, boolean queryableEntriesAreCached) {
-        return new GlobalPerIndexStats(ordered, queryableEntriesAreCached);
+    public PerIndexStats createPerIndexStats(boolean ordered, boolean usesCachedQueryableEntries) {
+        return new GlobalPerIndexStats(ordered, usesCachedQueryableEntries);
     }
 
 }

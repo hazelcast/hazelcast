@@ -114,7 +114,7 @@ public class PartitionContainer {
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
 
         if (!mapContainer.isGlobalIndexEnabled()) {
-            Indexes indexesForMap = Indexes.createPartitionIndexes(mapContainer);
+            Indexes indexesForMap = mapContainer.createIndexes(false);
             indexes.putIfAbsent(name, indexesForMap);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
@@ -255,7 +255,7 @@ public class PartitionContainer {
                 throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
             }
 
-            Indexes indexesForMap = Indexes.createPartitionIndexes(mapContainer);
+            Indexes indexesForMap = mapContainer.createIndexes(false);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

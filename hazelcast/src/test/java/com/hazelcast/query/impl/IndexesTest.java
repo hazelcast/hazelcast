@@ -64,7 +64,7 @@ public class IndexesTest {
 
     @Test
     public void testAndWithSingleEntry() {
-        Indexes indexes = Indexes.createStandaloneIndexes(serializationService, copyBehavior);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("name", false);
         indexes.addOrGetIndex("age", true);
         indexes.addOrGetIndex("salary", true);
@@ -87,7 +87,7 @@ public class IndexesTest {
 
     @Test
     public void testIndex() {
-        Indexes indexes = Indexes.createStandaloneIndexes(serializationService, copyBehavior);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("name", false);
         indexes.addOrGetIndex("age", true);
         indexes.addOrGetIndex("salary", true);
@@ -106,7 +106,7 @@ public class IndexesTest {
 
     @Test
     public void testIndex2() {
-        Indexes indexes = Indexes.createStandaloneIndexes(serializationService, copyBehavior);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("name", false);
         indexes.saveEntryIndex(new QueryEntry(serializationService, toData(1), new Value("abc"), Extractors.empty()), null,
                 Index.OperationSource.USER);
@@ -136,7 +136,7 @@ public class IndexesTest {
      */
     @Test
     public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
-        Indexes indexes = Indexes.createStandaloneIndexes(serializationService, copyBehavior);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("name", false);
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
@@ -144,7 +144,7 @@ public class IndexesTest {
 
     @Test
     public void shouldNotThrowException_withNullValues_whenNoIndexAdded() {
-        Indexes indexes = Indexes.createStandaloneIndexes(serializationService, copyBehavior);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
@@ -163,7 +163,7 @@ public class IndexesTest {
 
     @Test
     public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() {
-        Indexes indexes = Indexes.createStandaloneIndexes(serializationService, copyBehavior);
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("__key", false);
 
         for (int i = 0; i < 100; i++) {
