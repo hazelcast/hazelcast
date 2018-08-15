@@ -177,9 +177,9 @@ public final class TestSupport {
     private static final Address LOCAL_ADDRESS;
 
     // 1ms should be enough for a cooperative call. We warn, when it's more than 5ms and
-    // fail when it's more than 100ms, possibly due to other  activity in the system, such as
-    // parallel tests or GC.
-    private static final long COOPERATIVE_TIME_LIMIT_MS_FAIL = 1000;
+    // fail when it's more than 100ms, possibly due to other activity in the system, such as
+    // tests running in parallel or a GC.
+    private static final long COOPERATIVE_TIME_LIMIT_MS_FAIL = 5_000;
     private static final long COOPERATIVE_TIME_LIMIT_MS_WARN = 5;
 
     private static final long BLOCKING_TIME_LIMIT_MS_WARN = 10000;
