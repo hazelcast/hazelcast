@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.stream.Stream;
 
 @SuppressWarnings({"checkstyle:methodcount", "deprecation"})
 public class IListDecorator<E> implements IListJet<E> {
@@ -191,14 +190,4 @@ public class IListDecorator<E> implements IListJet<E> {
         return list.subList(fromIndex, toIndex);
     }
 
-    @Override
-    public Stream<E> stream() {
-        throw new UnsupportedOperationException("This method is no longer supported. Instead use DistributedStream" +
-                ".fromList() to create a distributed stream.");
-    }
-
-    @Override
-    public Stream<E> parallelStream() {
-        return stream();
-    }
 }
