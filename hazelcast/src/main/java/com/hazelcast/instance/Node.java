@@ -78,7 +78,6 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.PhoneHome;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
