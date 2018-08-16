@@ -21,13 +21,12 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.query.impl.IndexProvider;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.PartitionScanRunner;
 import com.hazelcast.map.impl.query.QueryRunner;
@@ -41,11 +40,13 @@ import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexCopyBehavior;
+import com.hazelcast.query.impl.IndexProvider;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.function.Predicate;
 
 import java.util.Collection;
 import java.util.Map;
@@ -84,15 +85,12 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     void initPartitionsContainers();
 
     /**
-     * Clears all map partitions which are expected to have lesser backups
-     * than given.
+     * Clears all partitions which the supplied predicate matches.
      *
+     * @param predicate   predicate to select partitions to be cleared
      * @param partitionId partition ID
-     * @param backupCount backup count
      */
-    void clearMapsHavingLesserBackupCountThan(int partitionId, int backupCount);
-
-    void clearPartitionData(int partitionId);
+    void clearPartitionsOf(Predicate<RecordStore> predicate, int partitionId);
 
     MapService getService();
 
@@ -199,9 +197,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      * store construction time in order to ensure no {@link RecordStore}
      * mutations are missed.
      *
-     * @param mapName The name of the map
+     * @param mapName     The name of the map
      * @param partitionId The partition
-     *
      * @return The collection of the observers
      */
     Collection<RecordStoreMutationObserver<Record>> createRecordStoreMutationObservers(String mapName, int partitionId);

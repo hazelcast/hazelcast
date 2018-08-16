@@ -314,10 +314,12 @@ public interface RecordStore<R extends Record> {
     /**
      * Clears internal partition data.
      *
-     * @param onShutdown true if {@code close} is called during MapService shutdown,
-     *                   false otherwise.
+     * @param onShutdown           true if {@code close} is called during
+     *                             MapService shutdown, false otherwise.
+     * @param onRecordStoreDestroy true if record-store will be destroyed,
+     *                             otherwise false.
      */
-    void clearPartition(boolean onShutdown, boolean onMapDestroy);
+    void clearPartition(boolean onShutdown, boolean onRecordStoreDestroy);
 
     /**
      * Resets the record store to it's initial state.
