@@ -262,6 +262,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public void init() {
         primary = isPrimary();
         records.setEntryCounting(primary);
+        markExpirable(CacheRecord.TIME_NOT_AVAILABLE);
     }
 
     protected boolean isReadThrough() {
@@ -1610,12 +1611,22 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
+    /**
+     * This method marks current replica as expirable and also starts expiration task if necessary.
+     *
+     * The expiration task runs on only primary replicas. Expiration on backup replicas are dictated by primary replicas. However,
+     * it is still important to mark a backup replica as expirable because it might be promoted to be the primary in a later time.
+     *
+     * @param expiryTime
+     */
     protected void markExpirable(long expiryTime) {
         if (expiryTime != CacheRecord.TIME_NOT_AVAILABLE) {
             hasEntryWithExpiration = true;
         }
 
-        cacheService.getExpirationManager().scheduleExpirationTask();
+        if (isPrimary() && hasEntryWithExpiration) {
+            cacheService.getExpirationManager().scheduleExpirationTask();
+        }
     }
 
     @Override
