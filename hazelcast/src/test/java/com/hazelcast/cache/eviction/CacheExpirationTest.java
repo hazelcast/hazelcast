@@ -170,6 +170,42 @@ public class CacheExpirationTest extends CacheTestSupport {
         }
     }
 
+    @Test
+    public void test_whenEntryIsRemovedBackupIsCleaned() {
+        SimpleExpiryListener listener = new SimpleExpiryListener();
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(1000, 1000, 1000), listener);
+        Cache<Integer, Integer> cache = createCache(cacheConfig);
+
+        for (int i = 0; i < KEY_RANGE; i++) {
+            cache.put(i, i);
+            cache.remove(i);
+        }
+
+        sleepAtLeastSeconds(1);
+        assertEquals(0, listener.getExpirationCount().get());
+        for (int i = 1; i < CLUSTER_SIZE; i++) {
+            BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
+            assertBackupSizeEventually(0, backupAccessor);
+        }
+    }
+
+    @Test
+    public void test_whenEntryIsRemovedBackupIsCleaned_eternalDuration() {
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(Duration.ETERNAL,
+                Duration.ETERNAL, Duration.ETERNAL));
+        Cache<Integer, Integer> cache = createCache(cacheConfig);
+
+        for (int i = 0; i < KEY_RANGE; i++) {
+            cache.put(i, i);
+            cache.remove(i);
+        }
+
+        for (int i = 1; i < CLUSTER_SIZE; i++) {
+            BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
+            assertBackupSizeEventually(0, backupAccessor);
+        }
+    }
+
     public static class SimpleExpiryListener<K, V> implements CacheEntryExpiredListener<K, V>, Serializable {
 
         private AtomicInteger expirationCount = new AtomicInteger();

@@ -324,6 +324,31 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
+    public void testExpiration_entryWithOwnTtl() {
+        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        final SimpleExpiryListener<Integer, String> listener = new SimpleExpiryListener<Integer, String>();
+        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration
+                = new MutableCacheEntryListenerConfiguration<Integer, String>(
+                        FactoryBuilder.factoryOf(listener), null, true, true);
+
+        config.addCacheEntryListenerConfiguration(listenerConfiguration);
+        config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new HazelcastExpiryPolicy(Duration.ETERNAL, Duration.ETERNAL,
+                Duration.ETERNAL)));
+
+        ICache<Integer, String> instanceCache = createCache(config);
+
+        instanceCache.put(1, "value", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(1, listener.expired.get());
+            }
+        });
+    }
+
+    @Test
     public void testIteratorRemove() {
         ICache<Integer, Integer> cache = createCache();
         int size = 1111;

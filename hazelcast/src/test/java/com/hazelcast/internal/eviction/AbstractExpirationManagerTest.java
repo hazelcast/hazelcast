@@ -17,17 +17,13 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
@@ -38,7 +34,6 @@ import static java.lang.String.valueOf;
 import static java.lang.System.clearProperty;
 import static java.lang.System.getProperty;
 import static java.lang.System.setProperty;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport {
@@ -92,10 +87,25 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
     }
 
     @Test
-    public void testCleanupPercentage_throwsIllegalArgumentException_whenNotInRange() {
+    public void testCleanupPercentage_throwsIllegalArgumentException_whenUnderRange() {
         String previous = getProperty(cleanupPercentagePropName());
         try {
             setProperty(cleanupPercentagePropName(), valueOf(0));
+
+            thrown.expectMessage("cleanupPercentage should be in range (0,100]");
+            thrown.expect(IllegalArgumentException.class);
+
+            newExpirationManager(createHazelcastInstance());
+        } finally {
+            restoreProperty(cleanupPercentagePropName(), previous);
+        }
+    }
+
+    @Test
+    public void testCleanupPercentage_throwsIllegalArgumentException_whenAboveRange() {
+        String previous = getProperty(cleanupPercentagePropName());
+        try {
+            setProperty(cleanupPercentagePropName(), valueOf(101));
 
             thrown.expectMessage("cleanupPercentage should be in range (0,100]");
             thrown.expect(IllegalArgumentException.class);
@@ -175,17 +185,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
         config.setProperty(taskPeriodSecondsPropName(), "1");
         HazelcastInstance node = createHazelcastInstance(config);
 
-        final AtomicInteger expirationCounter = new AtomicInteger();
-
-        IMap<Integer, Integer> map = node.getMap("test");
-        map.addEntryListener(new EntryExpiredListener() {
-            @Override
-            public void entryExpired(EntryEvent event) {
-                expirationCounter.incrementAndGet();
-            }
-        }, true);
-
-        map.put(1, 1, 3, TimeUnit.SECONDS);
+        final AtomicInteger expirationCounter = configureForTurnsActivePassiveTest(node);
 
         node.getCluster().changeClusterState(PASSIVE);
 
@@ -202,17 +202,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
         config.setProperty(taskPeriodSecondsPropName(), "1");
         HazelcastInstance node = createHazelcastInstance(config);
 
-        final AtomicInteger expirationCounter = new AtomicInteger();
-
-        IMap<Integer, Integer> map = node.getMap("test");
-        map.addEntryListener(new EntryExpiredListener() {
-            @Override
-            public void entryExpired(EntryEvent event) {
-                expirationCounter.incrementAndGet();
-            }
-        }, true);
-
-        map.put(1, 1, 3, SECONDS);
+        final AtomicInteger expirationCounter = configureForTurnsActivePassiveTest(node);
 
         node.getCluster().changeClusterState(PASSIVE);
         node.getCluster().changeClusterState(ACTIVE);
@@ -225,7 +215,6 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
             }
         });
     }
-
 
     protected int getCleanupOperationCount(ExpirationManager expirationManager) {
         return expirationManager.getCleanupOperationCount();
@@ -250,4 +239,6 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
     protected abstract String taskPeriodSecondsPropName();
 
     protected abstract String cleanupPercentagePropName();
+
+    protected abstract AtomicInteger configureForTurnsActivePassiveTest(HazelcastInstance node);
 }

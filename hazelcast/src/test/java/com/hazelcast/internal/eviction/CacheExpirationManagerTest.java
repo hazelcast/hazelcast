@@ -171,20 +171,36 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
         return HazelcastServerCachingProvider.createCachingProvider(instance).getCacheManager();
     }
 
+    @Override
     protected String cleanupOperationCountPropName() {
         return CacheClearExpiredRecordsTask.PROP_CLEANUP_OPERATION_COUNT;
     }
 
+    @Override
     protected String taskPeriodSecondsPropName() {
         return CacheClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
     }
 
+    @Override
     protected String cleanupPercentagePropName() {
         return CacheClearExpiredRecordsTask.PROP_CLEANUP_PERCENTAGE;
     }
 
+    @Override
     protected ExpirationManager newExpirationManager(HazelcastInstance node) {
         return new ExpirationManager(new CacheClearExpiredRecordsTask(getNodeEngineImpl(node), getPartitionSegments(node)), getNodeEngineImpl(node));
+    }
+
+    @Override
+    protected AtomicInteger configureForTurnsActivePassiveTest(HazelcastInstance node) {
+        final SimpleEntryListener simpleEntryListener = new SimpleEntryListener();
+
+        CacheManager cacheManager = createCacheManager(node);
+        CacheConfiguration cacheConfiguration = createCacheConfig(simpleEntryListener, new HazelcastExpiryPolicy(3000, 3000, 3000));
+        Cache<Integer, Integer> cache = cacheManager.createCache("test", cacheConfiguration);
+        cache.put(1, 1);
+
+        return simpleEntryListener.expiredCount;
     }
 
     protected CachePartitionSegment[] getPartitionSegments(HazelcastInstance instance) {

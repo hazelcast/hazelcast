@@ -43,9 +43,11 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_PRIMARY_DRIVES_BACKUP;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.lang.String.format;
 import static java.lang.System.getProperty;
 import static java.lang.System.setProperty;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -141,7 +143,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
     }
 
     @Test
-    public void clearExpiredRecordsTask_should_be_started_when_mapConfig_ttl_expiry() {
+    public void clearExpiredRecordsTask_should_be_started_when_mapConfig_ttl_is_configured() {
         String mapName = "test";
 
         Config config = new Config();
@@ -157,7 +159,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
     }
 
     @Test
-    public void clearExpiredRecordsTask_should_be_started_when_mapConfig_has_idle_expiry() {
+    public void clearExpiredRecordsTask_should_be_started_when_mapConfig_has_idle_configured() {
         String mapName = "test";
 
         Config config = new Config();
@@ -194,16 +196,36 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
                 .getPartitionContainers();
     }
 
+    @Override
     protected String cleanupOperationCountPropName() {
         return MapClearExpiredRecordsTask.PROP_CLEANUP_OPERATION_COUNT;
     }
 
+    @Override
     protected String taskPeriodSecondsPropName() {
         return MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
     }
 
+    @Override
     protected String cleanupPercentagePropName() {
         return MapClearExpiredRecordsTask.PROP_CLEANUP_PERCENTAGE;
+    }
+
+    @Override
+    protected AtomicInteger configureForTurnsActivePassiveTest(HazelcastInstance node) {
+        final AtomicInteger expirationCounter = new AtomicInteger();
+
+        IMap<Integer, Integer> map = node.getMap("test");
+        map.addEntryListener(new EntryExpiredListener() {
+            @Override
+            public void entryExpired(EntryEvent event) {
+                expirationCounter.incrementAndGet();
+            }
+        }, true);
+
+        map.put(1, 1, 3, SECONDS);
+
+        return expirationCounter;
     }
 
     private void backgroundClearTaskStops_whenLifecycleState(LifecycleEvent.LifecycleState lifecycleState) {
