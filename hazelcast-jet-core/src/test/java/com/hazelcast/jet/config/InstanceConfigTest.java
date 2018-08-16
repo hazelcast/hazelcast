@@ -80,12 +80,12 @@ public class InstanceConfigTest {
     }
 
     @Test
-    public void when_upscaleDelay_then_returnsDelay() {
+    public void when_scaleUpDelay_then_returnsDelay() {
         // When
         InstanceConfig config = new InstanceConfig();
-        config.setUpscaleDelayMillis(123);
+        config.setScaleUpDelayMillis(123);
 
         // Then
-        assertEquals(123L, config.getUpscaleDelayMillis());
+        assertEquals(123L, config.getScaleUpDelayMillis());
     }
 }

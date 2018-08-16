@@ -102,7 +102,7 @@ public class JobCoordinationService {
     private int awaitedTerminatingMembersCount;
     private CompletableFuture<Void> terminalSnapshotsFuture;
 
-    private final AtomicInteger upscaleScheduleCount = new AtomicInteger();
+    private final AtomicInteger scaleUpScheduledCount = new AtomicInteger();
 
     JobCoordinationService(NodeEngineImpl nodeEngine, JetService jetService, JetConfig config,
                            JobRepository jobRepository, SnapshotRepository snapshotRepository) {
@@ -150,28 +150,28 @@ public class JobCoordinationService {
         }
 
         updateQuorumValues();
-        scheduleUpscale(config.getInstanceConfig().getUpscaleDelayMillis());
+        scheduleScaleUp(config.getInstanceConfig().getScaleUpDelayMillis());
     }
 
-    private void scheduleUpscale(long delay) {
-        int counter = upscaleScheduleCount.incrementAndGet();
-        nodeEngine.getExecutionService().schedule(() -> upscaleJobsNow(counter), delay, MILLISECONDS);
+    private void scheduleScaleUp(long delay) {
+        int counter = scaleUpScheduledCount.incrementAndGet();
+        nodeEngine.getExecutionService().schedule(() -> scaleJobsUpNow(counter), delay, MILLISECONDS);
     }
 
-    private void upscaleJobsNow(int counter) {
-        // if another upscale was scheduled after this one, let's ignore this upscale
-        if (upscaleScheduleCount.get() != counter) {
+    private void scaleJobsUpNow(int counter) {
+        // if another scale-up was scheduled after this one, ignore this one
+        if (scaleUpScheduledCount.get() != counter) {
             return;
         }
         // if we can't start jobs yet, we also won't tear them down
         if (!shouldStartJobs()) {
-            scheduleUpscale(RETRY_DELAY_IN_MILLIS);
+            scheduleScaleUp(RETRY_DELAY_IN_MILLIS);
         }
 
         int count = 0;
         Collection<Member> dataMembers = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         for (MasterContext mc : masterContexts.values()) {
-            if (mc.maybeUpscale(dataMembers)) {
+            if (mc.maybeScaleUp(dataMembers)) {
                 count++;
             }
         }

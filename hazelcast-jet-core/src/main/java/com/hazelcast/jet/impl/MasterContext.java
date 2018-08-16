@@ -904,7 +904,7 @@ public class MasterContext {
         return null; // nothing to wait for
     }
 
-    boolean maybeUpscale(Collection<Member> currentDataMembers) {
+    boolean maybeScaleUp(Collection<Member> currentDataMembers) {
         if (!jobConfig().isAutoScaling()) {
             return false;
         }
