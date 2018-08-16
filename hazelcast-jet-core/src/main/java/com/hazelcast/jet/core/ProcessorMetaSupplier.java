@@ -90,7 +90,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * been called.
      */
     @Nonnull
-    Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses);
+    Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
 
     /**
      * Called on coordinator member after execution has finished on all
@@ -146,7 +146,8 @@ public interface ProcessorMetaSupplier extends Serializable {
      */
     @Nonnull
     static ProcessorMetaSupplier of(
-            @Nonnull DistributedSupplier<? extends Processor> procSupplier, int preferredLocalParallelism
+            @Nonnull DistributedSupplier<? extends Processor> procSupplier,
+            int preferredLocalParallelism
     ) {
         return of(ProcessorSupplier.of(procSupplier), preferredLocalParallelism);
     }
@@ -172,8 +173,9 @@ public interface ProcessorMetaSupplier extends Serializable {
      * @param addressToSupplier the mapping from address to ProcessorSupplier
      * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
      */
+    @Nonnull
     static ProcessorMetaSupplier of(
-            DistributedFunction<Address, ProcessorSupplier> addressToSupplier,
+            @Nonnull DistributedFunction<? super Address, ? extends ProcessorSupplier> addressToSupplier,
             int preferredLocalParallelism
     ) {
         Vertex.checkLocalParallelism(preferredLocalParallelism);
@@ -184,7 +186,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             }
 
             @Nonnull @Override
-            public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return addressToSupplier;
             }
         };
@@ -196,7 +198,10 @@ public interface ProcessorMetaSupplier extends Serializable {
      * ProcessorSupplier}. The {@link #preferredLocalParallelism()} of
      * the meta-supplier will be {@link Vertex#LOCAL_PARALLELISM_USE_DEFAULT}.
      */
-    static ProcessorMetaSupplier of(DistributedFunction<Address, ProcessorSupplier> addressToSupplier) {
+    @Nonnull
+    static ProcessorMetaSupplier of(
+            @Nonnull DistributedFunction<? super Address, ? extends ProcessorSupplier> addressToSupplier
+    ) {
         return of(addressToSupplier, Vertex.LOCAL_PARALLELISM_USE_DEFAULT);
     }
 
@@ -209,7 +214,8 @@ public interface ProcessorMetaSupplier extends Serializable {
      * The parallelism will be overriden if the {@link Vertex#localParallelism(int)} is
      * set to a specific value.
      */
-    static ProcessorMetaSupplier preferLocalParallelismOne(ProcessorSupplier supplier) {
+    @Nonnull
+    static ProcessorMetaSupplier preferLocalParallelismOne(@Nonnull ProcessorSupplier supplier) {
         return of(supplier, 1);
     }
 
@@ -229,7 +235,8 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Variant of {@link #forceTotalParallelismOne(ProcessorSupplier, String)} where the node
      * for the supplier will be chosen randomly.
      */
-    static ProcessorMetaSupplier forceTotalParallelismOne(ProcessorSupplier supplier) {
+    @Nonnull
+    static ProcessorMetaSupplier forceTotalParallelismOne(@Nonnull ProcessorSupplier supplier) {
         return forceTotalParallelismOne(supplier, newUnsecureUuidString());
     }
 
@@ -253,7 +260,10 @@ public interface ProcessorMetaSupplier extends Serializable {
      *
      * @throws IllegalArgumentException if vertex has local parallelism setting of greater than 1
      */
-    static ProcessorMetaSupplier forceTotalParallelismOne(ProcessorSupplier supplier, String partitionKey) {
+    @Nonnull
+    static ProcessorMetaSupplier forceTotalParallelismOne(
+            @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey
+    ) {
         return new ProcessorMetaSupplier() {
 
             private transient Address ownerAddress;

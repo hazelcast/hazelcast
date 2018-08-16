@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
-import com.hazelcast.jet.impl.pipeline.JetEvent;
+import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.pipeline.SessionWindowDef;

@@ -60,9 +60,13 @@ public final class ReadFilesP<R, T> extends AbstractProcessor {
     private Traverser<? extends T> outputTraverser;
     private Stream<R> currentStream;
 
-    private ReadFilesP(@Nonnull String directory, @Nonnull String glob, boolean sharedFileSystem,
-                       @Nonnull DistributedFunction<? super Path, ? extends Stream<R>> readFileFn,
-                       @Nonnull DistributedBiFunction<? super String, ? super R, ? extends T> mapOutputFn) {
+    private ReadFilesP(
+            @Nonnull String directory,
+            @Nonnull String glob, boolean sharedFileSystem,
+            @Nonnull DistributedFunction<? super Path, ? extends Stream<R>> readFileFn,
+            @Nonnull DistributedBiFunction<? super String, ? super R, ? extends T> mapOutputFn
+    ) {
+        setCooperative(false);
         this.directory = Paths.get(directory);
         this.glob = glob;
         this.readFileFn = readFileFn;
@@ -127,11 +131,6 @@ public final class ReadFilesP<R, T> extends AbstractProcessor {
         }
     }
 
-    @Override
-    public boolean isCooperative() {
-        return false;
-    }
-
     /**
      * Private API. Use {@link SourceProcessors#readFilesP} instead.
      */
@@ -139,8 +138,8 @@ public final class ReadFilesP<R, T> extends AbstractProcessor {
             @Nonnull String directory,
             @Nonnull String glob,
             boolean sharedFileSystem,
-            @Nonnull DistributedFunction<Path, Stream<W>> readFileFn,
-            @Nonnull DistributedBiFunction<String, ? super W, T> mapOutputFn
+            @Nonnull DistributedFunction<? super Path, ? extends Stream<W>> readFileFn,
+            @Nonnull DistributedBiFunction<? super String, ? super W, ? extends T> mapOutputFn
     ) {
         return ProcessorMetaSupplier.of(() -> new ReadFilesP<>(
                 directory, glob, sharedFileSystem, readFileFn, mapOutputFn),

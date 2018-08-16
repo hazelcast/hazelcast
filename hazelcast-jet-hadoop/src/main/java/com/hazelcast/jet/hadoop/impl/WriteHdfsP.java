@@ -62,6 +62,7 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
                        DistributedFunction<? super T, K> extractKeyFn,
                        DistributedFunction<? super T, V> extractValueFn
     ) {
+        setCooperative(false);
         this.recordWriter = recordWriter;
         this.taskAttemptContext = taskAttemptContext;
         this.outputCommitter = outputCommitter;
@@ -83,11 +84,6 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         if (outputCommitter.needsTaskCommit(taskAttemptContext)) {
             outputCommitter.commitTask(taskAttemptContext);
         }
-    }
-
-    @Override
-    public boolean isCooperative() {
-        return false;
     }
 
     public static class MetaSupplier<T, K, V> implements ProcessorMetaSupplier {

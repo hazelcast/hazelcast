@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;

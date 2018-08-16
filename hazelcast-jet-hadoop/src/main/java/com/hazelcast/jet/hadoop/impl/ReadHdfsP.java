@@ -78,6 +78,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
     private final DistributedBiFunction<K, V, R> projectionFn;
 
     private ReadHdfsP(@Nonnull List<RecordReader> recordReaders, @Nonnull DistributedBiFunction<K, V, R> projectionFn) {
+        setCooperative(false);
         this.trav = traverseIterable(recordReaders).flatMap(this::traverseRecordReader);
         this.projectionFn = projectionFn;
     }
@@ -104,11 +105,6 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
                 throw sneakyThrow(e);
             }
         };
-    }
-
-    @Override
-    public boolean isCooperative() {
-        return false;
     }
 
     public static class MetaSupplier<K, V, R> implements ProcessorMetaSupplier {

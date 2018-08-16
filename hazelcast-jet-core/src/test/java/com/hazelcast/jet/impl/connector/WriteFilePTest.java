@@ -262,6 +262,7 @@ public class WriteFilePTest extends JetTestSupport {
         private final int limit;
 
         SlowSourceP(Semaphore semaphore, int limit) {
+            setCooperative(false);
             this.semaphore = semaphore;
             this.limit = limit;
         }
@@ -276,11 +277,6 @@ public class WriteFilePTest extends JetTestSupport {
                 number++;
             }
             return true;
-        }
-
-        @Override
-        public boolean isCooperative() {
-            return false;
         }
     }
 

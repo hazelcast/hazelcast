@@ -224,7 +224,7 @@ public class JobExecutionService {
 
         // initial log entry with all of jobId, jobName, executionId
         logger.info("Execution plan for jobId=" + idToString(jobId)
-                + ", jobName=" + (created.jobName() != null ? "'" + created.jobName() + "'" : "null")
+                + ", jobName=" + (created.jobName() != null ? '\'' + created.jobName() + '\'' : "null")
                 + ", executionId=" + idToString(executionId) + " initialized");
     }
 

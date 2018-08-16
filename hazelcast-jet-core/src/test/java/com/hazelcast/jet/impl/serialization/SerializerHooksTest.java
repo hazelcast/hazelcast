@@ -32,7 +32,7 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
+import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;

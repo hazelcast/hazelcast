@@ -85,7 +85,7 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     @Override
-    public boolean isCooperative() {
+    public final boolean isCooperative() {
         return isCooperative;
     }
 

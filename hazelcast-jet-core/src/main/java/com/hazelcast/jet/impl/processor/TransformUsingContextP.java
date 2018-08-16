@@ -60,6 +60,7 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
                     ? extends Traverser<? extends R>> flatMapFn,
             @Nullable C contextObject
     ) {
+        setCooperative(contextFactory.isCooperative());
         this.contextFactory = contextFactory;
         this.flatMapFn = flatMapFn;
         this.contextObject = contextObject;
@@ -74,11 +75,6 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
             assert contextObject == null : "contextObject is not null: " + contextObject;
             contextObject = contextFactory.createFn().apply(context.jetInstance());
         }
-    }
-
-    @Override
-    public boolean isCooperative() {
-        return contextFactory.isCooperative();
     }
 
     @Override

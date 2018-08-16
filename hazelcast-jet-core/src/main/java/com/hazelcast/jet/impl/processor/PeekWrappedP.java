@@ -24,7 +24,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
-import com.hazelcast.jet.impl.pipeline.JetEvent;
+import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 

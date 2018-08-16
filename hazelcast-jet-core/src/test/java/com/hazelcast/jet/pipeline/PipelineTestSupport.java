@@ -108,6 +108,10 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         data.forEach(i -> dest.put(String.valueOf(key[0]++), i));
     }
 
+    <T> Sink<T> sinkList() {
+        return Sinks.list(sinkName);
+    }
+
     @SuppressWarnings("unchecked")
     <T> Map<T, Integer> sinkToBag() {
         return toBag((List<T>) this.sinkList);

@@ -77,8 +77,7 @@ public final class TimestampedItem<T> implements Serializable {
 
     @Override
     public String toString() {
-        return "TimestampedItem{ts=" + toLocalTime(timestamp)
-                + ", value='" + item + "'}";
+        return "{ts=" + toLocalTime(timestamp) + ", value='" + item + "'}";
     }
 
 

@@ -26,11 +26,11 @@ import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 
 public class TimestampTransform<T> extends AbstractTransform {
     @Nonnull
-    public WatermarkGenerationParams wmGenParams;
+    public WatermarkGenerationParams<? super T> wmGenParams;
 
     public TimestampTransform(
             @Nonnull Transform upstream,
-            @Nonnull WatermarkGenerationParams wmGenParams
+            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
     ) {
         super("timestamp", upstream);
         this.wmGenParams = wmGenParams;
@@ -46,11 +46,11 @@ public class TimestampTransform<T> extends AbstractTransform {
     }
 
     @Nonnull
-    public WatermarkGenerationParams getWmGenParams() {
+    public WatermarkGenerationParams<? super T> getWmGenParams() {
         return wmGenParams;
     }
 
-    public void setWmGenerationParams(@Nonnull WatermarkGenerationParams wmGenParams) {
+    public void setWmGenerationParams(@Nonnull WatermarkGenerationParams<? super T> wmGenParams) {
         this.wmGenParams = wmGenParams;
     }
 }

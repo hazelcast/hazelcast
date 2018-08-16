@@ -25,7 +25,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.pipeline.JetEvent;
+import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.EntryProcessor;

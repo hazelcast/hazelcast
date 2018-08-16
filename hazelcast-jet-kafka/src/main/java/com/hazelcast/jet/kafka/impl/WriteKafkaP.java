@@ -40,7 +40,7 @@ import static java.util.stream.Collectors.toList;
 public final class WriteKafkaP<T, K, V> implements Processor {
 
     private final KafkaProducer<K, V> producer;
-    private final Function<T, ProducerRecord<K, V>> toRecordFn;
+    private final Function<? super T, ? extends ProducerRecord<K, V>> toRecordFn;
     private final AtomicReference<Throwable> lastError = new AtomicReference<>();
 
     private final Callback callback = (metadata, exception) -> {
@@ -50,7 +50,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         }
     };
 
-    WriteKafkaP(KafkaProducer<K, V> producer, Function<T, ProducerRecord<K, V>> toRecordFn) {
+    WriteKafkaP(KafkaProducer<K, V> producer, Function<? super T, ? extends ProducerRecord<K, V>> toRecordFn) {
         this.producer = producer;
         this.toRecordFn = toRecordFn;
     }
@@ -107,11 +107,11 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         private static final long serialVersionUID = 1L;
 
         private final Properties properties;
-        private final Function<? super T, ProducerRecord<K, V>> toRecordFn;
+        private final Function<? super T, ? extends ProducerRecord<K, V>> toRecordFn;
 
         private transient KafkaProducer<K, V> producer;
 
-        public Supplier(Properties properties, Function<? super T, ProducerRecord<K, V>> toRecordFn) {
+        public Supplier(Properties properties, Function<? super T, ? extends ProducerRecord<K, V>> toRecordFn) {
             this.properties = properties;
             this.toRecordFn = toRecordFn;
         }

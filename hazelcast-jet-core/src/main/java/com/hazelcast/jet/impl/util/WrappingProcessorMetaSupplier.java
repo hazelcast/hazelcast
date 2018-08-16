@@ -48,7 +48,7 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
 
     @Nonnull @Override
     public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-        Function<Address, ProcessorSupplier> function = wrapped.get(addresses);
+        Function<? super Address, ? extends ProcessorSupplier> function = wrapped.get(addresses);
         return address -> new WrappingProcessorSupplier(function.apply(address), wrapperSupplier);
     }
 

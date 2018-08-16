@@ -70,8 +70,8 @@ public interface Processor {
      * involves blocking operations, which would cause all other processors on
      * the same shared thread to starve.
      * <p>
-     * Processor instances on single vertex are allowed to return different
-     * value, but single processor instance must return constant value.
+     * Processor instances of a single vertex are allowed to return different
+     * values, but a single processor instance must always return the same value.
      * <p>
      * The default implementation returns {@code true}.
      */

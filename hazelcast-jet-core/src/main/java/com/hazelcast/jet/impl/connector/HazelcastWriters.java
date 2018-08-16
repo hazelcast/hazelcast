@@ -81,8 +81,8 @@ public final class HazelcastWriters {
     public static <T, K, V> ProcessorMetaSupplier mergeMapSupplier(
             @Nonnull String name,
             @Nullable ClientConfig clientConfig,
-            @Nonnull DistributedFunction<T, K> toKeyFn,
-            @Nonnull DistributedFunction<T, V> toValueFn,
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends V> toValueFn,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
         checkSerializable(toKeyFn, "toKeyFn");
@@ -103,8 +103,8 @@ public final class HazelcastWriters {
     public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String name,
             @Nullable ClientConfig clientConfig,
-            @Nonnull DistributedFunction<T, K> toKeyFn,
-            @Nonnull DistributedBiFunction<V, T, V> updateFn
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
     ) {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(updateFn, "updateFn");
@@ -151,8 +151,8 @@ public final class HazelcastWriters {
     public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String name,
             @Nullable ClientConfig clientConfig,
-            @Nonnull DistributedFunction<T, K> toKeyFn,
-            @Nonnull DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn
     ) {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
@@ -299,9 +299,10 @@ public final class HazelcastWriters {
         private static final int MAX_PARALLEL_ASYNC_OPS = 1000;
         private final AtomicInteger numConcurrentOps = new AtomicInteger();
 
-        private final IMap<K, V> map;
-        private final DistributedFunction<T, K> toKeyFn;
-        private final DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn;
+        private final boolean isLocal;
+        private final IMap<? super K, ? extends V> map;
+        private final DistributedFunction<? super T, ? extends K> toKeyFn;
+        private final DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn;
         private final AtomicReference<Throwable> lastError = new AtomicReference<>();
         private final ExecutionCallback callback = callbackOf(
                 response -> numConcurrentOps.decrementAndGet(),
@@ -311,22 +312,19 @@ public final class HazelcastWriters {
                         lastError.compareAndSet(null, exception);
                     }
                 });
-        private final boolean isLocal;
 
-
-        private EntryProcessorWriter(HazelcastInstance instance, String name,
-                                     DistributedFunction toKeyFn,
-                                     DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn,
-                                     boolean isLocal) {
+        private EntryProcessorWriter(
+                @Nonnull HazelcastInstance instance,
+                @Nonnull String name,
+                @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+                @Nonnull DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn,
+                boolean isLocal
+        ) {
+            setCooperative(false);
             this.map = instance.getMap(name);
             this.toKeyFn = toKeyFn;
             this.toEntryProcessorFn = toEntryProcessorFn;
             this.isLocal = isLocal;
-        }
-
-        @Override
-        public boolean isCooperative() {
-            return false;
         }
 
         @Override
@@ -342,6 +340,7 @@ public final class HazelcastWriters {
                 return false;
             }
             try {
+                @SuppressWarnings("unchecked")
                 T item = (T) object;
                 EntryProcessor<K, V> entryProcessor = toEntryProcessorFn.apply(item);
                 K key = toKeyFn.apply(item);
@@ -382,16 +381,19 @@ public final class HazelcastWriters {
 
         private final String name;
         private final SerializableClientConfig clientConfig;
-        private final DistributedFunction<T, K> toKeyFn;
-        private final DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn;
+        private final DistributedFunction<? super T, ? extends K> toKeyFn;
+        private final DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn;
         private final boolean isLocal;
         private transient HazelcastInstance client;
         private transient HazelcastInstance instance;
 
-        private EntryProcessorWriterSupplier(String name, SerializableClientConfig clientConfig,
-                                             DistributedFunction<T, K> toKeyFn,
-                                             DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn,
-                                             boolean isLocal) {
+        private EntryProcessorWriterSupplier(
+                @Nonnull String name,
+                @Nullable SerializableClientConfig clientConfig,
+                @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+                @Nonnull DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn,
+                boolean isLocal
+        ) {
             this.name = name;
             this.clientConfig = clientConfig;
             this.toKeyFn = toKeyFn;
@@ -399,10 +401,9 @@ public final class HazelcastWriters {
             this.isLocal = isLocal;
         }
 
-
         @Override
         public void init(@Nonnull Context context) {
-            if (isRemote()) {
+            if (clientConfig != null) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
             } else {
                 instance = context.jetInstance().getHazelcastInstance();
@@ -414,10 +415,6 @@ public final class HazelcastWriters {
             if (client != null) {
                 client.shutdown();
             }
-        }
-
-        private boolean isRemote() {
-            return clientConfig != null;
         }
 
         @Override @Nonnull
@@ -484,15 +481,18 @@ public final class HazelcastWriters {
         }
     }
 
-    public static class ApplyFnEntryProcessor<K, V, T> implements EntryProcessor<K, V>, EntryBackupProcessor<K, V>,
-            IdentifiedDataSerializable {
+    public static class ApplyFnEntryProcessor<K, V, T>
+    implements EntryProcessor<K, V>, EntryBackupProcessor<K, V>, IdentifiedDataSerializable {
         private Map<K, T> keysToUpdate;
-        private DistributedBiFunction<V, T, V> updateFn;
+        private DistributedBiFunction<? super V, ? super T, ? extends V> updateFn;
 
         public ApplyFnEntryProcessor() {
         }
 
-        public ApplyFnEntryProcessor(Map<K, T> keysToUpdate, DistributedBiFunction<V, T, V> updateFn) {
+        public ApplyFnEntryProcessor(
+                Map<K, T> keysToUpdate,
+                DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
+        ) {
             this.keysToUpdate = keysToUpdate;
             this.updateFn = updateFn;
         }

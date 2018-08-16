@@ -91,7 +91,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     @Nonnull
     private final int[] partitionIds;
     @Nonnull
-    private final WatermarkSourceUtil<T> watermarkSourceUtil;
+    private final WatermarkSourceUtil<? super T> watermarkSourceUtil;
 
     private final boolean isRemoteReader;
 
@@ -124,7 +124,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull WatermarkGenerationParams<? super T> wmGenParams
     ) {
         this.eventJournalReader = eventJournalReader;
-        this.predicate = (Serializable & Predicate<E>) predicateFn::test;
+        this.predicate = (Predicate<? super E> & Serializable) predicateFn::test;
         this.projection = toProjection(projectionFn);
         this.initialPos = initialPos;
         this.isRemoteReader = isRemoteReader;
@@ -135,22 +135,21 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         watermarkSourceUtil = new WatermarkSourceUtil<>(wmGenParams);
 
-        // Do not coalesce partition WMs because the number of partitions
-        // is far larger than the number of consumers by default and it is
-        // not configurable on a per journal basis. This creates
-        // excessive latency when the number of events are relatively low
-        // where we have to wait for all partitions to advance before
-        // advancing the watermark.
-        // The side effect of not coalescing is that when the job is
-        // restarted and catching up, there might be dropped late events due to
-        // several events being read from one partition before the rest and
-        // the partition advancing ahead of others.
-        // This might be changed in the future and/or made optional.
+        // Do not coalesce partition WMs because the number of partitions is far
+        // larger than the number of consumers by default and it is not
+        // configurable on a per journal basis. This creates excessive latency
+        // when the number of events are relatively low and we have to wait for
+        // all partitions to advance before advancing the watermark. The side
+        // effect of not coalescing is that when the job is restarted and catching
+        // up, there might be dropped late events due to several events being read
+        // from one partition before the rest and the partition advancing ahead of
+        // others. This might be changed in the future and/or made optional.
         watermarkSourceUtil.increasePartitionCount(1);
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
+        @SuppressWarnings("unchecked")
         ICompletableFuture<EventJournalInitialSubscriberState>[] futures = new ICompletableFuture[partitionIds.length];
         Arrays.setAll(futures, i -> eventJournalReader.subscribeToEventJournal(partitionIds[i]));
         for (int i = 0; i < futures.length; i++) {
@@ -221,6 +220,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        @SuppressWarnings("unchecked")
         int partitionId = ((BroadcastKey<Integer>) key).key();
         int partitionIndex = arrayIndexOf(partitionId, partitionIds);
         long offset = ((long[]) value)[0];
@@ -241,11 +241,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return true;
     }
 
-    @Override
-    public boolean isCooperative() {
-        return true;
-    }
-
+    @SuppressWarnings("unchecked")
     private void initialRead() {
         readFutures = new ICompletableFuture[partitionIds.length];
         for (int i = 0; i < readFutures.length; i++) {
@@ -475,7 +471,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
             @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
             @Nonnull JournalInitialPosition initialPos,
-            WatermarkGenerationParams<? super T> wmGenParams
+            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
     ) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
@@ -492,7 +488,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
             @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<T> wmGenParams) {
+            @Nonnull WatermarkGenerationParams<? super T> wmGenParams) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
@@ -507,7 +503,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<T> wmGenParams) {
+            @Nonnull WatermarkGenerationParams<? super T> wmGenParams) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
@@ -523,7 +519,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<T> wmGenParams) {
+            @Nonnull WatermarkGenerationParams<? super T> wmGenParams) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 

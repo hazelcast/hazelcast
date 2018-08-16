@@ -64,16 +64,18 @@ public class Planner {
         Map<Transform, List<Transform>> adjacencyMap = pipeline.adjacencyMap();
         validateNoLeakage(adjacencyMap);
 
-        // Calculate greatest common denominator of frame lengths from all transforms in the pipeline
+        // Find the greatest common denominator of all frame lengths
+        // appearing in the pipeline
         long frameSizeGcd = Util.gcd(adjacencyMap.keySet().stream()
                                                  .map(Transform::watermarkFrameSize)
                                                  .filter(frameSize -> frameSize > 0)
                                                  .mapToLong(i -> i)
                                                  .toArray());
+        // Update watermark emission policy on all wm gen params
+        // with the GCD frame length
         WatermarkEmissionPolicy emitPolicy = frameSizeGcd > 0
                 ? emitByFrame(tumblingWinPolicy(frameSizeGcd))
                 : noThrottling();
-        // Replace emission policy
         for (Transform transform : adjacencyMap.keySet()) {
             if (transform instanceof StreamSourceTransform) {
                 StreamSourceTransform t = (StreamSourceTransform) transform;

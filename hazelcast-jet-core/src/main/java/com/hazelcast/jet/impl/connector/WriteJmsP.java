@@ -26,6 +26,7 @@ import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 
+import javax.annotation.Nonnull;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.Message;
@@ -99,11 +100,12 @@ public final class WriteJmsP {
         }
 
         @Override
-        public void init(Context ignored) {
+        public void init(@Nonnull Context ignored) {
             connection = connectionSupplier.get();
             uncheckRun(() -> connection.start());
         }
 
+        @Nonnull
         @Override
         public Collection<? extends Processor> get(int count) {
             DistributedFunction<Processor.Context, JmsContext> createFn = jet -> {

@@ -32,6 +32,7 @@ public class WriteLoggerP<T> extends AbstractProcessor {
     private Function<T, ? extends CharSequence> toStringFn;
 
     public WriteLoggerP(Function<T, ? extends CharSequence> toStringFn) {
+        setCooperative(false);
         this.toStringFn = toStringFn;
     }
 
@@ -46,10 +47,5 @@ public class WriteLoggerP<T> extends AbstractProcessor {
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         getLogger().fine(watermark.toString());
         return true;
-    }
-
-    @Override
-    public boolean isCooperative() {
-        return false;
     }
 }

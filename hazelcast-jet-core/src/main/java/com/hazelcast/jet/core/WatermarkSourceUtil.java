@@ -103,7 +103,7 @@ public class WatermarkSourceUtil<T> {
 
     private final long idleTimeoutNanos;
     private final ToLongFunction<? super T> timestampFn;
-    private final Supplier<WatermarkPolicy> newWmPolicyFn;
+    private final Supplier<? extends WatermarkPolicy> newWmPolicyFn;
     private final ObjLongBiFunction<? super T, ?> wrapFn;
     private final WatermarkEmissionPolicy wmEmitPolicy;
     private final AppendableTraverser<Object> traverser = new AppendableTraverser<>(2);

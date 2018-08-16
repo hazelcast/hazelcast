@@ -171,6 +171,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
         private final boolean complete;
 
         EmitListP(List<?> list, boolean complete) {
+            setCooperative(false);
             this.traverser = traverseIterable(list);
             this.complete = complete;
         }
@@ -188,11 +189,6 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                 }
             }
             return true;
-        }
-
-        @Override
-        public boolean isCooperative() {
-            return false;
         }
     }
 

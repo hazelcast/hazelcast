@@ -19,7 +19,6 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -29,6 +28,7 @@ import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
@@ -40,9 +40,9 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  */
 public final class SinkBuilder<W, T> {
 
-    private final DistributedFunction<Processor.Context, ? extends W> createFn;
+    private final DistributedFunction<? super Processor.Context, ? extends W> createFn;
     private final String name;
-    private DistributedBiConsumer<? super W, ? super T> onReceiveFn;
+    private DistributedBiConsumer<? super W, ? super T> receiveFn;
     private DistributedConsumer<? super W> flushFn = noopConsumer();
     private DistributedConsumer<? super W> destroyFn = noopConsumer();
     private int preferredLocalParallelism = 2;
@@ -50,7 +50,7 @@ public final class SinkBuilder<W, T> {
     /**
      * Use {@link Sinks#builder(String, DistributedFunction)}.
      */
-    SinkBuilder(@Nonnull String name, DistributedFunction<Processor.Context, ? extends W> createFn) {
+    SinkBuilder(@Nonnull String name, DistributedFunction<? super Processor.Context, ? extends W> createFn) {
         checkSerializable(createFn, "createFn");
         this.name = name;
         this.createFn = createFn;
@@ -62,13 +62,18 @@ public final class SinkBuilder<W, T> {
      * #createFn} and the received item. Its job is to push the item to the
      * writer.
      *
-     * @param onReceiveFn the "add item to the writer" function
+     * @param receiveFn the "add item to the writer" function
+     * @param <T_NEW> type of the items the sink will accept
      */
     @Nonnull
-    public SinkBuilder<W, T> onReceiveFn(@Nonnull DistributedBiConsumer<? super W, ? super T> onReceiveFn) {
-        checkSerializable(onReceiveFn, "onReceiveFn");
-        this.onReceiveFn = onReceiveFn;
-        return this;
+    @SuppressWarnings("unchecked")
+    public <T_NEW> SinkBuilder<W, T_NEW> receiveFn(
+            @Nonnull DistributedBiConsumer<? super W, ? super T_NEW> receiveFn
+    ) {
+        checkSerializable(receiveFn, "receiveFn");
+        SinkBuilder<W, T_NEW> newThis = (SinkBuilder<W, T_NEW>) this;
+        newThis.receiveFn = receiveFn;
+        return newThis;
     }
 
     /**
@@ -125,9 +130,9 @@ public final class SinkBuilder<W, T> {
      */
     @Nonnull
     public Sink<T> build() {
-        Preconditions.checkNotNull(onReceiveFn, "onReceiveFn must be set");
+        Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
 
-        DistributedSupplier<Processor> supplier = SinkProcessors.writeBufferedP(createFn, onReceiveFn, flushFn, destroyFn);
+        DistributedSupplier<Processor> supplier = writeBufferedP(createFn, receiveFn, flushFn, destroyFn);
         return new SinkImpl<>(name, ProcessorMetaSupplier.of(supplier, preferredLocalParallelism));
     }
 }

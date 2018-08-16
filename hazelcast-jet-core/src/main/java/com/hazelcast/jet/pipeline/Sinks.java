@@ -580,10 +580,9 @@ public final class Sinks {
      * (fault-tolerance): it will behave as an at-least-once sink.
      *
      * @param <W> type of the writer object
-     * @param <T> type of the items the sink will accept
      */
     @Nonnull
-    public static <W, T> SinkBuilder<W, T> builder(
+    public static <W> SinkBuilder<W, Void> builder(
             @Nonnull String name,
             @Nonnull DistributedFunction<Processor.Context, ? extends W> createFn
     ) {

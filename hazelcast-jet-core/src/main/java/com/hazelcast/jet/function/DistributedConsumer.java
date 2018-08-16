@@ -55,4 +55,11 @@ public interface DistributedConsumer<T> extends Consumer<T>, Serializable {
             after.accept(t);
         };
     }
+
+    /**
+     * Returns a consumer that does nothing.
+     */
+    static <T> DistributedConsumer<T> noop() {
+        return x -> { };
+    }
 }

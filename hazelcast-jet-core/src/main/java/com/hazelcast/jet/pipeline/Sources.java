@@ -115,7 +115,7 @@ public final class Sources {
     @Nonnull
     public static <T> StreamSource<T> streamFromProcessorWithWatermarks(
             @Nonnull String sourceName,
-            @Nonnull Function<WatermarkGenerationParams<T>, ProcessorMetaSupplier> metaSupplierFn
+            @Nonnull Function<WatermarkGenerationParams<? super T>, ProcessorMetaSupplier> metaSupplierFn
     ) {
         return new StreamSourceTransform<>(sourceName, metaSupplierFn, true);
     }

@@ -27,6 +27,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.util.Util.RunnableExc;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -117,7 +118,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected static File createTempDirectory() throws Exception {
+    protected static File createTempDirectory() throws IOException {
         Path directory = Files.createTempDirectory("jet-test-temp");
         File file = directory.toFile();
         file.deleteOnExit();
@@ -180,5 +181,15 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     @FunctionalInterface
     public interface UncheckedRunnable {
         void run() throws Exception;
+    }
+
+    public static void spawnSafe(RunnableExc r) {
+        spawn(() -> {
+            try {
+                r.run();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

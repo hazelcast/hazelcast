@@ -89,7 +89,7 @@ public final class ExecutionPlanBuilder {
             metaSupplier.init(new MetaSupplierCtx(instance, jobId, executionId, jobConfig, logger,
                     vertex.getName(), localParallelism, totalParallelism, clusterSize));
 
-            Function<Address, ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
+            Function<? super Address, ? extends ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
             for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
                 checkSerializable(processorSupplier, "ProcessorSupplier in vertex '" + vertex.getName() + '\'');

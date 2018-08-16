@@ -69,8 +69,10 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
     private final Traverser<T> outputTraverser;
 
-    ReadWithPartitionIteratorP(Function<Integer, Iterator<T>> partitionToIterator,
-                               List<Integer> partitions) {
+    ReadWithPartitionIteratorP(
+            Function<Integer, Iterator<T>> partitionToIterator, List<Integer> partitions
+    ) {
+        setCooperative(false);
         final CircularListCursor<Iterator<T>> iteratorCursor = new CircularListCursor<>(
                 partitions.stream().map(partitionToIterator).collect(toList())
         );
@@ -149,11 +151,6 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
     @Override
     public boolean complete() {
         return emitFromTraverser(outputTraverser);
-    }
-
-    @Override
-    public boolean isCooperative() {
-        return false;
     }
 
     private static <T> List<Processor> getProcessors(int count, List<Integer> ownedPartitions,

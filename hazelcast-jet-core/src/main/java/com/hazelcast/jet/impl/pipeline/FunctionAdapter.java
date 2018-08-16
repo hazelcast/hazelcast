@@ -22,6 +22,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.DistributedBiConsumer;
@@ -40,7 +41,7 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
+import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 
 
 public class FunctionAdapter {

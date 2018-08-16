@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
+import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
@@ -105,15 +105,16 @@ public class TaskletExecutionService {
     }
 
     /**
-     * Submits the tasklets for execution and returns a future which is completed only
-     * when execution of all the tasklets has completed. If an exception occurred during
-     * execution or execution was cancelled then the future will be completed exceptionally
-     * but only after all tasklets are finished executing. The returned future does not
-     * support cancellation, instead the supplied {@code cancellationFuture} should be used.
+     * Submits the tasklets for execution and returns a future which gets
+     * completed when the execution of all the tasklets has completed. If an
+     * exception occurrs or the execution gets cancelled, the future will be
+     * completed exceptionally, but only after all the tasklets have finished
+     * executing. The returned future does not support cancellation, instead
+     * the supplied {@code cancellationFuture} should be used.
      *
-     * @param tasklets        tasklets to run
-     * @param cancellationFuture A future when cancelled will cancel the execution of the tasklets
-     * @param jobClassLoader  classloader to use when running the tasklets
+     * @param tasklets            tasklets to run
+     * @param cancellationFuture  future that, if cancelled, will cancel the execution of the tasklets
+     * @param jobClassLoader      classloader to use when running the tasklets
      */
     CompletableFuture<Void> beginExecute(
             @Nonnull List<? extends Tasklet> tasklets,
@@ -154,15 +155,17 @@ public class TaskletExecutionService {
                 .map(blockingTaskletExecutor::submit)
                 .collect(toList());
 
-        // do not return from this method until all workers have started. Otherwise on
-        // cancellation there is a race that the worker might not be started by the executor yet.
-        // This results the taskletDone() method never being called for a worker.
+        // do not return from this method until all workers have started. Otherwise
+        // on cancellation there is a race where the executor might not have started
+        // the worker yet. This would results in taskletDone() never being called for
+        // a worker.
         uncheckRun(startedLatch::await);
     }
 
     private void submitCooperativeTasklets(
             ExecutionTracker executionTracker, ClassLoader jobClassLoader, List<Tasklet> tasklets
     ) {
+        @SuppressWarnings("unchecked")
         final List<TaskletTracker>[] trackersByThread = new List[cooperativeWorkers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList());
         for (Tasklet t : tasklets) {

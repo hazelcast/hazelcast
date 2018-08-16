@@ -36,13 +36,13 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
  */
 public class InsertWatermarksP<T> extends AbstractProcessor {
 
-    private final WatermarkSourceUtil<T> wsu;
+    private final WatermarkSourceUtil<? super T> wsu;
     private Traverser<Object> traverser;
 
     // value to be used temporarily during snapshot restore
     private long minRestoredWm = Long.MAX_VALUE;
 
-    public InsertWatermarksP(WatermarkGenerationParams<T> wmGenParams) {
+    public InsertWatermarksP(WatermarkGenerationParams<? super T> wmGenParams) {
         wsu = new WatermarkSourceUtil<>(wmGenParams);
         wsu.increasePartitionCount(1);
     }
@@ -57,6 +57,7 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
         return tryProcessInternal(item);
     }
 
+    @SuppressWarnings("unchecked")
     private boolean tryProcessInternal(@Nullable Object item) {
         if (traverser == null) {
             traverser = wsu.handleEvent((T) item, 0);

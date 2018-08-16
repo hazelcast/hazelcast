@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.WatermarkEmissionPolicy;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.function.DistributedBiFunction;
@@ -52,6 +52,7 @@ import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.NULL_EMIT_POLICY;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.DEFAULT_IDLE_TIMEOUT;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
@@ -74,10 +75,6 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     static final FunctionAdapter DO_NOT_ADAPT = new FunctionAdapter();
     static final JetEventFunctionAdapter ADAPT_TO_JET_EVENT = new JetEventFunctionAdapter();
 
-    private static final WatermarkEmissionPolicy THROWING_EMIT_POLICY = (currentWm, lastEmittedWm) -> {
-        throw new IllegalStateException("emit policy should have been replaced");
-    };
-
     @Nonnull
     public FunctionAdapter fnAdapter;
 
@@ -99,14 +96,14 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @Nonnull
     @SuppressWarnings("unchecked")
     public StreamStage<T> addTimestamps(
-            DistributedToLongFunction<? super T> timestampFn, long allowedLateness
+            @Nonnull DistributedToLongFunction<? super T> timestampFn, long allowedLateness
     ) {
         checkSerializable(timestampFn, "timestampFn");
         checkFalse(hasJetEvents(), "This stage already has timestamps assigned to it.");
 
         DistributedSupplier<WatermarkPolicy> wmPolicy = limitingLag(allowedLateness);
         WatermarkGenerationParams<T> wmParams = wmGenParams(
-                timestampFn, JetEvent::jetEvent, wmPolicy, THROWING_EMIT_POLICY, DEFAULT_IDLE_TIMEOUT
+                timestampFn, JetEvent::jetEvent, wmPolicy, NULL_EMIT_POLICY, DEFAULT_IDLE_TIMEOUT
         );
 
         if (transform instanceof StreamSourceTransform) {

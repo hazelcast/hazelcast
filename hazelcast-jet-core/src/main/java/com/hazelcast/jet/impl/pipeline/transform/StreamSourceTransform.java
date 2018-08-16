@@ -34,27 +34,42 @@ import static java.util.Collections.emptyList;
 
 public class StreamSourceTransform<T> extends AbstractTransform implements StreamSource<T> {
 
-    private final Function<WatermarkGenerationParams<T>, ProcessorMetaSupplier> metaSupplierFn;
-    private final boolean supportsWatermarks;
+    private final Function<? super WatermarkGenerationParams<? super T>, ? extends ProcessorMetaSupplier>
+            metaSupplierFn;
+    private final boolean emitsWatermarks;
 
     @Nullable
-    private WatermarkGenerationParams<T> wmParams;
+    private WatermarkGenerationParams<? super T> wmParams;
 
     public StreamSourceTransform(
             @Nonnull String name,
-            @Nonnull Function<WatermarkGenerationParams<T>, ProcessorMetaSupplier> metaSupplierFn,
-            boolean supportsWatermarks
+            @Nullable WatermarkGenerationParams<? super T> initialWmParams,
+            @Nonnull Function<? super WatermarkGenerationParams<? super T>, ? extends ProcessorMetaSupplier>
+                    metaSupplierFn,
+            boolean emitsWatermarks
     ) {
         super(name, emptyList());
+        this.wmParams = initialWmParams;
         this.metaSupplierFn = metaSupplierFn;
-        this.supportsWatermarks = supportsWatermarks;
+        this.emitsWatermarks = emitsWatermarks;
+    }
+
+    public StreamSourceTransform(
+            @Nonnull String name,
+            @Nonnull Function<? super WatermarkGenerationParams<? super T>, ? extends ProcessorMetaSupplier>
+                    metaSupplierFn,
+            boolean emitsWatermarks
+    ) {
+        this(name, null, metaSupplierFn, emitsWatermarks);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void addToDag(Planner p) {
-        WatermarkGenerationParams<T> params = emitsJetEvents() ? wmParams : noWatermarks();
-
-        if (supportsWatermarks || !emitsJetEvents()) {
+        WatermarkGenerationParams<? super T> params = wmParams != null ? wmParams : noWatermarks();
+        if (emitsWatermarks || wmParams == null) {
+            // Reached when the source either emits both JetEvents and watermarks
+            // or neither. In these cases we don't have to insert watermarks.
             p.addVertex(this, p.uniqueVertexName(name(), ""),
                     localParallelism(), metaSupplierFn.apply(params)
             );
@@ -78,11 +93,11 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
     }
 
     @Nullable
-    public WatermarkGenerationParams<T> getWmParams() {
+    public WatermarkGenerationParams<? super T> getWmParams() {
         return wmParams;
     }
 
-    public void setWmGenerationParams(WatermarkGenerationParams<T> wmParams) {
+    public void setWmGenerationParams(@Nonnull WatermarkGenerationParams<? super T> wmParams) {
         this.wmParams = wmParams;
     }
 

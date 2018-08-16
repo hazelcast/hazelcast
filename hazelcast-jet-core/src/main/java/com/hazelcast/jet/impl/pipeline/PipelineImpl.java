@@ -61,7 +61,7 @@ public class PipelineImpl implements Pipeline {
     @Nonnull @Override
     @SuppressWarnings("unchecked")
     public <T> StreamStage<T> drawFrom(@Nonnull StreamSource<? extends T> source) {
-        StreamSourceTransform<? extends T> xform = (StreamSourceTransform<? extends T>) source;
+        StreamSourceTransform<T> xform = (StreamSourceTransform<T>) source;
         return new StreamStageImpl<>(xform, xform.emitsJetEvents() ? ADAPT_TO_JET_EVENT : DO_NOT_ADAPT, this);
     }
 

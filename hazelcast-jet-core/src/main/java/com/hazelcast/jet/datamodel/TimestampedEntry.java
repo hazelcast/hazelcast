@@ -89,7 +89,7 @@ public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
 
     @Override
     public String toString() {
-        return String.format("TimestampedEntry{ts=%s, key='%s', value='%s'}", toLocalTime(timestamp), key, value);
+        return String.format("{ts=%s, key='%s', value='%s'}", toLocalTime(timestamp), key, value);
     }
 
     /**

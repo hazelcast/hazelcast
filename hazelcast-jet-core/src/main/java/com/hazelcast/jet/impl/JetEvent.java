@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.pipeline;
+package com.hazelcast.jet.impl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,6 +26,8 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  * Holds a stream event and its timestamp. Jet processors receive and send
  * these objects, but the user's lambdas in the Pipeline API don't observe
  * them.
+ *
+ * @param <T> type of the wrapped event
  */
 public final class JetEvent<T> {
     private final T payload;
@@ -36,6 +38,9 @@ public final class JetEvent<T> {
         this.payload = payload;
     }
 
+    /**
+     * Creates a new {@code JetEvent} with the given components.
+     */
     @Nullable
     public static <T> JetEvent<T> jetEvent(@Nullable T payload, long timestamp) {
         if (payload == null) {
@@ -44,10 +49,16 @@ public final class JetEvent<T> {
         return new JetEvent<>(payload, timestamp);
     }
 
+    /**
+     * Returns the timestamp of this event.
+     */
     public long timestamp() {
         return timestamp;
     }
 
+    /**
+     * Returns the wrapped event.
+     */
     @Nonnull
     public T payload() {
         return payload;

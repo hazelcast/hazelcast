@@ -46,8 +46,8 @@ public final class KafkaProcessors {
      */
     public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
-            @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
-            @Nonnull WatermarkGenerationParams<T> wmGenParams,
+            @Nonnull DistributedFunction<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
+            @Nonnull WatermarkGenerationParams<? super T> wmGenParams,
             @Nonnull String... topics
     ) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
@@ -65,8 +65,8 @@ public final class KafkaProcessors {
     public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
             @Nonnull Properties properties,
             @Nonnull String topic,
-            @Nonnull DistributedFunction<? super T, K> extractKeyFn,
-            @Nonnull DistributedFunction<? super T, V> extractValueFn
+            @Nonnull DistributedFunction<? super T, ? extends K> extractKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends V> extractValueFn
     ) {
         return writeKafkaP(properties, (T t) ->
                 new ProducerRecord<>(topic, extractKeyFn.apply(t), extractValueFn.apply(t))
@@ -79,7 +79,7 @@ public final class KafkaProcessors {
      */
     public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
             @Nonnull Properties properties,
-            @Nonnull DistributedFunction<? super T, ProducerRecord<K, V>> toRecordFn
+            @Nonnull DistributedFunction<? super T, ? extends ProducerRecord<K, V>> toRecordFn
     ) {
         return ProcessorMetaSupplier.of(new WriteKafkaP.Supplier<T, K, V>(properties, toRecordFn), 2);
     }

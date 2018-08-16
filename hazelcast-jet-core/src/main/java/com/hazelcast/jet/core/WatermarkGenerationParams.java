@@ -62,7 +62,7 @@ public final class WatermarkGenerationParams<T> implements Serializable {
      */
     public static final long DEFAULT_IDLE_TIMEOUT = 60_000L;
 
-    private static final DistributedSupplier<WatermarkPolicy> NO_WATERMARK_POLICY = () -> new WatermarkPolicy() {
+    private static final DistributedSupplier<WatermarkPolicy> NO_WATERMARKS = () -> new WatermarkPolicy() {
         @Override
         public long reportEvent(long timestamp) {
             return Long.MIN_VALUE;
@@ -76,14 +76,14 @@ public final class WatermarkGenerationParams<T> implements Serializable {
 
     private final DistributedToLongFunction<? super T> timestampFn;
     private final DistributedObjLongBiFunction<? super T, ?> wrapFn;
-    private final DistributedSupplier<WatermarkPolicy> newWmPolicyFn;
+    private final DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn;
     private final WatermarkEmissionPolicy wmEmitPolicy;
     private final long idleTimeoutMillis;
 
     private WatermarkGenerationParams(
             @Nonnull DistributedToLongFunction<? super T> timestampFn,
             @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
-            @Nonnull DistributedSupplier<WatermarkPolicy> newWmPolicyFn,
+            @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
             long idleTimeoutMillis
     ) {
@@ -102,7 +102,7 @@ public final class WatermarkGenerationParams<T> implements Serializable {
      * @param timestampFn       function that extracts the timestamp from the event
      * @param wrapFn            function that transforms the received item and its timestamp into the
      *                          emitted item
-     * @param wmPolicy          factory of the watermark policy objects
+     * @param newWmPolicyFn     factory of the watermark policy objects
      * @param wmEmitPolicy      watermark emission policy (decides how to suppress redundant watermarks)
      * @param idleTimeoutMillis the timeout after which a partition will be marked as <em>idle</em>.
      *                          If <= 0, partitions will never be marked as idle.
@@ -110,11 +110,11 @@ public final class WatermarkGenerationParams<T> implements Serializable {
     public static <T> WatermarkGenerationParams<T> wmGenParams(
             @Nonnull DistributedToLongFunction<? super T> timestampFn,
             @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
-            @Nonnull DistributedSupplier<WatermarkPolicy> wmPolicy,
+            @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
             long idleTimeoutMillis
     ) {
-        return new WatermarkGenerationParams<>(timestampFn, wrapFn, wmPolicy, wmEmitPolicy, idleTimeoutMillis);
+        return new WatermarkGenerationParams<>(timestampFn, wrapFn, newWmPolicyFn, wmEmitPolicy, idleTimeoutMillis);
     }
 
     /**
@@ -129,8 +129,8 @@ public final class WatermarkGenerationParams<T> implements Serializable {
      *                          If <= 0, partitions will never be marked as idle.
      */
     public static <T> WatermarkGenerationParams<T> wmGenParams(
-            @Nonnull DistributedToLongFunction<T> timestampFn,
-            @Nonnull DistributedSupplier<WatermarkPolicy> wmPolicy,
+            @Nonnull DistributedToLongFunction<? super T> timestampFn,
+            @Nonnull DistributedSupplier<? extends WatermarkPolicy> wmPolicy,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
             long idleTimeoutMillis
     ) {
@@ -145,7 +145,7 @@ public final class WatermarkGenerationParams<T> implements Serializable {
      * producing any output.
      */
     public static <T> WatermarkGenerationParams<T> noWatermarks() {
-        return wmGenParams(i -> Long.MIN_VALUE, NO_WATERMARK_POLICY, noThrottling(), -1);
+        return wmGenParams(i -> Long.MIN_VALUE, NO_WATERMARKS, noThrottling(), -1);
     }
 
     /**
@@ -169,7 +169,7 @@ public final class WatermarkGenerationParams<T> implements Serializable {
      * Returns the factory of the watermark policy objects.
      */
     @Nonnull
-    public DistributedSupplier<WatermarkPolicy> newWmPolicyFn() {
+    public DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn() {
         return newWmPolicyFn;
     }
 
