@@ -167,7 +167,17 @@ public interface Processor {
     /**
      * Called after all the inbound edges' streams are exhausted. If it returns
      * {@code false}, it will be invoked again until it returns {@code true}.
-     * After this method is called, no other processing methods will be called on
+     * For example, a streaming source processor will return {@code false}
+     * forever. Unlike other methods which guarantee that no other method is
+     * called until they return {@code true}, {@link #saveToSnapshot()} can be
+     * called even though this method returned {@code false}. If you returned
+     * because {@code Outbox.offer()} returned {@code false}, make sure to
+     * first offer the pending item to the outbox in {@link #saveToSnapshot()}
+     * before continuing to {@linkplain Outbox#offerToSnapshot offer to
+     * snapshot}.
+     *
+     *<p>
+     * After this method is called, no other processing methods are called on
      * this processor, except for {@link #saveToSnapshot()}.
      * <p>
      * Non-cooperative processors are required to return from this method from

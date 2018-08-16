@@ -169,7 +169,8 @@ public abstract class AbstractProcessor implements Processor {
      * Tries to process the supplied input item, which was received from the
      * edge with the supplied ordinal. May choose to process only partially
      * and return {@code false}, in which case it will be called again later
-     * with the same {@code (ordinal, item)} combination.
+     * with the same {@code (ordinal, item)} combination before any other
+     * processing method is called.
      * <p>
      * The default implementation throws an {@code UnsupportedOperationException}.
      * <p>
@@ -191,7 +192,7 @@ public abstract class AbstractProcessor implements Processor {
      * Tries to process the supplied input item, which was received from the
      * edge with ordinal 0. May choose to process only partially and return
      * {@code false}, in which case it will be called again later with the same
-     * item.
+     * item before any other processing method is called.
      * <p>
      * The default implementation delegates to {@link #tryProcess(int, Object)
      * tryProcess(0, item)}.
@@ -208,7 +209,7 @@ public abstract class AbstractProcessor implements Processor {
      * Tries to process the supplied input item, which was received from the
      * edge with ordinal 1. May choose to process only partially and return
      * {@code false}, in which case it will be called again later with the same
-     * item.
+     * item before any other processing method is called.
      * <p>
      * The default implementation delegates to {@link #tryProcess(int, Object)
      * tryProcess(1, item)}.
@@ -225,7 +226,7 @@ public abstract class AbstractProcessor implements Processor {
      * Tries to process the supplied input item, which was received from the
      * edge with ordinal 2. May choose to process only partially and return
      * {@code false}, in which case it will be called again later with the same
-     * item.
+     * item before any other processing method is called.
      * <p>
      * The default implementation delegates to {@link #tryProcess(int, Object)
      * tryProcess(2, item)}.
@@ -242,7 +243,7 @@ public abstract class AbstractProcessor implements Processor {
      * Tries to process the supplied input item, which was received from the
      * edge with ordinal 3. May choose to process only partially and return
      * {@code false}, in which case it will be called again later with the same
-     * item.
+     * item before any other processing method is called.
      * <p>
      * The default implementation delegates to {@link #tryProcess(int, Object)
      * tryProcess(3, item)}.
@@ -259,7 +260,7 @@ public abstract class AbstractProcessor implements Processor {
      * Tries to process the supplied input item, which was received from the
      * edge with ordinal 4. May choose to process only partially and return
      * {@code false}, in which case it will be called again later with the same
-     * item.
+     * item before any other processing method is called.
      * <p>
      * The default implementation delegates to {@link #tryProcess(int, Object)
      * tryProcess(4, item)}.

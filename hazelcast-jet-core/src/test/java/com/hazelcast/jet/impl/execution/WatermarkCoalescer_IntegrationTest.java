@@ -119,7 +119,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
         assertEquals("wm(100)", sinkList.get(0));
     }
 
@@ -131,10 +131,10 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         long time = System.nanoTime();
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
         assertEquals(entry(1, 1), sinkList.get(0));
 
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
+        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 10);
         assertEquals("wm(100)", sinkList.get(1));
         assertElapsedTime(time);
     }
@@ -147,10 +147,10 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         long time = System.nanoTime();
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
         assertEquals(entry(1, 1), sinkList.get(0));
 
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
+        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 10);
         assertEquals("wm(100)", sinkList.get(1));
         assertElapsedTime(time);
     }
@@ -162,7 +162,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
         assertEquals("wm(100)", sinkList.get(0));
     }
 
@@ -173,7 +173,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
         assertEquals("wm(100)", sinkList.get(0));
     }
 
@@ -184,10 +184,10 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
         long time = System.nanoTime();
         instance.newJob(dag, config);
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
         assertEquals("wm(100)", sinkList.get(0));
 
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
+        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 10);
 
         assertEquals("wm(150)", sinkList.get(1));
         assertElapsedTime(time);
@@ -201,10 +201,10 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         long time = System.nanoTime();
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
         assertEquals(entry(1, 1), sinkList.get(0));
 
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
+        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 10);
         assertEquals("wm(150)", sinkList.get(1));
         assertElapsedTime(time);
     }
@@ -217,10 +217,10 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         long time = System.nanoTime();
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
         assertEquals(entry(1, 1), sinkList.get(0));
 
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
+        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 10);
         assertEquals("wm(150)", sinkList.get(1));
         assertElapsedTime(time);
     }
@@ -243,7 +243,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10_000);
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 6);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
         assertEquals("wm(100)", sinkList.get(0));
     }
 
@@ -254,7 +254,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 3);
+        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 10);
         assertEquals("wm(100)", sinkList.get(0));
         assertEquals("wm(101)", sinkList.get(1));
     }
