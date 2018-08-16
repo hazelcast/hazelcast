@@ -178,7 +178,7 @@ public class BatchStageTest extends PipelineTestSupport {
         putToBatchSrcMap(input);
 
         // When
-        BatchStage<String> mapped = srcStage.addKey(i -> i).mapUsingContext(
+        BatchStage<String> mapped = srcStage.groupingKey(i -> i).mapUsingContext(
                 ContextFactory.withCreateFn(i -> "-keyed-context"),
                 (suffix, k, r) -> r + suffix
         );
@@ -217,7 +217,7 @@ public class BatchStageTest extends PipelineTestSupport {
         putToBatchSrcMap(input);
 
         // When
-        BatchStage<Integer> mapped = srcStage.addKey(i -> i).filterUsingContext(
+        BatchStage<Integer> mapped = srcStage.groupingKey(i -> i).filterUsingContext(
                 ContextFactory.withCreateFn(i -> 1),
                 (ctx, k, r) -> r % 2 == ctx);
 
@@ -255,7 +255,7 @@ public class BatchStageTest extends PipelineTestSupport {
         putToBatchSrcMap(input);
 
         // When
-        BatchStage<String> flatMapped = srcStage.addKey(i -> i).flatMapUsingContext(
+        BatchStage<String> flatMapped = srcStage.groupingKey(i -> i).flatMapUsingContext(
                 ContextFactory.withCreateFn(procCtx -> asList("A", "B")),
                 (ctx, k, o) -> traverseIterable(asList(o + ctx.get(0), o + ctx.get(1))));
 
@@ -319,7 +319,7 @@ public class BatchStageTest extends PipelineTestSupport {
             map.put(integer, String.valueOf(integer));
         }
 
-        srcStage.addKey(r -> r)
+        srcStage.groupingKey(r -> r)
                 .mapUsingIMap(map, (k, v) -> Util.entry(k, v))
                 .drainTo(sink);
 
@@ -355,7 +355,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         BatchStage<Entry<Integer, Long>> mapped = srcStage
-                .addKey(i -> i % 2)
+                .groupingKey(i -> i % 2)
                 .rollingAggregate(counting());
 
         // Then
@@ -417,7 +417,7 @@ public class BatchStageTest extends PipelineTestSupport {
         putToBatchSrcMap(input);
 
         // When
-        BatchStage<Integer> distinct = srcStage.addKey(keyFn).distinct();
+        BatchStage<Integer> distinct = srcStage.groupingKey(keyFn).distinct();
 
         // Then
         distinct.drainTo(sink);

@@ -386,7 +386,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
 
         // When
         BatchStage<Entry<Integer, Long>> aggregated = srcStage
-                .addKey(keyFn)
+                .groupingKey(keyFn)
                 .aggregate(summingLong(i -> i));
 
         //Then
@@ -405,7 +405,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
 
         // When
         BatchStage<Entry<Integer, Long>> aggregated = srcStage
-                .addKey(keyFn)
+                .groupingKey(keyFn)
                 .aggregate(summingLong(i -> i), (key, sum) -> entry(key, 3 * sum));
 
         //Then
@@ -446,8 +446,8 @@ public class BatchAggregateTest extends PipelineTestSupport {
         putToMap(jet().getMap(src1Name), input);
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.addKey(keyFn);
-        BatchStageWithKey<Integer, Integer> stage1 = srcStage1.addKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage1 = srcStage1.groupingKey(keyFn);
         BatchStage<Entry<Integer, Tuple2<Long, Long>>> aggregated =
                 attachAggregatingStageFn.apply(stage0, stage1);
 
@@ -505,8 +505,8 @@ public class BatchAggregateTest extends PipelineTestSupport {
                                          .map(mapFn1);
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.addKey(keyFn);
-        BatchStageWithKey<Integer, Integer> stage1 = srcStage1.addKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage1 = srcStage1.groupingKey(keyFn);
         BatchStage<Long> aggregated = attachAggregatingStageFn.apply(stage0, stage1, outputFn);
 
         //Then
@@ -566,9 +566,9 @@ public class BatchAggregateTest extends PipelineTestSupport {
         putToMap(jet().getMap(src2Name), input);
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.addKey(keyFn);
-        BatchStageWithKey<Integer, Integer> stage1 = srcStage1.addKey(keyFn);
-        BatchStageWithKey<Integer, Integer> stage2 = srcStage2.addKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage1 = srcStage1.groupingKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage2 = srcStage2.groupingKey(keyFn);
         BatchStage<Entry<Integer, Tuple3<Long, Long, Long>>> aggregated =
                 attachAggregatingStageFn.apply(stage0, stage1, stage2);
 
@@ -638,9 +638,9 @@ public class BatchAggregateTest extends PipelineTestSupport {
                                          .map(mapFn2);
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.addKey(keyFn);
-        BatchStageWithKey<Integer, Integer> stage1 = srcStage1.addKey(keyFn);
-        BatchStageWithKey<Integer, Integer> stage2 = srcStage2.addKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage1 = srcStage1.groupingKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage2 = srcStage2.groupingKey(keyFn);
         BatchStage<Long> aggregated =
                 attachAggregatingStageFn.apply(stage0, stage1, stage2, outputFn);
 
@@ -703,9 +703,9 @@ public class BatchAggregateTest extends PipelineTestSupport {
         GroupAggregateBuilderFixture fx = new GroupAggregateBuilderFixture();
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.addKey(fx.keyFn);
-        BatchStageWithKey<Integer, Integer> stage1 = fx.srcStage1.addKey(fx.keyFn);
-        BatchStageWithKey<Integer, Integer> stage2 = fx.srcStage2.addKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage1 = fx.srcStage1.groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage2 = fx.srcStage2.groupingKey(fx.keyFn);
         GroupAggregateBuilder<Integer, Long> b = stage0.aggregateBuilder(fx.aggrOp);
         Tag<Long> tag0 = b.tag0();
         Tag<Long> tag1 = b.add(stage1, fx.aggrOp);
@@ -723,9 +723,9 @@ public class BatchAggregateTest extends PipelineTestSupport {
         GroupAggregateBuilderFixture fx = new GroupAggregateBuilderFixture();
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.addKey(fx.keyFn);
-        BatchStageWithKey<Integer, Integer> stage1 = fx.srcStage1.addKey(fx.keyFn);
-        BatchStageWithKey<Integer, Integer> stage2 = fx.srcStage2.addKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage1 = fx.srcStage1.groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage2 = fx.srcStage2.groupingKey(fx.keyFn);
 
         GroupAggregateBuilder1<Integer, Integer> b = stage0.aggregateBuilder();
         Tag<Integer> inTag0 = b.tag0();

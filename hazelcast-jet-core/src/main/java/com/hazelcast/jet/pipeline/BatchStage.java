@@ -53,7 +53,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * {@inheritDoc}
      */
     @Nonnull
-    <K> BatchStageWithKey<T, K> addKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
+    <K> BatchStageWithKey<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
 
     @Nonnull @Override
     <R> BatchStage<R> map(@Nonnull DistributedFunction<? super T, ? extends R> mapFn);
@@ -126,7 +126,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      */
     @Nonnull
     default BatchStage<T> distinct() {
-        return addKey(wholeItem()).distinct();
+        return groupingKey(wholeItem()).distinct();
     }
 
     /**

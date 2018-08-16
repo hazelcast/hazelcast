@@ -71,7 +71,7 @@ public interface StageWithWindow<T> {
      * @param <K> type of the key
      */
     @Nonnull
-    <K> StageWithKeyAndWindow<T, K> addKey(
+    <K> StageWithKeyAndWindow<T, K> groupingKey(
             @Nonnull DistributedFunction<? super T, ? extends K> keyFn
     );
 
@@ -87,7 +87,7 @@ public interface StageWithWindow<T> {
      */
     @Nonnull
     default <R> StreamStage<R> distinct(@Nonnull WindowResultFunction<? super T, ? extends R> mapToOutputFn) {
-        return addKey(wholeItem()).distinct(mapToOutputFn);
+        return groupingKey(wholeItem()).distinct(mapToOutputFn);
     }
 
     /**
@@ -101,7 +101,7 @@ public interface StageWithWindow<T> {
      */
     @Nonnull
     default StreamStage<TimestampedItem<T>> distinct() {
-        return addKey(wholeItem()).distinct();
+        return groupingKey(wholeItem()).distinct();
     }
 
     /**

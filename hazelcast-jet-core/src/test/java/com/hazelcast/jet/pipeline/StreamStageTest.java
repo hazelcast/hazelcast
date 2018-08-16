@@ -151,7 +151,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<String> mapped = srcStage
                 .addTimestamps()
-                .addKey(i -> i)
+                .groupingKey(i -> i)
                 .mapUsingContext(ContextFactory.withCreateFn(i -> "-keyed-context"), (suffix, k, r) -> r + suffix);
 
         // Then
@@ -193,7 +193,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<Integer> mapped = srcStage
                 .addTimestamps()
-                .addKey(i -> i)
+                .groupingKey(i -> i)
                 .filterUsingContext(ContextFactory.withCreateFn(i -> 1), (ctx, k, r) -> r % 2 == ctx);
 
         // Then
@@ -238,7 +238,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<String> flatMapped = srcStage
                 .addTimestamps()
-                .addKey(i -> i)
+                .groupingKey(i -> i)
                 .flatMapUsingContext(
                         ContextFactory.withCreateFn(procCtx -> flatMapFn),
                         (ctx, k, o) -> traverseStream(ctx.apply(o))
@@ -308,7 +308,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         }
 
         srcStage.addTimestamps()
-                .addKey(r -> r)
+                .groupingKey(r -> r)
                 .mapUsingIMap(map, (k, v) -> Util.entry(k, v))
                 .drainTo(sink);
 
@@ -329,7 +329,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Entry<Integer, Long>> mapped = srcStage
-                .addKey(i -> i % 2)
+                .groupingKey(i -> i % 2)
                 .rollingAggregate(counting());
 
         // Then

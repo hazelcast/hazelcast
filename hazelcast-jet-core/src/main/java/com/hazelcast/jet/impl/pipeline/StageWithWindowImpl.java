@@ -60,7 +60,7 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     }
 
     @Nonnull @Override
-    public <K> StageWithKeyAndWindow<T, K> addKey(
+    public <K> StageWithKeyAndWindow<T, K> groupingKey(
             @Nonnull DistributedFunction<? super T, ? extends K> keyFn
     ) {
         return new StageWithKeyAndWindowImpl<>(streamStage, keyFn, wDef);

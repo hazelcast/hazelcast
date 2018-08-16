@@ -51,7 +51,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     }
 
     @Nonnull @Override
-    public <K> StreamStageWithKey<T, K> addKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn) {
+    public <K> StreamStageWithKey<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn) {
         checkSerializable(keyFn, "keyFn");
         return new StreamStageWithKeyImpl<>(this, keyFn);
     }
@@ -104,7 +104,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
 
     @Nonnull @Override
     public <R> StreamStage<R> rollingAggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp) {
-        return addKey(constantKey()).rollingAggregate(aggrOp, (k, v) -> v);
+        return groupingKey(constantKey()).rollingAggregate(aggrOp, (k, v) -> v);
     }
 
     @Nonnull @Override

@@ -61,7 +61,7 @@ public interface StreamStage<T> extends GeneralStage<T> {
     StreamStage<T> merge(@Nonnull StreamStage<? extends T> other);
 
     @Nonnull @Override
-    <K> StreamStageWithKey<T, K> addKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
+    <K> StreamStageWithKey<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
 
     @Nonnull @Override
     <R> StreamStage<R> map(@Nonnull DistributedFunction<? super T, ? extends R> mapFn);

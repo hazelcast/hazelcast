@@ -349,7 +349,7 @@ public interface GeneralStage<T> extends Stage {
      * @param <K> type of the key
      */
     @Nonnull
-    <K> GeneralStageWithKey<T, K> addKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
+    <K> GeneralStageWithKey<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
 
     /**
      * Adds a timestamp to each item in the stream using the current system
