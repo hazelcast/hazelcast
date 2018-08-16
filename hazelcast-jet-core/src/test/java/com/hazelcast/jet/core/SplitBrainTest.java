@@ -363,22 +363,23 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(false));
-            assertOpenEventually(StuckProcessor.executionStarted);
+            assertTrueEventually(() -> assertEquals("initCount", clusterSize, MockPS.initCount.get()), 10);
+            assertOpenEventually("executionStarted", StuckProcessor.executionStarted);
         };
 
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
             Job jobRef1 = firstSubCluster[0].getJob(jobRef[0].getId());
             Job jobRef2 = secondSubCluster[0].getJob(jobRef[0].getId());
-            assertNotNull(jobRef1);
-            assertNotNull(jobRef2);
-            assertTrueEventually(() -> assertEquals(RUNNING, jobRef1.getStatus()), 10);
-            assertTrueEventually(() -> assertEquals(RUNNING, jobRef2.getStatus()), 10);
-            assertEquals(clusterSize * 2, MockPS.initCount.get());
+            assertNotNull("jobRef1", jobRef1);
+            assertNotNull("jobRef2", jobRef2);
+            assertTrueEventually(() -> assertEquals("job not running on subcluster 1", RUNNING, jobRef1.getStatus()), 10);
+            assertTrueEventually(() -> assertEquals("job not running on subcluster 2", RUNNING, jobRef2.getStatus()), 10);
+            assertEquals("initCount", clusterSize * 2, MockPS.initCount.get());
         };
 
         Consumer<JetInstance[]> afterMerge = instances -> {
-            assertTrueAllTheTime(() -> assertEquals(RUNNING, jobRef[0].getStatus()), 5);
-            assertEquals(clusterSize * 2, MockPS.initCount.get());
+            // this assert will hold after the job scales up
+            assertTrueEventually(() -> assertEquals(clusterSize * 3, MockPS.initCount.get()), 20);
         };
 
         testSplitBrain(firstSubClusterSize, secondSubClusterSize, beforeSplit, onSplit, afterMerge);

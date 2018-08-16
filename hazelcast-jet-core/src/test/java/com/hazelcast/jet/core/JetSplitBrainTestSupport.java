@@ -86,6 +86,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         jetConfig.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
         jetConfig.getHazelcastConfig().setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         jetConfig.getHazelcastConfig().setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+        jetConfig.getInstanceConfig().setUpscaleDelayMillis(3000);
         onJetConfigCreated(jetConfig);
         return jetConfig;
     }
