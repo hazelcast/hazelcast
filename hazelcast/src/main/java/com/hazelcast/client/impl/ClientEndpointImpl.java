@@ -166,7 +166,8 @@ public final class ClientEndpointImpl implements ClientEndpoint, StatisticsAware
     
 	public static String getEndpointPrefix(ClientEndpoint endpoint) {
 		String type = endpoint.getClientType().name().toLowerCase();
-		String address = endpoint.getSocketAddress().toString().replace("/", "");
+		InetSocketAddress remote = endpoint.getConnection().getRemoteSocketAddress();
+		String address = remote == null ? "?" : remote.getAddress().getHostAddress() + ":" + remote.getPort();
 		String version = endpoint instanceof ClientEndpointImpl ? ((ClientEndpointImpl) endpoint).getClientVersionString() : "" + endpoint.getClientVersion();
 		return "client.endpoint[" + type + "][" + version + "][" + address + "][" + endpoint.getUuid() + "]";
 	}
@@ -204,7 +205,7 @@ public final class ClientEndpointImpl implements ClientEndpoint, StatisticsAware
 
     @Override
     public Map<String, Object> getStats() {
-    	if (!ownerConnection) {
+    	if (!ownerConnection || statsString == null || statsString.isEmpty()) {
     		return Collections.emptyMap();
     	}
 		Map<String, Object> res = new HashMap<String, Object>();
@@ -213,7 +214,7 @@ public final class ClientEndpointImpl implements ClientEndpoint, StatisticsAware
 		res.put("os" + uuid, osStats);
 		res.put("runtime" + uuid, runtimeStats);
 		for (ClientNearCacheStats ncStats : nearCacheStats.values()) {
-			res.put(ncStats.getType() + "." + ncStats.getName() + ".nearcache" + uuid, ncStats);
+			res.put("nearcache" + uuid + "[" + ncStats.getType() + "][" + ncStats.getName() + "]", ncStats);
 		}
 		return res;
     }
