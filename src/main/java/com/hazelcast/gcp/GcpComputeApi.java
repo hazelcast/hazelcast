@@ -23,6 +23,11 @@ import com.eclipsesource.json.JsonValue;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Responsible for connecting to the Google Cloud Compute API.
+ *
+ * @see <a href="https://cloud.google.com/compute/docs/reference/rest/v1/">Compute Engine API</a>
+ */
 class GcpComputeApi {
     private static final String GOOGLE_API_ENDPOINT = "https://www.googleapis.com";
 

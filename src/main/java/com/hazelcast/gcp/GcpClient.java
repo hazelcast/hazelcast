@@ -25,6 +25,9 @@ import java.util.concurrent.Callable;
 
 import static java.util.Collections.singletonList;
 
+/**
+ * Responsible for fetching the discovery information from GCP APIs.
+ */
 class GcpClient {
     private static final ILogger LOGGER = Logger.getLogger(GcpDiscoveryStrategy.class);
 

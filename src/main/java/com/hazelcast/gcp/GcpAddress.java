@@ -16,6 +16,9 @@
 
 package com.hazelcast.gcp;
 
+/**
+ * Structure that represents the discovery output information.
+ */
 final class GcpAddress {
     private final String privateAddress;
     private final String publicAddress;

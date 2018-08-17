@@ -22,7 +22,7 @@ import java.util.List;
 import static java.util.Arrays.asList;
 
 /**
- * Utility methods for GCP Discovery Strategy plugin.
+ * Utility methods.
  */
 final class Utils {
     private Utils() {
