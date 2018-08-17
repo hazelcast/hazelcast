@@ -252,7 +252,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
                     try {
                         Object value = resolve(state);
                         if (value instanceof AltResult) {
-                            Throwable error = prepareError((AltResult) value);
+                            Throwable error = unwrap((AltResult) value);
                             callback.onFailure(error);
                         } else {
                             callback.onResponse((V) value);
@@ -269,7 +269,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     }
 
     // this method should not be needed; but there is a difference between client and server how it handles async throwables
-    protected Throwable prepareError(AltResult result) {
+    protected Throwable unwrap(AltResult result) {
         Throwable throwable = result.cause;
 
         if (throwable instanceof ExecutionException && throwable.getCause() != null) {

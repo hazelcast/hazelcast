@@ -63,8 +63,8 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     }
 
     @Override
-    protected Throwable prepareError(AltResult result) {
-        return new ExecutionException(result.getCause());
+    protected Throwable unwrap(AltResult result) {
+        return result.getCause();
     }
 
     @Override
