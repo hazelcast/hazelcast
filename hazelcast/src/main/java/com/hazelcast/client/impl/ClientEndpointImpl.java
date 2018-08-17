@@ -174,17 +174,18 @@ public final class ClientEndpointImpl implements ClientEndpoint, StatisticsAware
 
     @Override
     public void setClientStatistics(String stats) {
+    	if (stats == null || stats.isEmpty()) {
+    		return;
+    	}
     	this.statsString = stats;
-        Map<String, String> statMap = new HashMap<String, String>();
-        if (stats != null) {
-        	for (String keyValuePair : splitStats(stats)) {
-        		List<String> keyAndValue = splitKeyValuePair(keyValuePair);
-        		if (keyAndValue != null && keyAndValue.size() == 2) {
-        			statMap.put(keyAndValue.get(0), keyAndValue.get(1));
-        		}
-        	}
-        }
-        this.stats.updateFrom(statMap);
+    	Map<String, String> statMap = new HashMap<String, String>();
+    	for (String keyValuePair : splitStats(stats)) {
+    		List<String> keyAndValue = splitKeyValuePair(keyValuePair);
+    		if (keyAndValue != null && keyAndValue.size() == 2) {
+    			statMap.put(keyAndValue.get(0), keyAndValue.get(1));
+    		}
+    	}
+    	this.stats.updateFrom(statMap);
         osStats.updateFrom(statMap);
         runtimeStats.updateFrom(statMap);
         Set<String> ncNames = ClientNearCacheStats.getNearCacheStatsDataStructureNames(statMap);
@@ -205,7 +206,7 @@ public final class ClientEndpointImpl implements ClientEndpoint, StatisticsAware
 
     @Override
     public Map<String, Object> getStats() {
-    	if (!ownerConnection || statsString == null || statsString.isEmpty()) {
+    	if (!ownerConnection) {
     		return Collections.emptyMap();
     	}
 		Map<String, Object> res = new HashMap<String, Object>();
