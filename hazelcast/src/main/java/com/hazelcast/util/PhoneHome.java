@@ -76,7 +76,7 @@ public class PhoneHome {
     private static final String FALSE = "false";
 
     volatile ScheduledFuture<?> phoneHomeFuture;
-    private ILogger logger;
+    private final ILogger logger;
     private final BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
 
     public PhoneHome(Node hazelcastNode) {
