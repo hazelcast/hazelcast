@@ -226,7 +226,6 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         // lastAccessTime is zero after put, we can find expiration by this calculation
         long expectedExpirationTime = delayToExpiration + entryView.getCreationTime();
-        System.out.println(lastAccessTime + " " + delayToExpiration);
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
 

@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 
@@ -34,7 +33,6 @@ import static com.hazelcast.internal.cluster.Versions.V3_11;
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-@BinaryInterface
 @SuppressWarnings("checkstyle:methodcount")
 public class SimpleEntryView<K, V>
         implements EntryView<K, V>, IdentifiedDataSerializable, Versioned {

@@ -769,10 +769,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit ttlUnit);
 
     /**
-     * Asynchronously puts the given key and value into this map with a given TTL (time to live) value.
+     * Asynchronously puts the given key and value into this map with a given TTL (time to live) value and max idle time value.
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
+     * from the map configuration will be used (default: forever).
+     * <p>
+     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
+     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
      * from the map configuration will be used (default: forever).
      * <pre>
      *   ICompletableFuture future = map.putAsync(key, value, ttl, timeunit);
@@ -927,6 +931,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
+     * <p>
+     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
+     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
+     * from the map configuration will be used (default: forever).
      * <pre>
      *   ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when you want to make sure set operation is complete:
@@ -995,11 +1003,15 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit ttlUnit);
 
     /**
-     * Asynchronously puts an entry into this map with a given TTL (time to live) value,
+     * Asynchronously puts an entry into this map with a given TTL (time to live) value and max idle time value.
      * without returning the old value (which is more efficient than {@code put()}).
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
+     * from the map configuration will be used (default: forever).
+     * <p>
+     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
+     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
      * from the map configuration will be used (default: forever).
      * <pre>
      *   ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
@@ -1229,10 +1241,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     V put(K key, V value, long ttl, TimeUnit ttlUnit);
 
     /**
-     * Puts an entry into this map with a given TTL (time to live) value.
+     * Puts an entry into this map with a given TTL (time to live) value and max idle time value.
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
+     * from the map configuration will be used (default: forever).
+     * <p>
+     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
+     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
      * from the map configuration will be used (default: forever).
      * <p>
      * <b>Warning 1:</b>
@@ -1317,6 +1333,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
+     * from the map configuration will be used (default: forever).
+     * <p>
+     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
+     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
      * from the map configuration will be used (default: forever).
      * <p>
      * <b>Warning 1:</b>
@@ -1426,11 +1446,15 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     V putIfAbsent(K key, V value, long ttl, TimeUnit ttlUnit);
 
     /**
-     * Puts an entry into this map with a given TTL (time to live) value,
+     * Puts an entry into this map with a given TTL (time to live) value and max idle time value.
      * if the specified key is not already associated with a value.
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
+     * from the map configuration will be used (default: forever).
+     * <p>
+     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
+     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
      * from the map configuration will be used (default: forever).
      * <p>
      * <b>Warning 1:</b>
@@ -1618,11 +1642,15 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     void set(K key, V value, long ttl, TimeUnit ttlUnit);
 
     /**
-     * Puts an entry into this map with a given TTL (time to live) value,
+     * Puts an entry into this map with a given TTL (time to live) value and max idle time value.
      * without returning the old value (which is more efficient than {@code put()}).
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
+     * from the map configuration will be used (default: forever).
+     * <p>
+     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
+     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
      * from the map configuration will be used (default: forever).
      * <p>
      * <b>Warning 1:</b>

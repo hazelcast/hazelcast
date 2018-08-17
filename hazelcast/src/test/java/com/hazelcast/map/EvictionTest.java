@@ -87,13 +87,33 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTTL_entryShouldNotBeReachableAfterMaxIdle() {
+    public void testMaxIdle_entryShouldNotBeReachableAfterMaxIdle() {
         IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value0", 0, TimeUnit.SECONDS, 1, TimeUnit.SECONDS);
         sleepSeconds(1);
 
         assertFalse(map.containsKey(1));
+    }
+
+    @Test
+    @Category(SlowTest.class)
+    public void testMaxIdle_backupEntryShouldNotBeReachableAfterMaxIdle() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance instanceB = factory.newHazelcastInstance(getConfig());
+
+        String keyOwnedByInstanceA = generateKeyOwnedBy(instance);
+
+        IMap<String, String> map = instance.getMap("Test");
+        map.put(keyOwnedByInstanceA, "value0", 0, TimeUnit.SECONDS, 5, TimeUnit.SECONDS);
+        instance.shutdown();
+
+        waitAllForSafeState(instanceB);
+        sleepSeconds(10);
+
+        map = instanceB.getMap("Test");
+        assertFalse(map.containsKey(keyOwnedByInstanceA));
     }
 
     @Test

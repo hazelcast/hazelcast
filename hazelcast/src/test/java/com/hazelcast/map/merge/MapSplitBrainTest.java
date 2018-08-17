@@ -301,13 +301,13 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
         mapA1.put("key1", "value1");
 
         // prevent updating at the same time
-        sleepAtLeastMillis(100);
+        sleepAtLeastMillis(1000);
 
         mapA2.put("key1", "LatestUpdatedValue1");
         mapA2.put("key2", "value2");
 
         // prevent updating at the same time
-        sleepAtLeastMillis(100);
+        sleepAtLeastMillis(1000);
 
         mapA1.put("key2", "LatestUpdatedValue2");
     }

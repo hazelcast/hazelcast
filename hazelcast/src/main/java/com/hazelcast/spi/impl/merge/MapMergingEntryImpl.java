@@ -186,6 +186,11 @@ public class MapMergingEntryImpl
         return maxIdle;
     }
 
+    public MapMergingEntryImpl setMaxIdle(long maxIdle) {
+        this.maxIdle = maxIdle;
+        return this;
+    }
+
     @Override
     public void setSerializationService(SerializationService serializationService) {
         this.serializationService = serializationService;
