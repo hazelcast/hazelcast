@@ -21,11 +21,15 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 
 import java.io.IOException;
 
-public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSerializable {
+import static com.hazelcast.internal.cluster.Versions.V3_11;
+
+public class ReplicatedMapEntryView<K, V>
+        implements EntryView, IdentifiedDataSerializable, Versioned {
 
     private static final int NOT_AVAILABLE = -1;
 
@@ -145,7 +149,10 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(ttl);
-        out.writeLong(maxIdle);
+        //RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(V3_11)) {
+            out.writeLong(maxIdle);
+        }
     }
 
     @Override
@@ -157,7 +164,10 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         lastAccessTime = in.readLong();
         lastUpdateTime = in.readLong();
         ttl = in.readLong();
-        maxIdle = in.readLong();
+        //RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(V3_11)) {
+            maxIdle = in.readLong();
+        }
     }
 
     @Override

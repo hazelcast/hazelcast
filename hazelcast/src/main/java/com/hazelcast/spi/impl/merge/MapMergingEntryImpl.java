@@ -21,11 +21,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.io.IOException;
+
+import static com.hazelcast.internal.cluster.Versions.V3_11;
 
 /**
  * Implementation of {@link MapMergeTypes}.
@@ -33,7 +36,8 @@ import java.io.IOException;
  * @since 3.10
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
-public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
+public class MapMergingEntryImpl
+        implements MapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable, Versioned {
 
     private Data value;
     private Data key;
@@ -200,7 +204,10 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
         out.writeLong(ttl);
-        out.writeLong(maxIdle);
+        //RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(V3_11)) {
+            out.writeLong(maxIdle);
+        }
     }
 
     @Override
@@ -216,7 +223,10 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         lastUpdateTime = in.readLong();
         version = in.readLong();
         ttl = in.readLong();
-        maxIdle = in.readLong();
+        //RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(V3_11)) {
+            maxIdle = in.readLong();
+        }
     }
 
     @Override

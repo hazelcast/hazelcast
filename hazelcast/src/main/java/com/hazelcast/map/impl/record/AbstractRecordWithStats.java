@@ -23,10 +23,11 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 /**
  * @param <V> type of {@link AbstractRecord}
  */
-abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
+abstract class AbstractRecordWithStats<V>
+        extends AbstractRecord<V> {
 
-    protected int lastStoredTime;
-    protected int expirationTime;
+    private int lastStoredTime = NOT_AVAILABLE;
+    private int expirationTime = NOT_AVAILABLE;
 
     AbstractRecordWithStats() {
     }
@@ -44,16 +45,30 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
     @Override
     public long getExpirationTime() {
+        if (expirationTime == NOT_AVAILABLE) {
+            return 0L;
+        }
+
+        if (expirationTime == Integer.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+
         return recomputeWithBaseTime(expirationTime);
     }
 
     @Override
     public void setExpirationTime(long expirationTime) {
-        this.expirationTime = stripBaseTime(expirationTime);
+        this.expirationTime = expirationTime == Long.MAX_VALUE
+                ? Integer.MAX_VALUE
+                : stripBaseTime(expirationTime);
     }
 
     @Override
     public long getLastStoredTime() {
+        if (expirationTime == NOT_AVAILABLE) {
+            return 0L;
+        }
+
         return recomputeWithBaseTime(lastStoredTime);
     }
 
@@ -79,8 +94,8 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) (lastStoredTime ^ (lastStoredTime >>> 32));
-        result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
+        result = 31 * result + lastStoredTime;
+        result = 31 * result + expirationTime;
         return result;
     }
 }

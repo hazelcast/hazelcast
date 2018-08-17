@@ -28,11 +28,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * @param <V> the type of the value of Record.
  */
-@SuppressWarnings("VolatileLongOrDoubleField")
+@SuppressWarnings({ "checkstyle:methodcount", "VolatileLongOrDoubleField" })
 public abstract class AbstractRecord<V> implements Record<V> {
 
     private static final int NUMBER_OF_LONGS = 2;
-    private static final int NUMBER_OF_INTS = 4;
+    private static final int NUMBER_OF_INTS = 5;
 
     /**
      * Base time to be used for storing time values as diffs (int) rather than full blown epoch based vals (long)
@@ -45,13 +45,13 @@ public abstract class AbstractRecord<V> implements Record<V> {
     protected long version;
     protected int ttl;
     protected int maxIdle;
-    private int creationTime = NOT_AVAILABLE;
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "Record can be accessed by only its own partition thread.")
     protected volatile long hits;
     private volatile int lastAccessTime = NOT_AVAILABLE;
     private volatile int lastUpdateTime = NOT_AVAILABLE;
+    private int creationTime = NOT_AVAILABLE;
 
     AbstractRecord() {
     }
@@ -68,7 +68,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getTtl() {
-        return ttl;
+        return ttl == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(ttl);
     }
 
     @Override
@@ -83,7 +83,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getMaxIdle() {
-        return SECONDS.toMillis(maxIdle);
+        return maxIdle == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(maxIdle);
     }
 
     @Override
@@ -240,10 +240,10 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public int hashCode() {
-        int result = key.hashCode();
+        int result = key != null ? key.hashCode() : 0;
         result = 31 * result + (int) (version ^ (version >>> 32));
-        result = 31 * result + (int) (ttl ^ (ttl >>> 32));
-        result = 31 * result + (int) (maxIdle ^ (maxIdle >>> 32));
+        result = 31 * result + ttl;
+        result = 31 * result + maxIdle;
         result = 31 * result + creationTime;
         result = 31 * result + (int) (hits ^ (hits >>> 32));
         result = 31 * result + lastAccessTime;

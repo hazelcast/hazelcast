@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -66,7 +67,7 @@ public class AbstractRecordTest {
 
         recordOtherCreationTime = new ObjectRecord(VALUE);
         recordOtherCreationTime.setKey(KEY);
-        recordOtherCreationTime.setCreationTime(152344145);
+        recordOtherCreationTime.setCreationTime(Clock.currentTimeMillis());
 
         recordOtherHits = new ObjectRecord(VALUE);
         recordOtherHits.setKey(KEY);
@@ -74,11 +75,11 @@ public class AbstractRecordTest {
 
         recordOtherLastAccessTime = new ObjectRecord(VALUE);
         recordOtherLastAccessTime.setKey(KEY);
-        recordOtherLastAccessTime.setLastAccessTime(354712354);
+        recordOtherLastAccessTime.setLastAccessTime(Clock.currentTimeMillis());
 
         recordOtherLastUpdateTime = new ObjectRecord(VALUE);
         recordOtherLastUpdateTime.setKey(KEY);
-        recordOtherLastUpdateTime.setLastUpdateTime(124241425);
+        recordOtherLastUpdateTime.setLastUpdateTime(Clock.currentTimeMillis() + 10000);
     }
 
     @Test

@@ -265,7 +265,7 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
         assertEquals("value1", mapA1.get("key1"));
 
         // prevent updating at the same time
-        sleepAtLeastMillis(100);
+        sleepAtLeastMillis(1000);
 
         mapA2.put("key1", "LatestAccessedValue1");
         // access to record
@@ -276,7 +276,7 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
         assertEquals("value2", mapA2.get("key2"));
 
         // prevent updating at the same time
-        sleepAtLeastMillis(100);
+        sleepAtLeastMillis(1000);
 
         mapA1.put("key2", "LatestAccessedValue2");
         // access to record

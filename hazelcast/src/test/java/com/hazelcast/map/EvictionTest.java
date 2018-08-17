@@ -87,11 +87,32 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testTTL_entryShouldNotBeReachableAfterMaxIdle() {
+        IMap<Integer, String> map = createSimpleMap();
+
+        map.put(1, "value0", 0, TimeUnit.SECONDS, 1, TimeUnit.SECONDS);
+        sleepSeconds(1);
+
+        assertFalse(map.containsKey(1));
+    }
+
+    @Test
     public void testTTL_zeroIsInfinity() {
         IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value0", 2, TimeUnit.SECONDS);
         map.put(1, "value1", 0, TimeUnit.SECONDS);
+        sleepSeconds(3);
+
+        assertTrue(map.containsKey(1));
+    }
+
+    @Test
+    public void testMaxIdle_zeroIsInfinity() {
+        IMap<Integer, String> map = createSimpleMap();
+
+        map.put(1, "value0", 0, TimeUnit.SECONDS, 1, TimeUnit.SECONDS);
+        map.put(1, "value1", 0, TimeUnit.SECONDS, 0, TimeUnit.SECONDS);
         sleepSeconds(3);
 
         assertTrue(map.containsKey(1));

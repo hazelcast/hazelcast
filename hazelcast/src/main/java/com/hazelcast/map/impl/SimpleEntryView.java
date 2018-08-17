@@ -22,8 +22,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
+
+import static com.hazelcast.internal.cluster.Versions.V3_11;
 
 /**
  * SimpleEntryView is an implementation of {@link com.hazelcast.core.EntryView} and also it is writable.
@@ -33,7 +36,8 @@ import java.io.IOException;
  */
 @BinaryInterface
 @SuppressWarnings("checkstyle:methodcount")
-public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSerializable {
+public class SimpleEntryView<K, V>
+        implements EntryView<K, V>, IdentifiedDataSerializable, Versioned {
 
     private K key;
     private V value;
@@ -255,7 +259,10 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         // writes the deprecated evictionCriteriaNumber to the data output (client protocol compatibility)
         out.writeLong(0);
         out.writeLong(ttl);
-        out.writeLong(maxIdle);
+        //RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(V3_11)) {
+            out.writeLong(maxIdle);
+        }
     }
 
     @Override
@@ -273,7 +280,10 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         // reads the deprecated evictionCriteriaNumber from the data input (client protocol compatibility)
         in.readLong();
         ttl = in.readLong();
-        maxIdle = in.readLong();
+        //RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(V3_11)) {
+            maxIdle = in.readLong();
+        }
     }
 
     @Override
