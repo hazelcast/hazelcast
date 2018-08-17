@@ -646,7 +646,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (future.isDone()) {
                 return;
             }
-            future.completeExceptionally(new TimeoutException("Authentication response did not come back in "
+            future.complete(new TimeoutException("Authentication response did not come back in "
                     + authenticationTimeout + " millis"));
         }
 

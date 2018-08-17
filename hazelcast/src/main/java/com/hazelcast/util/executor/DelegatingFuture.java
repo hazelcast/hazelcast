@@ -141,9 +141,8 @@ public class DelegatingFuture<V> implements InternalCompletableFuture<V> {
         return future.complete(value);
     }
 
-    @Override
-    public boolean completeExceptionally(Throwable error) {
-        return future.completeExceptionally(error);
+    protected void setError(Throwable error) {
+        future.complete(error);
     }
 
     protected ICompletableFuture getFuture() {

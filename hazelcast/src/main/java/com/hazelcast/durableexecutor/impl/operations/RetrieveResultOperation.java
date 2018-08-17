@@ -28,8 +28,6 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-
 /**
  * Used to retrieve the response of an execution with the given sequence
  */
@@ -55,10 +53,6 @@ public class RetrieveResultOperation extends AbstractDurableExecutorOperation im
 
     @Override
     public Object getResponse() {
-        if (result instanceof Throwable) {
-            throw rethrow((Throwable) result);
-        }
-
         return result;
     }
 

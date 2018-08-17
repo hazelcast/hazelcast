@@ -24,8 +24,6 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.MutatingOperation;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-
 public class RetrieveAndDisposeResultOperation extends DisposeResultOperation implements BlockingOperation,
         MutatingOperation {
 
@@ -46,10 +44,6 @@ public class RetrieveAndDisposeResultOperation extends DisposeResultOperation im
 
     @Override
     public Object getResponse() {
-        if (result instanceof Throwable) {
-            throw rethrow((Throwable) result);
-        }
-
         return result;
     }
 
