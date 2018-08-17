@@ -78,7 +78,6 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.PhoneHome;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
@@ -146,8 +145,6 @@ public class Node {
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final NodeShutdownHookThread shutdownHookThread;
-
-    private final PhoneHome phoneHome = new PhoneHome();
 
     private final InternalSerializationService serializationService;
 
@@ -411,7 +408,7 @@ public class Node {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
         nodeExtension.afterStart();
-        phoneHome.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
+        nodeExtension.sendPhoneHome();
         healthMonitor.start();
     }
 
@@ -497,7 +494,7 @@ public class Node {
         if (nodeExtension != null) {
             nodeExtension.beforeShutdown();
         }
-        phoneHome.shutdown();
+
         if (managementCenterService != null) {
             managementCenterService.shutdown();
         }

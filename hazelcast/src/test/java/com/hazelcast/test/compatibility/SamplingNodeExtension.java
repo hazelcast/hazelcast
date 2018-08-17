@@ -240,4 +240,8 @@ public class SamplingNodeExtension implements NodeExtension {
     public TextCommandService createTextCommandService() {
         return nodeExtension.createTextCommandService();
     }
+
+    @Override
+    public void sendPhoneHome() {
+    }
 }
