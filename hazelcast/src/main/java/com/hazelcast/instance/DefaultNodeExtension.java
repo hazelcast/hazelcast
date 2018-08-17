@@ -461,7 +461,7 @@ public class DefaultNodeExtension implements NodeExtension {
         phoneHome.check(node);
     }
 
-    public void createAndSetPhoneHome() {
+    protected void createAndSetPhoneHome() {
         this.phoneHome = new PhoneHome(node);
     }
 }
