@@ -37,6 +37,7 @@ import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.function.Predicate;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -207,10 +208,36 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
     private void clearMapsHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         if (thresholdReplicaIndex < 0) {
-            mapServiceContext.clearPartitionData(partitionId);
+            mapServiceContext.clearPartitionsOf(allMaps(), partitionId);
         } else {
-            mapServiceContext.clearMapsHavingLesserBackupCountThan(partitionId, thresholdReplicaIndex);
+            mapServiceContext.clearPartitionsOf(lesserBackupMapsThen(thresholdReplicaIndex), partitionId);
         }
+    }
+
+    /**
+     * @return predicate that matches with partitions of all maps
+     */
+    private static Predicate<RecordStore> allMaps() {
+        return new Predicate<RecordStore>() {
+            @Override
+            public boolean test(RecordStore recordStore) {
+                return true;
+            }
+        };
+    }
+
+    /**
+     * @param backupCount number of backups of a maps' partition
+     * @return predicate to find all map partitions which are expected to have
+     * lesser backups than given backupCount.
+     */
+    private static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
+        return new Predicate<RecordStore>() {
+            @Override
+            public boolean test(RecordStore recordStore) {
+                return recordStore.getMapContainer().getTotalBackupCount() < backupCount;
+            }
+        };
     }
 
     private MetaDataGenerator getMetaDataGenerator() {

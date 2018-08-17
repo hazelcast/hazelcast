@@ -46,8 +46,6 @@ import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
 import com.hazelcast.map.impl.query.CallerRunsAccumulationExecutor;
 import com.hazelcast.map.impl.query.CallerRunsPartitionScanExecutor;
-import com.hazelcast.query.impl.DefaultIndexProvider;
-import com.hazelcast.query.impl.IndexProvider;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.MapQueryEngineImpl;
 import com.hazelcast.map.impl.query.ParallelAccumulationExecutor;
@@ -73,7 +71,9 @@ import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
+import com.hazelcast.query.impl.DefaultIndexProvider;
 import com.hazelcast.query.impl.IndexCopyBehavior;
+import com.hazelcast.query.impl.IndexProvider;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
@@ -88,6 +88,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.util.function.Predicate;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -319,29 +320,19 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void clearMapsHavingLesserBackupCountThan(int partitionId, int backupCount) {
-        PartitionContainer container = getPartitionContainer(partitionId);
-        if (container != null) {
-            Iterator<RecordStore> iter = container.getMaps().values().iterator();
-            while (iter.hasNext()) {
-                RecordStore recordStore = iter.next();
-                final MapContainer mapContainer = recordStore.getMapContainer();
-                if (backupCount > mapContainer.getTotalBackupCount()) {
-                    recordStore.clearPartition(false, false);
-                    iter.remove();
-                }
-            }
+    public void clearPartitionsOf(Predicate<RecordStore> predicate, int partitionId) {
+        PartitionContainer container = partitionContainers[partitionId];
+        if (container == null) {
+            return;
         }
-    }
 
-    @Override
-    public void clearPartitionData(int partitionId) {
-        final PartitionContainer container = partitionContainers[partitionId];
-        if (container != null) {
-            for (RecordStore mapPartition : container.getMaps().values()) {
-                mapPartition.clearPartition(false, false);
+        Iterator<RecordStore> partitionIterator = container.getMaps().values().iterator();
+        while (partitionIterator.hasNext()) {
+            RecordStore partition = partitionIterator.next();
+            if (predicate.test(partition)) {
+                partition.clearPartition(false, false);
+                partitionIterator.remove();
             }
-            container.getMaps().clear();
         }
     }
 
