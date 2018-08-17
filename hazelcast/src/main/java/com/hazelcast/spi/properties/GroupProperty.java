@@ -542,6 +542,20 @@ public final class GroupProperty {
     public static final HazelcastProperty MAP_EXPIRY_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.map.expiry.delay.seconds", 10, SECONDS);
 
+    /**
+     * Maximum number of IMap entries Hazelcast will evict during a single eviction cycle.
+     * Eviction cycle is triggered by a map mutation. Typically it's OK to evict at most a single entry.
+     * However imagine the scenario where you are inserting values in a loop and in each iteration you double entry
+     * size. In this situation Hazelcast has to evict more than just a single entry - as all existing entries are
+     * smaller than the entry which is about to be added and removing any old entry cannot make sufficient room
+     * for the new entry.
+     *
+     * Default: 1
+     *
+     */
+    public static final HazelcastProperty MAP_EVICTION_BATCH_SIZE
+            = new HazelcastProperty("hazelcast.map.eviction.batch.size", 1);
+
     public static final HazelcastProperty LOGGING_TYPE
             = new HazelcastProperty("hazelcast.logging.type", "jdk");
 
