@@ -394,6 +394,10 @@ public class JobCoordinationService {
 
         JobResult jobResult = jobRepository.getJobResult(jobId);
         if (jobResult != null) {
+            if (terminationMode == CANCEL) {
+                logger.fine("Ignoring cancellation of a completed job " + idToString(jobId));
+                return;
+            }
             throw new IllegalStateException("Cannot " + terminationMode + " job " + idToString(jobId)
                     + " because it already has a result: " + jobResult);
         }
@@ -418,8 +422,13 @@ public class JobCoordinationService {
         }
 
         if (!masterContext.requestTermination(terminationMode)) {
-            throw new IllegalStateException("Cannot " + terminationMode + ", job is already terminating in mode:"
-                    + masterContext.requestedTerminationMode());
+            TerminationMode mcTerminationMode = masterContext.requestedTerminationMode();
+            // ignore double cancellation
+            if (terminationMode == CANCEL && mcTerminationMode == CANCEL) {
+                return;
+            }
+            throw new IllegalStateException("Cannot " + terminationMode + ", job is already terminating in mode: "
+                    + mcTerminationMode);
         }
     }
 

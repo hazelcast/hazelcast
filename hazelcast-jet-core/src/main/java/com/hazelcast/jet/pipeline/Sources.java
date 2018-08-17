@@ -942,7 +942,7 @@ public final class Sources {
      * Convenience for {@link Sources#jdbc(DistributedSupplier,
      * ToResultSetFunction, DistributedFunction)}.
      * A non-distributed, single-worker source which fetches the whole resultSet
-     * with a single query.
+     * with a single query on single member.
      * <p>
      * Example: <pre>{@code
      *     p.drawFrom(Sources.jdbc(

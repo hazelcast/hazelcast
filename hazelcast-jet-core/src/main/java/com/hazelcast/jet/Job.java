@@ -149,8 +149,9 @@ public interface Job {
      * getting restarted after the cluster has stabilized. Call {@link
      * #getStatus()} to find out and possibly try to cancel again.
      *
-     * @throws IllegalStateException if the job is not running: is restarting,
-     * completed, etc.
+     * @throws IllegalStateException if the cluster is not in a state to
+     * restart the job, for example when coordinator member left and new
+     * coordinator did not yet load job's metadata.
      */
     void cancel();
 }
