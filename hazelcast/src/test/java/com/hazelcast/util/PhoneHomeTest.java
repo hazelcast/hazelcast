@@ -149,7 +149,9 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testConvertToLetter() {
-        PhoneHome phoneHome = new PhoneHome();
+        HazelcastInstance hz = createHazelcastInstance();
+        Node node = getNode(hz);
+        PhoneHome phoneHome = new PhoneHome(node);
         assertEquals("A", phoneHome.convertToLetter(4));
         assertEquals("B", phoneHome.convertToLetter(9));
         assertEquals("C", phoneHome.convertToLetter(19));

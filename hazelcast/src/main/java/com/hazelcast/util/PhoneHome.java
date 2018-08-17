@@ -76,11 +76,8 @@ public class PhoneHome {
     private static final String FALSE = "false";
 
     volatile ScheduledFuture<?> phoneHomeFuture;
-    ILogger logger;
+    private ILogger logger;
     private final BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
-
-    public PhoneHome() {
-    }
 
     public PhoneHome(Node hazelcastNode) {
         logger = hazelcastNode.getLogger(PhoneHome.class);
@@ -88,7 +85,6 @@ public class PhoneHome {
 
     @SuppressWarnings("deprecation")
     public void check(final Node hazelcastNode) {
-        ILogger logger = hazelcastNode.getLogger(PhoneHome.class);
         if (!hazelcastNode.getProperties().getBoolean(GroupProperty.VERSION_CHECK_ENABLED)) {
             logger.warning(GroupProperty.VERSION_CHECK_ENABLED.getName() + " property is deprecated. Please use "
                     + GroupProperty.PHONE_HOME_ENABLED.getName() + " instead to disable phone home.");
@@ -185,7 +181,7 @@ public class PhoneHome {
         return parameterCreator;
     }
 
-    public String getDownloadId() {
+    private String getDownloadId() {
         String downloadId = "source";
         InputStream is = null;
         try {
