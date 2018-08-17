@@ -30,6 +30,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -62,6 +63,7 @@ import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENT
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryInfoAccessor;
+import static java.lang.Math.max;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -788,6 +790,32 @@ public class EvictionTest extends HazelcastTestSupport {
         }
 
         assertBackupsSweptOnAllNodes(mapName, maxSize, instances);
+    }
+
+    @Test
+    public void testEviction_increasingEntrySize() {
+        int maxSizeMB = 50;
+        String mapName = randomMapName();
+
+        Config config = newConfig(mapName, maxSizeMB, MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE);
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(GroupProperty.MAP_EVICTION_BATCH_SIZE.getName(), "2");
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, byte[]> map = instance.getMap(mapName);
+
+        int perIterationIncrementBytes = 2048;
+        long maxObservedHeapCost = 0;
+        for (int i = 0; i < 1000; i++) {
+            int payloadSizeBytes = i * perIterationIncrementBytes;
+            map.put(i, new byte[payloadSizeBytes]);
+            maxObservedHeapCost = max(maxObservedHeapCost, map.getLocalMapStats().getHeapCost());
+        }
+
+        double toleranceFactor = 1.1d;
+        long maxAllowedHeapCost = (long) (MemoryUnit.MEGABYTES.toBytes(maxSizeMB) * toleranceFactor);
+        long minAllowedHeapCost = (long) (MemoryUnit.MEGABYTES.toBytes(maxSizeMB) / toleranceFactor);
+        assertBetween("Maximum cost", maxObservedHeapCost, minAllowedHeapCost, maxAllowedHeapCost);
     }
 
     private void assertBackupsSweptOnAllNodes(String mapName, int maxSize, HazelcastInstance[] instances) {

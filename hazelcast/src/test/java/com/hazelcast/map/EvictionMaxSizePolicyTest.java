@@ -368,7 +368,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     private static final class TestEvictor extends EvictorImpl {
 
         TestEvictor(MapEvictionPolicy mapEvictionPolicy, EvictionChecker evictionChecker, IPartitionService partitionService) {
-            super(mapEvictionPolicy, evictionChecker, partitionService);
+            super(mapEvictionPolicy, evictionChecker, partitionService, 1);
         }
 
         @Override
