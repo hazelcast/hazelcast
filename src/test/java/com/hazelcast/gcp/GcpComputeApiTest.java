@@ -336,9 +336,4 @@ public class GcpComputeApiTest {
                         + "}  ", INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP, INSTANCE_2_PRIVATE_IP, INSTANCE_2_PUBLIC_IP,
                 INSTANCE_3_PRIVATE_IP);
     }
-    //
-    //    public static void main(String[] args) {
-    //        System.out.println(instancesResponse());
-    //    }
-
 }
