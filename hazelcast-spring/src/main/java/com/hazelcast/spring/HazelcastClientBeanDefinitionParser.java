@@ -25,12 +25,14 @@ import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
+import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -55,6 +57,7 @@ import java.util.List;
 
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
+import static org.springframework.util.Assert.isTrue;
 
 /**
  * BeanDefinitionParser for Hazelcast Client Configuration.
@@ -148,10 +151,51 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleFlakeIdGenerator(node);
                 } else if ("reliable-topic".equals(nodeName)) {
                     handleReliableTopic(node);
+                } else if ("security".equals(nodeName)) {
+                    handleSecurity(node);
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
             return builder.getBeanDefinition();
+        }
+
+        private void handleSecurity(Node node) {
+            BeanDefinitionBuilder securityConfigBuilder = createBeanBuilder(ClientSecurityConfig.class);
+            AbstractBeanDefinition beanDefinition = securityConfigBuilder.getBeanDefinition();
+            fillAttributeValues(node, securityConfigBuilder);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("credentials-factory".equals(nodeName)) {
+                    handleCredentialsFactory(child, securityConfigBuilder);
+                } else if ("credentials".equals(nodeName)) {
+                    securityConfigBuilder.addPropertyValue("credentialsClassname", getTextContent(child));
+                }
+            }
+            configBuilder.addPropertyValue("securityConfig", beanDefinition);
+        }
+
+        void handleCredentialsFactory(Node node, BeanDefinitionBuilder securityConfigBuilder) {
+            BeanDefinitionBuilder credentialsConfigBuilder = createBeanBuilder(CredentialsFactoryConfig.class);
+            AbstractBeanDefinition beanDefinition = credentialsConfigBuilder.getBeanDefinition();
+            NamedNodeMap attributes = node.getAttributes();
+            Node classNameNode = attributes.getNamedItem("class-name");
+            String className = classNameNode != null ? getTextContent(classNameNode) : null;
+            Node implNode = attributes.getNamedItem("implementation");
+            String implementation = implNode != null ? getTextContent(implNode) : null;
+            credentialsConfigBuilder.addPropertyValue("className", className);
+            if (implementation != null) {
+                credentialsConfigBuilder.addPropertyReference("implementation", implementation);
+            }
+            isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation'"
+                    + " attributes is required to create CredentialsFactory!");
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("properties".equals(nodeName)) {
+                    handleProperties(child, credentialsConfigBuilder);
+                    break;
+                }
+            }
+            securityConfigBuilder.addPropertyValue("credentialsFactoryConfig", beanDefinition);
         }
 
         private void handleConnectionStrategy(Node node) {
