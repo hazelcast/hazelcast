@@ -54,7 +54,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     @Override
     protected void onInterruptDetected() {
-        completeExceptionally(new InterruptedException());
+        complete(new InterruptedException());
     }
 
     @Override
@@ -63,8 +63,16 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     }
 
     @Override
-    protected Throwable unwrap(AltResult result) {
-        return result.getCause();
+    protected Throwable unwrap(Throwable throwable) {
+        return throwable;
+    }
+
+    @Override
+    protected Object resolve(Object value) {
+        if (value instanceof Throwable) {
+            return new ExecutionException((Throwable) value);
+        }
+        return value;
     }
 
     @Override
@@ -84,9 +92,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     @Override
     public ClientMessage resolveAndThrowIfException(Object response) throws ExecutionException, InterruptedException {
-        if (response instanceof AltResult) {
-            response = ((AltResult) response).getCause();
-
+        if (response instanceof Throwable) {
             fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {
                 throw (ExecutionException) response;

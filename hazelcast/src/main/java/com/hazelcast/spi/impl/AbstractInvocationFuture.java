@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 import static java.util.concurrent.locks.LockSupport.park;
@@ -130,14 +129,12 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return completeExceptionally(new CancellationException());
+        return complete(new CancellationException());
     }
 
     @Override
     public boolean isCancelled() {
-        Object state = resolve(this.state);
-        return state instanceof AltResult
-                && ((AltResult) state).cause instanceof CancellationException;
+        return state instanceof CancellationException;
     }
 
     @Override
@@ -251,8 +248,8 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
                 public void run() {
                     try {
                         Object value = resolve(state);
-                        if (value instanceof AltResult) {
-                            Throwable error = unwrap((AltResult) value);
+                        if (value instanceof Throwable) {
+                            Throwable error = unwrap((Throwable) value);
                             callback.onFailure(error);
                         } else {
                             callback.onResponse((V) value);
@@ -262,6 +259,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
                                 + "for call " + invocationToString(), cause);
                     }
                 }
+
             });
         } catch (RejectedExecutionException e) {
             callback.onFailure(e);
@@ -269,9 +267,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     }
 
     // this method should not be needed; but there is a difference between client and server how it handles async throwables
-    protected Throwable unwrap(AltResult result) {
-        Throwable throwable = result.cause;
-
+    protected Throwable unwrap(Throwable throwable) {
         if (throwable instanceof ExecutionException && throwable.getCause() != null) {
             return throwable.getCause();
         }
@@ -381,12 +377,6 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
         }
     }
 
-    @Override
-    public boolean completeExceptionally(Throwable error) {
-        checkNotNull(error);
-        return complete(new AltResult(error));
-    }
-
     protected void onComplete() {
 
     }
@@ -437,23 +427,4 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
             this.executor = executor;
         }
     }
-
-    @SuppressWarnings("checkstyle:visibilitymodifier")
-    protected static final class AltResult {
-        private final Throwable cause;
-
-        public AltResult(Throwable cause) {
-            this.cause = cause;
-        }
-
-        public Throwable getCause() {
-            return cause;
-        }
-
-        @Override
-        public String toString() {
-            return cause.toString();
-        }
-    }
-
 }

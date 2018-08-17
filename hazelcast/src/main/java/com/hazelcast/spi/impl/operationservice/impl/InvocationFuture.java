@@ -22,7 +22,6 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.util.concurrent.CancellationException;
@@ -79,42 +78,35 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
     protected E resolveAndThrowIfException(Object unresolved) throws ExecutionException, InterruptedException {
         Object value = resolve(unresolved);
 
-        if (value == null || !(value instanceof AltResult)) {
+        if (value == null || !(value instanceof Throwable)) {
             return (E) value;
-        }
-
-        Throwable cause = ((AltResult) value).getCause();
-
-        if (cause instanceof CancellationException) {
-            throw (CancellationException) cause;
-        } else if (cause instanceof ExecutionException) {
-            throw (ExecutionException) cause;
-        } else if (cause instanceof InterruptedException) {
-            throw (InterruptedException) cause;
-        } else if (cause instanceof Error) {
-            throw (Error) cause;
+        } else if (value instanceof CancellationException) {
+            throw (CancellationException) value;
+        } else if (value instanceof ExecutionException) {
+            throw (ExecutionException) value;
+        } else if (value instanceof InterruptedException) {
+            throw (InterruptedException) value;
+        } else if (value instanceof Error) {
+            throw (Error) value;
         } else {
-            throw new ExecutionException(cause);
+            throw new ExecutionException((Throwable) value);
         }
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     protected Object resolve(Object unresolved) {
         if (unresolved == null) {
             return null;
         } else if (unresolved == INTERRUPTED) {
-            return new AltResult(new InterruptedException(invocation.op.getClass().getSimpleName()
-                    + " was interrupted. " + invocation));
+            return new InterruptedException(invocation.op.getClass().getSimpleName() + " was interrupted. " + invocation);
         } else if (unresolved == CALL_TIMEOUT) {
             return newOperationTimeoutException(false);
         } else if (unresolved == HEARTBEAT_TIMEOUT) {
             return newOperationTimeoutException(true);
         } else if (unresolved.getClass() == Packet.class) {
-            unresolved = invocation.context.serializationService.toObject(unresolved);
-            if (unresolved instanceof NormalResponse) {
-                unresolved = ((NormalResponse) unresolved).getValue();
-            }
+            NormalResponse response = invocation.context.serializationService.toObject(unresolved);
+            unresolved = response.getValue();
         }
 
         Object value = unresolved;
@@ -125,28 +117,18 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
             }
         }
 
-        if (isErroneousState(value)) {
-            Throwable throwable = ((ErrorResponse) value).getCause();
+        if (invocation.shouldFailOnIndeterminateOperationState() && (value instanceof MemberLeftException)) {
+            String message = invocation + " failed because the target has left the cluster before response is received";
+            value = new IndeterminateOperationStateException(message, (MemberLeftException) value);
+        }
 
-            if (invocation.shouldFailOnIndeterminateOperationState()
-                    && (throwable instanceof MemberLeftException)) {
-                String message = invocation + " failed because the target has left the cluster before response is received";
-                throwable = new IndeterminateOperationStateException(message, throwable);
-            }
-
-            fixAsyncStackTrace(throwable, Thread.currentThread().getStackTrace());
-            return new AltResult(throwable);
+        if (value instanceof Throwable) {
+            Throwable throwable = ((Throwable) value);
+            fixAsyncStackTrace((Throwable) value, Thread.currentThread().getStackTrace());
+            return throwable;
         }
 
         return value;
-    }
-
-    /**
-     * Any Object is considered a value-type response, even exceptions.
-     * The only exception in the above rule, is responses of type {@link ErrorResponse}, which are thrown instead of returned.
-     */
-    private boolean isErroneousState(Object state) {
-        return state instanceof ErrorResponse;
     }
 
     private Object newOperationTimeoutException(boolean heartbeatTimeout) {
@@ -179,7 +161,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
         sb.append(invocation);
         String msg = sb.toString();
-        return new AltResult(new ExecutionException(msg, new OperationTimeoutException(msg)));
+        return new ExecutionException(msg, new OperationTimeoutException(msg));
     }
 
     private static void appendHeartbeat(StringBuilder sb, long lastHeartbeatMillis) {

@@ -215,10 +215,5 @@ public class DelegatingFutureTest {
         public boolean complete(Object value) {
             return false;
         }
-
-        @Override
-        public boolean completeExceptionally(Throwable error) {
-            return false;
-        }
     }
 }
