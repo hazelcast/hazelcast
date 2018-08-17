@@ -79,6 +79,13 @@ public abstract class ClientConnectionStrategy {
 
     /**
      * If a cluster connection is established, this method will be called.
+     * @param target address of the requested connection
+     */
+    public abstract void beforeConnectToCluster(Address target);
+
+
+    /**
+     * If a cluster connection is established, this method will be called.
      * if an exception is thrown, the already established connection will be closed.
      */
     public abstract void onConnectToCluster();
