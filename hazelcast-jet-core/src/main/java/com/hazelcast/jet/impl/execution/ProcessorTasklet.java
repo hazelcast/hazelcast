@@ -25,6 +25,7 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.jet.impl.util.ProgressState;
@@ -190,8 +191,10 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public void init() {
         if (serializationService.getManagedContext() != null) {
-            Object processor2 = serializationService.getManagedContext().initialize(processor);
-            assert processor2 == processor : "different object returned";
+            Processor toInit = processor instanceof ProcessorWrapper
+                    ? ((ProcessorWrapper) processor).getWrapped() : processor;
+            Object initialized = serializationService.getManagedContext().initialize(toInit);
+            assert initialized == toInit : "different object returned";
         }
         processor.init(outbox, context);
     }

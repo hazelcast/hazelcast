@@ -27,11 +27,16 @@ import javax.annotation.Nonnull;
  * Base class for processor wrappers. Delegates all calls to the wrapped
  * processor.
  */
-public class ProcessorWrapper implements Processor {
-    protected final Processor wrapped;
+public abstract class ProcessorWrapper implements Processor {
+
+    private final Processor wrapped;
 
     protected ProcessorWrapper(Processor wrapped) {
         this.wrapped = wrapped;
+    }
+
+    public Processor getWrapped() {
+        return wrapped;
     }
 
     @Override
