@@ -18,6 +18,7 @@ package com.hazelcast.gcp;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,9 +34,11 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class GcpDiscoveryStrategyTest {
+    private static final String ZONE = "us-east1-a";
     private static final int PORT1 = 5701;
     private static final int PORT2 = 5702;
 
@@ -49,6 +52,21 @@ public class GcpDiscoveryStrategyTest {
         Map<String, Comparable> properties = new HashMap<String, Comparable>();
         properties.put("hz-port", String.format("%s-%s", PORT1, PORT2));
         gcpDiscoveryStrategy = new GcpDiscoveryStrategy(properties, gcpClient);
+    }
+
+    @Test
+    public void discoverLocalMetadata() {
+        // given
+        given(gcpClient.getAvailabilityZone()).willReturn(ZONE);
+
+        // when
+        Map<String, Object> result1 = gcpDiscoveryStrategy.discoverLocalMetadata();
+        Map<String, Object> result2 = gcpDiscoveryStrategy.discoverLocalMetadata();
+
+        // then
+        assertEquals(ZONE, result1.get(PartitionGroupMetaData.PARTITION_GROUP_ZONE));
+        assertEquals(ZONE, result2.get(PartitionGroupMetaData.PARTITION_GROUP_ZONE));
+        verify(gcpClient).getAvailabilityZone();
     }
 
     @Test

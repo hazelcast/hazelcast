@@ -112,4 +112,18 @@ public class GcpClientTest {
         assertEquals(ADDRESSES, result);
     }
 
+    @Test
+    public void getAvailabilityZone() {
+        // given
+        given(gcpMetadataApi.currentZone()).willReturn(ZONE_1);
+        GcpConfig gcpConfig = GcpConfig.builder().build();
+        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpConfig);
+
+        // when
+        String result = gcpClient.getAvailabilityZone();
+
+        // then
+        assertEquals(ZONE_1, result);
+    }
+
 }

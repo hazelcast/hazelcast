@@ -98,4 +98,8 @@ class GcpClient {
         }
         return result;
     }
+
+    String getAvailabilityZone() {
+        return gcpMetadataApi.currentZone();
+    }
 }

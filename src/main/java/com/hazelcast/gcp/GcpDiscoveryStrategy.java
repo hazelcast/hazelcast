@@ -24,10 +24,12 @@ import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +48,8 @@ public class GcpDiscoveryStrategy
 
     private final GcpClient gcpClient;
     private final PortRange portRange;
+
+    private final Map<String, Object> memberMetadata = new HashMap<String, Object>();
 
     GcpDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
@@ -80,6 +84,14 @@ public class GcpDiscoveryStrategy
 
     private String getOrNull(GcpProperties gcpProperties) {
         return getOrNull(gcpProperties.getDefinition());
+    }
+
+    @Override
+    public Map<String, Object> discoverLocalMetadata() {
+        if (memberMetadata.isEmpty()) {
+            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, gcpClient.getAvailabilityZone());
+        }
+        return memberMetadata;
     }
 
     @Override
