@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
@@ -1064,8 +1065,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (entryEventType == UPDATED) {
                 mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.UPDATED, key, oldValue, value);
             } else {
-                if (is311OrLater()) {
-                    mapEventPublisher.publishLoadedOrAdded(callerAddress, name, key, null, value);
+                if (canPublishLoadEvent()) {
+                    mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED, key, null, value);
                 } else {
                     mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.ADDED, key, null, value);
                 }
@@ -1074,9 +1075,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return oldValue;
     }
 
-    private boolean is311OrLater() {
-        return mapServiceContext.getNodeEngine().getClusterService()
-                .getClusterVersion().isGreaterOrEqual(Versions.V3_11);
+    private boolean canPublishLoadEvent() {
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        ClusterService clusterService = nodeEngine.getClusterService();
+        boolean version311OrLater = clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_11);
+        boolean addEventPublishingEnabled = mapContainer.isAddEventPublishingEnabled();
+        return version311OrLater && !addEventPublishingEnabled;
     }
 
     protected boolean isKeyAndValueLoadable(Data key, Object value) {

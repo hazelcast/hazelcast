@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.spi.properties.GroupProperty.MAP_LOAD_ALL_PUBLISHES_ADD_EVENT;
 import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -206,6 +207,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     public void testPutEvent_withInterceptor_withLoadAll() {
         String name = randomString();
         Config config = getConfig();
+        config.setProperty(MAP_LOAD_ALL_PUBLISHES_ADD_EVENT.getName(), "true");
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setImplementation(new DummyLoader());

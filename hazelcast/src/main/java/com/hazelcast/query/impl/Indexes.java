@@ -301,7 +301,7 @@ public class Indexes {
          *                                   used for queryable entries, otherwise set {@code false}
          * @return this builder instance
          */
-        public Builder usesCacheQueryableEntries(boolean usesCachedQueryableEntries) {
+        public Builder usesCachedQueryableEntries(boolean usesCachedQueryableEntries) {
             this.usesCachedQueryableEntries = usesCachedQueryableEntries;
             return this;
         }
