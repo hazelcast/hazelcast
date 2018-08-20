@@ -137,6 +137,8 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
+        // speed up closing connections in com.hazelcast.internal.networking.nio.NioChannel.doClose()
+        System.setProperty("hazelcast.channel.close.delayMs", "0");
     }
 
     // When running a compatibility test, all com.hazelcast.* classes are transformed so that none are
