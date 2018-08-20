@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.internal.networking.EventLoopGroup;
-import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
+import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
@@ -51,30 +51,30 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
 
     private static final double HUNDRED = 100d;
 
-    private final NioEventLoopGroup eventLoopGroup;
+    private final NioNetworking networking;
     private final long periodMillis;
 
     public NetworkingImbalancePlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getProperties(), getThreadingModel(nodeEngine), nodeEngine.getLogger(NetworkingImbalancePlugin.class));
     }
 
-    public NetworkingImbalancePlugin(HazelcastProperties properties, EventLoopGroup eventLoopGroup, ILogger logger) {
+    public NetworkingImbalancePlugin(HazelcastProperties properties, Networking networking, ILogger logger) {
         super(logger);
 
-        if (eventLoopGroup instanceof NioEventLoopGroup) {
-            this.eventLoopGroup = (NioEventLoopGroup) eventLoopGroup;
+        if (networking instanceof NioNetworking) {
+            this.networking = (NioNetworking) networking;
         } else {
-            this.eventLoopGroup = null;
+            this.networking = null;
         }
-        this.periodMillis = this.eventLoopGroup == null ? 0 : properties.getMillis(PERIOD_SECONDS);
+        this.periodMillis = this.networking == null ? 0 : properties.getMillis(PERIOD_SECONDS);
     }
 
-    private static EventLoopGroup getThreadingModel(NodeEngineImpl nodeEngine) {
+    private static Networking getThreadingModel(NodeEngineImpl nodeEngine) {
         ConnectionManager connectionManager = nodeEngine.getNode().getConnectionManager();
         if (!(connectionManager instanceof TcpIpConnectionManager)) {
             return null;
         }
-        return ((TcpIpConnectionManager) connectionManager).getEventLoopGroup();
+        return ((TcpIpConnectionManager) connectionManager).getNetworking();
     }
 
     @Override
@@ -92,11 +92,11 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
         writer.startSection("NetworkingImbalance");
 
         writer.startSection("InputThreads");
-        render(writer, eventLoopGroup.getInputThreads());
+        render(writer, networking.getInputThreads());
         writer.endSection();
 
         writer.startSection("OutputThreads");
-        render(writer, eventLoopGroup.getOutputThreads());
+        render(writer, networking.getOutputThreads());
         writer.endSection();
 
         writer.endSection();

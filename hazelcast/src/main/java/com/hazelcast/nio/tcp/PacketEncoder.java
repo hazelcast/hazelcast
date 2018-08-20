@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
@@ -29,7 +29,7 @@ import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.nio.IOUtil.compactOrClear;
 
 /**
- * A {@link ChannelOutboundHandler} that for member to member communication.
+ * A {@link OutboundHandler} that for member to member communication.
  *
  * It writes {@link Packet} instances to the {@link ByteBuffer}.
  *
@@ -39,7 +39,7 @@ import static com.hazelcast.nio.IOUtil.compactOrClear;
  *
  * @see PacketDecoder
  */
-public class PacketEncoder extends ChannelOutboundHandler<Supplier<Packet>, ByteBuffer> {
+public class PacketEncoder extends OutboundHandler<Supplier<Packet>, ByteBuffer> {
 
     private final PacketIOHelper packetWriter = new PacketIOHelper();
 

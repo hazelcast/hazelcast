@@ -32,7 +32,7 @@ import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpHeadCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
@@ -67,7 +67,7 @@ import static com.hazelcast.spi.properties.GroupProperty.MEMCACHE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.REST_ENABLED;
 
 @PrivateApi
-public class TextDecoder extends ChannelInboundHandler<ByteBuffer, Void> {
+public class TextDecoder extends InboundHandler<ByteBuffer, Void> {
 
     private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
 

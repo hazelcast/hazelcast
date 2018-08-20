@@ -17,7 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.ascii.TextEncoder;
@@ -47,7 +47,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
  * of the connection will wait till it has received the protocol and then will only
  * send the protocol if the client side was a member.
  */
-public class ProtocolEncoder extends ChannelOutboundHandler<Void, ByteBuffer> {
+public class ProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
     private final IOService ioService;
     private final HazelcastProperties props;
@@ -134,23 +134,23 @@ public class ProtocolEncoder extends ChannelOutboundHandler<Void, ByteBuffer> {
     }
 
     private void initChannelForCluster() {
-        channel.config()
+        channel.options()
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_SEND_BUFFER_SIZE) * KILO_BYTE);
 
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
-        ChannelOutboundHandler[] handlers = ioService.createMemberOutboundHandlers(connection);
+        OutboundHandler[] handlers = ioService.createMemberOutboundHandlers(connection);
         channel.outboundPipeline().replace(this, handlers);
     }
 
     private void initChannelForClient() {
-        channel.config()
+        channel.options()
                 .setOption(SO_SNDBUF, clientSndBuf());
 
         channel.outboundPipeline().replace(this, new ClientMessageEncoder());
     }
 
     private void initChannelForText() {
-        channel.config()
+        channel.options()
                 .setOption(SO_SNDBUF, clientSndBuf());
 
         TextEncoder encoder = (TextEncoder) channel.attributeMap().remove(TEXT_ENCODER);

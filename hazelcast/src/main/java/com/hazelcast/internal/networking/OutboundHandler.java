@@ -23,49 +23,49 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.nio.IOUtil.newByteBuffer;
 
 /**
- * The {@link ChannelOutboundHandler} is a {@link ChannelHandler} for outbound
+ * The {@link OutboundHandler} is a {@link ChannelHandler} for outbound
  * traffic.
  *
  * An example is the PacketEncoder that takes packets from the src (Provider) and
  * encodes them to the dst (ByteBuffer).
  *
- * {@link ChannelOutboundHandler} instances are not expected to be thread-safe;
+ * {@link OutboundHandler} instances are not expected to be thread-safe;
  * each channel will gets its own instance(s).
  *
- * A {@link ChannelOutboundHandler} is constructed through a {@link ChannelInitializer}.
+ * A {@link OutboundHandler} is constructed through a {@link ChannelInitializer}.
  *
  * <h1>Buffer</h1>
- * The ChannelOutboundHandler is responsible for its own destination buffer
+ * The OutboundHandler is responsible for its own destination buffer
  * if it has one. So if needs to be compacted/flipped etc, it should take
  * care of that.
  *
- * If ChannelOutboundHandler has an destination buffer and the {@link #onWrite()}
+ * If OutboundHandler has an destination buffer and the {@link #onWrite()}
  * is called, the first thing it should do is to call
  * {@link com.hazelcast.nio.IOUtil#compactOrClear(ByteBuffer)} so it flips to
  * writing mode. And at the end of the onWrite method, the destination buffer
  * should be flipped into reading mode.
  *
- * If the ChannelOutboundHandler has a source buffer, it is expected to be
- * in reading mode and it is the responsibility of the ChannelOutboundHandler
+ * If the OutboundHandler has a source buffer, it is expected to be
+ * in reading mode and it is the responsibility of the OutboundHandler
  * in front to put that buffer in reading mode.
  *
  * @param <S> the type of the source. E.g. a ByteBuffer or a
  *            {@link com.hazelcast.util.function.Supplier}.
  * @param <D> the type of the destination. E.g. a ByteBuffer or a
  *            {@link com.hazelcast.util.function.Consumer}.
- * @see EventLoopGroup
- * @see ChannelInboundHandler
+ * @see Networking
+ * @see InboundHandler
  * @see ChannelInitializer
  * @see ChannelErrorHandler
  * @see Channel
  */
-public abstract class ChannelOutboundHandler<S, D> extends ChannelHandler<ChannelOutboundHandler, S, D> {
+public abstract class OutboundHandler<S, D> extends ChannelHandler<OutboundHandler, S, D> {
 
     /**
-     * A callback to indicate that this ChannelOutboundHandler should be
+     * A callback to indicate that this OutboundHandler should be
      * processed.
      *
-     * A ChannelOutboundHandler should be able to deal with a spurious wakeup.
+     * A OutboundHandler should be able to deal with a spurious wakeup.
      * So it could be for example there is no frame for it to write to.
      *
      * @return true if the content is fully written and this handler is clean.
@@ -81,7 +81,7 @@ public abstract class ChannelOutboundHandler<S, D> extends ChannelHandler<Channe
      * The buffer created is reading mode.
      */
     protected final void initDstBuffer() {
-        initDstBuffer(channel.config().getOption(SO_SNDBUF));
+        initDstBuffer(channel.options().getOption(SO_SNDBUF));
     }
 
     /**
@@ -112,7 +112,7 @@ public abstract class ChannelOutboundHandler<S, D> extends ChannelHandler<Channe
                     + ". bytes.length " + bytes.length);
         }
 
-        ChannelConfig config = channel.config();
+        ChannelOptions config = channel.options();
         ByteBuffer buffer = newByteBuffer(sizeBytes, config.getOption(DIRECT_BUF));
         if (bytes != null) {
             buffer.put(bytes);

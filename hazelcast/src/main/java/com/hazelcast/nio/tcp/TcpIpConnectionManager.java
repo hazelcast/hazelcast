@@ -20,7 +20,7 @@ import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.EventLoopGroup;
+import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -105,7 +105,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    private final EventLoopGroup eventLoopGroup;
+    private final Networking networking;
     private final MetricsRegistry metricsRegistry;
 
     private final ServerSocketChannel serverSocketChannel;
@@ -128,18 +128,18 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
                                   MetricsRegistry metricsRegistry,
-                                  EventLoopGroup eventLoopGroup) {
-        this(ioService, serverSocketChannel, loggingService, metricsRegistry, eventLoopGroup, null);
+                                  Networking networking) {
+        this(ioService, serverSocketChannel, loggingService, metricsRegistry, networking, null);
     }
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
                                   MetricsRegistry metricsRegistry,
-                                  EventLoopGroup eventLoopGroup,
+                                  Networking networking,
                                   HazelcastProperties properties) {
         this.ioService = ioService;
-        this.eventLoopGroup = eventLoopGroup;
+        this.networking = networking;
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
@@ -155,8 +155,8 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         return ioService;
     }
 
-    public EventLoopGroup getEventLoopGroup() {
-        return eventLoopGroup;
+    public Networking getNetworking() {
+        return networking;
     }
 
     // just for testing
@@ -353,7 +353,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     }
 
     Channel createChannel(SocketChannel socketChannel, boolean clientMode) throws Exception {
-        Channel channel = eventLoopGroup.register(socketChannel, clientMode);
+        Channel channel = networking.register(socketChannel, clientMode);
         acceptedChannels.add(channel);
         return channel;
     }
@@ -466,7 +466,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         live = true;
         logger.finest("Starting ConnectionManager and IO selectors.");
 
-        eventLoopGroup.start();
+        networking.start();
         startAcceptor();
     }
 
@@ -499,7 +499,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         for (TcpIpConnection conn : activeConnections) {
             destroySilently(conn, "TcpIpConnectionManager is stopping");
         }
-        eventLoopGroup.shutdown();
+        networking.shutdown();
         acceptedChannels.clear();
         connectionsInProgress.clear();
         connectionsMap.clear();

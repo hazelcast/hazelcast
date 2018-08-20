@@ -21,31 +21,31 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.nio.IOUtil.newByteBuffer;
 
 /**
- * The {@link ChannelInboundHandler} provides control when data is received and
+ * The {@link InboundHandler} provides control when data is received and
  * needs to be processed. For example data has received on the socket and needs
  * to be decoded into a Packet.
  *
- * {@link ChannelInboundHandler} are not expected to be thread-safe; each channel
+ * {@link InboundHandler} are not expected to be thread-safe; each channel
  * will gets its own instance(s).
  *
- * A {@link ChannelInboundHandler} is constructed through a {@link ChannelInitializer}.
+ * A {@link InboundHandler} is constructed through a {@link ChannelInitializer}.
  *
- * If the main task of a ChannelInboundHandler is to decode a message (e.g. a Packet),
+ * If the main task of a InboundHandler is to decode a message (e.g. a Packet),
  * it is best to call this handler a decoder. For example PacketDecoder.
  *
- * @see ChannelOutboundHandler
- * @see EventLoopGroup
+ * @see OutboundHandler
+ * @see Networking
  * @see ChannelInitializer
  * @see ChannelErrorHandler
  * @see Channel
  */
-public abstract class ChannelInboundHandler<S, D> extends ChannelHandler<ChannelInboundHandler, S, D> {
+public abstract class InboundHandler<S, D> extends ChannelHandler<InboundHandler, S, D> {
 
     /**
      * A callback to indicate that data is available in the src to be
      * processed.
      *
-     * ChannelInboundHandlers should be able to deal with spurious onReads
+     * InboundHandlers should be able to deal with spurious onReads
      * (so a read even though there is nothing to be processed).
      *
      * @return HandlerStatus the status of the handler after processing the src.
@@ -56,24 +56,24 @@ public abstract class ChannelInboundHandler<S, D> extends ChannelHandler<Channel
     public abstract HandlerStatus onRead() throws Exception;
 
     /**
-     * Initializes the src buffer. Should only be called by ChannelInboundHandler
+     * Initializes the src buffer. Should only be called by InboundHandler
      * implementations that have a ByteBuffer as source.
      *
-     * The capacity of the src buffer will come from the {@link ChannelConfig} using
+     * The capacity of the src buffer will come from the {@link ChannelOptions} using
      * {@link ChannelOption#SO_RCVBUF}
      */
     protected final void initSrcBuffer() {
-        initSrcBuffer(channel.config().getOption(SO_RCVBUF));
+        initSrcBuffer(channel.options().getOption(SO_RCVBUF));
     }
 
     /**
-     * Initializes the src buffer. Should only be called by ChannelInboundHandler
+     * Initializes the src buffer. Should only be called by InboundHandler
      * implementations that have a ByteBuffer as source.
      *
      * @param sizeBytes the size of the srcBuffer in bytes.
      */
     protected final void initSrcBuffer(int sizeBytes) {
-        ChannelConfig config = channel.config();
+        ChannelOptions config = channel.options();
         src = (S) newByteBuffer(sizeBytes, config.getOption(DIRECT_BUF));
     }
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.networking;
 
 /**
- * Represents something that can be written to a {@link Channel}
+ * Represents a payload to can be written to a {@link Channel}
  *
  * There are different types of OutboundFrame:
  * <ol>

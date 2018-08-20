@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
-import com.hazelcast.internal.networking.ChannelConfig;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelOptions;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.ascii.TextDecoder;
@@ -44,14 +44,14 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
- * A {@link ChannelInboundHandler} that reads the protocol bytes
+ * A {@link InboundHandler} that reads the protocol bytes
  * {@link com.hazelcast.nio.Protocols} and based on the protocol it creates the
  * appropriate handlers.
  *
  * The ProtocolDecoder doesn't forward to the dst; it replaces itself once the
  * protocol bytes are known. So that is why the Void type for dst.
  */
-public class ProtocolDecoder extends ChannelInboundHandler<ByteBuffer, Void> {
+public class ProtocolDecoder extends InboundHandler<ByteBuffer, Void> {
 
     private final IOService ioService;
     private final ProtocolEncoder protocolEncoder;
@@ -106,7 +106,7 @@ public class ProtocolDecoder extends ChannelInboundHandler<ByteBuffer, Void> {
     }
 
     private void initChannelForCluster() {
-        channel.config()
+        channel.options()
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE);
 
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
@@ -115,7 +115,7 @@ public class ProtocolDecoder extends ChannelInboundHandler<ByteBuffer, Void> {
     }
 
     private void initChannelForClient() {
-        channel.config()
+        channel.options()
                 .setOption(SO_RCVBUF, clientRcvBuf())
                 // clients dont support direct buffers
                 .setOption(DIRECT_BUF, false);
@@ -125,7 +125,7 @@ public class ProtocolDecoder extends ChannelInboundHandler<ByteBuffer, Void> {
     }
 
     private void initChannelForText(String protocol) {
-        ChannelConfig config = channel.config();
+        ChannelOptions config = channel.options();
 
         config.setOption(SO_RCVBUF, clientRcvBuf());
 

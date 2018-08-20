@@ -18,7 +18,7 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.tcp.EventLoopGroupFactory;
+import com.hazelcast.nio.tcp.NetworkingFactory;
 import com.hazelcast.nio.tcp.MockIOService;
 import com.hazelcast.nio.tcp.PlainChannelInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
@@ -28,14 +28,14 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SE
 import static com.hazelcast.spi.properties.GroupProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
 
-public class SelectWithSelectorFix_NioEventLoopGroupFactory implements EventLoopGroupFactory {
+public class SelectWithSelectorFix_NioNetworkingFactory implements NetworkingFactory {
 
     @Override
-    public NioEventLoopGroup create(MockIOService ioService, MetricsRegistry metricsRegistry) {
+    public NioNetworking create(MockIOService ioService, MetricsRegistry metricsRegistry) {
         HazelcastProperties properties = ioService.properties();
         LoggingService loggingService = ioService.loggingService;
-        return new NioEventLoopGroup(
-                new NioEventLoopGroup.Context()
+        return new NioNetworking(
+                new NioNetworking.Context()
                         .loggingService(loggingService)
                         .metricsRegistry(metricsRegistry)
                         .threadNamePrefix(ioService.getHazelcastName())

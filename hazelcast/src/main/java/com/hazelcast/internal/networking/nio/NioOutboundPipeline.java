@@ -19,8 +19,8 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.ChannelOutboundPipeline;
+import com.hazelcast.internal.networking.OutboundHandler;
+import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
@@ -49,7 +49,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public final class NioOutboundPipeline
         extends NioPipeline
-        implements Supplier<OutboundFrame>, ChannelOutboundPipeline {
+        implements Supplier<OutboundFrame>, OutboundPipeline {
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "writeQueueSize")
@@ -58,7 +58,7 @@ public final class NioOutboundPipeline
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
 
-    private ChannelOutboundHandler[] handlers = new ChannelOutboundHandler[0];
+    private OutboundHandler[] handlers = new OutboundHandler[0];
     private ByteBuffer sendBuffer;
 
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
@@ -160,12 +160,12 @@ public final class NioOutboundPipeline
     }
 
     /**
-     * Makes sure this ChannelOutboundHandler is scheduled to be executed by the IO thread.
+     * Makes sure this OutboundHandler is scheduled to be executed by the IO thread.
      * <p/>
      * This call is made by 'outside' threads that interact with the connection. For example when a frame is placed
      * on the connection to be written. It will never be made by an IO thread.
      * <p/>
-     * If the ChannelOutboundHandler already is scheduled, the call is ignored.
+     * If the OutboundHandler already is scheduled, the call is ignored.
      */
     private void schedule() {
         if (scheduled.get()) {
@@ -187,10 +187,10 @@ public final class NioOutboundPipeline
     public void process() throws Exception {
         processCount.inc();
 
-        ChannelOutboundHandler[] localHandlers = handlers;
+        OutboundHandler[] localHandlers = handlers;
         HandlerStatus pipelineStatus = CLEAN;
         for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
-            ChannelOutboundHandler handler = localHandlers[handlerIndex];
+            OutboundHandler handler = localHandlers[handlerIndex];
 
             HandlerStatus handlerStatus = handler.onWrite();
 
@@ -256,7 +256,7 @@ public final class NioOutboundPipeline
         // So there are frames, but we just unscheduled ourselves. If we don't try to reschedule, then these
         // Frames are at risk not to be send.
         if (!scheduled.compareAndSet(false, true)) {
-            //someone else managed to schedule this ChannelOutboundHandler, so we are done.
+            //someone else managed to schedule this OutboundHandler, so we are done.
             return;
         }
 
@@ -310,15 +310,15 @@ public final class NioOutboundPipeline
     }
 
     @Override
-    public ChannelOutboundPipeline remove(ChannelOutboundHandler handler) {
+    public OutboundPipeline remove(OutboundHandler handler) {
         return replace(handler);
     }
 
     @Override
-    public ChannelOutboundPipeline addLast(ChannelOutboundHandler... addedHandlers) {
+    public OutboundPipeline addLast(OutboundHandler... addedHandlers) {
         checkNotNull(addedHandlers, "addedHandlers can't be null");
 
-        for (ChannelOutboundHandler addedHandler : addedHandlers) {
+        for (OutboundHandler addedHandler : addedHandlers) {
             addedHandler.setChannel(channel).handlerAdded();
         }
         updatePipeline(append(handlers, addedHandlers));
@@ -326,28 +326,28 @@ public final class NioOutboundPipeline
     }
 
     @Override
-    public ChannelOutboundPipeline replace(ChannelOutboundHandler oldHandler, ChannelOutboundHandler... addedHandlers) {
+    public OutboundPipeline replace(OutboundHandler oldHandler, OutboundHandler... addedHandlers) {
         checkNotNull(oldHandler, "oldHandler can't be null");
         checkNotNull(addedHandlers, "newHandler can't be null");
 
-        ChannelOutboundHandler[] newHandlers = replaceFirst(handlers, oldHandler, addedHandlers);
+        OutboundHandler[] newHandlers = replaceFirst(handlers, oldHandler, addedHandlers);
         if (newHandlers == handlers) {
             throw new IllegalArgumentException("handler " + oldHandler + " isn't part of the pipeline");
         }
 
-        for (ChannelOutboundHandler addedHandler : addedHandlers) {
+        for (OutboundHandler addedHandler : addedHandlers) {
             addedHandler.setChannel(channel).handlerAdded();
         }
         updatePipeline(newHandlers);
         return this;
     }
 
-    private void updatePipeline(ChannelOutboundHandler[] newHandlers) {
+    private void updatePipeline(OutboundHandler[] newHandlers) {
         this.handlers = newHandlers;
         this.sendBuffer = newHandlers.length == 0 ? null : (ByteBuffer) newHandlers[newHandlers.length - 1].dst();
 
-        ChannelOutboundHandler prev = null;
-        for (ChannelOutboundHandler handler : handlers) {
+        OutboundHandler prev = null;
+        for (OutboundHandler handler : handlers) {
             if (prev == null) {
                 handler.src(this);
             } else {
@@ -363,7 +363,7 @@ public final class NioOutboundPipeline
     // useful for debugging
     private String pipelineToString() {
         StringBuilder sb = new StringBuilder("out-pipeline[");
-        ChannelOutboundHandler[] handlers = this.handlers;
+        OutboundHandler[] handlers = this.handlers;
         for (int k = 0; k < handlers.length; k++) {
             if (k > 0) {
                 sb.append("->-");
@@ -375,7 +375,7 @@ public final class NioOutboundPipeline
     }
 
     @Override
-    public ChannelOutboundPipeline wakeup() {
+    public OutboundPipeline wakeup() {
         addTaskAndWakeup(this);
         return this;
     }

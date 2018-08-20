@@ -19,7 +19,7 @@ package com.hazelcast.internal.networking;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * A {@link ChannelConfig} option for the {@link ChannelConfig}.
+ * A {@link ChannelOptions} option for the {@link ChannelOptions}.
  *
  * @param <T> the type of the value for the option.
  */

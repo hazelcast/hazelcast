@@ -20,7 +20,7 @@ package com.hazelcast.internal.networking;
  * The outbound pipeline of a {@link Channel}. So all data that gets
  * written to the network, goes through the outbound pipeline.
  */
-public interface ChannelOutboundPipeline {
+public interface OutboundPipeline {
 
 
     /**
@@ -34,10 +34,10 @@ public interface ChannelOutboundPipeline {
      * @param handlers the handlers to add.
      * @return this
      */
-    ChannelOutboundPipeline addLast(ChannelOutboundHandler... handlers);
+    OutboundPipeline addLast(OutboundHandler... handlers);
 
     /**
-     * Replaces the old ChannelOutboundHandler by the new ones. So if there
+     * Replaces the old OutboundHandler by the new ones. So if there
      * is a sequence of handlers [H1,H2,H3] and H2 gets replaced by [H4,H5]
      * the new pipeline will be [H1,H4,H5,H3].
      *
@@ -52,7 +52,7 @@ public interface ChannelOutboundPipeline {
      * @throws IllegalArgumentException is the oldHandler isn't part of this
      *                                  pipeline.
      */
-    ChannelOutboundPipeline replace(ChannelOutboundHandler oldHandler, ChannelOutboundHandler... newHandlers);
+    OutboundPipeline replace(OutboundHandler oldHandler, OutboundHandler... newHandlers);
 
     /**
      * Removes the given handler from the pipeline.
@@ -64,7 +64,7 @@ public interface ChannelOutboundPipeline {
      * @throws IllegalArgumentException is the handler isn't part of this
      *                                  pipeline.
      */
-    ChannelOutboundPipeline remove(ChannelOutboundHandler handler);
+    OutboundPipeline remove(OutboundHandler handler);
 
     /**
      * Request to flush all data to flush from the handlers to
@@ -86,5 +86,5 @@ public interface ChannelOutboundPipeline {
      *
      * @return this
      */
-    ChannelOutboundPipeline wakeup();
+    OutboundPipeline wakeup();
 }

@@ -71,14 +71,14 @@ public class AbstractChannelTest {
     private static class TestChannel extends AbstractChannel {
 
         private boolean throwExceptionOnClose;
-        private final ChannelConfig config = mock(ChannelConfig.class);
+        private final ChannelOptions config = mock(ChannelOptions.class);
 
         TestChannel(SocketChannel socketChannel, boolean clientMode) {
             super(socketChannel, clientMode);
         }
 
         @Override
-        public ChannelConfig config() {
+        public ChannelOptions options() {
             return config;
         }
 
@@ -95,13 +95,13 @@ public class AbstractChannelTest {
         }
 
         @Override
-        public ChannelInboundPipeline inboundPipeline() {
-            return mock(ChannelInboundPipeline.class);
+        public InboundPipeline inboundPipeline() {
+            return mock(InboundPipeline.class);
         }
 
         @Override
-        public ChannelOutboundPipeline outboundPipeline() {
-            return mock(ChannelOutboundPipeline.class);
+        public OutboundPipeline outboundPipeline() {
+            return mock(OutboundPipeline.class);
         }
 
         @Override

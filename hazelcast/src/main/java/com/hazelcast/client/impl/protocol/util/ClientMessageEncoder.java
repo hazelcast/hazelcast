@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.util.function.Supplier;
 
@@ -28,9 +28,9 @@ import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.nio.IOUtil.compactOrClear;
 
 /**
- * A {@link ChannelOutboundHandler} for the new-client. It writes ClientMessages to the ByteBuffer.
+ * A {@link OutboundHandler} for the new-client. It writes ClientMessages to the ByteBuffer.
  */
-public class ClientMessageEncoder extends ChannelOutboundHandler<Supplier<ClientMessage>, ByteBuffer> {
+public class ClientMessageEncoder extends OutboundHandler<Supplier<ClientMessage>, ByteBuffer> {
 
     private ClientMessage message;
 

@@ -17,15 +17,15 @@
 package com.hazelcast.internal.networking;
 
 /**
- * The ChannelInboundPipeline is pipeline responsible for inbound traffic.
+ * The InboundPipeline is pipeline responsible for inbound traffic.
  *
  * For example there could be a TLSDecoder followed by a PacketDecoder.
  *
- * A ChannelInboundPipeline contains a sequence of {@link ChannelInboundHandler}
+ * A InboundPipeline contains a sequence of {@link InboundHandler}
  * instances and the pipeline can be dynamically be modified.
  *
  * <h1>Spurious wakeups</h1>
- * ChannelInboundHandlers/ChannelOutboundHandlers need to be able to deal with
+ * InboundHandlers/OutboundHandlers need to be able to deal with
  * spurious wakeups. E.g. it could be that a PacketDecoder is called without
  * any Packets being available.
  *
@@ -35,7 +35,7 @@ package com.hazelcast.internal.networking;
  * PacketDecoder, the whole pipeline (in this case the PacketDecoder) is
  * automatically reprocessed.
  */
-public interface ChannelInboundPipeline {
+public interface InboundPipeline {
 
     /**
      * Adds the handlers at the end of the pipeline.
@@ -48,10 +48,10 @@ public interface ChannelInboundPipeline {
      * @param handlers the handlers to add
      * @return this
      */
-    ChannelInboundPipeline addLast(ChannelInboundHandler... handlers);
+    InboundPipeline addLast(InboundHandler... handlers);
 
     /**
-     * Replaces the old ChannelInboundHandler by the new ones. So if there
+     * Replaces the old InboundHandler by the new ones. So if there
      * is a sequence of handlers [H1,H2,H3] and H2 gets replaced by [H4,H5]
      * the new pipeline will be [H1,H4,H5,H3].
      *
@@ -66,7 +66,7 @@ public interface ChannelInboundPipeline {
      * @throws IllegalArgumentException is the oldHandler isn't part of this
      *                                  pipeline.
      */
-    ChannelInboundPipeline replace(ChannelInboundHandler oldHandler, ChannelInboundHandler... newHandlers);
+    InboundPipeline replace(InboundHandler oldHandler, InboundHandler... newHandlers);
 
     /**
      * Removes the given handler from the pipeline.
@@ -78,7 +78,7 @@ public interface ChannelInboundPipeline {
      * @throws IllegalArgumentException is the handler isn't part of this
      *                                  pipeline.
      */
-    ChannelInboundPipeline remove(ChannelInboundHandler handler);
+    InboundPipeline remove(InboundHandler handler);
 
 
     /**
@@ -99,5 +99,5 @@ public interface ChannelInboundPipeline {
      *
      * @return this
      */
-    ChannelInboundPipeline wakeup();
+    InboundPipeline wakeup();
 }

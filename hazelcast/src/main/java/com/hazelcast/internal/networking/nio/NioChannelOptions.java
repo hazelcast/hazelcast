@@ -18,7 +18,7 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelConfig;
+import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.networking.ChannelOption;
 
 import java.net.Socket;
@@ -39,12 +39,12 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Contains the configuration for a {@link Channel}.
  */
-final class NioChannelConfig implements ChannelConfig {
+final class NioChannelOptions implements ChannelOptions {
 
     private final Map<String, Object> values = new ConcurrentHashMap<String, Object>();
     private final Socket socket;
 
-    NioChannelConfig(Socket socket) {
+    NioChannelOptions(Socket socket) {
         setOption(DIRECT_BUF, false);
         this.socket = socket;
     }
@@ -75,7 +75,7 @@ final class NioChannelConfig implements ChannelConfig {
     }
 
     @Override
-    public <T> NioChannelConfig setOption(ChannelOption<T> option, T value) {
+    public <T> NioChannelOptions setOption(ChannelOption<T> option, T value) {
         checkNotNull(option, "option can't be null");
         checkNotNull(value, "value can't be null");
 

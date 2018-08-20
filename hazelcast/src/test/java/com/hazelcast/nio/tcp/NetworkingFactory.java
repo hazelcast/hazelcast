@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.networking.EventLoopGroup;
+import com.hazelcast.internal.networking.Networking;
 
-public interface EventLoopGroupFactory {
-    EventLoopGroup create(MockIOService ioService, MetricsRegistry metricsRegistry);
+public interface NetworkingFactory {
+    Networking create(MockIOService ioService, MetricsRegistry metricsRegistry);
 }

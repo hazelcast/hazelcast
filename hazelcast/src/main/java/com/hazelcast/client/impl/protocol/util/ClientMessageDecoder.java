@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.networking.HandlerStatus;
-import com.hazelcast.internal.networking.nio.ChannelInboundHandlerWithCounters;
+import com.hazelcast.internal.networking.nio.InboundHandlerWithCounters;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
 import com.hazelcast.util.function.Consumer;
@@ -36,7 +36,7 @@ import static com.hazelcast.nio.IOUtil.compactOrClear;
  *
  * Fragmented messages are merged into single messages before processed.
  */
-public class ClientMessageDecoder extends ChannelInboundHandlerWithCounters<ByteBuffer, Consumer<ClientMessage>> {
+public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer, Consumer<ClientMessage>> {
 
     private final Long2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Long2ObjectHashMap<BufferBuilder>();
     private final Connection connection;

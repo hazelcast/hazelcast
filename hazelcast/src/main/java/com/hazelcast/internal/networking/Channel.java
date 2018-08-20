@@ -35,11 +35,11 @@ import java.util.concurrent.ConcurrentMap;
  * with selectors to transport data. In the future also other channel implementations
  * could be added, e.g. UDP based.
  *
- * Channel data is read using a {@link ChannelInboundHandler}. E.g data from a socket
- * is received and needs to get processed. The {@link ChannelInboundHandler} can convert
+ * Channel data is read using a {@link InboundHandler}. E.g data from a socket
+ * is received and needs to get processed. The {@link InboundHandler} can convert
  * this to e.g. a Packet.
  *
- * Channel data is written using a {@link ChannelOutboundHandler}. E.g. a packet needs
+ * Channel data is written using a {@link OutboundHandler}. E.g. a packet needs
  * to be converted to bytes.
  *
  * A Channel gets initialized using the {@link ChannelInitializer}.
@@ -79,13 +79,13 @@ import java.util.concurrent.ConcurrentMap;
 public interface Channel extends Closeable {
 
     /**
-     * Returns the {@link ChannelConfig} of this Channel.
+     * Returns the {@link ChannelOptions} of this Channel.
      *
-     * Call is threadsafe; but calls to the ChannelConfig are not.
+     * Call is threadsafe; but calls to the ChannelOptions are not.
      *
      * @return the config for this channel. Returned value will never be null.
      */
-    ChannelConfig config();
+    ChannelOptions options();
 
     /**
      * Returns the attribute map.
@@ -99,22 +99,22 @@ public interface Channel extends Closeable {
     ConcurrentMap attributeMap();
 
     /**
-     * Returns the {@link ChannelInboundPipeline} that belongs to this Channel.
+     * Returns the {@link InboundPipeline} that belongs to this Channel.
      *
-     * This method is threadsafe, but most methods on the {@link ChannelInboundPipeline} are not!
+     * This method is threadsafe, but most methods on the {@link InboundPipeline} are not!
      *
-     * @return the ChannelInboundPipeline.
+     * @return the InboundPipeline.
      */
-    ChannelInboundPipeline inboundPipeline();
+    InboundPipeline inboundPipeline();
 
     /**
-     * Returns the {@link ChannelOutboundPipeline} that belongs to this Channel.
+     * Returns the {@link OutboundPipeline} that belongs to this Channel.
      *
-     * This method is threadsafe, but most methods on the {@link ChannelOutboundPipeline} are not!
+     * This method is threadsafe, but most methods on the {@link OutboundPipeline} are not!
      *
-     * @return the ChannelOutboundPipeline.
+     * @return the OutboundPipeline.
      */
-    ChannelOutboundPipeline outboundPipeline();
+    OutboundPipeline outboundPipeline();
 
     /**
      * @see java.nio.channels.SocketChannel#socket()

@@ -53,7 +53,7 @@ public class ClientPlainChannelInitializer implements ChannelInitializer {
 
     @Override
     public void initChannel(Channel channel) {
-        channel.config()
+        channel.options()
                 .setOption(SO_SNDBUF, KILO_BYTE * socketOptions.getBufferSize())
                 .setOption(SO_RCVBUF, KILO_BYTE * socketOptions.getBufferSize())
                 .setOption(SO_REUSEADDR, socketOptions.isReuseAddress())
