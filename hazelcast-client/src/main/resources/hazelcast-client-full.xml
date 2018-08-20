@@ -90,9 +90,18 @@
         </socket-interceptor>
 
         <ssl enabled="false">
-            <factory-class-name>com.hazelcast.examples.MySslFactory</factory-class-name>
+            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
             <properties>
                 <property name="protocol">TLS</property>
+
+                <property name="trustStore">/opt/hazelcast-client.truststore</property>
+                <property name="trustStorePassword">secret.123456</property>
+                <property name="trustStoreType">JKS</property>
+
+                <!-- Following properties are only needed when the mutual authentication is used. -->
+                <property name="keyStore">/opt/hazelcast-client.keystore</property>
+                <property name="keyStorePassword">keystorePassword123</property>
+                <property name="keyStoreType">JKS</property>
             </properties>
         </ssl>
         <aws enabled="true" connection-timeout-seconds="11">

@@ -271,9 +271,15 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertNotNull(sslConfig);
         assertFalse(sslConfig.isEnabled());
 
-        assertEquals("com.hazelcast.examples.MySslFactory", sslConfig.getFactoryClassName());
-        assertEquals(1, sslConfig.getProperties().size());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
+        assertEquals(7, sslConfig.getProperties().size());
         assertEquals("TLS", sslConfig.getProperties().get("protocol"));
+        assertEquals("/opt/hazelcast-client.truststore", sslConfig.getProperties().get("trustStore"));
+        assertEquals("secret.123456", sslConfig.getProperties().get("trustStorePassword"));
+        assertEquals("JKS", sslConfig.getProperties().get("trustStoreType"));
+        assertEquals("/opt/hazelcast-client.keystore", sslConfig.getProperties().get("keyStore"));
+        assertEquals("keystorePassword123", sslConfig.getProperties().get("keyStorePassword"));
+        assertEquals("JKS", sslConfig.getProperties().get("keyStoreType"));
     }
 
     @Test
