@@ -43,7 +43,9 @@ import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 /**
  * Replicates all IMap-states of this partition to a replica partition.
  */
-public class MapReplicationOperation extends Operation implements IdentifiedDataSerializable, Versioned, TargetAware {
+public class MapReplicationOperation
+        extends Operation
+        implements IdentifiedDataSerializable, Versioned, TargetAware {
 
     // keep these fields `protected`, extended in another context.
     protected final MapReplicationStateHolder mapReplicationStateHolder = new MapReplicationStateHolder(this);

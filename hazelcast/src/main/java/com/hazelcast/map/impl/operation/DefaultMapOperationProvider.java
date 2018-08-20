@@ -51,8 +51,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutOperation(String name, Data key, Data value, long ttl) {
-        return new PutOperation(name, key, value, ttl);
+    public MapOperation createPutOperation(String name, Data key, Data value, long ttl, long maxIdle) {
+        return new PutOperation(name, key, value, ttl, maxIdle);
     }
 
     @Override
@@ -61,18 +61,18 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl) {
-        return new SetOperation(name, dataKey, value, ttl);
+    public MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
+        return new SetOperation(name, dataKey, value, ttl, maxIdle);
     }
 
     @Override
-    public MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl) {
-        return new PutIfAbsentOperation(name, key, value, ttl);
+    public MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl, long maxIdle) {
+        return new PutIfAbsentOperation(name, key, value, ttl, maxIdle);
     }
 
     @Override
-    public MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl) {
-        return new PutTransientOperation(name, key, value, ttl);
+    public MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl, long maxIdle) {
+        return new PutTransientOperation(name, key, value, ttl, maxIdle);
     }
 
     @Override

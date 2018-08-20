@@ -43,12 +43,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.getIdlenessStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
@@ -73,7 +73,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * Used in expiration logic for traversing entries. Initializes lazily.
      */
     protected Iterator<Record> expirationIterator;
-    protected volatile boolean hasEntryWithCustomTTL;
+    protected volatile boolean hasEntryWithCustomExpiration;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -92,7 +92,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      */
     private boolean isRecordStoreExpirable() {
         MapConfig mapConfig = mapContainer.getMapConfig();
-        return hasEntryWithCustomTTL || mapConfig.getMaxIdleSeconds() > 0
+        return hasEntryWithCustomExpiration || mapConfig.getMaxIdleSeconds() > 0
                 || mapConfig.getTimeToLiveSeconds() > 0;
     }
 
@@ -182,9 +182,9 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return evictor != NULL_EVICTOR && evictor.checkEvictable(this);
     }
 
-    protected void markRecordStoreExpirable(long ttl) {
-        if (!isInfiniteTTL(ttl)) {
-            hasEntryWithCustomTTL = true;
+    protected void markRecordStoreExpirable(long ttl, long maxIdle) {
+        if (!isInfiniteTTL(ttl) || isMaxIdleDefined(maxIdle)) {
+            hasEntryWithCustomExpiration = true;
         }
 
         if (isRecordStoreExpirable()) {
@@ -199,6 +199,10 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     // this method is overridden on ee
     protected boolean isInfiniteTTL(long ttl) {
         return !(ttl > 0L && ttl < Long.MAX_VALUE);
+    }
+
+    protected boolean isMaxIdleDefined(long maxIdle) {
+        return maxIdle > 0L;
     }
 
     /**
@@ -241,8 +245,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return false;
         }
 
-        long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
-        if (maxIdleMillis == Long.MAX_VALUE) {
+        long maxIdleMillis = getRecordMaxIdleOrConfig(record);
+        if (maxIdleMillis < 1L || maxIdleMillis == Long.MAX_VALUE) {
             return false;
         }
         long idlenessStartTime = getIdlenessStartTime(record);
@@ -255,7 +259,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (record == null) {
             return false;
         }
-        long ttl = record.getTtl();
+        long ttl = getRecordTTLOrConfig(record);
         // when ttl is zero or negative or Long.MAX_VALUE, entry should live forever.
         if (ttl < 1L || ttl == Long.MAX_VALUE) {
             return false;
@@ -264,6 +268,22 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         long ttlMillis = calculateExpirationWithDelay(ttl, expiryDelayMillis, backup);
         long elapsedMillis = now - ttlStartTime;
         return elapsedMillis >= ttlMillis;
+    }
+
+    private long getRecordMaxIdleOrConfig(Record record) {
+        if (record.getMaxIdle() != DEFAULT_MAX_IDLE) {
+            return record.getMaxIdle();
+        }
+
+        return TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getMaxIdleSeconds());
+    }
+
+    private long getRecordTTLOrConfig(Record record) {
+        if (record.getTtl() != DEFAULT_TTL) {
+            return record.getTtl();
+        }
+
+        return TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getTimeToLiveSeconds());
     }
 
     @Override
@@ -376,31 +396,30 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected void accessRecord(Record record, long now) {
         record.onAccess(now);
         updateStatsOnGet(now);
-        long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
-        setExpirationTime(record, maxIdleMillis);
+        setExpirationTime(record);
     }
 
     protected void mergeRecordExpiration(Record record, EntryView mergingEntry) {
-        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getCreationTime(), mergingEntry.getLastAccessTime(),
-                mergingEntry.getLastUpdateTime());
+        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getMaxIdle(), mergingEntry.getCreationTime(),
+                mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
     }
 
     protected void mergeRecordExpiration(Record record, MapMergeTypes mergingEntry) {
-        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getCreationTime(), mergingEntry.getLastAccessTime(),
-                mergingEntry.getLastUpdateTime());
+        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getMaxIdle(), mergingEntry.getCreationTime(),
+                mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
     }
 
-    private void mergeRecordExpiration(Record record, long ttlMillis, long creationTime, long lastAccessTime,
+    private void mergeRecordExpiration(Record record, long ttlMillis, long maxIdleMillis, long creationTime, long lastAccessTime,
                                        long lastUpdateTime) {
         record.setTtl(ttlMillis);
+        record.setMaxIdle(maxIdleMillis);
         record.setCreationTime(creationTime);
         record.setLastAccessTime(lastAccessTime);
         record.setLastUpdateTime(lastUpdateTime);
 
-        long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
-        setExpirationTime(record, maxIdleMillis);
+        setExpirationTime(record);
 
-        markRecordStoreExpirable(record.getTtl());
+        markRecordStoreExpirable(record.getTtl(), record.getMaxIdle());
     }
 
     /**

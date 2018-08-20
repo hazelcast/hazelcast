@@ -55,8 +55,8 @@ public class MapMessageEncodeDecodeTest {
 
     @Test
     public void shouldEncodeDecodeCorrectly_PUT() {
-        final int calculatedSize = MapPutCodec.RequestParameters.calculateDataSize(NAME, DATA, DATA, THE_LONG, THE_LONG);
-        ClientMessage cmEncode = MapPutCodec.encodeRequest(NAME, DATA, DATA, THE_LONG, THE_LONG);
+        final int calculatedSize = MapPutCodec.RequestParameters.calculateDataSize(NAME, DATA, DATA, THE_LONG, THE_LONG, THE_LONG);
+        ClientMessage cmEncode = MapPutCodec.encodeRequest(NAME, DATA, DATA, THE_LONG, THE_LONG, THE_LONG);
         cmEncode.setVersion((short) 3).addFlag(ClientMessage.BEGIN_AND_END_FLAGS)
                 .setCorrelationId(Long.MAX_VALUE).setPartitionId(77);
 
@@ -77,6 +77,7 @@ public class MapMessageEncodeDecodeTest {
         assertEquals(DATA, decodeParams.value);
         assertEquals(THE_LONG, decodeParams.threadId);
         assertEquals(THE_LONG, decodeParams.ttl);
+        assertEquals(THE_LONG, decodeParams.maxIdle);
     }
 
 }

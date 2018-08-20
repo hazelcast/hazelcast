@@ -36,7 +36,7 @@ public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     public TxnUnlockBackupOperation(String name, Data dataKey, String ownerUuid) {
-        super(name, dataKey, -1);
+        super(name, dataKey, -1, -1);
         this.ownerUuid = ownerUuid;
     }
 

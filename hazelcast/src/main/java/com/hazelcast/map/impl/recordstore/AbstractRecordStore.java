@@ -43,7 +43,7 @@ import com.hazelcast.wan.impl.CallerProvenance;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 
 
 /**
@@ -107,12 +107,12 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Object value, long ttlMillis, long now) {
+    public Record createRecord(Object value, long ttlMillis, long maxIdle, long now) {
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
 
-        setTTLAndUpdateExpiryTime(ttlMillis, record, mapContainer.getMapConfig(), true);
+        setExpirationTimes(ttlMillis, maxIdle, record, mapContainer.getMapConfig(), true);
         updateStatsOnPut(false, now);
         return record;
     }
@@ -238,4 +238,5 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         stats.setLastAccessTime(now);
         stats.increaseHits();
     }
+
 }

@@ -384,10 +384,11 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected Data putInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+    protected Data putInternal(Object key, Data value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
-        long timeInMillis = getTimeInMillis(ttl, timeunit);
-        MapOperation operation = operationProvider.createPutOperation(name, keyData, value, timeInMillis);
+        long timeInMillis = getTimeInMillis(ttl, ttlUnit);
+        long maxIdleInMillis = getTimeInMillis(maxIdle, maxIdleUnit);
+        MapOperation operation = operationProvider.createPutOperation(name, keyData, value, timeInMillis, maxIdleInMillis);
         return (Data) invokeOperation(keyData, operation);
     }
 
@@ -398,17 +399,21 @@ abstract class MapProxySupport<K, V>
         return (Boolean) invokeOperation(keyData, operation);
     }
 
-    protected Data putIfAbsentInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+    protected Data putIfAbsentInternal(Object key, Data value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
-        long timeInMillis = getTimeInMillis(ttl, timeunit);
-        MapOperation operation = operationProvider.createPutIfAbsentOperation(name, keyData, value, timeInMillis);
+        long timeInMillis = getTimeInMillis(ttl, ttlUnit);
+        long maxIdleInMillis = getTimeInMillis(maxIdle, maxIdleUnit);
+        MapOperation operation = operationProvider
+                .createPutIfAbsentOperation(name, keyData, value, timeInMillis, maxIdleInMillis);
         return (Data) invokeOperation(keyData, operation);
     }
 
-    protected void putTransientInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+    protected void putTransientInternal(Object key, Data value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
-        long timeInMillis = getTimeInMillis(ttl, timeunit);
-        MapOperation operation = operationProvider.createPutTransientOperation(name, keyData, value, timeInMillis);
+        long timeInMillis = getTimeInMillis(ttl, ttlUnit);
+        long maxIdleInMillis = getTimeInMillis(maxIdle, maxIdleUnit);
+        MapOperation operation = operationProvider
+                .createPutTransientOperation(name, keyData, value, timeInMillis, maxIdleInMillis);
         invokeOperation(keyData, operation);
     }
 
@@ -438,10 +443,12 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected InternalCompletableFuture<Data> putAsyncInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+    protected InternalCompletableFuture<Data> putAsyncInternal(Object key, Data value, long ttl, TimeUnit ttlUnit,
+                                                               long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
-        MapOperation operation = operationProvider.createPutOperation(name, keyData, value, getTimeInMillis(ttl, timeunit));
+        MapOperation operation = operationProvider.createPutOperation(name, keyData, value,
+                getTimeInMillis(ttl, ttlUnit), getTimeInMillis(maxIdle, maxIdleUnit));
         operation.setThreadId(getThreadId());
         try {
             long startTimeNanos = System.nanoTime();
@@ -456,10 +463,12 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected InternalCompletableFuture<Data> setAsyncInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+    protected InternalCompletableFuture<Data> setAsyncInternal(Object key, Data value, long ttl, TimeUnit timeunit,
+                                                               long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
-        MapOperation operation = operationProvider.createSetOperation(name, keyData, value, getTimeInMillis(ttl, timeunit));
+        MapOperation operation = operationProvider.createSetOperation(name, keyData, value,
+                getTimeInMillis(ttl, timeunit), getTimeInMillis(maxIdle, maxIdleUnit));
         operation.setThreadId(getThreadId());
         try {
             return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
@@ -482,9 +491,10 @@ abstract class MapProxySupport<K, V>
 
     // WARNING: when UpdateEvent is fired it does *NOT* contain the oldValue
     // see this: https://github.com/hazelcast/hazelcast/pull/6088#issuecomment-136025968
-    protected void setInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+    protected void setInternal(Object key, Data value, long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
-        MapOperation operation = operationProvider.createSetOperation(name, keyData, value, timeunit.toMillis(ttl));
+        MapOperation operation = operationProvider.createSetOperation(name, keyData, value,
+                getTimeInMillis(ttl, timeunit), getTimeInMillis(maxIdle, maxIdleUnit));
         invokeOperation(keyData, operation);
     }
 

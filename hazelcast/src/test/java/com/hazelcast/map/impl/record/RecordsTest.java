@@ -121,14 +121,16 @@ public class RecordsTest extends HazelcastTestSupport {
         Record record = new DataRecordWithStats();
         Records.applyRecordInfo(record, recordInfo);
 
-        assertEquals(now, record.getCreationTime());
-        assertEquals(now, record.getCreationTime());
-        assertEquals(now, record.getLastAccessTime());
-        assertEquals(now, record.getLastUpdateTime());
+        // The creation time of the record is based on base offset (classloading time) + delta of (now - base)
+        // This info is stored as seconds, so the ms resolution is lost. Therefore the times retrieved from the Record
+        // will always be slightly elevated (depends on the classloading time).
+        assertEquals(now, record.getCreationTime(), 1000);
+        assertEquals(now, record.getLastAccessTime(), 1000);
+        assertEquals(now, record.getLastUpdateTime(), 1000);
         assertEquals(123, record.getVersion());
         assertEquals(12, record.getHits());
-        assertEquals(now, record.getExpirationTime());
-        assertEquals(now, record.getLastStoredTime());
+        assertEquals(now, record.getExpirationTime(), 1000);
+        assertEquals(now, record.getLastStoredTime(), 1000);
     }
 
     @Test

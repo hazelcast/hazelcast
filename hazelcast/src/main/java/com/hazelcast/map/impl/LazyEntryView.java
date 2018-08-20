@@ -44,6 +44,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
     private long lastUpdateTime;
     private long version;
     private long ttl;
+    private long maxIdle;
 
     private SerializationService serializationService;
     private MapMergePolicy mergePolicy;
@@ -185,6 +186,16 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
 
     public LazyEntryView<K, V> setTtl(long ttl) {
         this.ttl = ttl;
+        return this;
+    }
+
+    @Override
+    public long getMaxIdle() {
+        return maxIdle;
+    }
+
+    public LazyEntryView<K, V> setMaxIdle(long maxIdle) {
+        this.maxIdle = maxIdle;
         return this;
     }
 }

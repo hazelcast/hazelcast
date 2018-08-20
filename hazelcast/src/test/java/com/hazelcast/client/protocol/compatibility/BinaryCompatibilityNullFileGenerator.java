@@ -300,7 +300,7 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
-    ClientMessage clientMessage = MapPutCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong   );
+    ClientMessage clientMessage = MapPutCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong ,   aLong   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -432,7 +432,7 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
-    ClientMessage clientMessage = MapTryPutCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong   );
+    ClientMessage clientMessage = MapTryPutCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong ,   aLong   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -444,7 +444,7 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
-    ClientMessage clientMessage = MapPutTransientCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong   );
+    ClientMessage clientMessage = MapPutTransientCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong ,   aLong   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -456,7 +456,7 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
-    ClientMessage clientMessage = MapPutIfAbsentCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong   );
+    ClientMessage clientMessage = MapPutIfAbsentCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong ,   aLong   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -468,7 +468,7 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
-    ClientMessage clientMessage = MapSetCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong   );
+    ClientMessage clientMessage = MapSetCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong ,   aLong   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }

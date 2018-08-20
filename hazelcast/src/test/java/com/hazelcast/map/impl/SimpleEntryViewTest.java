@@ -57,6 +57,7 @@ public class SimpleEntryViewTest extends HazelcastTestSupport {
                 + ", lastUpdateTime=" + entryView.getLastUpdateTime()
                 + ", version=" + entryView.getVersion()
                 + ", ttl=" + entryView.getTtl()
+                + ", maxIdle=" + entryView.getMaxIdle()
                 + '}';
     }
 }

@@ -112,4 +112,11 @@ public interface EntryView<K, V> {
      * @return the last set time to live in milliseconds.
      */
     long getTtl();
+
+    /**
+     * Returns the last set max idle time in milliseconds.
+     *
+     * @return the last set max idle time in milliseconds.
+     */
+    long getMaxIdle();
 }

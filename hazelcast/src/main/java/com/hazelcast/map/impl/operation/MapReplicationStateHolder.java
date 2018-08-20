@@ -58,6 +58,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -188,7 +189,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
                     final Data value = recordReplicationInfo.getValue();
-                    Record newRecord = recordStore.createRecord(value, DEFAULT_TTL, Clock.currentTimeMillis());
+                    Record newRecord = recordStore.createRecord(value, DEFAULT_TTL, DEFAULT_MAX_IDLE, Clock.currentTimeMillis());
                     applyRecordInfo(newRecord, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
 

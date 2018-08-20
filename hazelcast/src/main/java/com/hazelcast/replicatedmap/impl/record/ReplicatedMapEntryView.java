@@ -21,11 +21,15 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 
 import java.io.IOException;
 
-public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSerializable {
+import static com.hazelcast.internal.cluster.Versions.V3_11;
+
+public class ReplicatedMapEntryView<K, V>
+        implements EntryView, IdentifiedDataSerializable, Versioned {
 
     private static final int NOT_AVAILABLE = -1;
 
@@ -36,6 +40,7 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
     private long lastAccessTime;
     private long lastUpdateTime;
     private long ttl;
+    private long maxIdle;
 
     public ReplicatedMapEntryView() {
     }
@@ -125,6 +130,11 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         return ttl;
     }
 
+    @Override
+    public long getMaxIdle() {
+        return maxIdle;
+    }
+
     public ReplicatedMapEntryView<K, V> setTtl(long ttl) {
         this.ttl = ttl;
         return this;
@@ -139,6 +149,10 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(ttl);
+        //RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(V3_11)) {
+            out.writeLong(maxIdle);
+        }
     }
 
     @Override
@@ -150,6 +164,10 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         lastAccessTime = in.readLong();
         lastUpdateTime = in.readLong();
         ttl = in.readLong();
+        //RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(V3_11)) {
+            maxIdle = in.readLong();
+        }
     }
 
     @Override
