@@ -66,6 +66,7 @@ public class CacheStatisticsImpl
     /**
      * This field is not mutated (read only) so no need to define it as volatile.
      */
+    @Probe
     protected long creationTime;
 
     @Probe
@@ -117,6 +118,7 @@ public class CacheStatisticsImpl
         return lastUpdateTime;
     }
 
+    @Probe
     @Override
     public long getOwnedEntryCount() {
         if (cacheEntryCountResolver != null) {

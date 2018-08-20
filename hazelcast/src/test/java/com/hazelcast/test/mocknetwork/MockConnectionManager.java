@@ -19,6 +19,7 @@ package com.hazelcast.test.mocknetwork;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -40,6 +41,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
@@ -66,6 +68,7 @@ class MockConnectionManager implements ConnectionManager {
         this.scheduler = new ScheduledThreadPoolExecutor(4,
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "MockConnectionManager")));
         this.logger = ioService.getLoggingService().getLogger(MockConnectionManager.class);
+        node.nodeEngine.getMetricsRegistry().scanAndRegister(this, "tcp.connection");
     }
 
     @Override
@@ -232,16 +235,19 @@ class MockConnectionManager implements ConnectionManager {
     }
 
     @Override
+    @Probe(name = "activeCount", level = MANDATORY)
     public int getActiveConnectionCount() {
         return 0;
     }
 
     @Override
+    @Probe(name = "clientCount", level = MANDATORY)
     public int getCurrentClientConnections() {
         return 0;
     }
 
     @Override
+    @Probe(name = "count", level = MANDATORY)
     public int getConnectionCount() {
         return 0;
     }
