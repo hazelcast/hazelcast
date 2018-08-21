@@ -22,16 +22,13 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 
 /**
- * The Networking is responsible for processing registered channels.
- * Effectively it is the threading model for the io system.
+ * The Networking is an abstraction responsible for lower level networking services.
  *
- * An event loop is for example visible on the NioThread where we loop over the
- * selector events. The Networking is the group of all these thread
- * instances.
+ * Networking is based on a set of registered channel and
  *
- * The default implementation of this is the {@link NioNetworking} that
- * relies on selectors. But also different implementations can be added like
- * spinning, thread per connection, epoll based etc.
+ * The default implementation of this is {@link NioNetworking} that relies on
+ * selectors. But also different implementations can be added like spinning,
+ * thread per connection, epoll, UDP based etc.
  *
  * @see NioNetworking
  */
@@ -45,20 +42,24 @@ public interface Networking {
      * channel e.g. adding attributes. Once this is done the {@link Channel#start()}
      * needs to be called.
      *
+     * In the future we need to think about passing the socket channel because
+     * it binds Networking to tcp and this is not desirable.
+     *
      * @param socketChannel the socketChannel to register
-     * @param clientMode if the channel is made in clientMode or server mode
+     * @param clientMode    if the channel is made in clientMode or server mode
      * @return the created Channel
-     * @throws IOException
+     * @throws IOException when something failed while registering the
+     *                     socketChannel
      */
     Channel register(SocketChannel socketChannel, boolean clientMode) throws IOException;
 
     /**
-     * Starts this Networking.
+     * Starts Networking.
      */
     void start();
 
     /**
-     * Shuts down this Networking.
+     * Shuts down Networking.
      */
     void shutdown();
 }
