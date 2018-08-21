@@ -80,18 +80,20 @@ public interface OperationService {
 
     /**
      * Invokes an set of operation on selected set of partitions
-     * * <p/>
+     * <p/>
      * This method blocks until all operations complete.
      *
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
      * @param partitions       the partitions the operation should be executed on.
+     * @param <T>              type of result of operations returned by {@code operationFactory}
      * @return a Map with partitionId as key and the outcome of the operation as
      * value.
-     * @throws Exception
+     * @throws Exception if there was an exception while waiting for the results
+     *                   of the partition invocations
      */
-    Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
-                                            Collection<Integer> partitions) throws Exception;
+    <T> Map<Integer, T> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
+                                           Collection<Integer> partitions) throws Exception;
 
     /**
      * Invokes an set of operation on selected set of partitions

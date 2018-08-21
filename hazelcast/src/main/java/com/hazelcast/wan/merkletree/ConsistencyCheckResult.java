@@ -20,45 +20,51 @@ package com.hazelcast.wan.merkletree;
  * Result of the last WAN consistency check result
  */
 public class ConsistencyCheckResult {
-    private final int lastCheckedCount;
-    private final int lastDiffCount;
+    /**
+     * Number of checked partitions
+     */
+    private final int lastCheckedPartitionCount;
+    /**
+     * Number of partitions found to be inconsistent
+     */
+    private final int lastDiffPartitionCount;
 
     public ConsistencyCheckResult() {
-        lastCheckedCount = 0;
-        lastDiffCount = 0;
+        lastCheckedPartitionCount = 0;
+        lastDiffPartitionCount = 0;
     }
 
     /**
-     * Constructs the result of the merkle tree root comparison
+     * Constructs the result of the WAN consistency check comparison
      *
-     * @param lastCheckedCount the number of last checked objects
-     * @param lastDiffCount    the number of different objects
+     * @param lastCheckedPartitionCount the number of last checked partitions
+     * @param lastDiffPartitionCount    the number of different partitions
      */
-    public ConsistencyCheckResult(int lastCheckedCount,
-                                  int lastDiffCount) {
-        this.lastCheckedCount = lastCheckedCount;
-        this.lastDiffCount = lastDiffCount;
+    public ConsistencyCheckResult(int lastCheckedPartitionCount, int lastDiffPartitionCount) {
+        this.lastCheckedPartitionCount = lastCheckedPartitionCount;
+        this.lastDiffPartitionCount = lastDiffPartitionCount;
     }
 
-    public int getLastCheckedCount() {
-        return lastCheckedCount;
+    public int getLastCheckedPartitionCount() {
+        return lastCheckedPartitionCount;
     }
 
-    public int getLastDiffCount() {
-        return lastDiffCount;
+    public int getLastDiffPartitionCount() {
+        return lastDiffPartitionCount;
     }
 
     public boolean isRunning() {
-        return lastCheckedCount == -1 && lastDiffCount == -1;
+        return lastCheckedPartitionCount == -1 && lastDiffPartitionCount == -1;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public float getDiffPercentage() {
-        return lastCheckedCount != 0
-                ? (float) lastDiffCount / lastCheckedCount
+        return lastCheckedPartitionCount != 0
+                ? (float) lastDiffPartitionCount / lastCheckedPartitionCount * 100
                 : 0;
     }
 
     public boolean isDone() {
-        return lastCheckedCount > 0 && lastDiffCount > 0;
+        return lastCheckedPartitionCount > 0 && lastDiffPartitionCount > 0;
     }
 }
