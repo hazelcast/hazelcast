@@ -455,7 +455,7 @@ public abstract class HazelcastTestSupport {
             }
             sleepSeconds(1);
 
-            // if the system or JVM is really stressed we may oversleep to much and get a timeout
+            // if the system or JVM is really stressed we may oversleep too much and get a timeout
             if (System.currentTimeMillis() - startMillis > SECONDS.toMillis(durationSeconds)) {
                 break;
             }
@@ -873,22 +873,22 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static <E> void assertNotContainsAll(Collection<E> actual, Collection<E> expected) {
-        if (actual.containsAll(expected)) {
+    public static <E> void assertNotContainsAll(Collection<E> actual, Collection<E> notExpected) {
+        if (actual.containsAll(notExpected)) {
             fail(format("Collection %s (%d) contained unexpected %s (%d)",
-                    actual, actual.size(), expected, expected.size()));
+                    actual, actual.size(), notExpected, notExpected.size()));
         }
     }
 
-    public static void assertContains(String string, String expected) {
-        if (!string.contains(expected)) {
-            fail(format("'%s' didn't contain expected '%s'", string, expected));
+    public static void assertContains(String actual, String expected) {
+        if (!actual.contains(expected)) {
+            fail(format("'%s' didn't contain expected '%s'", actual, expected));
         }
     }
 
-    public static void assertNotContains(String string, String expected) {
-        if (string.contains(expected)) {
-            fail(format("'%s' contained unexpected '%s'", string, expected));
+    public static void assertNotContains(String actual, String notExpected) {
+        if (actual.contains(notExpected)) {
+            fail(format("'%s' contained unexpected '%s'", actual, notExpected));
         }
     }
 
@@ -976,16 +976,16 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static void assertIterableEquals(Iterable iterable, Object... values) {
-        List<Object> actual = new ArrayList<Object>();
-        for (Object object : iterable) {
-            actual.add(object);
+    public static void assertIterableEquals(Iterable actual, Object... expected) {
+        List<Object> actualList = new ArrayList<Object>();
+        for (Object object : actual) {
+            actualList.add(object);
         }
 
-        List expected = asList(values);
+        List expectedList = asList(expected);
 
-        assertEquals("size should match", expected.size(), actual.size());
-        assertEquals(expected, actual);
+        assertEquals("size should match", expectedList.size(), actualList.size());
+        assertEquals(expectedList, actualList);
     }
 
     public static void assertCompletesEventually(final Future future) {

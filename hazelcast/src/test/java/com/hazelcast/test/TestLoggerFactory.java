@@ -184,7 +184,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         @Override
         public void info(Throwable thrown) {
             long startTime = System.nanoTime();
-            delegate.fine(thrown);
+            delegate.info(thrown);
             logOnSlowLogging(startTime);
         }
 
