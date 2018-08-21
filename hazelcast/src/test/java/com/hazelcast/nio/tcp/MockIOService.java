@@ -21,8 +21,8 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.InboundHandler;
+import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -305,8 +305,8 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public ChannelInboundHandler[] createMemberInboundHandlers(final TcpIpConnection connection) {
-        return new ChannelInboundHandler[]{new PacketDecoder(connection, new Consumer<Packet>() {
+    public InboundHandler[] createMemberInboundHandlers(final TcpIpConnection connection) {
+        return new InboundHandler[]{new PacketDecoder(connection, new Consumer<Packet>() {
             @Override
             public void accept(Packet packet) {
                 try {
@@ -326,7 +326,7 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public ChannelOutboundHandler[] createMemberOutboundHandlers(TcpIpConnection connection) {
-        return new ChannelOutboundHandler[]{new PacketEncoder()};
+    public OutboundHandler[] createMemberOutboundHandlers(TcpIpConnection connection) {
+        return new OutboundHandler[]{new PacketEncoder()};
     }
 }

@@ -18,7 +18,7 @@ package com.hazelcast.internal.networking;
 
 /**
  * A strategy for controlling what needs to be done in case of an Exception
- * being thrown when the {@link EventLoopGroup} processes events.
+ * being thrown when the {@link Networking} processes events.
  *
  * For example if a connection is making use of the Channel, the Connection
  * could close itself when an error was encountered.

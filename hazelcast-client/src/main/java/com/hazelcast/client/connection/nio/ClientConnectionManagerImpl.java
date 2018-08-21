@@ -42,7 +42,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
-import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -106,7 +106,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
     private final boolean allowInvokeWhenDisconnected;
     private final Credentials credentials;
-    private final NioEventLoopGroup eventLoopGroup;
+    private final NioNetworking networking;
     private final HeartbeatManager heartbeat;
     private final ClusterConnector clusterConnector;
     private final long authenticationTimeout;
@@ -132,7 +132,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
 
-        this.eventLoopGroup = initEventLoopGroup(client);
+        this.networking = initNetworking(client);
 
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
 
@@ -170,11 +170,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return strategy;
     }
 
-    public NioEventLoopGroup getEventLoopGroup() {
-        return eventLoopGroup;
+    public NioNetworking getNetworking() {
+        return networking;
     }
 
-    protected NioEventLoopGroup initEventLoopGroup(HazelcastClientInstanceImpl client) {
+    protected NioNetworking initNetworking(HazelcastClientInstanceImpl client) {
         HazelcastProperties properties = client.getProperties();
 
         SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
@@ -197,8 +197,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             outputThreads = configuredOutputThreads;
         }
 
-        return new NioEventLoopGroup(
-                new NioEventLoopGroup.Context()
+        return new NioNetworking(
+                new NioNetworking.Context()
                         .loggingService(client.getLoggingService())
                         .metricsRegistry(client.getMetricsRegistry())
                         .threadNamePrefix(client.getName())
@@ -236,15 +236,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             return;
         }
         alive = true;
-        startEventLoopGroup();
+        startNetworking();
 
         heartbeat.start();
         connectionStrategy.init(clientContext);
         connectionStrategy.start();
     }
 
-    protected void startEventLoopGroup() {
-        eventLoopGroup.start();
+    protected void startNetworking() {
+        networking.start();
     }
 
     public synchronized void shutdown() {
@@ -257,7 +257,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             connection.close("Hazelcast client is shutting down", null);
         }
         clusterConnector.shutdown();
-        stopEventLoopGroup();
+        stopNetworking();
         connectionListeners.clear();
         heartbeat.shutdown();
 
@@ -273,8 +273,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.principal = principal;
     }
 
-    protected void stopEventLoopGroup() {
-        eventLoopGroup.shutdown();
+    protected void stopNetworking() {
+        networking.shutdown();
     }
 
     @Override
@@ -467,7 +467,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             bindSocketToPort(socket);
 
-            Channel channel = eventLoopGroup.register(socketChannel, true);
+            Channel channel = networking.register(socketChannel, true);
             channel.connect(remoteAddress.getInetSocketAddress(), connectionTimeoutMillis);
 
             ClientConnection connection

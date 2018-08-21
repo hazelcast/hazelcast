@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.util.counters.Counter;
 
 /**
@@ -28,7 +28,7 @@ import com.hazelcast.internal.util.counters.Counter;
  * This class is a hack. We don't want to have any dependencies on this
  * packet.
  */
-public abstract class ChannelInboundHandlerWithCounters<S, D> extends ChannelInboundHandler<S, D> {
+public abstract class InboundHandlerWithCounters<S, D> extends InboundHandler<S, D> {
     protected Counter normalPacketsRead;
     protected Counter priorityPacketsRead;
 

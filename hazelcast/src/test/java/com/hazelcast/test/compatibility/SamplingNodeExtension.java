@@ -28,9 +28,9 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.Address;
@@ -123,12 +123,12 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public ChannelInboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService) {
+    public InboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService) {
         return nodeExtension.createInboundHandlers(connection, ioService);
     }
 
     @Override
-    public ChannelOutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService) {
+    public OutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService) {
         return nodeExtension.createOutboundHandlers(connection, ioService);
     }
 

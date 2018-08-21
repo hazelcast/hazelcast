@@ -545,7 +545,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics.register(
                 new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
         diagnostics.register(
-                new NetworkingImbalancePlugin(properties, connectionManager.getEventLoopGroup(),
+                new NetworkingImbalancePlugin(properties, connectionManager.getNetworking(),
                         loggingService.getLogger(NetworkingImbalancePlugin.class)));
         diagnostics.register(
                 new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),

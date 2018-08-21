@@ -58,9 +58,9 @@ import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -256,15 +256,15 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public ChannelInboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService) {
+    public InboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
         PacketDecoder decoder = new PacketDecoder(connection, nodeEngine.getPacketDispatcher());
-        return new ChannelInboundHandler[]{decoder};
+        return new InboundHandler[]{decoder};
     }
 
     @Override
-    public ChannelOutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService) {
-        return new ChannelOutboundHandler[]{new PacketEncoder()};
+    public OutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService) {
+        return new OutboundHandler[]{new PacketEncoder()};
     }
 
     @Override

@@ -22,8 +22,8 @@ import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.EventLoopGroup;
-import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
+import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -136,18 +136,18 @@ public class DefaultNodeContext implements NodeContext {
     @Override
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-        EventLoopGroup eventLoopGroup = createEventLoopGroup(node, ioService);
+        Networking networking = createNetworking(node, ioService);
 
         return new TcpIpConnectionManager(
                 ioService,
                 serverSocketChannel,
                 node.loggingService,
                 node.nodeEngine.getMetricsRegistry(),
-                eventLoopGroup,
+                networking,
                 node.getProperties());
     }
 
-    private EventLoopGroup createEventLoopGroup(Node node, NodeIOService ioService) {
+    private Networking createNetworking(Node node, NodeIOService ioService) {
         ChannelInitializer initializer = node.getNodeExtension().createChannelInitializer(ioService);
 
         LoggingServiceImpl loggingService = node.loggingService;
@@ -157,8 +157,8 @@ public class DefaultNodeContext implements NodeContext {
 
         HazelcastProperties props = node.getProperties();
 
-        return new NioEventLoopGroup(
-                new NioEventLoopGroup.Context()
+        return new NioNetworking(
+                new NioNetworking.Context()
                         .loggingService(loggingService)
                         .metricsRegistry(node.nodeEngine.getMetricsRegistry())
                         .threadNamePrefix(node.hazelcastInstance.getName())

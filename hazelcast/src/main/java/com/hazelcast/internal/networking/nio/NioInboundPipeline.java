@@ -19,8 +19,8 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.ChannelInboundPipeline;
+import com.hazelcast.internal.networking.InboundHandler;
+import com.hazelcast.internal.networking.InboundPipeline;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -44,11 +44,11 @@ import static java.nio.channels.SelectionKey.OP_READ;
  * When the {@link NioThread} receives a read event from the
  * {@link Selector}, then the {@link #process()} is called to read
  * out the data from the socket into a bytebuffer and hand it over to the
- * {@link ChannelInboundHandler} to get processed.
+ * {@link InboundHandler} to get processed.
  */
-public final class NioInboundPipeline extends NioPipeline implements ChannelInboundPipeline {
+public final class NioInboundPipeline extends NioPipeline implements InboundPipeline {
 
-    private ChannelInboundHandler[] handlers = new ChannelInboundHandler[0];
+    private InboundHandler[] handlers = new InboundHandler[0];
     private ByteBuffer receiveBuffer;
 
     @Probe(name = "bytesRead")
@@ -124,14 +124,14 @@ public final class NioInboundPipeline extends NioPipeline implements ChannelInbo
 
         // currently the whole pipeline is retried when one of the handlers is dirty; but only the dirty handler
         // and the remaining sequence should need to retry.
-        ChannelInboundHandler[] localHandlers = handlers;
+        InboundHandler[] localHandlers = handlers;
         boolean cleanPipeline;
         boolean unregisterRead;
         do {
             cleanPipeline = true;
             unregisterRead = false;
             for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
-                ChannelInboundHandler handler = localHandlers[handlerIndex];
+                InboundHandler handler = localHandlers[handlerIndex];
                 HandlerStatus handlerStatus = handler.onRead();
 
                 if (localHandlers != handlers) {
@@ -191,15 +191,15 @@ public final class NioInboundPipeline extends NioPipeline implements ChannelInbo
     }
 
     @Override
-    public ChannelInboundPipeline remove(ChannelInboundHandler handler) {
+    public InboundPipeline remove(InboundHandler handler) {
         return replace(handler);
     }
 
     @Override
-    public ChannelInboundPipeline addLast(ChannelInboundHandler... addedHandlers) {
+    public InboundPipeline addLast(InboundHandler... addedHandlers) {
         checkNotNull(addedHandlers, "handlers can't be null");
 
-        for (ChannelInboundHandler addedHandler : addedHandlers) {
+        for (InboundHandler addedHandler : addedHandlers) {
             fixDependencies(addedHandler);
             addedHandler.setChannel(channel).handlerAdded();
         }
@@ -209,16 +209,16 @@ public final class NioInboundPipeline extends NioPipeline implements ChannelInbo
     }
 
     @Override
-    public ChannelInboundPipeline replace(ChannelInboundHandler oldHandler, ChannelInboundHandler... addedHandlers) {
+    public InboundPipeline replace(InboundHandler oldHandler, InboundHandler... addedHandlers) {
         checkNotNull(oldHandler, "oldHandler can't be null");
         checkNotNull(addedHandlers, "addedHandlers can't be null");
 
-        ChannelInboundHandler[] newHandlers = replaceFirst(handlers, oldHandler, addedHandlers);
+        InboundHandler[] newHandlers = replaceFirst(handlers, oldHandler, addedHandlers);
         if (newHandlers == handlers) {
             throw new IllegalArgumentException("handler " + oldHandler + " isn't part of the pipeline");
         }
 
-        for (ChannelInboundHandler addedHandler : addedHandlers) {
+        for (InboundHandler addedHandler : addedHandlers) {
             fixDependencies(addedHandler);
             addedHandler.setChannel(channel).handlerAdded();
         }
@@ -227,19 +227,19 @@ public final class NioInboundPipeline extends NioPipeline implements ChannelInbo
     }
 
     private void fixDependencies(ChannelHandler addedHandler) {
-        if (addedHandler instanceof ChannelInboundHandlerWithCounters) {
-            ChannelInboundHandlerWithCounters c = (ChannelInboundHandlerWithCounters) addedHandler;
+        if (addedHandler instanceof InboundHandlerWithCounters) {
+            InboundHandlerWithCounters c = (InboundHandlerWithCounters) addedHandler;
             c.setNormalPacketsRead(normalFramesRead);
             c.setPriorityPacketsRead(priorityFramesRead);
         }
     }
 
-    private void updatePipeline(ChannelInboundHandler[] handlers) {
+    private void updatePipeline(InboundHandler[] handlers) {
         this.handlers = handlers;
         receiveBuffer = handlers.length == 0 ? null : (ByteBuffer) handlers[0].src();
 
-        ChannelInboundHandler prev = null;
-        for (ChannelInboundHandler handler : handlers) {
+        InboundHandler prev = null;
+        for (InboundHandler handler : handlers) {
             if (prev != null) {
                 Object src = handler.src();
                 if (src instanceof ByteBuffer) {
@@ -253,7 +253,7 @@ public final class NioInboundPipeline extends NioPipeline implements ChannelInbo
     // useful for debugging
     private String pipelineToString() {
         StringBuilder sb = new StringBuilder("in-pipeline[");
-        ChannelInboundHandler[] handlers = this.handlers;
+        InboundHandler[] handlers = this.handlers;
         for (int k = 0; k < handlers.length; k++) {
             if (k > 0) {
                 sb.append("->-");

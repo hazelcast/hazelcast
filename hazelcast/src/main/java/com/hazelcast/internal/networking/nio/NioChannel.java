@@ -38,16 +38,16 @@ public final class NioChannel extends AbstractChannel {
     NioOutboundPipeline outboundPipeline;
 
     private final ChannelInitializer channelInitializer;
-    private final NioChannelConfig config;
+    private final NioChannelOptions config;
 
     public NioChannel(SocketChannel socketChannel, boolean clientMode, ChannelInitializer channelInitializer) {
         super(socketChannel, clientMode);
         this.channelInitializer = channelInitializer;
-        this.config = new NioChannelConfig(socketChannel.socket());
+        this.config = new NioChannelOptions(socketChannel.socket());
     }
 
     @Override
-    public NioChannelConfig config() {
+    public NioChannelOptions options() {
         return config;
     }
 

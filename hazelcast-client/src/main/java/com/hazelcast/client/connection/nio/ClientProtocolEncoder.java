@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
 
 import java.nio.ByteBuffer;
@@ -28,7 +28,7 @@ import static com.hazelcast.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
- * A {@link ChannelOutboundHandler} that writes the client protocol bytes
+ * A {@link OutboundHandler} that writes the client protocol bytes
  * and once they have been fully written, it removes itself from pipeline.
  *
  * On a plain connection, this should be the last encoder in the pipeline.
@@ -36,7 +36,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
  * Even though the ClientProtocolEncoder has a ByteBuffer as src, it will
  * never consume bytes from this source.
  */
-public class ClientProtocolEncoder extends ChannelOutboundHandler<ByteBuffer, ByteBuffer> {
+public class ClientProtocolEncoder extends OutboundHandler<ByteBuffer, ByteBuffer> {
 
     @Override
     public void handlerAdded() {

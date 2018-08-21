@@ -17,7 +17,7 @@
 package com.hazelcast.nio.ascii;
 
 import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -32,7 +32,7 @@ import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.nio.IOUtil.compactOrClear;
 
 @PrivateApi
-public class TextEncoder extends ChannelOutboundHandler<Supplier<TextCommand>, ByteBuffer> {
+public class TextEncoder extends OutboundHandler<Supplier<TextCommand>, ByteBuffer> {
     public static final String TEXT_ENCODER = "textencoder";
 
     private final TcpIpConnection connection;

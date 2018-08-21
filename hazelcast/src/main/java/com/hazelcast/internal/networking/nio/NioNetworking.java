@@ -21,7 +21,9 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.EventLoopGroup;
+import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.InboundHandler;
+import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -46,7 +48,7 @@ import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
- * A non blocking {@link EventLoopGroup} implementation that makes use of
+ * A non blocking {@link Networking} implementation that makes use of
  * {@link java.nio.channels.Selector} to have a limited set of io threads, handle
  * an arbitrary number of connections.
  *
@@ -55,11 +57,11 @@ import static java.util.logging.Level.INFO;
  * <li>{@link NioInboundPipeline}: triggered by the NioThread when data is available
  * in the socket. The NioInboundPipeline takes care of reading data from the socket
  * and calling the appropriate
- * {@link com.hazelcast.internal.networking.ChannelInboundHandler}</li>
+ * {@link InboundHandler}</li>
  * <li>{@link NioOutboundPipeline}: triggered by the NioThread when either space
  * is available in the socket for writing, or when there is something that needs to
  * be written e.g. a Packet. The NioOutboundPipeline takes care of calling the
- * appropriate {@link com.hazelcast.internal.networking.ChannelOutboundHandler}
+ * appropriate {@link OutboundHandler}
  * to convert the {@link com.hazelcast.internal.networking.OutboundFrame} to bytes
  * in in the ByteBuffer and writing it to the socket.
  * </li>
@@ -70,7 +72,7 @@ import static java.util.logging.Level.INFO;
  * feature and will cause the io threads to run hot. For this reason, when this feature
  * is enabled, the number of io threads should be reduced (preferably 1).
  */
-public final class NioEventLoopGroup implements EventLoopGroup {
+public final class NioNetworking implements Networking {
 
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
@@ -92,13 +94,13 @@ public final class NioEventLoopGroup implements EventLoopGroup {
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
 
-    public NioEventLoopGroup(Context ctx) {
+    public NioNetworking(Context ctx) {
         this.threadNamePrefix = ctx.threadNamePrefix;
         this.metricsRegistry = ctx.metricsRegistry;
         this.loggingService = ctx.loggingService;
         this.inputThreadCount = ctx.inputThreadCount;
         this.outputThreadCount = ctx.outputThreadCount;
-        this.logger = loggingService.getLogger(NioEventLoopGroup.class);
+        this.logger = loggingService.getLogger(NioNetworking.class);
         this.errorHandler = ctx.errorHandler;
         this.balancerIntervalSeconds = ctx.balancerIntervalSeconds;
         this.channelInitializer = ctx.channelInitializer;
@@ -224,7 +226,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
         int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreadCount);
         NioThread[] threads = outputThreads;
         if (threads == null) {
-            throw new IllegalStateException("NioEventLoopGroup is shutdown!");
+            throw new IllegalStateException("NioNetworking is shutdown!");
         }
 
         return new NioOutboundPipeline(
@@ -239,7 +241,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
         int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreadCount);
         NioThread[] threads = inputThreads;
         if (threads == null) {
-            throw new IllegalStateException("NioEventLoopGroup is shutdown!");
+            throw new IllegalStateException("NioNetworking is shutdown!");
         }
 
         return new NioInboundPipeline(

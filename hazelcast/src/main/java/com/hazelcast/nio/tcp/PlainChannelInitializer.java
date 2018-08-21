@@ -17,7 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelConfig;
+import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -53,7 +53,7 @@ public class PlainChannelInitializer implements ChannelInitializer {
 
     @Override
     public void initChannel(Channel channel) {
-        ChannelConfig config = channel.config();
+        ChannelOptions config = channel.options();
         config.setOption(DIRECT_BUF, props.getBoolean(SOCKET_BUFFER_DIRECT))
                 .setOption(TCP_NODELAY, props.getBoolean(SOCKET_NO_DELAY))
                 .setOption(SO_KEEPALIVE, props.getBoolean(SOCKET_KEEP_ALIVE))

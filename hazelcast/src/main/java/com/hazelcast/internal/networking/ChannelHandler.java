@@ -89,7 +89,7 @@ public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
     /**
      * Sets the Channel.
      *
-     * Should only be called by the {@link ChannelInboundPipeline}.
+     * Should only be called by the {@link InboundPipeline}.
      *
      * @param channel the Channel
      * @return this instance

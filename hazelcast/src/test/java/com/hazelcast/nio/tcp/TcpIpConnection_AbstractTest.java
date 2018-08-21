@@ -19,7 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.networking.nio.Select_NioEventLoopGroupFactory;
+import com.hazelcast.internal.networking.nio.Select_NioNetworkingFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -41,7 +41,7 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("WeakerAccess")
 public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport {
 
-    protected EventLoopGroupFactory eventLoopGroupFactory = new Select_NioEventLoopGroupFactory();
+    protected NetworkingFactory networkingFactory = new Select_NioNetworkingFactory();
 
     protected ILogger logger;
     protected LoggingServiceImpl loggingService;
@@ -118,7 +118,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
                 ioService.serverSocketChannel,
                 ioService.loggingService,
                 metricsRegistry,
-                eventLoopGroupFactory.create(ioService, metricsRegistry));
+                networkingFactory.create(ioService, metricsRegistry));
     }
 
     // ====================== support ========================================

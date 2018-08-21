@@ -31,7 +31,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -106,16 +106,16 @@ class TestClientRegistry {
         }
 
         @Override
-        protected NioEventLoopGroup initEventLoopGroup(HazelcastClientInstanceImpl client) {
+        protected NioNetworking initNetworking(HazelcastClientInstanceImpl client) {
             return null;
         }
 
         @Override
-        protected void startEventLoopGroup() {
+        protected void startNetworking() {
         }
 
         @Override
-        protected void stopEventLoopGroup() {
+        protected void stopNetworking() {
         }
 
         @Override

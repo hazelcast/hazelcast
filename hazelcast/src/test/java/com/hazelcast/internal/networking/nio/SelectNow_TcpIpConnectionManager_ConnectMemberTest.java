@@ -29,7 +29,7 @@ public class SelectNow_TcpIpConnectionManager_ConnectMemberTest extends TcpIpCon
 
     @Before
     public void setup() throws Exception {
-        eventLoopGroupFactory = new SelectNow_NioEventLoopGroupFactory();
+        networkingFactory = new SelectNow_NioNetworkingFactory();
         super.setup();
     }
 }

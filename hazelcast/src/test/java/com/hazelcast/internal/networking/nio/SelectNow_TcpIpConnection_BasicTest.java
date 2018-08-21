@@ -29,7 +29,7 @@ public class SelectNow_TcpIpConnection_BasicTest extends TcpIpConnection_Abstrac
 
     @Before
     public void setup() throws Exception {
-        eventLoopGroupFactory = new SelectNow_NioEventLoopGroupFactory();
+        networkingFactory = new SelectNow_NioNetworkingFactory();
         super.setup();
     }
 }

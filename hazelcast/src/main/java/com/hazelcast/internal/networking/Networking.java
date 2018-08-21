@@ -16,26 +16,26 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 
 /**
- * The EventLoopGroup is responsible for processing registered channels.
+ * The Networking is responsible for processing registered channels.
  * Effectively it is the threading model for the io system.
  *
  * An event loop is for example visible on the NioThread where we loop over the
- * selector events. The EventLoopGroup is the group of all these thread
+ * selector events. The Networking is the group of all these thread
  * instances.
  *
- * The default implementation of this is the {@link NioEventLoopGroup} that
+ * The default implementation of this is the {@link NioNetworking} that
  * relies on selectors. But also different implementations can be added like
  * spinning, thread per connection, epoll based etc.
  *
- * @see NioEventLoopGroup
+ * @see NioNetworking
  */
-public interface EventLoopGroup {
+public interface Networking {
 
     /**
      * Registers the SocketChannel to the EventLoop group and returns the
@@ -53,12 +53,12 @@ public interface EventLoopGroup {
     Channel register(SocketChannel socketChannel, boolean clientMode) throws IOException;
 
     /**
-     * Starts this EventLoopGroup.
+     * Starts this Networking.
      */
     void start();
 
     /**
-     * Shuts down this EventLoopGroup.
+     * Shuts down this Networking.
      */
     void shutdown();
 }

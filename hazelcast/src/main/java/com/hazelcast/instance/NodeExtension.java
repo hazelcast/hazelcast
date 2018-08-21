@@ -27,9 +27,9 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.Address;
@@ -132,25 +132,25 @@ public interface NodeExtension {
     MemberSocketInterceptor getMemberSocketInterceptor();
 
     /**
-     * Creates a <tt>ChannelInboundHandler</tt> for given <tt>Connection</tt> instance.
+     * Creates a <tt>InboundHandler</tt> for given <tt>Connection</tt> instance.
      *
      * For TLS and other enterprise features, instead of returning the regular protocol decoder, a TLS decoder
      * can be returned. This is the first item in the chain.
      *
      * @param connection tcp-ip connection
      * @param ioService  IOService
-     * @return the created ChannelInboundHandler.
+     * @return the created InboundHandler.
      */
-    ChannelInboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService);
+    InboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService);
 
     /**
-     * Creates a <tt>ChannelOutboundHandler</tt> for given <tt>Connection</tt> instance.
+     * Creates a <tt>OutboundHandler</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
      * @param ioService  IOService
-     * @return the created ChannelOutboundHandler
+     * @return the created OutboundHandler
      */
-    ChannelOutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService);
+    OutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService);
 
 
     /**

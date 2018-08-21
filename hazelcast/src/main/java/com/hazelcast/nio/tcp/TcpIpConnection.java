@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.EventLoopGroup;
+import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * A {@link TcpIpConnection} is not responsible for reading or writing data to the socket; that is task of
  * the {@link Channel}.
  *
- * @see EventLoopGroup
+ * @see Networking
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpIpConnection implements Connection {
