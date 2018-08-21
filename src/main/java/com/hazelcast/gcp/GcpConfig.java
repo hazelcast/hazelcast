@@ -24,16 +24,22 @@ import java.util.List;
  * {@link GcpProperties}.
  */
 final class GcpConfig {
+    private final String privateKeyPath;
     private final List<String> projects;
     private final List<String> zones;
     private final String label;
     private final PortRange hzPort;
 
-    private GcpConfig(List<String> projects, List<String> zones, String label, PortRange hzPort) {
+    private GcpConfig(String privateKeyPath, List<String> projects, List<String> zones, String label, PortRange hzPort) {
+        this.privateKeyPath = privateKeyPath;
         this.projects = projects;
         this.zones = zones;
         this.label = label;
         this.hzPort = hzPort;
+    }
+
+    String getPrivateKeyPath() {
+        return privateKeyPath;
     }
 
     List<String> getProjects() {
@@ -57,10 +63,16 @@ final class GcpConfig {
     }
 
     static final class Builder {
+        private String privateKeyPath;
         private List<String> projects = new ArrayList<String>();
         private List<String> zones = new ArrayList<String>();
         private String label;
         private PortRange hzPort;
+
+        Builder setPrivateKeyPath(String privateKeyPath) {
+            this.privateKeyPath = privateKeyPath;
+            return this;
+        }
 
         Builder setProjects(List<String> projects) {
             this.projects = projects;
@@ -83,7 +95,7 @@ final class GcpConfig {
         }
 
         GcpConfig build() {
-            return new GcpConfig(projects, zones, label, hzPort);
+            return new GcpConfig(privateKeyPath, projects, zones, label, hzPort);
         }
     }
 }

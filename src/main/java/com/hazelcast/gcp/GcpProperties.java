@@ -28,6 +28,13 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 enum GcpProperties {
 
     /**
+     * Filesystem path to the JSON file with the Service Account private key.
+     * <p>
+     * If not specified, then the access token is taken from the GCP VM Instance.
+     */
+    PRIVATE_KEY_PATH("private-key-path", STRING, true),
+
+    /**
      * A list of GCP projects in the form of "project1,project2,project3".
      * <p>
      * If not specified, then the discovery takes place only in the current project.

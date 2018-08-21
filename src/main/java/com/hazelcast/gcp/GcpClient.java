@@ -35,18 +35,23 @@ class GcpClient {
 
     private final GcpMetadataApi gcpMetadataApi;
     private final GcpComputeApi gcpComputeApi;
+    private final GcpAuthenticator gcpAuthenticator;
 
+    private final String privateKeyPath;
     private final List<String> projects;
     private final List<String> zones;
     private final String label;
 
-    GcpClient(GcpMetadataApi gcpMetadataApi, GcpComputeApi gcpComputeApi, GcpConfig gcpConfig) {
+    GcpClient(GcpMetadataApi gcpMetadataApi, GcpComputeApi gcpComputeApi, GcpAuthenticator gcpAuthenticator,
+              GcpConfig gcpConfig) {
         this.gcpMetadataApi = gcpMetadataApi;
         this.gcpComputeApi = gcpComputeApi;
+        this.gcpAuthenticator = gcpAuthenticator;
 
-        projects = projectFromConfigOrMetadataApi(gcpConfig);
-        zones = zonesFromConfigOrMetadataApi(gcpConfig);
-        label = gcpConfig.getLabel();
+        this.privateKeyPath = gcpConfig.getPrivateKeyPath();
+        this.projects = projectFromConfigOrMetadataApi(gcpConfig);
+        this.zones = zonesFromConfigOrMetadataApi(gcpConfig);
+        this.label = gcpConfig.getLabel();
     }
 
     private List<String> projectFromConfigOrMetadataApi(final GcpConfig gcpConfig) {
@@ -77,12 +82,7 @@ class GcpClient {
 
     List<GcpAddress> getAddresses() {
         LOGGER.finest("Fetching OAuth Access Token");
-        final String accessToken = RetryUtils.retry(new Callable<String>() {
-            @Override
-            public String call() {
-                return gcpMetadataApi.accessToken();
-            }
-        }, RETRIES);
+        final String accessToken = accessToken();
 
         List<GcpAddress> result = new ArrayList<GcpAddress>();
         for (final String project : projects) {
@@ -100,6 +100,18 @@ class GcpClient {
             }
         }
         return result;
+    }
+
+    private String accessToken() {
+        if (privateKeyPath != null) {
+            return gcpAuthenticator.accessToken(privateKeyPath);
+        }
+        return RetryUtils.retry(new Callable<String>() {
+            @Override
+            public String call() {
+                return gcpMetadataApi.accessToken();
+            }
+        }, RETRIES);
     }
 
     String getAvailabilityZone() {

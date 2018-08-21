@@ -38,6 +38,7 @@ public class GcpClientTest {
     private static final String ZONE_1 = "us-east1-b";
     private static final String ZONE_2 = "us-east1-c";
     private static final String ACCESS_TOKEN = "ya29.c.Elr6BVAeC2CeahNthgBf6Nn8j66IfIfZV6eb0LTkDeoAzELseUL5pFmfq0K_ViJN8BaeVB6b16NNCiPB0YbWPnoHRC2I1ghmnknUTzL36t-79b_OitEF_q_C1GM";
+    private static final String PRIVATE_KEY_PATH = "/sample/filesystem/path";
 
     private static final GcpAddress ADDRESS_1 = new GcpAddress("10.240.0.2", "35.207.0.219");
     private static final GcpAddress ADDRESS_2 = new GcpAddress("10.240.0.3", "35.237.227.147");
@@ -49,6 +50,8 @@ public class GcpClientTest {
     private GcpMetadataApi gcpMetadataApi;
     @Mock
     private GcpComputeApi gcpComputeApi;
+    @Mock
+    private GcpAuthenticator gcpAuthenticator;
 
     @Before
     public void setUp() {
@@ -64,7 +67,7 @@ public class GcpClientTest {
         given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
         GcpConfig gcpConfig = GcpConfig.builder().build();
-        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpConfig);
+        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
 
         // when
         List<GcpAddress> result = gcpClient.getAddresses();
@@ -80,7 +83,7 @@ public class GcpClientTest {
         given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
         GcpConfig gcpConfig = GcpConfig.builder().setLabel(label).build();
-        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpConfig);
+        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
 
         // when
         List<GcpAddress> result = gcpClient.getAddresses();
@@ -103,7 +106,24 @@ public class GcpClientTest {
                                        .setZones(asList(ZONE_1, ZONE_2))
                                        .setLabel(label)
                                        .build();
-        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpConfig);
+        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // when
+        List<GcpAddress> result = gcpClient.getAddresses();
+
+        // then
+        assertEquals(ADDRESSES, result);
+    }
+
+    @Test
+    public void getAddressesWithPrivateKeyPath() {
+        // given
+        given(gcpMetadataApi.accessToken()).willReturn(null);
+        given(gcpAuthenticator.accessToken(PRIVATE_KEY_PATH)).willReturn(ACCESS_TOKEN);
+        given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, null, ACCESS_TOKEN)).willReturn(ADDRESSES);
+
+        GcpConfig gcpConfig = GcpConfig.builder().setPrivateKeyPath(PRIVATE_KEY_PATH).build();
+        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
 
         // when
         List<GcpAddress> result = gcpClient.getAddresses();
@@ -117,7 +137,7 @@ public class GcpClientTest {
         // given
         given(gcpMetadataApi.currentZone()).willReturn(ZONE_1);
         GcpConfig gcpConfig = GcpConfig.builder().build();
-        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpConfig);
+        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
 
         // when
         String result = gcpClient.getAvailabilityZone();
