@@ -52,7 +52,7 @@ public class MatchingPointConfigPatternMatcher implements ConfigPatternMatcher {
     }
 
     /**
-     * This method returns higher values the better the matching is.
+     * This method returns the higher value the better the matching is.
      *
      * @param pattern  configuration pattern to match with
      * @param itemName item name to match
