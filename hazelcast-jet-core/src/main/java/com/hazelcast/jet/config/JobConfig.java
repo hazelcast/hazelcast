@@ -116,8 +116,10 @@ public class JobConfig implements Serializable {
      * Sets whether Jet will scale the job up/down when a member is
      * added/removed from the cluster.
      * <p>
-     * If enabled and a member is added or removed, the job will automatically
-     * restart, see {@link Job#restart} for more details.
+     * If enabled and a member is added or removed, the job will
+     * automatically restart, see {@link Job#restart} for more details.
+     * In case of member addition, it will restart after a {@linkplain
+     * InstanceConfig#setScaleUpDelayMillis(long) delay}.
      * <p>
      * If disabled and a <em>member is added</em>, Jet takes no action and the
      * job will not use the added member; you have to manually {@linkplain
@@ -125,7 +127,7 @@ public class JobConfig implements Serializable {
      * shutdown or a failure), Jet suspends the job. You have to manually
      * {@linkplain Job#resume() resume} it.
      * <p>
-     * By default, auto-restart is enabled.
+     * By default, auto-scaling is enabled.
      *
      * @return {@code this} instance for fluent API
      */

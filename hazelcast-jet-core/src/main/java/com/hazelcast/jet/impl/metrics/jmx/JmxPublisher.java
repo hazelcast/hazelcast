@@ -20,6 +20,8 @@ import com.hazelcast.internal.metrics.MetricsUtil;
 import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.jet.impl.metrics.MetricsPublisher;
 
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -51,6 +53,8 @@ public class JmxPublisher implements MetricsPublisher {
      */
     private final Map<ObjectName, MetricsMBean> mBeans = new HashMap<>();
     private final String domainPrefix;
+
+    private volatile boolean isShutdown;
 
     public JmxPublisher(String instanceName, String domainPrefix) {
         this.domainPrefix = domainPrefix;
@@ -87,7 +91,21 @@ public class JmxPublisher implements MetricsPublisher {
             }
             return bean;
         });
+        if (isShutdown) {
+            unregisterMBeanIgnoreError(metricData.objectName);
+        }
         mBean.setMetricValue(metricData.metric, metricData.unit, value);
+    }
+
+    private void unregisterMBeanIgnoreError(ObjectName objectName) {
+        try {
+            platformMBeanServer.unregisterMBean(objectName);
+        } catch (InstanceNotFoundException ignored) {
+            // Unregistration can by racy, we unregister from multiple places.
+            // See https://github.com/hazelcast/hazelcast-jet/issues/942
+        } catch (MBeanRegistrationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -103,11 +121,7 @@ public class JmxPublisher implements MetricsPublisher {
                 // remove entire bean if no metric is left
                 if (mBean.numAttributes() == 0) {
                     mBeans.remove(metricData.objectName);
-                    try {
-                        platformMBeanServer.unregisterMBean(metricData.objectName);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+                    unregisterMBeanIgnoreError(metricData.objectName);
                 }
             } else {
                 metricData.wasPresent = false;
@@ -229,13 +243,16 @@ public class JmxPublisher implements MetricsPublisher {
 
     @Override
     public void shutdown() {
+        isShutdown = true;
+        ObjectName name;
         try {
-            ObjectName name = new ObjectName("com.hazelcast*" + ":instance=" + instanceNameEscaped + ",type=Metrics,*");
-            for (ObjectName bean : platformMBeanServer.queryNames(name, null)) {
-                platformMBeanServer.unregisterMBean(bean);
-            }
-        } catch (Exception e) {
+            name = new ObjectName("com.hazelcast*" + ":instance=" + instanceNameEscaped + ",type=Metrics,*");
+        } catch (MalformedObjectNameException e) {
             throw new RuntimeException("Exception when unregistering JMX beans", e);
+        }
+
+        for (ObjectName bean : platformMBeanServer.queryNames(name, null)) {
+            unregisterMBeanIgnoreError(bean);
         }
     }
 }
