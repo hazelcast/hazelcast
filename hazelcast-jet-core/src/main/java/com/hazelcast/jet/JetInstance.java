@@ -128,7 +128,7 @@ public interface JetInstance {
     /**
      * Returns the last submitted job with the given name or {@code null}
      * if no such job could be found.
-     **/
+     */
     @Nullable
     default Job getJob(@Nonnull String name) {
         return getJobs(name).stream().findFirst().orElse(null);

@@ -37,11 +37,14 @@ import com.hazelcast.jet.impl.JetInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Properties;
 
+import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
 import static com.hazelcast.jet.impl.metrics.JetMetricsService.applyMetricsConfig;
+import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_RESULTS_TTL_SECONDS;
 
 /**
  * Entry point to the Jet product.
@@ -124,13 +127,21 @@ public final class Jet {
                         .setClassName(JetMetricsService.class.getName())
                         .setConfigObject(jetConfig.getMetricsConfig()));
 
+        HazelcastProperties properties = new HazelcastProperties(jetConfig.getProperties());
+
+        MapConfig metadataMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + "*")
+                .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
+                .setStatisticsEnabled(false)
+                .setMergePolicyConfig(
+                        new MergePolicyConfig().setPolicy(IgnoreMergingEntryMapMergePolicy.class.getName()));
+
+        MapConfig resultsMapConfig = new MapConfig(metadataMapConfig)
+                .setName(JOB_RESULTS_MAP_NAME)
+                .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
+
         hzConfig
-                .addMapConfig(new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + "*")
-                        .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
-                        .setStatisticsEnabled(false)
-                        .setMergePolicyConfig(
-                                new MergePolicyConfig().setPolicy(IgnoreMergingEntryMapMergePolicy.class.getName()))
-                );
+                .addMapConfig(metadataMapConfig)
+                .addMapConfig(resultsMapConfig);
 
         MetricsConfig metricsConfig = jetConfig.getMetricsConfig();
         applyMetricsConfig(hzConfig, metricsConfig);
@@ -140,5 +151,4 @@ public final class Jet {
             hzConfig.getProperties().setProperty(prop, jetProps.getProperty(prop));
         }
     }
-
 }
