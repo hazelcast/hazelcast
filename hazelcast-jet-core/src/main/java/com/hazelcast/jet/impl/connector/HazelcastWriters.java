@@ -101,7 +101,7 @@ public final class HazelcastWriters {
     @Nonnull
     @SuppressWarnings("unchecked")
     public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
-            @Nonnull String name,
+            @Nonnull String mapName,
             @Nullable ClientConfig clientConfig,
             @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
             @Nonnull DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
@@ -110,40 +110,65 @@ public final class HazelcastWriters {
         checkSerializable(updateFn, "updateFn");
 
         boolean isLocal = clientConfig == null;
-        return preferLocalParallelismOne(new HazelcastWriterSupplier<>(
+        return preferLocalParallelismOne(new HazelcastWriterSupplier<UpdateMapContext<K, V, T>, T>(
                 serializableConfig(clientConfig),
-                index -> new ArrayList<>(),
-                ArrayList::add,
-                instance -> {
-                    IMap map = instance.getMap(name);
-                    Map<K, T> tmpMap = new HashMap<>();
-                    ApplyFnEntryProcessor<K, V, T> entryProcessor = new ApplyFnEntryProcessor<>(tmpMap, updateFn);
-
-                    return buffer -> {
-                        try {
-                            if (buffer.isEmpty()) {
-                                return;
-                            }
-                            for (Object object : buffer) {
-                                T item = (T) object;
-                                K key = toKeyFn.apply(item);
-                                // on duplicate key, we'll flush immediately
-                                if (tmpMap.containsKey(key)) {
-                                    map.executeOnKeys(tmpMap.keySet(), entryProcessor);
-                                    tmpMap.clear();
-                                }
-                                tmpMap.put(key, item);
-                            }
-                            map.executeOnKeys(tmpMap.keySet(), entryProcessor);
-                            tmpMap.clear();
-                        } catch (HazelcastInstanceNotActiveException e) {
-                            throw handleInstanceNotActive(e, isLocal);
-                        }
-                        buffer.clear();
-                    };
-                },
+                procContext -> new UpdateMapContext<>(mapName, toKeyFn, updateFn, isLocal),
+                UpdateMapContext::add,
+                instance -> context -> context.flush(instance),
                 noopConsumer()
         ));
+    }
+
+    private static final class UpdateMapContext<K, V, T> {
+        private final String mapName;
+        private final DistributedFunction<? super T, ? extends K> toKeyFn;
+        private final boolean isLocal;
+        private final ApplyFnEntryProcessor<K, V, T> entryProcessor;
+
+        private IMap map;
+        private final List<T> buffer = new ArrayList<>();
+        private final Map<K, T> tmpMap = new HashMap<>();
+
+        UpdateMapContext(
+                String mapName,
+                @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+                @Nonnull DistributedBiFunction<? super V, ? super T, ? extends V> updateFn,
+                boolean isLocal) {
+            this.mapName = mapName;
+            this.toKeyFn = toKeyFn;
+            this.isLocal = isLocal;
+            entryProcessor = new ApplyFnEntryProcessor<>(tmpMap, updateFn);
+        }
+
+        void add(T item) {
+            buffer.add(item);
+        }
+
+        void flush(HazelcastInstance instance) {
+            if (map == null) {
+                map = instance.getMap(mapName);
+            }
+            try {
+                if (buffer.isEmpty()) {
+                    return;
+                }
+                for (Object object : buffer) {
+                    T item = (T) object;
+                    K key = toKeyFn.apply(item);
+                    // on duplicate key, we'll flush immediately
+                    if (tmpMap.containsKey(key)) {
+                        map.executeOnKeys(tmpMap.keySet(), entryProcessor);
+                        tmpMap.clear();
+                    }
+                    tmpMap.put(key, item);
+                }
+                map.executeOnKeys(tmpMap.keySet(), entryProcessor);
+                tmpMap.clear();
+            } catch (HazelcastInstanceNotActiveException e) {
+                throw handleInstanceNotActive(e, isLocal);
+            }
+            buffer.clear();
+        }
     }
 
     @Nonnull
@@ -167,7 +192,6 @@ public final class HazelcastWriters {
                 )
         );
     }
-
 
     @Nonnull
     @SuppressWarnings("unchecked")
@@ -436,8 +460,8 @@ public final class HazelcastWriters {
         private final DistributedBiConsumer<B, T> addToBufferFn;
         private final DistributedConsumer<B> disposeBufferFn;
 
+        private transient DistributedConsumer<B> flushBufferFn;
         private transient HazelcastInstance client;
-        private transient HazelcastInstance instance;
 
         HazelcastWriterSupplier(
                 SerializableClientConfig clientConfig,
@@ -455,11 +479,13 @@ public final class HazelcastWriters {
 
         @Override
         public void init(@Nonnull Context context) {
+            HazelcastInstance instance;
             if (isRemote()) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
             } else {
                 instance = context.jetInstance().getHazelcastInstance();
             }
+            flushBufferFn = instanceToFlushBufferFn.apply(instance);
         }
 
         @Override
@@ -475,21 +501,20 @@ public final class HazelcastWriters {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return Stream.generate(() -> new WriteBufferedP<>(
-                    newBufferFn, addToBufferFn, instanceToFlushBufferFn.apply(instance), disposeBufferFn)
-            ).limit(count).collect(toList());
+            return Stream.generate(() -> new WriteBufferedP<>(newBufferFn, addToBufferFn, flushBufferFn, disposeBufferFn))
+                         .limit(count).collect(toList());
         }
     }
 
     public static class ApplyFnEntryProcessor<K, V, T>
-    implements EntryProcessor<K, V>, EntryBackupProcessor<K, V>, IdentifiedDataSerializable {
+            implements EntryProcessor<K, V>, EntryBackupProcessor<K, V>, IdentifiedDataSerializable {
         private Map<K, T> keysToUpdate;
         private DistributedBiFunction<? super V, ? super T, ? extends V> updateFn;
 
         public ApplyFnEntryProcessor() {
         }
 
-        public ApplyFnEntryProcessor(
+        ApplyFnEntryProcessor(
                 Map<K, T> keysToUpdate,
                 DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
         ) {
@@ -545,5 +570,4 @@ public final class HazelcastWriters {
             return SerializationConstants.APPLY_FN_ENTRY_PROCESSOR;
         }
     }
-
 }
