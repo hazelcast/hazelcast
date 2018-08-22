@@ -250,7 +250,12 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
 
         map1.remove(key);
         assertEquals("Expected the uppercase removed value", expectedValueAfterPut, interceptor1.removedValue);
-        assertEquals("Expected the uppercase value after remove", expectedValueAfterPut, interceptor1.afterRemoveValue);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("Expected the uppercase value after remove", expectedValueAfterPut, interceptor1.afterRemoveValue);
+            }
+        });
         assertNoInteractionWith(interceptor2);
         assertNull("Expected the value to be removed", map1.get(key));
 
