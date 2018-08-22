@@ -17,6 +17,7 @@
 package com.hazelcast.test;
 
 import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggerFactory;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -46,12 +47,20 @@ public class ChangeLoggingRule implements TestRule {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                TestLoggerFactory testLoggerFactory = (TestLoggerFactory) Logger.newLoggerFactory(null);
-                testLoggerFactory.changeConfigFile(configFile); //setting the desired configuration
-                try {
+                LoggerFactory loggerFactory = Logger.newLoggerFactory(null);
+                if (loggerFactory instanceof TestLoggerFactory) {
+                    TestLoggerFactory testLoggerFactory = (TestLoggerFactory) loggerFactory;
+                    testLoggerFactory.changeConfigFile(configFile); //setting the desired configuration
+                    try {
+                        base.evaluate();
+                    } finally {
+                        testLoggerFactory.changeConfigFile(null); //resetting to default behavior
+                    }
+                } else {
+                    System.out.printf("ChangeLoggingRule: could not change config file to '%s' because "
+                            + "logger factory is instance of '%s' instead of expected TestLoggerFactory.\n",
+                            configFile, loggerFactory.getClass());
                     base.evaluate();
-                } finally {
-                    testLoggerFactory.changeConfigFile(null); //resetting to default behavior
                 }
             }
         };
