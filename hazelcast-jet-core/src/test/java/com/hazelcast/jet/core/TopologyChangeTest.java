@@ -427,7 +427,7 @@ public class TopologyChangeTest extends JetTestSupport {
 
         assertTrueEventually(() -> assertFalse(jetService.getJobCoordinationService().getMasterContexts().isEmpty()));
 
-        spawn(instances[2]::shutdown);
+        spawn(() -> instances[2].getHazelcastInstance().shutdown());
 
         // Then, it restarts until the shutting down node is gone
         assertTrueEventually(() -> assertEquals(STARTING, job.getStatus()));
