@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.TenantControl;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -71,6 +72,17 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
             throws IOException {
         setKeyClassName(in.readUTF());
         setValueClassName(in.readUTF());
+    }
+
+    @Override
+    protected void writeTenant(ObjectDataOutput out) throws IOException {
+        out.writeObject(getTenantControl());
+    }
+
+    @Override
+    protected void readTenant(ObjectDataInput in) throws IOException {
+        TenantControl tc = in.readObject();
+        setTenantControl(tc);
     }
 
     @Override

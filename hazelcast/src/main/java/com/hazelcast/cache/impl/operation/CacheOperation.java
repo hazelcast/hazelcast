@@ -23,6 +23,7 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -32,6 +33,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.spi.TenantControl;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
@@ -50,6 +52,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
     protected transient ICacheService cacheService;
     protected transient ICacheRecordStore recordStore;
     protected transient CacheWanEventPublisher wanEventPublisher;
+    protected transient TenantControl.Closeable tenantContext;
 
     protected CacheOperation() {
     }
@@ -71,6 +74,11 @@ public abstract class CacheOperation extends AbstractNamedOperation
     @Override
     public final void beforeRun() throws Exception {
         cacheService = getService();
+
+        // establish tenant application's thread-local context for this cache operation
+        CacheConfig<?, ?> cacheConfig = cacheService.getCacheConfig(name);
+        tenantContext = (cacheConfig == null? new TenantControl.NoTenantControl() : cacheConfig.getTenantControl()).setTenant(true);
+
         try {
             recordStore = getOrCreateStoreIfAllowed();
         } catch (CacheNotExistsException e) {
@@ -86,6 +94,11 @@ public abstract class CacheOperation extends AbstractNamedOperation
         }
 
         beforeRunInternal();
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        tenantContext.close();
     }
 
     /**

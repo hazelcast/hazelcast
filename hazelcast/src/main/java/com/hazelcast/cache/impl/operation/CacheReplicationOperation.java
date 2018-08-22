@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.TenantControl;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -103,8 +104,16 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     public void run() throws Exception {
         ICacheService service = getService();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
-            ICacheRecordStore cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
-            cache.reset();
+            // establish thread-local context for this cache's tenant application before possibly creating records
+            // This is so CDI / JPA / EJB methods can be called from other than JavaEE threads
+            TenantControl.Closeable tenantContext = service.getCacheConfig(entry.getKey()).getTenantControl().setTenant(true);
+            ICacheRecordStore cache;
+            try {
+                cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
+                cache.reset();
+            } finally {
+                tenantContext.close();
+            }
             Map<Data, CacheRecord> map = entry.getValue();
 
             Iterator<Map.Entry<Data, CacheRecord>> iterator = map.entrySet().iterator();
