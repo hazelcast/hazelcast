@@ -63,6 +63,7 @@ public class StreamJmsPTest extends JetTestSupport {
     @Test
     public void when_queue() throws Exception {
         String queueName = randomString();
+        logger.info("using queue: " + queueName);
         initializeProcessor(queueName, true);
         String message1 = sendMessage(queueName, true);
         String message2 = sendMessage(queueName, true);
@@ -71,16 +72,25 @@ public class StreamJmsPTest extends JetTestSupport {
 
         Queue<Object> queue = outbox.queue(0);
 
-        processor.complete();
-        assertEquals(message1, queue.poll());
+        // Even though both messages are in queue, the processor might not see them
+        // because it uses `consumer.receiveNoWait()`, so if it's not yet available, it doesn't
+        // block and it should be available later.
+        // See https://github.com/hazelcast/hazelcast-jet/issues/1010
+        assertTrueEventually(() -> {
+            processor.complete();
+            assertEquals(message1, queue.poll());
+        });
         outbox.reset();
-        processor.complete();
-        assertEquals(message2, queue.poll());
+        assertTrueEventually(() -> {
+            processor.complete();
+            assertEquals(message2, queue.poll());
+        });
     }
 
     @Test
     public void when_topic() throws Exception {
         String topicName = randomString();
+        logger.info("using topic: " + topicName);
         sendMessage(topicName, false);
         initializeProcessor(topicName, false);
         sleepSeconds(1);
@@ -120,6 +130,7 @@ public class StreamJmsPTest extends JetTestSupport {
         MessageProducer producer = session.createProducer(destination);
         TextMessage textMessage = session.createTextMessage(message);
         producer.send(textMessage);
+        logger.info("sent message " + message + " to " + destinationName);
         session.close();
         connection.close();
         return message;
@@ -142,5 +153,4 @@ public class StreamJmsPTest extends JetTestSupport {
         connection.close();
         return size;
     }
-
 }
