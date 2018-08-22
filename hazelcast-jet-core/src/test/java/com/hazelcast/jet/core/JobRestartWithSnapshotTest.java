@@ -414,8 +414,8 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     public void stressTest_restart() throws Exception {
         stressTest(job -> {
             job.restart();
-            // Sleep a little because the snapshot that started before restart was requested
-            // can complete after this happens.
+            // Sleep a little in order to not observe the RUNNING status from the execution
+            // before the restart.
             LockSupport.parkNanos(MILLISECONDS.toNanos(500));
             assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
         });
@@ -425,9 +425,13 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     public void stressTest_suspendAndResume() throws Exception {
         stressTest(job -> {
             job.suspend();
-            assertTrueEventually(() -> assertEquals(JobStatus.SUSPENDED, job.getStatus()), 5);
+            assertTrueEventually(() -> assertEquals(JobStatus.SUSPENDED, job.getStatus()), 15);
+            // The Job.resume() call might overtake the suspension.
+            // resume() does nothing when job is not suspended. Without
+            // the sleep, the job might remain suspended.
+            sleepSeconds(1);
             job.resume();
-            assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()), 5);
+            assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()), 15);
         });
     }
 

@@ -103,17 +103,6 @@ public class SnapshotRepository {
     /**
      * Updates status of the given snapshot. Returns the elapsed time for the snapshot.
      */
-    private void setSnapshotStatus(long jobId, long snapshotId, SnapshotStatus status) {
-        IMap<Long, SnapshotRecord> snapshots = getSnapshotMap(jobId);
-        compute(snapshots, snapshotId, (k, r) -> {
-            r.setStatus(status);
-            return null;
-        });
-    }
-
-    /**
-     * Updates status of the given snapshot. Returns the elapsed time for the snapshot.
-     */
     long setSnapshotComplete(long jobId, long snapshotId, SnapshotStatus status,
                                long numBytes, long numKeys, long numChunks) {
         IMap<Long, SnapshotRecord> snapshots = getSnapshotMap(jobId);
@@ -234,8 +223,15 @@ public class SnapshotRepository {
         snapshotMap.destroy();
     }
 
-    private void deleteSnapshot(IMap<Long, SnapshotRecord> map, SnapshotRecord record) {
-        setSnapshotStatus(record.jobId(), record.snapshotId(), SnapshotStatus.TO_DELETE);
+    // package-visible for test
+    void deleteSnapshot(IMap<Long, SnapshotRecord> map, SnapshotRecord record) {
+        IMap<Long, SnapshotRecord> snapshots = getSnapshotMap(record.jobId());
+        compute(snapshots, record.snapshotId(), (k, r) -> {
+            if (r != null) {
+                r.setStatus(SnapshotStatus.TO_DELETE);
+            }
+            return r;
+        });
         deleteSnapshotData(record);
         map.remove(record.snapshotId());
         logFinest(logger, "Deleted snapshot record for snapshot %d for job %s",

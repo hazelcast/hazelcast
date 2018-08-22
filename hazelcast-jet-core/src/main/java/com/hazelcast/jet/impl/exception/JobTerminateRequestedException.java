@@ -25,6 +25,7 @@ public class JobTerminateRequestedException extends JetException {
     private final TerminationMode mode;
 
     public JobTerminateRequestedException(@Nonnull TerminationMode mode) {
+        super(mode.name());
         this.mode = mode;
     }
 

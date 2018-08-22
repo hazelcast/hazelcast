@@ -297,7 +297,7 @@ public class JobCoordinationService {
 
         JobRecord jobRecord = jobRepository.getJobRecord(jobId);
         if (jobRecord != null) {
-            return startJobIfNotStartedOrCompleted(jobRecord, "join request from client");
+            return startJobIfNotStartedOrCompleted(jobRecord, "join request from client", false);
         }
 
         JobResult jobResult = jobRepository.getJobResult(jobId);
@@ -309,7 +309,7 @@ public class JobCoordinationService {
     }
 
     // Tries to start a job if it is not already running or completed
-    private CompletableFuture<Void> startJobIfNotStartedOrCompleted(JobRecord jobRecord, String reason) {
+    private CompletableFuture<Void> startJobIfNotStartedOrCompleted(JobRecord jobRecord, String reason, boolean resume) {
         // the order of operations is important.
         long jobId = jobRecord.getJobId();
         JobResult jobResult = jobRepository.getJobResult(jobId);
@@ -330,7 +330,7 @@ public class JobCoordinationService {
         }
 
         if (oldMasterContext != null) {
-            if (!jobRecord.isSuspended() && oldMasterContext.jobStatus() == SUSPENDED) {
+            if (resume && oldMasterContext.jobStatus() == SUSPENDED) {
                 oldMasterContext.resumeJob(jobRepository::newExecutionId);
             }
             return oldMasterContext.completionFuture();
@@ -537,7 +537,7 @@ public class JobCoordinationService {
         if (jobRepository.updateJobSuspendedStatus(jobId, false)) {
             JobRecord jobRecord = jobRepository.getJobRecord(jobId);
             if (jobRecord != null) {
-                startJobIfNotStartedOrCompleted(jobRecord, "resume request");
+                startJobIfNotStartedOrCompleted(jobRecord, "resume request", true);
             }
         }
     }
@@ -617,7 +617,7 @@ public class JobCoordinationService {
                 snapshotRepository.deleteSingleSnapshot(jobId, snapshotId);
             }
         } catch (Exception e) {
-            logger.warning("Cannot delete old snapshots for " + masterContext.jobIdString());
+            logger.warning("Cannot delete old snapshots for " + masterContext.jobIdString(), e);
         }
     }
 
@@ -685,7 +685,8 @@ public class JobCoordinationService {
             Collection<JobRecord> jobs = jobRepository.getJobRecords();
             jobs.stream()
                 .filter(jobRecord -> !jobRecord.isSuspended())
-                .forEach(jobRecord -> startJobIfNotStartedOrCompleted(jobRecord, "discovered by scanning of JobRecords"));
+                .forEach(jobRecord ->
+                        startJobIfNotStartedOrCompleted(jobRecord, "discovered by scanning of JobRecords", false));
 
             performCleanup();
         } catch (Exception e) {
