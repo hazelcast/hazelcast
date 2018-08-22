@@ -65,8 +65,8 @@ public interface OperationService {
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);
 
     /**
-     * Invokes a set of operation on each partition.
-     * <p/>
+     * Invokes a set of operations on each partition.
+     * <p>
      * This method blocks until the operation completes.
      *
      * @param serviceName      the name of the service.
@@ -79,8 +79,8 @@ public interface OperationService {
             throws Exception;
 
     /**
-     * Invokes an set of operation on selected set of partitions
-     * <p/>
+     * Invokes a set of operations on selected set of partitions.
+     * <p>
      * This method blocks until all operations complete.
      *
      * @param serviceName      the name of the service
@@ -96,8 +96,8 @@ public interface OperationService {
                                            Collection<Integer> partitions) throws Exception;
 
     /**
-     * Invokes an set of operation on selected set of partitions
-     * * <p/>
+     * Invokes a set of operations on selected set of partitions.
+     * <p>
      * This method blocks until all operations complete.
      *
      * @param serviceName      the name of the service

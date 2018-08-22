@@ -19,8 +19,8 @@ package com.hazelcast.logging;
 import java.util.logging.Level;
 
 /**
- * Abstract {@link ILogger} implementation that provides implementations for the convenience methods like
- * finest,info,warning and severe.
+ * Abstract {@link ILogger} implementation that provides implementations for convenience methods like
+ * finest, info, warning and severe.
  */
 public abstract class AbstractLogger implements ILogger {
 
@@ -70,6 +70,16 @@ public abstract class AbstractLogger implements ILogger {
     }
 
     @Override
+    public void info(String message, Throwable thrown) {
+        log(Level.INFO, message, thrown);
+    }
+
+    @Override
+    public void info(Throwable thrown) {
+        log(Level.INFO, thrown.getMessage());
+    }
+
+    @Override
     public boolean isInfoEnabled() {
         return isLoggable(Level.INFO);
     }
@@ -107,5 +117,10 @@ public abstract class AbstractLogger implements ILogger {
     @Override
     public void severe(String message, Throwable thrown) {
         log(Level.SEVERE, message, thrown);
+    }
+
+    @Override
+    public boolean isSevereEnabled() {
+        return isLoggable(Level.SEVERE);
     }
 }

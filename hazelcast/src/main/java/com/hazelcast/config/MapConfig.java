@@ -458,7 +458,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     /**
-     * Sets the {@link EvictionPolicy}.
+     * Sets the {@link EvictionPolicy}. Default value is {@link EvictionPolicy#NONE}.
      *
      * @param evictionPolicy the evictionPolicy to set
      */

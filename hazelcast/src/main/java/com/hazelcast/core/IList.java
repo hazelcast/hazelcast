@@ -19,12 +19,12 @@ package com.hazelcast.core;
 import java.util.List;
 
 /**
- * Concurrent, distributed implementation of {@link List}
+ * Concurrent, distributed implementation of {@link List}.
  *
- * The Hazelcast IList is not a partitioned data-structure. So all the content of the IList is stored in a single machine (and
- * in the backup). So the IList will not scale by adding more members in the cluster.
+ * <p>The Hazelcast IList is not a partitioned data-structure. Entire contents of an IList is stored on a single machine (and
+ * in the backup). The IList will not scale by adding more members to the cluster.
  *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * <p>Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  *
  * @param <E>
  * @see List

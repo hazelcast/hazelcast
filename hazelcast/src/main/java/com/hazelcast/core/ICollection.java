@@ -27,14 +27,12 @@ public interface ICollection<E> extends Collection<E>, DistributedObject {
 
     /**
      * Returns the name of this collection.
-     *
-     * @return the name of this collection
      */
     String getName();
 
     /**
      * Adds an item listener for this collection.
-     * The listener will be notified for all collection add/remove events.
+     * The listener will be notified of all collection add/remove events.
      *
      * @param listener     the item listener
      * @param includeValue {@code true} if the updated item should be passed
