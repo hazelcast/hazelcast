@@ -62,12 +62,16 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
                        DistributedFunction<? super T, K> extractKeyFn,
                        DistributedFunction<? super T, V> extractValueFn
     ) {
-        setCooperative(false);
         this.recordWriter = recordWriter;
         this.taskAttemptContext = taskAttemptContext;
         this.outputCommitter = outputCommitter;
         this.extractKeyFn = extractKeyFn;
         this.extractValueFn = extractValueFn;
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return false;
     }
 
     @Override

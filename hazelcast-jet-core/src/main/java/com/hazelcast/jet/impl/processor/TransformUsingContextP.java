@@ -60,13 +60,17 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
                     ? extends Traverser<? extends R>> flatMapFn,
             @Nullable C contextObject
     ) {
-        setCooperative(contextFactory.isCooperative());
         this.contextFactory = contextFactory;
         this.flatMapFn = flatMapFn;
         this.contextObject = contextObject;
 
         assert contextObject == null ^ contextFactory.isSharedLocally()
                 : "if contextObject is shared, it must be non-null, or vice versa";
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return contextFactory.isCooperative();
     }
 
     @Override

@@ -56,7 +56,6 @@ import java.util.function.Function;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
-import static com.hazelcast.jet.core.processor.Processors.nonCooperativeP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -311,8 +310,8 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
         // Given
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
-        dag.newVertex("faulty", nonCooperativeP(
-                new MockPMS(() -> new MockPS(() -> new MockP().setCompleteError(e), MEMBER_COUNT))));
+        dag.newVertex("faulty", new MockPMS(() -> new MockPS(() ->
+                new MockP().nonCooperative().setCompleteError(e), MEMBER_COUNT)));
 
         // When
         Job job = runJobExpectFailure(dag, e);

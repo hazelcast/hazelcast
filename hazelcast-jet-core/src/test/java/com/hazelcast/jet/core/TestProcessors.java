@@ -261,6 +261,12 @@ public final class TestProcessors {
         private Exception processError;
         private RuntimeException completeError;
         private Exception closeError;
+        private boolean isCooperative;
+
+        @Override
+        public boolean isCooperative() {
+            return isCooperative;
+        }
 
         public MockP setInitError(Exception initError) {
             this.initError = initError;
@@ -283,7 +289,7 @@ public final class TestProcessors {
         }
 
         public MockP nonCooperative() {
-            setCooperative(false);
+            isCooperative = false;
             return this;
         }
 

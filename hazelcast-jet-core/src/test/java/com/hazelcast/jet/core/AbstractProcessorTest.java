@@ -33,10 +33,7 @@ import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Queue;
-import java.util.stream.Stream;
 
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -83,17 +80,6 @@ public class AbstractProcessorTest {
         tryProcessP.init(outbox, ctx);
         nothingOverriddenP = new NothingOverriddenP();
         nothingOverriddenP.init(outbox, ctx);
-    }
-
-    @Test
-    public void when_setCooperative_then_isCooperative() {
-        Stream.of(FALSE, TRUE).forEach(b -> {
-            // When
-            p.setCooperative(b);
-
-            // Then
-            assertEquals(b, p.isCooperative());
-        });
     }
 
     @Test

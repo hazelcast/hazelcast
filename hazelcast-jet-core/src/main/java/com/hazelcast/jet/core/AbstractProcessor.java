@@ -65,7 +65,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  */
 public abstract class AbstractProcessor implements Processor {
 
-    private boolean isCooperative = true;
     private ILogger logger;
     private Outbox outbox;
 
@@ -73,21 +72,6 @@ public abstract class AbstractProcessor implements Processor {
     private Entry<?, ?> pendingSnapshotItem;
 
     // final implementations of Processor API
-
-    /**
-     * Specifies what this processor's {@link #isCooperative()} method will return.
-     * The method will have no effect if called after the processor has been
-     * submitted to the execution service; therefore it should be called from the
-     * {@link ProcessorSupplier} that creates it or in processor's constructor.
-     */
-    public final void setCooperative(boolean isCooperative) {
-        this.isCooperative = isCooperative;
-    }
-
-    @Override
-    public final boolean isCooperative() {
-        return isCooperative;
-    }
 
     @Override
     public final void init(@Nonnull Outbox outbox, @Nonnull Context context) {

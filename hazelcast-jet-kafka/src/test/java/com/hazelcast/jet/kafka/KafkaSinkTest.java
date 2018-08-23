@@ -28,10 +28,6 @@ import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -40,6 +36,11 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
 
 import static com.hazelcast.jet.Util.entry;
 import static java.util.Collections.singletonMap;
@@ -179,7 +180,11 @@ public class KafkaSinkTest extends KafkaTestSupport {
             // reset so that values from previous run don't remain
             isDone = false;
             allowSnapshot = false;
-            setCooperative(false);
+        }
+
+        @Override
+        public boolean isCooperative() {
+            return false;
         }
 
         @Override

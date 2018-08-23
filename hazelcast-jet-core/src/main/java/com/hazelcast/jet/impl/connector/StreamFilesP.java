@@ -115,7 +115,11 @@ public class StreamFilesP<R> extends AbstractProcessor {
         this.glob = FileSystems.getDefault().getPathMatcher("glob:" + glob);
         this.sharedFileSystem = sharedFileSystem;
         this.mapOutputFn = mapOutputFn;
-        setCooperative(false);
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return false;
     }
 
     @Override

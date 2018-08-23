@@ -344,11 +344,15 @@ public final class HazelcastWriters {
                 @Nonnull DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn,
                 boolean isLocal
         ) {
-            setCooperative(false);
             this.map = instance.getMap(name);
             this.toKeyFn = toKeyFn;
             this.toEntryProcessorFn = toEntryProcessorFn;
             this.isLocal = isLocal;
+        }
+
+        @Override
+        public boolean isCooperative() {
+            return false;
         }
 
         @Override

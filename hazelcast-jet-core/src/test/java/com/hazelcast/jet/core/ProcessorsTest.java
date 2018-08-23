@@ -23,7 +23,6 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
@@ -45,14 +44,11 @@ import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
-import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class ProcessorsTest {
@@ -228,22 +224,6 @@ public class ProcessorsTest {
                         singletonList(2)
                 ))
                 .expectOutput(singletonList("[1, 2]"));
-    }
-
-    @Test
-    public void nonCooperative_ProcessorSupplier() {
-        ProcessorSupplier cooperativeSupplier = ProcessorSupplier.of(filterP(alwaysTrue()));
-        ProcessorSupplier nonCooperativeSupplier = Processors.nonCooperativeP(cooperativeSupplier);
-        assertTrue(cooperativeSupplier.get(1).iterator().next().isCooperative());
-        assertFalse(nonCooperativeSupplier.get(1).iterator().next().isCooperative());
-    }
-
-    @Test
-    public void nonCooperative_SupplierProcessor() {
-        DistributedSupplier<Processor> cooperativeSupplier = filterP(alwaysTrue());
-        DistributedSupplier<Processor> nonCooperativeSupplier = Processors.nonCooperativeP(cooperativeSupplier);
-        assertTrue(cooperativeSupplier.get().isCooperative());
-        assertFalse(nonCooperativeSupplier.get().isCooperative());
     }
 
     @Test

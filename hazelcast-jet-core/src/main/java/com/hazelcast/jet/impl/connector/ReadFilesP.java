@@ -66,12 +66,16 @@ public final class ReadFilesP<R, T> extends AbstractProcessor {
             @Nonnull DistributedFunction<? super Path, ? extends Stream<R>> readFileFn,
             @Nonnull DistributedBiFunction<? super String, ? super R, ? extends T> mapOutputFn
     ) {
-        setCooperative(false);
         this.directory = Paths.get(directory);
         this.glob = glob;
         this.readFileFn = readFileFn;
         this.mapOutputFn = mapOutputFn;
         this.sharedFileSystem = sharedFileSystem;
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return false;
     }
 
     @Override

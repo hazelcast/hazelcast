@@ -29,6 +29,12 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -37,11 +43,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Semaphore;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
@@ -262,11 +263,14 @@ public class WriteFilePTest extends JetTestSupport {
         private final int limit;
 
         SlowSourceP(Semaphore semaphore, int limit) {
-            setCooperative(false);
             this.semaphore = semaphore;
             this.limit = limit;
         }
 
+        @Override
+        public boolean isCooperative() {
+            return false;
+        }
 
         @Override
         public boolean complete() {

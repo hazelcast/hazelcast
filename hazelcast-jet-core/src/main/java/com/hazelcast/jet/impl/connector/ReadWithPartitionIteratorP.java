@@ -72,7 +72,6 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
     ReadWithPartitionIteratorP(
             Function<Integer, Iterator<T>> partitionToIterator, List<Integer> partitions
     ) {
-        setCooperative(false);
         final CircularListCursor<Iterator<T>> iteratorCursor = new CircularListCursor<>(
                 partitions.stream().map(partitionToIterator).collect(toList())
         );
@@ -90,6 +89,11 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
             } while (iteratorCursor.advance());
             return null;
         };
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return false;
     }
 
     public static <T> ProcessorMetaSupplier readMapSupplier(@Nonnull String mapName) {

@@ -20,10 +20,8 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
@@ -44,8 +42,6 @@ import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.impl.processor.TransformUsingContextP;
-import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
-import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
 import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
@@ -847,46 +843,6 @@ public final class Processors {
     @Nonnull
     public static DistributedSupplier<Processor> noopP() {
         return NoopP::new;
-    }
-
-    /**
-     * Decorates a processor meta-supplier with one that will declare all its
-     * processors non-cooperative. The wrapped meta-supplier must return processors
-     * that are {@code instanceof} {@link AbstractProcessor}.
-     */
-    @Nonnull
-    public static ProcessorMetaSupplier nonCooperativeP(@Nonnull ProcessorMetaSupplier wrapped) {
-        return new WrappingProcessorMetaSupplier(wrapped, p -> {
-            ((AbstractProcessor) p).setCooperative(false);
-            return p;
-        });
-    }
-
-    /**
-     * Decorates a {@code ProcessorSupplier} with one that will declare all its
-     * processors non-cooperative. The wrapped supplier must return processors
-     * that are {@code instanceof} {@link AbstractProcessor}.
-     */
-    @Nonnull
-    public static ProcessorSupplier nonCooperativeP(@Nonnull ProcessorSupplier wrapped) {
-        return new WrappingProcessorSupplier(wrapped, p -> {
-            ((AbstractProcessor) p).setCooperative(false);
-            return p;
-        });
-    }
-
-    /**
-     * Decorates a {@code Supplier<Processor>} into one that will declare
-     * its processors non-cooperative. The wrapped supplier must return
-     * processors that are {@code instanceof} {@link AbstractProcessor}.
-     */
-    @Nonnull
-    public static DistributedSupplier<Processor> nonCooperativeP(@Nonnull DistributedSupplier<Processor> wrapped) {
-        return () -> {
-            final Processor p = wrapped.get();
-            ((AbstractProcessor) p).setCooperative(false);
-            return p;
-        };
     }
 
     /** A no-operation processor. See {@link #noopP()} */

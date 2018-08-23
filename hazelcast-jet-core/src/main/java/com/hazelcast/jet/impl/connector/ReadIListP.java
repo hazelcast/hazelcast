@@ -43,9 +43,13 @@ public final class ReadIListP extends AbstractProcessor {
     private HazelcastInstance client;
 
     ReadIListP(String name, SerializableClientConfig clientConfig) {
-        setCooperative(false);
         this.name = name;
         this.clientConfig = clientConfig;
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return false;
     }
 
     @Override

@@ -374,8 +374,9 @@ public class CancellationTest extends JetTestSupport {
         static volatile boolean hasStarted;
         static volatile boolean isDone;
 
-        BlockingProcessor() {
-            setCooperative(false);
+        @Override
+        public boolean isCooperative() {
+            return false;
         }
 
         @Override

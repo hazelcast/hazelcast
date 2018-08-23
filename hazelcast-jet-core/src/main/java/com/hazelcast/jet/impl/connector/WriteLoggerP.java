@@ -32,8 +32,12 @@ public class WriteLoggerP<T> extends AbstractProcessor {
     private Function<T, ? extends CharSequence> toStringFn;
 
     public WriteLoggerP(Function<T, ? extends CharSequence> toStringFn) {
-        setCooperative(false);
         this.toStringFn = toStringFn;
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return false;
     }
 
     @Override
