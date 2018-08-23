@@ -135,7 +135,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
                 HandlerStatus handlerStatus = handler.onRead();
 
                 if (localHandlers != handlers) {
-                    handlerIndex = 0;
+                    handlerIndex = -1;
                     localHandlers = handlers;
                     continue;
                 }

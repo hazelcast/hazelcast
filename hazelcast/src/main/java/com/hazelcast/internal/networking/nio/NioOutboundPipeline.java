@@ -198,7 +198,7 @@ public final class NioOutboundPipeline
                 // change in the pipeline detected, therefor the pipeline is restarted.
                 localHandlers = handlers;
                 pipelineStatus = CLEAN;
-                handlerIndex = 0;
+                handlerIndex = -1;
             } else if (handlerStatus != CLEAN) {
                 pipelineStatus = handlerStatus;
             }
