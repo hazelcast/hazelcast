@@ -33,7 +33,7 @@ import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
- * See {@link Sinks#builder(String, DistributedFunction)}.
+ * See {@link SinkBuilder#sinkBuilder(String, DistributedFunction)}.
  *
  * @param <W> type of the writer object
  * @param <T> type of the items the sink will accept
@@ -47,13 +47,51 @@ public final class SinkBuilder<W, T> {
     private DistributedConsumer<? super W> destroyFn = noopConsumer();
     private int preferredLocalParallelism = 2;
 
-    /**
-     * Use {@link Sinks#builder(String, DistributedFunction)}.
-     */
-    SinkBuilder(@Nonnull String name, DistributedFunction<? super Processor.Context, ? extends W> createFn) {
+    private SinkBuilder(
+            @Nonnull String name,
+            @Nonnull DistributedFunction<? super Processor.Context, ? extends W> createFn
+    ) {
         checkSerializable(createFn, "createFn");
         this.name = name;
         this.createFn = createFn;
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom {@link Sink} for the Pipeline API. It allows you to keep a
+     * single-threaded, stateful writer object in each instance of a Jet worker
+     * dedicated to driving the sink. Its primary intended purpose is to serve
+     * as the holder of references to external resources and optional buffers.
+     * Keep in mind that only the writer object may be stateful; the functions
+     * you provide must hold no mutable state of their own.
+     * <p>
+     * These are the callback functions you can provide to implement the sink's
+     * behavior:
+     * <ol><li>
+     *     {@code createFn} creates the writer. Gets the processor context as
+     *     argument which can be used to obtain local Jet instance, global
+     *     processor index etc. It will be called once for each worker thread.
+     *     This component is required.
+     * </li><li>
+     *     {@code onReceiveFn} gets notified of each item the sink receives and
+     *     (typically) passes it to the writer. This component is required.
+     * </li><li>
+     *     {@code flushFn} flushes the writer. This component is optional.
+     * </li><li>
+     *     {@code destroyFn} destroys the writer. This component is optional.
+     * </li></ol>
+     * The returned sink will be non-cooperative and will have preferred local
+     * parallelism of 2. It also cannot participate in state snapshot saving
+     * (fault-tolerance): it will behave as an at-least-once sink.
+     *
+     * @param <W> type of the writer object
+     */
+    @Nonnull
+    public static <W> SinkBuilder<W, Void> sinkBuilder(
+            @Nonnull String name,
+            @Nonnull DistributedFunction<Processor.Context, ? extends W> createFn
+    ) {
+        return new SinkBuilder<>(name, createFn);
     }
 
     /**
@@ -131,7 +169,6 @@ public final class SinkBuilder<W, T> {
     @Nonnull
     public Sink<T> build() {
         Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
-
         DistributedSupplier<Processor> supplier = writeBufferedP(createFn, receiveFn, flushFn, destroyFn);
         return new SinkImpl<>(name, ProcessorMetaSupplier.of(supplier, preferredLocalParallelism));
     }

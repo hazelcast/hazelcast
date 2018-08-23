@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.jet.pipeline.SinkBuilder.sinkBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -50,8 +51,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
         BatchStage<Integer> stage = p.drawFrom(Sources.list(srcName));
 
         // When
-        Sink<Integer> sink = Sinks
-                .builder("file-sink",
+        Sink<Integer> sink = sinkBuilder("file-sink",
                         context -> {
                             File directory = createTempDirectory();
                             File file = new File(directory, randomName());
@@ -99,8 +99,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
 
             // When
             int localPort = serverSocket.getLocalPort();
-            Sink<Integer> sink = Sinks
-                    .builder("socket-sink", jet -> getSocketWriter(localPort))
+            Sink<Integer> sink = sinkBuilder("socket-sink", jet -> getSocketWriter(localPort))
                     .receiveFn((PrintWriter w, Integer x) -> w.println(x))
                     .flushFn(PrintWriter::flush)
                     .destroyFn(PrintWriter::close)
