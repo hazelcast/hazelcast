@@ -263,7 +263,7 @@ public class CacheExpirationTest extends CacheTestSupport {
     @Test
     public void test_whenEntryIsRemovedBackupIsCleaned() {
         SimpleExpiryListener listener = new SimpleExpiryListener();
-        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(1000, 1000, 1000), listener);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(FIVE_SECONDS, FIVE_SECONDS, FIVE_SECONDS), listener);
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
         for (int i = 0; i < KEY_RANGE; i++) {
@@ -271,7 +271,7 @@ public class CacheExpirationTest extends CacheTestSupport {
             cache.remove(i);
         }
 
-        sleepAtLeastSeconds(1);
+        sleepAtLeastSeconds(5);
         assertEquals(0, listener.getExpirationCount().get());
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
