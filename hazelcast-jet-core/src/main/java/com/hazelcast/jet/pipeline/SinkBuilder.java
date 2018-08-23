@@ -81,8 +81,12 @@ public final class SinkBuilder<W, T> {
      *     {@code destroyFn} destroys the writer. This component is optional.
      * </li></ol>
      * The returned sink will be non-cooperative and will have preferred local
-     * parallelism of 2. It also cannot participate in state snapshot saving
-     * (fault-tolerance): it will behave as an at-least-once sink.
+     * parallelism of 2. It doesn't participate in the fault-tolerance protocol,
+     * which means you can't remember across a job restart which items you
+     * already received. The sink will still receive each item at least once,
+     * thus complying with the <em>at-least-once</em> processing guarantee. If
+     * the sink is idempotent (suppresses duplicate items), it will also be
+     * compatible with the <em>exactly-once</em> guarantee.
      *
      * @param <W> type of the writer object
      */
@@ -151,9 +155,15 @@ public final class SinkBuilder<W, T> {
     }
 
     /**
-     * Sets the local parallelism of the sink, default value is {@code 2}
-     *
-     * @param preferredLocalParallelism the local parallelism of the sink
+     * Sets the local parallelism of the sink. On each member of the cluster
+     * Jet will create this many parallel processors for the sink. To identify
+     * each processor instance, your {@code createFn} can consult {@link
+     * Processor.Context#totalParallelism() procContext.totalParallelism()} and {@link
+     * Processor.Context#globalProcessorIndex() procContext.globalProcessorIndex()}.
+     * Jet calls {@code createFn} exactly once with each {@code
+     * globalProcessorIndex} from 0 to {@code totalParallelism - 1}.
+     * <p>
+     * The default value of this property is 2.
      */
     @Nonnull
     public SinkBuilder<W, T> preferredLocalParallelism(int preferredLocalParallelism) {

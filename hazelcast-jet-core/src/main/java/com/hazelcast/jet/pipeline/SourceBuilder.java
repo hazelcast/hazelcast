@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -106,35 +107,39 @@ public final class SourceBuilder<S> {
      * BatchSource batch source} for a Jet pipeline. The source will use
      * {@linkplain Processor#isCooperative() non-cooperative} processors.
      * <p>
-     * Each parallel worker that drives your source has its private instance of
-     * a state object it gets from your {@code createFn}. To get the data items
-     * to emit to the pipeline, the worker repeatedly calls your {@code
+     * Each parallel processor that drives your source has its private instance
+     * of a state object it gets from your {@code createFn}. To get the data
+     * items to emit to the pipeline, the processor repeatedly calls your {@code
      * fillBufferFn} with the state object and a buffer object.
      * <p>
      * Your function should add some items to the buffer, ideally those it has
-     * ready without having to block. It shouldn't add more than a hundred
-     * items at once, but there is no limit enforced. If it doesn't have any
+     * ready without having to block. A hundred items at a time is enough to
+     * eliminate any per-call overheads within Jet. If it doesn't have any
      * items ready, it may also return without adding anything. In any case the
      * function should not take more than a second or so to complete, otherwise
      * you risk interfering with Jet's coordination mechanisms and getting bad
-     * performance. Once it has added all the data, the function must call
-     * {@link SourceBuffer#close() buffer.close()}.
+     * performance.
+     * <p>
+     * Once it has emitted all the data, {@code fillBufferFn} must call {@link
+     * SourceBuffer#close() buffer.close()}. This signals Jet to not call {@code
+     * fillBufferFn} again and at some later point it will call the {@code
+     * destroyFn} on the state object.
      * <p>
      * Unless you call {@link SourceBuilder.Batch#distributed(int) builder.distributed()},
-     * Jet will create just a single worker that should emit all the data. If
-     * you do call it, make sure your distributed source takes care of
-     * splitting the data between workers. Your {@code createFn} should consult
-     * {@link Processor.Context#totalParallelism() procContext.totalParallelism()}
-     * and {@link Processor.Context#globalProcessorIndex() procContext.globalProcessorIndex()}.
+     * Jet will create just a single processor that should emit all the data.
+     * If you do call it, make sure your distributed source takes care of
+     * splitting the data between processors. Your {@code createFn} should
+     * consult {@link Context#totalParallelism()} procContext.totalParallelism()}
+     * and {@link Context#globalProcessorIndex()} procContext.globalProcessorIndex()}.
      * Jet calls it exactly once with each {@code globalProcessorIndex} from 0
      * to {@code totalParallelism - 1} and each of the resulting state objects
      * must emit its unique slice of the total source data.
      * <p>
      * Here's an example that builds a simple, non-distributed source that
      * reads the lines from a single text file. Since you can't control on
-     * which member of the Jet cluster the source's worker will run, the file
-     * should be available on all members. The source emits one line per {@code
-     * fillBufferFn} call.
+     * which member of the Jet cluster the source's processor will run, the
+     * file should be available on all members. The source emits one line per
+     * {@code fillBufferFn} call.
      * <pre>{@code
      * BatchSource<String> fileSource = SourceBuilder
      *         .batch("file-source", x ->
@@ -169,47 +174,50 @@ public final class SourceBuilder<S> {
      * StreamSource unbounded stream source} for a Jet pipeline. The source will
      * use {@linkplain Processor#isCooperative() non-cooperative} processors.
      * <p>
-     * Each parallel worker that drives your source has its private instance of
-     * a state object it gets from your {@code createFn}. To get the data items
-     * to emit to the pipeline, the worker repeatedly calls your {@code
+     * Each parallel processor that drives your source has its private instance
+     * of a state object it gets from your {@code createFn}. To get the data
+     * items to emit to the pipeline, the processor repeatedly calls your {@code
      * fillBufferFn} with the state object and a buffer object.
      * <p>
      * Your function should add some items to the buffer, ideally those it has
-     * ready without having to block. It shouldn't add more than a hundred
-     * items at once, but there is no limit enforced. If it doesn't have any
+     * ready without having to block. A hundred items at a time is enough to
+     * eliminate any per-call overheads within Jet. If it doesn't have any
      * items ready, it may also return without adding anything. In any case the
      * function should not take more than a second or so to complete, otherwise
      * you risk interfering with Jet's coordination mechanisms and getting bad
      * performance.
      * <p>
      * Unless you call {@link SourceBuilder.Stream#distributed(int) builder.distributed()},
-     * Jet will create just a single worker that should emit all the data. If
-     * you do call it, make sure your distributed source takes care of
-     * splitting the data between workers. Your {@code createFn} should consult
-     * {@link Processor.Context#totalParallelism() procContext.totalParallelism()}
-     * and {@link Processor.Context#globalProcessorIndex() procContext.globalProcessorIndex()}.
+     * Jet will create just a single processor that should emit all the data.
+     * If you do call it, make sure your distributed source takes care of
+     * splitting the data between processors. Your {@code createFn} should
+     * consult {@link Context#totalParallelism() procContext.totalParallelism()}
+     * and {@link Context#globalProcessorIndex() procContext.globalProcessorIndex()}.
      * Jet calls it exactly once with each {@code globalProcessorIndex} from 0
      * to {@code totalParallelism - 1} and each of the resulting state objects
      * must emit its unique slice of the total source data.
      * <p>
      * Here's an example that builds a simple, non-distributed source that
-     * reads lines of text from a TCP/IP socket. The source emits one line per
-     * {@code fillBufferFn} call, or nothing if there's no data ready.
+     * polls an URL and emits all the lines it gets in the response:
      * <pre>{@code
      * StreamSource<String> socketSource = SourceBuilder
-     *         .stream("socket-source", ctx -> new BufferedReader(
-     *                 new InputStreamReader(
-     *                         new Socket("localhost", 7001).getInputStream())))
-     *         .<String>fillBufferFn((in, buf) -> {
-     *             if (in.ready()) {
-     *                 buf.add(in.readLine());
-     *             }
-     *         })
-     *         .destroyFn(BufferedReader::close)
-     *         .build();
+     *     .stream("http-source", ctx -> HttpClients.createDefault())
+     *     .<String>fillBufferFn((httpc, buf) -> {
+     *         new BufferedReader(new InputStreamReader(
+     *             httpc.execute(new HttpGet("localhost:8008"))
+     *                  .getEntity().getContent()))
+     *             .lines()
+     *             .forEach(buf::add);
+     *     })
+     *     .destroyFn(Closeable::close)
+     *     .build();
      * Pipeline p = Pipeline.create();
-     * StreamStage<String> srcStage = p.drawFrom(fileSource);
+     * StreamStage<String> srcStage = p.drawFrom(socketSource);
      * }</pre>
+     * <p>
+     * <strong>NOTE:</strong> the source you build with this builder is not
+     * fault-tolerant. You shouldn't use it in jobs that require a processing
+     * guarantee.
      *
      * @param name     a descriptive name for the source (for diagnostic purposes)
      * @param createFn a function that creates the state object
@@ -230,53 +238,63 @@ public final class SourceBuilder<S> {
      * It will use {@linkplain Processor#isCooperative() non-cooperative}
      * processors.
      * <p>
-     * Each parallel worker that drives your source has its private instance of
-     * a state object it gets from your {@code createFn}. To get the data items
-     * to emit to the pipeline, the worker repeatedly calls your {@code
+     * Each parallel processor that drives your source has its private instance
+     * of a state object it gets from your {@code createFn}. To get the data
+     * items to emit to the pipeline, the processor repeatedly calls your {@code
      * fillBufferFn} with the state object and a buffer object. The buffer's
      * {@link SourceBuilder.TimestampedSourceBuffer#add add()} method takes two
      * arguments: the item and the timestamp in milliseconds.
      * <p>
      * Your function should add some items to the buffer, ideally those it has
-     * ready without having to block. It shouldn't add more than a hundred
-     * items at once, but there is no limit enforced. If it doesn't have any
+     * ready without having to block. A hundred items at a time is enough to
+     * eliminate any per-call overheads within Jet. If it doesn't have any
      * items ready, it may also return without adding anything. In any case the
      * function should not take more than a second or so to complete, otherwise
      * you risk interfering with Jet's coordination mechanisms and getting bad
      * performance.
      * <p>
      * Unless you call {@link SourceBuilder.TimestampedStream#distributed(int)
-     * builder.distributed()}, Jet will create just a single worker that should
-     * emit all the data. If you do call it, make sure your distributed source
-     * takes care of splitting the data between workers. Your {@code createFn}
-     * should consult {@link Processor.Context#totalParallelism()
-     * procContext.totalParallelism()} and {@link Processor.Context#globalProcessorIndex()
+     * builder.distributed()}, Jet will create just a single processor that
+     * should emit all the data. If you do call it, make sure your distributed
+     * source takes care of splitting the data between processors. Your {@code
+     * createFn} should consult {@link Context#totalParallelism()
+     * procContext.totalParallelism()} and {@link Context#globalProcessorIndex()
      * procContext.globalProcessorIndex()}. Jet calls it exactly once with each
      * {@code globalProcessorIndex} from 0 to {@code totalParallelism - 1} and
      * each of the resulting state objects must emit its unique slice of the
      * total source data.
      * <p>
      * Here's an example that builds a simple, non-distributed source that
-     * reads lines of text from a TCP/IP socket, interpreting the first 9
-     * characters as the timestamp. The source emits one item per
-     * {@code fillBufferFn} call, or nothing if there's no data ready.
+     * polls an URL and emits all the lines it gets in the response,
+     * interpreting the first 9 characters as the timestamp.
      * <pre>{@code
      * StreamSource<String> socketSource = SourceBuilder
-     *     .timestampedStream("socket-source", ctx -> new BufferedReader(
-     *         new InputStreamReader(
-     *             new Socket("localhost", 7001).getInputStream())))
-     *     .<String>fillBufferFn((in, buf) -> {
-     *         if (in.ready()) {
-     *             String line = in.readLine();
-     *             long timestamp = Long.valueOf(line.substring(0, 9));
-     *             buf.add(line.substring(9), timestamp);
-     *         }
+     *     .timestampedStream("http-source", ctx -> HttpClients.createDefault())
+     *     .<String>fillBufferFn((httpc, buf) -> {
+     *         new BufferedReader(new InputStreamReader(
+     *             httpc.execute(new HttpGet("localhost:8008"))
+     *                  .getEntity().getContent()))
+     *             .lines()
+     *             .forEach(line -> {
+     *                 long timestamp = Long.valueOf(line.substring(0, 9));
+     *                 buf.add(line.substring(9), timestamp);
+     *             });
      *     })
-     *     .destroyFn(BufferedReader::close)
+     *     .destroyFn(Closeable::close)
      *     .build();
      * Pipeline p = Pipeline.create();
-     * StreamStage<String> srcStage = p.drawFrom(fileSource);
+     * StreamStage<String> srcStage = p.drawFrom(socketSource);
      * }</pre>
+     * <p>
+     * <strong>NOTE 1:</strong> the source you build with this builder is not
+     * fault-tolerant. You shouldn't use it in jobs that require a processing
+     * guarantee.
+     * <p>
+     * <strong>NOTE 2:</strong> if the data source you're adapting to Jet is
+     * partitioned, you may run into issues with event skew between partitions.
+     * The timestamp you get from one partition may be significantly behind the
+     * timestamp you already got from another partition. If the lag is more
+     * than you configured with
      *
      * @param name a descriptive name for the source (for diagnostic purposes)
      * @param createFn a function that creates the state object
@@ -306,9 +324,9 @@ public final class SourceBuilder<S> {
 
         /**
          * Declares that you're creating a distributed source. On each member of
-         * the cluster Jet will create as many workers as you specify with the
+         * the cluster Jet will create as many processors as you specify with the
          * {@code preferredLocalParallelism} parameter. If you call this, you must
-         * ensure that all the source workers are coordinated and not emitting
+         * ensure that all the source processors are coordinated and not emitting
          * duplicated data. The {@code createFn} can consult {@link Processor.Context#totalParallelism()
          * procContext.totalParallelism()} and {@link Processor.Context#globalProcessorIndex()
          * procContext.globalProcessorIndex()}. Jet calls {@code createFn} exactly
@@ -316,7 +334,7 @@ public final class SourceBuilder<S> {
          * totalParallelism - 1}, this can help all the instances agree on which
          * part of the data to emit.
          *
-         * @param preferredLocalParallelism requested number of workers on each cluster member
+         * @param preferredLocalParallelism requested number of processors on each cluster member
          */
         @Nonnull
         public Base<T> distributed(int preferredLocalParallelism) {

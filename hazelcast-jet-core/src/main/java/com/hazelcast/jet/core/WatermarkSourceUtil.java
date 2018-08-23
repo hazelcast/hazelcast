@@ -33,59 +33,69 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * events from multiple external partitions.
  *
  * <h3>The problems</h3>
- * <h4>1. Reading partition by partition</h4>
- * On restart it can happen that <em>partition1</em> has one very recent event
- * and <em>partition2</em> has one old event. If <em>partition1</em> is polled
- * first and the event is emitted, it will advance the watermark. Then later
- * <em>partition2</em> is polled and its event might be dropped as late.
  *
- * This utility helps you track watermarks per partition and decide when to
- * emit it.
+ * <h4>1. Reading partition by partition</h4>
+ *
+ * Upon restart it can happen that partition <em>partition1</em> has one
+ * very recent event and <em>partition2</em> has an old one. If we poll
+ * <em>partition1</em> first and emit its recent event, it will advance the
+ * watermark. When we poll <em>partition2</em> later on, its event will be
+ * behind the watermork, to be dropped as late. This utility tracks the
+ * event timestamps for each partition individually and allows the
+ * processor to emit the watermark that is correct with respect to all the
+ * partitions.
  *
  * <h4>2. Some partition having no data</h4>
- * It can happen that some partition does not have any events at all and others
- * do. Or that the processor is not assigned any external partitions. In this
- * both cases no watermarks will be emitted. This utility supports <em>idle
- * timeout</em>: if some partition does not have any event during this time,
- * it will be marked as <em>idle</em>. If all partitions are idle or there are
- * no partitions, special <em>idle message</em> will be emitted and the
- * downstream will exclude this processor from watermark coalescing.
+ *
+ * It can happen that some partition does not have any events at all while
+ * others do or the processor doesn't get any external partitions assigned
+ * to it. If we simply wait for the timestamps in all partitions to advance
+ * to some point, we won't be emitting any watermarks. This utility
+ * supports the <em>idle timeout</em>: if there's no new data from a
+ * partition after the timeout elapses, it will be marked as <em>idle</em>,
+ * allowing the processor's watermark to advance as if that partition didn't
+ * exist. If all partitions are idle or there are no partitions, the
+ * processor will emit a special <em>idle message</em> and the downstream
+ * will exclude this processor from watermark coalescing.
  *
  * <h3>Usage</h3>
- * API is designed to be used as a flat-mapping step in {@link Traverser}. Your
- * source might follow this pattern:
+ *
+ * The API is designed to be used as a flat-mapping step in the {@link
+ * Traverser} that holds the output data. Your source can follow this
+ * pattern:
  *
  * <pre>{@code
- *   public boolean complete() {
- *       if (traverser == null) {
- *           List<Record> records = poll(); // get a batch of events from external source
- *           if (records.isEmpty()) {
- *               traverser = watermarkSourceUtil.handleNoEvent();
- *           } else {
- *               traverser = traverserIterable(records)
- *                   .flatMap(event -> watermarkSourceUtil.handleEvent(event, event.getPartition()));
- *           }
- *           traverser = traverser.onFirstNull(() -> traverser = null);
- *       }
- *       emitFromTraverser(traverser, event -> {
- *           if (!(event instanceof Watermark)) {
- *               // store your offset after event was emitted
- *               offsetsMap.put(event.getPartition(), event.getOffset());
- *           }
- *       });
- *       return false;
- *   }
+ * public boolean complete() {
+ *     if (traverser == null) {
+ *         List<Record> records = poll();
+ *         if (records.isEmpty()) {
+ *             traverser = wmSourceUtil.handleNoEvent();
+ *         } else {
+ *             traverser = traverserIterable(records)
+ *                 .flatMap(event -> wmSourceUtil.handleEvent(
+ *                      event, event.getPartition()));
+ *         }
+ *         traverser = traverser.onFirstNull(() -> traverser = null);
+ *     }
+ *     emitFromTraverser(traverser, event -> {
+ *         if (!(event instanceof Watermark)) {
+ *             // store your offset after event was emitted
+ *             offsetsMap.put(event.getPartition(), event.getOffset());
+ *         }
+ *     });
+ *     return false;
+ * }
  * }</pre>
  *
  * Other methods:
- * <ul>
- *     <li>Call {@link #increasePartitionCount} to set your partition count
+ * <ul><li>
+ *     Call {@link #increasePartitionCount} to set your partition count
  *     initially or whenever the count increases.
- *
- *     <li>If you support state snapshots, save the value returned by {@link
+ * <li>
+ *     If you support state snapshots, save the value returned by {@link
  *     #getWatermark} for all partitions to the snapshot. When restoring the
- *     state, call {@link #restoreWatermark}.<br>
- *
+ *     state, call {@link #restoreWatermark}.
+ *     <br>
  *     You should save the value under your external partition key so that the
  *     watermark value can be restored to correct processor instance. The key
  *     should also be wrapped using {@link BroadcastKey#broadcastKey
