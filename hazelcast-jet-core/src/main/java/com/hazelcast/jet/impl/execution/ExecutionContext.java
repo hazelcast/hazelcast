@@ -187,7 +187,7 @@ public class ExecutionContext {
                 // if cancelled before execution started, then assign the already completed future.
                 executionFuture = cancellationFuture;
             }
-            snapshotContext().cancel();
+            snapshotContext.cancel();
             return executionFuture;
         }
     }

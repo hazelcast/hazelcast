@@ -130,6 +130,7 @@ public class JobCoordinationService {
     }
 
     public void reset() {
+        assert !isMaster() : "this member is a master";
         masterContexts.values().forEach(ctx -> ctx.setFinalResult(new CancellationException()));
         masterContexts.clear();
     }

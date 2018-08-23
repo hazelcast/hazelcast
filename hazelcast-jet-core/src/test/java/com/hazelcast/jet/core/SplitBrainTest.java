@@ -106,7 +106,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             });
 
             assertTrueAllTheTime(() -> {
-                assertEquals(NOT_RUNNING, service2.getJobCoordinationService().getJobStatus(jobId));
+                assertStatusNotRunningOrStarting(service2.getJobCoordinationService().getJobStatus(jobId));
             }, 20);
         };
 
@@ -373,9 +373,10 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             Job jobRef2 = secondSubCluster[0].getJob(jobRef[0].getId());
             assertNotNull("jobRef1", jobRef1);
             assertNotNull("jobRef2", jobRef2);
-            assertTrueEventually(() -> assertEquals("job not running on subcluster 1", RUNNING, jobRef1.getStatus()), 10);
-            assertTrueEventually(() -> assertEquals("job not running on subcluster 2", RUNNING, jobRef2.getStatus()), 10);
-            assertEquals("initCount", clusterSize * 2, MockPS.initCount.get());
+            assertTrueEventually(() -> assertEquals("job not running on subcluster 1", RUNNING, jobRef1.getStatus()));
+            assertTrueEventually(() -> assertEquals("job not running on subcluster 2", RUNNING, jobRef2.getStatus()));
+            // we need assert-eventually here because we might observe RUNNING state from an execution before the split
+            assertTrueEventually(() -> assertEquals("initCount", clusterSize * 2, MockPS.initCount.get()));
         };
 
         Consumer<JetInstance[]> afterMerge = instances -> {

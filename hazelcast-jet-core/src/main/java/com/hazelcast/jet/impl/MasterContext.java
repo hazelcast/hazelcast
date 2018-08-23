@@ -610,7 +610,9 @@ public class MasterContext {
         Collection<MemberInfo> successfulMembers = grouped.get(false).stream().map(Entry::getKey).collect(toList());
 
         List<Entry<MemberInfo, Object>> failures = grouped.get(true);
-        logger.fine(opName + " of " + jobIdString() + " has failures: " + failures);
+        if (!failures.isEmpty()) {
+            logger.fine(opName + " of " + jobIdString() + " has failures: " + failures);
+        }
 
         TerminationMode mode = requestedTerminationMode;
         if (mode == CANCEL) {
