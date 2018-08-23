@@ -1,5 +1,18 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
+Release 3.11-BETA-1
+
+- Fine-Grained Control over WAN Replication Events.
+- License Enforcements and Warnings.
+- WAN Synchronization using Merkle Trees.
+- Ability to Set TTL for Map and Cache Entries.
+- Maximum Idle Timeout Support Per Entry.
+- Java 9 Compliance.
+- Map Index Statistics.
+- JCache Expired Entries Disposal.
+- Improved Network I/O.
+
+
 Release 3.10
 
 - Split-Brain Healing for Hazelcast Data Structures with High-Density (HD) Memory Store.
