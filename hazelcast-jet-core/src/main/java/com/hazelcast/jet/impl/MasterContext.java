@@ -141,7 +141,7 @@ public class MasterContext {
      * It's true while a snapshot is in progress. It's used to prevent
      * concurrent snapshots.
      */
-    private volatile boolean snapshotInProgress;
+    private boolean snapshotInProgress;
 
     /**
      * If {@code true}, the snapshot that will be executed next will be
@@ -228,7 +228,9 @@ public class MasterContext {
         if (localStatus == SUSPENDED) {
             coordinationService.completeJob(this, System.currentTimeMillis(), new CancellationException());
         } else {
-            handleTermination(mode);
+            if (localStatus == RUNNING || localStatus == STARTING) {
+                handleTermination(mode);
+            }
         }
 
         return true;
@@ -515,6 +517,11 @@ public class MasterContext {
                 // cancel the scheduled snapshot from previous execution, so let's just ignore it.
                 logger.fine("Not beginning snapshot since unexpected execution ID received for " + jobIdString()
                         + ". Received execution ID: " + idToString(executionId));
+                return;
+            }
+
+            if (jobStatus != RUNNING) {
+                logger.fine("Not beginning snapshot, job is not RUNNING, but " + jobStatus);
                 return;
             }
 
@@ -915,9 +922,20 @@ public class MasterContext {
         return null; // nothing to wait for
     }
 
+    /**
+     * Checks if the job is running on all members and maybe restart it.
+     *
+     * <p>Returns {@code false}, if this method should be scheduled to
+     * be called later. That is, when the job is running, but we've
+     * failed to request the restart.
+     *
+     * <p>Returns {@code true}, if the job is not running, has
+     * auto-scaling disabled, is already running on all members or if
+     * we've managed to request a restart.
+     */
     boolean maybeScaleUp(Collection<Member> currentDataMembers) {
         if (!jobConfig().isAutoScaling()) {
-            return false;
+            return true;
         }
 
         // We only compare the number of our participating members and current members.
@@ -926,10 +944,15 @@ public class MasterContext {
         if (executionPlanMap == null || executionPlanMap.size() == currentDataMembers.size()) {
             LoggingUtil.logFine(logger, "Not up-scaling job %s: not running or already running on all members",
                     jobIdString());
-            return false;
+            return true;
         }
 
-        return requestTermination(TerminationMode.RESTART_GRACEFUL);
+        JobStatus localStatus = jobStatus;
+        if (localStatus == RUNNING && requestTermination(TerminationMode.RESTART_GRACEFUL)) {
+            logger.info("Requested restart of " + jobIdString() + " to make use of added member(s)");
+            return true;
+        }
+        return false;
     }
 
     private void assertLockHeld() {

@@ -169,15 +169,13 @@ public class JobCoordinationService {
             scheduleScaleUp(RETRY_DELAY_IN_MILLIS);
         }
 
-        int count = 0;
+        boolean allSucceeded = true;
         Collection<Member> dataMembers = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         for (MasterContext mc : masterContexts.values()) {
-            if (mc.maybeScaleUp(dataMembers)) {
-                count++;
-            }
+            allSucceeded &= mc.maybeScaleUp(dataMembers);
         }
-        if (count > 0) {
-            logger.info("Restarted " + count + " job(s) to make use of added members");
+        if (!allSucceeded) {
+            scheduleScaleUp(RETRY_DELAY_IN_MILLIS);
         }
     }
 

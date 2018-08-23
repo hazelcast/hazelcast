@@ -21,10 +21,13 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.StuckForeverSourceP;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class ScaleUpTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;
@@ -47,55 +50,55 @@ public class ScaleUpTest extends JetTestSupport {
     public void when_memberAdded_then_jobScaledUp() {
         setup(1000);
         instances[0].newJob(dag);
-        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
         createJetMember(config);
-        assertTrueEventually(() -> assertEquals(NODE_COUNT * 2 + 1, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(NODE_COUNT * 2 + 1, MockPS.initCount.get()));
     }
 
     @Test
     public void when_memberAddedAndAutoScalingDisabled_then_jobNotRestarted() {
         setup(1000);
         instances[0].newJob(dag, new JobConfig().setAutoScaling(false));
-        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
         createJetMember(config);
-        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
     }
 
     @Test
     public void when_liteMemberAdded_then_jobNotRestarted() {
         setup(1000);
         instances[0].newJob(dag);
-        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
         JetConfig config = new JetConfig();
         config.getHazelcastConfig().setLiteMember(true);
         createJetMember(config);
-        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
     }
 
     @Test
     public void when_memberAddedAndAnotherAddedBeforeDelay_then_jobRestartedOnce() {
         setup(10_000);
         instances[0].newJob(dag);
-        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
         createJetMember(config);
         sleepSeconds(1);
         createJetMember(config);
-        assertTrueEventually(() -> assertEquals(NODE_COUNT * 2 + 2, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(NODE_COUNT * 2 + 2, MockPS.initCount.get()));
     }
 
     @Test
     public void when_memberAddedAndRemovedBeforeDelay_then_jobNotRestarted() {
         setup(12_000);
         instances[0].newJob(dag);
-        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
         JetInstance addedMember = createJetMember(config);
         sleepSeconds(1);
         addedMember.shutdown();
-        assertTrueAllTheTime(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 12);
+        assertTrueAllTheTime(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 15);
     }
 }
