@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.metrics.jmx;
 
+import com.hazelcast.internal.metrics.MetricsUtil;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
@@ -157,6 +158,73 @@ public class JmxPublisherTest {
                         singletonList(entry("a", 3L))),
                 tuple2(domainPrefix + ":type=Metrics,instance=inst1",
                         singletonList(entry("a", 4L)))
+        ));
+    }
+
+    @Test
+    public void when_metricNotRendered_then_mBeanRemoved() throws Exception {
+        jmxPublisher.publishLong("[tag1=a,metric=b]", 1L);
+        jmxPublisher.publishLong("[tag1=a,metric=c]", 2L);
+        jmxPublisher.whenComplete();
+        assertMBeans(singletonList(
+                tuple2(domainPrefix + ":type=Metrics,instance=inst1,tag0=\"tag1=a\"",
+                        asList(entry("b", 1L), entry("c", 2L)))
+        ));
+
+        jmxPublisher.publishLong("[tag1=a,metric=b]", 1L);
+        jmxPublisher.whenComplete();
+        assertMBeans(singletonList(
+                tuple2(domainPrefix + ":type=Metrics,instance=inst1,tag0=\"tag1=a\"",
+                        singletonList(entry("b", 1L)))
+        ));
+
+        jmxPublisher.whenComplete();
+        assertMBeans(emptyList());
+    }
+
+    @Test
+    public void when_badCharacters1_then_escaped() throws Exception {
+        // this is a test that the test works with plain input
+        when_badCharacters_then_escaped("aaa");
+    }
+
+    @Test
+    public void when_badCharacters2_then_escaped() throws Exception {
+        // backslash is special in quoted value, but not in unquoted
+        when_badCharacters_then_escaped("\\");
+    }
+
+    @Test
+    public void when_badCharacters3_then_escaped() throws Exception {
+        // colon is special in unquoted value, but not in quoted
+        when_badCharacters_then_escaped(":");
+    }
+
+    @Test
+    public void when_badCharacters4_then_escaped() throws Exception {
+        // a text containing characters that need to be escaped in quoted value
+        when_badCharacters_then_escaped("\\w\n\\");
+    }
+
+    @Test
+    public void when_badCharacters5_then_escaped() throws Exception {
+        // * and ? can be validly a part of unquoted or quoted value, but they are pattern matchers
+        // and we want to treat them literally
+        when_badCharacters_then_escaped("?*");
+    }
+
+    private void when_badCharacters_then_escaped(String badText) throws Exception {
+        // we must be able to work with any crazy user input
+        System.out.println("badText: " + badText);
+        jmxPublisher.publishLong(badText + ".metric", 1L);
+        jmxPublisher.publishLong("[tag1=a,metric=" + MetricsUtil.escapeMetricNamePart(badText) + "]", 2L);
+        jmxPublisher.whenComplete();
+
+        assertMBeans(asList(
+                tuple2(domainPrefix + ":type=Metrics,instance=inst1,tag0=" + JmxPublisher.escapeObjectNameValue(badText),
+                        singletonList(entry("metric", 1L))),
+                tuple2(domainPrefix + ":type=Metrics,instance=inst1,tag0=\"tag1=a\"",
+                        singletonList(entry(badText, 2L)))
         ));
     }
 

@@ -69,15 +69,15 @@ public class JmxPublisher implements MetricsPublisher {
 
     @Override
     public void publishLong(String metricName, long value) {
-        renderNumber(metricName, value);
+        publishNumber(metricName, value);
     }
 
     @Override
     public void publishDouble(String metricName, double value) {
-        renderNumber(metricName, value);
+        publishNumber(metricName, value);
     }
 
-    private void renderNumber(String metricName, Number value) {
+    private void publishNumber(String metricName, Number value) {
         MetricData metricData = metricNameToMetricData.computeIfAbsent(metricName,
                 n -> new MetricData(n, instanceNameEscaped, domainPrefix));
         assert !metricData.wasPresent : "metric '" + metricName + "' was rendered twice";
@@ -129,8 +129,9 @@ public class JmxPublisher implements MetricsPublisher {
         }
     }
 
+    // package-visible for test
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
-    private static String escapeObjectNameValue(String name) {
+    static String escapeObjectNameValue(String name) {
         if (name.indexOf(',') < 0
                 && name.indexOf('=') < 0
                 && name.indexOf(':') < 0
@@ -140,7 +141,13 @@ public class JmxPublisher implements MetricsPublisher {
                 && name.indexOf('\n') < 0) {
             return name;
         }
-        return "\"" + name.replace("\"", "\\\"").replace("\n", "\\n ") + '"';
+        return "\"" + name
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("*", "\\*")
+                .replace("?", "\\?")
+                + '"';
     }
 
     private static class MetricData {
