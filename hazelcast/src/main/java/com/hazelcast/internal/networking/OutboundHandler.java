@@ -68,7 +68,7 @@ public abstract class OutboundHandler<S, D> extends ChannelHandler<OutboundHandl
      * A OutboundHandler should be able to deal with a spurious wakeup.
      * So it could be for example there is no frame for it to write to.
      *
-     * @return true if the content is fully written and this handler is clean.
+     * @return {@link HandlerStatus} the status of the handler after processing the src.
      * @throws Exception if something fails while executing the onWrite. When
      *                   an exception is thrown, the {@link ChannelErrorHandler}
      *                   is called.
