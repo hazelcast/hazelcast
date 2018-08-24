@@ -81,19 +81,23 @@ class GcpClient {
     }
 
     List<GcpAddress> getAddresses() {
+        return RetryUtils.retry(new Callable<List<GcpAddress>>() {
+            @Override
+            public List<GcpAddress> call() {
+                return fetchGcpAddresses();
+            }
+        }, RETRIES);
+    }
+
+    private List<GcpAddress> fetchGcpAddresses() {
         LOGGER.finest("Fetching OAuth Access Token");
-        final String accessToken = accessToken();
+        final String accessToken = fetchAccessToken();
 
         List<GcpAddress> result = new ArrayList<GcpAddress>();
         for (final String project : projects) {
             for (final String zone : zones) {
                 LOGGER.finest(String.format("Fetching instances for project '%s' and zone '%s'", project, zone));
-                List<GcpAddress> addresses = RetryUtils.retry(new Callable<List<GcpAddress>>() {
-                    @Override
-                    public List<GcpAddress> call() {
-                        return gcpComputeApi.instances(project, zone, label, accessToken);
-                    }
-                }, RETRIES);
+                List<GcpAddress> addresses = gcpComputeApi.instances(project, zone, label, accessToken);
                 LOGGER.finest(String.format("Found the following instances for project '%s' and zone '%s': %s", project, zone,
                         addresses));
                 result.addAll(addresses);
@@ -102,16 +106,11 @@ class GcpClient {
         return result;
     }
 
-    private String accessToken() {
+    private String fetchAccessToken() {
         if (privateKeyPath != null) {
-            return gcpAuthenticator.accessToken(privateKeyPath);
+            return gcpAuthenticator.refreshAccessToken(privateKeyPath);
         }
-        return RetryUtils.retry(new Callable<String>() {
-            @Override
-            public String call() {
-                return gcpMetadataApi.accessToken();
-            }
-        }, RETRIES);
+        return gcpMetadataApi.accessToken();
     }
 
     String getAvailabilityZone() {

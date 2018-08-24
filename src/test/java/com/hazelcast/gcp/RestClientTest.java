@@ -23,6 +23,7 @@ import org.junit.Test;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.Assert.assertEquals;
@@ -31,7 +32,8 @@ public class RestClientTest {
     private static final int PORT = 8089;
     private static final String ADDRESS = String.format("http://localhost:%s", PORT);
     private static final String API_ENDPOINT = "/some/endpoint";
-    private static final String BODY_RESPONSE = "some body";
+    private static final String BODY_REQUEST = "some body request";
+    private static final String BODY_RESPONSE = "some body response";
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(PORT);
@@ -78,5 +80,21 @@ public class RestClientTest {
 
         // then
         // throw exception
+    }
+
+    @Test
+    public void postSuccess() {
+        // given
+        stubFor(post(urlEqualTo(API_ENDPOINT))
+                .withRequestBody(equalTo(BODY_REQUEST))
+                .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+
+        // when
+        String result = RestClient.create(String.format("%s%s", ADDRESS, API_ENDPOINT))
+                                  .withBody(BODY_REQUEST)
+                                  .post();
+
+        // then
+        assertEquals(BODY_RESPONSE, result);
     }
 }

@@ -33,7 +33,7 @@ Make sure you have the `hazelcast-gcp.jar` dependency in your classpath. Then, y
             <!-- class equals to the DiscoveryStrategy not the factory! -->
             <discovery-strategy enabled="true" class="com.hazelcast.gcp.GcpDiscoveryStrategy">
                 <properties>
-                   <property name="private-key-path">/service/account/key/json/path</property>
+                   <property name="private-key-path">/home/name/service/account/key.json</property>
                    <property name="projects">project-1,project-2</property>
                    <property name="zones">us-east1-a,us-east1-b</property>
                    <property name="label">application=hazelcast</property>
@@ -57,7 +57,7 @@ joinConfig.getMulticastConfig().setEnabled(false);
 joinConfig.getAwsConfig().setEnabled(false);
 GcpDiscoveryStrategyFactory gcpDiscoveryStrategyFactory = new GcpDiscoveryStrategyFactory();
 Map<String, Comparable> properties = new HashMap<String, Comparable>();
-properties.put("private-key-path","/service/account/key/json/path");
+properties.put("private-key-path","/home/name/service/account/key.json");
 properties.put("projects","project-1,project-2");
 properties.put("zones","us-east1-a,us-east1-b");
 properties.put("label","application=hazelcast");
@@ -67,7 +67,7 @@ joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConf
 ```
 
 The following properties can be configured:
-* `private-key-path`: a filesystem path to the private key for GCP service account; if not set, the access token is fetched from the GCP VM instance
+* `private-key-path`: a filesystem path to the private key for GCP service account in the JSON format; if not set, the access token is fetched from the GCP VM instance
 * `projects`: a list of projects where the plugin looks for instances; if not set, the current project is used
 * `zones`: a list of zones where the plugin looks for instances; if not set, the current zone is used
 * `label`: a filter to look only for instances labeled as specified; property format: `key=value`

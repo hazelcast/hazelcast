@@ -119,7 +119,7 @@ public class GcpClientTest {
     public void getAddressesWithPrivateKeyPath() {
         // given
         given(gcpMetadataApi.accessToken()).willReturn(null);
-        given(gcpAuthenticator.accessToken(PRIVATE_KEY_PATH)).willReturn(ACCESS_TOKEN);
+        given(gcpAuthenticator.refreshAccessToken(PRIVATE_KEY_PATH)).willReturn(ACCESS_TOKEN);
         given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, null, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
         GcpConfig gcpConfig = GcpConfig.builder().setPrivateKeyPath(PRIVATE_KEY_PATH).build();
