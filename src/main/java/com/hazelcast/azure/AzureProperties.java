@@ -114,10 +114,10 @@ public final class AzureProperties {
     }
 
     /**
-     * Returns a Comparable type for the specified property defition in the provided
+     * Returns a Comparable type for the specified property definition in the provided
      * property map
      *
-     * @param property the PropertyDefition to use provided by
+     * @param property the PropertyDefinition to use provided by
      * @param properties the properties map to retrieve the property from
      * @return the or null
      * @throws ValidationException if value does not fall in valid port number range

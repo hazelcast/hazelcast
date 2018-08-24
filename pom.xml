@@ -95,6 +95,9 @@
 
         <hazelcast.version>3.7.2</hazelcast.version>
 
+        <azure.client.authentication.version>1.6.0</azure.client.authentication.version>
+        <azure.mgmt.sdk.version>1.14.0</azure.mgmt.sdk.version>
+
         <maven.findbugs.plugin.version>3.0.0</maven.findbugs.plugin.version>
         <maven.checkstyle.plugin.version>2.12</maven.checkstyle.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
@@ -241,24 +244,13 @@
         </dependency>
         <dependency>
             <groupId>com.microsoft.azure</groupId>
+            <artifactId>azure-client-authentication</artifactId>
+            <version>${azure.client.authentication.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.azure</groupId>
             <artifactId>azure-mgmt-compute</artifactId>
-            <version>0.9.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.microsoft.azure</groupId>
-            <artifactId>azure-mgmt-resources</artifactId>
-            <version>0.9.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.microsoft.azure</groupId>
-            <artifactId>azure-mgmt-network</artifactId>
-            <version>0.9.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.microsoft.azure</groupId>
-            <artifactId>azure-mgmt-utility</artifactId>
-            <version>0.9.1</version>
-            <scope>test</scope>
+            <version>${azure.mgmt.sdk.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
