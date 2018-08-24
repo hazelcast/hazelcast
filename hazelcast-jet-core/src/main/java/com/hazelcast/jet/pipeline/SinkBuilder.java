@@ -45,7 +45,7 @@ public final class SinkBuilder<W, T> {
     private DistributedBiConsumer<? super W, ? super T> receiveFn;
     private DistributedConsumer<? super W> flushFn = noopConsumer();
     private DistributedConsumer<? super W> destroyFn = noopConsumer();
-    private int preferredLocalParallelism = 2;
+    private int preferredLocalParallelism = 1;
 
     private SinkBuilder(
             @Nonnull String name,
@@ -81,7 +81,7 @@ public final class SinkBuilder<W, T> {
      *     {@code destroyFn} destroys the writer. This component is optional.
      * </li></ol>
      * The returned sink will be non-cooperative and will have preferred local
-     * parallelism of 2. It doesn't participate in the fault-tolerance protocol,
+     * parallelism of 1. It doesn't participate in the fault-tolerance protocol,
      * which means you can't remember across a job restart which items you
      * already received. The sink will still receive each item at least once,
      * thus complying with the <em>at-least-once</em> processing guarantee. If
@@ -163,7 +163,7 @@ public final class SinkBuilder<W, T> {
      * Jet calls {@code createFn} exactly once with each {@code
      * globalProcessorIndex} from 0 to {@code totalParallelism - 1}.
      * <p>
-     * The default value of this property is 2.
+     * The default value of this property is 1.
      */
     @Nonnull
     public SinkBuilder<W, T> preferredLocalParallelism(int preferredLocalParallelism) {

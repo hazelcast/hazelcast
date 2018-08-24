@@ -125,19 +125,19 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return file;
     }
 
-    public static void assertTrueEventually(UncheckedRunnable runnable) {
+    public static void assertTrueEventually(RunnableExc runnable) {
         HazelcastTestSupport.assertTrueEventually(assertTask(runnable));
     }
 
-    public static void assertTrueEventually(UncheckedRunnable runnable, long timeoutSeconds) {
+    public static void assertTrueEventually(RunnableExc runnable, long timeoutSeconds) {
         HazelcastTestSupport.assertTrueEventually(assertTask(runnable), timeoutSeconds);
     }
 
-    public static void assertTrueAllTheTime(UncheckedRunnable runnable, long durationSeconds) {
+    public static void assertTrueAllTheTime(RunnableExc runnable, long durationSeconds) {
         HazelcastTestSupport.assertTrueAllTheTime(assertTask(runnable), durationSeconds);
     }
 
-    public static void assertTrueFiveSeconds(UncheckedRunnable runnable) {
+    public static void assertTrueFiveSeconds(RunnableExc runnable) {
         HazelcastTestSupport.assertTrueFiveSeconds(assertTask(runnable));
     }
 
@@ -161,7 +161,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return getNodeEngineImpl(hz(instance));
     }
 
-    private static AssertTask assertTask(UncheckedRunnable runnable) {
+    private static AssertTask assertTask(RunnableExc runnable) {
         return new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -176,11 +176,6 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     protected void terminateInstance(JetInstance instance) {
         instanceFactory.terminate(instance);
-    }
-
-    @FunctionalInterface
-    public interface UncheckedRunnable {
-        void run() throws Exception;
     }
 
     public static void spawnSafe(RunnableExc r) {
