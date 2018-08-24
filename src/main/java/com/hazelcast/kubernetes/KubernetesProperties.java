@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.core.TypeConverter;
 
+import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
 import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
-import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
 
 /**
  * <p>Configuration class of the Hazelcast Discovery Plugin for <a href="http://kubernetes.io">Kubernetes</a>.</p>
@@ -86,8 +86,8 @@ public final class KubernetesProperties {
     public static final PropertyDefinition NAMESPACE = property("namespace", STRING);
 
     /**
-     *  <p>Configuration key: <tt>resolve-not-ready-addresses</tt></p>
-     *  Defines if not ready addresses should be evaluated to be discovered on startup.
+     * <p>Configuration key: <tt>resolve-not-ready-addresses</tt></p>
+     * Defines if not ready addresses should be evaluated to be discovered on startup.
      */
     public static final PropertyDefinition RESOLVE_NOT_READY_ADDRESSES = property("resolve-not-ready-addresses", BOOLEAN);
 
