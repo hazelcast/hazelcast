@@ -375,7 +375,7 @@
                                         <include>**/**.java</include>
                                     </includes>
                                     <excludes>
-                                        <exclude>**/mapreduce/**.java</exclude>
+                                        <exclude>**/mapreduce/**/*.java</exclude>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
                                     </excludes>
