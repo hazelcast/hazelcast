@@ -1620,12 +1620,13 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
         checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
-        if (keys.isEmpty()) {
-            // TODO [viliam] figure out how to throw completed future :)
+        // TODO [viliam] figure out how to throw completed future :)
+//        if (keys.isEmpty()) {
 //            SimpleCompletableFuture<Map<K, Object>> res = new SimpleCompletableFuture<Map<K, Object>>(getNodeEngine());
 //            res.setResult(emptyMap());
 //            return res;
-        }
+//        }
+
         Collection<Data> dataCollection = objectToDataCollection(keys, getSerializationService());
 
         ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataCollection);

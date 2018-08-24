@@ -22,7 +22,6 @@ import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
@@ -96,7 +95,6 @@ final class InvokeOnPartitions {
     }
 
     private void invokeOnAllPartitions() {
-        final NodeEngineImpl nodeEngine = operationService.nodeEngine;
         for (final Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
             final Address address = mp.getKey();
             List<Integer> partitions = mp.getValue();
@@ -105,38 +103,7 @@ final class InvokeOnPartitions {
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
                     .invoke()
-                    .andThen(new ExecutionCallback<Object>() {
-                        @Override
-                        public void onResponse(Object response) {
-                            PartitionResponse result = nodeEngine.toObject(response);
-                            Object[] results = result.getResults();
-                            int[] partitions = result.getPartitions();
-                            assert results.length <= mp.getValue().size() : "results.length=" + results.length
-                                    + ", but was sent to just " + mp.getValue().size() + " partitions";
-                            int failedPartitionsCnt = 0;
-                            for (int i = 0; i < partitions.length; i++) {
-                                if (results[i] instanceof Throwable) {
-                                    retryPartition(partitions[i]);
-                                    failedPartitionsCnt++;
-                                } else {
-                                    partitionResults.set(partitions[i], results[i]);
-                                }
-                            }
-                            decrementLatchAndHandle(mp.getValue().size() - failedPartitionsCnt);
-                        }
-
-                        @Override
-                        public void onFailure(Throwable t) {
-                            if (operationService.logger.isFinestEnabled()) {
-                                operationService.logger.finest(t);
-                            } else {
-                                operationService.logger.warning(t.getMessage());
-                            }
-                            for (Integer partition : mp.getValue()) {
-                                retryPartition(partition);
-                            }
-                        }
-                    });
+                    .andThen(new FirstAttemptExecutionCallback(mp.getValue()));
         }
     }
 
@@ -190,6 +157,45 @@ final class InvokeOnPartitions {
         future.setResult(result);
         if (callback != null) {
             callback.onResponse(result);
+        }
+    }
+
+    private class FirstAttemptExecutionCallback implements ExecutionCallback<Object> {
+        private final List<Integer> allPartitions;
+
+        FirstAttemptExecutionCallback(List<Integer> partitions) {
+            this.allPartitions = partitions;
+        }
+
+        @Override
+        public void onResponse(Object response) {
+            PartitionResponse result = operationService.nodeEngine.toObject(response);
+            Object[] results = result.getResults();
+            int[] partitions = result.getPartitions();
+            assert results.length <= allPartitions.size() : "results.length=" + results.length
+                    + ", but was sent to just " + allPartitions.size() + " partitions";
+            int failedPartitionsCnt = 0;
+            for (int i = 0; i < partitions.length; i++) {
+                if (results[i] instanceof Throwable) {
+                    retryPartition(partitions[i]);
+                    failedPartitionsCnt++;
+                } else {
+                    partitionResults.set(partitions[i], results[i]);
+                }
+            }
+            decrementLatchAndHandle(allPartitions.size() - failedPartitionsCnt);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            if (operationService.logger.isFinestEnabled()) {
+                operationService.logger.finest(t);
+            } else {
+                operationService.logger.warning(t.getMessage());
+            }
+            for (Integer partition : allPartitions) {
+                retryPartition(partition);
+            }
         }
     }
 }
