@@ -68,7 +68,6 @@ If you don't want to set the namespace in the XML config file, it is also possib
 ----
 <hazelcast>
   <properties>
-    <!-- only necessary prior Hazelcast 3.8 -->
     <property name="hazelcast.discovery.enabled">true</property>
   </properties>
 
@@ -130,7 +129,6 @@ link:https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns[Kub
 ----
 <hazelcast>
   <properties>
-    <!-- only necessary prior Hazelcast 3.8 -->
     <property name="hazelcast.discovery.enabled">true</property>
   </properties>
 
