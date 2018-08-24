@@ -32,5 +32,6 @@ public interface MergingMaxIdle<V> extends MergingValue<V> {
      *
      * @return the MaxIdle of the merge data
      */
-    long getMaxIdle();
+    //RU_COMPAT_3_10 (Long -> long)
+    Long getMaxIdle();
 }

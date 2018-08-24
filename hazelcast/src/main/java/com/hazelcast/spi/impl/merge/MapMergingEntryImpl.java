@@ -50,7 +50,8 @@ public class MapMergingEntryImpl
     private long lastUpdateTime = -1;
     private long version = -1;
     private long ttl = -1;
-    private long maxIdle = -1;
+    //RU_COMPAT_3_10 (Long -> long)
+    private Long maxIdle;
 
     private transient SerializationService serializationService;
 
@@ -182,7 +183,7 @@ public class MapMergingEntryImpl
     }
 
     @Override
-    public long getMaxIdle() {
+    public Long getMaxIdle() {
         return maxIdle;
     }
 
@@ -255,6 +256,7 @@ public class MapMergingEntryImpl
         }
 
         MapMergingEntryImpl that = (MapMergingEntryImpl) o;
+
         if (cost != that.cost) {
             return false;
         }
@@ -282,19 +284,19 @@ public class MapMergingEntryImpl
         if (ttl != that.ttl) {
             return false;
         }
-        if (maxIdle != that.maxIdle) {
+        if (value != null ? !value.equals(that.value) : that.value != null) {
             return false;
         }
         if (key != null ? !key.equals(that.key) : that.key != null) {
             return false;
         }
-        return value != null ? value.equals(that.value) : that.value == null;
+        return maxIdle != null ? maxIdle.equals(that.maxIdle) : that.maxIdle == null;
     }
 
     @Override
     public int hashCode() {
-        int result = key != null ? key.hashCode() : 0;
-        result = 31 * result + (value != null ? value.hashCode() : 0);
+        int result = value != null ? value.hashCode() : 0;
+        result = 31 * result + (key != null ? key.hashCode() : 0);
         result = 31 * result + (int) (cost ^ (cost >>> 32));
         result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
         result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
@@ -304,7 +306,7 @@ public class MapMergingEntryImpl
         result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
         result = 31 * result + (int) (version ^ (version >>> 32));
         result = 31 * result + (int) (ttl ^ (ttl >>> 32));
-        result = 31 * result + (int) (maxIdle ^ (maxIdle >>> 32));
+        result = 31 * result + (maxIdle != null ? maxIdle.hashCode() : 0);
         return result;
     }
 
