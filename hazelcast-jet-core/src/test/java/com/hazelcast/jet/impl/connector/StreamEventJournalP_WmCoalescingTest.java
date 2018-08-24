@@ -33,6 +33,8 @@ import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.IntStream;
 
@@ -90,26 +92,31 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
     }
 
     @Test
-    public void when_entryInOnePartition_then_wmForwardedAfterIdleTime() {
+    public void when_entryInOnePartition_then_wmForwardedAfterIdleTime() throws InterruptedException {
         // initially, there will be entries in both partitions
-        map.put(partitionKeys[0], 10);
-        map.put(partitionKeys[1], 10);
+        map.put(partitionKeys[0], 11);
+        map.put(partitionKeys[1], 11);
 
         // insert to map in parallel to verifyProcessor so that the partition0 is not marked as idle
         // but partition1 is
-        new Thread(() -> {
-            for (int i = 0; i < 8; i++) {
+        CountDownLatch productionStartedLatch = new CountDownLatch(1);
+        Future future = spawn(() -> {
+            while (!Thread.interrupted()) {
                 LockSupport.parkNanos(MILLISECONDS.toNanos(500));
-                map.put(partitionKeys[0], 10);
+                map.put(partitionKeys[0], 11);
+                productionStartedLatch.countDown();
             }
-        }).start();
+        });
+        productionStartedLatch.await();
 
-        TestSupport.verifyProcessor(createSupplier(asList(0, 1), 2000))
+        TestSupport.verifyProcessor(createSupplier(asList(0, 1), 4000))
                    .disableProgressAssertion()
                    .disableRunUntilCompleted(4000)
                    .disableSnapshots()
                    .outputChecker((e, a) -> new HashSet<>(e).equals(new HashSet<>(a)))
-                   .expectOutput(asList(10, wm(10)));
+                   .expectOutput(asList(11, wm(11)));
+
+        future.cancel(true);
     }
 
     @Test
@@ -128,7 +135,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
             // We will start after a delay so that the source will first become idle and then recover.
             Thread.sleep(4000);
             for (int i = 0; i < 32; i++) {
-                map.put(partitionKeys[0], 10);
+                map.put(partitionKeys[0], 12);
                 Thread.sleep(250);
             }
         }));
@@ -139,10 +146,10 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .disableRunUntilCompleted(8000)
                    .disableSnapshots()
                    .outputChecker((e, a) -> {
-                       a.removeAll(singletonList(10));
+                       a.removeAll(singletonList(12));
                        return a.equals(e);
                    })
-                   .expectOutput(asList(IDLE_MESSAGE, wm(10)));
+                   .expectOutput(asList(IDLE_MESSAGE, wm(12)));
 
         updatingThread.interrupt();
         updatingThread.join();
@@ -151,13 +158,13 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
     @Test
     public void test_nonFirstPartition() {
         /* aim of this test is to check that the mapping from partitionIndex to partitionId works */
-        map.put(partitionKeys[1], 10);
+        map.put(partitionKeys[1], 13);
 
         TestSupport.verifyProcessor(createSupplier(singletonList(1), 2000))
                    .disableProgressAssertion()
                    .disableRunUntilCompleted(4000)
                    .disableSnapshots()
-                   .expectOutput(asList(wm(10), 10, IDLE_MESSAGE));
+                   .expectOutput(asList(wm(13), 13, IDLE_MESSAGE));
     }
 
     public DistributedSupplier<Processor> createSupplier(List<Integer> assignedPartitions, long idleTimeout) {
