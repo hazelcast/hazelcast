@@ -245,10 +245,10 @@
        difference in the contents of large data structures. The precision of
        such a comparison mechanism is defined by the depth of the merkle tree.
     -->
-    <merkle-tree enabled="false">
-        <mapName>mapName</mapName>
-        <depth>10</depth>
-    </merkle-tree>
+    <!--<merkle-tree enabled="false">-->
+        <!--<mapName>mapName</mapName>-->
+        <!--<depth>10</depth>-->
+    <!--</merkle-tree>-->
 
     <multimap name="default">
         <backup-count>1</backup-count>

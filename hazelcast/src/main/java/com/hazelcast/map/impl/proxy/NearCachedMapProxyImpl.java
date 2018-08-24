@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
@@ -519,13 +520,15 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public Map<K, Object> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys, EntryProcessor entryProcessor) {
+    public ICompletableFuture<Map<K, Object>> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys,
+                EntryProcessor entryProcessor, ExecutionCallback<Map<K, Object>> callback) {
         if (serializeKeys) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
         try {
-            return super.executeOnKeysInternal(keys, dataKeys, entryProcessor);
+            return super.executeOnKeysInternal(keys, dataKeys, entryProcessor, callback);
         } finally {
+            // TODO [viliam] this doesn't seem right, should be after the async call is done...
             Set<?> ncKeys = serializeKeys ? dataKeys : keys;
             for (Object key : ncKeys) {
                 invalidateNearCache(key);

@@ -235,6 +235,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     };
 
+    @SuppressWarnings("unchecked")
+    private final ClientMessageDecoder submitToKeysResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) prepareResult(MapExecuteOnKeysCodec.decodeResponse(clientMessage).response);
+        }
+    };
+
     private ClientMessageDecoder eventJournalReadResponseDecoder;
     private ClientMessageDecoder eventJournalSubscribeResponseDecoder;
     private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
@@ -1607,6 +1615,22 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invoke(request);
         MapExecuteOnKeysCodec.ResponseParameters resultParameters = MapExecuteOnKeysCodec.decodeResponse(response);
         return prepareResult(resultParameters.response);
+    }
+
+    @Override
+    public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
+        if (keys.isEmpty()) {
+            // TODO [viliam] figure out how to throw completed future :)
+//            SimpleCompletableFuture<Map<K, Object>> res = new SimpleCompletableFuture<Map<K, Object>>(getNodeEngine());
+//            res.setResult(emptyMap());
+//            return res;
+        }
+        Collection<Data> dataCollection = objectToDataCollection(keys, getSerializationService());
+
+        ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataCollection);
+        ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
+        return new ClientDelegatingFuture<Map<K, Object>>(future, getSerializationService(), submitToKeysResponseDecoder);
     }
 
     @Override

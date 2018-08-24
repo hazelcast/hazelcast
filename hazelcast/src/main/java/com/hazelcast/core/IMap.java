@@ -2765,6 +2765,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor);
 
     /**
+     * TODO [viliam]
+     */
+    ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor);
+
+    /**
      * Applies the user defined {@link EntryProcessor} to the all entries in the map.
      * Returns the results mapped by each key in the map.
      * <p>

@@ -36,7 +36,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -292,18 +291,14 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             this.results = results;
         }
 
-        public void addResults(Map<Integer, Object> partitionResults) {
-            if (results == null) {
-                return;
-            }
-            for (int i = 0; i < results.length; i++) {
-                partitionResults.put(partitions[i], results[i]);
-            }
-        }
-
         @SuppressFBWarnings("EI_EXPOSE_REP")
         public Object[] getResults() {
             return results;
+        }
+
+        @SuppressFBWarnings("EI_EXPOSE_REP")
+        public int[] getPartitions() {
+            return partitions;
         }
 
         @Override

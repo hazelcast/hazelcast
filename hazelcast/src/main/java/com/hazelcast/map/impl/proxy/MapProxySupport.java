@@ -29,12 +29,14 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -1108,28 +1110,41 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public Map<K, Object> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys, EntryProcessor entryProcessor) {
-        // TODO: why are we not forwarding to executeOnKeysInternal(keys, entryProcessor, null) or some other kind of fake
-        // callback? now there is a lot of code duplication
+    public ICompletableFuture<Map<K, Object>> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys,
+                EntryProcessor entryProcessor, final ExecutionCallback<Map<K, Object>> callback) {
         if (dataKeys.isEmpty()) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
         Collection<Integer> partitionsForKeys = getPartitionsForKeys(dataKeys);
-        Map<K, Object> result = createHashMap(partitionsForKeys.size());
-        try {
-            OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, dataKeys,
-                    entryProcessor);
-            Map<Integer, Object> results = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitionsForKeys);
-            for (Object object : results.values()) {
-                if (object != null) {
+        OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, dataKeys,
+                entryProcessor);
+
+        final SimpleCompletableFuture<Map<K, Object>> resultFuture = new SimpleCompletableFuture<Map<K, Object>>(getNodeEngine());
+        ExecutionCallback<Map<Integer, Object>> partialCallback = new ExecutionCallback<Map<Integer, Object>>() {
+            @Override
+            public void onResponse(Map<Integer, Object> response) {
+                Map<K, Object> result = createHashMap(response.size());
+                for (Object object : response.values()) {
                     MapEntries mapEntries = (MapEntries) object;
                     mapEntries.putAllToMap(serializationService, result);
                 }
+                resultFuture.setResult(result);
+                if (callback != null) {
+                    callback.onResponse(result);
+                }
             }
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-        return result;
+
+            @Override
+            public void onFailure(Throwable t) {
+                resultFuture.setResult(t);
+                if (callback != null) {
+                    callback.onFailure(t);
+                }
+            }
+        };
+
+        operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsForKeys, partialCallback);
+        return resultFuture;
     }
 
     public InternalCompletableFuture<Object> executeOnKeyInternal(Object key, EntryProcessor entryProcessor,

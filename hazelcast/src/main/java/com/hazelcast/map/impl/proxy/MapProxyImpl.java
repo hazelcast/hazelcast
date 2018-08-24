@@ -28,6 +28,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
@@ -88,6 +89,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
@@ -765,7 +767,25 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             return emptyMap();
         }
         Set<Data> dataKeys = createHashSet(keys.size());
-        return executeOnKeysInternal(keys, dataKeys, entryProcessor);
+        try {
+            return executeOnKeysInternal(keys, dataKeys, entryProcessor, null).get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    @Override
+    public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
+        handleHazelcastInstanceAwareParams(entryProcessor);
+        if (keys.isEmpty()) {
+            SimpleCompletableFuture<Map<K, Object>> res = new SimpleCompletableFuture<Map<K, Object>>(getNodeEngine());
+            res.setResult(emptyMap());
+            return res;
+        }
+
+        Set<Data> dataKeys = createHashSet(keys.size());
+        return executeOnKeysInternal(keys, dataKeys, entryProcessor, null);
     }
 
     @Override

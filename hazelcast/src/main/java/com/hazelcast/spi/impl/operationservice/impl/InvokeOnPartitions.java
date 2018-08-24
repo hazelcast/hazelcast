@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
@@ -25,11 +28,10 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOpe
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
@@ -43,12 +45,14 @@ final class InvokeOnPartitions {
     private static final int TRY_COUNT = 10;
     private static final int TRY_PAUSE_MILLIS = 300;
 
-    private OperationServiceImpl operationService;
+    private final OperationServiceImpl operationService;
     private final String serviceName;
     private final OperationFactory operationFactory;
     private final Map<Address, List<Integer>> memberPartitions;
-    private final Map<Address, Future> futures;
-    private final Map<Integer, Object> partitionResults;
+    private final AtomicReferenceArray<Object> partitionResults;
+    private final AtomicInteger latch;
+    private volatile ExecutionCallback<Map<Integer, Object>> callback;
+    private final SimpleCompletableFuture future;
 
     InvokeOnPartitions(OperationServiceImpl operationService, String serviceName, OperationFactory operationFactory,
                        Map<Address, List<Integer>> memberPartitions) {
@@ -56,24 +60,33 @@ final class InvokeOnPartitions {
         this.serviceName = serviceName;
         this.operationFactory = operationFactory;
         this.memberPartitions = memberPartitions;
-        this.futures = createHashMap(memberPartitions.size());
         int partitionCount = operationService.nodeEngine.getPartitionService().getPartitionCount();
-        this.partitionResults = createHashMap(partitionCount);
+        // this is the total number of partitions for which we actually have operation
+        int actualPartitionCount = 0;
+        for (List<Integer> mp : memberPartitions.values()) {
+            actualPartitionCount += mp.size();
+        }
+        this.partitionResults = new AtomicReferenceArray<Object>(partitionCount);
+        this.latch = new AtomicInteger(actualPartitionCount);
+        this.future = new SimpleCompletableFuture(operationService.nodeEngine);
     }
 
     /**
      * Executes all the operations on the partitions.
      */
     <T> Map<Integer, T> invoke() throws Exception {
+        return this.<T>invokeAsync(null).get();
+    }
+
+    /**
+     * Executes all the operations on the partitions.
+     */
+    @SuppressWarnings("unchecked")
+    <T> ICompletableFuture<Map<Integer, T>> invokeAsync(ExecutionCallback<Map<Integer, T>> callback) {
+        this.callback = (ExecutionCallback<Map<Integer, Object>>) ((ExecutionCallback) callback);
         ensureNotCallingFromPartitionOperationThread();
-
         invokeOnAllPartitions();
-
-        awaitCompletion();
-
-        retryFailedPartitions();
-
-        return (Map<Integer, T>) partitionResults;
+        return future;
     }
 
     private void ensureNotCallingFromPartitionOperationThread() {
@@ -83,66 +96,100 @@ final class InvokeOnPartitions {
     }
 
     private void invokeOnAllPartitions() {
-        for (Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
-            Address address = mp.getKey();
+        final NodeEngineImpl nodeEngine = operationService.nodeEngine;
+        for (final Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
+            final Address address = mp.getKey();
             List<Integer> partitions = mp.getValue();
             PartitionIteratingOperation op = new PartitionIteratingOperation(operationFactory, toIntArray(partitions));
-            Future future = operationService.createInvocationBuilder(serviceName, op, address)
+            operationService.createInvocationBuilder(serviceName, op, address)
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
-                    .invoke();
-            futures.put(address, future);
+                    .invoke()
+                    .andThen(new ExecutionCallback<Object>() {
+                        @Override
+                        public void onResponse(Object response) {
+                            PartitionResponse result = nodeEngine.toObject(response);
+                            Object[] results = result.getResults();
+                            int[] partitions = result.getPartitions();
+                            assert results.length <= mp.getValue().size() : "results.length=" + results.length
+                                    + ", but was sent to just " + mp.getValue().size() + " partitions";
+                            int failedPartitionsCnt = 0;
+                            for (int i = 0; i < partitions.length; i++) {
+                                if (results[i] instanceof Throwable) {
+                                    retryPartition(partitions[i]);
+                                    failedPartitionsCnt++;
+                                } else {
+                                    partitionResults.set(partitions[i], results[i]);
+                                }
+                            }
+                            decrementLatchAndHandle(mp.getValue().size() - failedPartitionsCnt);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            if (operationService.logger.isFinestEnabled()) {
+                                operationService.logger.finest(t);
+                            } else {
+                                operationService.logger.warning(t.getMessage());
+                            }
+                            for (Integer partition : mp.getValue()) {
+                                retryPartition(partition);
+                            }
+                        }
+                    });
         }
     }
 
-    private void awaitCompletion() {
-        NodeEngineImpl nodeEngine = operationService.nodeEngine;
-        for (Map.Entry<Address, Future> response : futures.entrySet()) {
-            try {
-                Future future = response.getValue();
-                PartitionResponse result = nodeEngine.toObject(future.get());
-                result.addResults(partitionResults);
-            } catch (Throwable t) {
-                if (operationService.logger.isFinestEnabled()) {
-                    operationService.logger.finest(t);
-                } else {
-                    operationService.logger.warning(t.getMessage());
-                }
-                List<Integer> partitions = memberPartitions.get(response.getKey());
-                for (Integer partition : partitions) {
-                    partitionResults.put(partition, t);
-                }
-            }
+    private void retryPartition(final int partitionId) {
+        Operation operation;
+        PartitionAwareOperationFactory partitionAwareFactory = extractPartitionAware(operationFactory);
+        if (partitionAwareFactory != null) {
+            operation = partitionAwareFactory.createPartitionOperation(partitionId);
+        } else {
+            operation = operationFactory.createOperation();
         }
+
+        operationService.createInvocationBuilder(serviceName, operation, partitionId)
+                        .invoke()
+                        .andThen(new ExecutionCallback<Object>() {
+                            @Override
+                            public void onResponse(Object response) {
+                                partitionResults.set(partitionId, response);
+                                decrementLatchAndHandle(1);
+                            }
+
+                            @Override
+                            public void onFailure(Throwable t) {
+                                partitionResults.set(partitionId, t);
+                                decrementLatchAndHandle(1);
+                            }
+                        });
     }
 
-    private void retryFailedPartitions() throws InterruptedException, ExecutionException {
-        List<Integer> failedPartitions = new LinkedList<Integer>();
-        for (Map.Entry<Integer, Object> partitionResult : partitionResults.entrySet()) {
-            int partitionId = partitionResult.getKey();
-            Object result = partitionResult.getValue();
-            if (result instanceof Throwable) {
-                failedPartitions.add(partitionId);
-            }
+    private void decrementLatchAndHandle(int count) {
+        if (latch.addAndGet(-count) > 0) {
+            // we're not done yet
+            return;
         }
 
-        for (Integer failedPartition : failedPartitions) {
-            Operation operation;
-            PartitionAwareOperationFactory partitionAwareFactory = extractPartitionAware(operationFactory);
-            if (partitionAwareFactory != null) {
-                operation = partitionAwareFactory.createPartitionOperation(failedPartition);
-            } else {
-                operation = operationFactory.createOperation();
+        Map<Integer, Object> result = createHashMap(partitionResults.length());
+        for (int partitionId = 0; partitionId < partitionResults.length(); partitionId++) {
+            Object partitionResult = partitionResults.get(partitionId);
+            if (partitionResult instanceof Throwable) {
+                future.setResult(partitionResult);
+                if (callback != null) {
+                    callback.onFailure((Throwable) partitionResult);
+                }
+                return;
             }
-
-            Future future = operationService.createInvocationBuilder(serviceName, operation, failedPartition).invoke();
-            partitionResults.put(failedPartition, future);
+            // partitionResult is null for partitions which had no keys
+            if (partitionResult != null) {
+                result.put(partitionId, partitionResult);
+            }
         }
-
-        for (Integer failedPartition : failedPartitions) {
-            Future future = (Future) partitionResults.get(failedPartition);
-            Object result = future.get();
-            partitionResults.put(failedPartition, result);
+        future.setResult(result);
+        if (callback != null) {
+            callback.onResponse(result);
         }
     }
 }
