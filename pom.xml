@@ -418,7 +418,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**.java</exclude>
+                                        <exclude>**/mapreduce/**/*.java</exclude>
                                     </excludes>
                                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                                     <excludedGroups>
