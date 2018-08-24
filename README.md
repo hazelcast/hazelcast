@@ -172,7 +172,37 @@ There are 2 properties to configure the plugin:
 
 ## Plugin Usages
 
-There are multiple scenarios of how the Hazelcast Kubernetes plugin can be used. The most popular use cases are presented below.
+Apart from embedding Hazelcast in your application as described above, there are multiple other scenarios of how to use the Hazelcast Kubernetes plugin.
+
+### Embedded Hazelcast Client
+
+If you have a Hazelcast cluster deployed on Kubernetes, then you can configure Hazelcast Client (deployed on the same Kubernetes cluster). To do it, use exactly the same Maven/Gradle dependencies and the same Discovery Strategy extract in your Hazelcast Client configuration.
+
+Here's an example in case of the **Kubernetes API** mode.
+
+```xml
+ <hazelcast-client>
+  <properties>
+    <property name="hazelcast.discovery.enabled">true</property>
+  </properties>
+
+  <network>
+    <discovery-strategies>
+        <discovery-strategy enabled="true"
+          class="com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
+    
+        <properties>
+          <!-- configure discovery service API lookup -->
+          <property name="namespace">MY-KUBERNETES-NAMESPACE</property>
+          <property name="service-name">MY-SERVICE-NAME</property>
+          <property name="service-label-name">MY-SERVICE-LABEL-NAME</property>
+          <property name="service-label-value">MY-SERVICE-LABEL-VALUE</property>
+        </properties>
+      </discovery-strategy>
+    </discovery-strategies>
+  </network>
+ </hazelcast-client>
+```
 
 ### Docker images
 
