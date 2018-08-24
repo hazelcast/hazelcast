@@ -2,6 +2,38 @@
 
 This repository contains a plugin which provides the automatic Hazelcast member discovery in the Kubernetes environment.
 
+You can use it in your project deployed on Kubernetes in order to make the embedded Hazelcast members discover each other automatically. This plugin is also included in Hazelcast Docker images, Hazelcast Helm Charts, and Hazelcast OpenShift Docker image.
+
+## Embedded mode
+
+To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml` as presented below or an equivalent Java-based configuration, your Hazelcast instances discover themselves automatically.
+
+#### Maven
+
+```xml
+<dependency>
+  <groupId>com.hazelcast</groupId>
+  <artifactId>hazelcast-kubernetes</artifactId>
+  <version>${hazelcast-kubernetes-version}</version>
+</dependency>
+```
+
+#### Gradle
+
+```groovy
+compile group: "com.hazelcast", name: "hazelcast-kubernetes", version: "${hazelcast-kubernetes-version}"
+```
+
+## Understanding Discovery Modes
+
+The following table summarizes the differences between the discovery modes: **Kubernetes API** and **DNS Lookup**.
+
+|                | Kubernetes API  | DNS Lookup |
+| -------------  | ------------- | ------------- |
+| Description    | Uses REST calls to Kubernetes Master to fetch IPs of PODs | Uses DNS to resolve IPs of PODs related to the given service |
+| Pros           | Flexible, supports **3 different options**: <br> - Hazelcast cluster per service<br> - Hazelcast cluster per multiple services (distinguished by labels)<br> - Hazelcast cluster per namespace | **No additional configuration** required, resolving DNS does not require granting any permissions  |
+| Cons           | Requires setting up **RoleBinding** (to allow access to Kubernetes API)  | - Limited to **headless Cluster IP** service<br> - Limited to **Hazelcast cluster per service**  |
+
 ## Configuration
 
 This plugin supports **two different options** of how Hazelcast members discover each others:
@@ -37,7 +69,7 @@ Then, apply `rbac.yaml`.
 $ kubectl apply -f rbac.yaml
 ```
 
-*Note*: You can be even more strict with the permissions and create your own Role. For details, please check the implementation of [Hazelcast Helm Chart](https://github.com/helm/charts/tree/master/stable/hazelcast) ([Role](https://github.com/helm/charts/blob/master/stable/hazelcast/templates/role.yaml), [Service Account](https://github.com/helm/charts/blob/master/stable/hazelcast/templates/serviceaccount.yaml), and [RoleBinding](https://github.com/helm/charts/blob/master/stable/hazelcast/templates/rolebinding.yaml)).
+*Note*: You can be even more strict with the permissions and create your own Role. For details, please check the implementation of [Hazelcast Helm Chart](https://github.com/helm/charts/tree/master/stable/hazelcast).
 
 #### Hazelcast Configuration
 
@@ -45,6 +77,10 @@ The second step is to configure the discovery plugin inside of your Hazelcast co
 
 ```xml
 <hazelcast>        
+  <properties>
+    <property name="hazelcast.discovery.enabled">true</property>
+  </properties>
+
   <network>
     <join>
       <!-- deactivate normal discovery -->
@@ -102,6 +138,10 @@ The Hazelcast configuration to use DNS Lookup looks as follows.
 
 ```xml
 <hazelcast>
+  <properties>
+    <property name="hazelcast.discovery.enabled">true</property>
+  </properties>
+
   <network>
     <join>
       <!-- deactivate normal discovery -->
@@ -130,39 +170,9 @@ There are 2 properties to configure the plugin:
 
 **Note**: In this README, only XML configurations are presented, however you can achieve exactly the same effect using Java-based configurations.
 
-## Understanding Discovery Modes
-
-The following table summarizes the differences between the discovery modes: **Kubernetes API** and **DNS Lookup**.
-
-|                | Kubernetes API  | DNS Lookup |
-| -------------  | ------------- | ------------- |
-| Description    | Uses REST calls to Kubernetes Master to fetch IPs of PODs | Uses DNS to resolve IPs of PODs related to the given service |
-| Pros           | Flexible, supports **3 different options**: <br> - Hazelcast cluster per service<br> - Hazelcast cluster per multiple services (distinguished by labels)<br> - Hazelcast cluster per namespace | **No additional configuration** required, resolving DNS does not require granting any permissions  |
-| Cons           | Requires setting up **RoleBinding** (to allow access to Kubernetes API)  | - Limited to **headless Cluster IP** service<br> - Limited to **Hazelcast cluster per service**  |
- 
-## Usage
+## Plugin Usages
 
 There are multiple scenarios of how the Hazelcast Kubernetes plugin can be used. The most popular use cases are presented below.
-
-### Embedded
-
-To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml` as presented above or an equivalent Java-based configuration, your Hazelcast instances discover themselves automatically.
-
-#### Maven
-
-```xml
-<dependency>
-  <groupId>com.hazelcast</groupId>
-  <artifactId>hazelcast-kubernetes</artifactId>
-  <version>${hazelcast-kubernetes-version}</version>
-</dependency>
-```
-
-#### Gradle
-
-```groovy
-compile group: "com.hazelcast", name: "hazelcast-kubernetes", version: "${hazelcast-kubernetes-version}"
-```
 
 ### Docker images
 
