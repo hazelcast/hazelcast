@@ -35,6 +35,7 @@ import java.util.Map;
 
 import static com.hazelcast.gcp.GcpProperties.LABEL;
 import static com.hazelcast.gcp.GcpProperties.PORT;
+import static com.hazelcast.gcp.GcpProperties.PRIVATE_KEY_PATH;
 import static com.hazelcast.gcp.GcpProperties.PROJECTS;
 import static com.hazelcast.gcp.GcpProperties.ZONES;
 import static com.hazelcast.gcp.Utils.splitByComma;
@@ -57,7 +58,8 @@ public class GcpDiscoveryStrategy
             GcpConfig gcpConfig = createGcpConfig();
             GcpMetadataApi gcpMetadataApi = new GcpMetadataApi();
             GcpComputeApi gcpComputeApi = new GcpComputeApi();
-            this.gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpConfig);
+            GcpAuthenticator gcpAuthenticator = new GcpAuthenticator();
+            this.gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
             this.portRange = gcpConfig.getHzPort();
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("Invalid GCP Discovery Strategy configuration", e);
@@ -75,6 +77,7 @@ public class GcpDiscoveryStrategy
 
     private GcpConfig createGcpConfig() {
         return GcpConfig.builder()
+                        .setPrivateKeyPath(getOrNull(PRIVATE_KEY_PATH))
                         .setProjects(splitByComma(getOrNull(PROJECTS)))
                         .setZones(splitByComma((getOrNull(ZONES))))
                         .setLabel(getOrNull(LABEL))

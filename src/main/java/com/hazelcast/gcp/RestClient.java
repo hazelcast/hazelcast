@@ -16,6 +16,11 @@
 
 package com.hazelcast.gcp;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -27,10 +32,13 @@ import java.util.Scanner;
  * Utility class for making REST calls.
  */
 final class RestClient {
+    private static final ILogger LOGGER = Logger.getLogger(RestClient.class);
+
     private static final int HTTP_OK = 200;
 
     private final String url;
     private final List<Header> headers = new ArrayList<Header>();
+    private String body;
 
     private RestClient(String url) {
         this.url = url;
@@ -45,18 +53,43 @@ final class RestClient {
         return this;
     }
 
+    RestClient withBody(String body) {
+        this.body = body;
+        return this;
+    }
+
     String get() {
+        return call("GET");
+    }
+
+    String post() {
+        return call("POST");
+    }
+
+    private String call(String method) {
         HttpURLConnection connection = null;
+        DataOutputStream outputStream = null;
         try {
             URL urlToConnect = new URL(url);
             connection = (HttpURLConnection) urlToConnect.openConnection();
-            connection.setRequestMethod("GET");
+            connection.setRequestMethod(method);
             for (Header header : headers) {
                 connection.setRequestProperty(header.getKey(), header.getValue());
             }
+            if (body != null) {
+                byte[] bodyData = body.getBytes("UTF-8");
+
+                connection.setDoOutput(true);
+                connection.setRequestProperty("charset", "utf-8");
+                connection.setRequestProperty("Content-Length", Integer.toString(bodyData.length));
+
+                outputStream = new DataOutputStream(connection.getOutputStream());
+                outputStream.write(bodyData);
+                outputStream.flush();
+            }
 
             if (connection.getResponseCode() != HTTP_OK) {
-                throw new RestClientException(String.format("Failure executing: GET at: %s. Message: %s,", url,
+                throw new RestClientException(String.format("Failure executing: %s at: %s. Message: %s,", method, url,
                         read(connection.getErrorStream())));
             }
             return read(connection.getInputStream());
@@ -65,6 +98,13 @@ final class RestClient {
         } finally {
             if (connection != null) {
                 connection.disconnect();
+            }
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    LOGGER.finest("Error while closing HTTP output stream", e);
+                }
             }
         }
     }

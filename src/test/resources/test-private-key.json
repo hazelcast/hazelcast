@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "hazelcast-33",
+  "private_key_id": "7022670a6af0a3b247f87970ae3a61b75043be25",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCdX688AEqrxVnn\n9NMNmI9A7Q+AjmGnJHfS6iYe8roNjp4REE8H4ocdfQOoU/a4fqZg0UJnTEsEYnCZ\n9pp202ubNzZ3fnVq6Gm8PBESezZBK9EnKzAMaf1cEW9vKeoALD2z4Shxz/uRP6QZ\nHQ1s/A5sMEwJ3XbvpWtB3oVz/bTPuPhEi/whhqKIwmTXWGectybW9Uz3tjMC6WxW\n1LDch3DYRydfUYonTQOEMoLGB7qkb72qX8vUhZVKDbila80vA6qgFq7+gyqDZpIC\n3ET17LqUmNqxFcQHCuMw0SaG/nOmiqfyEf5zPWYgbpVe5W7S50wcBj5O2M9rGOuR\nfVteMpuJAgMBAAECggEACtZ9bu27jBDPRut+uBT66Jxq0OOn/fwY9GwuVpCeF4js\nLH3/CKqlEMwnOv8X9/oLjedbYgRzC3OWuu5XZ4+FKESpJO7kjzQ/no2pxKgPmHVi\ntgaCDJjQBfh9askW1bmLlkkPS/ySypyjZHIHwVWqeJuVi6hgzygz4W69qhCdfyCW\nI7c1uqkbtaED/jZELjG+/fW5GWJEMLa66mzOM9aZLCIWlQWPf4tnCSEjYwD9BSbl\ng1jlRFno5kcE0EGryKoLyDeaAxW7+VOAtOJY5JIyIKPdZD4X6uhN9BHiRM+as4lh\nWYSXNVLI08flxLanezCU66ANHqfczkzxW7y2jI5EMQKBgQDeNZiE9kms3z7YYgDA\nctdY2cEuwj2oBXiVZ3mVd5QjntqEZm/RgWYaDqxcLbMb7CYyjG1jl0Olu3+3yp7Q\nDQokIrQcmH2HiQMjyT2VVDWL2qa+iHcMFmSPVbkYJtTMF2YKWhaYtmyFVeUDAq55\nukNJY1N+7/Av0rPxmPIrwuzUCwKBgQC1ThlsoEzbt8QxrFjNjmzvNNM3cY4op/eN\nvMbXSvbzOT1KdmptQpbnFZ4/Kn9siGtsvRUV4rPCn5NZTf3+STKF+7fnoUDBW6zm\nrZxkXifxFIKrsa/NInnPQlXJeiXmmxZsRXAMxDCm8RECQTEMIj3oKhWzuMY+Snlq\nUK8OG2pXOwKBgQDCwlUAzOD8TNtHSnaANue6b3kbo5Hoz4rF4GC3eYx0wAmknCgL\nh4/W7N9zF3bx1UQRb/V8oZrgCvvBOi2CCrvFukkE+z6i6Zq/5eU9GgaooqcdPnyh\nMotG+gp2Oaqvix6bmiROCy4Im6VSwynrdS7+hrkq++AX+mRPMA+p/XoXywKBgGr8\nsDISkegiE8tAKZL7Fbs+T9lqz/mbzJA+MpP+76TtRQa4w+q/na61ahFaMaFJCyM6\nnMOyaGNTqS7MwDIa3Y6E0KwF0uGHCIuDLUNo8GbptIY+rz/8tSahvV/MDat8Hwo7\nG3jdGNyaanALKjc/yYpDs1S/l3RQnD8pZ3OKqADbAoGBANOZDFun5TGUP1T96E2E\n0t/R1TKpnNiNjATEKTxqdTubyY67RQVuw7lUZkOGeMdAI1Mbd7HY14H8ViiDdtat\n9egazPB1/e3uGyMlZ1mYQ52W81BAxXTy1sIwG7GBXtvVYR2+oqrXczBNhaVSuO9U\njNmQ0mpfGlpNSx/wP3TVMPJU\n-----END PRIVATE KEY-----\n",
+  "client_email": "761326798069-r5mljlln1rd4lrbhg75efgigp36m78j5@developer.gserviceaccount.com",
+  "client_id": "110154582116249208339",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/test-account%40hazelcast-33.iam.gserviceaccount.com"
+}
