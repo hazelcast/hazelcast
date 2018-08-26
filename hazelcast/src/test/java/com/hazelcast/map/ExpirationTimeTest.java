@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -30,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -197,6 +199,21 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testExpirationTime_withNegativeMaxIdleTime() {
+        IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(10);
+
+        map.put(1, 1, -1, MILLISECONDS, -1, MILLISECONDS);
+
+        EntryView<Integer, Integer> entryView = map.getEntryView(1);
+        long creationTime = entryView.getCreationTime();
+        long expirationTime = entryView.getExpirationTime();
+
+        // negative max idle means use value from map config
+        long expectedExpirationTime = creationTime + TimeUnit.SECONDS.toMillis(10);
+        assertEquals(expectedExpirationTime, expirationTime);
+    }
+
+    @Test
     public void testExpirationTime_withMaxIdleTime_afterMultipleAccesses() {
         IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(10);
 
@@ -297,9 +314,15 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         assertEquals(expirationTimeAfterReplace, expirationTimeAfterPut);
     }
 
+    protected InMemoryFormat inMemoryFormat() {
+        return BINARY;
+    }
+
     private IMap<Integer, Integer> createMap() {
         String mapName = randomMapName();
-        HazelcastInstance node = createHazelcastInstance(getConfig());
+        Config config = getConfig();
+        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat());
+        HazelcastInstance node = createHazelcastInstance(config);
         return node.getMap(mapName);
     }
 
@@ -308,7 +331,9 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
-        config.getMapConfig(mapName).setMaxIdleSeconds(maxIdleSeconds);
+        config.getMapConfig(mapName)
+              .setMaxIdleSeconds(maxIdleSeconds)
+              .setInMemoryFormat(inMemoryFormat());
 
         HazelcastInstance node = createHazelcastInstance(config);
         return node.getMap(mapName);
@@ -319,7 +344,9 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
-        config.getMapConfig(mapName).setTimeToLiveSeconds(ttlSeconds);
+        config.getMapConfig(mapName)
+              .setTimeToLiveSeconds(ttlSeconds)
+              .setInMemoryFormat(inMemoryFormat());
 
         HazelcastInstance node = createHazelcastInstance(config);
         return node.getMap(mapName);
