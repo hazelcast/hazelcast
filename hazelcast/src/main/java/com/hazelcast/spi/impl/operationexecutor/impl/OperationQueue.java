@@ -56,7 +56,7 @@ public interface OperationQueue {
      */
     Object take(boolean priorityOnly) throws InterruptedException;
 
-    /**
+     /**
      * returns the number of normal operations pending.
      *
      * This method is thread safe.
@@ -91,4 +91,19 @@ public interface OperationQueue {
      * @return the total number of pending operations.
      */
     int size();
+
+    /**
+     * Returns the batch to this OperationQueue. The goal of this method is to allow for
+     * other operations to interleave while this TaskBatch is being processed.
+     *
+     * If other operations/tasks are pending, theu will be picked up first when the
+     * {@link #take(boolean)} is called; otherwise the batch is returned.
+     *
+     * If the TaskBatch is empty, it should not be returned.
+     *
+     * This method should only be made by the OperationThread owning the OperationQueue.
+     *
+     * @param batch
+     */
+    void returnBatch(TaskBatch batch);
 }

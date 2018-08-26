@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,6 +26,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -32,6 +34,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -56,7 +59,7 @@ public class OperationQueueImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void add_whenPriority() throws InterruptedException {
+    public void add_whenPriority() {
         Object task = new Object();
         operationQueue.add(task, true);
 
@@ -224,5 +227,72 @@ public class OperationQueueImplTest extends HazelcastTestSupport {
     public void assertContent(Queue<Object> q, Object... expected) {
         List<Object> actual = new LinkedList<Object>(q);
         assertEquals(Arrays.asList(expected), actual);
+    }
+
+    @Test
+    public void batchInterleaving_singleBatch() throws InterruptedException {
+        TaskBatch batch1 = createBatch();
+        Object operation = "operation";
+
+        // we add the batch and expect it to be taken first
+        operationQueue.add(batch1, false);
+        assertSame(batch1, operationQueue.take(false));
+
+        // while processing the batch, we add an operation
+        operationQueue.add(operation, false);
+
+        operationQueue.returnBatch(batch1);
+
+        // now we expect to pull the operation first before taking the returned batch
+        assertSame(operation, operationQueue.take(false));
+        assertSame(batch1, operationQueue.take(false));
+    }
+
+    private TaskBatch createBatch() {
+        return new TaskBatch(mock(PartitionTaskFactory.class), new BitSet(1), 1, 1);
+    }
+
+    @Test
+    public void batchInterleaving_singleBatch_andPriority() throws InterruptedException {
+        TaskBatch batch1 = createBatch();
+        Object operation = "operation";
+
+        // we add the batch and expect it to be taken first
+        operationQueue.add(batch1, false);
+        assertSame(batch1, operationQueue.take(false));
+
+        // while processing the batch, we add an operation
+        operationQueue.add(operation, true);
+
+        operationQueue.returnBatch(batch1);
+
+        // now we expect to pull the operation first before taking the returned batch
+        assertSame(operation, operationQueue.take(false));
+        assertSame(batch1, operationQueue.take(false));
+    }
+
+    @Test
+    public void batchInterleaving_multipleBatches() throws InterruptedException {
+        TaskBatch batch1 = createBatch();
+        TaskBatch batch2 = createBatch();
+        Object operation = "operation";
+
+        // we add the batch and expect it to be taken first
+        operationQueue.add(batch1, false);
+        operationQueue.add(batch2, false);
+        assertSame(batch1, operationQueue.take(false));
+
+        // while processing the batch, we add an operation
+        operationQueue.add(operation, false);
+
+        operationQueue.returnBatch(batch1);
+
+        // now we expect to pull the operation first before adding a ne batch
+        assertSame(batch2, operationQueue.take(false));
+        operationQueue.returnBatch(batch2);
+
+        assertSame(operation, operationQueue.take(false));
+        assertSame(batch1, operationQueue.take(false));
+        assertSame(batch2, operationQueue.take(false));
     }
 }
