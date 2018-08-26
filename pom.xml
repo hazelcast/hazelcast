@@ -263,8 +263,7 @@
                     <excludes>
                         <exclude>**/jsr/**.java</exclude>
                         <exclude>**/**IT.java</exclude>
-                        <exclude>**/client/**Request.*</exclude>
-                        <exclude>**/mapreduce/**.java</exclude>
+                        <exclude>**/mapreduce/**/*.java</exclude>
                     </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
@@ -377,7 +376,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**.java</exclude>
+                                        <exclude>**/mapreduce/**/*.java</exclude>
                                     </excludes>
                                     <groups>
                                         com.hazelcast.test.annotation.QuickTest AND
@@ -418,7 +417,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**.java</exclude>
+                                        <exclude>**/mapreduce/**/*.java</exclude>
                                     </excludes>
                                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                                     <excludedGroups>
@@ -463,7 +462,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -601,8 +600,7 @@
                                 <exclude>**HibernateStatisticsTestSupport**</exclude>
                                 <exclude>**HibernateTestSupport**</exclude>
                                 <exclude>**RegionFactoryDefaultTest**</exclude>
-                                <exclude>**/client/**Request.*</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                         </configuration>
                         <executions>
@@ -628,7 +626,7 @@
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -891,7 +889,7 @@
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
@@ -962,7 +960,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -1057,7 +1055,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                                 <!--
                                   An outdated PaxRunner used by the OSGi test prevents executing on Java 9+.
                                   TODO: remove this exclude once we have a proper fix in the test class.
@@ -1115,14 +1113,13 @@
                             </includes>
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
-                                <exclude>**/client/**Request.*</exclude>
                                 <!-- code triggered by UserCodeDeploymentSmokeTest and OperationRunnerImplTest -->
                                 <!-- casts to SerializationServiceV1 and fails when Node is configured with the -->
                                 <!-- wrapper ClassRecordingSerializationService -->
                                 <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
