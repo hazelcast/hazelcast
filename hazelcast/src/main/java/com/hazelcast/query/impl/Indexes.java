@@ -48,7 +48,6 @@ public class Indexes {
     private final IndexCopyBehavior indexCopyBehavior;
     private final QueryContextProvider queryContextProvider;
     private final InternalSerializationService serializationService;
-
     private final ConcurrentMap<String, InternalIndex> mapIndexes = new ConcurrentHashMap<String, InternalIndex>(3);
     private final AtomicReference<InternalIndex[]> indexes = new AtomicReference<InternalIndex[]>(EMPTY_INDEX);
 

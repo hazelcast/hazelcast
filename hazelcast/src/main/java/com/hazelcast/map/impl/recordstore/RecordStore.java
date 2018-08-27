@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.IMap;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapContainer;
@@ -317,29 +318,9 @@ public interface RecordStore<R extends Record> {
      */
     long softFlush();
 
-    /**
-     * Clears internal partition data.
-     *
-     * @param onShutdown           true if {@code close} is called during
-     *                             MapService shutdown, false otherwise.
-     * @param onRecordStoreDestroy true if record-store will be destroyed,
-     *                             otherwise false.
-     */
-    void clearPartition(boolean onShutdown, boolean onRecordStoreDestroy);
-
-    /**
-     * Resets the record store to it's initial state.
-     * Used in replication operations.
-     *
-     * @see #putRecord(Data, Record)
-     */
-    void reset();
-
     boolean forceUnlock(Data dataKey);
 
     long getOwnedEntryCost();
-
-    int clear();
 
     boolean isEmpty();
 
@@ -419,14 +400,6 @@ public interface RecordStore<R extends Record> {
      * This can be used to release unused resources.
      */
     void disposeDeferredBlocks();
-
-    void destroy();
-
-    /**
-     * Like {@link #destroy()} but does not touch state on other services
-     * like lock service or event journal service.
-     */
-    void destroyInternals();
 
     /**
      * Initialize the recordStore after creation
@@ -519,4 +492,48 @@ public interface RecordStore<R extends Record> {
      * for this map.
      */
     boolean hasQueryCache();
+
+    /**
+     * Called by {@link IMap#destroy()} or {@link
+     * com.hazelcast.map.impl.MapMigrationAwareService}
+     *
+     * Clears internal partition data.
+     *
+     * @param onShutdown           true if {@code close} is called during
+     *                             MapService shutdown, false otherwise.
+     * @param onRecordStoreDestroy true if record-store will be destroyed,
+     *                             otherwise false.
+     */
+    void clearPartition(boolean onShutdown, boolean onRecordStoreDestroy);
+
+    /**
+     * Called by {@link IMap#clear()}.
+     *
+     * Clears data in this record store.
+     *
+     * @return number of cleared entries.
+     */
+    int clear();
+
+    /**
+     * Resets the record store to it's initial state.
+     *
+     * Used in replication operations.
+     *
+     * @see #putRecord(Data, Record)
+     */
+    void reset();
+
+    /**
+     * Called by {@link IMap#destroy()}.
+     *
+     * Destroys data in this record store.
+     */
+    void destroy();
+
+    /**
+     * Like {@link #destroy()} but does not touch state on other services
+     * like lock service or event journal service.
+     */
+    void destroyInternals();
 }

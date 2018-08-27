@@ -319,8 +319,33 @@ class MapServiceContextImpl implements MapServiceContext {
         return new PartitionContainer(service, partitionId);
     }
 
+    private void removeAllRecordStoresOfAllMaps(boolean onShutdown, boolean onRecordStoreDestroy) {
+        for (PartitionContainer partitionContainer : partitionContainers) {
+            if (partitionContainer != null) {
+                removeRecordStoresFromPartitionMatchingWith(allRecordStores(),
+                        partitionContainer.getPartitionId(), onShutdown, onRecordStoreDestroy);
+            }
+        }
+    }
+
+    /**
+     * @return predicate that matches with all record stores of all maps
+     */
+    private static Predicate<RecordStore> allRecordStores() {
+        return new Predicate<RecordStore>() {
+            @Override
+            public boolean test(RecordStore recordStore) {
+                return true;
+            }
+        };
+    }
+
     @Override
-    public void clearPartitionsOf(Predicate<RecordStore> predicate, int partitionId) {
+    public void removeRecordStoresFromPartitionMatchingWith(Predicate<RecordStore> predicate,
+                                                            int partitionId,
+                                                            boolean onShutdown,
+                                                            boolean onRecordStoreDestroy) {
+
         PartitionContainer container = partitionContainers[partitionId];
         if (container == null) {
             return;
@@ -330,7 +355,7 @@ class MapServiceContextImpl implements MapServiceContext {
         while (partitionIterator.hasNext()) {
             RecordStore partition = partitionIterator.next();
             if (predicate.test(partition)) {
-                partition.clearPartition(false, false);
+                partition.clearPartition(onShutdown, onRecordStoreDestroy);
                 partitionIterator.remove();
             }
         }
@@ -344,15 +369,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void setService(MapService mapService) {
         this.mapService = mapService;
-    }
-
-    @Override
-    public void clearPartitions(boolean onShutdown, boolean onRecordStoreDestroy) {
-        for (PartitionContainer container : partitionContainers) {
-            if (container != null) {
-                container.clear(onShutdown, onRecordStoreDestroy);
-            }
-        }
     }
 
     @Override
@@ -428,13 +444,13 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void reset() {
-        clearPartitions(false, false);
+        removeAllRecordStoresOfAllMaps(false, false);
         mapNearCacheManager.reset();
     }
 
     @Override
     public void shutdown() {
-        clearPartitions(true, false);
+        removeAllRecordStoresOfAllMaps(true, false);
         mapNearCacheManager.shutdown();
         mapContainers.clear();
     }
