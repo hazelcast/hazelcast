@@ -40,6 +40,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.query.Predicates.and;
+import static com.hazelcast.query.Predicates.greaterEqual;
+import static com.hazelcast.query.Predicates.lessEqual;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -171,6 +174,23 @@ public class MapQueryPartitionIteratorTest extends HazelcastTestSupport {
             String val = iterator.next();
             assertEquals(value, val);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void test_NoExceptions_When_IndexesAreAccessed_During_PredicateOptimization() {
+        int count = instance.getPartitionService().getPartitions().size() * 10;
+
+        MapProxyImpl<Integer, Integer> map = (MapProxyImpl<Integer, Integer>) instance.<Integer, Integer>getMap(randomMapName());
+        for (int i = 0; i < count; ++i) {
+            map.put(i, i);
+        }
+
+        // this predicate is a subject for optimizing it into a between predicate
+        Predicate<Integer, Integer> predicate = and(greaterEqual("this", 0), lessEqual("this", count - 1));
+
+        Collection result = collectAll(map.iterator(10, 1, Projections.<Entry<Integer, Integer>>identity(), predicate));
+        assertTrue(!result.isEmpty());
     }
 
     private void fillMap(IMap<String, String> map, int partitionId, int count, String value) {
