@@ -319,7 +319,17 @@ class MapServiceContextImpl implements MapServiceContext {
         return new PartitionContainer(service, partitionId);
     }
 
-    private void removeAllRecordStoresOfAllMaps(boolean onShutdown, boolean onRecordStoreDestroy) {
+    /**
+     * Removes all record stores from all partitions.
+     *
+     * Calls {@link #removeRecordStoresFromPartitionMatchingWith} internally and
+     *
+     * @param onShutdown           {@code true} if this method is called during map service shutdown,
+     *                             otherwise set {@code false}
+     * @param onRecordStoreDestroy {@code true} if this method is called during to destroy record store,
+     *                             otherwise set {@code false}
+     */
+    protected void removeAllRecordStoresOfAllMaps(boolean onShutdown, boolean onRecordStoreDestroy) {
         for (PartitionContainer partitionContainer : partitionContainers) {
             if (partitionContainer != null) {
                 removeRecordStoresFromPartitionMatchingWith(allRecordStores(),
