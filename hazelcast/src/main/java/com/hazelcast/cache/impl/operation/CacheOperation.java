@@ -33,10 +33,11 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.TenantControl;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
+
+import java.io.Closeable;
 
 import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
@@ -52,7 +53,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
     protected transient ICacheService cacheService;
     protected transient ICacheRecordStore recordStore;
     protected transient CacheWanEventPublisher wanEventPublisher;
-    protected transient TenantControl.Closeable tenantContext;
+    protected transient Closeable tenantContext;
 
     protected CacheOperation() {
     }
@@ -77,7 +78,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
 
         // establish tenant application's thread-local context for this cache operation
         CacheConfig<?, ?> cacheConfig = cacheService.getCacheConfig(name);
-        tenantContext = (cacheConfig == null? new TenantControl.NoTenantControl() : cacheConfig.getTenantControl()).setTenant(true);
+        tenantContext = cacheConfig.getTenantControl().setTenant(true);
 
         try {
             recordStore = getOrCreateStoreIfAllowed();

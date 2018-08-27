@@ -29,9 +29,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.TenantControl;
 import com.hazelcast.util.Clock;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -106,7 +106,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
             // establish thread-local context for this cache's tenant application before possibly creating records
             // This is so CDI / JPA / EJB methods can be called from other than JavaEE threads
-            TenantControl.Closeable tenantContext = service.getCacheConfig(entry.getKey()).getTenantControl().setTenant(true);
+            Closeable tenantContext = service.getCacheConfig(entry.getKey()).getTenantControl().setTenant(true);
             ICacheRecordStore cache;
             try {
                 cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());

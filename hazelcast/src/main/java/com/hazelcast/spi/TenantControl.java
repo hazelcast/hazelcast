@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 Hazelcast, Inc..
+ * Copyright 2008-2018 Hazelcast, Inc..
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,10 @@
  */
 package com.hazelcast.spi;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.impl.NoopTenantControl;
+
+import java.io.Closeable;
 import java.io.Serializable;
 
 /**
@@ -28,7 +31,11 @@ import java.io.Serializable;
  *
  * @author lprimak
  */
+@Beta
 public interface TenantControl extends Serializable {
+
+    final TenantControl NOOP_TENANT_CONTROL = new NoopTenantControl();
+
     /**
      * To be called from the application's thread to connect a Hazelcast object
      * with a particular tenant, e.g. JCache-based cache with a particular application
@@ -88,44 +95,5 @@ public interface TenantControl extends Serializable {
          * what context to send to the destroy() method
          */
         Class<?> getContextType();
-    }
-
-    /**
-     * Cannot use AutoCloseable due to JDK 6 compatibility
-     * Used to remove IOException checked exception, because there is no need
-     */
-    interface Closeable extends java.io.Closeable {
-        /**
-         * Remove IOException so it doesn't have to be caught
-         */
-        @Override
-        public void close();
-    };
-
-    /**
-     * Default no-op implementation of TenantControl
-     * This is so the code doesn't have to do any null checks
-     */
-    @BinaryInterface
-    static class NoTenantControl implements TenantControl {
-        @Override
-        public TenantControl saveCurrentTenant(DestroyEventContext event) {
-            return this;
-        }
-
-        @Override
-        public void unregister() {
-        }
-
-        @Override
-        public TenantControl.Closeable setTenant(boolean createRequestScope) {
-            return new Closeable() {
-                @Override
-                public void close() {
-                }
-            };
-        }
-
-        private static final long serialVersionUID = 1L;
     }
 }

@@ -44,6 +44,7 @@ import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheWriter;
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +53,7 @@ import java.util.Set;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
+import static com.hazelcast.spi.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -88,7 +90,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      */
     private boolean disablePerEntryInvalidationEvents;
 
-    private TenantControl tenantControl = new TenantControl.NoTenantControl();
+    private TenantControl tenantControl = NOOP_TENANT_CONTROL;
 
     public CacheConfig() {
     }
@@ -558,7 +560,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         // SUPER
         readKeyValueTypes(in);
         readTenant(in);
-        TenantControl.Closeable tenantContext = tenantControl.setTenant(false);
+        Closeable tenantContext = tenantControl.setTenant(false);
         try {
             readFactories(in);
         }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.ICacheInternal;
@@ -27,6 +28,7 @@ import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.net.URI;
@@ -178,6 +180,16 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected void onShuttingDown() {
+    }
+
+    @Override
+    protected ClassLoader getConfigClassLoader() {
+        return client.getConfig().getClassLoader();
+    }
+
+    @Override
+    protected ILogger getLogger() {
+        return client.getLoggingService().getLogger(HazelcastCacheManager.class);
     }
 
     /**
