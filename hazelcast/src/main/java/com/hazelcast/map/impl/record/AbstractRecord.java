@@ -31,15 +31,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SuppressWarnings({ "checkstyle:methodcount", "VolatileLongOrDoubleField" })
 public abstract class AbstractRecord<V> implements Record<V> {
 
-    private static final int NUMBER_OF_LONGS = 2;
-    private static final int NUMBER_OF_INTS = 5;
-
     /**
      * Base time to be used for storing time values as diffs (int) rather than full blown epoch based vals (long)
      * This allows for a space in seconds, of roughly 68 years.
      */
     public static final long EPOCH_TIME = zeroOutMillis(System.currentTimeMillis());
 
+    private static final int NUMBER_OF_LONGS = 2;
+    private static final int NUMBER_OF_INTS = 5;
 
     protected Data key;
     protected long version;
