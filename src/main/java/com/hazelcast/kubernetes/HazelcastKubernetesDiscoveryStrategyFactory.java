@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,15 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
     static {
         PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(Arrays.asList(
                 KubernetesProperties.SERVICE_DNS,
+                KubernetesProperties.SERVICE_DNS_TIMEOUT,
                 KubernetesProperties.SERVICE_NAME,
-                KubernetesProperties.SERVICE_PORT,
                 KubernetesProperties.SERVICE_LABEL_NAME,
                 KubernetesProperties.SERVICE_LABEL_VALUE,
                 KubernetesProperties.NAMESPACE,
                 KubernetesProperties.RESOLVE_NOT_READY_ADDRESSES,
                 KubernetesProperties.KUBERNETES_MASTER_URL,
-                KubernetesProperties.KUBERNETES_API_TOKEN));
+                KubernetesProperties.KUBERNETES_API_TOKEN,
+                KubernetesProperties.SERVICE_PORT));
     }
 
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {

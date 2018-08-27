@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ class ServiceEndpointResolver
             token = getAccountToken();
         }
         logger.info("Kubernetes Discovery: Bearer Token { " + token + " }");
-        return new KubernetesClient(kubernetesMaster, token);
+        return new RetryKubernetesClient(new DefaultKubernetesClient(kubernetesMaster, token));
     }
 
     @Override
@@ -91,7 +91,7 @@ class ServiceEndpointResolver
         }
     }
 
-    private void resolveAddresses(List<DiscoveryNode> discoveredNodes, List<KubernetesClient.EntrypointAddress> addresses) {
+    private void resolveAddresses(List<DiscoveryNode> discoveredNodes, List<EntrypointAddress> addresses) {
         for (EntrypointAddress address : addresses) {
             addAddress(discoveredNodes, address);
         }
