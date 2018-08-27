@@ -54,7 +54,6 @@
 
     <hazelcast.version>3.10</hazelcast.version>
     <dnsjava.version>2.1.8</dnsjava.version>
-    <minimaljson.version>0.9.4</minimaljson.version>
 
     <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
     <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>
@@ -131,11 +130,6 @@
       <version>${dnsjava.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.eclipsesource.minimal-json</groupId>
-      <artifactId>minimal-json</artifactId>
-      <version>${minimaljson.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>annotations</artifactId>
       <version>3.0.0</version>
@@ -210,7 +204,7 @@
               com.hazelcast.config,com.hazelcast.config.properties,
               com.hazelcast.spi.discovery,com.hazelcast.core,
               com.hazelcast.logging,com.hazelcast.nio, com.hazelcast.util,
-              org.xbill.DNS,com.eclipsesource.json,javax.net.ssl,javax.security.auth.x500
+              org.xbill.DNS,com.hazelcast.com.eclipsesource.json,javax.net.ssl,javax.security.auth.x500
             </Import-Package>
           </instructions>
         </configuration>
