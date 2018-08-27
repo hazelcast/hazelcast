@@ -82,7 +82,7 @@ public class QueryRunner {
      */
     public ResultSegment runPartitionScanQueryOnPartitionChunk(Query query, int partitionId, int tableIndex, int fetchSize) {
         final MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
-        final Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes());
+        final Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
         final QueryableEntriesSegment entries = partitionScanExecutor
                 .execute(query.getMapName(), predicate, partitionId, tableIndex, fetchSize);
 
