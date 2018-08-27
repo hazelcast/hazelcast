@@ -155,7 +155,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         }
 
         if (SOURCE == event.getMigrationEndpoint()) {
-            clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
+            removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
@@ -184,7 +184,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (DESTINATION == event.getMigrationEndpoint()) {
-            clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
+            removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
         }
 
@@ -206,18 +206,20 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         }
     }
 
-    private void clearMapsHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+    private void removeRecordStoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         if (thresholdReplicaIndex < 0) {
-            mapServiceContext.clearPartitionsOf(allMaps(), partitionId);
+            mapServiceContext.removeRecordStoresFromPartitionMatchingWith(allRecordStores(), partitionId,
+                    false, false);
         } else {
-            mapServiceContext.clearPartitionsOf(lesserBackupMapsThen(thresholdReplicaIndex), partitionId);
+            mapServiceContext.removeRecordStoresFromPartitionMatchingWith(lesserBackupMapsThen(thresholdReplicaIndex),
+                    partitionId, false, false);
         }
     }
 
     /**
      * @return predicate that matches with partitions of all maps
      */
-    private static Predicate<RecordStore> allMaps() {
+    private static Predicate<RecordStore> allRecordStores() {
         return new Predicate<RecordStore>() {
             @Override
             public boolean test(RecordStore recordStore) {

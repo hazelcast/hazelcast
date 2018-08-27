@@ -85,22 +85,22 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     void initPartitionsContainers();
 
     /**
-     * Clears all partitions which the supplied predicate matches.
+     * Removes all record stores inside the supplied partition ID matching with
+     * the supplied predicate.
      *
-     * @param predicate   predicate to select partitions to be cleared
-     * @param partitionId partition ID
+     * @param predicate            to find partitions to be removed
+     * @param partitionId          partition ID
+     * @param onShutdown           {@code true} if this method is called during map service shutdown,
+     *                             otherwise set {@code false}
+     * @param onRecordStoreDestroy {@code true} if this method is called during to destroy record store,
+     *                             otherwise set {@code false}
+     * @see MapManagedService#reset()
+     * @see MapManagedService#shutdown(boolean)
      */
-    void clearPartitionsOf(Predicate<RecordStore> predicate, int partitionId);
+    void removeRecordStoresFromPartitionMatchingWith(Predicate<RecordStore> predicate, int partitionId,
+                                                     boolean onShutdown, boolean onRecordStoreDestroy);
 
     MapService getService();
-
-    /**
-     * Clears all partition based data allocated by MapService.
-     *
-     * @param onShutdown {@code true} if {@code clearPartitions} is called during MapService shutdown,
-     *                   {@code false} otherwise
-     */
-    void clearPartitions(boolean onShutdown, boolean onRecordStoreDestroy);
 
     void destroyMapStores();
 

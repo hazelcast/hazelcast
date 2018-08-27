@@ -132,21 +132,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void destroy() {
-        clearPartition(false, true);
-        storage.destroy(false);
-        mutationObserver.onDestroy(false);
-    }
-
-    @Override
-    public void destroyInternals() {
-        clearMapStore();
-        clearStorage(false);
-        storage.destroy(false);
-        mutationObserver.onDestroy(true);
-    }
-
-    @Override
     public long softFlush() {
         updateStoreStats();
         return mapDataStore.softFlush();
@@ -158,7 +143,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @param recordsToBeFlushed records to be flushed to map-store.
      * @param backup             <code>true</code> if backup, false otherwise.
      */
-    protected void flush(Collection<Record> recordsToBeFlushed, boolean backup) {
+    private void flush(Collection<Record> recordsToBeFlushed, boolean backup) {
         Iterator<Record> iterator = recordsToBeFlushed.iterator();
         while (iterator.hasNext()) {
             Record record = iterator.next();
@@ -232,94 +217,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Iterator<Record> loadAwareIterator(long now, boolean backup) {
         checkIfLoaded();
         return iterator(now, backup);
-    }
-
-    @Override
-    public void clearPartition(boolean onShutdown, boolean onRecordStoreDestroy) {
-        clearLockStore();
-        if (onRecordStoreDestroy) {
-            destroyIndexes();
-        } else {
-            clearIndexedData();
-        }
-        clearMapStore();
-        clearStorage(onShutdown);
-    }
-
-    protected void clearLockStore() {
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        if (lockService != null) {
-            ObjectNamespace namespace = MapService.getObjectNamespace(name);
-            lockService.clearLockStore(partitionId, namespace);
-        }
-    }
-
-    protected void clearStorage(boolean onShutdown) {
-        if (onShutdown) {
-            NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-            NativeMemoryConfig nativeMemoryConfig = nodeEngine.getConfig().getNativeMemoryConfig();
-            boolean shouldClear = (nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() != POOLED);
-            if (shouldClear) {
-                storage.clear(true);
-                mutationObserver.onClear();
-            }
-            storage.destroy(true);
-            mutationObserver.onDestroy(true);
-        } else {
-            storage.clear(false);
-            mutationObserver.onClear();
-        }
-    }
-
-    protected void clearMapStore() {
-        mapDataStore.reset();
-    }
-
-    /**
-     * Only indexed data will be removed, index info will stay.
-     */
-    public void clearIndexedData() {
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes.isGlobal()) {
-            if (indexes.hasIndex()) {
-                // clears indexed data of this partition
-                // from shared global index.
-                fullScanLocalDataToClear(indexes);
-            }
-        } else {
-            // if index is partitioned, we can clear indexed
-            // data with clearAll here.
-            indexes.clearAll();
-        }
-    }
-
-    public void destroyIndexes() {
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        indexes.destroyIndexes();
-        if (indexes.isGlobal()) {
-            if (indexes.hasIndex()) {
-                // clears indexed data of this partition
-                // from shared global index.
-                fullScanLocalDataToClear(indexes);
-            }
-        } else {
-            // if index is partitioned, we can destroy indexed
-            // data with destroyIndexes here.
-            indexes.destroyIndexes();
-        }
-    }
-
-    /**
-     * Clears local data of this partition from global index by doing
-     * partition full-scan.
-     */
-    private void fullScanLocalDataToClear(Indexes indexes) {
-        for (Record record : storage.values()) {
-            Data key = record.getKey();
-            Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntryIndex(key, value, Index.OperationSource.SYSTEM);
-        }
     }
 
     /**
@@ -448,20 +345,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return record;
     }
 
-    @Override
-    public int clear() {
-        checkIfLoaded();
-
-        // we don't remove locked keys. These are clearable records.
-        Collection<Record> clearableRecords = getNotLockedRecords();
-        // This conversion is required by mapDataStore#removeAll call.
-        List<Data> keys = getKeysFromRecords(clearableRecords);
-        mapDataStore.removeAll(keys);
-        clearMapStore();
-        removeIndex(clearableRecords);
-        return removeRecords(clearableRecords);
-    }
-
     protected List<Data> getKeysFromRecords(Collection<Record> clearableRecords) {
         List<Data> keys = new ArrayList<Data>(clearableRecords.size());
         for (Record clearableRecord : clearableRecords) {
@@ -516,17 +399,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
         }
         return notLockedRecords;
-    }
-
-    /**
-     * Resets the record store to it's initial state.
-     */
-    @Override
-    public void reset() {
-        clearMapStore();
-        storage.clear(false);
-        stats.reset();
-        mutationObserver.onReset();
     }
 
     @Override
@@ -968,7 +840,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         saveIndex(record, oldValue);
         return oldValue;
     }
-
     @Override
     public boolean replace(Data key, Object expect, Object update) {
         checkIfLoaded();
@@ -1299,5 +1170,127 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return "on partitionId=" + partitionId + " on " + mapServiceContext.getNodeEngine().getThisAddress()
                 + " loadedOnCreate=" + loadedOnCreate + " loadedOnPreMigration=" + loadedOnPreMigration
                 + " isLoaded=" + isLoaded();
+    }
+
+    @Override
+    public int clear() {
+        checkIfLoaded();
+        // we don't remove locked keys. These are clearable records.
+        Collection<Record> clearableRecords = getNotLockedRecords();
+        // This conversion is required by mapDataStore#removeAll call.
+        List<Data> keys = getKeysFromRecords(clearableRecords);
+        mapDataStore.removeAll(keys);
+        clearMapStore();
+        removeIndex(clearableRecords);
+        return removeRecords(clearableRecords);
+    }
+
+    @Override
+    public void reset() {
+        clearMapStore();
+        storage.clear(false);
+        stats.reset();
+        mutationObserver.onReset();
+    }
+
+    @Override
+    public void destroy() {
+        clearPartition(false, true);
+        storage.destroy(false);
+        mutationObserver.onDestroy(false);
+    }
+
+    @Override
+    public void destroyInternals() {
+        clearMapStore();
+        clearStorage(false);
+        storage.destroy(false);
+        mutationObserver.onDestroy(true);
+    }
+
+    @Override
+    public void clearPartition(boolean onShutdown, boolean onRecordStoreDestroy) {
+        clearOtherResourcesThanStorage(onRecordStoreDestroy);
+        clearStorage(onShutdown || onRecordStoreDestroy);
+    }
+
+    public void clearOtherResourcesThanStorage(boolean onRecordStoreDestroy) {
+        clearMapStore();
+        clearLockStore();
+        clearIndexedData(onRecordStoreDestroy);
+    }
+
+    private void clearLockStore() {
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        if (lockService != null) {
+            ObjectNamespace namespace = MapService.getObjectNamespace(name);
+            lockService.clearLockStore(partitionId, namespace);
+        }
+    }
+
+    public void clearStorage(boolean onShutdown) {
+        if (onShutdown) {
+            NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+            NativeMemoryConfig nativeMemoryConfig = nodeEngine.getConfig().getNativeMemoryConfig();
+            boolean shouldClear = (nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() != POOLED);
+            if (shouldClear) {
+                storage.clear(true);
+                mutationObserver.onClear();
+            }
+            storage.destroy(true);
+            mutationObserver.onDestroy(true);
+        } else {
+            storage.clear(false);
+            mutationObserver.onClear();
+        }
+    }
+
+    private void clearMapStore() {
+        mapDataStore.reset();
+    }
+
+    /**
+     * Only indexed data will be removed, index info will stay.
+     */
+    public void clearIndexedData(boolean onRecordStoreDestroy) {
+        clearGlobalIndexes();
+        clearPartitionedIndexes(onRecordStoreDestroy);
+    }
+
+    private void clearGlobalIndexes() {
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        if (indexes.isGlobal()) {
+            if (indexes.hasIndex()) {
+                // clears indexed data of this partition
+                // from shared global index.
+                fullScanLocalDataToClear(indexes);
+            }
+        }
+    }
+
+    private void clearPartitionedIndexes(boolean onRecordStoreDestroy) {
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        if (indexes.isGlobal()) {
+            return;
+        }
+
+        if (onRecordStoreDestroy) {
+            indexes.destroyIndexes();
+        } else {
+            indexes.clearAll();
+        }
+    }
+
+    /**
+     * Clears local data of this partition from global index by doing
+     * partition full-scan.
+     */
+    private void fullScanLocalDataToClear(Indexes indexes) {
+        for (Record record : storage.values()) {
+            Data key = record.getKey();
+            Object value = Records.getValueOrCachedValue(record, serializationService);
+            indexes.removeEntryIndex(key, value, Index.OperationSource.SYSTEM);
+        }
     }
 }

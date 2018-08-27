@@ -208,15 +208,6 @@ public class PartitionContainer {
         }
     }
 
-    public void clear(boolean onShutdown, boolean onRecordStoreDestroy) {
-        for (RecordStore recordStore : maps.values()) {
-            recordStore.clearPartition(onShutdown, onRecordStoreDestroy);
-            mapService.getMapServiceContext().getEventJournal().destroy(
-                    recordStore.getMapContainer().getObjectNamespace(), partitionId);
-        }
-        maps.clear();
-    }
-
     public boolean hasRunningCleanup() {
         return hasRunningCleanup;
     }
