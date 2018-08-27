@@ -38,7 +38,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
      * Base time to be used for storing time values as diffs (int) rather than full blown epoch based vals (long)
      * This allows for a space in seconds, of roughly 68 years.
      */
-    private static final long CREATION_DATE_BASE = System.currentTimeMillis();
+    private static final long EPOCH_TIME = zeroOutMillis(System.currentTimeMillis());
 
 
     protected Data key;
@@ -257,15 +257,19 @@ public abstract class AbstractRecord<V> implements Record<V> {
         }
 
         long exploded = SECONDS.toMillis(value);
-        return exploded + CREATION_DATE_BASE;
+        return exploded + EPOCH_TIME;
     }
 
     protected int stripBaseTime(long value) {
         int diff = NOT_AVAILABLE;
         if (value > 0) {
-            diff = (int) MILLISECONDS.toSeconds(value - CREATION_DATE_BASE);
+            diff = (int) MILLISECONDS.toSeconds(value - EPOCH_TIME);
         }
 
         return diff;
+    }
+
+    private static long zeroOutMillis(long value) {
+        return SECONDS.toMillis(MILLISECONDS.toSeconds(value));
     }
 }
