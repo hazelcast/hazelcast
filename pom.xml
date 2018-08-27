@@ -32,7 +32,6 @@
         <jdk.version>1.6</jdk.version>
 
         <hazelcast.version>3.10.4</hazelcast.version>
-        <minimaljson.version>0.9.4</minimaljson.version>
 
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
@@ -70,11 +69,6 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${hazelcast.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.eclipsesource.minimal-json</groupId>
-            <artifactId>minimal-json</artifactId>
-            <version>${minimaljson.version}</version>
         </dependency>
 
         <dependency>
