@@ -777,12 +777,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
         checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(entryProcessor);
         if (keys.isEmpty()) {
             SimpleCompletableFuture<Map<K, Object>> res = new SimpleCompletableFuture<Map<K, Object>>(getNodeEngine());
             res.setResult(emptyMap());
             return res;
         }
+        handleHazelcastInstanceAwareParams(entryProcessor);
 
         Set<Data> dataKeys = createHashSet(keys.size());
         return executeOnKeysInternal(keys, dataKeys, entryProcessor, null);

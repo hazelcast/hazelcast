@@ -122,13 +122,13 @@ final class InvokeOnPartitions {
                         .andThen(new ExecutionCallback<Object>() {
                             @Override
                             public void onResponse(Object response) {
-                                partitionResults.set(partitionId, response);
+                                setPartitionResult(partitionId, response);
                                 decrementLatchAndHandle(1);
                             }
 
                             @Override
                             public void onFailure(Throwable t) {
-                                partitionResults.set(partitionId, t);
+                                setPartitionResult(partitionId, t);
                                 decrementLatchAndHandle(1);
                             }
                         });
@@ -181,7 +181,7 @@ final class InvokeOnPartitions {
                     retryPartition(partitions[i]);
                     failedPartitionsCnt++;
                 } else {
-                    partitionResults.set(partitions[i], results[i]);
+                    setPartitionResult(partitions[i], results[i]);
                 }
             }
             decrementLatchAndHandle(allPartitions.size() - failedPartitionsCnt);
@@ -198,5 +198,11 @@ final class InvokeOnPartitions {
                 retryPartition(partition);
             }
         }
+    }
+
+    private void setPartitionResult(int partition, Object result) {
+        assert result != null : "null result";
+        boolean success = partitionResults.compareAndSet(partition, null, result);
+        assert success : "two results for same partition: old=" + partitionResults.get(partition) + ", new=" + result;
     }
 }
