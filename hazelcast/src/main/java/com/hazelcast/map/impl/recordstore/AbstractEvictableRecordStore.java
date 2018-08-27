@@ -413,6 +413,9 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                                        long lastUpdateTime) {
         record.setTtl(ttlMillis);
         record.setMaxIdle(maxIdleMillis);
+//        record.setMaxIdle(maxIdleMillis < 0
+//                ? TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getMaxIdleSeconds())
+//                : maxIdleMillis);
         record.setCreationTime(creationTime);
         record.setLastAccessTime(lastAccessTime);
         record.setLastUpdateTime(lastUpdateTime);

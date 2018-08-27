@@ -88,6 +88,9 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public void setMaxIdle(long maxIdle) {
+        // negative value means default max idle from MapConfig
+        // a negative value should have already been handled before it reaches this point
+        assert maxIdle >= 0 : "maxIdle should not be negative";
         long maxIdleSeconds = MILLISECONDS.toSeconds(maxIdle);
         if (maxIdleSeconds == 0 && maxIdle != 0) {
             maxIdleSeconds = 1;
