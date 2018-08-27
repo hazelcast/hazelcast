@@ -89,6 +89,7 @@ final class InvokeOnPartitions {
     }
 
     private void ensureNotCallingFromPartitionOperationThread() {
+        // TODO [viliam] is this check necessary when it's async?
         if (Thread.currentThread() instanceof PartitionOperationThread) {
             throw new IllegalThreadStateException(Thread.currentThread() + " cannot make invocation on multiple partitions!");
         }

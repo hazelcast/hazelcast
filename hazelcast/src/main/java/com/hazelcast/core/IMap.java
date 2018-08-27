@@ -2582,6 +2582,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
      * if the write-behind queue has reached its per-node maximum
      * capacity.
+     * <p>
+     * See {@link #submitToKeys(Set, EntryProcessor)} for an async
+     * version of this method.
      *
      * <h4>Performance note</h4>
      * <p>Keep the state of {@code entryProcessor}
@@ -2602,9 +2605,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      *         });
      * }</pre>
      *
+     * @param keys The keys to execute the entry processor on. Can be
+     *            empty, in that case it's a local no-op
      * @return results of {@link EntryProcessor#process(Entry)}
-     * @throws NullPointerException     if the specified key is {@code null}
-     * @throws IllegalArgumentException if the specified {@code keys} set is empty
+     * @throws NullPointerException if there's null element in {@code keys}
      */
     Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
 
@@ -2765,7 +2769,62 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor);
 
     /**
-     * TODO [viliam]
+     * Applies the user defined {@link EntryProcessor} to the entries mapped by the collection of keys.
+     * <p>
+     * The operation is not lock-aware. The {@code EntryProcessor} will process the entries no matter if the keys are
+     * locked or not. For more details check <b>Entry Processing</b> section on {@link IMap} documentation.
+     *
+     * <p><b>Interactions with the map store</b>
+     * <p>
+     * For each entry not found in memory {@link MapLoader#load(Object)}
+     * is invoked to load the value from the map store backing the map.
+     * <p>
+     * If write-through persistence mode is configured, for each entry
+     * updated by the entryProcessor, before the updated value is stored
+     * in memory, {@link MapStore#store(Object, Object)} is called to
+     * write the value into the map store.
+     * <p>
+     * If write-through persistence mode is configured, for each entry
+     * updated to null value, before the value is removed from the
+     * memory, {@link MapStore#delete(Object)} is called to delete the
+     * value from the map store.
+     * <p>
+     * Any exceptions thrown by the map store fail the operation and are
+     * propagated to the caller. If an exception happened, the operation might
+     * already succeeded on some of the keys.
+     * <p>
+     * If write-behind persistence mode is
+     * configured with write-coalescing turned off,
+     * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
+     * if the write-behind queue has reached its per-node maximum
+     * capacity.
+     * <p>
+     * See {@link #executeOnKeys(Set, EntryProcessor)} for a sync
+     * version of this method.
+     *
+     * <h4>Performance note</h4>
+     * <p>Keep the state of {@code entryProcessor}
+     * small, it will be serialized and one copy will be sent to each member.
+     * Additionally, the {@linkplain EntryProcessor#getBackupProcessor() backup
+     * processor} will also be serialized once for each affected partition and
+     * sent to each backup. For example, in this usage the entire {@code
+     * additions} map will be duplicated once for each member and once for each
+     * partition and backup:
+     * <pre>{@code
+     *   HashMap additions = ...;
+     *   iMap.executeOnKeys(map.keySet(), new AbstractEntryProcessor<Integer, Integer>() {
+     *             public Object process(Entry<Integer, Integer> entry) {
+     *                 Integer updateBy = additions.get(entry.getKey());
+     *                 entry.setValue(entry.getValue() + updateBy);
+     *                 return null;
+     *             }
+     *         });
+     * }</pre>
+     *
+     * @param keys The keys to execute the entry processor on. Can be
+     *            empty, in that case it's a local no-op
+     * @return results of {@link EntryProcessor#process(Entry)}
+     * @throws NullPointerException if there's null element in {@code keys}
      */
     ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor);
 
