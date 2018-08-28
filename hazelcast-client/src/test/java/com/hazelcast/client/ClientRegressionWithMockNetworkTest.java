@@ -26,8 +26,6 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -851,27 +849,24 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         Config config = new Config();
         int clientHeartbeatSeconds = 8;
         config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), String.valueOf(clientHeartbeatSeconds));
-        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "1000");
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
-        warmUpPartitions(instance, instance2);
-        String key = generateKeyOwnedBy(instance2);
+        HazelcastInstance client2 = hazelcastFactory.newHazelcastClient();
 
         final AtomicBoolean isClientDisconnected = new AtomicBoolean();
-        instance.getClientService().addClientListener(new ClientListener() {
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
-            public void clientConnected(Client client) {
-
-            }
-
-            @Override
-            public void clientDisconnected(Client client) {
-                isClientDisconnected.set(true);
+            public void stateChanged(LifecycleEvent event) {
+                if (LifecycleState.CLIENT_DISCONNECTED.equals(event.getState())) {
+                    isClientDisconnected.set(true);
+                }
             }
         });
 
+        String key = "topicName";
         ITopic topic = client.getTopic(key);
         MessageListener listener = new MessageListener() {
             public void onMessage(Message message) {
@@ -879,11 +874,11 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         };
         String id = topic.addMessageListener(listener);
 
-        ITopic<Object> instanceTopic = instance.getTopic(key);
+        ITopic<Object> client2Topic = client2.getTopic(key);
         long begin = System.currentTimeMillis();
 
         while (System.currentTimeMillis() - begin < TimeUnit.SECONDS.toMillis(clientHeartbeatSeconds * 2)) {
-            instanceTopic.publish("message");
+            client2Topic.publish("message");
         }
 
         topic.removeMessageListener(id);
