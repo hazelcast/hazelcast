@@ -29,7 +29,12 @@ public class SimpleCompletableFuture<T> extends AbstractCompletableFuture<T>
     }
 
     @Override
-    public Object join() {
+    public boolean setResult(Object result) {
+        return super.setResult(result);
+    }
+
+    @Override
+    public T join() {
         try {
             return get();
         } catch (Exception e) {

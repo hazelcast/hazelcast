@@ -2802,6 +2802,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * See {@link #executeOnKeys(Set, EntryProcessor)} for a sync
      * version of this method.
      *
+     * <h4>Concurrent modification</h4>
+     * <p>The {@code keys} set must not be modified after it was passed
+     * to this method, until the async operation is done. It will be
+     * read by concurrent threads.
+     *
      * <h4>Performance note</h4>
      * <p>Keep the state of {@code entryProcessor}
      * small, it will be serialized and one copy will be sent to each member.

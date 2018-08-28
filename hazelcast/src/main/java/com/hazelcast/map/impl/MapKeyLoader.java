@@ -640,8 +640,8 @@ public class MapKeyLoader {
         }
 
         @Override
-        protected void setResult(Object result) {
-            super.setResult(result);
+        protected boolean setResult(Object result) {
+            return super.setResult(result);
         }
 
         @Override
