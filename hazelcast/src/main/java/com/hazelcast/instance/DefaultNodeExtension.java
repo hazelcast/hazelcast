@@ -47,6 +47,7 @@ import com.hazelcast.internal.diagnostics.MemberHeartbeatPlugin;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
 import com.hazelcast.internal.diagnostics.OperationHeartbeatPlugin;
+import com.hazelcast.internal.diagnostics.OperationThreadSamplerPlugin;
 import com.hazelcast.internal.diagnostics.OverloadedConnectionsPlugin;
 import com.hazelcast.internal.diagnostics.PendingInvocationsPlugin;
 import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
@@ -448,6 +449,7 @@ public class DefaultNodeExtension implements NodeExtension {
         diagnostics.register(new MemberHeartbeatPlugin(nodeEngine));
         diagnostics.register(new NetworkingImbalancePlugin(nodeEngine));
         diagnostics.register(new OperationHeartbeatPlugin(nodeEngine));
+        diagnostics.register(new OperationThreadSamplerPlugin(nodeEngine));
     }
 
     @Override
