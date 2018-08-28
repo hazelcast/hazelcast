@@ -86,7 +86,7 @@ public class ClientConditionProxy extends PartitionSpecificClientProxy implement
         final long timeoutInMillis = unit.toMillis(time);
         ClientMessage request = ConditionAwaitCodec
                 .encodeRequest(conditionId, threadId, timeoutInMillis, name, referenceIdGenerator.getNextReferenceId());
-        ClientMessage response = invokeOnPartition(request);
+        ClientMessage response = invokeOnPartition(request, Long.MAX_VALUE);
         return ConditionAwaitCodec.decodeResponse(response).response;
     }
 
