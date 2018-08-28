@@ -21,6 +21,8 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+
 public class SetTTLBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     public SetTTLBackupOperation() {
@@ -28,7 +30,7 @@ public class SetTTLBackupOperation extends KeyBasedMapOperation implements Backu
     }
 
     public SetTTLBackupOperation(String name, Data dataKey, long ttl) {
-        super(name, dataKey, ttl);
+        super(name, dataKey, ttl, DEFAULT_MAX_IDLE);
     }
 
     @Override

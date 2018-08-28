@@ -36,6 +36,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BlockingOperation;
@@ -367,9 +368,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private void sendResponseAfterOperationError(Operation operation, Throwable e) {
         try {
             if (node.getState() != NodeState.SHUT_DOWN) {
-                operation.sendResponse(errorResponse(operation, e));
+                operation.sendResponse(e);
             } else if (operation.executedLocally()) {
-                operation.sendResponse(errorResponse(operation, new HazelcastInstanceNotActiveException()));
+                operation.sendResponse(new HazelcastInstanceNotActiveException());
             }
         } catch (Throwable t) {
             logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
@@ -423,9 +424,6 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         }
     }
 
-    private ErrorResponse errorResponse(Operation op, Throwable error) {
-        return new ErrorResponse(error, op.getCallId(), op.isUrgent());
-    }
     /**
      * This method has a direct dependency on how objects are serialized.
      * If the stream format is changed, this extraction method must be changed as well.
@@ -484,15 +482,26 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             }
         } else if (t instanceof OutOfMemoryError) {
             try {
-                logger.severe(t.getMessage(), t);
+                logException(t.getMessage(), t, SEVERE);
             } catch (Throwable ignored) {
                 logger.severe(ignored.getMessage(), t);
             }
-        } else {
-            final Level level = nodeEngine.isRunning() ? SEVERE : FINEST;
-            if (logger.isLoggable(level)) {
-                logger.log(level, t.getMessage(), t);
+        } else if (t instanceof HazelcastSerializationException) {
+            if (!node.getClusterService().isJoined()) {
+                logException("A serialization exception occurred while joining a cluster, is this member compatible with "
+                        + "other members of the cluster?", t, SEVERE);
+            } else {
+                logException(t.getMessage(), t, nodeEngine.isRunning() ? SEVERE : FINEST);
             }
+        } else {
+            logException(t.getMessage(), t, nodeEngine.isRunning() ? SEVERE : FINEST);
         }
     }
+
+    private void logException(String message, Throwable t, Level level) {
+        if (logger.isLoggable(level)) {
+            logger.log(level, message, t);
+        }
+    }
+
 }

@@ -698,7 +698,6 @@ public class ConfigXmlGenerator {
     private static void wanReplicationSyncGenerator(XmlGenerator gen, WanSyncConfig c) {
         gen.open("wan-sync")
            .node("consistency-check-strategy", c.getConsistencyCheckStrategy())
-           .node("consistency-check-period-millis", c.getConsistencyCheckPeriodMillis())
            .close();
     }
 

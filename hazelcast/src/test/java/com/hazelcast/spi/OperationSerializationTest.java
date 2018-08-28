@@ -28,7 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 
 import static org.junit.Assert.assertEquals;
@@ -52,7 +51,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_partitionId() throws IOException {
+    public void test_partitionId() {
         test_partitionId(0, false);
         test_partitionId(100, false);
         test_partitionId(-1, false);
@@ -72,7 +71,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_replicaIndex() throws IOException {
+    public void test_replicaIndex() {
         test_replicaIndex(0, false);
         test_replicaIndex(1, true);
         test_replicaIndex(3, true);
@@ -89,7 +88,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_callTimeout() throws IOException {
+    public void test_callTimeout() {
         test_callTimeout(0, false);
         test_callTimeout(100, false);
         test_callTimeout(-1, false);
@@ -205,6 +204,17 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         assertTrue("service name should be set", copy.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
     }
 
+    @Test
+    public void test_serviceName_whenOverridesGetServiceNameAndRequiresExplicitServiceName_thenSerialized() {
+        OperationWithExplicitServiceNameAndOverride op = new OperationWithExplicitServiceNameAndOverride();
+        assertNull(op.getRawServiceName());
+        assertFalse("service name should not be set", op.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
+
+        Operation copy = copy(op);
+        assertEquals(DUMMY_SERVICE_NAME, copy.getRawServiceName());
+        assertTrue("service name should be set", copy.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
+    }
+
     private Operation copy(Operation op) {
         try {
             BufferObjectDataOutput out = serializationService.createObjectDataOutput(1000);
@@ -251,4 +261,26 @@ public class OperationSerializationTest extends HazelcastTestSupport {
             return DUMMY_SERVICE_NAME;
         }
     }
+
+    private static class OperationWithExplicitServiceNameAndOverride extends Operation {
+
+        public OperationWithExplicitServiceNameAndOverride() {
+        }
+
+        @Override
+        public void run() throws Exception {
+        }
+
+        @Override
+        protected boolean requiresExplicitServiceName() {
+            return true;
+        }
+
+        @Override
+        public String getServiceName() {
+            return DUMMY_SERVICE_NAME;
+        }
+
+    }
+
 }

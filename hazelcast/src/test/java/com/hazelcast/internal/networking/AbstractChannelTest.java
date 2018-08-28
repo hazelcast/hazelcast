@@ -30,6 +30,7 @@ import java.nio.channels.SocketChannel;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -59,15 +60,6 @@ public class AbstractChannelTest {
     }
 
     @Test
-    public void testClose_whenExceptionIsThrownOnClose_thenCloseIsSuccessful() throws Exception {
-        channel.throwExceptionOnClose = true;
-
-        channel.close();
-
-        assertTrue(channel.isClosed());
-    }
-
-    @Test
     public void testClose_whenExceptionIsThrownOnListener_thenCloseIsSuccessful() throws Exception {
         channel.addCloseListener(new TestChannelCloseListener());
 
@@ -79,17 +71,37 @@ public class AbstractChannelTest {
     private static class TestChannel extends AbstractChannel {
 
         private boolean throwExceptionOnClose;
+        private final ChannelOptions config = mock(ChannelOptions.class);
 
         TestChannel(SocketChannel socketChannel, boolean clientMode) {
             super(socketChannel, clientMode);
         }
 
         @Override
-        protected void onClose() throws IOException {
-            super.onClose();
+        public ChannelOptions options() {
+            return config;
+        }
+
+        @Override
+        protected void close0() throws IOException {
+            super.close0();
             if (throwExceptionOnClose) {
                 throw new IOException("Expected exception");
             }
+        }
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public InboundPipeline inboundPipeline() {
+            return mock(InboundPipeline.class);
+        }
+
+        @Override
+        public OutboundPipeline outboundPipeline() {
+            return mock(OutboundPipeline.class);
         }
 
         @Override
@@ -105,10 +117,6 @@ public class AbstractChannelTest {
         @Override
         public boolean write(OutboundFrame frame) {
             return false;
-        }
-
-        @Override
-        public void flush() {
         }
     }
 

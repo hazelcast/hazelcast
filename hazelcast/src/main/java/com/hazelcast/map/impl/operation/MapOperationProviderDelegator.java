@@ -41,8 +41,8 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     abstract MapOperationProvider getDelegate();
 
     @Override
-    public MapOperation createPutOperation(String name, Data key, Data value, long ttl) {
-        return getDelegate().createPutOperation(name, key, value, ttl);
+    public MapOperation createPutOperation(String name, Data key, Data value, long ttl, long maxIdle) {
+        return getDelegate().createPutOperation(name, key, value, ttl, maxIdle);
     }
 
     @Override
@@ -51,18 +51,18 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl) {
-        return getDelegate().createSetOperation(name, dataKey, value, ttl);
+    public MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
+        return getDelegate().createSetOperation(name, dataKey, value, ttl, maxIdle);
     }
 
     @Override
-    public MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl) {
-        return getDelegate().createPutIfAbsentOperation(name, key, value, ttl);
+    public MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl, long maxIdle) {
+        return getDelegate().createPutIfAbsentOperation(name, key, value, ttl, maxIdle);
     }
 
     @Override
-    public MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl) {
-        return getDelegate().createPutTransientOperation(name, key, value, ttl);
+    public MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl, long maxIdle) {
+        return getDelegate().createPutTransientOperation(name, key, value, ttl, maxIdle);
     }
 
     @Override

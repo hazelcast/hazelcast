@@ -18,41 +18,49 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
-import com.hazelcast.map.impl.eviction.ExpirationManager;
+import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.getIdlenessStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
+import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.MAX_EXPIRED_KEY_COUNT_IN_BATCH;
 
 
 /**
  * Contains eviction specific functionality.
  */
-abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
+public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     protected final long expiryDelayMillis;
     protected final EventService eventService;
@@ -65,7 +73,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * Used in expiration logic for traversing entries. Initializes lazily.
      */
     protected Iterator<Record> expirationIterator;
-    protected volatile boolean hasEntryWithCustomTTL;
+    protected volatile boolean hasEntryWithCustomExpiration;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -84,7 +92,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      */
     private boolean isRecordStoreExpirable() {
         MapConfig mapConfig = mapContainer.getMapConfig();
-        return hasEntryWithCustomTTL || mapConfig.getMaxIdleSeconds() > 0
+        return hasEntryWithCustomExpiration || mapConfig.getMaxIdleSeconds() > 0
                 || mapConfig.getTimeToLiveSeconds() > 0;
     }
 
@@ -174,9 +182,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return evictor != NULL_EVICTOR && evictor.checkEvictable(this);
     }
 
-    protected void markRecordStoreExpirable(long ttl) {
-        if (!isInfiniteTTL(ttl)) {
-            hasEntryWithCustomTTL = true;
+    protected void markRecordStoreExpirable(long ttl, long maxIdle) {
+        if (!isInfiniteTTL(ttl) || isMaxIdleDefined(maxIdle)) {
+            hasEntryWithCustomExpiration = true;
         }
 
         if (isRecordStoreExpirable()) {
@@ -191,6 +199,10 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     // this method is overridden on ee
     protected boolean isInfiniteTTL(long ttl) {
         return !(ttl > 0L && ttl < Long.MAX_VALUE);
+    }
+
+    protected boolean isMaxIdleDefined(long maxIdle) {
+        return maxIdle > 0L;
     }
 
     /**
@@ -228,13 +240,13 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private boolean isIdleExpired(Record record, long now, boolean backup) {
-        if (backup && expirationManager.canPrimaryDriveExpiration()) {
+        if (backup && mapServiceContext.getClearExpiredRecordsTask().canPrimaryDriveExpiration()) {
             // don't check idle expiry on backup
             return false;
         }
 
-        long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
-        if (maxIdleMillis == Long.MAX_VALUE) {
+        long maxIdleMillis = getRecordMaxIdleOrConfig(record);
+        if (maxIdleMillis < 1L || maxIdleMillis == Long.MAX_VALUE) {
             return false;
         }
         long idlenessStartTime = getIdlenessStartTime(record);
@@ -247,7 +259,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (record == null) {
             return false;
         }
-        long ttl = record.getTtl();
+        long ttl = getRecordTTLOrConfig(record);
         // when ttl is zero or negative or Long.MAX_VALUE, entry should live forever.
         if (ttl < 1L || ttl == Long.MAX_VALUE) {
             return false;
@@ -256,6 +268,22 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         long ttlMillis = calculateExpirationWithDelay(ttl, expiryDelayMillis, backup);
         long elapsedMillis = now - ttlStartTime;
         return elapsedMillis >= ttlMillis;
+    }
+
+    private long getRecordMaxIdleOrConfig(Record record) {
+        if (record.getMaxIdle() != DEFAULT_MAX_IDLE) {
+            return record.getMaxIdle();
+        }
+
+        return TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getMaxIdleSeconds());
+    }
+
+    private long getRecordTTLOrConfig(Record record) {
+        if (record.getTtl() != DEFAULT_TTL) {
+            return record.getTtl();
+        }
+
+        return TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getTimeToLiveSeconds());
     }
 
     @Override
@@ -307,37 +335,94 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             expiredKeys.offer(new ExpiredKey(toHeapData(record.getKey()), record.getCreationTime()));
         }
 
-        expirationManager.sendExpiredKeysToBackups(this, true);
+        sendExpiredKeysToBackups(true);
+    }
+
+    public void sendExpiredKeysToBackups(boolean checkIfReachedBatch) {
+        InvalidationQueue<ExpiredKey> invalidationQueue = getExpiredKeys();
+
+        int size = invalidationQueue.size();
+        if (size == 0 || checkIfReachedBatch && size < MAX_EXPIRED_KEY_COUNT_IN_BATCH) {
+            return;
+        }
+
+        if (!invalidationQueue.tryAcquire()) {
+            return;
+        }
+
+        Collection<ExpiredKey> expiredKeys;
+        try {
+            expiredKeys = pollExpiredKeys(invalidationQueue);
+        } finally {
+            invalidationQueue.release();
+        }
+
+        if (expiredKeys.size() == 0) {
+            return;
+        }
+
+        // send expired keys to all backups
+        OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
+        int backupReplicaCount = getMapContainer().getTotalBackupCount();
+        for (int replicaIndex = 1; replicaIndex < backupReplicaCount + 1; replicaIndex++) {
+            if (hasReplicaAddress(getPartitionId(), replicaIndex)) {
+                Operation operation = new EvictBatchBackupOperation(getName(), expiredKeys, size());
+                operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, getPartitionId())
+                        .setReplicaIndex(replicaIndex).invoke();
+            }
+        }
+    }
+
+    protected boolean hasReplicaAddress(int partitionId, int replicaIndex) {
+        return mapServiceContext.getNodeEngine()
+                .getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex) != null;
+    }
+
+
+    private static Collection<ExpiredKey> pollExpiredKeys(Queue<ExpiredKey> expiredKeys) {
+        Collection<ExpiredKey> polledKeys = new ArrayList<ExpiredKey>(expiredKeys.size());
+
+        do {
+            ExpiredKey expiredKey = expiredKeys.poll();
+            if (expiredKey == null) {
+                break;
+            }
+            polledKeys.add(expiredKey);
+        } while (true);
+
+        return polledKeys;
     }
 
     protected void accessRecord(Record record, long now) {
         record.onAccess(now);
         updateStatsOnGet(now);
-        long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
-        setExpirationTime(record, maxIdleMillis);
+        setExpirationTime(record);
     }
 
     protected void mergeRecordExpiration(Record record, EntryView mergingEntry) {
-        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getCreationTime(), mergingEntry.getLastAccessTime(),
-                mergingEntry.getLastUpdateTime());
+        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getMaxIdle(), mergingEntry.getCreationTime(),
+                mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
     }
 
     protected void mergeRecordExpiration(Record record, MapMergeTypes mergingEntry) {
-        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getCreationTime(), mergingEntry.getLastAccessTime(),
-                mergingEntry.getLastUpdateTime());
+        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getMaxIdle(), mergingEntry.getCreationTime(),
+                mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
     }
 
-    private void mergeRecordExpiration(Record record, long ttlMillis, long creationTime, long lastAccessTime,
+    private void mergeRecordExpiration(Record record, long ttlMillis, Long maxIdleMillis, long creationTime, long lastAccessTime,
                                        long lastUpdateTime) {
         record.setTtl(ttlMillis);
+        //RU_COMPAT_3_10 (Long -> long)
+        if (maxIdleMillis != null) {
+            record.setMaxIdle(maxIdleMillis);
+        }
         record.setCreationTime(creationTime);
         record.setLastAccessTime(lastAccessTime);
         record.setLastUpdateTime(lastUpdateTime);
 
-        long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
-        setExpirationTime(record, maxIdleMillis);
+        setExpirationTime(record);
 
-        markRecordStoreExpirable(record.getTtl());
+        markRecordStoreExpirable(record.getTtl(), record.getMaxIdle());
     }
 
     /**

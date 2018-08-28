@@ -26,6 +26,8 @@ import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+
 public class MapPutMessageTask
         extends AbstractMapPutMessageTask<MapPutCodec.RequestParameters> {
 
@@ -37,7 +39,7 @@ public class MapPutMessageTask
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         MapOperation op = operationProvider.createPutOperation(parameters.name, parameters.key,
-                parameters.value, parameters.ttl);
+                parameters.value, parameters.ttl, parameters.maxIdleExist ? parameters.maxIdle : DEFAULT_MAX_IDLE);
         op.setThreadId(parameters.threadId);
         return op;
     }

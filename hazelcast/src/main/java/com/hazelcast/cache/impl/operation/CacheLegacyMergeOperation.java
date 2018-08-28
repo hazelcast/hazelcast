@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 
 /**
  * Contains a merging entry for split-brain healing with a {@link CacheMergePolicy}.
@@ -43,7 +44,8 @@ public class CacheLegacyMergeOperation
     public CacheLegacyMergeOperation() {
     }
 
-    public CacheLegacyMergeOperation(String name, Data key, CacheEntryView<Data, Data> entryView, CacheMergePolicy policy) {
+    public CacheLegacyMergeOperation(String name, Data key,
+                                     CacheEntryView<Data, Data> entryView, CacheMergePolicy policy) {
         super(name, key);
         mergingEntry = entryView;
         mergePolicy = policy;
@@ -51,7 +53,8 @@ public class CacheLegacyMergeOperation
 
     @Override
     public void run() throws Exception {
-        backupRecord = recordStore.merge(mergingEntry, mergePolicy, SOURCE_NOT_AVAILABLE, null, IGNORE_COMPLETION);
+        backupRecord = recordStore.merge(mergingEntry, mergePolicy,
+                SOURCE_NOT_AVAILABLE, null, IGNORE_COMPLETION, NOT_WAN);
     }
 
     @Override

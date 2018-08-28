@@ -281,6 +281,7 @@ final class OperationBackupHandler {
         // if getServiceName() method is overridden to return the same name
         // then this will have no effect.
         backupOp.setServiceName(op.getServiceName());
+        backupOp.setNodeEngine(nodeEngine);
         return backupOp;
     }
 

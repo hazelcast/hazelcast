@@ -110,11 +110,6 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
     }
 
     @Override
-    public boolean completeExceptionally(Throwable error) {
-        return future.completeExceptionally(error);
-    }
-
-    @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         return future.cancel(mayInterruptIfRunning);
     }

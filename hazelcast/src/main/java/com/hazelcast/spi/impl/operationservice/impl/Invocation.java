@@ -205,10 +205,8 @@ public abstract class Invocation implements OperationResponseHandler {
 
         if (response instanceof CallTimeoutResponse) {
             notifyCallTimeout();
-        } else if (response instanceof Throwable) {
-            notifyError((Throwable) response);
-        } else if (response instanceof ErrorResponse) {
-            notifyError(((ErrorResponse) response).getCause());
+        } else if (response instanceof ErrorResponse || response instanceof Throwable) {
+            notifyError(response);
         } else if (response instanceof NormalResponse) {
             NormalResponse normalResponse = (NormalResponse) response;
             notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupAcks());
@@ -280,18 +278,25 @@ public abstract class Invocation implements OperationResponseHandler {
         remote = !context.thisAddress.equals(invTarget);
     }
 
-    void notifyError(Throwable cause) {
-        assert cause != null;
+    void notifyError(Object error) {
+        assert error != null;
+
+        Throwable cause = error instanceof Throwable
+                ? (Throwable) error
+                : ((ErrorResponse) error).getCause();
 
         switch (onException(cause)) {
+            case THROW_EXCEPTION:
+                notifyNormalResponse(cause, 0);
+                break;
             case RETRY_INVOCATION:
                 if (invokeCount < tryCount) {
                     // we are below the tryCount, so lets retry
                     handleRetry(cause);
-                    break;
+                } else {
+                    // we can't retry anymore, so lets send the cause to the future.
+                    notifyNormalResponse(cause, 0);
                 }
-            case THROW_EXCEPTION:
-                completeExceptionally(cause);
                 break;
             default:
                 throw new IllegalStateException("Unhandled ExceptionAction");
@@ -469,7 +474,7 @@ public abstract class Invocation implements OperationResponseHandler {
         }
 
         if (shouldFailOnIndeterminateOperationState()) {
-            completeExceptionally(new IndeterminateOperationStateException(this + " failed because backup acks missed."));
+            complete(new IndeterminateOperationStateException(this + " failed because backup acks missed."));
             return true;
         }
 
@@ -649,10 +654,6 @@ public abstract class Invocation implements OperationResponseHandler {
         }
     }
 
-    private void completeExceptionally(Throwable error) {
-        complete(new ErrorResponse(error, op.getCallId(), op.isUrgent()));
-    }
-
     private void handleRetry(Object cause) {
         context.retryCount.inc();
 
@@ -686,7 +687,7 @@ public abstract class Invocation implements OperationResponseHandler {
         if (context.logger.isFinestEnabled()) {
             context.logger.finest(e);
         }
-        completeExceptionally(new HazelcastInstanceNotActiveException(e.getMessage()));
+        complete(new HazelcastInstanceNotActiveException(e.getMessage()));
     }
 
     private void resetAndReInvoke() {

@@ -40,7 +40,7 @@ public class NodeStateImpl implements NodeState {
     private Version clusterVersion;
     private MemberVersion memberVersion;
 
-    private Map<String, List<String>> weakConfigs;
+    private Map<String, List<String>> weakSecretsConfigs;
 
     public NodeStateImpl() {
     }
@@ -51,14 +51,14 @@ public class NodeStateImpl implements NodeState {
     }
 
     public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.NodeState nodeState,
-                         Version clusterVersion, MemberVersion memberVersion, Map<String, List<String>> weakConfigs) {
+                         Version clusterVersion, MemberVersion memberVersion, Map<String,
+                         List<String>> weakSecretsConfigs) {
         this.clusterState = clusterState;
         this.nodeState = nodeState;
         this.clusterVersion = clusterVersion;
         this.memberVersion = memberVersion;
-        this.weakConfigs = weakConfigs;
+        this.weakSecretsConfigs = weakSecretsConfigs;
     }
-
 
     @Override
     public ClusterState getClusterState() {
@@ -88,7 +88,7 @@ public class NodeStateImpl implements NodeState {
         root.add("memberVersion", memberVersion.toString());
 
         JsonObject weaknesses = new JsonObject();
-        for (Map.Entry<String, List<String>> entry : weakConfigs.entrySet()) {
+        for (Map.Entry<String, List<String>> entry : weakSecretsConfigs.entrySet()) {
             JsonArray values = new JsonArray();
             for (String value : entry.getValue()) {
                 values.add(value);
@@ -119,7 +119,7 @@ public class NodeStateImpl implements NodeState {
             memberVersion = MemberVersion.of(jsonNodeVersion);
         }
 
-        weakConfigs = new HashMap<String, List<String>>();
+        weakSecretsConfigs = new HashMap<String, List<String>>();
         JsonValue jsonWeakConfigs = json.get("weakConfigs");
         if (jsonWeakConfigs != null) {
             JsonObject weakConfigsJsObj = jsonWeakConfigs.asObject();
@@ -128,7 +128,7 @@ public class NodeStateImpl implements NodeState {
                 for (JsonValue value : member.getValue().asArray()) {
                     weaknesses.add(value.asString());
                 }
-                weakConfigs.put(member.getName(), weaknesses);
+                weakSecretsConfigs.put(member.getName(), weaknesses);
             }
         }
     }

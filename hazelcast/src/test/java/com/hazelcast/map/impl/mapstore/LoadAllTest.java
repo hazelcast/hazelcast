@@ -161,12 +161,12 @@ public class LoadAllTest extends AbstractMapStoreTest {
         populateMap(map, itemCount);
         evictRange(map, 0, 700);
 
-        final CountDownLatch addEventCounter = new CountDownLatch(700);
-        addListener(map, addEventCounter);
+        final CountDownLatch loadEventCounter = new CountDownLatch(700);
+        addLoadedListener(map, loadEventCounter);
 
         map.loadAll(false);
 
-        assertOpenEventually(addEventCounter);
+        assertOpenEventually(loadEventCounter);
         assertEquals(itemCount, map.size());
     }
 
@@ -177,17 +177,14 @@ public class LoadAllTest extends AbstractMapStoreTest {
         final Config config = createNewConfig(mapName);
         final HazelcastInstance node = createHazelcastInstance(config);
         final IMap<Integer, Integer> map = node.getMap(mapName);
-        final CountDownLatch eventCounter = new CountDownLatch(itemCount);
         final CountDownLatch loadedCounter = new CountDownLatch(itemCount);
         populateMap(map, itemCount);
         map.evictAll();
 
-        addListener(map, eventCounter);
         addLoadedListener(map, loadedCounter);
 
         map.loadAll(true);
 
-        assertOpenEventually(eventCounter);
         assertOpenEventually(loadedCounter);
         assertEquals(itemCount, map.size());
     }

@@ -87,7 +87,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         MemberVersion memberVersion = MemberVersion.of("3.8.0");
         NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion);
         final BackupTaskStatus backupTaskStatus = new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 5, 10);
-        final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus, false);
+        final String backupDirectory = "/hot/backup/dir";
+        final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus, true, backupDirectory);
         final WanSyncState wanSyncState = new WanSyncStateImpl(WanSyncStatus.IN_PROGRESS, 86, "atob", "B");
 
         Map<String, String> clientStats = new HashMap<String, String>();
@@ -151,7 +152,9 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(memberVersion, deserializedState.getMemberVersion());
 
         final HotRestartState deserializedHotRestartState = deserialized.getHotRestartState();
+        assertTrue(deserializedHotRestartState.isHotBackupEnabled());
         assertEquals(backupTaskStatus, deserializedHotRestartState.getBackupTaskStatus());
+        assertEquals(backupDirectory, deserializedHotRestartState.getBackupDirectory());
 
         final WanSyncState deserializedWanSyncState = deserialized.getWanSyncState();
         assertEquals(WanSyncStatus.IN_PROGRESS, deserializedWanSyncState.getStatus());

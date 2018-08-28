@@ -312,8 +312,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int MERGE = 147;
     public static final int SET_TTL = 148;
     public static final int SET_TTL_BACKUP = 149;
+    public static final int MERKLE_TREE_NODE_ENTRIES = 150;
 
-    private static final int LEN = SET_TTL_BACKUP + 1;
+    private static final int LEN = MERKLE_TREE_NODE_ENTRIES + 1;
 
     @Override
     public int getFactoryId() {
@@ -1054,6 +1055,12 @@ public final class MapDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new SetTTLBackupOperation();
+            }
+        };
+        constructors[MERKLE_TREE_NODE_ENTRIES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MerkleTreeNodeEntries();
             }
         };
 

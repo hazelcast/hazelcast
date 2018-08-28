@@ -58,6 +58,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -182,13 +183,13 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 final boolean indexesMustBePopulated = indexesMustBePopulated(indexes, operation);
                 if (indexesMustBePopulated) {
                     // defensively clear possible stale leftovers in non-global indexes from the previous failed promotion attempt
-                    indexes.clearContents();
+                    indexes.clearAll();
                 }
 
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
                     final Data value = recordReplicationInfo.getValue();
-                    Record newRecord = recordStore.createRecord(value, DEFAULT_TTL, Clock.currentTimeMillis());
+                    Record newRecord = recordStore.createRecord(value, DEFAULT_TTL, DEFAULT_MAX_IDLE, Clock.currentTimeMillis());
                     applyRecordInfo(newRecord, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
 
@@ -196,7 +197,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                         final Object valueToIndex = getValueOrCachedValue(newRecord, serializationService);
                         if (valueToIndex != null) {
                             final QueryableEntry queryableEntry = mapContainer.newQueryEntry(newRecord.getKey(), valueToIndex);
-                            indexes.saveEntryIndex(queryableEntry, null);
+                            indexes.saveEntryIndex(queryableEntry, null, Index.OperationSource.SYSTEM);
                         }
                     }
 

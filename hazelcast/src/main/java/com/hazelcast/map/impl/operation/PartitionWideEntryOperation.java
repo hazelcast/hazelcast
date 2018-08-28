@@ -75,7 +75,6 @@ public class PartitionWideEntryOperation extends MapOperation
     public void run() {
         responses = new MapEntries(recordStore.size());
         operator = operator(this, entryProcessor, getPredicate());
-
         Iterator<Record> iterator = recordStore.iterator(Clock.currentTimeMillis(), false);
         while (iterator.hasNext()) {
             Record record = iterator.next();

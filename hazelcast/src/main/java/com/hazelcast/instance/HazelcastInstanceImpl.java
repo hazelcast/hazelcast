@@ -133,7 +133,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
                 throw new IllegalStateException("Node failed to start!");
             }
 
-            this.managementService = new ManagementService(this);
+            this.managementService = node.getNodeExtension().createJMXManagementService(this);
             initManagedContext(configuredManagedContext);
 
             this.hazelcastCacheManager = new HazelcastInstanceCacheManager(this);

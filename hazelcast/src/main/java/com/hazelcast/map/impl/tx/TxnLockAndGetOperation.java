@@ -42,7 +42,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
 
     public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid,
                                   boolean shouldLoad, boolean blockReads) {
-        super(name, dataKey, ttl);
+        super(name, dataKey, ttl, -1);
         this.ownerUuid = ownerUuid;
         this.shouldLoad = shouldLoad;
         this.blockReads = blockReads;

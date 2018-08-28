@@ -37,7 +37,6 @@ public class LegacyMergeOperation extends BasePutOperation {
 
     private MapMergePolicy mergePolicy;
     private EntryView<Data, Data> mergingEntry;
-    private boolean disableWanReplicationEvent;
 
     private transient boolean merged;
 
@@ -58,7 +57,7 @@ public class LegacyMergeOperation extends BasePutOperation {
         if (oldRecord != null) {
             dataOldValue = mapServiceContext.toData(oldRecord.getValue());
         }
-        merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
+        merged = recordStore.merge(dataKey, mergingEntry, mergePolicy, getCallerProvenance());
         if (merged) {
             Record record = recordStore.getRecord(dataKey);
             if (record != null) {
@@ -66,11 +65,6 @@ public class LegacyMergeOperation extends BasePutOperation {
                 dataMergingValue = mapServiceContext.toData(mergingEntry.getValue());
             }
         }
-    }
-
-    @Override
-    protected boolean canThisOpGenerateWANEvent() {
-        return !disableWanReplicationEvent;
     }
 
     @Override

@@ -33,6 +33,7 @@ public final class Records {
         record.setVersion(replicationInfo.getVersion());
         record.setHits(replicationInfo.getHits());
         record.setTtl(replicationInfo.getTtl());
+        record.setMaxIdle(replicationInfo.getMaxIdle());
         record.setCreationTime(replicationInfo.getCreationTime());
         record.setLastAccessTime(replicationInfo.getLastAccessTime());
         record.setLastUpdateTime(replicationInfo.getLastUpdateTime());
@@ -49,6 +50,7 @@ public final class Records {
         info.setLastAccessTime(record.getLastAccessTime());
         info.setLastUpdateTime(record.getLastUpdateTime());
         info.setTtl(record.getTtl());
+        info.setMaxIdle(record.getMaxIdle());
         info.setExpirationTime(record.getExpirationTime());
         info.setLastStoredTime(record.getLastStoredTime());
 

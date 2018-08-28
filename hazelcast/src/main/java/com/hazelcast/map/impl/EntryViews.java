@@ -54,6 +54,7 @@ public final class EntryViews {
                 .withLastAccessTime(record.getLastAccessTime())
                 .withLastUpdateTime(record.getLastUpdateTime())
                 .withTtl(record.getTtl())
+                .withMaxIdle(record.getMaxIdle())
                 .withCreationTime(record.getCreationTime())
                 .withExpirationTime(record.getExpirationTime())
                 .withLastStoredTime(record.getLastStoredTime());
@@ -67,6 +68,7 @@ public final class EntryViews {
                 .withLastAccessTime(record.getLastAccessTime())
                 .withLastUpdateTime(record.getLastUpdateTime())
                 .withTtl(record.getTtl())
+                .withMaxIdle(record.getMaxIdle())
                 .withCreationTime(record.getCreationTime())
                 .withExpirationTime(record.getExpirationTime())
                 .withLastStoredTime(record.getLastStoredTime());
@@ -82,6 +84,7 @@ public final class EntryViews {
                 .setLastAccessTime(record.getLastAccessTime())
                 .setLastUpdateTime(record.getLastUpdateTime())
                 .setTtl(record.getTtl())
+                .setMaxIdle(record.getMaxIdle())
                 .setCreationTime(record.getCreationTime())
                 .setExpirationTime(record.getExpirationTime())
                 .setLastStoredTime(record.getLastStoredTime());
@@ -96,6 +99,7 @@ public final class EntryViews {
                 .setLastAccessTime(entryView.getLastAccessTime())
                 .setLastUpdateTime(entryView.getLastUpdateTime())
                 .setTtl(entryView.getTtl())
+                .setMaxIdle(entryView.getMaxIdle())
                 .setCreationTime(entryView.getCreationTime())
                 .setHits(entryView.getHits())
                 .setExpirationTime(entryView.getExpirationTime())

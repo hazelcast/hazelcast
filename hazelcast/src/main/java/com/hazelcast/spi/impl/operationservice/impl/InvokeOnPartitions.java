@@ -24,7 +24,6 @@ import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -65,7 +64,7 @@ final class InvokeOnPartitions {
     /**
      * Executes all the operations on the partitions.
      */
-    Map<Integer, Object> invoke() throws Exception {
+    <T> Map<Integer, T> invoke() throws Exception {
         ensureNotCallingFromPartitionOperationThread();
 
         invokeOnAllPartitions();
@@ -74,7 +73,7 @@ final class InvokeOnPartitions {
 
         retryFailedPartitions();
 
-        return partitionResults;
+        return (Map<Integer, T>) partitionResults;
     }
 
     private void ensureNotCallingFromPartitionOperationThread() {
@@ -102,7 +101,7 @@ final class InvokeOnPartitions {
             try {
                 Future future = response.getValue();
                 PartitionResponse result = nodeEngine.toObject(future.get());
-                result.drainTo(partitionResults);
+                result.addResults(partitionResults);
             } catch (Throwable t) {
                 if (operationService.logger.isFinestEnabled()) {
                     operationService.logger.finest(t);
@@ -122,19 +121,9 @@ final class InvokeOnPartitions {
         for (Map.Entry<Integer, Object> partitionResult : partitionResults.entrySet()) {
             int partitionId = partitionResult.getKey();
             Object result = partitionResult.getValue();
-            // The concept is that we send an operation to each member of the cluster, which in turn, asks each partition
-            // for results, and returns an array with the responses.
-            // This can fail in two levels.
-            // a. The original operation (send to each member) could fail, in which case it will throw an Exception
-            // upon {@link Future.get} at {@link #awaitCompletion()}.
-            // b. The inner futures (the ones running per partition) could fail, in which case it will return any value
-            // (Object or Exception), types accepted by the caller API, or an Exception (due to some Error)
-            // wrapped in an ErrorResponse.
-            if (result instanceof ErrorResponse
-                    || result instanceof Throwable) {
+            if (result instanceof Throwable) {
                 failedPartitions.add(partitionId);
             }
-
         }
 
         for (Integer failedPartition : failedPartitions) {

@@ -28,7 +28,6 @@ import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -126,10 +125,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
         public void sendResponse(Operation operation, Object response) {
             assert operation instanceof DummyPartitionAwareOperation : "Invalid operation: " + operation;
             NodeEngine nodeEngine = operation.getNodeEngine();
-
-            if (!(response instanceof ErrorResponse
-                    && ((ErrorResponse) response).getCause() instanceof RetryableHazelcastException)
-                    && nodeEngine.isRunning()) {
+            if (!(response instanceof RetryableHazelcastException) && nodeEngine.isRunning()) {
                 DummyPartitionAwareOperation op = (DummyPartitionAwareOperation) operation;
                 failures.add("Unexpected response: " + response + ". Node: " + nodeEngine.getThisAddress()
                         + ", Event: " + op.event + ", Type: " + op.type);

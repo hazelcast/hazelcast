@@ -21,11 +21,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.io.IOException;
+
+import static com.hazelcast.internal.cluster.Versions.V3_11;
 
 /**
  * Implementation of {@link MapMergeTypes}.
@@ -33,7 +36,8 @@ import java.io.IOException;
  * @since 3.10
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
-public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
+public class MapMergingEntryImpl
+        implements MapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable, Versioned {
 
     private Data value;
     private Data key;
@@ -46,6 +50,8 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
     private long lastUpdateTime = -1;
     private long version = -1;
     private long ttl = -1;
+    //RU_COMPAT_3_10 (Long -> long)
+    private Long maxIdle;
 
     private transient SerializationService serializationService;
 
@@ -177,6 +183,16 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
     }
 
     @Override
+    public Long getMaxIdle() {
+        return maxIdle;
+    }
+
+    public MapMergingEntryImpl setMaxIdle(long maxIdle) {
+        this.maxIdle = maxIdle;
+        return this;
+    }
+
+    @Override
     public void setSerializationService(SerializationService serializationService) {
         this.serializationService = serializationService;
     }
@@ -194,6 +210,10 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
         out.writeLong(ttl);
+        //RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(V3_11)) {
+            out.writeLong(maxIdle);
+        }
     }
 
     @Override
@@ -209,6 +229,10 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         lastUpdateTime = in.readLong();
         version = in.readLong();
         ttl = in.readLong();
+        //RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(V3_11)) {
+            maxIdle = in.readLong();
+        }
     }
 
     @Override
@@ -232,6 +256,7 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         }
 
         MapMergingEntryImpl that = (MapMergingEntryImpl) o;
+
         if (cost != that.cost) {
             return false;
         }
@@ -259,16 +284,19 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         if (ttl != that.ttl) {
             return false;
         }
+        if (value != null ? !value.equals(that.value) : that.value != null) {
+            return false;
+        }
         if (key != null ? !key.equals(that.key) : that.key != null) {
             return false;
         }
-        return value != null ? value.equals(that.value) : that.value == null;
+        return maxIdle != null ? maxIdle.equals(that.maxIdle) : that.maxIdle == null;
     }
 
     @Override
     public int hashCode() {
-        int result = key != null ? key.hashCode() : 0;
-        result = 31 * result + (value != null ? value.hashCode() : 0);
+        int result = value != null ? value.hashCode() : 0;
+        result = 31 * result + (key != null ? key.hashCode() : 0);
         result = 31 * result + (int) (cost ^ (cost >>> 32));
         result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
         result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
@@ -278,6 +306,7 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
         result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
         result = 31 * result + (int) (version ^ (version >>> 32));
         result = 31 * result + (int) (ttl ^ (ttl >>> 32));
+        result = 31 * result + (maxIdle != null ? maxIdle.hashCode() : 0);
         return result;
     }
 
@@ -295,6 +324,7 @@ public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceA
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", version=" + version
                 + ", ttl=" + ttl
+                + ", maxIdle=" + maxIdle
                 + '}';
     }
 }

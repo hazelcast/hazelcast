@@ -300,7 +300,7 @@ public class ClientEntryLoadedListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void add_listener_notified_after_loadAll() {
+    public void add_listener_not_notified_after_loadAll() {
         final AtomicInteger addEventCount = new AtomicInteger();
 
         IMap<Integer, Integer> map = client.getMap("add_listener_notified_after_loadAll");
@@ -311,12 +311,12 @@ public class ClientEntryLoadedListenerTest extends HazelcastTestSupport {
 
         map.loadAll(true);
 
-        assertTrueEventually(new AssertTask() {
+        assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(5, addEventCount.get());
+                assertEquals(0, addEventCount.get());
             }
-        });
+        }, 5);
     }
 
     static class LoadAndAddListener implements EntryLoadedListener<Integer, Integer>,

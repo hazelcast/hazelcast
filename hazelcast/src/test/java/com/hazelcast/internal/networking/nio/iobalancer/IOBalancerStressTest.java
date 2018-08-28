@@ -23,7 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioChannel;
-import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
@@ -155,7 +155,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     private String debug(TcpIpConnectionManager connectionManager) {
-        NioEventLoopGroup threadingModel = (NioEventLoopGroup) connectionManager.getEventLoopGroup();
+        NioNetworking threadingModel = (NioNetworking) connectionManager.getNetworking();
 
         StringBuilder sb = new StringBuilder();
         sb.append("in owners\n");

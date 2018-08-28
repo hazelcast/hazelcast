@@ -91,7 +91,7 @@ public class HeartbeatManager implements Runnable {
             }
         }
 
-        if (now - connection.lastReadTimeMillis() > heartbeatInterval) {
+        if (now - connection.lastWriteTimeMillis() > heartbeatInterval) {
             ClientMessage request = ClientPingCodec.encodeRequest();
             ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
             clientInvocation.invokeUrgent();

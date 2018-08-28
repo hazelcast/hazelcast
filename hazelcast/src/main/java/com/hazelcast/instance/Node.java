@@ -36,7 +36,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
@@ -79,7 +78,6 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.PhoneHome;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
@@ -133,7 +131,7 @@ public class Node {
     public final ClusterServiceImpl clusterService;
     public final MulticastService multicastService;
     public final DiscoveryService discoveryService;
-    public final TextCommandServiceImpl textCommandService;
+    public final TextCommandService textCommandService;
     public final LoggingServiceImpl loggingService;
 
     public final ConnectionManager connectionManager;
@@ -147,8 +145,6 @@ public class Node {
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final NodeShutdownHookThread shutdownHookThread;
-
-    private final PhoneHome phoneHome = new PhoneHome();
 
     private final InternalSerializationService serializationService;
 
@@ -228,7 +224,7 @@ public class Node {
                     this.config.getNetworkConfig().getJoin().getDiscoveryConfig().getAsReadOnly(), localMember);
             partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this, localMember);
-            textCommandService = new TextCommandServiceImpl(this);
+            textCommandService = nodeExtension.createTextCommandService();
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
@@ -412,7 +408,7 @@ public class Node {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
         nodeExtension.afterStart();
-        phoneHome.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
+        nodeExtension.sendPhoneHome();
         healthMonitor.start();
     }
 
@@ -498,7 +494,7 @@ public class Node {
         if (nodeExtension != null) {
             nodeExtension.beforeShutdown();
         }
-        phoneHome.shutdown();
+
         if (managementCenterService != null) {
             managementCenterService.shutdown();
         }

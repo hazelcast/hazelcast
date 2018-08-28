@@ -271,9 +271,15 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertNotNull(sslConfig);
         assertFalse(sslConfig.isEnabled());
 
-        assertEquals("com.hazelcast.examples.MySslFactory", sslConfig.getFactoryClassName());
-        assertEquals(1, sslConfig.getProperties().size());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
+        assertEquals(7, sslConfig.getProperties().size());
         assertEquals("TLS", sslConfig.getProperties().get("protocol"));
+        assertEquals("/opt/hazelcast-client.truststore", sslConfig.getProperties().get("trustStore"));
+        assertEquals("secret.123456", sslConfig.getProperties().get("trustStorePassword"));
+        assertEquals("JKS", sslConfig.getProperties().get("trustStoreType"));
+        assertEquals("/opt/hazelcast-client.keystore", sslConfig.getProperties().get("keyStore"));
+        assertEquals("keystorePassword123", sslConfig.getProperties().get("keyStorePassword"));
+        assertEquals("JKS", sslConfig.getProperties().get("keyStoreType"));
     }
 
     @Test
@@ -350,6 +356,37 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         ClientConnectionStrategyConfig connectionStrategyConfig = fullClientConfig.getConnectionStrategyConfig();
         assertTrue(connectionStrategyConfig.isAsyncStart());
         assertEquals(ClientConnectionStrategyConfig.ReconnectMode.ASYNC, connectionStrategyConfig.getReconnectMode());
+    }
+
+    @Test
+    public void testConnectionStrategyConfig_defaults() {
+        ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
+        assertFalse(connectionStrategyConfig.isAsyncStart());
+        assertEquals(ClientConnectionStrategyConfig.ReconnectMode.ON, connectionStrategyConfig.getReconnectMode());
+    }
+
+    @Test
+    public void testExponentialConnectionRetryConfig() {
+        ClientConnectionStrategyConfig connectionStrategyConfig = fullClientConfig.getConnectionStrategyConfig();
+        ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
+        assertTrue(exponentialRetryConfig.isEnabled());
+        assertTrue(exponentialRetryConfig.isFailOnMaxBackoff());
+        assertEquals(0.5, exponentialRetryConfig.getJitter(), 0);
+        assertEquals(2000, exponentialRetryConfig.getInitialBackoffMillis());
+        assertEquals(60000, exponentialRetryConfig.getMaxBackoffMillis());
+        assertEquals(3, exponentialRetryConfig.getMultiplier(), 0);
+    }
+
+    @Test
+    public void testExponentialConnectionRetryConfig_defaults() {
+        ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
+        ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
+        assertFalse(exponentialRetryConfig.isEnabled());
+        assertFalse(exponentialRetryConfig.isFailOnMaxBackoff());
+        assertEquals(0.2, exponentialRetryConfig.getJitter(), 0);
+        assertEquals(1000, exponentialRetryConfig.getInitialBackoffMillis());
+        assertEquals(30000, exponentialRetryConfig.getMaxBackoffMillis());
+        assertEquals(2, exponentialRetryConfig.getMultiplier(), 0);
     }
 
     @Test

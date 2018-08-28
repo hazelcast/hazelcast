@@ -148,7 +148,7 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
         Channel channel = connection.getChannel();
         if (channel instanceof NioChannel) {
             NioInboundPipeline reader = ((NioChannel) channel).inboundPipeline();
-            return priority ? reader.getPriorityFramesReadCounter().get() : reader.getNormalFramesReadCounter().get();
+            return priority ? reader.priorityFramesRead() : reader.normalFramesRead();
         } else {
             throw new RuntimeException();
         }

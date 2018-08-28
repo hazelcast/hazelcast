@@ -130,9 +130,4 @@ public class InvalidationEventQueueTest {
     public void retainAllOperationIsNotSupported() {
         new InvalidationQueue().retainAll(new ArrayList<SingleNearCacheInvalidation>());
     }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void clearOperationIsNotSupported() {
-        new InvalidationQueue().clear();
-    }
 }

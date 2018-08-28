@@ -113,14 +113,14 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
     public void lock() {
         ClientMessage request = LockLockCodec
                 .encodeRequest(name, -1, ThreadUtil.getThreadId(), referenceIdGenerator.getNextReferenceId());
-        invokeOnPartition(request);
+        invokeOnPartition(request, Long.MAX_VALUE);
     }
 
     @Override
     public void lockInterruptibly() throws InterruptedException {
         ClientMessage request = LockLockCodec
                 .encodeRequest(name, -1, ThreadUtil.getThreadId(), referenceIdGenerator.getNextReferenceId());
-        invokeOnPartitionInterruptibly(request);
+        invokeOnPartitionInterruptibly(request, Long.MAX_VALUE);
     }
 
     @Override
@@ -145,7 +145,8 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         long threadId = ThreadUtil.getThreadId();
         ClientMessage request = LockTryLockCodec
                 .encodeRequest(name, threadId, leaseTimeInMillis, timeoutInMillis, referenceIdGenerator.getNextReferenceId());
-        LockTryLockCodec.ResponseParameters resultParameters = LockTryLockCodec.decodeResponse(invokeOnPartition(request));
+        ClientMessage clientMessage = invokeOnPartition(request, Long.MAX_VALUE);
+        LockTryLockCodec.ResponseParameters resultParameters = LockTryLockCodec.decodeResponse(clientMessage);
         return resultParameters.response;
     }
 

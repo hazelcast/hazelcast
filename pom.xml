@@ -38,7 +38,7 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>1.7.0-3</client.protocol.version>
+        <client.protocol.version>1.7.0-4</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>1.6</jdk.version>
@@ -69,10 +69,10 @@
 
         <maven.surefire.plugin.version>2.21.0</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
-        <maven.spotbugs.plugin.version>3.1.3.1</maven.spotbugs.plugin.version>
+        <maven.spotbugs.plugin.version>3.1.6</maven.spotbugs.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>2.20.1</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>2.22.0</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
 
         <log4j.version>1.2.17</log4j.version>
@@ -85,7 +85,7 @@
         <hamcrest.version>1.3</hamcrest.version>
         <mockito.version>2.19.0</mockito.version>
         <powermock.version>2.0.0-beta.5</powermock.version>
-        <bytebuddy.version>1.6.12</bytebuddy.version>
+        <bytebuddy.version>1.8.17</bytebuddy.version>
         <reflections.version>0.9.10</reflections.version>
         <jmh.version>1.16</jmh.version>
         <commons-lang3.version>3.4</commons-lang3.version>
@@ -263,8 +263,7 @@
                     <excludes>
                         <exclude>**/jsr/**.java</exclude>
                         <exclude>**/**IT.java</exclude>
-                        <exclude>**/client/**Request.*</exclude>
-                        <exclude>**/mapreduce/**.java</exclude>
+                        <exclude>**/mapreduce/**/*.java</exclude>
                     </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
@@ -377,7 +376,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**.java</exclude>
+                                        <exclude>**/mapreduce/**/*.java</exclude>
                                     </excludes>
                                     <groups>
                                         com.hazelcast.test.annotation.QuickTest AND
@@ -418,7 +417,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**.java</exclude>
+                                        <exclude>**/mapreduce/**/*.java</exclude>
                                     </excludes>
                                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                                     <excludedGroups>
@@ -463,7 +462,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -601,8 +600,7 @@
                                 <exclude>**HibernateStatisticsTestSupport**</exclude>
                                 <exclude>**HibernateTestSupport**</exclude>
                                 <exclude>**RegionFactoryDefaultTest**</exclude>
-                                <exclude>**/client/**Request.*</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                         </configuration>
                         <executions>
@@ -628,7 +626,7 @@
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -891,7 +889,7 @@
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
@@ -962,7 +960,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -1023,11 +1021,28 @@
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <!--
-                            The jdk.xml.internal package export is added to workaround Powermock issue https://github.com/powermock/powermock/issues/905 in tests.
+                            Allow access to Operating system metrics:
+                                open jdk.management/com.sun.management.internal
+
+                            Avoid warnings caused by reflection in
+                            SelectorOptimizer:
+                                open java.base/sun.nio.ch
+                            FilteringClassLoader:
+                                open java.base/java.lang
+                            TimedMemberStateFactoryHelper:
+                                open java.management/sun.management
+
+                            Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
+                                export java.xml/jdk.xml.internal
                              -->
                             <argLine>
                                 ${vmHeapSettings}
+                                --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+                                --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+                                --add-opens java.base/java.lang=ALL-UNNAMED
+                                --add-opens java.management/sun.management=ALL-UNNAMED
                                 --add-exports java.xml/jdk.xml.internal=ALL-UNNAMED
+                                --illegal-access=warn
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
@@ -1040,7 +1055,12 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
+                                <!--
+                                  An outdated PaxRunner used by the OSGi test prevents executing on Java 9+.
+                                  TODO: remove this exclude once we have a proper fix in the test class.
+                                -->
+                                <exclude>**/HazelcastOSGiIntegrationTest.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -1093,14 +1113,13 @@
                             </includes>
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
-                                <exclude>**/client/**Request.*</exclude>
                                 <!-- code triggered by UserCodeDeploymentSmokeTest and OperationRunnerImplTest -->
                                 <!-- casts to SerializationServiceV1 and fails when Node is configured with the -->
                                 <!-- wrapper ClassRecordingSerializationService -->
                                 <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
+                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>

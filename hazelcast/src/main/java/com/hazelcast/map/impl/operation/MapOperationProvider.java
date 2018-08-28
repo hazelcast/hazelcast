@@ -36,17 +36,15 @@ import java.util.Set;
  */
 public interface MapOperationProvider {
 
-    MapOperation createPutOperation(String name, Data key, Data value, long ttl);
+    MapOperation createPutOperation(String name, Data key, Data value, long ttl, long maxIdle);
 
     MapOperation createTryPutOperation(String name, Data dataKey, Data value, long timeout);
 
-    MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl);
+    MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle);
 
-    MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl);
+    MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl, long maxIdle);
 
-    MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl);
-
-    MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent);
+    MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl, long maxIdle);
 
     MapOperation createSetTTLOperation(String name, Data key, long ttl);
 
@@ -57,6 +55,8 @@ public interface MapOperationProvider {
     MapOperation createRemoveIfSameOperation(String name, Data dataKey, Data value);
 
     MapOperation createReplaceIfSameOperation(String name, Data dataKey, Data expect, Data update);
+
+    MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent);
 
     /**
      * Creates a delete operation for an entry with key equal to {@code key} from the map named {@code name}.

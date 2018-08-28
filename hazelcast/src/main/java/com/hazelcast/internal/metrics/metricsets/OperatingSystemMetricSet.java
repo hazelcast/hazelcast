@@ -19,10 +19,13 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
+import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -32,6 +35,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class OperatingSystemMetricSet {
 
+    private static final ILogger LOGGER = Logger.getLogger(OperatingSystemMetricSet.class);
     private static final long PERCENTAGE_MULTIPLIER = 100;
     private static final Object[] EMPTY_ARGS = new Object[0];
 
@@ -79,7 +83,7 @@ public final class OperatingSystemMetricSet {
 
     private static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name,
                                        final long multiplier) {
-        final Method method = getMethod(osBean, methodName);
+        final Method method = getMethod(osBean, methodName, name);
 
         if (method == null) {
             return;
@@ -107,14 +111,19 @@ public final class OperatingSystemMetricSet {
      *
      * @param source     the source object.
      * @param methodName the name of the method to retrieve.
+     * @param name the probe name
      * @return the method
      */
-    private static Method getMethod(Object source, String methodName) {
+    private static Method getMethod(Object source, String methodName, String name) {
         try {
-            Method method = source.getClass().getDeclaredMethod(methodName);
+            Method method = source.getClass().getMethod(methodName);
             method.setAccessible(true);
             return method;
         } catch (Exception e) {
+            if (LOGGER.isFinestEnabled()) {
+                LOGGER.log(Level.FINEST,
+                        "Unable to register OperatingSystemMXBean method " + methodName + " used for probe " + name, e);
+            }
             return null;
         }
     }

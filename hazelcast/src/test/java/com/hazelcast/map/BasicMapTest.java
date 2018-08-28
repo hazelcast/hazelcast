@@ -62,6 +62,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -694,6 +695,8 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = instance.getMap("testEntryView");
         long time1 = Clock.currentTimeMillis();
+        sleepSeconds(1);
+
         map.put(1, 1);
         map.put(1, 1);
         map.get(1);
@@ -702,10 +705,16 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.get(2);
         map.put(3, 3);
         map.put(3, 3);
+
         long time2 = Clock.currentTimeMillis();
+        sleepSeconds(1);
         map.get(3);
         map.get(3);
+        sleepSeconds(1);
+
         long time3 = Clock.currentTimeMillis();
+        sleepSeconds(1);
+        map.get(2);
         map.put(2, 22);
 
         EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
@@ -721,7 +730,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEqualsStringFormat("Expected entryView3.getValue() to be %d, but was %d", 3, entryView3.getValue());
 
         assertEqualsStringFormat("Expected entryView1.getHits() to be %d, but were %d", 2L, entryView1.getHits());
-        assertEqualsStringFormat("Expected entryView2.getHits() to be %d, but were %d", 3L, entryView2.getHits());
+        assertEqualsStringFormat("Expected entryView2.getHits() to be %d, but were %d", 4L, entryView2.getHits());
         assertEqualsStringFormat("Expected entryView3.getHits() to be %d, but were %d", 3L, entryView3.getHits());
 
         assertEqualsStringFormat("Expected entryView1.getVersion() to be %d, but was %d", 1L, entryView1.getVersion());
@@ -733,12 +742,17 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertBetween("entryView3.getCreationTime()", entryView3.getCreationTime(), time1, time2);
 
         assertBetween("entryView1.getLastAccessTime()", entryView1.getLastAccessTime(), time1, time2);
-        assertGreaterOrEquals("entryView2.getLastAccessTime()", entryView2.getLastAccessTime(), time3);
-        assertBetween("entryView3.getLastAccessTime()", entryView3.getLastAccessTime(), time2, time3);
+        assertGreaterOrEquals("entryView2.getLastAccessTime()",
+                MILLISECONDS.toSeconds(entryView2.getLastAccessTime()), MILLISECONDS.toSeconds(time3));
+        assertBetween("entryView3.getLastAccessTime()", MILLISECONDS.toSeconds(entryView3.getLastAccessTime()),
+                MILLISECONDS.toSeconds(time2), MILLISECONDS.toSeconds(time3));
 
-        assertBetween("entryView1.getLastUpdateTime()", entryView1.getLastUpdateTime(), time1, time2);
-        assertGreaterOrEquals("entryView2.getLastUpdateTime()", entryView2.getLastUpdateTime(), time3);
-        assertBetween("entryView3.getLastUpdateTime()", entryView3.getLastUpdateTime(), time1, time2);
+        assertBetween("entryView1.getLastUpdateTime()", MILLISECONDS.toSeconds(entryView1.getLastUpdateTime()),
+                MILLISECONDS.toSeconds(time1), MILLISECONDS.toSeconds(time2));
+        assertGreaterOrEquals("entryView2.getLastUpdateTime()", MILLISECONDS.toSeconds(entryView2.getLastUpdateTime()),
+                MILLISECONDS.toSeconds(time3));
+        assertBetween("entryView3.getLastUpdateTime()", MILLISECONDS.toSeconds(entryView3.getLastUpdateTime()),
+                MILLISECONDS.toSeconds(time1), MILLISECONDS.toSeconds(time2));
     }
 
     @Test
@@ -1210,7 +1224,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key", "value");
         map.setTTL("key", 1, TimeUnit.SECONDS);
 
-        sleepAtLeastMillis(1000);
+        sleepAtLeastMillis(2000);
 
         assertNull(map.get("key"));
     }

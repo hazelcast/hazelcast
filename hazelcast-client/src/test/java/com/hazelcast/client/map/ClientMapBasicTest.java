@@ -98,9 +98,9 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         final IMap<String, String> map = client.getMap(randomString());
 
         map.put("key", "value");
-        map.setTTL("key", 100, TimeUnit.MILLISECONDS);
+        map.setTTL("key", 1000, TimeUnit.MILLISECONDS);
 
-        sleepAtLeastMillis(100);
+        sleepAtLeastMillis(1000);
 
         assertNull(map.get("key"));
     }

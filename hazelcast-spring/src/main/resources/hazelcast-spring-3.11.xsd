@@ -2427,22 +2427,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="consistency-check-period-millis" minOccurs="0" type="xs:long">
-                <xs:annotation>
-                    <xs:documentation>
-                        Period (in milliseconds) for checking consistency of data
-                        between source and target cluster.
-                        Any inconsistency will not be reconciled, it will be merely reported via
-                        the usual mechanisms (e.g. statistics, diagnostics). The user must
-                        initiate WAN sync to reconcile there differences.
-                        For the check procedure to work properly, the target cluster should
-                        support merkle trees and the data structures being synced should be
-                        configured with merkle trees enabled both on the source and target cluster.
-                        Default value is 0, which means the periodic check is disabled.
-                        The period must not be negative.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
         </xs:all>
     </xs:complexType>
 
@@ -2854,12 +2838,12 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attributeGroup>
-                    <xs:attribute name="persist-wan-replicated-data" type="parameterized-boolean" default="true">
+                    <xs:attribute name="persist-wan-replicated-data" type="parameterized-boolean" default="false">
                         <xs:annotation>
                             <xs:documentation>
                                 When true, an incoming event over WAN replication can be persisted to a
                                 database for example, otherwise it will not be persisted. Default value
-                                is true.
+                                is false.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
@@ -4086,8 +4070,23 @@
     </xs:complexType>
 
     <xs:complexType name="connection-strategy">
+        <xs:choice>
+            <xs:element name="connection-retry" type="connection-retry" minOccurs="0"
+                        maxOccurs="1"/>
+        </xs:choice>
         <xs:attribute name="async-start" type="xs:boolean" default="false" use="optional"/>
         <xs:attribute name="reconnect-mode" type="reconnect-mode" default="ON" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="connection-retry">
+        <xs:all>
+            <xs:element name="initial-backoff-millis" type="xs:int" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="max-backoff-millis" type="xs:int" minOccurs="0" maxOccurs="1" default="30000"/>
+            <xs:element name="multiplier" type="xs:double" minOccurs="0" maxOccurs="1" default="2"/>
+            <xs:element name="fail-on-max-backoff" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="jitter" type="xs:double" minOccurs="0" maxOccurs="1" default="0.2"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
     </xs:complexType>
 
     <xs:simpleType name="reconnect-mode">

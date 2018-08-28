@@ -45,7 +45,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>3.8.0</version>
                 <configuration combine.self="override">
                     <release>9</release>
                 </configuration>
@@ -56,6 +56,33 @@
                 <version>2.22.0</version>
                 <configuration combine.self="override">
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <!--
+                    Allow access to Operating system metrics:
+                        open jdk.management/com.sun.management.internal
+
+                    Avoid warnings caused by reflection in
+                    SelectorOptimizer:
+                        open java.base/sun.nio.ch
+                    FilteringClassLoader:
+                        open java.base/java.lang
+                    TimedMemberStateFactoryHelper:
+                        open java.management/sun.management
+
+                    Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
+                        export java.xml/jdk.xml.internal
+                     -->
+                    <argLine>
+                        ${vmHeapSettings}
+                        --add-opens jdk.management/com.sun.management.internal=com.hazelcast.core
+                        --add-opens java.base/sun.nio.ch=com.hazelcast.core
+                        --add-opens java.base/java.lang=com.hazelcast.core
+                        --add-opens java.management/sun.management=com.hazelcast.core
+                        --add-exports java.xml/jdk.xml.internal=com.hazelcast.core
+                        --illegal-access=warn
+                        -Dhazelcast.phone.home.enabled=false
+                        -Dlog4j.skipJansi=true
+                        ${extraVmArgs}
+                    </argLine>
                 </configuration>
             </plugin>
 

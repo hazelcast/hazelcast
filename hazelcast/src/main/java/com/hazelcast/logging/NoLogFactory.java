@@ -68,6 +68,14 @@ public class NoLogFactory implements LoggerFactory {
         }
 
         @Override
+        public void info(String message, Throwable thrown) {
+        }
+
+        @Override
+        public void info(Throwable thrown) {
+        }
+
+        @Override
         public boolean isInfoEnabled() {
             return false;
         }
@@ -99,6 +107,11 @@ public class NoLogFactory implements LoggerFactory {
 
         @Override
         public void severe(String message, Throwable thrown) {
+        }
+
+        @Override
+        public boolean isSevereEnabled() {
+            return false;
         }
 
         @Override

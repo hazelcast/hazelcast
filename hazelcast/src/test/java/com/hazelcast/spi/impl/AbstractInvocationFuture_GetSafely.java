@@ -54,7 +54,7 @@ public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture
     @Test
     public void whenRuntimeException() throws Exception {
         ExpectedRuntimeException ex = new ExpectedRuntimeException();
-        future.completeExceptionally(ex);
+        future.complete(ex);
 
         Future joinFuture = spawn(new Callable<Object>() {
             @Override
@@ -75,7 +75,7 @@ public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture
     @Test
     public void whenRegularException() throws Exception {
         Exception ex = new Exception();
-        future.completeExceptionally(ex);
+        future.complete(ex);
 
         Future joinFuture = spawn(new Callable<Object>() {
             @Override

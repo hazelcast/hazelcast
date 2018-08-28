@@ -23,7 +23,6 @@ import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
@@ -33,15 +32,18 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.wan.impl.CallerProvenance;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 
 
 /**
@@ -54,7 +56,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final LockStore lockStore;
     protected final MapContainer mapContainer;
     protected final RecordFactory recordFactory;
-    protected final MapEventJournal eventJournal;
     protected final InMemoryFormat inMemoryFormat;
     protected final MapStoreContext mapStoreContext;
     protected final RecordComparator recordComparator;
@@ -62,6 +63,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final SerializationService serializationService;
     protected final MapDataStore<Data, Object> mapDataStore;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
+    protected final RecordStoreMutationObserver<Record> mutationObserver;
 
     protected Storage<Data, Record> storage;
 
@@ -70,14 +72,28 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapContainer = mapContainer;
         this.partitionId = partitionId;
         this.mapServiceContext = mapContainer.getMapServiceContext();
-        this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.serializationService = nodeEngine.getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
         this.recordComparator = mapServiceContext.getRecordComparator(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
-        this.eventJournal = mapServiceContext.getEventJournal();
+        Collection<RecordStoreMutationObserver<Record>> mutationObservers = mapServiceContext
+                .createRecordStoreMutationObservers(getName(), partitionId);
+        this.mutationObserver = new CompositeRecordStoreMutationObserver<Record>(mutationObservers);
+    }
+
+    protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
+        switch (provenance) {
+            case WAN:
+                return mapContainer.isPersistWanReplicatedData();
+            case NOT_WAN:
+                return true;
+            default:
+                throw new IllegalArgumentException("Unexpected provenance: `" + provenance + "`");
+        }
     }
 
     @Override
@@ -91,12 +107,12 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Object value, long ttlMillis, long now) {
+    public Record createRecord(Object value, long ttlMillis, long maxIdle, long now) {
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
 
-        setTTLAndUpdateExpiryTime(ttlMillis, record, mapContainer.getMapConfig(), true);
+        setExpirationTimes(ttlMillis, maxIdle, record, mapContainer.getMapConfig(), true);
         updateStatsOnPut(false, now);
         return record;
     }
@@ -131,8 +147,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
             record.onAccess(now);
         }
         record.onUpdate(now);
-        eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                record.getKey(), record.getValue(), value);
+        mutationObserver.onUpdateRecord(key, record, value);
         storage.updateRecordValue(key, record, value);
     }
 
@@ -147,7 +162,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.hasIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
-            indexes.saveEntryIndex(queryableEntry, oldValue);
+            indexes.saveEntryIndex(queryableEntry, oldValue, Index.OperationSource.USER);
         }
     }
 
@@ -157,7 +172,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.hasIndex()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntryIndex(key, value);
+            indexes.removeEntryIndex(key, value, Index.OperationSource.USER);
         }
     }
 
@@ -223,4 +238,5 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         stats.setLastAccessTime(now);
         stats.increaseHits();
     }
+
 }

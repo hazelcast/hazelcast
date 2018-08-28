@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -36,6 +37,7 @@ import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.function.Predicate;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -153,7 +155,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         }
 
         if (SOURCE == event.getMigrationEndpoint()) {
-            clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
+            removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
@@ -182,7 +184,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (DESTINATION == event.getMigrationEndpoint()) {
-            clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
+            removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
         }
 
@@ -200,16 +202,44 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 continue;
             }
 
-            indexes.clearContents();
+            indexes.clearAll();
         }
     }
 
-    private void clearMapsHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+    private void removeRecordStoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         if (thresholdReplicaIndex < 0) {
-            mapServiceContext.clearPartitionData(partitionId);
+            mapServiceContext.removeRecordStoresFromPartitionMatchingWith(allRecordStores(), partitionId,
+                    false, false);
         } else {
-            mapServiceContext.clearMapsHavingLesserBackupCountThan(partitionId, thresholdReplicaIndex);
+            mapServiceContext.removeRecordStoresFromPartitionMatchingWith(lesserBackupMapsThen(thresholdReplicaIndex),
+                    partitionId, false, false);
         }
+    }
+
+    /**
+     * @return predicate that matches with partitions of all maps
+     */
+    private static Predicate<RecordStore> allRecordStores() {
+        return new Predicate<RecordStore>() {
+            @Override
+            public boolean test(RecordStore recordStore) {
+                return true;
+            }
+        };
+    }
+
+    /**
+     * @param backupCount number of backups of a maps' partition
+     * @return predicate to find all map partitions which are expected to have
+     * lesser backups than given backupCount.
+     */
+    private static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
+        return new Predicate<RecordStore>() {
+            @Override
+            public boolean test(RecordStore recordStore) {
+                return recordStore.getMapContainer().getTotalBackupCount() < backupCount;
+            }
+        };
     }
 
     private MetaDataGenerator getMetaDataGenerator() {
@@ -258,7 +288,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 final Object value = Records.getValueOrCachedValue(record, serializationService);
                 if (value != null) {
                     QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-                    indexes.saveEntryIndex(queryEntry, null);
+                    indexes.saveEntryIndex(queryEntry, null, Index.OperationSource.SYSTEM);
                 }
             }
         }
@@ -291,7 +321,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 final Data key = record.getKey();
 
                 final Object value = Records.getValueOrCachedValue(record, serializationService);
-                indexes.removeEntryIndex(key, value);
+                indexes.removeEntryIndex(key, value, Index.OperationSource.SYSTEM);
             }
         }
     }

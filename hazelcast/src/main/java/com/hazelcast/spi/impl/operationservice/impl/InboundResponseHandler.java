@@ -98,7 +98,7 @@ public final class InboundResponseHandler implements Consumer<Packet> {
                     break;
                 case ERROR_RESPONSE:
                     ErrorResponse errorResponse = serializationService.toObject(packet);
-                    notifyErrorResponse(callId, errorResponse, sender);
+                    notifyErrorResponse(callId, errorResponse.getCause(), sender);
                     break;
                 default:
                     logger.severe("Unrecognized type: " + typeId + " packet:" + packet);
@@ -130,8 +130,7 @@ public final class InboundResponseHandler implements Consumer<Packet> {
         }
     }
 
-
-    void notifyErrorResponse(long callId, ErrorResponse response, Address sender) {
+    void notifyErrorResponse(long callId, Object cause, Address sender) {
         responsesError.inc();
         Invocation invocation = invocationRegistry.get(callId);
 
@@ -143,7 +142,7 @@ public final class InboundResponseHandler implements Consumer<Packet> {
             return;
         }
 
-        invocation.notifyError(response.getCause());
+        invocation.notifyError(cause);
     }
 
     void notifyNormalResponse(long callId, Object value, int backupCount, Address sender) {

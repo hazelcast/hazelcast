@@ -16,9 +16,15 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
@@ -63,30 +69,39 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_EVICTION_BATCH_SIZE;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_LOAD_ALL_PUBLISHES_ADD_EVENT;
 import static java.lang.System.getProperty;
 
 /**
- * Map container for a map with a specific name. Contains config and supporting structures for
- * all of the maps' functionalities.
+ * Map container for a map with a specific name. Contains config and
+ * supporting structures for all of the maps' functionalities.
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity"})
 public class MapContainer {
 
+    protected final boolean addEventPublishingEnabled;
     protected final String name;
     protected final String quorumName;
-    protected final MapServiceContext mapServiceContext;
+    // on-heap indexes are global, meaning there is only one index per map,
+    // stored in the mapContainer, so if globalIndexes is null it means that
+    // global index is not in use
+    protected final Indexes globalIndexes;
     protected final Extractors extractors;
-    protected final PartitioningStrategy partitioningStrategy;
     protected final MapStoreContext mapStoreContext;
-    protected final SerializationService serializationService;
+    protected final ObjectNamespace objectNamespace;
+    protected final MapServiceContext mapServiceContext;
     protected final QueryEntryFactory queryEntryFactory;
+    protected final EventJournalConfig eventJournalConfig;
+    protected final PartitioningStrategy partitioningStrategy;
+    protected final SerializationService serializationService;
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
-    // on-heap indexes are global, meaning there is only one index per map, stored in the mapContainer,
-    // so if globalIndexes is null it means that global index is not in use
-    protected final Indexes globalIndexes;
-
+    /**
+     * Holds number of registered {@link InvalidationListener} from clients.
+     */
+    protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
     // RU_COMPAT_3_9
     /**
      * Definitions of indexes that need to be added on partition threads
@@ -98,26 +113,20 @@ public class MapContainer {
      */
     protected final Set<IndexInfo> partitionIndexesToAdd = new ConcurrentSkipListSet<IndexInfo>();
 
-    /**
-     * Holds number of registered {@link InvalidationListener} from clients.
-     */
-    protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
-
-    protected final ObjectNamespace objectNamespace;
-
-    protected WanReplicationPublisher wanReplicationPublisher;
     protected Object wanMergePolicy;
+    protected WanReplicationPublisher wanReplicationPublisher;
 
     protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
-    protected final EventJournalConfig eventJournalConfig;
 
+    private boolean persistWanReplicatedData;
 
     /**
      * Operations which are done in this constructor should obey the rules defined
      * in the method comment {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}
      * Otherwise undesired situations, like deadlocks, may appear.
      */
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public MapContainer(final String name, final Config config, final MapServiceContext mapServiceContext) {
         this.name = name;
         this.mapConfig = config.findMapConfig(name);
@@ -134,15 +143,33 @@ public class MapContainer {
         ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), classloader);
         if (shouldUseGlobalIndex(mapConfig)) {
-            this.globalIndexes = new Indexes((InternalSerializationService) serializationService,
-                    mapServiceContext.getIndexProvider(mapConfig), extractors,
-                    true, mapServiceContext.getIndexCopyBehavior());
+            this.globalIndexes = createIndexes(true);
         } else {
             this.globalIndexes = null;
         }
+        this.addEventPublishingEnabled = nodeEngine.getProperties().getBoolean(MAP_LOAD_ALL_PUBLISHES_ADD_EVENT);
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
         initEvictor();
+    }
+
+    /**
+     * @param global set {@code true} to create global indexes, otherwise set
+     *               {@code false} to have partitioned indexes
+     * @return a new Indexes object
+     */
+    public Indexes createIndexes(boolean global) {
+        return Indexes.newBuilder(serializationService, mapServiceContext.getIndexCopyBehavior())
+                .global(global)
+                .extractors(extractors)
+                .statsEnabled(mapConfig.isStatisticsEnabled())
+                .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
+                .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
+                .build();
+    }
+
+    public boolean isAddEventPublishingEnabled() {
+        return addEventPublishingEnabled;
     }
 
     // this method is overridden
@@ -153,8 +180,10 @@ public class MapContainer {
         } else {
             MemoryInfoAccessor memoryInfoAccessor = getMemoryInfoAccessor();
             EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
-            IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
-            evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService);
+            NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+            IPartitionService partitionService = nodeEngine.getPartitionService();
+            int batchSize = nodeEngine.getProperties().getInteger(MAP_EVICTION_BATCH_SIZE);
+            evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService, batchSize);
         }
     }
 
@@ -204,9 +233,50 @@ public class MapContainer {
             return;
         }
         String wanReplicationRefName = wanReplicationRef.getName();
+        Config config = nodeEngine.getConfig();
+        if (!config.findMapMerkleTreeConfig(name).isEnabled()
+                && hasPublisherWithMerkleTreeSync(config, wanReplicationRefName)) {
+            throw new InvalidConfigurationException(
+                    "Map " + name + " has disabled merkle trees but the WAN replication scheme "
+                            + wanReplicationRefName + " has publishers that use merkle trees."
+                            + " Please enable merkle trees for the map.");
+        }
+
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
         wanMergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
+
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
+        if (wanReplicationConfig != null) {
+            WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getWanConsumerConfig();
+            if (wanConsumerConfig != null) {
+                persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
+            }
+        }
+    }
+
+    /**
+     * Returns {@code true} if at least one of the WAN publishers has
+     * Merkle tree consistency check configured for the given WAN
+     * replication configuration
+     *
+     * @param config                configuration
+     * @param wanReplicationRefName The name of the WAN replication
+     * @return {@code true} if there is at least one publisher has Merkle
+     * tree configured
+     */
+    private boolean hasPublisherWithMerkleTreeSync(Config config, String wanReplicationRefName) {
+        WanReplicationConfig replicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
+        if (replicationConfig != null) {
+            for (WanPublisherConfig publisherConfig : replicationConfig.getWanPublisherConfigs()) {
+                if (publisherConfig.getWanSyncConfig() != null
+                        && ConsistencyCheckStrategy.MERKLE_TREES.equals(publisherConfig.getWanSyncConfig()
+                        .getConsistencyCheckStrategy())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
@@ -385,6 +455,10 @@ public class MapContainer {
 
     public void clearPartitionIndexesToAdd() {
         partitionIndexesToAdd.clear();
+    }
+
+    public boolean isPersistWanReplicatedData() {
+        return persistWanReplicatedData;
     }
 
     @SerializableByConvention

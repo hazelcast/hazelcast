@@ -21,7 +21,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.concurrent.CountDownLatch;
@@ -105,10 +104,6 @@ public class LocalRetryableExecution implements Runnable, OperationResponseHandl
     @Override
     public void sendResponse(Operation op, Object response) {
         tryCount++;
-        if (response instanceof ErrorResponse) {
-            response = ((ErrorResponse) response).getCause();
-        }
-
         if (response instanceof RetryableHazelcastException && tryCount < invocationMaxRetryCount) {
             Level level = tryCount > LOG_MAX_INVOCATION_COUNT ? WARNING : FINEST;
             if (logger.isLoggable(level)) {

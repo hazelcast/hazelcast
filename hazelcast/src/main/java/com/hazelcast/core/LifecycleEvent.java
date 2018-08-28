@@ -82,7 +82,7 @@ public final class LifecycleEvent {
         CLIENT_CONNECTED,
 
         /**
-         * Fired when a client is disconnected to the member.
+         * Fired when a client is disconnected from the member.
          */
         CLIENT_DISCONNECTED
     }

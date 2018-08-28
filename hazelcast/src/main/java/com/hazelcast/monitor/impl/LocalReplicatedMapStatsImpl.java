@@ -16,11 +16,13 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.util.Clock;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.ConcurrencyUtil.setMax;
@@ -288,13 +290,22 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
-    @Probe
+    @Override
     public long getHeapCost() {
         return 0;
     }
 
     // TODO: unused
     public void setHeapCost(long heapCost) {
+    }
+
+    @Override
+    public long getMerkleTreesCost() {
+        return 0;
+    }
+
+    // TODO: unused
+    public void setMerkleTreesCost(long merkleTreesCost) {
     }
 
     @Probe
@@ -307,6 +318,21 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     @Override
     public NearCacheStatsImpl getNearCacheStats() {
         throw new UnsupportedOperationException("Replicated map has no Near Cache!");
+    }
+
+    @Override
+    public long getQueryCount() {
+        throw new UnsupportedOperationException("Queries on replicated maps are not supported.");
+    }
+
+    @Override
+    public long getIndexedQueryCount() {
+        throw new UnsupportedOperationException("Queries on replicated maps are not supported.");
+    }
+
+    @Override
+    public Map<String, LocalIndexStats> getIndexStats() {
+        throw new UnsupportedOperationException("Queries on replicated maps are not supported.");
     }
 
     @Override

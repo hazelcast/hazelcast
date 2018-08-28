@@ -100,6 +100,7 @@ public final class MergingValueFactory {
                 .setLastAccessTime(entryView.getLastAccessTime())
                 .setHits(entryView.getHits())
                 .setTtl(entryView.getTtl())
+                .setMaxIdle(entryView.getMaxIdle())
                 .setVersion(entryView.getVersion())
                 .setCost(entryView.getCost());
     }
@@ -116,6 +117,7 @@ public final class MergingValueFactory {
                 .setLastUpdateTime(record.getLastUpdateTime())
                 .setHits(record.getHits())
                 .setTtl(record.getTtl())
+                .setMaxIdle(record.getMaxIdle())
                 .setVersion(record.getVersion())
                 .setCost(record.getCost());
     }
@@ -132,6 +134,7 @@ public final class MergingValueFactory {
                 .setLastUpdateTime(record.getLastUpdateTime())
                 .setHits(record.getHits())
                 .setTtl(record.getTtl())
+                .setMaxIdle(record.getMaxIdle())
                 .setVersion(record.getVersion())
                 .setCost(record.getCost());
     }

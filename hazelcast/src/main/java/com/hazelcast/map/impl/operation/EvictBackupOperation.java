@@ -27,7 +27,6 @@ import java.io.IOException;
 public class EvictBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     protected boolean unlockKey;
-    protected boolean disableWanReplicationEvent;
 
     public EvictBackupOperation() {
     }
@@ -47,11 +46,6 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
     @Override
     public void afterRun() throws Exception {
         publishWanRemove(dataKey);
-    }
-
-    @Override
-    protected boolean canThisOpGenerateWANEvent() {
-        return !disableWanReplicationEvent;
     }
 
     @Override

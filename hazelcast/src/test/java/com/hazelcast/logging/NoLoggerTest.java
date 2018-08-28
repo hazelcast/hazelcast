@@ -81,8 +81,18 @@ public class NoLoggerTest extends AbstractLoggerTest {
     }
 
     @Test
+    public void info() {
+        logger.info(MESSAGE, THROWABLE);
+    }
+
+    @Test
     public void info_withMessage() {
         logger.info(MESSAGE);
+    }
+
+    @Test
+    public void info_withThrowable() {
+        logger.info(THROWABLE);
     }
 
     @Test
@@ -123,6 +133,11 @@ public class NoLoggerTest extends AbstractLoggerTest {
     @Test
     public void severe() {
         logger.severe(MESSAGE, THROWABLE);
+    }
+
+    @Test
+    public void isSevereEnabled() {
+        assertFalse(logger.isSevereEnabled());
     }
 
     @Test

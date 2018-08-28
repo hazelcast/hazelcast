@@ -30,7 +30,7 @@ public class SelectWithSelectorFix_TcpIpConnectionManager_ConnectMemberTest
 
     @Before
     public void setup() throws Exception {
-        eventLoopGroupFactory = new SelectWithSelectorFix_NioEventLoopGroupFactory();
+        networkingFactory = new SelectWithSelectorFix_NioNetworkingFactory();
         super.setup();
     }
 }

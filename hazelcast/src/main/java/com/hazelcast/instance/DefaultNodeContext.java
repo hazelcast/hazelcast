@@ -22,23 +22,27 @@ import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.EventLoopGroup;
-import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
+import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.MemberChannelInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Properties;
+
+import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.IO_INPUT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
 
 @PrivateApi
 public class DefaultNodeContext implements NodeContext {
@@ -132,35 +136,36 @@ public class DefaultNodeContext implements NodeContext {
     @Override
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-        EventLoopGroup eventLoopGroup = createEventLoopGroup(node, ioService);
+        Networking networking = createNetworking(node, ioService);
 
         return new TcpIpConnectionManager(
                 ioService,
                 serverSocketChannel,
                 node.loggingService,
                 node.nodeEngine.getMetricsRegistry(),
-                eventLoopGroup,
+                networking,
                 node.getProperties());
     }
 
-    private EventLoopGroup createEventLoopGroup(Node node, NodeIOService ioService) {
-        LoggingServiceImpl loggingService = node.loggingService;
+    private Networking createNetworking(Node node, NodeIOService ioService) {
+        ChannelInitializer initializer = node.getNodeExtension().createChannelInitializer(ioService);
 
-        ChannelInitializer initializer
-                = new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class), ioService);
+        LoggingServiceImpl loggingService = node.loggingService;
 
         ChannelErrorHandler errorHandler
                 = new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class));
 
-        return new NioEventLoopGroup(
-                new NioEventLoopGroup.Context()
+        HazelcastProperties props = node.getProperties();
+
+        return new NioNetworking(
+                new NioNetworking.Context()
                         .loggingService(loggingService)
                         .metricsRegistry(node.nodeEngine.getMetricsRegistry())
                         .threadNamePrefix(node.hazelcastInstance.getName())
                         .errorHandler(errorHandler)
-                        .inputThreadCount(ioService.getInputSelectorThreadCount())
-                        .outputThreadCount(ioService.getOutputSelectorThreadCount())
-                        .balancerIntervalSeconds(ioService.getBalancerIntervalSeconds())
+                        .inputThreadCount(props.getInteger(IO_INPUT_THREAD_COUNT))
+                        .outputThreadCount(props.getInteger(IO_OUTPUT_THREAD_COUNT))
+                        .balancerIntervalSeconds(props.getInteger(IO_BALANCER_INTERVAL_SECONDS))
                         .channelInitializer(initializer));
     }
 }

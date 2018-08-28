@@ -41,7 +41,7 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     }
 
     public TxnUnlockOperation(String name, Data dataKey, long version) {
-        super(name, dataKey, -1);
+        super(name, dataKey, -1, -1);
         this.version = version;
     }
 

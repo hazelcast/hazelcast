@@ -65,6 +65,7 @@ public class LocalReplicatedMapStatsImplTest {
         localReplicatedMapStats.incrementReceivedEvents();
 
         localReplicatedMapStats.setHeapCost(7461762);
+        localReplicatedMapStats.setMerkleTreesCost(6548888);
     }
 
     @Test
@@ -95,6 +96,7 @@ public class LocalReplicatedMapStatsImplTest {
         assertEquals(2, localReplicatedMapStats.getEventOperationCount());
 
         assertEquals(0, localReplicatedMapStats.getHeapCost());
+        assertEquals(0, localReplicatedMapStats.getMerkleTreesCost());
         assertNotNull(localReplicatedMapStats.toString());
     }
 
@@ -130,6 +132,7 @@ public class LocalReplicatedMapStatsImplTest {
         assertEquals(2, deserialized.getEventOperationCount());
 
         assertEquals(0, deserialized.getHeapCost());
+        assertEquals(0, deserialized.getMerkleTreesCost());
         assertNotNull(deserialized.toString());
     }
 

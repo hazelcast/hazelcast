@@ -40,12 +40,4 @@ public interface InternalCompletableFuture<E> extends ICompletableFuture<E> {
      * @return {@code true} if this invocation caused this InternalCompletableFuture to complete, else {@code false}
      */
     boolean complete(Object value);
-
-    /**
-     * Completes this future with an exception.
-     *
-     * @param error the error (Exception) to complete this future with.
-     * @return {@code true} if this invocation caused this InternalCompletableFuture to complete, else {@code false}
-     */
-    boolean completeExceptionally(Throwable error);
 }

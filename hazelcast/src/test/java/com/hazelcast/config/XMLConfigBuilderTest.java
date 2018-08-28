@@ -1180,6 +1180,23 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void default_value_of_persist_wan_replicated_data_is_false() {
+        String configName  = "test";
+        String xml = HAZELCAST_START_TAG
+                + "  <wan-replication name=\"" + configName + "\">\n"
+                + "        <wan-consumer>\n"
+                + "        </wan-consumer>\n"
+                + "    </wan-replication>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(configName);
+        WanConsumerConfig consumerConfig = wanReplicationConfig.getWanConsumerConfig();
+        assertFalse(consumerConfig.isPersistWanReplicatedData());
+    }
+
+
+    @Test
     public void testWanReplicationSyncConfig() {
         String configName  = "test";
         String xml = HAZELCAST_START_TAG
@@ -1188,7 +1205,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "            <class-name>PublisherClassName</class-name>\n"
                 + "            <wan-sync>\n"
                 + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
-                + "                <consistency-check-period-millis>12345</consistency-check-period-millis>\n"
                 + "            </wan-sync>\n"
                 + "        </wan-publisher>\n"
                 + "    </wan-replication>\n"
@@ -1205,8 +1221,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         WanPublisherConfig publisherConfig = publishers.get(0);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
                                                                            .getConsistencyCheckStrategy());
-        assertEquals(12345, publisherConfig.getWanSyncConfig()
-                                           .getConsistencyCheckPeriodMillis());
     }
 
     @Test

@@ -16,29 +16,31 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.nio.ChannelInboundHandlerWithCounters;
+import com.hazelcast.internal.networking.InboundHandler;
+import com.hazelcast.internal.networking.HandlerStatus;
+import com.hazelcast.internal.networking.nio.InboundHandlerWithCounters;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
 import com.hazelcast.util.function.Consumer;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 
 /**
- * The {@link ChannelInboundHandler} for member to member communication.
+ * The {@link InboundHandler} for member to member communication.
  *
- * It reads as many packets from the src ByteBuffer as possible, and each of the
- * Packets is send to the dst {@link Consumer}.
+ * It reads as many packets from the src {@link ByteBuffer} as possible, and
+ * each of the Packets is send to the destination.
  *
  * @see Consumer
  * @see PacketEncoder
  */
-public class PacketDecoder extends ChannelInboundHandlerWithCounters {
+public class PacketDecoder extends InboundHandlerWithCounters<ByteBuffer, Consumer<Packet>> {
 
     protected final TcpIpConnection connection;
-    private final Consumer<Packet> dst;
     private final PacketIOHelper packetReader = new PacketIOHelper();
 
     public PacketDecoder(TcpIpConnection connection, Consumer<Packet> dst) {
@@ -47,13 +49,25 @@ public class PacketDecoder extends ChannelInboundHandlerWithCounters {
     }
 
     @Override
-    public void onRead(ByteBuffer src) throws Exception {
-        while (src.hasRemaining()) {
-            Packet packet = packetReader.readFrom(src);
-            if (packet == null) {
-                break;
+    public void handlerAdded() {
+        initSrcBuffer();
+    }
+
+    @Override
+    public HandlerStatus onRead() throws Exception {
+        src.flip();
+        try {
+            while (src.hasRemaining()) {
+                Packet packet = packetReader.readFrom(src);
+                if (packet == null) {
+                    break;
+                }
+                onPacketComplete(packet);
             }
-            onPacketComplete(packet);
+
+            return CLEAN;
+        } finally {
+            compactOrClear(src);
         }
     }
 

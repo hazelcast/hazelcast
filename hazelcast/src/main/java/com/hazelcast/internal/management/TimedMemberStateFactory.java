@@ -197,7 +197,9 @@ public class TimedMemberStateFactory {
     private void createHotRestartState(MemberStateImpl memberState) {
         final HotRestartService hotRestartService = instance.node.getNodeExtension().getHotRestartService();
         boolean hotBackupEnabled = hotRestartService.isHotBackupEnabled();
-        final HotRestartStateImpl state = new HotRestartStateImpl(hotRestartService.getBackupTaskStatus(), hotBackupEnabled);
+        String hotBackupDirectory = hotRestartService.getBackupDirectory();
+        final HotRestartStateImpl state = new HotRestartStateImpl(hotRestartService.getBackupTaskStatus(),
+                hotBackupEnabled, hotBackupDirectory);
 
         memberState.setHotRestartState(state);
     }

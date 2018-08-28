@@ -18,11 +18,9 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.query.IndexProvider;
+import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
@@ -85,7 +83,7 @@ public class PartitionContainer {
     private volatile long lastCleanupTime;
 
     /**
-     * Used when sorting partition containers in {@link com.hazelcast.map.impl.eviction.ExpirationManager}
+     * Used when sorting partition containers in {@link ExpirationManager}
      * A non-volatile copy of lastCleanupTime is used with two reasons.
      * <p/>
      * 1. We need an un-modified field during sorting.
@@ -115,11 +113,8 @@ public class PartitionContainer {
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
 
-        InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig);
         if (!mapContainer.isGlobalIndexEnabled()) {
-            Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), false,
-                    serviceContext.getIndexCopyBehavior());
+            Indexes indexesForMap = mapContainer.createIndexes(false);
             indexes.putIfAbsent(name, indexesForMap);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
@@ -213,15 +208,6 @@ public class PartitionContainer {
         }
     }
 
-    public void clear(boolean onShutdown) {
-        for (RecordStore recordStore : maps.values()) {
-            recordStore.clearPartition(onShutdown);
-            mapService.getMapServiceContext().getEventJournal().destroy(
-                    recordStore.getMapContainer().getObjectNamespace(), partitionId);
-        }
-        maps.clear();
-    }
-
     public boolean hasRunningCleanup() {
         return hasRunningCleanup;
     }
@@ -260,11 +246,7 @@ public class PartitionContainer {
                 throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
             }
 
-            InternalSerializationService ss = (InternalSerializationService)
-                    mapServiceContext.getNodeEngine().getSerializationService();
-            Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
-            IndexProvider indexProvider = mapServiceContext.getIndexProvider(mapContainer.getMapConfig());
-            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, false, mapServiceContext.getIndexCopyBehavior());
+            Indexes indexesForMap = mapContainer.createIndexes(false);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

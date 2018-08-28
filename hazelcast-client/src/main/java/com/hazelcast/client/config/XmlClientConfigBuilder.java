@@ -270,7 +270,44 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         if (attrValue != null) {
             strategyConfig.setReconnectMode(ReconnectMode.valueOf(upperCaseInternal(attrValue.trim())));
         }
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("connection-retry".equals(nodeName)) {
+                handleConnectionRetry(child, strategyConfig);
+            }
+        }
         clientConfig.setConnectionStrategyConfig(strategyConfig);
+    }
+
+    private void handleConnectionRetry(Node node, ClientConnectionStrategyConfig strategyConfig) {
+        Node enabledNode = node.getAttributes().getNamedItem("enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
+        if (!enabled) {
+            LOGGER.warning("Exponential Connection Strategy is not enabled.");
+        }
+        ConnectionRetryConfig connectionRetryConfig = new ConnectionRetryConfig();
+        connectionRetryConfig.setEnabled(enabled);
+
+        String initialBackoffMillis = "initial-backoff-millis";
+        String maxBackoffMillis = "max-backoff-millis";
+        String multiplier = "multiplier";
+        String jitter = "jitter";
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if (initialBackoffMillis.equals(nodeName)) {
+                connectionRetryConfig.setInitialBackoffMillis(getIntegerValue(initialBackoffMillis, value));
+            } else if (maxBackoffMillis.equals(nodeName)) {
+                connectionRetryConfig.setMaxBackoffMillis(getIntegerValue(maxBackoffMillis, value));
+            } else if (multiplier.equals(nodeName)) {
+                connectionRetryConfig.setMultiplier(getIntegerValue(multiplier, value));
+            } else if ("fail-on-max-backoff".equals(nodeName)) {
+                connectionRetryConfig.setFailOnMaxBackoff(getBooleanValue(value));
+            } else if (jitter.equals(nodeName)) {
+                connectionRetryConfig.setJitter(getDoubleValue(jitter, value));
+            }
+        }
+        strategyConfig.setConnectionRetryConfig(connectionRetryConfig);
     }
 
     private void handleUserCodeDeployment(Node node) {

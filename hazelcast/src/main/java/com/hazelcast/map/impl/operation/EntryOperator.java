@@ -50,6 +50,8 @@ import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 /**
@@ -281,9 +283,9 @@ public final class EntryOperator {
 
     private void onAddedOrUpdated() {
         if (backup) {
-            recordStore.putBackup(dataKey, newValue);
+            recordStore.putBackup(dataKey, newValue, NOT_WAN);
         } else {
-            recordStore.setWithUncountedAccess(dataKey, newValue, DEFAULT_TTL);
+            recordStore.setWithUncountedAccess(dataKey, newValue, DEFAULT_TTL, DEFAULT_MAX_IDLE);
             if (mapOperation.isPostProcessing(recordStore)) {
                 Record record = recordStore.getRecord(dataKey);
                 newValue = record == null ? null : record.getValue();
@@ -295,9 +297,9 @@ public final class EntryOperator {
 
     private void onRemove() {
         if (backup) {
-            recordStore.removeBackup(dataKey);
+            recordStore.removeBackup(dataKey, NOT_WAN);
         } else {
-            recordStore.delete(dataKey);
+            recordStore.delete(dataKey, NOT_WAN);
             mapServiceContext.interceptAfterRemove(mapName, oldValue);
             stats.incrementRemoveLatencyNanos(getLatencyNanos(startTimeNanos));
         }

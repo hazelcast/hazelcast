@@ -16,14 +16,11 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.config.SSLConfig;
-import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelFactory;
-import com.hazelcast.internal.networking.EventLoopGroup;
+import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -108,12 +105,11 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    private final EventLoopGroup eventLoopGroup;
+    private final Networking networking;
     private final MetricsRegistry metricsRegistry;
 
     private final ServerSocketChannel serverSocketChannel;
 
-    private final ChannelFactory channelFactory;
     @Probe
     private final MwCounter openedCount = newMwCounter();
     @Probe
@@ -132,46 +128,35 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
                                   MetricsRegistry metricsRegistry,
-                                  EventLoopGroup eventLoopGroup) {
-        this(ioService, serverSocketChannel, loggingService, metricsRegistry, eventLoopGroup, null);
+                                  Networking networking) {
+        this(ioService, serverSocketChannel, loggingService, metricsRegistry, networking, null);
     }
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
                                   MetricsRegistry metricsRegistry,
-                                  EventLoopGroup eventLoopGroup,
+                                  Networking networking,
                                   HazelcastProperties properties) {
         this.ioService = ioService;
-        this.eventLoopGroup = eventLoopGroup;
+        this.networking = networking;
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
-        this.channelFactory = ioService.getChannelFactory();
         this.metricsRegistry = metricsRegistry;
         this.connector = new TcpIpConnector(this);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpConnectionManager")));
         this.spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
         metricsRegistry.scanAndRegister(this, "tcp.connection");
-        checkSslAllowed();
-    }
-
-    private void checkSslAllowed() {
-        SSLConfig sslConfig = ioService.getSSLConfig();
-        if (sslConfig != null && sslConfig.isEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
-            }
-        }
     }
 
     public IOService getIoService() {
         return ioService;
     }
 
-    public EventLoopGroup getEventLoopGroup() {
-        return eventLoopGroup;
+    public Networking getNetworking() {
+        return networking;
     }
 
     // just for testing
@@ -367,8 +352,8 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         //now you can send anything...
     }
 
-    Channel createChannel(SocketChannel socketChannel, boolean client) throws Exception {
-        Channel channel = channelFactory.create(socketChannel, client, ioService.useDirectSocketBuffer());
+    Channel createChannel(SocketChannel socketChannel, boolean clientMode) throws Exception {
+        Channel channel = networking.register(socketChannel, clientMode);
         acceptedChannels.add(channel);
         return channel;
     }
@@ -388,7 +373,8 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
                     + channel.localSocketAddress() + " and " + channel.remoteSocketAddress());
             openedCount.inc();
 
-            eventLoopGroup.register(channel);
+            channel.start();
+
             return connection;
         } finally {
             acceptedChannels.remove(channel);
@@ -480,7 +466,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         live = true;
         logger.finest("Starting ConnectionManager and IO selectors.");
 
-        eventLoopGroup.start();
+        networking.start();
         startAcceptor();
     }
 
@@ -513,7 +499,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         for (TcpIpConnection conn : activeConnections) {
             destroySilently(conn, "TcpIpConnectionManager is stopping");
         }
-        eventLoopGroup.shutdown();
+        networking.shutdown();
         acceptedChannels.clear();
         connectionsInProgress.clear();
         connectionsMap.clear();

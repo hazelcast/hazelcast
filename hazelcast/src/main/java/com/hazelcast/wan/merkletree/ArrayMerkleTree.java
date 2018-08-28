@@ -22,6 +22,7 @@ import com.hazelcast.util.function.Consumer;
 import java.util.Arrays;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
@@ -89,6 +90,15 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
     private final OAHashSet<Object>[] leafKeys;
     private final int leafLevel;
 
+    /**
+     * Footprint holds the total memory footprint of the Merkle tree and
+     * the leaf data blocks.
+     * <p/>
+     * Note that this field leverages a single-writer and a non-atomic
+     * operation is executed on the field. See {@link #adjustFootprintWithLeafKeySetChange}
+     */
+    private volatile long footprint;
+
     public ArrayMerkleTree(int depth) {
         this(depth, DEFAULT_EXPECTED_ENTRY_COUNT);
     }
@@ -108,6 +118,8 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
         for (int i = 0; i < leaves; i++) {
             leafKeys[i] = new OAHashSet<Object>(leafKeysSetCapacity);
         }
+
+        initializeFootprint();
     }
 
     @Override
@@ -187,28 +199,15 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
     }
 
     @Override
-    @SuppressWarnings("checkstyle:trailingcomment")
-    public int footprint() {
-        int leafKeysSetsFootprint = 0;
-        for (OAHashSet leafKeysSet : leafKeys) {
-            leafKeysSetsFootprint += leafKeysSet.footprint();
-        }
-
-        return leafKeysSetsFootprint
-                + INT_SIZE_IN_BYTES * tree.length
-                + REFERENCE_COST_IN_BYTES * leafKeys.length
-                + REFERENCE_COST_IN_BYTES // reference to the tree
-                + REFERENCE_COST_IN_BYTES // reference to leafKeys array
-                + INT_SIZE_IN_BYTES // depth
-                + INT_SIZE_IN_BYTES // leafLevelOrder
-                + INT_SIZE_IN_BYTES; // leafLevel
+    public long footprint() {
+        return footprint;
     }
 
     @Override
     public void clear() {
         Arrays.fill(tree, 0);
-        for (OAHashSet<Object> leafKeys : this.leafKeys) {
-            leafKeys.clear();
+        for (OAHashSet<Object> leafKeysSet : this.leafKeys) {
+            leafKeysSet.clear();
         }
     }
 
@@ -237,12 +236,47 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
 
     private void addKeyToLeaf(int leafOrder, int keyHash, Object key) {
         int relativeLeafOrder = leafOrder - leafLevelOrder;
-        leafKeys[relativeLeafOrder].add(key, keyHash);
+        OAHashSet<Object> leafKeySet = leafKeys[relativeLeafOrder];
+        long leafKeysFootprintBefore = leafKeySet.footprint();
+        leafKeySet.add(key, keyHash);
+
+        adjustFootprintWithLeafKeySetChange(leafKeySet.footprint(), leafKeysFootprintBefore);
     }
 
     private void removeKeyFromLeaf(int leafOrder, int keyHash, Object key) {
         int relativeLeafOrder = leafOrder - leafLevelOrder;
-        leafKeys[relativeLeafOrder].remove(key, keyHash);
+        OAHashSet<Object> leafKeySet = leafKeys[relativeLeafOrder];
+        long leafKeysFootprintBefore = leafKeySet.footprint();
+        leafKeySet.remove(key, keyHash);
+
+        adjustFootprintWithLeafKeySetChange(leafKeySet.footprint(), leafKeysFootprintBefore);
+    }
+
+    private void adjustFootprintWithLeafKeySetChange(long currentFootprint, long footprintBeforeUpdate) {
+        long footprintDelta = currentFootprint - footprintBeforeUpdate;
+
+        if (footprintDelta != 0) {
+            //noinspection NonAtomicOperationOnVolatileField
+            footprint += footprintDelta;
+        }
+    }
+
+    @SuppressWarnings("checkstyle:trailingcomment")
+    private void initializeFootprint() {
+        long leafKeysSetsFootprint = 0;
+        for (OAHashSet leafKeysSet : leafKeys) {
+            leafKeysSetsFootprint += leafKeysSet.footprint();
+        }
+
+        footprint = leafKeysSetsFootprint
+                + INT_SIZE_IN_BYTES * tree.length
+                + REFERENCE_COST_IN_BYTES * leafKeys.length
+                + REFERENCE_COST_IN_BYTES // reference to the tree
+                + REFERENCE_COST_IN_BYTES // reference to leafKeys array
+                + INT_SIZE_IN_BYTES // depth
+                + INT_SIZE_IN_BYTES // leafLevelOrder
+                + INT_SIZE_IN_BYTES // leafLevel
+                + LONG_SIZE_IN_BYTES; // footprint
     }
 
 }

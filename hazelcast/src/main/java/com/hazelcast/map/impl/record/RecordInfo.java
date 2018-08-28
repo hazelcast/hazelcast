@@ -20,17 +20,21 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.cluster.Versions.V3_11;
 import static com.hazelcast.map.impl.record.Record.NOT_AVAILABLE;
 
 /**
  * Record info.
  */
-public class RecordInfo implements IdentifiedDataSerializable {
+public class RecordInfo
+        implements IdentifiedDataSerializable, Versioned {
     protected long version;
     protected long ttl;
+    protected long maxIdle;
     protected long creationTime;
     protected long lastAccessTime;
     protected long lastUpdateTime;
@@ -46,6 +50,7 @@ public class RecordInfo implements IdentifiedDataSerializable {
         this.version = recordInfo.version;
         this.hits = recordInfo.hits;
         this.ttl = recordInfo.ttl;
+        this.maxIdle = recordInfo.maxIdle;
         this.creationTime = recordInfo.creationTime;
         this.lastAccessTime = recordInfo.lastAccessTime;
         this.lastUpdateTime = recordInfo.lastUpdateTime;
@@ -77,6 +82,14 @@ public class RecordInfo implements IdentifiedDataSerializable {
 
     public void setTtl(long ttl) {
         this.ttl = ttl;
+    }
+
+    public long getMaxIdle() {
+        return maxIdle;
+    }
+
+    public void setMaxIdle(long maxIdle) {
+        this.maxIdle = maxIdle;
     }
 
     public long getCreationTime() {
@@ -134,6 +147,11 @@ public class RecordInfo implements IdentifiedDataSerializable {
             out.writeLong(lastStoredTime);
             out.writeLong(expirationTime);
         }
+
+        //RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(V3_11)) {
+            out.writeLong(maxIdle);
+        }
     }
 
     @Override
@@ -149,6 +167,11 @@ public class RecordInfo implements IdentifiedDataSerializable {
         lastStoredTime = statsEnabled ? in.readLong() : NOT_AVAILABLE;
         expirationTime = statsEnabled ? in.readLong() : NOT_AVAILABLE;
 
+        //RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(V3_11)) {
+            maxIdle = in.readLong();
+        }
+
     }
 
     @Override
@@ -157,6 +180,7 @@ public class RecordInfo implements IdentifiedDataSerializable {
                 + "creationTime=" + creationTime
                 + ", version=" + version
                 + ", ttl=" + ttl
+                + ", maxIdle=" + maxIdle
                 + ", lastAccessTime=" + lastAccessTime
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", hits=" + hits

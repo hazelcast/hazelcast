@@ -21,28 +21,32 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.eviction.ExpirationManager;
+import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.PartitionScanRunner;
 import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexCopyBehavior;
+import com.hazelcast.query.impl.IndexProvider;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.function.Predicate;
 
 import java.util.Collection;
 import java.util.Map;
@@ -81,25 +85,22 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     void initPartitionsContainers();
 
     /**
-     * Clears all map partitions which are expected to have lesser backups
-     * than given.
+     * Removes all record stores inside the supplied partition ID matching with
+     * the supplied predicate.
      *
-     * @param partitionId partition ID
-     * @param backupCount backup count
+     * @param predicate            to find partitions to be removed
+     * @param partitionId          partition ID
+     * @param onShutdown           {@code true} if this method is called during map service shutdown,
+     *                             otherwise set {@code false}
+     * @param onRecordStoreDestroy {@code true} if this method is called during to destroy record store,
+     *                             otherwise set {@code false}
+     * @see MapManagedService#reset()
+     * @see MapManagedService#shutdown(boolean)
      */
-    void clearMapsHavingLesserBackupCountThan(int partitionId, int backupCount);
-
-    void clearPartitionData(int partitionId);
+    void removeRecordStoresFromPartitionMatchingWith(Predicate<RecordStore> predicate, int partitionId,
+                                                     boolean onShutdown, boolean onRecordStoreDestroy);
 
     MapService getService();
-
-    /**
-     * Clears all partition based data allocated by MapService.
-     *
-     * @param onShutdown {@code true} if {@code clearPartitions} is called during MapService shutdown,
-     *                   {@code false} otherwise
-     */
-    void clearPartitions(boolean onShutdown);
 
     void destroyMapStores();
 
@@ -154,6 +155,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     LocalMapStatsProvider getLocalMapStatsProvider();
 
+    MapClearExpiredRecordsTask getClearExpiredRecordsTask();
+
     MapOperationProvider getMapOperationProvider(String name);
 
     MapOperationProvider getMapOperationProvider(MapConfig mapConfig);
@@ -187,4 +190,16 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     String addLocalListenerAdapter(ListenerAdapter listenerAdaptor, String mapName);
 
     IndexCopyBehavior getIndexCopyBehavior();
+
+    /**
+     * Returns the collection of the {@link RecordStoreMutationObserver}s
+     * for the given map's partition that need to be added in record
+     * store construction time in order to ensure no {@link RecordStore}
+     * mutations are missed.
+     *
+     * @param mapName     The name of the map
+     * @param partitionId The partition
+     * @return The collection of the observers
+     */
+    Collection<RecordStoreMutationObserver<Record>> createRecordStoreMutationObservers(String mapName, int partitionId);
 }

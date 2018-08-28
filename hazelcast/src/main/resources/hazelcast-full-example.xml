@@ -226,17 +226,6 @@
                 check procedure to work properly, the target cluster should support the
                 chosen strategy.
                 Default value is NONE, which means the check is disabled.
-            - <consistency-check-period-millis>:
-                Period (in milliseconds) for checking consistency of data
-                between source and target cluster.
-                Any inconsistency will not be reconciled, it will be merely reported via
-                the usual mechanisms (e.g. statistics, diagnostics). The user must
-                initiate WAN sync to reconcile there differences.
-                For the check procedure to work properly, the target cluster should
-                support merkle trees and the data structures being synced should be
-                configured with merkle trees enabled both on the source and target cluster.
-                Default value is 0, which means the periodic check is disabled.
-                The period must not be negative.
         * <aws>:
             Set its "enabled" attribute to true for discovery within Amazon EC2. It has the following sub-elements:
             - <access-key>:
@@ -291,7 +280,6 @@
             <initial-publisher-state>REPLICATING</initial-publisher-state>
             <wan-sync>
                 <consistency-check-strategy>NONE</consistency-check-strategy>
-                <consistency-check-period-millis>0</consistency-check-period-millis>
             </wan-sync>
             <properties>
                 <property name="endpoints">10.3.5.1:5701,10.3.5.2:5701</property>
@@ -567,7 +555,20 @@
         <interfaces enabled="true">
             <interface>10.10.1.*</interface>
         </interfaces>
-        <ssl enabled="false"/>
+        <ssl enabled="false">
+            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
+            <properties>
+                <property name="protocol">TLS</property>
+
+                <property name="mutualAuthentication">REQUIRED</property>
+                <property name="keyStore">/opt/hazelcast.keystore</property>
+                <property name="keyStorePassword">secret.97531</property>
+                <property name="keyStoreType">JKS</property>
+                <property name="trustStore">/opt/hazelcast.truststore</property>
+                <property name="trustStorePassword">changeit</property>
+                <property name="trustStoreType">JKS</property>
+            </properties>
+        </ssl>
         <socket-interceptor enabled="false"/>
         <symmetric-encryption enabled="false">
             <algorithm>PBEWithMD5AndDES</algorithm>

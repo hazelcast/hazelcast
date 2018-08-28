@@ -53,7 +53,7 @@ public interface HazelcastInstance {
     String getName();
 
     /**
-     * Returns the distributed queue instance with the specified name.
+     * Creates or returns the distributed queue instance with the specified name.
      *
      * @param name name of the distributed queue
      * @return distributed queue instance with the specified name
@@ -61,7 +61,7 @@ public interface HazelcastInstance {
     <E> IQueue<E> getQueue(String name);
 
     /**
-     * Returns the distributed topic instance with the specified name.
+     * Creates or returns the distributed topic instance with the specified name.
      *
      * @param name name of the distributed topic
      * @return distributed topic instance with the specified name
@@ -69,7 +69,7 @@ public interface HazelcastInstance {
     <E> ITopic<E> getTopic(String name);
 
     /**
-     * Returns the distributed set instance with the specified name.
+     * Creates or returns the distributed set instance with the specified name.
      *
      * @param name name of the distributed set
      * @return distributed set instance with the specified name
@@ -77,7 +77,7 @@ public interface HazelcastInstance {
     <E> ISet<E> getSet(String name);
 
     /**
-     * Returns the distributed list instance with the specified name.
+     * Creates or returns the distributed list instance with the specified name.
      * Index based operations on the list are not supported.
      *
      * @param name name of the distributed list
@@ -86,7 +86,7 @@ public interface HazelcastInstance {
     <E> IList<E> getList(String name);
 
     /**
-     * Returns the distributed map instance with the specified name.
+     * Creates or returns the distributed map instance with the specified name.
      *
      * @param name name of the distributed map
      * @return distributed map instance with the specified name
@@ -94,7 +94,7 @@ public interface HazelcastInstance {
     <K, V> IMap<K, V> getMap(String name);
 
     /**
-     * Returns the replicated map instance with the specified name.
+     * Creates or returns the replicated map instance with the specified name.
      *
      * @param name name of the distributed map
      * @return replicated map instance with specified name
@@ -104,7 +104,7 @@ public interface HazelcastInstance {
     <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
 
     /**
-     * Returns the job tracker instance with the specified name.
+     * Creates or returns the job tracker instance with the specified name.
      *
      * @param name name of the job tracker
      * @return job tracker instance with the specified name
@@ -116,7 +116,7 @@ public interface HazelcastInstance {
     JobTracker getJobTracker(String name);
 
     /**
-     * Returns the distributed multimap instance with the specified name.
+     * Creates or returns the distributed multimap instance with the specified name.
      *
      * @param name name of the distributed multimap
      * @return distributed multimap instance with the specified name
@@ -124,7 +124,7 @@ public interface HazelcastInstance {
     <K, V> MultiMap<K, V> getMultiMap(String name);
 
     /**
-     * Returns the distributed lock instance for the specified key object.
+     * Creates or returns the distributed lock instance for the specified key object.
      * The specified object is considered to be the key for this lock.
      * So keys are considered equals cluster-wide as long as
      * they are serialized to the same byte array such as String, long,
@@ -151,7 +151,7 @@ public interface HazelcastInstance {
     ILock getLock(String key);
 
     /**
-     * Returns the distributed Ringbuffer instance with the specified name.
+     * Creates or returns the distributed Ringbuffer instance with the specified name.
      *
      * @param name name of the distributed Ringbuffer
      * @return distributed RingBuffer instance with the specified name
@@ -159,7 +159,7 @@ public interface HazelcastInstance {
     <E> Ringbuffer<E> getRingbuffer(String name);
 
     /**
-     * Returns the reliable ReliableTopic instance with the specified name.
+     * Creates or returns the reliable ReliableTopic instance with the specified name.
      *
      * @param name name of the reliable ITopic
      * @return the reliable ITopic
@@ -190,7 +190,7 @@ public interface HazelcastInstance {
     Endpoint getLocalEndpoint();
 
     /**
-     * Returns the distributed executor service for the given name.
+     * Creates or returns the distributed executor service for the given name.
      * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
      * <p>
@@ -203,7 +203,7 @@ public interface HazelcastInstance {
     IExecutorService getExecutorService(String name);
 
     /**
-     * Returns the durable executor service for the given name.
+     * Creates or returns the durable executor service for the given name.
      * DurableExecutor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
      * <p>
@@ -254,7 +254,7 @@ public interface HazelcastInstance {
     TransactionContext newTransactionContext(TransactionOptions options);
 
     /**
-     * Creates cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
+     * Creates or returns a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
      * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt>. ID generation occurs almost at the speed of
      * local <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
      * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
@@ -271,7 +271,7 @@ public interface HazelcastInstance {
     IdGenerator getIdGenerator(String name);
 
     /**
-     * Creates a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
+     * Creates or returns a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
      * and are k-ordered (roughly ordered). IDs are in the range from {@code 0} to {@code
      * Long.MAX_VALUE}.
      * <p>
@@ -291,7 +291,7 @@ public interface HazelcastInstance {
     FlakeIdGenerator getFlakeIdGenerator(String name);
 
     /**
-     * Creates cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed
+     * Creates or returns a cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed
      * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
      *
      * @param name name of the {@link IAtomicLong} proxy
@@ -300,7 +300,7 @@ public interface HazelcastInstance {
     IAtomicLong getAtomicLong(String name);
 
     /**
-     * Creates cluster-wide atomic reference. Hazelcast {@link IAtomicReference} is distributed
+     * Creates or returns a cluster-wide atomic reference. Hazelcast {@link IAtomicReference} is distributed
      * implementation of <tt>java.util.concurrent.atomic.AtomicReference</tt>.
      *
      * @param name name of the {@link IAtomicReference} proxy
@@ -309,7 +309,7 @@ public interface HazelcastInstance {
     <E> IAtomicReference<E> getAtomicReference(String name);
 
     /**
-     * Creates cluster-wide CountDownLatch. Hazelcast {@link ICountDownLatch} is distributed
+     * Creates or returns a cluster-wide CountDownLatch. Hazelcast {@link ICountDownLatch} is distributed
      * implementation of <tt>java.util.concurrent.CountDownLatch</tt>.
      *
      * @param name name of the {@link ICountDownLatch} proxy
@@ -318,7 +318,7 @@ public interface HazelcastInstance {
     ICountDownLatch getCountDownLatch(String name);
 
     /**
-     * Creates cluster-wide semaphore. Hazelcast {@link ISemaphore} is distributed
+     * Creates or returns a cluster-wide semaphore. Hazelcast {@link ISemaphore} is distributed
      * implementation of <tt>java.util.concurrent.Semaphore</tt>.
      *
      * @param name name of the {@link ISemaphore} proxy
@@ -462,7 +462,7 @@ public interface HazelcastInstance {
     CardinalityEstimator getCardinalityEstimator(String name);
 
     /**
-     * Obtain a {@link com.hazelcast.crdt.pncounter.PNCounter} with the given
+     * Creates or returns a {@link com.hazelcast.crdt.pncounter.PNCounter} with the given
      * name.
      * <p>
      * The PN counter can be used as a counter with strong eventual consistency
@@ -476,7 +476,7 @@ public interface HazelcastInstance {
     PNCounter getPNCounter(String name);
 
     /**
-     * Returns the {@link IScheduledExecutorService} scheduled executor service for the given name.
+     * Creates or returns the {@link IScheduledExecutorService} scheduled executor service for the given name.
      * ScheduledExecutor service enables you to schedule your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
      *
