@@ -16,18 +16,29 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.util.ExceptionUtil;
 
-// TODO [viliam] maybe we can extend AbstractInvocationFuture, which is InternalCompletableFuture
-public class SimpleCompletableFuture<T> extends AbstractCompletableFuture<T> {
+public class SimpleCompletableFuture<T> extends AbstractCompletableFuture<T>
+        implements InternalCompletableFuture<T> {
 
     public SimpleCompletableFuture(NodeEngine nodeEngine) {
         super(nodeEngine, nodeEngine.getLogger(InvocationUtil.class));
     }
 
     @Override
-    public void setResult(Object result) {
-        super.setResult(result);
+    public Object join() {
+        try {
+            return get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Override
+    public boolean complete(Object value) {
+        return setResult(value);
     }
 }

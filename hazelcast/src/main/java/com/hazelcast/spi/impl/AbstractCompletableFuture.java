@@ -232,12 +232,12 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         }
     }
 
-    protected void setResult(Object result) {
+    protected boolean setResult(Object result) {
         for (; ; ) {
             Object currentState = this.state;
 
             if (isDoneState(currentState)) {
-                return;
+                return false;
             }
 
             if (STATE.compareAndSet(this, currentState, result)) {
@@ -247,6 +247,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
                 break;
             }
         }
+        return true;
     }
 
     /**
