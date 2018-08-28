@@ -70,7 +70,7 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_EVICTION_BATCH_SIZE;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_LOAD_ALL_PUBLISHES_ADD_EVENT;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT;
 import static java.lang.System.getProperty;
 
 /**
@@ -147,7 +147,7 @@ public class MapContainer {
         } else {
             this.globalIndexes = null;
         }
-        this.addEventPublishingEnabled = nodeEngine.getProperties().getBoolean(MAP_LOAD_ALL_PUBLISHES_ADD_EVENT);
+        this.addEventPublishingEnabled = nodeEngine.getProperties().getBoolean(MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT);
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
         initEvictor();

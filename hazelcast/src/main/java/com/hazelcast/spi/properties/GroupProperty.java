@@ -570,8 +570,8 @@ public final class GroupProperty {
      *
      * @since 3.11
      */
-    public static final HazelcastProperty MAP_LOAD_ALL_PUBLISHES_ADD_EVENT
-            = new HazelcastProperty("hazelcast.map.loadAll.publishes.add.event", false);
+    public static final HazelcastProperty MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT
+            = new HazelcastProperty("hazelcast.map.loadAll.publishes.added.event", false);
 
     public static final HazelcastProperty LOGGING_TYPE
             = new HazelcastProperty("hazelcast.logging.type", "jdk");
