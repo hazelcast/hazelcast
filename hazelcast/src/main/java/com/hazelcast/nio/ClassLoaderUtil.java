@@ -36,7 +36,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.Collections.unmodifiableMap;
 
 /**
- * Utility class to deal with classloaders.
+ * Utility class to deal with class loaders.
  */
 @PrivateApi
 public final class ClassLoaderUtil {
@@ -47,7 +47,7 @@ public final class ClassLoaderUtil {
     private static final boolean CLASS_CACHE_DISABLED = Boolean.getBoolean("hazelcast.compat.classloading.cache.disabled");
 
     private static final Map<String, Class> PRIMITIVE_CLASSES;
-    private static final int MAX_PRIM_CLASSNAME_LENGTH = 7;
+    private static final int MAX_PRIM_CLASS_NAME_LENGTH = 7;
 
     private static final ClassLoaderWeakCache<Constructor> CONSTRUCTOR_CACHE = new ClassLoaderWeakCache<Constructor>();
     private static final ClassLoaderWeakCache<Class> CLASS_CACHE = new ClassLoaderWeakCache<Class>();
@@ -117,11 +117,9 @@ public final class ClassLoaderUtil {
     @SuppressWarnings({"unchecked", "checkstyle:cyclomaticcomplexity"})
     public static <T> T newInstance(final ClassLoader classLoaderHint, final String className) throws Exception {
         isNotNull(className, "className");
-        if (className.length() <= MAX_PRIM_CLASSNAME_LENGTH && Character.isLowerCase(className.charAt(0))) {
-            final Class primitiveClass = PRIMITIVE_CLASSES.get(className);
-            if (primitiveClass != null) {
-                return (T) primitiveClass.newInstance();
-            }
+        final Class primitiveClass = tryPrimitiveClass(className);
+        if (primitiveClass != null) {
+            return (T) primitiveClass.newInstance();
         }
 
         // Note: Class.getClassLoader() and Thread.getContextClassLoader() are
@@ -172,11 +170,11 @@ public final class ClassLoaderUtil {
 
         // if not found in cache, try to query the class loaders and add constructor to cache
         try {
-            return newInstanceInt(cl1, className);
+            return newInstance0(cl1, className);
         } catch (ClassNotFoundException e1) {
             if (cl2 != null) {
                 try {
-                    return newInstanceInt(cl2, className);
+                    return newInstance0(cl2, className);
                 } catch (ClassNotFoundException e2) {
                     ignore(e2);
                 }
@@ -186,7 +184,7 @@ public final class ClassLoaderUtil {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T newInstanceInt(ClassLoader classLoader, String className) throws Exception {
+    private static <T> T newInstance0(ClassLoader classLoader, String className) throws Exception {
         Class klass = classLoader == null ? Class.forName(className) : tryLoadClass(className, classLoader);
         final Constructor constructor = klass.getDeclaredConstructor();
         if (!constructor.isAccessible()) {
@@ -200,11 +198,9 @@ public final class ClassLoaderUtil {
 
     public static Class<?> loadClass(final ClassLoader classLoaderHint, final String className) throws ClassNotFoundException {
         isNotNull(className, "className");
-        if (className.length() <= MAX_PRIM_CLASSNAME_LENGTH && Character.isLowerCase(className.charAt(0))) {
-            final Class primitiveClass = PRIMITIVE_CLASSES.get(className);
-            if (primitiveClass != null) {
-                return primitiveClass;
-            }
+        final Class<?> primitiveClass = tryPrimitiveClass(className);
+        if (primitiveClass != null) {
+            return primitiveClass;
         }
         ClassLoader theClassLoader = classLoaderHint;
         if (theClassLoader == null) {
@@ -232,6 +228,16 @@ public final class ClassLoaderUtil {
             return tryLoadClass(className, theClassLoader);
         }
         return Class.forName(className);
+    }
+
+    private static Class<?> tryPrimitiveClass(String className) {
+        if (className.length() <= MAX_PRIM_CLASS_NAME_LENGTH && Character.isLowerCase(className.charAt(0))) {
+            final Class primitiveClass = PRIMITIVE_CLASSES.get(className);
+            if (primitiveClass != null) {
+                return primitiveClass;
+            }
+        }
+        return null;
     }
 
     public static boolean isClassAvailable(final ClassLoader classLoader, final String className) {
@@ -361,7 +367,7 @@ public final class ClassLoaderUtil {
         private final ConcurrentMap<ClassLoader, ConcurrentMap<String, WeakReference<V>>> cache;
 
         private ClassLoaderWeakCache() {
-            // let's guess 16 classloaders to not waste too much memory (16 is default concurrency level)
+            // let's guess 16 class loaders to not waste too much memory (16 is default concurrency level)
             cache = new ConcurrentReferenceHashMap<ClassLoader, ConcurrentMap<String, WeakReference<V>>>(16);
         }
 
