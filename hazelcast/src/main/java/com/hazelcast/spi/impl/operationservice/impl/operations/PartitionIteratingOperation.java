@@ -181,13 +181,8 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             final NodeEngine nodeEngine = getNodeEngine();
 
             final PartitionAwareOperationFactory factory = givenFactory.createFactoryOnRunner(nodeEngine, partitions);
-
-            int[] operationFactoryPartitions = factory.getPartitions();
-            partitions = operationFactoryPartitions == null ? partitions : operationFactoryPartitions;
-
             final OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
             final Object service = getServiceName() == null ? null : getService();
-
 
             PartitionTaskFactory f = new PartitionTaskFactory() {
                 @Override

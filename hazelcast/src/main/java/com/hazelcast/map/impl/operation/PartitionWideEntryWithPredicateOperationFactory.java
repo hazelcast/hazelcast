@@ -89,7 +89,8 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     @Override
     public Operation createPartitionOperation(int partition) {
         if (partitionIdToKeysMap == null) {
-            // index query failed to run because of ongoing migrations
+            // Index query failed to run because of ongoing migrations or we are
+            // creating an operation on the caller node.
             return new PartitionWideEntryWithPredicateOperation(name, entryProcessor, predicate);
         }
 
