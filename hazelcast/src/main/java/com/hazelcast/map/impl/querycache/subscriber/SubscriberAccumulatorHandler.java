@@ -85,11 +85,11 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
             case ADDED:
             case UPDATED:
             case MERGED:
-                queryCache.setInternal(keyData, valueData, false, entryEventType);
+                queryCache.set(keyData, valueData, entryEventType);
                 break;
             case REMOVED:
             case EVICTED:
-                queryCache.deleteInternal(keyData, false, entryEventType);
+                queryCache.delete(keyData, entryEventType);
                 break;
             case CLEAR_ALL:
                 handleMapWideEvent(eventData, entryEventType, clearAllRemovedCountHolders);

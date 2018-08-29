@@ -30,9 +30,15 @@ import com.hazelcast.query.impl.Indexes;
  */
 public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
 
-    void setInternal(K key, V value, boolean callDelegate, EntryEventType eventType);
+    void set(K key, V value, EntryEventType eventType);
 
-    void deleteInternal(Object key, boolean callDelegate, EntryEventType eventType);
+    /**
+     * Used during initial population of query cache. Initially fetched data
+     * from cluster will be written to query cache by the help of this method.
+     */
+    void prepopulate(K key, V value);
+
+    void delete(Object key, EntryEventType eventType);
 
     /**
      * Scans all entries in this {@link QueryCache} to remove matching ones
@@ -54,4 +60,13 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
      * @return internally used ID for this query cache
      */
     String getCacheId();
+
+    /**
+     * Used to quit pre-population when max size is reached.
+     *
+     * @return {@code true} if this query cache is at its max capacity,
+     * otherwise return {@code false}
+     * @see com.hazelcast.config.QueryCacheConfig#populate
+     */
+    boolean reachedMaxCapacity();
 }

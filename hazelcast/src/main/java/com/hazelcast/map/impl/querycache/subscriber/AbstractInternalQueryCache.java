@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.IMap;
@@ -47,7 +48,6 @@ import static com.hazelcast.core.EntryEventType.EVICTED;
  * @param <V> the value type for this {@link InternalQueryCache}
  */
 abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K, V> {
-
     protected final boolean includeValue;
     protected final String mapName;
     protected final String cacheId;
@@ -104,6 +104,14 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
     protected Predicate getPredicate() {
         return queryCacheConfig.getPredicateConfig().getImplementation();
+    }
+
+    @Override
+    public boolean reachedMaxCapacity() {
+        EvictionConfig evictionConfig = queryCacheConfig.getEvictionConfig();
+        EvictionConfig.MaxSizePolicy maximumSizePolicy = evictionConfig.getMaximumSizePolicy();
+        return maximumSizePolicy == EvictionConfig.MaxSizePolicy.ENTRY_COUNT
+                && size() == evictionConfig.getSize();
     }
 
     private EvictionListener getEvictionListener() {
