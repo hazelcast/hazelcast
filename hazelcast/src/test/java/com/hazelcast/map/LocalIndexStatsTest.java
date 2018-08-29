@@ -521,7 +521,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testInsertUpdateRemoveAreNotEffectEachOther() {
+    public void testInsertUpdateRemoveAreNotAffectingEachOther() {
         map.addIndex("__key", false);
         assertEquals(0, keyStats().getInsertCount());
         assertEquals(0, keyStats().getUpdateCount());
