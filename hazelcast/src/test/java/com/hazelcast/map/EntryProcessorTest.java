@@ -32,6 +32,7 @@ import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -1240,7 +1241,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         if (sync) {
             resultMap = map2.executeOnKeys(keys, new IncrementorEntryProcessor());
         } else {
-            resultMap = map2.submitToKeys(keys, new IncrementorEntryProcessor()).get();
+            resultMap = ((MapProxyImpl<Integer, Integer>) map2).submitToKeys(keys, new IncrementorEntryProcessor()).get();
         }
         assertEquals(1, resultMap.get(1));
         assertEquals(1, resultMap.get(4));
