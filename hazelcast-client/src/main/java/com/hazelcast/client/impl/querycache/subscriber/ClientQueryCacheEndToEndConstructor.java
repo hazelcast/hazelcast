@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryMadePublishableCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateWithValueCodec;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor;
@@ -28,9 +27,6 @@ import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndConstructor;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.nio.serialization.Data;
-
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * Client-side implementation of {@code QueryCacheEndToEndConstructor}.
@@ -45,48 +41,34 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
 
     @Override
     public void createPublisherAccumulator(AccumulatorInfo info) throws Exception {
-        if (info.isIncludeValue()) {
-            createPublishAccumulatorWithIncludeValue(info);
-        } else {
-            createPublishAccumulatorWithoutIncludeValue(info);
-        }
+        ClientMessage request = createClientMessage(info);
+
+        InvokerWrapper invokerWrapper = context.getInvokerWrapper();
+        ClientMessage response = (ClientMessage) invokerWrapper.invoke(request);
+
+        prepopulate(queryCache, response, info.isIncludeValue());
+
         if (info.isPopulate()) {
             madePublishable(info.getMapName(), info.getCacheId());
             info.setPublishable(true);
         }
     }
 
-    private void createPublishAccumulatorWithIncludeValue(AccumulatorInfo info) {
-        Data data = context.getSerializationService().toData(info.getPredicate());
-        ClientMessage request = ContinuousQueryPublisherCreateWithValueCodec.encodeRequest(info.getMapName(),
-                info.getCacheId(), data,
+    private ClientMessage createClientMessage(AccumulatorInfo info) {
+        Data dataPredicate = context.getSerializationService().toData(info.getPredicate());
+
+        if (info.isIncludeValue()) {
+            return ContinuousQueryPublisherCreateWithValueCodec.encodeRequest(info.getMapName(),
+                    info.getCacheId(), dataPredicate,
+                    info.getBatchSize(), info.getBufferSize(), info.getDelaySeconds(),
+                    info.isPopulate(), info.isCoalesce());
+
+        }
+
+        return ContinuousQueryPublisherCreateCodec.encodeRequest(info.getMapName(),
+                info.getCacheId(), dataPredicate,
                 info.getBatchSize(), info.getBufferSize(), info.getDelaySeconds(),
                 info.isPopulate(), info.isCoalesce());
-
-
-        InvokerWrapper invokerWrapper = context.getInvokerWrapper();
-        ClientMessage response = (ClientMessage) invokerWrapper.invoke(request);
-
-        Collection<Map.Entry<Data, Data>> result
-                = ContinuousQueryPublisherCreateWithValueCodec.decodeResponse(response).response;
-
-        populateWithValues(queryCache, result);
-    }
-
-    private void createPublishAccumulatorWithoutIncludeValue(AccumulatorInfo info) {
-        Data data = context.getSerializationService().toData(info.getPredicate());
-        ClientMessage request = ContinuousQueryPublisherCreateCodec.encodeRequest(info.getMapName(),
-                info.getCacheId(), data,
-                info.getBatchSize(), info.getBufferSize(), info.getDelaySeconds(),
-                info.isPopulate(), info.isCoalesce());
-
-
-        InvokerWrapper invokerWrapper = context.getInvokerWrapper();
-        ClientMessage response = (ClientMessage) invokerWrapper.invoke(request);
-
-        Collection<Data> result = ContinuousQueryPublisherCreateCodec.decodeResponse(response).response;
-
-        populateWithoutValues(queryCache, result);
     }
 
     private void madePublishable(String mapName, String cacheName) throws Exception {
@@ -94,16 +76,17 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         context.getInvokerWrapper().invokeOnAllPartitions(request);
     }
 
-    private void populateWithValues(InternalQueryCache queryCache, Collection<Map.Entry<Data, Data>> result) {
-        for (Map.Entry<Data, Data> entry : result) {
-            queryCache.setInternal(entry.getKey(), entry.getValue(), false, EntryEventType.ADDED);
+    private static void prepopulate(InternalQueryCache queryCache, ClientMessage clientMessage, boolean includeValue) {
+        int responseSize = clientMessage.getInt();
+        for (int responseIndex = 0; responseIndex < responseSize; ++responseIndex) {
+            if (queryCache.reachedMaxCapacity()) {
+                break;
+            }
+
+            Data dataKey = clientMessage.getData();
+            Data dataValue = includeValue ? clientMessage.getData() : null;
+
+            queryCache.prepopulate(dataKey, dataValue);
         }
     }
-
-    private void populateWithoutValues(InternalQueryCache queryCache, Collection<Data> result) {
-        for (Data data : result) {
-            queryCache.setInternal(data, null, false, EntryEventType.ADDED);
-        }
-    }
-
 }

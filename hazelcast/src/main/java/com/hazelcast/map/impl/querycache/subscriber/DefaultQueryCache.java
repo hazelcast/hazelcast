@@ -48,7 +48,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +55,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor.OPERATION_WAIT_TIMEOUT_MINUTES;
+import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEntryEvent;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
@@ -79,35 +79,44 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     }
 
     @Override
-    public void setInternal(K key, V value, boolean callDelegate, EntryEventType eventType) {
+    public void set(K key, V value, EntryEventType eventType) {
+        setInternal(key, value, eventType, true);
+    }
+
+    @Override
+    public void prepopulate(K key, V value) {
+        setInternal(key, value, EntryEventType.ADDED, false);
+    }
+
+    /**
+     * @param doEvictionCheck when doing pre-population of query cache, set
+     *                        this to false since we quit population if we reach max capacity {@link
+     *                        #reachedMaxCapacity()}, eviction is not needed.
+     */
+    private void setInternal(K key, V value, EntryEventType eventType, boolean doEvictionCheck) {
         Data keyData = toData(key);
         Data valueData = toData(value);
 
-        if (callDelegate) {
-            getDelegate().set(keyData, valueData);
-        }
-        QueryCacheRecord oldRecord = recordStore.add(keyData, valueData);
+        QueryCacheRecord oldRecord = doEvictionCheck
+                ? recordStore.add(keyData, valueData) : recordStore.addWithoutEvictionCheck(keyData, valueData);
 
         if (eventType != null) {
-            EventPublisherHelper.publishEntryEvent(context, mapName, cacheId, keyData, valueData, oldRecord, eventType);
+            publishEntryEvent(context, mapName, cacheId, keyData, valueData, oldRecord, eventType);
         }
     }
 
     @Override
-    public void deleteInternal(Object key, boolean callDelegate, EntryEventType eventType) {
+    public void delete(Object key, EntryEventType eventType) {
         checkNotNull(key, "key cannot be null");
 
         Data keyData = toData(key);
 
-        if (callDelegate) {
-            getDelegate().delete(keyData);
-        }
         QueryCacheRecord oldRecord = recordStore.remove(keyData);
         if (oldRecord == null) {
             return;
         }
         if (eventType != null) {
-            EventPublisherHelper.publishEntryEvent(context, mapName, cacheId, keyData, null, oldRecord, eventType);
+            publishEntryEvent(context, mapName, cacheId, keyData, null, oldRecord, eventType);
         }
     }
 
@@ -493,9 +502,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         int removedEntryCount = 0;
 
         Set<Data> keys = recordStore.keySet();
-        Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            Data keyData = iterator.next();
+        for (Data keyData : keys) {
             if (context.getPartitionId(keyData) == partitionId) {
                 if (recordStore.remove(keyData) != null) {
                     removedEntryCount++;
