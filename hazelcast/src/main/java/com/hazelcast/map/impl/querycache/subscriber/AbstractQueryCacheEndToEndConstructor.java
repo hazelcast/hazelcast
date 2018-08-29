@@ -47,7 +47,6 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     protected final SubscriberContext subscriberContext;
     protected final ILogger logger = Logger.getLogger(getClass());
 
-    protected boolean includeValue;
     protected InternalQueryCache queryCache;
 
     private Predicate predicate;
@@ -147,8 +146,6 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
             return null;
         }
 
-        // init some required parameters
-        this.includeValue = queryCacheConfig.isIncludeValue();
         this.predicate = queryCacheConfig.getPredicateConfig().getImplementation();
 
         return queryCacheConfig;
