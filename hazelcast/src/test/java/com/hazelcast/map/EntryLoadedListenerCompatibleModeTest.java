@@ -37,7 +37,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.spi.properties.GroupProperty.MAP_LOAD_ALL_PUBLISHES_ADD_EVENT;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT;
 import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("deprecation")
@@ -53,7 +53,7 @@ public class EntryLoadedListenerCompatibleModeTest extends HazelcastTestSupport 
     public static void setUp() {
         Config config = new Config();
 
-        config.setProperty(MAP_LOAD_ALL_PUBLISHES_ADD_EVENT.getName(), "true");
+        config.setProperty(MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT.getName(), "true");
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);

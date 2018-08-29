@@ -132,9 +132,8 @@ public class ClusterConnectionRetryTest extends ClientTestSupport {
         while (iterator.hasNext()) {
             long attemptTimeStamp = iterator.next();
             long actualSleepBetweenAttempts = attemptTimeStamp - startPoint - last;
-            long upperBound = (long) (currentBackoffMillis + currentBackoffMillis * jitter);
             long lowerBound = (long) (currentBackoffMillis - currentBackoffMillis * jitter);
-            assertBetween("sleep between attempts", actualSleepBetweenAttempts, lowerBound, upperBound);
+            assertGreaterOrEquals("sleep between attempts", actualSleepBetweenAttempts, lowerBound);
             currentBackoffMillis *= retryTimeoutMultiplier;
             last = attemptTimeStamp - startPoint;
         }
