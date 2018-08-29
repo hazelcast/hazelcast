@@ -73,8 +73,8 @@ public interface OperationService {
      *
      * @param serviceName      the name of the service.
      * @param operationFactory the factory responsible for creating operations
-     * @return a Map with partitionId as key and the outcome of the operation
-     * as value.
+     * @return a Map with partitionId as a key and the outcome of the operation
+     * as a value.
      * @throws Exception
      */
     Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory)
@@ -89,7 +89,7 @@ public interface OperationService {
      * @param operationFactory the factory responsible for creating operations
      * @param partitions       the partitions the operation should be executed on.
      * @param <T>              type of result of operations returned by {@code operationFactory}
-     * @return a Map with partitionId as key and the outcome of the operation as
+     * @return a Map with partitionId as a key and the outcome of the operation as
      * a value.
      * @throws Exception if there was an exception while waiting for the results
      *                   of the partition invocations
@@ -105,8 +105,8 @@ public interface OperationService {
      * @param partitions       the partitions the operation should be executed on.
      * @param callback         optional callback
      * @param <T>              type of result of operations returned by {@code operationFactory}
-     * @return a future returning a Map with partitionId as key and the outcome of the operation as
-     * a value.
+     * @return a future returning a Map with partitionId as a key and the
+     * outcome of the operation as a value.
      */
     <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
             String serviceName, OperationFactory operationFactory, Collection<Integer> partitions,
@@ -120,7 +120,7 @@ public interface OperationService {
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
      * @param partitions       the partitions the operation should be executed on.
-     * @return a Map with partitionId as key and the outcome of the operation as value.
+     * @return a Map with partitionId as a key and the outcome of the operation as a value.
      * @throws Exception
      */
     Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,

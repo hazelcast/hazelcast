@@ -21,11 +21,15 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.ExceptionUtil;
 
+/**
+ * Generic implementation of {@link InternalCompletableFuture}. Requires only
+ * {@link NodeEngine}.
+ */
 public class SimpleCompletableFuture<T> extends AbstractCompletableFuture<T>
         implements InternalCompletableFuture<T> {
 
     public SimpleCompletableFuture(NodeEngine nodeEngine) {
-        super(nodeEngine, nodeEngine.getLogger(InvocationUtil.class));
+        super(nodeEngine, nodeEngine.getLogger(SimpleCompletableFuture.class));
     }
 
     @Override

@@ -390,8 +390,20 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public <T> Map<Integer, T> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
-        ICompletableFuture<Map<Integer, T>> future = invokeOnPartitionsAsync(serviceName, operationFactory, partitions, null);
-        return future.get();
+
+        Map<Address, List<Integer>> memberPartitions = createHashMap(3);
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        for (int partition : partitions) {
+            Address owner = partitionService.getPartitionOwnerOrWait(partition);
+
+            if (!memberPartitions.containsKey(owner)) {
+                memberPartitions.put(owner, new ArrayList<Integer>());
+            }
+
+            memberPartitions.get(owner).add(partition);
+        }
+        InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
+        return invokeOnPartitions.invoke();
     }
 
     @Override
@@ -410,7 +422,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
             memberPartitions.get(owner).add(partition);
         }
-        InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
+        InvokeOnPartitionsAsync invokeOnPartitions =
+                new InvokeOnPartitionsAsync(this, serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invokeAsync(callback);
     }
 

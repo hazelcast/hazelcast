@@ -520,15 +520,29 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public ICompletableFuture<Map<K, Object>> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys,
+    public Map<K, Object> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys, EntryProcessor entryProcessor) {
+        if (serializeKeys) {
+            toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
+        }
+        try {
+            return super.executeOnKeysInternal(keys, dataKeys, entryProcessor);
+        } finally {
+            Set<?> ncKeys = serializeKeys ? dataKeys : keys;
+            for (Object key : ncKeys) {
+                invalidateNearCache(key);
+            }
+        }
+    }
+
+    @Override
+    public ICompletableFuture<Map<K, Object>> executeOnKeysInternalAsync(Set<K> keys, Set<Data> dataKeys,
                 EntryProcessor entryProcessor, ExecutionCallback<Map<K, Object>> callback) {
         if (serializeKeys) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
         try {
-            return super.executeOnKeysInternal(keys, dataKeys, entryProcessor, callback);
+            return super.executeOnKeysInternalAsync(keys, dataKeys, entryProcessor, callback);
         } finally {
-            // TODO [viliam] this doesn't seem right, should be after the async call is done...
             Set<?> ncKeys = serializeKeys ? dataKeys : keys;
             for (Object key : ncKeys) {
                 invalidateNearCache(key);

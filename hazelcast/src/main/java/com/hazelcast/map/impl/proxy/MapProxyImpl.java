@@ -28,7 +28,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
+import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
@@ -75,6 +75,7 @@ import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -89,7 +90,6 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
@@ -767,25 +767,19 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             return emptyMap();
         }
         Set<Data> dataKeys = createHashSet(keys.size());
-        try {
-            return executeOnKeysInternal(keys, dataKeys, entryProcessor, null).get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        return executeOnKeysInternal(keys, dataKeys, entryProcessor);
     }
 
     @Override
     public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
         checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
         if (keys.isEmpty()) {
-            SimpleCompletableFuture<Map<K, Object>> res = new SimpleCompletableFuture<Map<K, Object>>(getNodeEngine());
-            res.setResult(emptyMap());
-            return res;
+            return new SimpleCompletedFuture<Map<K, Object>>(Collections.<K, Object>emptyMap());
         }
         handleHazelcastInstanceAwareParams(entryProcessor);
 
         Set<Data> dataKeys = createHashSet(keys.size());
-        return executeOnKeysInternal(keys, dataKeys, entryProcessor, null);
+        return executeOnKeysInternalAsync(keys, dataKeys, entryProcessor, null);
     }
 
     @Override
