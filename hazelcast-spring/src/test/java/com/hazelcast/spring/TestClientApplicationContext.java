@@ -24,6 +24,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ConnectionRetryConfig;
+import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
@@ -55,6 +56,7 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -121,6 +123,9 @@ public class TestClientApplicationContext {
     @Resource(name = "client13-exponential-connection-retry")
     private HazelcastClientProxy connectionRetryClient;
 
+    @Resource(name = "client14-reliable-topic")
+    private HazelcastClientProxy hazelcastReliableTopic;
+
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
@@ -162,6 +167,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "semaphore")
     private ISemaphore semaphore;
+
+    @Resource(name = "reliableTopic")
+    private ITopic reliableTopic;
 
     @Autowired
     private Credentials credentials;
@@ -287,6 +295,7 @@ public class TestClientApplicationContext {
         assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
         assertNotNull(semaphore);
+        assertNotNull(reliableTopic);
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
         assertEquals("multiMap", multiMap.getName());
@@ -299,6 +308,7 @@ public class TestClientApplicationContext {
         assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
+        assertEquals("reliableTopic", reliableTopic.getName());
     }
 
     @Test
@@ -427,6 +437,14 @@ public class TestClientApplicationContext {
         assertEquals(2000, connectionRetryConfig.getInitialBackoffMillis());
         assertEquals(60000, connectionRetryConfig.getMaxBackoffMillis());
         assertEquals(3, connectionRetryConfig.getMultiplier(), 0);
+    }
+
+    @Test
+    public void testReliableTopicConfig() {
+        ClientConfig clientConfig = hazelcastReliableTopic.getClientConfig();
+        ClientReliableTopicConfig topicConfig = clientConfig.getReliableTopicConfig("rel-topic");
+        assertEquals(100, topicConfig.getReadBatchSize());
+        assertEquals(TopicOverloadPolicy.DISCARD_NEWEST, topicConfig.getTopicOverloadPolicy());
     }
 
     private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {

@@ -45,6 +45,11 @@ public class ClientReliableTopicConfig {
     private String name;
     private TopicOverloadPolicy topicOverloadPolicy = DEFAULT_TOPIC_OVERLOAD_POLICY;
 
+
+    // for spring-instantiation
+    public ClientReliableTopicConfig() {
+    }
+
     /**
      * Creates a new ReliableTopicConfig with default settings.
      */
@@ -59,6 +64,14 @@ public class ClientReliableTopicConfig {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Sets the name or name pattern for this config. Must not be modified after this
+     * instance is added to {@link ClientConfig}.
+     */
+    public void setName(String name) {
+        this.name = name;
     }
 
     /**

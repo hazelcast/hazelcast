@@ -24,6 +24,7 @@ import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -92,6 +93,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         private final BeanDefinitionBuilder builder;
         private final ManagedMap<String, BeanDefinition> nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
         private final ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap = new ManagedMap<String, BeanDefinition>();
+        private final ManagedMap<String, BeanDefinition> reliableTopicConfigMap = new ManagedMap<String, BeanDefinition>();
 
         SpringXmlBuilder(ParserContext parserContext) {
             this(parserContext, rootBeanDefinition(HazelcastClient.class)
@@ -106,6 +108,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.configBuilder = rootBeanDefinition(ClientConfig.class);
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
             configBuilder.addPropertyValue("flakeIdGeneratorConfigMap", flakeIdGeneratorConfigMap);
+            configBuilder.addPropertyValue("reliableTopicConfigMap", reliableTopicConfigMap);
         }
 
         @SuppressWarnings("checkstyle:cyclomaticcomplexity")
@@ -143,6 +146,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleUserCodeDeployment(node);
                 } else if ("flake-id-generator".equals(nodeName)) {
                     handleFlakeIdGenerator(node);
+                } else if ("reliable-topic".equals(nodeName)) {
+                    handleReliableTopic(node);
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
@@ -292,6 +297,13 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, configBuilder);
             String name = getAttribute(node, "name");
             flakeIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());
+        }
+
+        private void handleReliableTopic(Node node) {
+            BeanDefinitionBuilder configBuilder = createBeanBuilder(ClientReliableTopicConfig.class);
+            String name = getAttribute(node, "name");
+            fillValues(node, configBuilder);
+            reliableTopicConfigMap.put(name, configBuilder.getBeanDefinition());
         }
 
         private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {
