@@ -65,4 +65,12 @@ public class LocalWanStatsImpl implements LocalWanStats {
             localPublisherStatsMap.put(next.getName(), localPublisherStats);
         }
     }
+
+    @Override
+    public String toString() {
+        return "LocalWanStatsImpl{"
+                + "localPublisherStatsMap=" + localPublisherStatsMap
+                + ", creationTime=" + creationTime
+                + '}';
+    }
 }
