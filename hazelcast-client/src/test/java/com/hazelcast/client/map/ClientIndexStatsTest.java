@@ -133,13 +133,21 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
             assertNotNull(indexStats2);
 
             LocalIndexStatsImpl combinedIndexStats = new LocalIndexStatsImpl();
-            assertEquals(indexStats1.getHitCount(), indexStats2.getHitCount());
-            combinedIndexStats.setHitCount(indexStats1.getHitCount());
+            long hitCount1 = indexStats1.getHitCount();
+            long hitCount2 = indexStats2.getHitCount();
+            assertEquals(hitCount1, hitCount2);
+            combinedIndexStats.setHitCount(hitCount1);
 
             assertEquals(indexStats1.getQueryCount(), indexStats2.getQueryCount());
             combinedIndexStats.setQueryCount(indexStats1.getQueryCount());
-            combinedIndexStats.setAverageHitSelectivity(
-                    (indexStats1.getAverageHitSelectivity() + indexStats2.getAverageHitSelectivity()) / 2.0);
+            if (hitCount1 + hitCount2 == 0) {
+                combinedIndexStats.setAverageHitSelectivity(0.0);
+            } else {
+                // use weighted average for better precision
+                combinedIndexStats.setAverageHitSelectivity(
+                        (hitCount1 * indexStats1.getAverageHitSelectivity() + hitCount2 * indexStats2.getAverageHitSelectivity())
+                                / (hitCount1 + hitCount2));
+            }
             combinedIndexStats
                     .setAverageHitLatency((indexStats1.getAverageHitLatency() + indexStats2.getAverageHitLatency()) / 2);
 
