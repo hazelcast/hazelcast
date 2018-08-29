@@ -29,6 +29,7 @@ import java.util.Set;
 /**
  * Object for neutral {@code InternalQueryCache} implementation.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public final class NullQueryCache implements InternalQueryCache {
 
     /**
@@ -40,11 +41,16 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public void setInternal(Object key, Object value, boolean callDelegate, EntryEventType eventType) {
+    public void set(Object key, Object value, EntryEventType eventType) {
     }
 
     @Override
-    public void deleteInternal(Object key, boolean callDelegate, EntryEventType eventType) {
+    public void prepopulate(Object key, Object value) {
+
+    }
+
+    @Override
+    public void delete(Object key, EntryEventType eventType) {
     }
 
     @Override
@@ -74,6 +80,11 @@ public final class NullQueryCache implements InternalQueryCache {
     @Override
     public String getCacheId() {
         return null;
+    }
+
+    @Override
+    public boolean reachedMaxCapacity() {
+        return false;
     }
 
     @Override
