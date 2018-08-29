@@ -29,6 +29,8 @@ public interface QueryCacheRecordStore {
 
     QueryCacheRecord add(Data keyData, Data valueData);
 
+    QueryCacheRecord addWithoutEvictionCheck(Data keyData, Data valueData);
+
     QueryCacheRecord get(Data keyData);
 
     QueryCacheRecord remove(Data keyData);

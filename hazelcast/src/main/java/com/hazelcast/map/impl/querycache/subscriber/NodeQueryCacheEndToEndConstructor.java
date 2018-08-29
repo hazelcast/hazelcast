@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
@@ -34,6 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static java.lang.String.format;
@@ -51,10 +51,13 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
     }
 
     @Override
-    public void createPublisherAccumulator(AccumulatorInfo info) throws Exception {
+    public void createPublisherAccumulator(AccumulatorInfo info) {
         // create publishers and execute initial population query in one go
         Collection<QueryResult> results = createPublishersAndGetQueryResults(info);
-        setResults(queryCache, results);
+        if (!isEmpty(results)) {
+            prepopulate(queryCache, results);
+        }
+
         boolean populate = info.isPopulate();
 
         if (logger.isFinestEnabled()) {
@@ -78,7 +81,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
         return returnWithDeadline(futures, OPERATION_WAIT_TIMEOUT_MINUTES, MINUTES);
     }
 
-    private void madePublishable(String mapName, String cacheId) throws Exception {
+    private void madePublishable(String mapName, String cacheId) {
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
 
         Collection<Member> memberList = context.getMemberList();
@@ -92,46 +95,21 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
         waitWithDeadline(futures, OPERATION_WAIT_TIMEOUT_MINUTES, MINUTES);
     }
 
-    private void setResults(InternalQueryCache queryCache, Collection<QueryResult> results) {
-        if (results == null || results.isEmpty()) {
-            return;
-        }
-
-        //todo: afaik no switch is needed since queryresults will not contain value if it wasn't requested.
-        if (includeValue) {
-            populateWithValues(queryCache, results);
-        } else {
-            populateWithoutValues(queryCache, results);
-        }
-    }
-
-    private void populateWithValues(InternalQueryCache queryCache, Collection<QueryResult> resultSets) {
+    private static void prepopulate(InternalQueryCache queryCache, Collection<QueryResult> resultSets) {
         for (QueryResult queryResult : resultSets) {
             try {
                 if (queryResult == null || queryResult.isEmpty()) {
                     continue;
                 }
+
+                if (queryCache.reachedMaxCapacity()) {
+                    break;
+                }
+
                 for (QueryResultRow row : queryResult) {
                     Data keyData = row.getKey();
                     Data valueData = row.getValue();
-                    queryCache.setInternal(keyData, valueData, false, EntryEventType.ADDED);
-                }
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        }
-
-    }
-
-    private void populateWithoutValues(InternalQueryCache queryCache, Collection<QueryResult> resultSets) {
-        for (QueryResult queryResult : resultSets) {
-            try {
-                if (queryResult == null) {
-                    continue;
-                }
-                for (QueryResultRow row : queryResult) {
-                    Data dataKey = row.getKey();
-                    queryCache.setInternal(dataKey, null, false, EntryEventType.ADDED);
+                    queryCache.prepopulate(keyData, valueData);
                 }
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);

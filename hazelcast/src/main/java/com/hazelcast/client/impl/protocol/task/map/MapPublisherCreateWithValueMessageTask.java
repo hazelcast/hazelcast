@@ -34,8 +34,10 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.collection.InflatableSet;
 
 import java.security.Permission;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -44,7 +46,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -61,14 +62,13 @@ public class MapPublisherCreateWithValueMessageTask
     protected Object call() throws Exception {
         ClusterService clusterService = clientEngine.getClusterService();
         Collection<MemberImpl> members = clusterService.getMemberImpls();
-        List<Future> futures = new ArrayList<Future>(members.size());
-        createInvocations(members, futures);
-
-        return getQueryResults(futures);
+        List<Future> snapshotFutures = createPublishersAndGetSnapshotOf(members);
+        return fetchMapSnapshotFrom(snapshotFutures);
     }
 
-    private void createInvocations(Collection<MemberImpl> members, List<Future> futures) {
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+    private List<Future> createPublishersAndGetSnapshotOf(Collection<MemberImpl> members) {
+        List<Future> futures = new ArrayList<Future>(members.size());
+        InternalOperationService operationService = nodeEngine.getOperationService();
         for (MemberImpl member : members) {
             Predicate predicate = serializationService.toObject(parameters.predicate);
             AccumulatorInfo accumulatorInfo =
@@ -84,25 +84,40 @@ public class MapPublisherCreateWithValueMessageTask
             Future future = invocationBuilder.invoke();
             futures.add(future);
         }
+
+        return futures;
     }
 
-    private Set<Map.Entry<Data, Data>> getQueryResults(List<Future> futures) {
-        Map<Data, Data> results = createHashMap(futures.size());
+    private static Set<Map.Entry<Data, Data>> fetchMapSnapshotFrom(List<Future> futures) {
+        List<Object> queryResults = new ArrayList<Object>(futures.size());
+        int queryResultSize = 0;
+
         for (Future future : futures) {
-            Object result = null;
+            Object result;
             try {
                 result = future.get();
             } catch (Throwable t) {
-                ExceptionUtil.rethrow(t);
+                throw ExceptionUtil.rethrow(t);
             }
             if (result == null) {
                 continue;
             }
+
+            queryResults.add(result);
+            queryResultSize += ((QueryResult) result).size();
+        }
+
+        return unpackResults(queryResults, queryResultSize);
+    }
+
+    private static Set<Map.Entry<Data, Data>> unpackResults(List<Object> results, int numOfEntries) {
+        InflatableSet.Builder<Map.Entry<Data, Data>> builder = InflatableSet.newBuilder(numOfEntries);
+        for (Object result : results) {
             for (QueryResultRow row : (QueryResult) result) {
-                results.put(row.getKey(), row.getValue());
+                builder.add(new AbstractMap.SimpleEntry<Data, Data>(row.getKey(), row.getValue()));
             }
         }
-        return results.entrySet();
+        return builder.build();
     }
 
     @Override

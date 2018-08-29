@@ -34,6 +34,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.collection.InflatableSet;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -43,7 +44,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -63,7 +63,7 @@ public class MapPublisherCreateMessageTask
         List<Future> futures = new ArrayList<Future>(members.size());
         createInvocations(members, futures);
 
-        return getQueryResults(futures);
+        return fetchMapSnapshotFrom(futures);
     }
 
     private void createInvocations(Collection<MemberImpl> members, List<Future> futures) {
@@ -85,24 +85,36 @@ public class MapPublisherCreateMessageTask
         }
     }
 
-    private Set<Data> getQueryResults(List<Future> futures) {
-        Set<Data> results = createHashSet(futures.size());
+    private static Set<Data> fetchMapSnapshotFrom(List<Future> futures) {
+        List<Object> queryResults = new ArrayList<Object>(futures.size());
+        int queryResultSize = 0;
+
         for (Future future : futures) {
-            Object result = null;
+            Object result;
             try {
                 result = future.get();
             } catch (Throwable t) {
-                ExceptionUtil.rethrow(t);
+                throw ExceptionUtil.rethrow(t);
             }
             if (result == null) {
                 continue;
             }
-            QueryResult queryResult = (QueryResult) result;
-            for (QueryResultRow row : queryResult) {
-                results.add(row.getKey());
+
+            queryResults.add(result);
+            queryResultSize += ((QueryResult) result).size();
+        }
+
+        return unpackResults(queryResults, queryResultSize);
+    }
+
+    private static Set<Data> unpackResults(List<Object> results, int numOfEntries) {
+        InflatableSet.Builder<Data> builder = InflatableSet.newBuilder(numOfEntries);
+        for (Object result : results) {
+            for (QueryResultRow row : (QueryResult) result) {
+                builder.add(row.getKey());
             }
         }
-        return results;
+        return builder.build();
     }
 
     @Override
