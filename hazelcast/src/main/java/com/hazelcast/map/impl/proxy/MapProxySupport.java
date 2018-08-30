@@ -1112,7 +1112,7 @@ abstract class MapProxySupport<K, V>
 
     /**
      * TODO This method can be replaced with {@code executeOnKeysInternalAsync(...).get()}
-     * after feature freeze.
+     * after feature freeze is over.
      */
     public Map<K, Object> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys, EntryProcessor entryProcessor) {
         // TODO: why are we not forwarding to executeOnKeysInternal(keys, entryProcessor, null) or some other kind of fake
