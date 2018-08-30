@@ -94,7 +94,10 @@ public abstract class AbstractChannel implements Channel {
     @Override
     public SocketAddress remoteSocketAddress() {
         if (remoteAddress == null) {
-            REMOTE_ADDRESS.compareAndSet(this, null, socket().getRemoteSocketAddress());
+            Socket socket = socket();
+            if (socket != null) {
+                REMOTE_ADDRESS.compareAndSet(this, null, socket.getRemoteSocketAddress());
+            }
         }
         return remoteAddress;
     }
@@ -102,7 +105,10 @@ public abstract class AbstractChannel implements Channel {
     @Override
     public SocketAddress localSocketAddress() {
         if (localAddress == null) {
-            LOCAL_ADDRESS.compareAndSet(this, null, socket().getLocalSocketAddress());
+            Socket socket = socket();
+            if (socket != null) {
+                LOCAL_ADDRESS.compareAndSet(this, null, socket().getLocalSocketAddress());
+            }
         }
         return localAddress;
     }
