@@ -37,6 +37,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -525,6 +526,26 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(255, icmpPingConfig.getTtl());
         assertEquals(2, icmpPingConfig.getMaxAttempts());
         assertEquals(true, icmpPingConfig.isEchoFailFastOnStartup());
+    }
+
+    @Test
+    public void testReliableTopic() {
+        ClientReliableTopicConfig reliableTopicConfig = fullClientConfig.getReliableTopicConfig("rel-topic");
+        assertEquals(100, reliableTopicConfig.getReadBatchSize());
+        assertEquals(TopicOverloadPolicy.DISCARD_NEWEST, reliableTopicConfig.getTopicOverloadPolicy());
+    }
+
+    @Test
+    public void testReliableTopic_defaults() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<reliable-topic name=\"rel-topic\">"
+                + "</reliable-topic>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        ClientReliableTopicConfig reliableTopicConfig = config.getReliableTopicConfig("rel-topic");
+        assertEquals("rel-topic", reliableTopicConfig.getName());
+        assertEquals(10, reliableTopicConfig.getReadBatchSize());
+        assertEquals(TopicOverloadPolicy.BLOCK, reliableTopicConfig.getTopicOverloadPolicy());
     }
 
     @Test

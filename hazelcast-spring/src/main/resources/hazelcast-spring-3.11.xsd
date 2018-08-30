@@ -1931,7 +1931,8 @@
                         <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="flake-id-generator" type="client-flake-id-generator" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="flake-id-generator" type="client-flake-id-generator" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="reliable-topic" type="client-reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:choice>
                     <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
@@ -3572,6 +3573,49 @@
                     This setting pertains only to newId() calls made on the member that configured it.
                 </xs:documentation>
             </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="client-reliable-topic">
+        <xs:all>
+            <xs:element name="topic-overload-policy" minOccurs="0" default="BLOCK">
+                <xs:annotation>
+                    <xs:documentation>
+                        Policy to deal with an overloaded topic; so topic where there is no place to store new messages.
+                        Options are
+                        DISCARD_OLDEST: Using this policy, a message that has not expired can be overwritten.
+                        No matter the retention period set, the overwrite will just overwrite the item.
+                        DISCARD_NEWEST : The message that was to be published, is discarded.
+                        BLOCK : The caller will wait till there space in the ringbuffer.
+                        ERROR : The publish call immediately fails.(Default Value)
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="DISCARD_OLDEST"/>
+                        <xs:enumeration value="DISCARD_NEWEST"/>
+                        <xs:enumeration value="BLOCK"/>
+                        <xs:enumeration value="ERROR"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="read-batch-size" type="xs:int" minOccurs="0" default="10">
+                <xs:annotation>
+                    <xs:documentation>
+                        The maximum number of items to read in a batch.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the Reliable Topic.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
 

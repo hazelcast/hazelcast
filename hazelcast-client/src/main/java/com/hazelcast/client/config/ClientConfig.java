@@ -466,6 +466,34 @@ public class ClientConfig {
     }
 
     /**
+     * Sets the map of {@link ClientReliableTopicConfig},
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration will be obtained in the future.
+     *
+     * @param map the FlakeIdGenerator configuration map to set
+     * @return this config instance
+     */
+    public ClientConfig setReliableTopicConfigMap(Map<String, ClientReliableTopicConfig> map) {
+        reliableTopicConfigMap.clear();
+        reliableTopicConfigMap.putAll(map);
+        for (Entry<String, ClientReliableTopicConfig> entry : map.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    /**
+     * Returns the map of reliable topic configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration was initially obtained.
+     *
+     * @return the map configurations mapped by config name
+     */
+    public Map<String, ClientReliableTopicConfig> getReliableTopicConfigMap() {
+        return reliableTopicConfigMap;
+    }
+
+    /**
      * Use {@link ClientNetworkConfig#isSmartRouting} instead
      */
     @Deprecated

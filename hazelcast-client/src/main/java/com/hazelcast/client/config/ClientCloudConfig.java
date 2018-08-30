@@ -35,7 +35,7 @@ public class ClientCloudConfig {
 
     /**
      * @param discoveryToken hazelcast.cloud discoveryToken of your cluster
-     * @return this for chaining
+     * @return configured {@link com.hazelcast.client.config.ClientCloudConfig} for chaining
      */
     public ClientCloudConfig setDiscoveryToken(String discoveryToken) {
         this.discoveryToken = discoveryToken;
@@ -51,8 +51,10 @@ public class ClientCloudConfig {
 
     /**
      * @param enabled true to use hazelcast.cloud
+     * @return configured {@link com.hazelcast.client.config.ClientCloudConfig} for chaining
      */
-    public void setEnabled(boolean enabled) {
+    public ClientCloudConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
     }
 }
