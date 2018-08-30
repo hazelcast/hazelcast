@@ -61,6 +61,16 @@ public class EventJournalMapDataStructureAdapter<K, V>
     }
 
     @Override
+    public void load(K key) {
+        map.get(key);
+    }
+
+    @Override
+    public void loadAll(Set<K> keys) {
+        map.loadAll(keys, true);
+    }
+
+    @Override
     public ObjectNamespace getNamespace() {
         return MapService.getObjectNamespace(map.getName());
     }

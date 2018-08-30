@@ -106,6 +106,20 @@ public interface MapEventJournal extends EventJournal<InternalEventJournalMapEve
     void writeEvictEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key, Object value);
 
     /**
+     * Writes an {@link com.hazelcast.core.EntryEventType#LOADED} to the event journal.
+     * If there is no event journal configured for this map, the method will do nothing.
+     * If an event is added to the event journal, all parked operations waiting for
+     * new events on that journal will be unparked.
+     *
+     * @param journalConfig the event journal config for the map in which the event occurred
+     * @param namespace     the map namespace
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param value         the entry value
+     */
+    void writeLoadEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key, Object value);
+
+    /**
      * Returns {@code true} if the object has a configured and enabled event journal.
      *
      * @param namespace the object namespace

@@ -63,7 +63,7 @@ import com.hazelcast.map.impl.record.ObjectRecordComparator;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
-import com.hazelcast.map.impl.recordstore.EventJournalUpdaterRecordStoreMutationObserver;
+import com.hazelcast.map.impl.recordstore.EventJournalWriterRecordStoreMutationObserver;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -873,7 +873,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     private void addEventJournalUpdaterObserver(Collection<RecordStoreMutationObserver<Record>> observers, String mapName, int
             partitionId) {
-        RecordStoreMutationObserver<Record> observer = new EventJournalUpdaterRecordStoreMutationObserver(getEventJournal(),
+        RecordStoreMutationObserver<Record> observer = new EventJournalWriterRecordStoreMutationObserver(getEventJournal(),
                 getMapContainer(mapName), partitionId);
         observers.add(observer);
     }

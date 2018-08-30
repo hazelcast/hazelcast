@@ -38,6 +38,7 @@ import com.hazelcast.spi.impl.operationparker.OperationParker;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.EVICTED;
+import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 
@@ -81,6 +82,12 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
     public void writeEvictEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
                                 Data key, Object value) {
         addToEventRingbuffer(journalConfig, namespace, partitionId, EVICTED, key, value, null);
+    }
+
+    @Override
+    public void writeLoadEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key,
+                               Object value) {
+        addToEventRingbuffer(journalConfig, namespace, partitionId, LOADED, key, null, value);
     }
 
     @Override

@@ -68,6 +68,16 @@ public class EventJournalCacheDataStructureAdapter<K, V>
     }
 
     @Override
+    public void load(K key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void loadAll(Set<K> keys) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public ObjectNamespace getNamespace() {
         return CacheService.getObjectNamespace(cache.getPrefixedName());
     }

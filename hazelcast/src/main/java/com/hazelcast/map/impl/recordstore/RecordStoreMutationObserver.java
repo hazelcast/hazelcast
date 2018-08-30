@@ -74,6 +74,14 @@ public interface RecordStoreMutationObserver<R extends Record> {
     void onEvictRecord(Data key, R record);
 
     /**
+     * Called when a record is loaded into the observed {@link RecordStore}
+     *
+     * @param key      The key of the record
+     * @param record   The record
+     */
+    void onLoadRecord(Data key, R record);
+
+    /**
      * Called when the observed {@link RecordStore} is being destroyed.
      * The observer should release all resources. The implementations of
      * this method should be idempotent.

@@ -46,6 +46,8 @@ public class EventJournalMapEventAdapter<K, V> implements EventJournalEventAdapt
                 return EventType.UPDATED;
             case EVICTED:
                 return EventType.EVICTED;
+            case LOADED:
+                return EventType.LOADED;
             default:
                 throw new IllegalArgumentException("Unknown event journal event type " + e.getType());
         }
