@@ -57,7 +57,7 @@ public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
         // validate configuration
         for (PropertyDefinition prop : PROPERTY_DEFINITIONS) {
             if (AzureProperties.getOrNull(prop, properties) == null) {
-                throw new IllegalArgumentException("Property, " + prop + " cannot be null");
+                throw new IllegalArgumentException("Property, " + prop.key() + " cannot be null");
             }
         }
 

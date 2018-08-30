@@ -39,9 +39,9 @@ public final class AzureClientHelper {
      */
     public static ComputeManager getComputeManager(Map<String, Comparable> properties) {
         ApplicationTokenCredentials atc = new ApplicationTokenCredentials(
-                (String) properties.get(CLIENT_ID.key()),
-                (String) properties.get(TENANT_ID.key()),
-                (String) properties.get(CLIENT_SECRET.key()), null);
-        return ComputeManager.authenticate(atc, properties.get(SUBSCRIPTION_ID.key()).toString());
+                (String) AzureProperties.getOrNull(CLIENT_ID, properties),
+                (String) AzureProperties.getOrNull(TENANT_ID, properties),
+                (String) AzureProperties.getOrNull(CLIENT_SECRET, properties), null);
+        return ComputeManager.authenticate(atc, (String) AzureProperties.getOrNull(SUBSCRIPTION_ID, properties));
     }
 }
