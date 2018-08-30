@@ -40,9 +40,13 @@ public final class ThreadLeakTestUtils {
      * List of whitelisted classes of threads, which are allowed to be not joinable.
      * We should not add classes of Hazelcast production code here, just test related classes.
      */
-    private static final List<Class> THREAD_CLASS_WHITELIST = asList(new Class[]{
+    private static final List<Class<?>> THREAD_CLASS_WHITELIST = asList(new Class<?>[]{
             JitterThread.class,
     });
+    private static final List<String> THREAD_NAME_WHITELIST = asList(
+            "process reaper",
+            "surefire-forkedjvm-ping-30s"
+    );
 
     private static final ILogger LOGGER = Logger.getLogger(ThreadLeakTestUtils.class);
 
@@ -100,7 +104,9 @@ public final class ThreadLeakTestUtils {
         Iterator<Thread> iterator = threads.iterator();
         while (iterator.hasNext()) {
             Thread thread = iterator.next();
-            if (THREAD_CLASS_WHITELIST.contains(thread.getClass())) {
+            Class<? extends Thread> threadClass = thread.getClass();
+            String threadName = thread.getName();
+            if (THREAD_CLASS_WHITELIST.contains(threadClass) || THREAD_NAME_WHITELIST.contains(threadName)) {
                 iterator.remove();
             }
         }
