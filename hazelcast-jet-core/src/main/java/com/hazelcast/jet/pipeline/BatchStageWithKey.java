@@ -25,6 +25,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedQuadFunction;
 import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.function.DistributedTriPredicate;
 
@@ -214,24 +215,24 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * create the items to emit.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     *
+     *@param <R0> type of the aggregation result for stream-0
+     * @param <T1> type of items in {@code stage1}
+     * @param <R1> type of the aggregation result for stream-1
+     * @param <OUT> type of the output item
      * @param aggrOp0 aggregate operation to perform on this stage
      * @param stage1 the other stage
      * @param aggrOp1 aggregate operation to perform on the other stage
      * @param mapToOutputFn the function that creates the output item
-     * @param <R0> type of the aggregation result for stream-0
-     * @param <T1> type of items in {@code stage1}
-     * @param <R1> type of the aggregation result for stream-1
-     * @param <OUT> type of the output item
      */
     @Nonnull
     default <T1, R0, R1, OUT> BatchStage<OUT> aggregate2(
             @Nonnull AggregateOperation1<? super T, ?, R0> aggrOp0,
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation1<? super T1, ?, R1> aggrOp1,
-            @Nonnull DistributedBiFunction<? super K, ? super Tuple2<R0, R1>, OUT> mapToOutputFn
+            @Nonnull DistributedTriFunction<? super K, ? super R0, ? super R1, OUT> mapToOutputFn
     ) {
-        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2), mapToOutputFn);
+        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2),
+                (key, tuple) -> mapToOutputFn.apply(key, tuple.f0(), tuple.f1()));
     }
 
     /**
@@ -370,11 +371,11 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
             @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
             @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
             @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2,
-            @Nonnull DistributedBiFunction<? super K, ? super Tuple3<R0, R1, R2>, ? extends OUT> mapToOutputFn
+            @Nonnull DistributedQuadFunction<? super K, ? super R0, ? super R1, ? super R2, ? extends OUT> mapToOutputFn
     ) {
         return aggregate3(stage1, stage2,
                 aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3),
-                mapToOutputFn);
+                (key, tuple) -> mapToOutputFn.apply(key, tuple.f0(), tuple.f1(), tuple.f2()));
     }
 
     /**

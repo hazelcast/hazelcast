@@ -27,7 +27,7 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.TriFunction;
-import com.hazelcast.jet.pipeline.BatchAggregateTest.QuadFunction;
+import com.hazelcast.jet.function.QuadFunction;
 import org.junit.Test;
 
 import java.util.List;

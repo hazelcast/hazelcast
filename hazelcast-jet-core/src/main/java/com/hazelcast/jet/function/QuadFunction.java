@@ -17,11 +17,11 @@
 package com.hazelcast.jet.function;
 
 /**
- * Represents a three-arity function that accepts three arguments and
+ * Represents a four-arity function that accepts four arguments and
  * produces a result.
  */
 @FunctionalInterface
-public interface TriFunction<T0, T1, T2, R> {
+public interface QuadFunction<T0, T1, T2, T3, R> {
 
     /**
      * Applies this function to the given arguments.
@@ -29,7 +29,8 @@ public interface TriFunction<T0, T1, T2, R> {
      * @param t0 the first argument
      * @param t1 the second argument
      * @param t2 the third argument
+     * @param t3 the fourth argument
      * @return the function result
      */
-    R apply(T0 t0, T1 t1, T2 t2);
+    R apply(T0 t0, T1 t1, T2 t2, T3 t3);
 }

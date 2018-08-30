@@ -25,6 +25,9 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedQuadFunction;
+import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.QuadFunction;
 import com.hazelcast.jet.function.TriFunction;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,8 +52,6 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toList;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toSet;
 import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
@@ -480,14 +481,15 @@ public class BatchAggregateTest extends PipelineTestSupport {
     public void groupAggregate2_withAggrOp2_withOutputFn() {
         AggregateOperation1<Integer, ?, Long> aggrOp = summingLong(i -> i);
         testGroupAggregate2_withOutputFn((stage0, stage1, outputFn) ->
-                stage0.aggregate2(stage1, aggregateOperation2(aggrOp, aggrOp), outputFn));
+                stage0.aggregate2(stage1, aggregateOperation2(aggrOp, aggrOp),
+                        (key, tuple) -> outputFn.apply(key, tuple.f0(), tuple.f1())));
     }
 
     private void testGroupAggregate2_withOutputFn(
             TriFunction<
                     BatchStageWithKey<Integer, Integer>,
                     BatchStageWithKey<Integer, Integer>,
-                    DistributedBiFunction<Integer, Tuple2<Long, Long>, Long>,
+                    DistributedTriFunction<Integer, Long, Long, Long>,
                     BatchStage<Long>
                 > attachAggregatingStageFn
     ) {
@@ -497,7 +499,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         DistributedFunction<Integer, Integer> mapFn1 = i -> 10 * i;
         Collector<Integer, ?, Long> collectOp = Collectors.summingLong(i -> i);
         long a = 37;
-        DistributedBiFunction<Integer, Tuple2<Long, Long>, Long> outputFn = (k, v) -> v.f1() + a * (v.f0() + a * k);
+        DistributedTriFunction<Integer, Long, Long, Long> outputFn = (k, v0, v1) -> v1 + a * (v0 + a * k);
         String src1Name = randomMapName();
         putToBatchSrcMap(input);
         putToMap(jet().getMap(src1Name), input);
@@ -521,7 +523,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         keys.addAll(expectedAggr1.keySet());
         List<Long> expectedOutput = keys
             .stream()
-            .map(k -> outputFn.apply(k, tuple2(expectedAggr0.getOrDefault(k, 0L), expectedAggr1.getOrDefault(k, 0L))))
+            .map(k -> outputFn.apply(k, expectedAggr0.getOrDefault(k, 0L), expectedAggr1.getOrDefault(k, 0L)))
             .collect(Collectors.toList());
         assertEquals(toBag(expectedOutput), sinkToBag());
     }
@@ -605,18 +607,19 @@ public class BatchAggregateTest extends PipelineTestSupport {
     public void groupAggregate3_withAggrOp3_withOutputFn() {
         AggregateOperation1<Integer, ?, Long> aggrOp = summingLong(i -> i);
         testGroupAggregate3_withOutputFn((stage0, stage1, stage2, outputFn) ->
-                stage0.aggregate3(stage1, stage2, aggregateOperation3(aggrOp, aggrOp, aggrOp), outputFn)
+                stage0.aggregate3(stage1, stage2, aggregateOperation3(aggrOp, aggrOp, aggrOp),
+                        (key, tuple) -> outputFn.apply(key, tuple.f0(), tuple.f1(), tuple.f2()))
         );
     }
 
     private void testGroupAggregate3_withOutputFn(
             QuadFunction<
-                    BatchStageWithKey<Integer, Integer>,
-                    BatchStageWithKey<Integer, Integer>,
-                    BatchStageWithKey<Integer, Integer>,
-                    DistributedBiFunction<Integer, Tuple3<Long, Long, Long>, Long>,
-                    BatchStage<Long>
-                > attachAggregatingStageFn
+                BatchStageWithKey<Integer, Integer>,
+                BatchStageWithKey<Integer, Integer>,
+                BatchStageWithKey<Integer, Integer>,
+                DistributedQuadFunction<Integer, Long, Long, Long, Long>,
+                BatchStage<Long>
+            > attachAggregatingStageFn
     ) {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -625,8 +628,8 @@ public class BatchAggregateTest extends PipelineTestSupport {
         DistributedFunction<Integer, Integer> mapFn2 = i -> 100 * i;
         Collector<Integer, ?, Long> collectOp = Collectors.summingLong(i -> i);
         long a = 37;
-        DistributedBiFunction<Integer, Tuple3<Long, Long, Long>, Long> outputFn = (k, v) ->
-                v.f2() + a * (v.f1() + a * (v.f0() + a * k));
+        DistributedQuadFunction<Integer, Long, Long, Long, Long> outputFn = (k, v0, v1, v2) ->
+                v2 + a * (v1 + a * (v0 + a * k));
         String src1Name = randomMapName();
         String src2Name = randomMapName();
         putToBatchSrcMap(input);
@@ -660,11 +663,11 @@ public class BatchAggregateTest extends PipelineTestSupport {
         keys.addAll(expectedAggr2.keySet());
         List<Long> expectedOutput = keys
             .stream()
-            .map(k -> outputFn.apply(k, tuple3(
+            .map(k -> outputFn.apply(k,
                     expectedAggr0.getOrDefault(k, 0L),
                     expectedAggr1.getOrDefault(k, 0L),
                     expectedAggr2.getOrDefault(k, 0L)
-            )))
+            ))
             .collect(Collectors.toList());
         assertEquals(toBag(expectedOutput), sinkToBag());
     }
@@ -772,9 +775,5 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 )))
                 .collect(Collectors.toList());
         assertEquals(toBag(expectedOutput), sinkToBag());
-    }
-
-    interface QuadFunction<T0, T1, T2, T3, R> {
-        R apply(T0 t0, T1 t1, T2 t2, T3 t3);
     }
 }

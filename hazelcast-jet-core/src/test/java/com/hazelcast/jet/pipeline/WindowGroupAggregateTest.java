@@ -29,7 +29,7 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.function.TriFunction;
-import com.hazelcast.jet.pipeline.BatchAggregateTest.QuadFunction;
+import com.hazelcast.jet.function.QuadFunction;
 import org.junit.Test;
 
 import java.util.HashSet;

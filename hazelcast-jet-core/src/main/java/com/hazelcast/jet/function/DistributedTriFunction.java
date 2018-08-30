@@ -25,17 +25,17 @@ import java.io.Serializable;
  * exception.
  */
 @FunctionalInterface
-public interface DistributedTriFunction<T, U, V, R> extends TriFunction<T, U, V, R>, Serializable {
+public interface DistributedTriFunction<T0, T1, T2, R> extends TriFunction<T0, T1, T2, R>, Serializable {
 
     /**
-     * Exception-declaring version of {@link TriFunction#apply}.
+     * Exception-declaring variant of {@link TriFunction#apply}.
      */
-    R applyEx(T t, U u, V v) throws Exception;
+    R applyEx(T0 t0, T1 t1, T2 t2) throws Exception;
 
     @Override
-    default R apply(T t, U u, V v) {
+    default R apply(T0 t0, T1 t1, T2 t2) {
         try {
-            return applyEx(t, u, v);
+            return applyEx(t0, t1, t2);
         } catch (Exception e) {
             throw ExceptionUtil.sneakyThrow(e);
         }
