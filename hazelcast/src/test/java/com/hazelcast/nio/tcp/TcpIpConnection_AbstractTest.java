@@ -26,11 +26,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -40,6 +43,10 @@ import static org.junit.Assert.fail;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport {
+
+    private static final int PORT_A = 5701;
+    private static final int PORT_B = 5702;
+    private static final int PORT_C = 5703;
 
     protected EventLoopGroupFactory eventLoopGroupFactory = new Select_NioEventLoopGroupFactory();
 
@@ -65,9 +72,9 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
 
     @Before
     public void setup() throws Exception {
-        addressA = new Address("127.0.0.1", 5701);
-        addressB = new Address("127.0.0.1", 5702);
-        addressC = new Address("127.0.0.1", 5703);
+        addressA = new Address("127.0.0.1", PORT_A);
+        addressB = new Address("127.0.0.1", PORT_B);
+        addressC = new Address("127.0.0.1", PORT_C);
 
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
         logger = loggingService.getLogger(TcpIpConnection_AbstractTest.class);
@@ -98,6 +105,21 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         metricsRegistryA.shutdown();
         metricsRegistryB.shutdown();
         metricsRegistryC.shutdown();
+
+        assertPortAvailableForBinding(PORT_A);
+        assertPortAvailableForBinding(PORT_B);
+        assertPortAvailableForBinding(PORT_C);
+    }
+
+    private static void assertPortAvailableForBinding(int port) {
+        ServerSocket ss = null;
+        try {
+            ss = new ServerSocket(port);
+        } catch (IOException e) {
+            throw new IllegalStateException("Error while binding to port " + port, e);
+        } finally {
+            IOUtil.close(ss);
+        }
     }
 
     protected void startAllConnectionManagers() {
