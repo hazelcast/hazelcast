@@ -25,36 +25,28 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
-import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.TERMINATE;
 
 public enum TerminationMode {
 
     // terminate and restart the job
-    RESTART_GRACEFUL(true, RESTART, false, JobTerminateRequestedException::new),
-    RESTART_FORCEFUL(false, RESTART, false, JobTerminateRequestedException::new),
+    RESTART_GRACEFUL(true, RESTART, JobTerminateRequestedException::new),
+    RESTART_FORCEFUL(false, RESTART, JobTerminateRequestedException::new),
 
     // terminate and mark the job as suspended
-    SUSPEND_GRACEFUL(true, SUSPEND, false, JobTerminateRequestedException::new),
-    SUSPEND_FORCEFUL(false, SUSPEND, false, JobTerminateRequestedException::new),
-
-    // only terminate, don't restart and don't mark it as suspended. Used when
-    // master is gracefully shut down.
-    TERMINATE_GRACEFUL(true, TERMINATE, false, JobTerminateRequestedException::new),
-    TERMINATE_FORCEFUL(false, TERMINATE, false, JobTerminateRequestedException::new),
+    SUSPEND_GRACEFUL(true, SUSPEND, JobTerminateRequestedException::new),
+    SUSPEND_FORCEFUL(false, SUSPEND, JobTerminateRequestedException::new),
 
     // terminate and complete the job
-    CANCEL(false, TERMINATE, true, terminationMode -> new CancellationException());
+    CANCEL(false, ActionAfterTerminate.NO_ACTION, terminationMode -> new CancellationException());
 
     private final boolean withTerminalSnapshot;
     private final ActionAfterTerminate actionAfterTerminate;
-    private final boolean deleteData;
     private final Function<TerminationMode, Exception> exceptionFactory;
 
-    TerminationMode(boolean withTerminalSnapshot, ActionAfterTerminate actionAfterTerminate, boolean deleteData,
+    TerminationMode(boolean withTerminalSnapshot, ActionAfterTerminate actionAfterTerminate,
                     Function<TerminationMode, Exception> exceptionFactory) {
         this.withTerminalSnapshot = withTerminalSnapshot;
         this.actionAfterTerminate = actionAfterTerminate;
-        this.deleteData = deleteData;
         this.exceptionFactory = exceptionFactory;
     }
 
@@ -74,15 +66,6 @@ public enum TerminationMode {
     }
 
     /**
-     * If true, job resources and snapshots should be deleted after
-     * termination. Otherwise the job will remain ready to be restarted. It's
-     * true only for cancellation.
-     */
-    public boolean isDeleteData() {
-        return deleteData;
-    }
-
-    /**
      * Returns a copy of this TerminationMode with terminal snapshot disabled.
      */
     @CheckReturnValue
@@ -92,8 +75,6 @@ public enum TerminationMode {
             res = SUSPEND_FORCEFUL;
         } else if (this == RESTART_GRACEFUL) {
             res = RESTART_FORCEFUL;
-        } else if (this == TERMINATE_GRACEFUL) {
-            res = TERMINATE_FORCEFUL;
         }
         assert !res.isWithTerminalSnapshot() : "mode still has (withTerminalSnapshot == true): " + res;
         return res;
@@ -109,8 +90,7 @@ public enum TerminationMode {
         RESTART,
         /** Don't start the job again, mark the job as suspended. */
         SUSPEND,
-        /** Don't start the job again, don't mark the job as suspended - used when
-         * shutting down a member or cancelling. */
-        TERMINATE
+        /** Used when cancelling. */
+        NO_ACTION
     }
 }

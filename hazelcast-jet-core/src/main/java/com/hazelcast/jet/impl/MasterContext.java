@@ -80,9 +80,9 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.SnapshotRepository.snapshotDataMapName;
+import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.NO_ACTION;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
-import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.TERMINATE;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
 import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
@@ -732,7 +732,7 @@ public class MasterContext {
                 nonSynchronizedAction = () -> coordinationService.restartJob(jobId);
             } else if ((failure instanceof RestartableException || failure instanceof TopologyChangedException)
                     && jobRecord.getConfig().isAutoScaling()) {
-                // if restart is due to a failure, restart with a delay
+                // if restart is due to a failure, schedule a restart after a delay
                 scheduleRestart();
             } else if (terminationModeAction == SUSPEND
                     || (failure instanceof RestartableException || failure instanceof TopologyChangedException)
@@ -740,8 +740,7 @@ public class MasterContext {
                 jobStatus = SUSPENDED;
                 jobRecord = jobRecord.withSuspended(true);
                 nonSynchronizedAction = () -> coordinationService.suspendJob(this);
-            } else if (terminationModeAction == TERMINATE) {
-                // leave the job not-suspended, not-restarted. New master will pick it up.
+            } else if (terminationModeAction == NO_ACTION) {
                 jobStatus = NOT_RUNNING;
             } else {
                 jobStatus = (isSuccess ? COMPLETED : FAILED);

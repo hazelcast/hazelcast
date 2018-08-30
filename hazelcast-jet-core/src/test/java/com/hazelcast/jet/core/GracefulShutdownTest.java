@@ -234,7 +234,6 @@ public class GracefulShutdownTest extends JetTestSupport {
             } else {
                 assertFalse(jobDone);
             }
-            System.out.println("aaa");
             sleepMillis(200);
         }
 
