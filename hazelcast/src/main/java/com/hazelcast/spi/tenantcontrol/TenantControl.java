@@ -1,11 +1,11 @@
 /*
- * Copyright 2008-2018 Hazelcast, Inc..
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.spi;
+package com.hazelcast.spi.tenantcontrol;
 
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.NoopTenantControl;
@@ -34,7 +34,7 @@ import java.io.Serializable;
 @Beta
 public interface TenantControl extends Serializable {
 
-    final TenantControl NOOP_TENANT_CONTROL = new NoopTenantControl();
+    TenantControl NOOP_TENANT_CONTROL = new NoopTenantControl();
 
     /**
      * To be called from the application's thread to connect a Hazelcast object
@@ -77,23 +77,4 @@ public interface TenantControl extends Serializable {
      * This is so the TenantControl itself can be garbage collected
      */
     public void unregister();
-
-    /**
-     * Hook to decouple Hazelcast object from the tenant
-     */
-    interface DestroyEventContext extends Serializable {
-        /**
-         * called to decouple Hazelcast object from the tenant
-         *
-         * @param <TT> context type
-         * @param context to use to delete the cache
-         */
-        <TT> void destroy(TT context);
-
-        /**
-         * @return context type so the tenant control implementor knows
-         * what context to send to the destroy() method
-         */
-        Class<?> getContextType();
-    }
 }

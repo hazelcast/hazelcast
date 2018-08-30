@@ -24,10 +24,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.BinaryInterface;
-import com.hazelcast.spi.TenantControl;
-import com.hazelcast.util.ServiceLoader;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -46,7 +42,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cache.CacheUtil.getPrefix;
-import static com.hazelcast.spi.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SetUtil.createLinkedHashSet;
@@ -69,8 +64,6 @@ import static com.hazelcast.util.SetUtil.createLinkedHashSet;
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractHazelcastCacheManager implements HazelcastCacheManager {
-
-    public static final String TENANT_CONTROL = "com.hazelcast.spi.TenantControl";
 
     protected final ConcurrentMap<String, ICacheInternal<?, ?>> caches
             = new ConcurrentHashMap<String, ICacheInternal<?, ?>>();
@@ -410,20 +403,6 @@ public abstract class AbstractHazelcastCacheManager implements HazelcastCacheMan
         cacheConfig.setName(cacheName);
         cacheConfig.setManagerPrefix(this.cacheNamePrefix);
         cacheConfig.setUriString(getURI().toString());
-        // associate cache config with the current thread's tenant
-        // and add hook so when the tenant is destroyed, so is the cache config
-        TenantControl tenantControl = null;
-        try {
-            tenantControl = ServiceLoader.load(TenantControl.class, TENANT_CONTROL, getConfigClassLoader());
-        } catch (Exception e) {
-            if (getLogger().isFinestEnabled()) {
-                getLogger().finest("Could not load service provider for TenantControl", e);
-            }
-        }
-        if (tenantControl == null) {
-            tenantControl = NOOP_TENANT_CONTROL;
-        }
-        cacheConfig.setTenantControl(tenantControl.saveCurrentTenant(new DestroyEventImpl(cacheName)));
         return cacheConfig;
     }
 
@@ -453,40 +432,4 @@ public abstract class AbstractHazelcastCacheManager implements HazelcastCacheMan
     protected abstract void postClose();
 
     protected abstract void onShuttingDown();
-
-    protected abstract ClassLoader getConfigClassLoader();
-
-    protected abstract ILogger getLogger();
-
-    /**
-     * When the tenant application is destroyed,
-     * Remove the cache configuration from the local node only
-     * If there are other replicas of the cache, leave them alone
-     * If the tenant is ever re-deployed, it will get the new configuration
-     * from the remote node, or the cache will be re-created if it's not replicated
-     */
-    @BinaryInterface
-    private static class DestroyEventImpl implements TenantControl.DestroyEventContext {
-        private final String cacheName;
-
-        public DestroyEventImpl(String cacheName) {
-            this.cacheName = cacheName;
-        }
-
-        @Override
-        public<TT> void destroy(TT manager) {
-            // TODO should be remove, not destroy cache,
-            // but errors remain if a new class tries to load old objects,
-            // should be some way to serialize objects here and deserialize them
-            // when starting another version of the client
-            ((AbstractHazelcastCacheManager)manager).removeCache(cacheName, true);
-        }
-
-        @Override
-        public Class<?> getContextType() {
-            return AbstractHazelcastCacheManager.class;
-        }
-
-        private static final long serialVersionUID = 1L;
-    }
 }

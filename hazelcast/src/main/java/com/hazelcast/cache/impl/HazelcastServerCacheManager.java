@@ -210,15 +210,6 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
         close();
     }
 
-    @Override
-    protected ClassLoader getConfigClassLoader() {
-        return nodeEngine.getConfigClassLoader();
-    }
-
-    protected ILogger getLogger() {
-        return logger;
-    }
-
     public ICacheService getCacheService() {
         return cacheService;
     }

@@ -17,7 +17,8 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.spi.TenantControl;
+import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import java.io.Closeable;
 
@@ -48,5 +49,15 @@ public final class NoopTenantControl implements TenantControl {
         @Override
         public void close() {
         }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof NoopTenantControl;
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
     }
 }
