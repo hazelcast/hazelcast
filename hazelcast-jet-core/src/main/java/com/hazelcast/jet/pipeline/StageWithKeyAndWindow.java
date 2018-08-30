@@ -33,6 +33,7 @@ import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
+import static com.hazelcast.jet.aggregate.AggregateOperations.pickAny;
 
 /**
  * Represents an intermediate step in the construction of a pipeline stage
@@ -72,9 +73,9 @@ public interface StageWithKeyAndWindow<T, K> {
      * @return the newly attached stage
      */
     @Nonnull
-    <R> StreamStage<R> distinct(
-            @Nonnull WindowResultFunction<? super T, ? extends R> mapToOutputFn
-    );
+    default <R> StreamStage<R> distinct(@Nonnull WindowResultFunction<? super T, ? extends R> mapToOutputFn) {
+        return aggregate(pickAny(), mapToOutputFn.toKeyedWindowResultFn());
+    }
 
     /**
      * Attaches a stage that passes through just the items that are distinct
