@@ -249,6 +249,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (maxIdleMillis < 1L || maxIdleMillis == Long.MAX_VALUE) {
             return false;
         }
+
         long idlenessStartTime = getIdlenessStartTime(record);
         long idleMillis = calculateExpirationWithDelay(maxIdleMillis, expiryDelayMillis, backup);
         long elapsedMillis = now - idlenessStartTime;
@@ -326,8 +327,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private void accumulateOrSendExpiredKey(Record record) {
-        if (mapContainer.getMapConfig().getMaxIdleSeconds() <= 0
-                || mapContainer.getTotalBackupCount() == 0) {
+        if (mapContainer.getTotalBackupCount() == 0) {
             return;
         }
 
