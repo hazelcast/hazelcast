@@ -329,7 +329,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (value != null) {
             record = createRecord(value, DEFAULT_TTL, DEFAULT_MAX_IDLE, getNow());
             storage.put(key, record);
-            mutationObserver.onPutRecord(key, record);
+            mutationObserver.onLoadRecord(key, record);
             if (!backup) {
                 saveIndex(record, null);
                 mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED,
@@ -917,7 +917,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = mapServiceContext.interceptPut(name, null, value);
             record = createRecord(value, ttl, maxIdle, now);
             storage.put(key, record);
-            mutationObserver.onPutRecord(key, record);
+            if (canPublishLoadEvent()) {
+                mutationObserver.onLoadRecord(key, record);
+            } else {
+                mutationObserver.onPutRecord(key, record);
+            }
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);

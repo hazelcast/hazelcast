@@ -74,6 +74,13 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
     }
 
     @Override
+    public void onLoadRecord(Data key, R record) {
+        for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
+            mutationObserver.onLoadRecord(key, record);
+        }
+    }
+
+    @Override
     public void onDestroy(boolean internal) {
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onDestroy(internal);

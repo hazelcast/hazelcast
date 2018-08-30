@@ -52,6 +52,6 @@ public interface EventJournalEventAdapter<K, V, EJ_TYPE> extends Serializable {
      * events may have separate enums for event types.
      */
     enum EventType {
-        ADDED, REMOVED, UPDATED, EVICTED;
+        ADDED, REMOVED, UPDATED, EVICTED, LOADED;
     }
 }
