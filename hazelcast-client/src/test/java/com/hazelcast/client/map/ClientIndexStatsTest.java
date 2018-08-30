@@ -130,7 +130,8 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         LocalMapStats stats1 = map1.getLocalMapStats();
         LocalMapStats stats2 = map2.getLocalMapStats();
 
-        List<Indexes> allIndexes = getAllIndexes(map1);
+        List<Indexes> allIndexes = new ArrayList<Indexes>();
+        allIndexes.addAll(getAllIndexes(map1));
         allIndexes.addAll(getAllIndexes(map2));
 
         LocalMapStatsImpl combinedStats = new LocalMapStatsImpl();
