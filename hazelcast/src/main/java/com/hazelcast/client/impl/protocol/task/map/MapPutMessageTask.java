@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
@@ -33,6 +34,14 @@ public class MapPutMessageTask
 
     public MapPutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected void beforeProcess() {
+        super.beforeProcess();
+        if (parameters.maxIdleExist && nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
+            throw new UnsupportedOperationException("Setting MaxIdle is available when cluster version is 3.11 or higher");
+        }
     }
 
     @Override

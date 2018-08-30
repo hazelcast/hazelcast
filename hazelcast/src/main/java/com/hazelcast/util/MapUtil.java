@@ -25,9 +25,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 /**
  * Utility class for Maps
  */
@@ -104,7 +101,4 @@ public final class MapUtil {
         return map == null || map.isEmpty();
     }
 
-    public static long zeroOutMillis(long value) {
-        return SECONDS.toMillis(MILLISECONDS.toSeconds(value));
-    }
 }

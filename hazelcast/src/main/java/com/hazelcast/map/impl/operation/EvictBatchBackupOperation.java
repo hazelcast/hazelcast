@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static com.hazelcast.util.MapUtil.zeroOutMillis;
 import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.util.TimeUtil.zeroOutMs;
 
 /**
  * Used to transfer expired keys from owner replica to backup replicas.
@@ -95,7 +95,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         // to backups, backups should not remove it. Comparing creation times to be sure that
         // we are deleting correct record.
         // since 3.11, creationTime is maintained at second accuracy
-        return existingRecord.getCreationTime() == zeroOutMillis(expiredKey.getCreationTime());
+        return existingRecord.getCreationTime() == zeroOutMs(expiredKey.getCreationTime());
     }
 
     @Override

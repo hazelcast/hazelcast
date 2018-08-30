@@ -166,7 +166,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -174,6 +174,8 @@ import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static com.hazelcast.util.TimeUtil.timeInMsOrTimeIfNullUnit;
+import static com.hazelcast.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -313,7 +315,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public V put(K key, V value) {
-        return put(key, value, -1, MILLISECONDS);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+        return putInternal(DEFAULT_TTL, MILLISECONDS, null, null, key, value);
     }
 
     @Override
@@ -414,7 +419,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public ICompletableFuture<V> putAsync(K key, V value) {
-        return putAsync(key, value, -1, MILLISECONDS);
+        return putAsyncInternal(DEFAULT_TTL, MILLISECONDS, null, null, key, value);
     }
 
     @Override
@@ -422,7 +427,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return putAsyncInternal(ttl, timeunit, DEFAULT_MAX_IDLE, MILLISECONDS, key, value);
+        return putAsyncInternal(ttl, timeunit, null, null, key, value);
     }
 
     @Override
@@ -433,14 +438,19 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return putAsyncInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
 
-    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit,
+    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
                                                      Object key, Object value) {
         try {
             Data keyData = toData(key);
             Data valueData = toData(value);
-            long ttlMillis = getTimeInMillis(ttl, timeunit);
-            long maxIdleMillis = getTimeInMillis(maxIdle, maxIdleUnit);
-            ClientMessage request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis, maxIdleMillis);
+            long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, timeunit);
+            ClientMessage request;
+            if (maxIdle != null) {
+                request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(),
+                        ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+            } else {
+                request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
+            }
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             return new ClientDelegatingFuture<V>(future, getSerializationService(), PUT_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
@@ -458,7 +468,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return setAsyncInternal(ttl, timeunit, DEFAULT_MAX_IDLE, MILLISECONDS, key, value);
+        return setAsyncInternal(ttl, timeunit, null, null, key, value);
     }
 
     @Override
@@ -469,14 +479,20 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return setAsyncInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
 
-    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit,
+    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
                                                         Object key, Object value) {
         try {
             Data keyData = toData(key);
             Data valueData = toData(value);
-            long ttlMillis = getTimeInMillis(ttl, timeunit);
-            long maxIdleMillis = getTimeInMillis(maxIdle, maxIdleUnit);
-            ClientMessage request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis, maxIdleMillis);
+            long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, timeunit);
+            ClientMessage request;
+            if (maxIdle != null) {
+                request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(),
+                        ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+            } else {
+                request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
+            }
+
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             return new ClientDelegatingFuture<Void>(future, getSerializationService(), SET_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
@@ -526,7 +542,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     protected boolean tryPutInternal(long timeout, TimeUnit timeunit, Object key, Object value) {
         Data keyData = toData(key);
         Data valueData = toData(value);
-        long timeoutMillis = getTimeInMillis(timeout, timeunit);
+        long timeoutMillis = timeInMsOrOneIfResultIsZero(timeout, timeunit);
         ClientMessage request = MapTryPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), timeoutMillis);
         ClientMessage response = invoke(request, keyData);
         MapTryPutCodec.ResponseParameters resultParameters = MapTryPutCodec.decodeResponse(response);
@@ -538,16 +554,20 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return putInternal(ttl, timeunit, DEFAULT_MAX_IDLE, MILLISECONDS, key, value);
+        return putInternal(ttl, timeunit, null, null, key, value);
     }
 
-    protected V putInternal(long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit, Object key, Object value) {
+    protected V putInternal(long ttl, TimeUnit ttlUnit, Long maxIdle, TimeUnit maxIdleUnit, Object key, Object value) {
         Data keyData = toData(key);
         Data valueData = toData(value);
-        long ttlMillis = getTimeInMillis(ttl, ttlUnit);
-        long maxIdleMillis = getTimeInMillis(maxIdle, maxIdleUnit);
-        ClientMessage request = MapPutCodec.encodeRequest(name, keyData, valueData,
-                getThreadId(), ttlMillis, maxIdleMillis);
+        long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, ttlUnit);
+        ClientMessage request;
+        if (maxIdle != null) {
+            request = MapPutCodec.encodeRequest(name, keyData, valueData,
+                    getThreadId(), ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+        } else {
+            request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
+        }
         ClientMessage response = invoke(request, keyData);
         MapPutCodec.ResponseParameters resultParameters = MapPutCodec.decodeResponse(response);
         return toObject(resultParameters.response);
@@ -558,7 +578,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        putTransientInternal(ttl, timeunit, DEFAULT_MAX_IDLE, MILLISECONDS, key, value);
+        putTransientInternal(ttl, timeunit, null, null, key, value);
     }
 
     @Override
@@ -569,20 +589,28 @@ public class ClientMapProxy<K, V> extends ClientProxy
         putTransientInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
 
-    protected void putTransientInternal(long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit,
+    protected void putTransientInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
                                         Object key, Object value) {
         Data keyData = toData(key);
         Data valueData = toData(value);
-        long ttlMillis = getTimeInMillis(ttl, timeunit);
-        long maxIdleMillis = getTimeInMillis(maxIdle, maxIdleUnit);
-        ClientMessage request = MapPutTransientCodec.encodeRequest(name, keyData, valueData,
-                getThreadId(), ttlMillis, maxIdleMillis);
+        long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, timeunit);
+        ClientMessage request;
+        if (maxIdle != null) {
+            request = MapPutTransientCodec.encodeRequest(name, keyData, valueData,
+                    getThreadId(), ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+        } else {
+            request = MapPutTransientCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
+        }
+
         invoke(request, keyData);
     }
 
     @Override
     public V putIfAbsent(K key, V value) {
-        return putIfAbsent(key, value, -1, MILLISECONDS);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+        return putIfAbsentInternal(DEFAULT_TTL, MILLISECONDS, null, null, key, value);
     }
 
     @Override
@@ -590,7 +618,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return putIfAbsentInternal(ttl, timeunit, DEFAULT_MAX_IDLE, MILLISECONDS, key, value);
+        return putIfAbsentInternal(ttl, timeunit, null, null, key, value);
     }
 
     @Override
@@ -601,13 +629,19 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return putIfAbsentInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
 
-    protected V putIfAbsentInternal(long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit, Object key, Object value) {
+    protected V putIfAbsentInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit, Object key, Object value) {
         Data keyData = toData(key);
         Data valueData = toData(value);
-        long ttlMillis = getTimeInMillis(ttl, timeunit);
-        long maxIdleMillis = getTimeInMillis(maxIdle, maxIdleUnit);
-        ClientMessage request = MapPutIfAbsentCodec.encodeRequest(name, keyData, valueData,
-                getThreadId(), ttlMillis, maxIdleMillis);
+        long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, timeunit);
+        ClientMessage request;
+        if (maxIdle != null) {
+             request = MapPutIfAbsentCodec.encodeRequest(name, keyData, valueData,
+                    getThreadId(), ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+        } else {
+             request = MapPutIfAbsentCodec.encodeRequest(name, keyData, valueData,
+                    getThreadId(), ttlMillis);
+        }
+
         ClientMessage result = invoke(request, keyData);
         MapPutIfAbsentCodec.ResponseParameters resultParameters = MapPutIfAbsentCodec.decodeResponse(result);
         return toObject(resultParameters.response);
@@ -654,7 +688,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        setInternal(ttl, timeunit, DEFAULT_MAX_IDLE, MILLISECONDS, key, value);
+        setInternal(ttl, timeunit, null, null, key, value);
     }
 
     @Override
@@ -665,13 +699,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
         setInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
 
-    protected void setInternal(long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit, Object key, Object value) {
+    protected void setInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit, Object key, Object value) {
         Data keyData = toData(key);
         Data valueData = toData(value);
-        long ttlMillis = getTimeInMillis(ttl, timeunit);
-        long maxIdleMillis = getTimeInMillis(maxIdle, maxIdleUnit);
-        ClientMessage request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis, maxIdleMillis);
-
+        long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, timeunit);
+        ClientMessage request;
+        if (maxIdle != null) {
+            request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(),
+                    ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+        } else {
+            request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
+        }
         invoke(request, keyData);
     }
 
@@ -684,8 +722,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
-        ClientMessage request = MapLockCodec.encodeRequest(name, keyData, getThreadId(), getTimeInMillis(leaseTime, timeUnit),
-                lockReferenceIdGenerator.getNextReferenceId());
+        ClientMessage request = MapLockCodec.encodeRequest(name, keyData, getThreadId(),
+                timeInMsOrTimeIfNullUnit(leaseTime, timeUnit), lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData, Long.MAX_VALUE);
     }
 
@@ -730,8 +768,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
-        long leaseTimeMillis = getTimeInMillis(leaseTime, leaseUnit);
-        long timeoutMillis = getTimeInMillis(time, timeunit);
+        long leaseTimeMillis = timeInMsOrTimeIfNullUnit(leaseTime, leaseUnit);
+        long timeoutMillis = timeInMsOrTimeIfNullUnit(time, timeunit);
         ClientMessage request = MapTryLockCodec.encodeRequest(name, keyData, getThreadId(), leaseTimeMillis, timeoutMillis,
                 lockReferenceIdGenerator.getNextReferenceId());
 
@@ -1776,10 +1814,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     // used for testing
     public ClientQueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
-    }
-
-    private long getTimeInMillis(long time, TimeUnit timeunit) {
-        return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
     private EventHandler<ClientMessage> createHandler(ListenerAdapter<IMapEvent> listenerAdapter) {
