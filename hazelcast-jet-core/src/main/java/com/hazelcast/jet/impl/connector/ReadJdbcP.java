@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.pipeline.ToResultSetFunction;
+import com.hazelcast.jet.function.ToResultSetFunction;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;

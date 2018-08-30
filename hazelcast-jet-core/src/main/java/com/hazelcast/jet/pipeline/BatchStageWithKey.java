@@ -35,10 +35,10 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
 
 /**
- * Represents an intermediate step while constructing a group-and-aggregate
- * batch pipeline stage. It captures the grouping key and offers the methods
- * to finalize the construction by specifying the aggregate operation and
- * any additional pipeline stages contributing their data to a
+ * An intermediate step while constructing a group-and-aggregate batch
+ * pipeline stage. It captures the grouping key and offers the methods to
+ * finalize the construction by specifying the aggregate operation and any
+ * additional pipeline stages contributing their data to a
  * co-group-and-aggregate stage.
  *
  * @param <T> type of the input item

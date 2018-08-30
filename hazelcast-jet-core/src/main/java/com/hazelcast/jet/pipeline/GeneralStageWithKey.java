@@ -31,8 +31,8 @@ import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 
 /**
- * Represents an intermediate step when constructing a group-and-aggregate
- * pipeline stage. This is the base type for the batch and stream variants.
+ * An intermediate step when constructing a group-and-aggregate pipeline
+ * stage. This is the base type for the batch and stream variants.
  *
  * @param <T> type of the stream item
  * @param <K> type of the grouping key

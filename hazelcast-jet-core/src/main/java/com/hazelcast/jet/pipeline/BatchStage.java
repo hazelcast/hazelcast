@@ -40,10 +40,9 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 
 /**
- * Represents a stage in a distributed computation {@link Pipeline
- * pipeline} that will observe a finite amount of data (a batch). It
- * accepts input from its upstream stages (if any) and passes its output
- * to its downstream stages.
+ * A stage in a distributed computation {@link Pipeline pipeline} that will
+ * observe a finite amount of data (a batch). It accepts input from its
+ * upstream stages (if any) and passes its output to its downstream stages.
  *
  * @param <T> the type of items coming out of this stage
  */

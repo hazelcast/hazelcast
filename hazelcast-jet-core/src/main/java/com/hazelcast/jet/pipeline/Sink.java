@@ -17,8 +17,8 @@
 package com.hazelcast.jet.pipeline;
 
 /**
- * Represents a data sink in a Jet pipeline. It accepts the data the
- * pipeline processed and exports it to an external system.
+ * A data sink in a Jet pipeline. It accepts the data the pipeline
+ * processed and exports it to an external system.
  *
  * @see Sinks sink factory methods
  *

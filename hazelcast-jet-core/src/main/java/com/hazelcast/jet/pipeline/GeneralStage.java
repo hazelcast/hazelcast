@@ -34,9 +34,8 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 
 /**
- * Represents the common aspect of {@link BatchStage batch} and {@link
- * StreamStage stream} pipeline stages, defining those operations that
- * apply to both.
+ * The common aspect of {@link BatchStage batch} and {@link StreamStage
+ * stream} pipeline stages, defining those operations that apply to both.
  * <p>
  * Unless specified otherwise, all functions passed to methods of this
  * interface must be stateless.

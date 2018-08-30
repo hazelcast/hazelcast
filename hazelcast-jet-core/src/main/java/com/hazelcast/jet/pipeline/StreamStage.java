@@ -31,10 +31,10 @@ import com.hazelcast.jet.function.DistributedTriFunction;
 import javax.annotation.Nonnull;
 
 /**
- * Represents a stage in a distributed computation {@link Pipeline
- * pipeline} that will observe an unbounded amount of data (i.e., an event
- * stream). It accepts input from its upstream stages (if any) and passes
- * its output to its downstream stages.
+ * A stage in a distributed computation {@link Pipeline pipeline} that will
+ * observe an unbounded amount of data (i.e., an event stream). It accepts
+ * input from its upstream stages (if any) and passes its output to its
+ * downstream stages.
  *
  * @param <T> the type of items coming out of this stage
  */

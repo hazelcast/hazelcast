@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.pipeline;
+package com.hazelcast.jet.function;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -22,10 +22,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * Represents a function that accepts a JDBC connection to the database,
- * the total parallelism and processor index as arguments and produces a
- * result set. This result set should return a part of the whole result
- * set specific to this processor.
+ * A function that accepts a JDBC connection to the database, the total
+ * parallelism and processor index as arguments and produces a result set.
+ * This result set should return a part of the whole result set specific to
+ * this processor.
  */
 @FunctionalInterface
 public interface ToResultSetFunction extends Serializable {

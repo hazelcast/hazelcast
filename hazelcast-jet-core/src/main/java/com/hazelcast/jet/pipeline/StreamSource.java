@@ -19,8 +19,8 @@ package com.hazelcast.jet.pipeline;
 import javax.annotation.Nonnull;
 
 /**
- * Represents an infinite source of data for a Jet pipeline. To aggregate
- * the data from an infinite source, you must specify how to {@link
+ * An infinite source of data for a Jet pipeline. To aggregate the data
+ * from an infinite source, you must specify how to {@link
  * StreamStage#window window} it into finite subsets over which Jet will
  * perform the aggregation.
  *
