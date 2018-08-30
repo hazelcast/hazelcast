@@ -43,10 +43,13 @@ public class TcpIpConnectionChannelErrorHandler implements ChannelErrorHandler {
             logger.severe(error);
         } else {
             TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
-            if (error instanceof EOFException) {
-                connection.close("Connection closed by the other side", error);
+            if (connection != null) {
+                String closeReason = (error instanceof EOFException)
+                        ? "Connection closed by the other side"
+                        : "Exception in " + connection + ", thread=" + Thread.currentThread().getName();
+                connection.close(closeReason, error);
             } else {
-                connection.close("Exception in " + connection + ", thread=" + Thread.currentThread().getName(), error);
+                logger.warning("Channel error occured", error);
             }
         }
     }
