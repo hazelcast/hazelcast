@@ -1110,6 +1110,10 @@ abstract class MapProxySupport<K, V>
         }
     }
 
+    /**
+     * TODO This method can be replaced with {@code executeOnKeysInternalAsync(...).get()}
+     * after feature freeze.
+     */
     public Map<K, Object> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys, EntryProcessor entryProcessor) {
         // TODO: why are we not forwarding to executeOnKeysInternal(keys, entryProcessor, null) or some other kind of fake
         // callback? now there is a lot of code duplication
@@ -1134,6 +1138,9 @@ abstract class MapProxySupport<K, V>
         return result;
     }
 
+    /**
+     * Async version of {@link #executeOnKeysInternal}.
+     */
     public ICompletableFuture<Map<K, Object>> executeOnKeysInternalAsync(Set<K> keys, Set<Data> dataKeys,
                 EntryProcessor entryProcessor, final ExecutionCallback<Map<K, Object>> callback) {
         if (dataKeys.isEmpty()) {
