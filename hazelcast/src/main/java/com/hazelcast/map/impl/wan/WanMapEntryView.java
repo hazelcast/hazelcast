@@ -14,49 +14,52 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.wan;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_11;
-
 /**
- * SimpleEntryView is an implementation of {@link com.hazelcast.core.EntryView} and also it is writable.
+ * WAN heap based implementation of {@link EntryView} for keeping
+ * compatibility when sending to older (3.8+) clusters.
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-@SuppressWarnings("checkstyle:methodcount")
-public class SimpleEntryView<K, V>
-        implements EntryView<K, V>, IdentifiedDataSerializable, Versioned {
+@BinaryInterface
+public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSerializable {
 
-    private K key;
-    private V value;
+    private final K key;
+    private final V value;
+    private final long cost;
+    private final long creationTime;
+    private final long expirationTime;
+    private final long hits;
+    private final long lastAccessTime;
+    private final long lastStoredTime;
+    private final long lastUpdateTime;
+    private final long version;
+    private final long ttl;
 
-    private long cost;
-    private long creationTime;
-    private long expirationTime;
-    private long hits;
-    private long lastAccessTime;
-    private long lastStoredTime;
-    private long lastUpdateTime;
-    private long version;
-    private long ttl;
-    private long maxIdle;
-
-    public SimpleEntryView(K key, V value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    public SimpleEntryView() {
+    public WanMapEntryView(EntryView<K, V> entryView) {
+        this.key = entryView.getKey();
+        this.value = entryView.getValue();
+        this.cost = entryView.getCost();
+        this.version = entryView.getVersion();
+        this.hits = entryView.getHits();
+        this.lastAccessTime = entryView.getLastAccessTime();
+        this.lastUpdateTime = entryView.getLastUpdateTime();
+        this.ttl = entryView.getTtl();
+        this.creationTime = entryView.getCreationTime();
+        this.expirationTime = entryView.getExpirationTime();
+        this.lastStoredTime = entryView.getLastStoredTime();
     }
 
     @Override
@@ -64,27 +67,9 @@ public class SimpleEntryView<K, V>
         return key;
     }
 
-    public void setKey(K key) {
-        this.key = key;
-    }
-
-    public SimpleEntryView<K, V> withKey(K key) {
-        this.key = key;
-        return this;
-    }
-
     @Override
     public V getValue() {
         return value;
-    }
-
-    public void setValue(V value) {
-        this.value = value;
-    }
-
-    public SimpleEntryView<K, V> withValue(V value) {
-        this.value = value;
-        return this;
     }
 
     @Override
@@ -92,27 +77,9 @@ public class SimpleEntryView<K, V>
         return cost;
     }
 
-    public void setCost(long cost) {
-        this.cost = cost;
-    }
-
-    public SimpleEntryView<K, V> withCost(long cost) {
-        this.cost = cost;
-        return this;
-    }
-
     @Override
     public long getCreationTime() {
         return creationTime;
-    }
-
-    public void setCreationTime(long creationTime) {
-        this.creationTime = creationTime;
-    }
-
-    public SimpleEntryView<K, V> withCreationTime(long creationTime) {
-        this.creationTime = creationTime;
-        return this;
     }
 
     @Override
@@ -120,27 +87,9 @@ public class SimpleEntryView<K, V>
         return expirationTime;
     }
 
-    public void setExpirationTime(long expirationTime) {
-        this.expirationTime = expirationTime;
-    }
-
-    public SimpleEntryView<K, V> withExpirationTime(long expirationTime) {
-        this.expirationTime = expirationTime;
-        return this;
-    }
-
     @Override
     public long getHits() {
         return hits;
-    }
-
-    public void setHits(long hits) {
-        this.hits = hits;
-    }
-
-    public SimpleEntryView<K, V> withHits(long hits) {
-        this.hits = hits;
-        return this;
     }
 
     @Override
@@ -148,27 +97,9 @@ public class SimpleEntryView<K, V>
         return lastAccessTime;
     }
 
-    public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = lastAccessTime;
-    }
-
-    public SimpleEntryView<K, V> withLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = lastAccessTime;
-        return this;
-    }
-
     @Override
     public long getLastStoredTime() {
         return lastStoredTime;
-    }
-
-    public void setLastStoredTime(long lastStoredTime) {
-        this.lastStoredTime = lastStoredTime;
-    }
-
-    public SimpleEntryView<K, V> withLastStoredTime(long lastStoredTime) {
-        this.lastStoredTime = lastStoredTime;
-        return this;
     }
 
     @Override
@@ -176,27 +107,9 @@ public class SimpleEntryView<K, V>
         return lastUpdateTime;
     }
 
-    public void setLastUpdateTime(long lastUpdateTime) {
-        this.lastUpdateTime = lastUpdateTime;
-    }
-
-    public SimpleEntryView<K, V> withLastUpdateTime(long lastUpdateTime) {
-        this.lastUpdateTime = lastUpdateTime;
-        return this;
-    }
-
     @Override
     public long getVersion() {
         return version;
-    }
-
-    public void setVersion(long version) {
-        this.version = version;
-    }
-
-    public SimpleEntryView<K, V> withVersion(long version) {
-        this.version = version;
-        return this;
     }
 
     @Override
@@ -204,27 +117,9 @@ public class SimpleEntryView<K, V>
         return ttl;
     }
 
-    public void setTtl(long ttl) {
-        this.ttl = ttl;
-    }
-
-    public SimpleEntryView<K, V> withTtl(long ttl) {
-        this.ttl = ttl;
-        return this;
-    }
-
     @Override
     public long getMaxIdle() {
-        return maxIdle;
-    }
-
-    public void setMaxIdle(long maxIdle) {
-        this.maxIdle = maxIdle;
-    }
-
-    public SimpleEntryView<K, V> withMaxIdle(long maxIdle) {
-        this.maxIdle = maxIdle;
-        return this;
+        return 0;
     }
 
     /**
@@ -257,43 +152,24 @@ public class SimpleEntryView<K, V>
         // writes the deprecated evictionCriteriaNumber to the data output (client protocol compatibility)
         out.writeLong(0);
         out.writeLong(ttl);
-        // RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            out.writeLong(maxIdle);
-        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = IOUtil.readObject(in);
-        value = IOUtil.readObject(in);
-        cost = in.readLong();
-        creationTime = in.readLong();
-        expirationTime = in.readLong();
-        hits = in.readLong();
-        lastAccessTime = in.readLong();
-        lastStoredTime = in.readLong();
-        lastUpdateTime = in.readLong();
-        version = in.readLong();
-        // reads the deprecated evictionCriteriaNumber from the data input (client protocol compatibility)
-        in.readLong();
-        ttl = in.readLong();
-        // RU_COMPAT_3_10
-        // DO NOT REMOVE UNTIL WAN PROTOCOL HAS BEEN IMPLEMENTED
-        // THE SOURCE CLUSTER SERIALIZES THE com.hazelcast.map.impl.wan.WanMapEntryView
-        // THE TARGET CLUSTER SHOULD DESERIALIZE THIS CLASS
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            maxIdle = in.readLong();
-        }
+        throw new UnsupportedOperationException(getClass().getName() + " should not be deserialized!");
     }
 
     @Override
     public int getFactoryId() {
+        // needs to have same factoryId and ID as SimpleEntryView
+        // for backwards compatibility when sending to a 3.8+ cluster
         return MapDataSerializerHook.F_ID;
     }
 
     @Override
     public int getId() {
+        // needs to have same factoryId and ID as SimpleEntryView
+        // for backwards compatibility when sending to a 3.8+ cluster
         return MapDataSerializerHook.ENTRY_VIEW;
     }
 
@@ -307,7 +183,7 @@ public class SimpleEntryView<K, V>
             return false;
         }
 
-        SimpleEntryView<?, ?> that = (SimpleEntryView<?, ?>) o;
+        WanMapEntryView<?, ?> that = (WanMapEntryView<?, ?>) o;
         if (cost != that.cost) {
             return false;
         }
@@ -335,9 +211,6 @@ public class SimpleEntryView<K, V>
         if (ttl != that.ttl) {
             return false;
         }
-        if (maxIdle != that.maxIdle) {
-            return false;
-        }
         if (key != null ? !key.equals(that.key) : that.key != null) {
             return false;
         }
@@ -357,13 +230,12 @@ public class SimpleEntryView<K, V>
         result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
         result = 31 * result + (int) (version ^ (version >>> 32));
         result = 31 * result + (int) (ttl ^ (ttl >>> 32));
-        result = 31 * result + (int) (maxIdle ^ (maxIdle >>> 32));
         return result;
     }
 
     @Override
     public String toString() {
-        return "EntryView{"
+        return "WanMapEntryView{"
                 + "key=" + key
                 + ", value=" + value
                 + ", cost=" + cost
@@ -375,7 +247,6 @@ public class SimpleEntryView<K, V>
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", version=" + version
                 + ", ttl=" + ttl
-                + ", maxIdle=" + maxIdle
                 + '}';
     }
 }

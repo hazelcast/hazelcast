@@ -35,7 +35,7 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
     /** The policy how to merge the entry on the receiving cluster */
     private Object mergePolicy;
     /** The updated entry */
-    private EntryView<Data, Data> entryView;
+    private WanMapEntryView<Data, Data> entryView;
 
     public MapReplicationUpdate() {
     }
@@ -45,7 +45,11 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
                                 EntryView<Data, Data> entryView) {
         this.mergePolicy = mergePolicy;
         this.mapName = mapName;
-        this.entryView = entryView;
+        if (entryView instanceof WanMapEntryView) {
+            this.entryView = (WanMapEntryView<Data, Data>) entryView;
+        } else {
+            this.entryView = new WanMapEntryView<Data, Data>(entryView);
+        }
     }
 
     public String getMapName() {
@@ -64,11 +68,11 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
         this.mergePolicy = mergePolicy;
     }
 
-    public EntryView<Data, Data> getEntryView() {
+    public WanMapEntryView<Data, Data> getEntryView() {
         return entryView;
     }
 
-    public void setEntryView(EntryView<Data, Data> entryView) {
+    public void setEntryView(WanMapEntryView<Data, Data> entryView) {
         this.entryView = entryView;
     }
 
@@ -83,7 +87,13 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
         mergePolicy = in.readObject();
-        entryView = in.readObject();
+        EntryView<Data, Data> entryView = in.readObject();
+
+        if (entryView instanceof WanMapEntryView) {
+            this.entryView = (WanMapEntryView<Data, Data>) entryView;
+        } else {
+            this.entryView = new WanMapEntryView<Data, Data>(entryView);
+        }
     }
 
     @Override

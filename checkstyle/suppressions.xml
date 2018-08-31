@@ -283,7 +283,6 @@
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]querycache[\\/]event[\\/]DefaultQueryCacheEventData"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]query[\\/]MapQueryEngineImpl"/>
-    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]SimpleEntryView"/>
 
     <!-- PhoneHome -->
     <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]util[\\/]PhoneHome"/>
