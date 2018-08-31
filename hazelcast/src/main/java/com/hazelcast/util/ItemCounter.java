@@ -33,6 +33,18 @@ import static java.util.Collections.sort;
 public final class ItemCounter<T> {
 
     private final Map<T, MutableLong> map = new HashMap<T, MutableLong>();
+    private long total;
+
+    /**
+     * Returns the total counts.
+     *
+     * Complexity is O(1).
+     *
+     * @return total count.
+     */
+    public long total() {
+        return total;
+    }
 
     /**
      * Returns an iterator over all keys.
@@ -89,9 +101,21 @@ public final class ItemCounter<T> {
         if (entry == null) {
             entry = MutableLong.valueOf(value);
             map.put(item, entry);
+            total += value;
         } else {
+            total -= entry.value;
+            total += value;
             entry.value = value;
         }
+    }
+
+    /**
+     * Increases the count by on for the given item.
+     *
+     * @param item
+     */
+    public void inc(T item) {
+        add(item, 1);
     }
 
     /**
@@ -108,6 +132,7 @@ public final class ItemCounter<T> {
         } else {
             entry.value += delta;
         }
+        total += delta;
     }
 
     /**
@@ -120,6 +145,7 @@ public final class ItemCounter<T> {
         for (MutableLong entry : map.values()) {
             entry.value = 0;
         }
+        total = 0;
     }
 
     /**
@@ -127,6 +153,7 @@ public final class ItemCounter<T> {
      */
     public void clear() {
         map.clear();
+        total = 0;
     }
 
     /**
@@ -142,16 +169,19 @@ public final class ItemCounter<T> {
         if (entry == null) {
             entry = MutableLong.valueOf(value);
             map.put(item, entry);
+            total += value;
             return 0;
         }
 
         long oldValue = entry.value;
+        total = total - oldValue + value;
         entry.value = value;
         return oldValue;
     }
 
     public void remove(T item) {
-        map.remove(item);
+        MutableLong entry = map.remove(item);
+        total -= entry == null ? 0 : entry.value;
     }
 
     @Override
