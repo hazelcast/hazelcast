@@ -17,9 +17,13 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.IMap;
 import com.hazelcast.jet.GenericPredicates;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -158,6 +162,32 @@ public final class Sources {
     }
 
     /**
+     * Returns a source that fetches entries from the given Hazelcast {@code
+     * IMap} and emits them as {@code Map.Entry}. It leverages data locality
+     * by making each of the underlying processors fetch only those entries
+     * that are stored on the member where it is running.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the map you supply
+     * and acquires a map with that name on the local cluster. If you supply a
+     * map instance from another cluster, no error will be thrown to indicate
+     * this.
+     * <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all entries.
+     * <p>
+     * If the {@code IMap} is modified while being read, or if there is a
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
+     */
+    @Nonnull
+    public static <K, V> BatchSource<Entry<K, V>> map(@Nonnull IMap<K, V> map) {
+        return map(map.getName());
+    }
+
+    /**
      * Returns a source that fetches entries from a local Hazelcast {@code
      * IMap} with the specified name. By supplying a {@code predicate} and
      * {@code projection} here instead of in separate {@code map/filter}
@@ -166,11 +196,8 @@ public final class Sources {
      * data traffic. If your data is stored in the IMDG using the <a href=
      *     "http://docs.hazelcast.org/docs/3.10/manual/html-single/index.html#implementing-portable-serialization">
      * portable serialization format</a>, there are additional optimizations
-     * available when using {@link
-     *     com.hazelcast.projection.Projections#singleAttribute(String)
-     * Projections.singleAttribute()} and {@link
-     *     com.hazelcast.projection.Projections#multiAttribute(String...)
-     * Projections.multiAttribute()}) to create your projection instance and
+     * available when using {@link Projections#singleAttribute} and
+     * {@link Projections#multiAttribute}) to create your projection instance and
      * using the {@link GenericPredicates} factory or {@link PredicateBuilder}
      * to create the predicate. In this case Jet can test the predicate and
      * apply the projection without deserializing the whole object.
@@ -195,13 +222,12 @@ public final class Sources {
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicate} and {@code projection} need
-     * to be available on the cluster's classpath, or loaded using
+     * to be available on the cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link JobConfig}. Same is
-     * true for the class of the objects stored in the map itself. If you
-     * cannot fulfill these conditions, use {@link #map(String)} and add a
-     * subsequent {@link GeneralStage#map map} or {@link GeneralStage#filter
-     * filter} stage.
+     * the job classpath in {@link JobConfig}. The same is true for the class of
+     * the objects stored in the map itself. If you cannot meet these
+     * requirements, use {@link #map(String)} and add a subsequent
+     * {@link GeneralStage#map map} or {@link GeneralStage#filter filter} stage.
      *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events. If you want to specify just the
@@ -223,6 +249,73 @@ public final class Sources {
     }
 
     /**
+     * Returns a source that fetches entries from the given Hazelcast {@code
+     * IMap}. By supplying a {@code predicate} and {@code projection} here
+     * instead of in separate {@code map/filter} transforms you allow the
+     * source to apply these functions early, before generating any output,
+     * with the potential of significantly reducing data traffic.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the map you supply
+     * and acquires a map with that name on the local cluster. If you supply a
+     * map instance from another cluster, no error will be thrown to indicate
+     * this.
+     * <p>
+     * If your data is stored in the IMDG using the <a href=
+     *   "http://docs.hazelcast.org/docs/3.10/manual/html-single/index.html#implementing-portable-serialization">
+     * portable serialization format</a>, there are additional optimizations
+     * available when using {@link Projections#singleAttribute} and
+     * {@link Projections#multiAttribute}) to create your projection instance
+     * and using the {@link GenericPredicates} factory or {@link PredicateBuilder}
+     * to create the predicate. In this case Jet can test the predicate and
+     * apply the projection without deserializing the whole object.
+     * <p>
+     * Due to the current limitations in the way Jet reads the map it can't use
+     * any indexes on the map. It will always scan the map in full.
+     * <p>
+     * The source leverages data locality by making each of the underlying
+     * processors fetch only those entries that are stored on the member where
+     * it is running.
+     * <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all entries.
+     * <p>
+     * If the {@code IMap} is modified while being read, or if there is a
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
+     *
+     * <h4>Predicate/projection class requirements</h4>
+     * <p>
+     * The classes implementing {@code predicate} and {@code projection} need
+     * to be available on the cluster's classpath or loaded using
+     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
+     * the job classpath in {@link JobConfig}. The same is true for the class
+     * of the objects stored in the map itself. If you cannot meet these
+     * requirements, use {@link #map(String)} and add a subsequent
+     * {@link GeneralStage#map map} or {@link GeneralStage#filter filter} stage.
+     *
+     * @param map        the Hazelcast map to draw data from
+     * @param predicate  the predicate to filter the events. If you want to specify just the
+     *                   projection, use {@link
+     *                   com.hazelcast.jet.GenericPredicates#alwaysTrue()} as a pass-through
+     *                   predicate
+     * @param projection the projection to map the events. If the projection returns a {@code
+     *                   null} for an item, that item will be filtered out. If you want to
+     *                   specify just the predicate, use {@link Projections#identity()}.
+     * @param <T>        type of emitted item
+     */
+    @Nonnull
+    public static <T, K, V> BatchSource<T> map(
+            @Nonnull IMap<K, V> map,
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull Projection<Entry<K, V>, T> projection
+    ) {
+        return map(map.getName(), predicate, projection);
+    }
+
+    /**
      * Convenience for {@link #map(String, Predicate, Projection)}
      * which uses a {@link DistributedFunction} as the projection function.
      */
@@ -233,6 +326,24 @@ public final class Sources {
             @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
     ) {
         return batchFromProcessor("mapSource(" + mapName + ')', readMapP(mapName, predicate, projectionFn));
+    }
+
+    /**
+     * Convenience for {@link #map(IMap, Predicate, Projection)} which uses a
+     * {@link DistributedFunction} as the projection function.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the map you supply
+     * and acquires a map with that name on the local cluster. If you supply a
+     * map instance from another cluster, no error will be thrown to indicate
+     * this.
+     */
+    @Nonnull
+    public static <T, K, V> BatchSource<T> map(
+            @Nonnull IMap<K, V> map,
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
+    ) {
+        return map(map.getName(), predicate, projectionFn);
     }
 
     /**
@@ -247,14 +358,13 @@ public final class Sources {
      * processors fetch only those entries that are stored on the member where
      * it is running.
      * <p>
-     * To use an {@code IMap} as a streaming source, you must {@link
-     * com.hazelcast.config.EventJournalConfig configure the event journal}
-     * for it. The journal has fixed capacity and will drop events if it
-     * overflows.
+     * To use an {@code IMap} as a streaming source, you must {@link EventJournalConfig
+     * configure the event journal} for it. The journal has fixed capacity and
+     * will drop events if it overflows.
      * <p>
-     * The source saves the journal offset to the snapshot. If the job
-     * restarts, it starts emitting from the saved offset with an
-     * exactly-once guarantee (unless the journal has overflowed).
+     * The source saves the journal offset to the snapshot. If the job restarts,
+     * it starts emitting from the saved offset with an exactly-once guarantee
+     * (unless the journal has overflowed).
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
@@ -262,25 +372,25 @@ public final class Sources {
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
-     * need to be available on the cluster's classpath, or loaded using
+     * need to be available on the cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link JobConfig}. Same is
-     * true for the class of the objects stored in the map itself. If you
-     * cannot fulfill these conditions, use {@link #mapJournal(String,
-     * JournalInitialPosition)} and add a subsequent {@link GeneralStage#map
-     * map} or {@link GeneralStage#filter filter} stage.
+     * the job classpath in {@link JobConfig}. The same is true for the class
+     * of the objects stored in the map itself. If you cannot meet these
+     * requirements, use {@link #mapJournal(String, JournalInitialPosition)} and
+     * add a subsequent {@link GeneralStage#map map} or {@link GeneralStage#filter
+     * filter} stage.
      *
-     * @param mapName the name of the map
-     * @param predicateFn the predicate to filter the events. If you want to specify just the
-     *                    projection, use {@link com.hazelcast.jet.Util#mapPutEvents} to pass
-     *                    only {@link com.hazelcast.core.EntryEventType#ADDED ADDED} and
-     *                    {@link com.hazelcast.core.EntryEventType#UPDATED UPDATED} events.
+     * @param mapName      the name of the map
+     * @param predicateFn  the predicate to filter the events. If you want to specify just the
+     *                     projection, use {@link com.hazelcast.jet.Util#mapPutEvents} to pass
+     *                     only {@link com.hazelcast.core.EntryEventType#ADDED ADDED} and
+     *                     {@link com.hazelcast.core.EntryEventType#UPDATED UPDATED} events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
      *                     com.hazelcast.jet.Util#mapEventToEntry()} to extract just the key and
      *                     the new value.
-     * @param initialPos describes which event to start receiving from
-     * @param <T> type of emitted item
+     * @param initialPos   describes which event to start receiving from
+     * @param <T>          type of emitted item
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> mapJournal(
@@ -294,12 +404,72 @@ public final class Sources {
     }
 
     /**
+     * Returns a source that will stream {@link EventJournalMapEvent}s of the
+     * given Hazelcast {@code IMap}. By supplying a {@code predicate} and {@code
+     * projection} here instead of in separate {@code map/filter} transforms you
+     * allow the source to apply these functions early, before generating any
+     * output, with the potential of significantly reducing data traffic.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the map you supply
+     * and acquires a map with that name on the local cluster. If you supply a
+     * map instance from another cluster, no error will be thrown to indicate
+     * this.
+     * <p>
+     * The source leverages data locality by making each of the underlying
+     * processors fetch only those entries that are stored on the member where
+     * it is running.
+     * <p>
+     * To use an {@code IMap} as a streaming source, you must {@link EventJournalConfig
+     * configure the event journal} for it. The journal has fixed capacity and
+     * will drop events if it
+     * overflows.
+     * <p>
+     * The source saves the journal offset to the snapshot. If the job
+     * restarts, it starts emitting from the saved offset with an
+     * exactly-once guarantee (unless the journal has overflowed).
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
+     *
+     * <h4>Predicate/projection class requirements</h4>
+     *
+     * The classes implementing {@code predicateFn} and {@code projectionFn}
+     * need to be available on the cluster's classpath or loaded using
+     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
+     * the job classpath in {@link JobConfig}. The same is true for the class
+     * of the objects stored in the map itself. If you cannot meet these
+     * requirements, use {@link #mapJournal(String, JournalInitialPosition)}
+     * and add a subsequent {@link GeneralStage#map map} or
+     * {@link GeneralStage#filter filter} stage.
+     *
+     * @param map          the map to draw data from
+     * @param predicateFn  the predicate to filter the events. If you want to specify just the
+     *                     projection, use {@link com.hazelcast.jet.Util#mapPutEvents} to pass
+     *                     only {@link com.hazelcast.core.EntryEventType#ADDED ADDED} and
+     *                     {@link com.hazelcast.core.EntryEventType#UPDATED UPDATED} events.
+     * @param projectionFn the projection to map the events. If the projection returns a {@code
+     *                     null} for an item, that item will be filtered out. You may use {@link
+     *                     com.hazelcast.jet.Util#mapEventToEntry()} to extract just the key and
+     *                     the new value.
+     * @param initialPos   describes which event to start receiving from
+     * @param <T>          type of emitted item
+     */
+    @Nonnull
+    public static <T, K, V> StreamSource<T> mapJournal(
+            @Nonnull IMap<K, V> map,
+            @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return mapJournal(map.getName(), predicateFn, projectionFn, initialPos);
+    }
+
+    /**
      * Convenience for {@link #mapJournal(String, DistributedPredicate,
      * DistributedFunction, JournalInitialPosition)}
-     * which will pass only {@link EntryEventType#ADDED
-     * ADDED} and {@link EntryEventType#UPDATED UPDATED}
-     * events and will project the event's key and new value into a {@code
-     * Map.Entry}.
+     * which will pass only {@link EntryEventType#ADDED ADDED} and
+     * {@link EntryEventType#UPDATED UPDATED} events and will project the
+     * event's key and new value into a {@code Map.Entry}.
      */
     @Nonnull
     public static <K, V> StreamSource<Entry<K, V>> mapJournal(
@@ -307,6 +477,27 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return mapJournal(mapName, mapPutEvents(), mapEventToEntry(), initialPos);
+    }
+
+    /**
+     * Convenience for {@link #mapJournal(IMap, DistributedPredicate,
+     * DistributedFunction, JournalInitialPosition)}
+     * which will pass only {@link EntryEventType#ADDED
+     * ADDED} and {@link EntryEventType#UPDATED UPDATED}
+     * events and will project the event's key and new value into a {@code
+     * Map.Entry}.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the map you supply
+     * and acquires a map with that name on the local cluster. If you supply a
+     * map instance from another cluster, no error will be thrown to indicate
+     * this.
+     */
+    @Nonnull
+    public static <K, V> StreamSource<Entry<K, V>> mapJournal(
+            @Nonnull IMap<K, V> map,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return mapJournal(map.getName(), mapPutEvents(), mapEventToEntry(), initialPos);
     }
 
     /**
@@ -366,13 +557,13 @@ public final class Sources {
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicate} and {@code projection} need
-     * to be available on the remote cluster's classpath, or loaded using
+     * to be available on the remote cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link JobConfig}. Same is
-     * true for the class of the objects stored in the map itself. If you
-     * cannot fulfill these conditions, use {@link #remoteMap(String,
-     * ClientConfig)} and add a subsequent {@link GeneralStage#map map} or
-     * {@link GeneralStage#filter filter} stage.
+     * the job classpath in {@link JobConfig}. The same is true for the class
+     * of the objects stored in the map itself. If you cannot meet these
+     * conditions, use {@link #remoteMap(String, ClientConfig)} and add a
+     * subsequent {@link GeneralStage#map map} or {@link GeneralStage#filter
+     * filter} stage.
      *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events. If you want to specify just the
@@ -418,10 +609,9 @@ public final class Sources {
      * source to apply these functions early, before generating any output,
      * with the potential of significantly reducing data traffic.
      * <p>
-     * To use an {@code IMap} as a streaming source, you must {@link
-     * com.hazelcast.config.EventJournalConfig configure the event journal}
-     * for it. The journal has fixed capacity and will drop events if it
-     * overflows.
+     * To use an {@code IMap} as a streaming source, you must {@link EventJournalConfig
+     * configure the event journal} for it. The journal has fixed capacity and
+     * will drop events if it overflows.
      * <p>
      * The source saves the journal offset to the snapshot. If the job
      * restarts, it starts emitting from the saved offset with an
@@ -432,13 +622,13 @@ public final class Sources {
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
-     * need to be available on the remote cluster's classpath, or loaded using
+     * need to be available on the remote cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link JobConfig}. Same is
-     * true for the class of the objects stored in the map itself. If you
-     * cannot fulfill these conditions, use {@link #remoteMapJournal(String,
-     * ClientConfig, JournalInitialPosition)} and add a subsequent {@link
-     * GeneralStage#map map} or {@link GeneralStage#filter filter} stage.
+     * the job classpath in {@link JobConfig}. The same is true for the class
+     * of the objects stored in the map itself. If you cannot meet these
+     * requirements, use {@link #remoteMapJournal(String, ClientConfig, JournalInitialPosition)}
+     * and add a subsequent {@link GeneralStage#map map} or
+     * {@link GeneralStage#filter filter} stage.
      *
      * @param mapName the name of the map
      * @param clientConfig configuration for the client to connect to the remote cluster
@@ -484,11 +674,10 @@ public final class Sources {
     }
 
     /**
-     * Returns a source that fetches entries from the Hazelcast {@code ICache}
-     * with the specified name and emits them as {@code Map.Entry}. It
-     * leverages data locality by making each of the underlying processors
-     * fetch only those entries that are stored on the member where it is
-     * running.
+     * Returns a source that fetches entries from a Hazelcast {@code ICache}
+     * with the given name and emits them as {@code Map.Entry}. It leverages
+     * data locality by making each of the underlying processors fetch only
+     * those entries that are stored on the member where it is running.
      * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
@@ -506,8 +695,34 @@ public final class Sources {
     }
 
     /**
+     * Returns a source that fetches entries from the given Hazelcast {@code
+     * ICache} and emits them as {@code Map.Entry}. It leverages data locality
+     * by making each of the underlying processors fetch only those entries
+     * that are stored on the member where it is running.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the cache you
+     * supply and acquires a cache with that name on the local cluster. If you
+     * supply a cache instance from another cluster, no error will be thrown to
+     * indicate this.
+     * <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all entries.
+     * <p>
+     * If the {@code ICache} is modified while being read, or if there is a
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
+     */
+    @Nonnull
+    public static <K, V> BatchSource<Entry<K, V>> cache(@Nonnull ICache<K, V> cache) {
+        return cache(cache.getName());
+    }
+
+    /**
      * Returns a source that will stream the {@link EventJournalCacheEvent}
-     * events of the Hazelcast {@code ICache} with the specified name. By
+     * events of a Hazelcast {@code ICache} with the specified name. By
      * supplying a {@code predicate} and {@code projection} here instead of
      * in separate {@code map/filter} transforms you allow the source to apply
      * these functions early, before generating any output, with the potential
@@ -517,10 +732,9 @@ public final class Sources {
      * processors fetch only those entries that are stored on the member where
      * it is running.
      * <p>
-     * To use an {@code ICache} as a streaming source, you must {@link
-     * com.hazelcast.config.EventJournalConfig configure the event journal}
-     * for it. The journal has fixed capacity and will drop events if it
-     * overflows.
+     * To use an {@code ICache} as a streaming source, you must {@link EventJournalConfig
+     * configure the event journal} for it. The journal has fixed capacity and
+     * will drop events if it overflows.
      * <p>
      * The source saves the journal offset to the snapshot. If the job
      * restarts, it starts emitting from the saved offset with an
@@ -532,13 +746,13 @@ public final class Sources {
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
-     * need to be available on the cluster's classpath, or loaded using
+     * need to be available on the cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link JobConfig}. Same is
-     * true for the class of the objects stored in the cache itself. If you
-     * cannot fulfill these conditions, use {@link #cacheJournal(String,
-     * JournalInitialPosition)} and add a subsequent {@link GeneralStage#map
-     * map} or {@link GeneralStage#filter filter} stage.
+     * the job classpath in {@link JobConfig}. The same is true for the class
+     * of the objects stored in the cache itself. If you cannot meet these
+     * conditions, use {@link #cacheJournal(String, JournalInitialPosition)}
+     * and add a subsequent {@link GeneralStage#map map} or
+     * {@link GeneralStage#filter filter} stage.
      *
      * @param cacheName the name of the cache
      * @param predicateFn the predicate to filter the events. You may use {@link
@@ -565,6 +779,67 @@ public final class Sources {
     }
 
     /**
+     * Returns a source that will stream the {@link EventJournalCacheEvent}
+     * events of the given Hazelcast {@code ICache}. By supplying a {@code
+     * predicate} and {@code projection} here instead of in separate {@code
+     * map/filter} transforms you allow the source to apply these functions
+     * early, before generating any output, with the potential of significantly
+     * reducing data traffic.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the cache you
+     * supply and acquires a cache with that name on the local cluster. If you
+     * supply a cache instance from another cluster, no error will be thrown to
+     * indicate this.
+     * <p>
+     * The source leverages data locality by making each of the underlying
+     * processors fetch only those entries that are stored on the member where
+     * it is running.
+     * <p>
+     * To use an {@code ICache} as a streaming source, you must {@link EventJournalConfig
+     * configure the event journal} for it. The journal has fixed capacity and
+     * will drop events if it overflows.
+     * <p>
+     * The source saves the journal offset to the snapshot. If the job
+     * restarts, it starts emitting from the saved offset with an
+     * exactly-once guarantee (unless the journal has overflowed).
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
+     *
+     * <h4>Predicate/projection class requirements</h4>
+     *
+     * The classes implementing {@code predicateFn} and {@code projectionFn}
+     * need to be available on the cluster's classpath or loaded using
+     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
+     * the job classpath in {@link JobConfig}. The same is true for the class
+     * of the objects stored in the cache itself. If you cannot meet these
+     * requirements, use {@link #cacheJournal(String, JournalInitialPosition)}
+     * and add a subsequent {@link GeneralStage#map map} or
+     * {@link GeneralStage#filter filter} stage.
+     *
+     * @param cache       the cache from which to draw data
+     * @param predicateFn the predicate to filter the events. You may use {@link
+     *                    com.hazelcast.jet.Util#cachePutEvents()} to pass only {@link
+     *                    com.hazelcast.cache.CacheEventType#CREATED CREATED} and {@link
+     *                    com.hazelcast.cache.CacheEventType#UPDATED UPDATED} events.
+     * @param projectionFn the projection to map the events. If the projection returns a {@code
+     *                     null} for an item, that item will be filtered out. You may use {@link
+     *                     com.hazelcast.jet.Util#cacheEventToEntry()} to extract just the key
+     *                     and the new value.
+     * @param initialPos  describes which event to start receiving from
+     * @param <T>         type of emitted item
+     */
+    @Nonnull
+    public static <T, K, V> StreamSource<T> cacheJournal(
+            @Nonnull ICache<K, V> cache,
+            @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return cacheJournal(cache.getName(), predicateFn, projectionFn, initialPos);
+    }
+
+    /**
      * Convenience for {@link #cacheJournal(String, DistributedPredicate,
      * DistributedFunction, JournalInitialPosition)}
      * which will pass only {@link CacheEventType#CREATED
@@ -578,6 +853,27 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return cacheJournal(cacheName, cachePutEvents(), cacheEventToEntry(), initialPos);
+    }
+
+    /**
+     * Convenience for {@link #cacheJournal(ICache, DistributedPredicate,
+     * DistributedFunction, JournalInitialPosition)}
+     * which will pass only {@link CacheEventType#CREATED
+     * CREATED} and {@link CacheEventType#UPDATED UPDATED}
+     * events and will project the event's key and new value into a {@code
+     * Map.Entry}.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the cache you
+     * supply and acquires a cache with that name on the local cluster. If you
+     * supply a cache instance from another cluster, no error will be thrown to
+     * indicate this.
+     */
+    @Nonnull
+    public static <K, V> StreamSource<Entry<K, V>> cacheJournal(
+            @Nonnull ICache<K, V> cache,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return cacheJournal(cache.getName(), cachePutEvents(), cacheEventToEntry(), initialPos);
     }
 
     /**
@@ -612,10 +908,9 @@ public final class Sources {
      * source to apply these functions early, before generating any output,
      * with the potential of significantly reducing data traffic.
      * <p>
-     * To use an {@code ICache} as a streaming source, you must {@link
-     * com.hazelcast.config.EventJournalConfig configure the event journal}
-     * for it. The journal has fixed capacity and will drop events if it
-     * overflows.
+     * To use an {@code ICache} as a streaming source, you must {@link EventJournalConfig
+     * configure the event journal} for it. The journal has fixed capacity and
+     * will drop events if it overflows.
      * <p>
      * The source saves the journal offset to the snapshot. If the job
      * restarts, it starts emitting from the saved offset with an
@@ -626,13 +921,13 @@ public final class Sources {
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
-     * need to be available on the cluster's classpath, or loaded using
+     * need to be available on the cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link JobConfig}. Same is
-     * true for the class of the objects stored in the cache itself. If you
-     * cannot fulfill these conditions, use {@link #remoteCacheJournal(String,
-     * ClientConfig, JournalInitialPosition)} and add a subsequent {@link
-     * GeneralStage#map map} or {@link GeneralStage#filter filter} stage.
+     * the job classpath in {@link JobConfig}. The same is true for the class
+     * of the objects stored in the cache itself. If you cannot meet these
+     * conditions, use {@link #remoteCacheJournal(String, ClientConfig, JournalInitialPosition)}
+     * and add a subsequent {@link GeneralStage#map map} or
+     * {@link GeneralStage#filter filter} stage.
      *
      * @param cacheName the name of the cache
      * @param clientConfig configuration for the client to connect to the remote cluster
@@ -690,6 +985,26 @@ public final class Sources {
     @Nonnull
     public static <T> BatchSource<T> list(@Nonnull String listName) {
         return batchFromProcessor("listSource(" + listName + ')', readListP(listName));
+    }
+
+    /**
+     * Returns a source that emits items retrieved from a Hazelcast {@code
+     * IList}. All elements are emitted on a single member &mdash; the one
+     * where the entire list is stored by the IMDG.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the list you
+     * supply and acquires a list with that name on the local cluster. If you
+     * supply a list instance from another cluster, no error will be thrown to
+     * indicate this.
+     * <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all entries.
+     * <p>
+     * The default local parallelism for this processor is 1.
+     */
+    @Nonnull
+    public static <T> BatchSource<T> list(@Nonnull IList<T> list) {
+        return list(list.getName());
     }
 
     /**

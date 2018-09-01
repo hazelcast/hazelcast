@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -37,6 +40,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
@@ -52,7 +56,6 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -99,8 +102,29 @@ public final class Sinks {
      * The default local parallelism for this sink is 1.
      */
     @Nonnull
-    public static <T extends Map.Entry> Sink<T> map(@Nonnull String mapName) {
+    public static <K, V> Sink<Map.Entry<K, V>> map(@Nonnull String mapName) {
         return fromProcessor("mapSink(" + mapName + ')', writeMapP(mapName));
+    }
+
+    /**
+     * Returns a sink that puts {@code Map.Entry}s it receives into the given
+     * Hazelcast {@code IMap}.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the map you supply
+     * and acquires a map with that name on the local cluster. If you supply a
+     * map instance from another cluster, no error will be thrown to indicate
+     * this.
+     * <p>
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
+     * <p>
+     * The default local parallelism for this sink is 1.
+     */
+    @Nonnull
+    public static <K, V> Sink<Map.Entry<K, V>> map(@Nonnull IMap<K, V> map) {
+        return map(map.getName());
     }
 
     /**
@@ -158,15 +182,15 @@ public final class Sinks {
      * @param toValueFn function that extracts the value from the input item
      * @param mergeFn   function that merges the existing value with the value acquired from the
      *                  received item
-     * @param <E> input item type
+     * @param <T> input item type
      * @param <K> key type
      * @param <V> value type
      */
     @Nonnull
-    public static <E, K, V> Sink<E> mapWithMerging(
+    public static <T, K, V> Sink<T> mapWithMerging(
             @Nonnull String mapName,
-            @Nonnull DistributedFunction<E, K> toKeyFn,
-            @Nonnull DistributedFunction<E, V> toValueFn,
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends V> toValueFn,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
         return fromProcessor("mapWithMergingSink(" + mapName + ')',
@@ -174,16 +198,72 @@ public final class Sinks {
     }
 
     /**
-     * Returns a sink equivalent to {@link #mapWithMerging}, but for a map
-     * in a remote Hazelcast cluster identified by the supplied {@code
-     * ClientConfig}.
+     * Returns a sink that uses the supplied functions to extract the key
+     * and value with which to update a Hazelcast {@code IMap}. If the map
+     * already contains the key, it applies the given {@code mergeFn} to
+     * resolve the existing and the proposed value into the value to use. If
+     * the value comes out as {@code null}, it removes the key from the map.
+     * Expressed as code, the sink performs the equivalent of the following for
+     * each item:
+     * <pre>
+     * K key = toKeyFn.apply(item);
+     * V oldValue = map.get(key);
+     * V newValue = toValueFn.apply(item);
+     * V resolved = (oldValue == null)
+     *            ? newValue
+                  : mergeFn.apply(oldValue, newValue);
+     * if (value == null)
+     *     map.remove(key);
+     * else
+     *     map.put(key, value);
+     * </pre>
+     * <strong>NOTE:</strong> Jet only remembers the name of the map you supply
+     * and acquires a map with that name on the local cluster. If you supply a
+     * map instance from another cluster, no error will be thrown to indicate
+     * this.
+     * <p>
+     * This sink supports exactly-once processing only if the
+     * supplied merge function performs <i>idempotent updates</i>, i.e.,
+     * it satisfies the rule
+     * {@code mergeFn.apply(oldValue, toValueFn.apply(e)).equals(oldValue)}
+     * for any {@code e} that was already observed.
+     * <p>
+     * <b>Note:</b> This operation is <em>NOT</em> lock-aware, it will process the
+     * entries no matter if they are locked or not. Use {@link #mapWithEntryProcessor}
+     * if you need locking.
+     * <p>
+     * The default local parallelism for this sink is 1.
+     *
+     * @param map       the map to drain to
+     * @param toKeyFn   function that extracts the key from the input item
+     * @param toValueFn function that extracts the value from the input item
+     * @param mergeFn   function that merges the existing value with the value acquired from the
+     *                  received item
+     * @param <T> input item type
+     * @param <K> key type
+     * @param <V> value type
      */
     @Nonnull
-    public static <E, K, V> Sink<E> remoteMapWithMerging(
+    public static <T, K, V> Sink<T> mapWithMerging(
+            @Nonnull IMap<K, V> map,
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends V> toValueFn,
+            @Nonnull DistributedBinaryOperator<V> mergeFn
+    ) {
+        return mapWithMerging(map.getName(), toKeyFn, toValueFn, mergeFn);
+    }
+
+    /**
+     * Returns a sink equivalent to {@link #mapWithMerging(String, DistributedBinaryOperator)},
+     * but for a map in a remote Hazelcast cluster identified by the supplied
+     * {@code ClientConfig}.
+     */
+    @Nonnull
+    public static <T, K, V> Sink<T> remoteMapWithMerging(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedFunction<E, K> toKeyFn,
-            @Nonnull DistributedFunction<E, V> toValueFn,
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends V> toValueFn,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
         return fromProcessor("remoteMapWithMergingSink(" + mapName + ')',
@@ -191,16 +271,28 @@ public final class Sinks {
     }
 
     /**
-     * Convenience for {@link #mapWithMerging} with {@link Map.Entry} as
-     * input item.
+     * Convenience for {@link #mapWithMerging(String, DistributedFunction, DistributedFunction,
+     * DistributedBinaryOperator)} with {@link Map.Entry} as input item.
      */
     @Nonnull
-    public static <E extends Map.Entry<?, V>, V> Sink<E> mapWithMerging(
+    public static <K, V> Sink<Map.Entry<K, V>> mapWithMerging(
             @Nonnull String mapName,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
         return fromProcessor("mapWithMergingSink(" + mapName + ')',
-                mergeMapP(mapName, entryKey(), entryValue(), mergeFn));
+                mergeMapP(mapName, Entry::getKey, entryValue(), mergeFn));
+    }
+
+    /**
+     * Convenience for {@link #mapWithMerging(IMap, DistributedFunction, DistributedFunction,
+     * DistributedBinaryOperator)} with {@link Map.Entry} as input item.
+     */
+    @Nonnull
+    public static <K, V> Sink<Map.Entry<K, V>> mapWithMerging(
+            @Nonnull IMap<K, V> map,
+            @Nonnull DistributedBinaryOperator<V> mergeFn
+    ) {
+        return mapWithMerging(map.getName(), mergeFn);
     }
 
     /**
@@ -208,13 +300,13 @@ public final class Sinks {
      * input item.
      */
     @Nonnull
-    public static <E extends Map.Entry<?, V>, V> Sink<E> remoteMapWithMerging(
+    public static <K, V> Sink<Map.Entry<K, V>> remoteMapWithMerging(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
         return fromProcessor("remoteMapWithMergingSink(" + mapName + ')',
-                mergeRemoteMapP(mapName, clientConfig, entryKey(), entryValue(), mergeFn));
+                mergeRemoteMapP(mapName, clientConfig, Entry::getKey, entryValue(), mergeFn));
     }
 
     /**
@@ -250,17 +342,67 @@ public final class Sinks {
      * @param toKeyFn  function that extracts the key from the input item
      * @param updateFn function that receives the existing map value and the item
      *                 and returns the new map value
-     * @param <E>      input item type
+     * @param <T>      input item type
      * @param <K>      key type
      * @param <V>      value type
      */
     @Nonnull
-    public static <E, K, V> Sink<E> mapWithUpdating(
+    public static <T, K, V> Sink<T> mapWithUpdating(
             @Nonnull String mapName,
-            @Nonnull DistributedFunction<E, K> toKeyFn,
-            @Nonnull DistributedBiFunction<V, E, V> updateFn
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
     ) {
         return fromProcessor("mapWithUpdatingSink(" + mapName + ')', updateMapP(mapName, toKeyFn, updateFn));
+    }
+
+    /**
+     * Returns a sink that uses the supplied key-extracting and value-updating
+     * functions to update a Hazelcast {@code IMap}. For each item it receives, it
+     * applies {@code toKeyFn} to get the key and then applies {@code updateFn} to
+     * the existing value in the map and the received item to acquire the new
+     * value to associate with the key. If the new value is {@code null}, it
+     * removes the key from the map. Expressed as code, the sink performs the
+     * equivalent of the following for each item:
+     * <pre>
+     * K key = toKeyFn.apply(item);
+     * V oldValue = map.get(key);
+     * V newValue = updateFn.apply(oldValue, item);
+     * if (newValue == null)
+     *     map.remove(key);
+     * else
+     *     map.put(key, newValue);
+     * </pre>
+     * <strong>NOTE:</strong> Jet only remembers the name of the map you supply
+     * and acquires a map with that name on the local cluster. If you supply a
+     * map instance from another cluster, no error will be thrown to indicate
+     * this.
+     * <p>
+     * This sink supports exactly-once processing only if the supplied update
+     * function performs <i>idempotent updates</i>, i.e., it satisfies the rule
+     * {@code updateFn.apply(v, e).equals(v)} for any {@code e} that was
+     * already observed.
+     * <p>
+     * <b>Note:</b> This operation is not lock-aware, it will process the entries
+     * even if they are locked. Use {@link #mapWithEntryProcessor} if you need
+     * locking.
+     * <p>
+     * The default local parallelism for this sink is 1.
+     *
+     * @param map      map to drain to
+     * @param toKeyFn  function that extracts the key from the input item
+     * @param updateFn function that receives the existing map value and the item
+     *                 and returns the new map value
+     * @param <T>      input item type
+     * @param <K>      key type
+     * @param <V>      value type
+     */
+    @Nonnull
+    public static <T, K, V> Sink<T> mapWithUpdating(
+            @Nonnull IMap<K, V> map,
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
+    ) {
+        return mapWithUpdating(map.getName(), toKeyFn, updateFn);
     }
 
     /**
@@ -269,11 +411,11 @@ public final class Sinks {
      * ClientConfig}.
      */
     @Nonnull
-    public static <E, K, V> Sink<E> remoteMapWithUpdating(
+    public static <T, K, V> Sink<T> remoteMapWithUpdating(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedFunction<E, K> toKeyFn,
-            @Nonnull DistributedBiFunction<V, E, V> updateFn
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
 
     ) {
         return fromProcessor("remoteMapWithUpdatingSink(" + mapName + ')',
@@ -281,16 +423,28 @@ public final class Sinks {
     }
 
     /**
-     * Convenience for {@link #mapWithUpdating} with {@link Map.Entry} as
-     * input item.
+     * Convenience for {@link #mapWithUpdating(String, DistributedFunction,
+     * DistributedBiFunction)} with {@link Map.Entry} as the input item.
      */
     @Nonnull
-    public static <E extends Map.Entry<?, V>, V> Sink<E> mapWithUpdating(
+    public static <K, V, E extends Map.Entry<K, V>> Sink<E> mapWithUpdating(
             @Nonnull String mapName,
-            @Nonnull DistributedBiFunction<V, E, V> updateFn
+            @Nonnull DistributedBiFunction<? super V, ? super E, ? extends V> updateFn
     ) {
-        return fromProcessor("mapWithUpdatingSink(" + mapName + ')', updateMapP(mapName, Map.Entry::getKey,
-                updateFn));
+        return fromProcessor("mapWithUpdatingSink(" + mapName + ')',
+                updateMapP(mapName, Entry<K, V>::getKey, updateFn));
+    }
+
+    /**
+     * Convenience for {@link #mapWithUpdating(IMap, DistributedFunction,
+     * DistributedBiFunction)} with {@link Map.Entry} as the input item.
+     */
+    @Nonnull
+    public static <K, V, E extends Map.Entry<K, V>> Sink<E> mapWithUpdating(
+            @Nonnull IMap<K, V> map,
+            @Nonnull DistributedBiFunction<? super V, ? super E, ? extends V> updateFn
+    ) {
+        return mapWithUpdating(map.getName(), updateFn);
     }
 
     /**
@@ -358,6 +512,58 @@ public final class Sinks {
     }
 
     /**
+     * Returns a sink that uses the items it receives to create {@code
+     * EntryProcessor}s it submits to a Hazelcast {@code IMap} with the
+     * specified name. For each received item it applies {@code toKeyFn} to
+     * get the key and {@code toEntryProcessorFn} to get the entry processor,
+     * and then submits the key and the entry processor to the Hazelcast
+     * cluster, which will internally apply the entry processor to the key.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the map you supply
+     * and acquires a map with that name on the local cluster. If you supply a
+     * map instance from another cluster, no error will be thrown to indicate
+     * this.
+     * <p>
+     * As opposed to {@link #mapWithUpdating} and {@link #mapWithMerging},
+     * this sink does not use batching and submits a separate entry processor
+     * for each received item. For use cases that are efficiently solvable
+     * using those sinks, this one will perform worse. It should be used only
+     * when they are not applicable.
+     * <p>
+     * If your entry processors take a long time to update a value, consider
+     * using entry processors that implement {@link Offloadable}. This will
+     * avoid blocking the Hazelcast partition thread during large update
+     * operations.
+     * <p>
+     * This sink supports exactly-once processing only if the supplied entry
+     * processor performs <i>idempotent updates</i>, i.e., the resulting value
+     * would be the same if an entry processor was run on the same entry more
+     * than once.
+     * <p>
+     * <b>Note:</b> Unlike {@link #mapWithUpdating} and {@link #mapWithMerging},
+     * this operation <em>is</em> lock-aware. If the key is locked,
+     * the EntryProcessor will wait until it acquires the lock.
+     * <p>
+     * The default local parallelism for this sink is 1.
+     *
+     * @param map                map to drain to
+     * @param toKeyFn            function that extracts the key from the input item
+     * @param toEntryProcessorFn function that returns the {@code EntryProcessor} to apply to the key
+     * @param <T>                input item type
+     * @param <K>                key type
+     * @param <V>                value type
+     */
+    @Nonnull
+    public static <T, K, V> Sink<T> mapWithEntryProcessor(
+            @Nonnull IMap<K, V> map,
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn
+
+    ) {
+        return mapWithEntryProcessor(map.getName(), toKeyFn, toEntryProcessorFn);
+    }
+
+    /**
      * Returns a sink equivalent to {@link #mapWithEntryProcessor}, but for a map
      * in a remote Hazelcast cluster identified by the supplied {@code
      * ClientConfig}.
@@ -388,6 +594,27 @@ public final class Sinks {
     @Nonnull
     public static <T extends Map.Entry> Sink<T> cache(@Nonnull String cacheName) {
         return fromProcessor("cacheSink(" + cacheName + ')', writeCacheP(cacheName));
+    }
+
+    /**
+     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
+     * {@code ICache} with the specified name.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the cache you
+     * supply and acquires a cache with that name on the local cluster. If you
+     * supply a cache instance from another cluster, no error will be thrown to
+     * indicate this.
+     * <p>
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
+     * <p>
+     * The default local parallelism for this sink is 1.
+     */
+    @Nonnull
+    public static <K, V> Sink<Map.Entry<K, V>> cache(@Nonnull ICache<K, V> cache) {
+        return cache(cache.getName());
     }
 
     /**
@@ -423,6 +650,26 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> list(@Nonnull String listName) {
         return fromProcessor("listSink(" + listName + ')', writeListP(listName));
+    }
+
+    /**
+     * Returns a sink that adds the items it receives to a Hazelcast {@code
+     * IList} with the specified name.
+     * <p>
+     * <strong>NOTE:</strong> Jet only remembers the name of the list you
+     * supply and acquires a list with that name on the local cluster. If you
+     * supply a list instance from another cluster, no error will be thrown to
+     * indicate this.
+     * <p>
+     * No state is saved to snapshot for this sink. After the job is restarted,
+     * the items will likely be duplicated, providing an <i>at-least-once</i>
+     * guarantee.
+     * <p>
+     * The default local parallelism for this sink is 1.
+     */
+    @Nonnull
+    public static <T> Sink<T> list(@Nonnull IList<T> list) {
+        return list(list.getName());
     }
 
     /**
