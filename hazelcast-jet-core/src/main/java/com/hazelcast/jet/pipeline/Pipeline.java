@@ -65,15 +65,34 @@ public interface Pipeline {
     <T> StreamStage<T> drawFrom(@Nonnull StreamSource<? extends T> source);
 
     /**
-     * Attaches an arbitrary number of stages to the supplied sink. Returns the
-     * {@code SinkStage} representing the sink. This method is useful mainly when
-     * you want to drain more than one stage to the same sink. In the typical case
+     * Attaches the supplied sink to two pipeline stages. Returns the
+     * {@code SinkStage} representing the sink. You need this method when you
+     * want to drain more than one stage to the same sink. In the typical case
+     * you'll use {@link GeneralStage#drainTo(Sink)} instead.
+     *
+     * @param <T> the type of data being drained to the sink
+     */
+    <T> SinkStage drainTo(
+            @Nonnull Sink<? super T> sink,
+            @Nonnull GeneralStage<? extends T> stage0,
+            @Nonnull GeneralStage<? extends T> stage1
+    );
+
+    /**
+     * Attaches the supplied sink to two or more pipeline stages. Returns the
+     * {@code SinkStage} representing the sink. You need this method when you
+     * want to drain more than one stage to the same sink. In the typical case
      * you'll use {@link GeneralStage#drainTo(Sink)} instead.
      *
      * @param <T> the type of data being drained to the sink
      */
     @Nonnull
-    <T> SinkStage drainTo(@Nonnull Sink<T> sink, GeneralStage<?>... stagesToDrain);
+    <T> SinkStage drainTo(
+            @Nonnull Sink<? super T> sink,
+            @Nonnull GeneralStage<? extends T> stage0,
+            @Nonnull GeneralStage<? extends T> stage1,
+            @Nonnull GeneralStage<? extends T>... moreStages
+    );
 
     /**
      * Transforms the pipeline into a Jet DAG, which can be submitted for

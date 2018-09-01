@@ -50,6 +50,7 @@ import static java.util.stream.Collectors.toList;
 
 public class PipelineImpl implements Pipeline {
 
+    private static final GeneralStage[] NO_STAGES = {};
     private final Map<Transform, List<Transform>> adjacencyMap = new LinkedHashMap<>();
 
     @Nonnull @Override
@@ -66,17 +67,33 @@ public class PipelineImpl implements Pipeline {
     }
 
     @Override
-    public <T> SinkStage drainTo(@Nonnull Sink<T> sink, GeneralStage<?>... stagesToDrain) {
-        if (stagesToDrain == null || stagesToDrain.length == 0) {
-            throw new IllegalArgumentException("No stages supplied to Pipeline.drainTo()");
-        }
-        List<Transform> upstream = Arrays.stream(stagesToDrain)
-                                         .map(s -> (AbstractStage) s)
-                                         .map(s -> s.transform)
-                                         .collect(toList());
+    @SuppressWarnings("unchecked")
+    public <T> SinkStage drainTo(
+            @Nonnull Sink<? super T> sink,
+            @Nonnull GeneralStage<? extends T> stage0,
+            @Nonnull GeneralStage<? extends T> stage1
+    ) {
+        return drainTo(sink, stage0, stage1, (GeneralStage<? extends T>[]) NO_STAGES);
+    }
+
+    @Override
+    public <T> SinkStage drainTo(
+            @Nonnull Sink<? super T> sink,
+            @Nonnull GeneralStage<? extends T> stage0,
+            @Nonnull GeneralStage<? extends T> stage1,
+            @Nonnull GeneralStage<? extends T>... moreStages
+    ) {
+        GeneralStage[] stages = new GeneralStage[2 + moreStages.length];
+        stages[0] = stage0;
+        stages[1] = stage1;
+        System.arraycopy(moreStages, 0, stages, 2, moreStages.length);
+        List<Transform> upstream = Arrays.stream(stages)
+                .map(s -> (AbstractStage) s)
+                .map(s -> s.transform)
+                .collect(toList());
         int[] ordinalsToAdapt = IntStream
-                .range(0, stagesToDrain.length)
-                .filter(i -> ((ComputeStageImplBase) stagesToDrain[i]).fnAdapter == ADAPT_TO_JET_EVENT)
+                .range(0, stages.length)
+                .filter(i -> ((ComputeStageImplBase) stages[i]).fnAdapter == ADAPT_TO_JET_EVENT)
                 .toArray();
         SinkImpl sinkImpl = (SinkImpl) sink;
         SinkTransform sinkTransform = new SinkTransform(sinkImpl, upstream, ordinalsToAdapt);
