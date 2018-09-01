@@ -55,11 +55,11 @@ public final class WriteJmsP {
      * SinkProcessors#writeJmsTopicP} instead
      */
     public static <T> ProcessorMetaSupplier supplier(
-            DistributedSupplier<Connection> connectionSupplier,
-            DistributedFunction<Connection, Session> sessionF,
-            DistributedBiFunction<Session, T, Message> messageFn,
-            DistributedBiConsumer<MessageProducer, Message> sendFn,
-            DistributedConsumer<Session> flushFn,
+            DistributedSupplier<? extends Connection> connectionSupplier,
+            DistributedFunction<? super Connection, ? extends Session> sessionF,
+            DistributedBiFunction<? super Session, T, ? extends Message> messageFn,
+            DistributedBiConsumer<? super MessageProducer, ? super Message> sendFn,
+            DistributedConsumer<? super Session> flushFn,
             String name,
             boolean isTopic
     ) {
@@ -72,21 +72,21 @@ public final class WriteJmsP {
 
         static final long serialVersionUID = 1L;
 
-        private final DistributedSupplier<Connection> connectionSupplier;
-        private final DistributedFunction<Connection, Session> sessionF;
+        private final DistributedSupplier<? extends Connection> connectionSupplier;
+        private final DistributedFunction<? super Connection, ? extends Session> sessionF;
         private final String name;
         private final boolean isTopic;
-        private final DistributedBiFunction<Session, T, Message> messageFn;
-        private final DistributedBiConsumer<MessageProducer, Message> sendFn;
-        private final DistributedConsumer<Session> flushFn;
+        private final DistributedBiFunction<? super Session, ? super T, ? extends Message> messageFn;
+        private final DistributedBiConsumer<? super MessageProducer, ? super Message> sendFn;
+        private final DistributedConsumer<? super Session> flushFn;
 
         private transient Connection connection;
 
-        private Supplier(DistributedSupplier<Connection> connectionSupplier,
-                         DistributedFunction<Connection, Session> sessionF,
-                         DistributedBiFunction<Session, T, Message> messageFn,
-                         DistributedBiConsumer<MessageProducer, Message> sendFn,
-                         DistributedConsumer<Session> flushFn,
+        private Supplier(DistributedSupplier<? extends Connection> connectionSupplier,
+                         DistributedFunction<? super Connection, ? extends Session> sessionF,
+                         DistributedBiFunction<? super Session, ? super T, ? extends Message> messageFn,
+                         DistributedBiConsumer<? super MessageProducer, ? super Message> sendFn,
+                         DistributedConsumer<? super Session> flushFn,
                          String name,
                          boolean isTopic
         ) {

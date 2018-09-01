@@ -47,8 +47,8 @@ public final class WriteJdbcP<T> implements Processor {
             new BackoffIdleStrategy(0, 0, SECONDS.toNanos(1), SECONDS.toNanos(10));
     private static final int BATCH_LIMIT = 50;
 
-    private final DistributedSupplier<Connection> connectionSupplier;
-    private final DistributedBiConsumer<PreparedStatement, T> bindFn;
+    private final DistributedSupplier<? extends Connection> connectionSupplier;
+    private final DistributedBiConsumer<? super PreparedStatement, ? super T> bindFn;
     private final String updateQuery;
 
     private ILogger logger;
@@ -61,8 +61,8 @@ public final class WriteJdbcP<T> implements Processor {
 
     private WriteJdbcP(
             @Nonnull String updateQuery,
-            @Nonnull DistributedSupplier<Connection> connectionSupplier,
-            @Nonnull DistributedBiConsumer<PreparedStatement, T> bindFn
+            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
+            @Nonnull DistributedBiConsumer<? super PreparedStatement, ? super T> bindFn
     ) {
         this.updateQuery = updateQuery;
         this.connectionSupplier = connectionSupplier;
@@ -74,8 +74,8 @@ public final class WriteJdbcP<T> implements Processor {
      */
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nonnull String updateQuery,
-            @Nonnull DistributedSupplier<Connection> connectionSupplier,
-            @Nonnull DistributedBiConsumer<PreparedStatement, T> bindFn
+            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
+            @Nonnull DistributedBiConsumer<? super PreparedStatement, ? super T> bindFn
 
     ) {
         return ProcessorMetaSupplier.preferLocalParallelismOne(() ->

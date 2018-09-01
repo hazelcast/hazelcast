@@ -50,20 +50,20 @@ public class StreamJmsP<T> extends AbstractProcessor {
     public static final int PREFERRED_LOCAL_PARALLELISM = 4;
 
     private final Connection connection;
-    private final DistributedFunction<Connection, Session> sessionFn;
-    private final DistributedFunction<Session, MessageConsumer> consumerFn;
-    private final DistributedConsumer<Session> flushFn;
-    private final DistributedFunction<Message, T> projectionFn;
+    private final DistributedFunction<? super Connection, ? extends Session> sessionFn;
+    private final DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn;
+    private final DistributedConsumer<? super Session> flushFn;
+    private final DistributedFunction<? super Message, ? extends T> projectionFn;
 
     private Session session;
     private MessageConsumer consumer;
-    private Traverser<T> traverser;
+    private Traverser<? extends T> traverser;
 
     StreamJmsP(Connection connection,
-               DistributedFunction<Connection, Session> sessionFn,
-               DistributedFunction<Session, MessageConsumer> consumerFn,
-               DistributedConsumer<Session> flushFn,
-               DistributedFunction<Message, T> projectionFn
+               DistributedFunction<? super Connection, ? extends Session> sessionFn,
+               DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
+               DistributedConsumer<? super Session> flushFn,
+               DistributedFunction<? super Message, ? extends T> projectionFn
     ) {
         this.connection = connection;
         this.sessionFn = sessionFn;
@@ -78,11 +78,11 @@ public class StreamJmsP<T> extends AbstractProcessor {
      */
     @Nonnull
     public static <T> ProcessorSupplier supplier(
-            @Nonnull DistributedSupplier<Connection> connectionSupplier,
-            @Nonnull DistributedFunction<Connection, Session> sessionFn,
-            @Nonnull DistributedFunction<Session, MessageConsumer> consumerFn,
-            @Nonnull DistributedConsumer<Session> flushFn,
-            @Nonnull DistributedFunction<Message, T> projectionFn
+            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
+            @Nonnull DistributedFunction<? super Connection, ? extends Session> sessionFn,
+            @Nonnull DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
+            @Nonnull DistributedConsumer<? super Session> flushFn,
+            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn
     ) {
         return new Supplier<>(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn);
     }
@@ -112,19 +112,19 @@ public class StreamJmsP<T> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private final DistributedSupplier<Connection> connectionSupplier;
-        private final DistributedFunction<Connection, Session> sessionFn;
-        private final DistributedFunction<Session, MessageConsumer> consumerFn;
-        private final DistributedConsumer<Session> flushFn;
-        private final DistributedFunction<Message, T> projectionFn;
+        private final DistributedSupplier<? extends Connection> connectionSupplier;
+        private final DistributedFunction<? super Connection, ? extends Session> sessionFn;
+        private final DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn;
+        private final DistributedConsumer<? super Session> flushFn;
+        private final DistributedFunction<? super Message, ? extends T> projectionFn;
 
         private transient Connection connection;
 
-        private Supplier(DistributedSupplier<Connection> connectionSupplier,
-                         DistributedFunction<Connection, Session> sessionFn,
-                         DistributedFunction<Session, MessageConsumer> consumerFn,
-                         DistributedConsumer<Session> flushFn,
-                         DistributedFunction<Message, T> projectionFn) {
+        private Supplier(DistributedSupplier<? extends Connection> connectionSupplier,
+                         DistributedFunction<? super Connection, ? extends Session> sessionFn,
+                         DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
+                         DistributedConsumer<? super Session> flushFn,
+                         DistributedFunction<? super Message, ? extends T> projectionFn) {
             this.connectionSupplier = connectionSupplier;
             this.sessionFn = sessionFn;
             this.consumerFn = consumerFn;

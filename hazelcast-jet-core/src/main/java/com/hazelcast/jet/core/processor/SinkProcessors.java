@@ -82,10 +82,10 @@ public final class SinkProcessors {
      * DistributedBinaryOperator)}.
      */
     @Nonnull
-    public static <E, K, V> ProcessorMetaSupplier mergeMapP(
+    public static <T, K, V> ProcessorMetaSupplier mergeMapP(
             @Nonnull String mapName,
-            @Nonnull DistributedFunction<E, K> toKeyFn,
-            @Nonnull DistributedFunction<E, V> toValueFn,
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends V> toValueFn,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
         return HazelcastWriters.mergeMapSupplier(mapName, null, toKeyFn, toValueFn, mergeFn);
@@ -97,11 +97,11 @@ public final class SinkProcessors {
      * DistributedFunction, DistributedBinaryOperator)}.
      */
     @Nonnull
-    public static <E, K, V> ProcessorMetaSupplier mergeRemoteMapP(
+    public static <T, K, V> ProcessorMetaSupplier mergeRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedFunction<E, K> toKeyFn,
-            @Nonnull DistributedFunction<E, V> toValueFn,
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends V> toValueFn,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
         return HazelcastWriters.mergeMapSupplier(mapName, clientConfig, toKeyFn, toValueFn, mergeFn);
@@ -112,10 +112,10 @@ public final class SinkProcessors {
      * {@link Sinks#mapWithEntryProcessor(String, DistributedFunction, DistributedFunction)} .
      */
     @Nonnull
-    public static <E, K, V> ProcessorMetaSupplier updateMapP(
+    public static <T, K, V> ProcessorMetaSupplier updateMapP(
             @Nonnull String mapName,
-            @Nonnull DistributedFunction<E, K> toKeyFn,
-            @Nonnull DistributedBiFunction<V, E, V> updateFn
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
     ) {
         return HazelcastWriters.updateMapSupplier(mapName, null, toKeyFn, updateFn);
     }
@@ -126,11 +126,11 @@ public final class SinkProcessors {
      * , DistributedBiFunction)}.
      */
     @Nonnull
-    public static <E, K, V> ProcessorMetaSupplier updateRemoteMapP(
+    public static <T, K, V> ProcessorMetaSupplier updateRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedFunction<E, K> toKeyFn,
-            @Nonnull DistributedBiFunction<V, E, V> updateFn
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
     ) {
         return HazelcastWriters.updateMapSupplier(mapName, clientConfig, toKeyFn, updateFn);
     }
@@ -142,8 +142,8 @@ public final class SinkProcessors {
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier updateMapP(
             @Nonnull String mapName,
-            @Nonnull DistributedFunction<T, K> toKeyFn,
-            @Nonnull DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn
 
     ) {
         return HazelcastWriters.updateMapSupplier(mapName, null, toKeyFn, toEntryProcessorFn);
@@ -158,8 +158,8 @@ public final class SinkProcessors {
     public static <T, K, V> ProcessorMetaSupplier updateRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedFunction<T, K> toKeyFn,
-            @Nonnull DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn
+            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
+            @Nonnull DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn
     ) {
         return HazelcastWriters.updateMapSupplier(mapName, clientConfig, toKeyFn, toEntryProcessorFn);
     }
@@ -209,7 +209,7 @@ public final class SinkProcessors {
     public static <T> ProcessorMetaSupplier writeSocketP(
             @Nonnull String host,
             int port,
-            @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull DistributedFunction<? super T, ? extends String> toStringFn,
             @Nonnull Charset charset
     ) {
         checkSerializable(toStringFn, "toStringFn");
@@ -234,7 +234,7 @@ public final class SinkProcessors {
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFileP(
             @Nonnull String directoryName,
-            @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull DistributedFunction<? super T, ? extends String> toStringFn,
             @Nonnull Charset charset,
             boolean append
     ) {
@@ -251,9 +251,9 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <W, T> DistributedSupplier<Processor> writeBufferedP(
-            @Nonnull DistributedFunction<Context, W> createFn,
-            @Nonnull DistributedBiConsumer<W, T> onReceiveFn,
-            @Nonnull DistributedConsumer<W> flushFn
+            @Nonnull DistributedFunction<? super Context, ? extends W> createFn,
+            @Nonnull DistributedBiConsumer<? super W, ? super T> onReceiveFn,
+            @Nonnull DistributedConsumer<? super W> flushFn
     ) {
         return writeBufferedP(createFn, onReceiveFn, flushFn, noopConsumer());
     }
@@ -293,11 +293,11 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJmsQueueP(
-            @Nonnull DistributedSupplier<Connection> connectionSupplier,
-            @Nonnull DistributedFunction<Connection, Session> sessionF,
-            @Nonnull DistributedBiFunction<Session, T, Message> messageFn,
-            @Nonnull DistributedBiConsumer<MessageProducer, Message> sendFn,
-            @Nonnull DistributedConsumer<Session> flushFn,
+            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
+            @Nonnull DistributedFunction<? super Connection, ? extends Session> sessionF,
+            @Nonnull DistributedBiFunction<? super Session, ? super T, ? extends Message> messageFn,
+            @Nonnull DistributedBiConsumer<? super MessageProducer, ? super Message> sendFn,
+            @Nonnull DistributedConsumer<? super Session> flushFn,
             @Nonnull String name
     ) {
         return WriteJmsP.supplier(connectionSupplier, sessionF, messageFn, sendFn, flushFn, name, false);
@@ -308,11 +308,11 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJmsTopicP(
-            @Nonnull DistributedSupplier<Connection> connectionSupplier,
-            @Nonnull DistributedFunction<Connection, Session> sessionF,
-            @Nonnull DistributedBiFunction<Session, T, Message> messageFn,
-            @Nonnull DistributedBiConsumer<MessageProducer, Message> sendFn,
-            @Nonnull DistributedConsumer<Session> flushFn,
+            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
+            @Nonnull DistributedFunction<? super Connection, ? extends Session> sessionF,
+            @Nonnull DistributedBiFunction<? super Session, ? super T, ? extends Message> messageFn,
+            @Nonnull DistributedBiConsumer<? super MessageProducer, ? super Message> sendFn,
+            @Nonnull DistributedConsumer<? super Session> flushFn,
             @Nonnull String name
     ) {
         return WriteJmsP.supplier(connectionSupplier, sessionF, messageFn, sendFn, flushFn, name, true);
@@ -325,8 +325,8 @@ public final class SinkProcessors {
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJdbcP(
             @Nonnull String updateQuery,
-            @Nonnull DistributedSupplier<java.sql.Connection> connectionSupplier,
-            @Nonnull DistributedBiConsumer<PreparedStatement, T> bindFn
+            @Nonnull DistributedSupplier<? extends java.sql.Connection> connectionSupplier,
+            @Nonnull DistributedBiConsumer<? super PreparedStatement, ? super T> bindFn
     ) {
         checkSerializable(connectionSupplier, "connectionSupplier");
         checkSerializable(bindFn, "bindFn");

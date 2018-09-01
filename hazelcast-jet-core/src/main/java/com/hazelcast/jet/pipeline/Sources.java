@@ -183,7 +183,7 @@ public final class Sources {
      * CPU is available).
      */
     @Nonnull
-    public static <K, V> BatchSource<Entry<K, V>> map(@Nonnull IMap<K, V> map) {
+    public static <K, V> BatchSource<Entry<K, V>> map(@Nonnull IMap<? extends K, ? extends V> map) {
         return map(map.getName());
     }
 
@@ -242,8 +242,8 @@ public final class Sources {
     @Nonnull
     public static <T, K, V> BatchSource<T> map(
             @Nonnull String mapName,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull Projection<Entry<K, V>, T> projection
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
         return batchFromProcessor("mapSource(" + mapName + ')', readMapP(mapName, predicate, projection));
     }
@@ -308,9 +308,9 @@ public final class Sources {
      */
     @Nonnull
     public static <T, K, V> BatchSource<T> map(
-            @Nonnull IMap<K, V> map,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull Projection<Entry<K, V>, T> projection
+            @Nonnull IMap<? extends K, ? extends V> map,
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
         return map(map.getName(), predicate, projection);
     }
@@ -322,8 +322,8 @@ public final class Sources {
     @Nonnull
     public static <T, K, V> BatchSource<T> map(
             @Nonnull String mapName,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull DistributedFunction<? super Map.Entry<K, V>, ? extends T> projectionFn
     ) {
         return batchFromProcessor("mapSource(" + mapName + ')', readMapP(mapName, predicate, projectionFn));
     }
@@ -339,9 +339,9 @@ public final class Sources {
      */
     @Nonnull
     public static <T, K, V> BatchSource<T> map(
-            @Nonnull IMap<K, V> map,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
+            @Nonnull IMap<? extends K, ? extends V> map,
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull DistributedFunction<? super Map.Entry<K, V>, ? extends T> projectionFn
     ) {
         return map(map.getName(), predicate, projectionFn);
     }
@@ -395,8 +395,8 @@ public final class Sources {
     @Nonnull
     public static <T, K, V> StreamSource<T> mapJournal(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
+            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("mapJournalSource(" + mapName + ')',
@@ -456,9 +456,9 @@ public final class Sources {
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> mapJournal(
-            @Nonnull IMap<K, V> map,
-            @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
+            @Nonnull IMap<? extends K, ? extends V> map,
+            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return mapJournal(map.getName(), predicateFn, projectionFn, initialPos);
@@ -494,7 +494,7 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> StreamSource<Entry<K, V>> mapJournal(
-            @Nonnull IMap<K, V> map,
+            @Nonnull IMap<? extends K, ? extends V> map,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return mapJournal(map.getName(), mapPutEvents(), mapEventToEntry(), initialPos);
@@ -579,8 +579,8 @@ public final class Sources {
     public static <T, K, V> BatchSource<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull Projection<Entry<K, V>, T> projection
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
                 readRemoteMapP(mapName, clientConfig, predicate, projection));
@@ -594,8 +594,8 @@ public final class Sources {
     public static <T, K, V> BatchSource<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull DistributedFunction<? super Entry<K, V>, ? extends T> projectionFn
     ) {
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
                 readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
@@ -649,8 +649,8 @@ public final class Sources {
     public static <T, K, V> StreamSource<T> remoteMapJournal(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
+            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("remoteMapJournalSource(" + mapName + ')',
@@ -716,7 +716,7 @@ public final class Sources {
      * CPU is available).
      */
     @Nonnull
-    public static <K, V> BatchSource<Entry<K, V>> cache(@Nonnull ICache<K, V> cache) {
+    public static <K, V> BatchSource<Entry<K, V>> cache(@Nonnull ICache<? extends K, ? extends V> cache) {
         return cache(cache.getName());
     }
 
@@ -769,8 +769,8 @@ public final class Sources {
     @Nonnull
     public static <T, K, V> StreamSource<T> cacheJournal(
             @Nonnull String cacheName,
-            @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
+            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("cacheJournalSource(" + cacheName + ')',
@@ -831,9 +831,9 @@ public final class Sources {
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> cacheJournal(
-            @Nonnull ICache<K, V> cache,
-            @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
+            @Nonnull ICache<? extends K, ? extends V> cache,
+            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return cacheJournal(cache.getName(), predicateFn, projectionFn, initialPos);
@@ -870,7 +870,7 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> StreamSource<Entry<K, V>> cacheJournal(
-            @Nonnull ICache<K, V> cache,
+            @Nonnull ICache<? extends K, ? extends V> cache,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return cacheJournal(cache.getName(), cachePutEvents(), cacheEventToEntry(), initialPos);
@@ -946,8 +946,8 @@ public final class Sources {
     public static <T, K, V> StreamSource<T> remoteCacheJournal(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
+            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("remoteCacheJournalSource(" + cacheName + ')',
@@ -1003,7 +1003,7 @@ public final class Sources {
      * The default local parallelism for this processor is 1.
      */
     @Nonnull
-    public static <T> BatchSource<T> list(@Nonnull IList<T> list) {
+    public static <T> BatchSource<T> list(@Nonnull IList<? extends T> list) {
         return list(list.getName());
     }
 
@@ -1123,7 +1123,7 @@ public final class Sources {
      */
     @Nonnull
     public static StreamSource<Message> jmsQueue(
-            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
+            @Nonnull DistributedSupplier<? extends ConnectionFactory> factorySupplier,
             @Nonnull String name
     ) {
         return jmsQueueBuilder(factorySupplier)
@@ -1148,7 +1148,7 @@ public final class Sources {
      * are available).
      */
     @Nonnull
-    public static JmsSourceBuilder jmsQueueBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
+    public static JmsSourceBuilder jmsQueueBuilder(DistributedSupplier<? extends ConnectionFactory> factorySupplier) {
         return new JmsSourceBuilder(factorySupplier, false);
     }
 
@@ -1163,7 +1163,7 @@ public final class Sources {
      */
     @Nonnull
     public static StreamSource<Message> jmsTopic(
-            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
+            @Nonnull DistributedSupplier<? extends ConnectionFactory> factorySupplier,
             @Nonnull String name
     ) {
         return jmsTopicBuilder(factorySupplier)
@@ -1195,7 +1195,7 @@ public final class Sources {
      * documentation for details.
      */
     @Nonnull
-    public static JmsSourceBuilder jmsTopicBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
+    public static JmsSourceBuilder jmsTopicBuilder(DistributedSupplier<? extends ConnectionFactory> factorySupplier) {
         return new JmsSourceBuilder(factorySupplier, true);
     }
 
@@ -1246,9 +1246,9 @@ public final class Sources {
      * @param <T> type of output objects
      */
     public static <T> BatchSource<T> jdbc(
-            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
             @Nonnull ToResultSetFunction resultSetFn,
-            @Nonnull DistributedFunction<ResultSet, T> createOutputFn
+            @Nonnull DistributedFunction<? super ResultSet, ? extends T> createOutputFn
     ) {
         return batchFromProcessor("jdbcSource",
                 SourceProcessors.readJdbcP(connectionSupplier, resultSetFn, createOutputFn));
@@ -1270,7 +1270,7 @@ public final class Sources {
     public static <T> BatchSource<T> jdbc(
             @Nonnull String connectionURL,
             @Nonnull String query,
-            @Nonnull DistributedFunction<ResultSet, T> createOutputFn
+            @Nonnull DistributedFunction<? super ResultSet, ? extends T> createOutputFn
     ) {
         return batchFromProcessor("jdbcSource",
                 SourceProcessors.readJdbcP(connectionURL, query, createOutputFn));

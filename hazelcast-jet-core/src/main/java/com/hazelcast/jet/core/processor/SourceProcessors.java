@@ -96,8 +96,8 @@ public final class SourceProcessors {
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier readMapP(
             @Nonnull String mapName,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull Projection<Entry<K, V>, T> projectionFn
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull Projection<? super Entry<K, V>, ? extends T> projectionFn
     ) {
         return ReadWithPartitionIteratorP.readMapSupplier(mapName, predicate, projectionFn);
     }
@@ -109,8 +109,8 @@ public final class SourceProcessors {
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier readMapP(
             @Nonnull String mapName,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull DistributedFunction<? super Entry<K, V>, ? extends T> projectionFn
     ) {
         return ReadWithPartitionIteratorP.readMapSupplier(mapName, predicate, toProjection(projectionFn));
     }
@@ -136,8 +136,8 @@ public final class SourceProcessors {
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamMapP(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
+            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<? super T> wmGenParams
     ) {
@@ -164,8 +164,8 @@ public final class SourceProcessors {
     public static <T, K, V> ProcessorMetaSupplier readRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull Projection<Entry<K, V>, T> projection
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
         return ReadWithPartitionIteratorP.readRemoteMapSupplier(mapName, clientConfig, projection, predicate);
     }
@@ -178,8 +178,8 @@ public final class SourceProcessors {
     public static <T, K, V> ProcessorMetaSupplier readRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull DistributedFunction<? super Entry<K, V>, ? extends T> projectionFn
     ) {
         return ReadWithPartitionIteratorP.readRemoteMapSupplier(
                 mapName, clientConfig, toProjection(projectionFn), predicate
@@ -191,7 +191,7 @@ public final class SourceProcessors {
      * {@link Sources#remoteMapJournal(String, ClientConfig, JournalInitialPosition)}.
      */
     @Nonnull
-    public static <K, V, R> ProcessorMetaSupplier streamRemoteMapP(
+    public static <K, V> ProcessorMetaSupplier streamRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull JournalInitialPosition initialPos,
@@ -210,8 +210,8 @@ public final class SourceProcessors {
     public static <T, K, V> ProcessorMetaSupplier streamRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
+            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<? super T> wmGenParams
     ) {
@@ -233,7 +233,7 @@ public final class SourceProcessors {
      * {@link Sources#cacheJournal(String, JournalInitialPosition)}.
      */
     @Nonnull
-    public static <K, V, R> ProcessorMetaSupplier streamCacheP(
+    public static <K, V> ProcessorMetaSupplier streamCacheP(
             @Nonnull String cacheName,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<? super Entry<K, V>> wmGenParams
@@ -249,8 +249,8 @@ public final class SourceProcessors {
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamCacheP(
             @Nonnull String cacheName,
-            @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
+            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<? super T> wmGenParams
     ) {
@@ -293,8 +293,8 @@ public final class SourceProcessors {
     public static <T, K, V> ProcessorMetaSupplier streamRemoteCacheP(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
+            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
+            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<? super T> wmGenParams
     ) {
@@ -341,7 +341,7 @@ public final class SourceProcessors {
             @Nonnull Charset charset,
             @Nonnull String glob,
             boolean sharedFileSystem,
-            @Nonnull DistributedBiFunction<String, String, R> mapOutputFn
+            @Nonnull DistributedBiFunction<? super String, ? super String, ? extends R> mapOutputFn
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
@@ -361,7 +361,7 @@ public final class SourceProcessors {
             @Nonnull Charset charset,
             @Nonnull String glob,
             boolean sharedFileSystem,
-            @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
+            @Nonnull DistributedBiFunction<? super String, ? super String, ?> mapOutputFn
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
@@ -373,11 +373,11 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier streamJmsQueueP(
-            @Nonnull DistributedSupplier<Connection> connectionSupplier,
-            @Nonnull DistributedFunction<Connection, Session> sessionFn,
-            @Nonnull DistributedFunction<Session, MessageConsumer> consumerFn,
-            @Nonnull DistributedConsumer<Session> flushFn,
-            @Nonnull DistributedFunction<Message, T> projectionFn
+            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
+            @Nonnull DistributedFunction<? super Connection, ? extends Session> sessionFn,
+            @Nonnull DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
+            @Nonnull DistributedConsumer<? super Session> flushFn,
+            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn
     ) {
         return ProcessorMetaSupplier.of(
                 StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn),
@@ -389,11 +389,11 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier streamJmsTopicP(
-            @Nonnull DistributedSupplier<Connection> connectionSupplier,
-            @Nonnull DistributedFunction<Connection, Session> sessionFn,
-            @Nonnull DistributedFunction<Session, MessageConsumer> consumerFn,
-            @Nonnull DistributedConsumer<Session> flushFn,
-            @Nonnull DistributedFunction<Message, T> projectionFn
+            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
+            @Nonnull DistributedFunction<? super Connection, ? extends Session> sessionFn,
+            @Nonnull DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
+            @Nonnull DistributedConsumer<? super Session> flushFn,
+            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn
     ) {
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn));
@@ -404,9 +404,9 @@ public final class SourceProcessors {
      * DistributedSupplier, ToResultSetFunction, DistributedFunction)}.
      */
     public static <T> ProcessorMetaSupplier readJdbcP(
-            @Nonnull DistributedSupplier<java.sql.Connection> connectionSupplier,
+            @Nonnull DistributedSupplier<? extends java.sql.Connection> connectionSupplier,
             @Nonnull ToResultSetFunction resultSetFn,
-            @Nonnull DistributedFunction<ResultSet, T> mapOutputFn
+            @Nonnull DistributedFunction<? super ResultSet, ? extends T> mapOutputFn
     ) {
         checkSerializable(connectionSupplier, "connectionSupplier");
         checkSerializable(resultSetFn, "resultSetFn");
@@ -421,7 +421,7 @@ public final class SourceProcessors {
     public static <T> ProcessorMetaSupplier readJdbcP(
             @Nonnull String connectionURL,
             @Nonnull String query,
-            @Nonnull DistributedFunction<ResultSet, T> mapOutputFn
+            @Nonnull DistributedFunction<? super ResultSet, ? extends T> mapOutputFn
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
         return ReadJdbcP.supplier(connectionURL, query, mapOutputFn);

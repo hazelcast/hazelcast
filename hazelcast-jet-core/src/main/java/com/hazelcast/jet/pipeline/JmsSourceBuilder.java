@@ -39,13 +39,13 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class JmsSourceBuilder {
 
-    private final DistributedSupplier<ConnectionFactory> factorySupplier;
+    private final DistributedSupplier<? extends ConnectionFactory> factorySupplier;
     private final boolean isTopic;
 
-    private DistributedFunction<ConnectionFactory, Connection> connectionFn;
-    private DistributedFunction<Connection, Session> sessionFn;
-    private DistributedFunction<Session, MessageConsumer> consumerFn;
-    private DistributedConsumer<Session> flushFn;
+    private DistributedFunction<? super ConnectionFactory, ? extends Connection> connectionFn;
+    private DistributedFunction<? super Connection, ? extends Session> sessionFn;
+    private DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn;
+    private DistributedConsumer<? super Session> flushFn;
 
     private String username;
     private String password;
@@ -56,7 +56,7 @@ public final class JmsSourceBuilder {
     /**
      * Use {@link Sources#jmsQueueBuilder} of {@link Sources#jmsTopicBuilder}.
      */
-    JmsSourceBuilder(DistributedSupplier<ConnectionFactory> factorySupplier, boolean isTopic) {
+    JmsSourceBuilder(DistributedSupplier<? extends ConnectionFactory> factorySupplier, boolean isTopic) {
         checkSerializable(factorySupplier, "factorySupplier");
         this.factorySupplier = factorySupplier;
         this.isTopic = isTopic;
@@ -82,7 +82,9 @@ public final class JmsSourceBuilder {
      * ConnectionFactory#createConnection(username, password)} to create the
      * connection. See {@link #connectionParams(String, String)}.
      */
-    public JmsSourceBuilder connectionFn(@Nonnull DistributedFunction<ConnectionFactory, Connection> connectionFn) {
+    public JmsSourceBuilder connectionFn(
+            @Nonnull DistributedFunction<? super ConnectionFactory, ? extends Connection> connectionFn
+    ) {
         checkSerializable(connectionFn, "connectionFn");
         this.connectionFn = connectionFn;
         return this;
@@ -110,7 +112,7 @@ public final class JmsSourceBuilder {
      * Connection#createSession(boolean transacted, int acknowledgeMode)} to
      * create the session. See {@link #sessionParams(boolean, int)}.
      */
-    public JmsSourceBuilder sessionFn(@Nonnull DistributedFunction<Connection, Session> sessionFn) {
+    public JmsSourceBuilder sessionFn(@Nonnull DistributedFunction<? super Connection, ? extends Session> sessionFn) {
         checkSerializable(sessionFn, "sessionFn");
         this.sessionFn = sessionFn;
         return this;
@@ -133,7 +135,9 @@ public final class JmsSourceBuilder {
      * Either {@code consumerFn} or {@code destinationName} should be set. See
      * {@link #destinationName(String)}.
      */
-    public JmsSourceBuilder consumerFn(@Nonnull DistributedFunction<Session, MessageConsumer> consumerFn) {
+    public JmsSourceBuilder consumerFn(
+            @Nonnull DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn
+    ) {
         checkSerializable(consumerFn, "consumerFn");
         this.consumerFn = consumerFn;
         return this;
@@ -144,7 +148,7 @@ public final class JmsSourceBuilder {
      * <p>
      * If not provided, the builder creates a no-op consumer.
      */
-    public JmsSourceBuilder flushFn(@Nonnull DistributedConsumer<Session> flushFn) {
+    public JmsSourceBuilder flushFn(@Nonnull DistributedConsumer<? super Session> flushFn) {
         checkSerializable(flushFn, "flushFn");
         this.flushFn = flushFn;
         return this;
@@ -158,12 +162,13 @@ public final class JmsSourceBuilder {
      *                    message
      * @param <T> the type of the items the source emits
      */
-    public <T> StreamSource<T> build(@Nonnull DistributedFunction<Message, T> projectionFn) {
+    public <T> StreamSource<T> build(@Nonnull DistributedFunction<? super Message, ? extends T> projectionFn) {
         String usernameLocal = username;
         String passwordLocal = password;
         boolean transactedLocal = transacted;
         int acknowledgeModeLocal = acknowledgeMode;
         String nameLocal = destinationName;
+        @SuppressWarnings("UnnecessaryLocalVariable")
         boolean isTopicLocal = isTopic;
 
         if (connectionFn == null) {
@@ -174,16 +179,19 @@ public final class JmsSourceBuilder {
         }
         if (consumerFn == null) {
             checkNotNull(nameLocal);
-            consumerFn = session ->
-                    session.createConsumer(isTopicLocal ? session.createTopic(nameLocal) : session.createQueue(nameLocal));
+            consumerFn = session -> session.createConsumer(isTopicLocal
+                    ? session.createTopic(nameLocal)
+                    : session.createQueue(nameLocal));
         }
         if (flushFn == null) {
             flushFn = noopConsumer();
         }
 
-        DistributedFunction<ConnectionFactory, Connection> connectionFnLocal = connectionFn;
-        DistributedSupplier<ConnectionFactory> factorySupplierLocal = factorySupplier;
-        DistributedSupplier<Connection> connectionSupplier = () -> connectionFnLocal.apply(factorySupplierLocal.get());
+        DistributedFunction<? super ConnectionFactory, ? extends Connection> connectionFnLocal = connectionFn;
+        @SuppressWarnings("UnnecessaryLocalVariable")
+        DistributedSupplier<? extends ConnectionFactory> factorySupplierLocal = factorySupplier;
+        DistributedSupplier<? extends Connection> connectionSupplier =
+                () -> connectionFnLocal.apply(factorySupplierLocal.get());
 
         ProcessorMetaSupplier metaSupplier = isTopic ?
                 SourceProcessors.streamJmsTopicP(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn)
@@ -201,6 +209,6 @@ public final class JmsSourceBuilder {
 
     private String sourceName() {
         return (isTopic ? "jmsTopicSource(" : "jmsQueueSource(")
-                + (destinationName == null ? "?" : destinationName) + ")";
+                + (destinationName == null ? "?" : destinationName) + ')';
     }
 }

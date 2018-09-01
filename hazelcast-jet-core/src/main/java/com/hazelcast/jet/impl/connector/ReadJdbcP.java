@@ -40,9 +40,9 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
  */
 public final class ReadJdbcP<T> extends AbstractProcessor {
 
-    private final DistributedSupplier<Connection> connectionSupplier;
+    private final DistributedSupplier<? extends Connection> connectionSupplier;
     private final ToResultSetFunction resultSetFn;
-    private final DistributedFunction<ResultSet, T> mapOutputFn;
+    private final DistributedFunction<? super ResultSet, ? extends T> mapOutputFn;
 
     private Connection connection;
     private ResultSet resultSet;
@@ -51,9 +51,9 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     private int index;
 
     private ReadJdbcP(
-            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
             @Nonnull ToResultSetFunction resultSetFn,
-            @Nonnull DistributedFunction<ResultSet, T> mapOutputFn
+            @Nonnull DistributedFunction<? super ResultSet, ? extends T> mapOutputFn
     ) {
         this.connectionSupplier = connectionSupplier;
         this.resultSetFn = resultSetFn;
@@ -69,9 +69,9 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
      * Use {@link SourceProcessors#readJdbcP}.
      */
     public static <T> ProcessorMetaSupplier supplier(
-            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
             @Nonnull ToResultSetFunction resultSetFn,
-            @Nonnull DistributedFunction<ResultSet, T> mapOutputFn
+            @Nonnull DistributedFunction<? super ResultSet, ? extends T> mapOutputFn
     ) {
         return ProcessorMetaSupplier.preferLocalParallelismOne(() ->
                 new ReadJdbcP<>(connectionSupplier, resultSetFn, mapOutputFn));
@@ -80,7 +80,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     public static <T> ProcessorMetaSupplier supplier(
             @Nonnull String connectionURL,
             @Nonnull String query,
-            @Nonnull DistributedFunction<ResultSet, T> mapOutputFn
+            @Nonnull DistributedFunction<? super ResultSet, ? extends T> mapOutputFn
     ) {
         return ProcessorMetaSupplier.forceTotalParallelismOne(ProcessorSupplier.of(() ->
                 new ReadJdbcP<>(

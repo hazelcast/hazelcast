@@ -50,7 +50,7 @@ public final class WriteFileP {
      */
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nonnull String directoryName,
-            @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull DistributedFunction<? super T, ? extends String> toStringFn,
             @Nonnull String charset,
             boolean append) {
 

@@ -321,9 +321,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final SerializableClientConfig serializableConfig;
-        private final DistributedFunction<HazelcastInstance, EventJournalReader<E>> eventJournalReaderSupplier;
-        private final DistributedPredicate<E> predicate;
-        private final DistributedFunction<E, T> projection;
+        private final DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
+                eventJournalReaderSupplier;
+        private final DistributedPredicate<? super E> predicate;
+        private final DistributedFunction<? super E, ? extends T> projection;
         private final JournalInitialPosition initialPos;
         private final WatermarkGenerationParams<? super T> wmGenParams;
 
@@ -332,9 +333,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         ClusterMetaSupplier(
                 @Nullable ClientConfig clientConfig,
-                @Nonnull DistributedFunction<HazelcastInstance, EventJournalReader<E>> eventJournalReaderSupplier,
-                @Nonnull DistributedPredicate<E> predicate,
-                @Nonnull DistributedFunction<E, T> projection,
+                @Nonnull DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
+                        eventJournalReaderSupplier,
+                @Nonnull DistributedPredicate<? super E> predicate,
+                @Nonnull DistributedFunction<? super E, ? extends T> projection,
                 @Nonnull JournalInitialPosition initialPos,
                 @Nonnull WatermarkGenerationParams<? super T> wmGenParams
         ) {
@@ -401,7 +403,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Nullable
         private final SerializableClientConfig serializableClientConfig;
         @Nonnull
-        private final DistributedFunction<HazelcastInstance, EventJournalReader<E>> eventJournalReaderSupplier;
+        private final DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
+                eventJournalReaderSupplier;
         @Nonnull
         private final DistributedPredicate<? super E> predicate;
         @Nonnull
@@ -417,7 +420,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         ClusterProcessorSupplier(
                 @Nonnull List<Integer> ownedPartitions,
                 @Nullable SerializableClientConfig serializableClientConfig,
-                @Nonnull DistributedFunction<HazelcastInstance, EventJournalReader<E>> eventJournalReaderSupplier,
+                @Nonnull DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
+                        eventJournalReaderSupplier,
                 @Nonnull DistributedPredicate<? super E> predicate,
                 @Nonnull DistributedFunction<? super E, ? extends T> projection,
                 @Nonnull JournalInitialPosition initialPos,
@@ -468,8 +472,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     public static <K, V, T> ProcessorMetaSupplier streamMapSupplier(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
-            @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
+            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicate,
+            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<? super T> wmGenParams
     ) {
@@ -485,8 +489,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     public static <K, V, T> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
-            @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
+            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicate,
+            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<? super T> wmGenParams) {
         checkSerializable(predicate, "predicate");
@@ -500,8 +504,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     public static <K, V, T> ProcessorMetaSupplier streamCacheSupplier(
             @Nonnull String cacheName,
-            @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
-            @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
+            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicate,
+            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<? super T> wmGenParams) {
         checkSerializable(predicate, "predicate");
@@ -516,8 +520,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     public static <K, V, T> ProcessorMetaSupplier streamRemoteCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
-            @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
+            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicate,
+            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<? super T> wmGenParams) {
         checkSerializable(predicate, "predicate");
