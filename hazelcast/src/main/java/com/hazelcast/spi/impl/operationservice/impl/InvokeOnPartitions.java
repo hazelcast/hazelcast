@@ -38,8 +38,8 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 /**
  * Executes an operation on a set of partitions.
  *
- * // TODO delete this class after feature freeze is over, replace with {@link InvokeOnPartitionsAsync}
- * which has the same functionality and an async implementation. Allows
+ * // TODO delete this class in 3.12, replace with {@link InvokeOnPartitionsAsync}
+ * which has the same functionality, but in an async implementation. Allows
  * for async version of all-partitions operations, such as putAll, clear...
  */
 final class InvokeOnPartitions {
