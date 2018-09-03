@@ -181,14 +181,14 @@ public class ManualRestartTest extends JetTestSupport {
         job.join();
 
         Map<Integer, Integer> actual = new ArrayList<>(instances[0].<Entry<Integer, Integer>>getList("sink")).stream()
-                .filter(e -> e.getKey() == 0)
+                .filter(e -> e.getKey() == 0) // we'll only check partition 0
                 .map(Entry::getValue)
                 .collect(Collectors.toMap(e -> e, e -> 1, (o, n) -> o + n, TreeMap::new));
 
-        assertEquals(actual.toString(), (Integer) 1, actual.get(0));
-        assertEquals(actual.toString(), (Integer) 1, actual.get(9999));
-        // the result should be some ones, then some twos and then some ones. The ones should be from the time
-        // when the source was replayed from last snapshot.
+        assertEquals("first item != 1, " + actual.toString(), (Integer) 1, actual.get(0));
+        assertEquals("last item != 1, " + actual.toString(), (Integer) 1, actual.get(9999));
+        // the result should be some ones, then some twos and then some ones. The twos should be during the time
+        // since the last successful snapshot until the actual termination, when there was reprocessing.
         boolean sawTwo = false;
         boolean sawOneAgain = false;
         for (Integer v : actual.values()) {

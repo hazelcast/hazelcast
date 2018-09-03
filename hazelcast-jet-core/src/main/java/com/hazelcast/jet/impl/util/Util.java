@@ -24,8 +24,8 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JetEvent;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -64,6 +64,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
@@ -134,6 +135,32 @@ public final class Util {
             @Override
             public void onFailure(Throwable throwable) {
                 onError.accept(throwable);
+            }
+        };
+    }
+
+    /**
+     * This method will generate an {@link ExecutionCallback} which allows to
+     * asynchronously get notified when the execution is completed, either
+     * successfully or with an error.
+     *
+     * @param callback BiConsumer to call when execution is completed. Only one
+     *                of the passed values will be non-null, except for the
+     *                case the normal result is null, in which case both values
+     *                will be null
+     * @param <T> type of the response
+     * @return {@link ExecutionCallback}
+     */
+    public static <T> ExecutionCallback<T> callbackOf(BiConsumer<T, Throwable> callback) {
+        return new ExecutionCallback<T>() {
+            @Override
+            public void onResponse(T o) {
+                callback.accept(o, null);
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                callback.accept(null, throwable);
             }
         };
     }

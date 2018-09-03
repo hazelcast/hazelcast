@@ -143,8 +143,8 @@ public class SnapshotOperation extends AsyncJobOperation {
 
         /**
          * Merge other SnapshotOperationResult into this one. It adds the
-         * totals and if the other result has error, it will take it to this,
-         * unless there already was one.
+         * subtotals and if the other result has an error, it will store it
+         * into this, unless this result already has one.
          */
         public void merge(SnapshotOperationResult other) {
             numBytes += other.numBytes;

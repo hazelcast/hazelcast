@@ -54,7 +54,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +62,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -91,6 +91,7 @@ import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createE
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.util.Util.callbackOf;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -105,6 +106,13 @@ public class MasterContext {
 
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
     public static final String SNAPSHOT_VERTEX_PREFIX = "__snapshot_";
+
+    private static final Object NULL_OBJECT = new Object() {
+        @Override
+        public String toString() {
+            return "NULL_OBJECT";
+        }
+    };
 
     private final Object lock = new Object();
 
@@ -352,7 +360,7 @@ public class MasterContext {
         Function<ExecutionPlan, Operation> operationCtor = plan ->
                 new InitExecutionOperation(jobId, executionId, membersView.getVersion(), participants,
                         nodeEngine.getSerializationService().toData(plan));
-        invoke(operationCtor, this::onInitStepCompleted, null);
+        invokeOnParticipants(operationCtor, this::onInitStepCompleted, null);
     }
 
     private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId) {
@@ -483,7 +491,7 @@ public class MasterContext {
 
         jobStatus = RUNNING;
 
-        invoke(operationCtor, completionCallback, executionInvocationCallback);
+        invokeOnParticipants(operationCtor, completionCallback, executionInvocationCallback);
 
         if (isSnapshottingEnabled()) {
             coordinationService.scheduleSnapshot(jobId, executionId);
@@ -505,7 +513,7 @@ public class MasterContext {
 
     private void cancelExecutionInvocations(long jobId, long executionId, TerminationMode mode) {
         nodeEngine.getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR, () ->
-                invoke(plan -> new TerminateExecutionOperation(jobId, executionId, mode), responses -> { }, null));
+                invokeOnParticipants(plan -> new TerminateExecutionOperation(jobId, executionId, mode), null, null));
     }
 
     void beginSnapshot(long executionId) {
@@ -541,7 +549,8 @@ public class MasterContext {
         Function<ExecutionPlan, Operation> factory =
                 plan -> new SnapshotOperation(jobId, executionId, newSnapshotId, isTerminal);
 
-        invoke(factory, responses -> onSnapshotCompleted(responses, executionId, newSnapshotId, isTerminal), null);
+        invokeOnParticipants(factory,
+                responses -> onSnapshotCompleted(responses, executionId, newSnapshotId, isTerminal), null);
     }
 
     private void onSnapshotCompleted(Map<MemberInfo, Object> responses, long executionId, long snapshotId,
@@ -551,7 +560,7 @@ public class MasterContext {
         // was successful.
         SnapshotOperationResult mergedResult = new SnapshotOperationResult();
         for (Object response : responses.values()) {
-            // the response either SnapshotOperationResult or an exception, see #invoke() method
+            // the response is either SnapshotOperationResult or an exception, see #invokeOnParticipants() method
             if (response instanceof Throwable) {
                 response = new SnapshotOperationResult(0, 0, 0, (Throwable) response);
             }
@@ -681,7 +690,7 @@ public class MasterContext {
         }
 
         Function<ExecutionPlan, Operation> operationCtor = plan -> new CompleteExecutionOperation(executionId, finalError);
-        invoke(operationCtor, responses -> onCompleteExecutionCompleted(error), null);
+        invokeOnParticipants(operationCtor, responses -> onCompleteExecutionCompleted(error), null);
     }
 
     private void onCompleteExecutionCompleted(Throwable error) {
@@ -812,56 +821,37 @@ public class MasterContext {
 
     /**
      * @param completionCallback a consumer that will receive a map of
-     *                           responses, one for each member. The value will
-     *                           be either the response or an exception thrown
-     *                           from the operation.
+     *                           responses, one for each member, after all have
+     *                           been received. The value will be either the
+     *                           response or an exception thrown from the
+     *                           operation
+     * @param callback A callback that will be called after each individual
+     *                operation for each member completes
      */
-    private void invoke(Function<ExecutionPlan, Operation> operationCtor,
-                        Consumer<Map<MemberInfo, Object>> completionCallback,
-                        ExecutionCallback<Object> callback) {
-        CompletableFuture<Void> doneFuture = new CompletableFuture<>();
-        Map<MemberInfo, InternalCompletableFuture<Object>> futures = new ConcurrentHashMap<>();
-        invokeOnParticipants(futures, doneFuture, operationCtor);
-
-        // once all invocations return, notify the completion callback
-        doneFuture.whenComplete(withTryCatch(logger, (aVoid, throwable) -> {
-            Map<MemberInfo, Object> responses = new HashMap<>();
-            for (Entry<MemberInfo, InternalCompletableFuture<Object>> entry : futures.entrySet()) {
-                Object val;
-                try {
-                    val = entry.getValue().get();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    val = e;
-                } catch (Exception e) {
-                    val = peel(e);
-                }
-                responses.put(entry.getKey(), val);
-            }
-            completionCallback.accept(responses);
-        }));
-
-        if (callback != null) {
-            futures.values().forEach(f -> f.andThen(callback));
-        }
-    }
-
-    private void invokeOnParticipants(Map<MemberInfo, InternalCompletableFuture<Object>> futures,
-                                      CompletableFuture<Void> doneFuture,
-                                      Function<ExecutionPlan, Operation> opCtor) {
+    private void invokeOnParticipants(Function<ExecutionPlan, Operation> operationCtor,
+                                      @Nullable Consumer<Map<MemberInfo, Object>> completionCallback,
+                                      @Nullable ExecutionCallback<Object> callback) {
+        ConcurrentMap<MemberInfo, Object> responses = new ConcurrentHashMap<>();
         AtomicInteger remainingCount = new AtomicInteger(executionPlanMap.size());
-        for (Entry<MemberInfo, ExecutionPlan> e : executionPlanMap.entrySet()) {
-            MemberInfo member = e.getKey();
-            Operation op = opCtor.apply(e.getValue());
+        for (Entry<MemberInfo, ExecutionPlan> entry : executionPlanMap.entrySet()) {
+            MemberInfo member = entry.getKey();
+            Operation op = operationCtor.apply(entry.getValue());
             InternalCompletableFuture<Object> future = nodeEngine.getOperationService()
-                 .createInvocationBuilder(JetService.SERVICE_NAME, op, member.getAddress())
-                 .setDoneCallback(() -> {
-                     if (remainingCount.decrementAndGet() == 0) {
-                         doneFuture.complete(null);
-                     }
-                 })
-                 .invoke();
-            futures.put(member, future);
+                    .createInvocationBuilder(JetService.SERVICE_NAME, op, member.getAddress())
+                    .invoke();
+
+            if (completionCallback != null) {
+                future.andThen(callbackOf((r, throwable) -> {
+                    responses.put(member, r != null ? r : throwable != null ? peel(throwable) : NULL_OBJECT);
+                    if (remainingCount.decrementAndGet() == 0) {
+                        completionCallback.accept(responses);
+                    }
+                }));
+            }
+
+            if (callback != null) {
+                future.andThen(callback);
+            }
         }
     }
 
