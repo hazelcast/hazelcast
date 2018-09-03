@@ -28,7 +28,6 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.Message;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
-import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -38,19 +37,17 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ReliableMessageListener;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -190,7 +187,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
             }
         });
 
-        sleepSeconds(3);
+        assertNonEmptyPendingInvocationAndWaitSet(server);
 
         client.shutdown();
 
@@ -206,9 +203,32 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
         // ReliableTopic listener registers a blocking invocation
         client.getReliableTopic(randomName()).addMessageListener(new NopReliableMessageListener());
 
+        assertNonEmptyPendingInvocationAndWaitSet(server);
+
         client.shutdown();
 
         assertEmptyPendingInvocationAndWaitSet(server);
+    }
+
+    private void assertNonEmptyPendingInvocationAndWaitSet(HazelcastInstance server) {
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(server);
+        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        final InvocationRegistry invocationRegistry = operationService.getInvocationRegistry();
+        final OperationParkerImpl operationParker = (OperationParkerImpl) nodeEngine.getOperationParker();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse(invocationRegistry.entrySet().isEmpty());
+            }
+        });
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(operationParker.getTotalParkedOperationCount() > 0);
+            }
+        });
     }
 
     private void assertEmptyPendingInvocationAndWaitSet(HazelcastInstance server) {
@@ -220,16 +240,16 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertThat(invocationRegistry.entrySet(), Matchers.<Map.Entry<Long, Invocation>>empty());
+                assertTrue(invocationRegistry.entrySet().isEmpty());
             }
-        }, 10);
+        });
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 assertEquals(0, operationParker.getTotalParkedOperationCount());
             }
-        }, 10);
+        });
     }
 
     private static class NopReliableMessageListener implements ReliableMessageListener<Object> {
