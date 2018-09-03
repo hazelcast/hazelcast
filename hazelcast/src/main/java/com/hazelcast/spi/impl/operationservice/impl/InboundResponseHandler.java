@@ -49,9 +49,9 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * response packet, it will lookup the Invocation from the InvocationRegistry and
  * notify the Invocation.
  *
- * InboundResponseHandlers are not threadsafe. So if there are multiple threads
+ * InboundResponseHandlers are not thread-safe. So if there are multiple threads
  * processing responses, each thread needs to get its own instance. Only the backup
- * handling is threadsafe since backups can be completed locally by any thread.
+ * handling is thread-safe since backups can be completed locally by any thread.
  */
 public final class InboundResponseHandler implements Consumer<Packet> {
 
@@ -119,7 +119,7 @@ public final class InboundResponseHandler implements Consumer<Packet> {
             // taking too much time.
             if (invocation == null) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("No Invocation found for backup response with callId " + callId);
+                    logger.finest("No Invocation found for backup response with callId=" + callId);
                 }
                 return;
             }
@@ -137,7 +137,7 @@ public final class InboundResponseHandler implements Consumer<Packet> {
         if (invocation == null) {
             responsesMissing.inc();
             if (nodeEngine.isRunning() && callId != 0) {
-                logger.warning("No Invocation found for error response with callId: " + callId + " sent from " + sender);
+                logger.warning("No Invocation found for error response with callId=" + callId + " sent from " + sender);
             }
             return;
         }
@@ -152,7 +152,7 @@ public final class InboundResponseHandler implements Consumer<Packet> {
         if (invocation == null) {
             responsesMissing.inc();
             if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for normal response with callId " + callId + " sent from " + sender);
+                logger.warning("No Invocation found for normal response with callId=" + callId + " sent from " + sender);
             }
             return;
         }
@@ -166,7 +166,7 @@ public final class InboundResponseHandler implements Consumer<Packet> {
         if (invocation == null) {
             responsesMissing.inc();
             if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for call timeout response with callId" + callId + " sent from " + sender);
+                logger.warning("No Invocation found for call timeout response with callId=" + callId + " sent from " + sender);
             }
             return;
         }

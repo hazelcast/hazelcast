@@ -828,14 +828,14 @@ public class ClusterJoinManager {
 
         if (targetDataMemberCount > currentDataMemberCount) {
             logger.info("We should merge to " + joinMessage.getAddress()
-                    + ", because their data member count is bigger than ours ["
+                    + " because their data member count is bigger than ours ["
                     + (targetDataMemberCount + " > " + currentDataMemberCount) + ']');
             return LOCAL_NODE_SHOULD_MERGE;
         }
 
         if (targetDataMemberCount < currentDataMemberCount) {
             logger.info(joinMessage.getAddress() + " should merge to us "
-                    + ", because our data member count is bigger than theirs ["
+                    + "because our data member count is bigger than theirs ["
                     + (currentDataMemberCount + " > " + targetDataMemberCount) + ']');
             return REMOTE_NODE_SHOULD_MERGE;
         }
@@ -920,7 +920,7 @@ public class ClusterJoinManager {
         for (Address address : clusterService.getMemberAddresses()) {
             if (targetMemberAddresses.contains(address)) {
                 logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessageAddress
-                        + ", because it thinks " + address + " as its member. "
+                        + ", because it thinks " + address + " is its member. "
                         + "But " + address + " is member of this cluster.");
                 return false;
             }
