@@ -63,6 +63,7 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_EVICTION_BATCH_SIZE;
 import static java.lang.System.getProperty;
 
 /**
@@ -153,8 +154,10 @@ public class MapContainer {
         } else {
             MemoryInfoAccessor memoryInfoAccessor = getMemoryInfoAccessor();
             EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
-            IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
-            evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService);
+            NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+            IPartitionService partitionService = nodeEngine.getPartitionService();
+            int batchSize = nodeEngine.getProperties().getInteger(MAP_EVICTION_BATCH_SIZE);
+            evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService, batchSize);
         }
     }
 
