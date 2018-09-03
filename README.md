@@ -8,6 +8,8 @@ You can use it in your project deployed on Kubernetes in order to make the embed
 
 To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml` as presented below or an equivalent Java-based configuration, your Hazelcast instances discover themselves automatically.
 
+***NOTE:*** If you also have the direct dependency to `hazelcast` specified, then please note that hazelcast-kubernetes 1.3+ is compatible with hazelcast 3.11+ and for older hazelcast verions you need to use hazelcast-kubernetes 1.2.
+
 #### Maven
 
 ```xml
