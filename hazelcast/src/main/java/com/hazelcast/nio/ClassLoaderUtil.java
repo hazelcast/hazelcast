@@ -44,6 +44,8 @@ public final class ClassLoaderUtil {
     public static final String HAZELCAST_ARRAY = "[L" + HAZELCAST_BASE_PACKAGE;
 
     private static final boolean CLASS_CACHE_DISABLED = Boolean.getBoolean("hazelcast.compat.classloading.cache.disabled");
+    private static final boolean CONSTRUCTOR_CACHE_DISABLED =
+            Boolean.getBoolean("hazelcast.classloading.constructor.cache.disabled");
 
     private static final Map<String, Class> PRIMITIVE_CLASSES;
     private static final int MAX_PRIM_CLASSNAME_LENGTH = 7;
@@ -94,9 +96,11 @@ public final class ClassLoaderUtil {
     @SuppressWarnings("unchecked")
     public static <T> T newInstance(ClassLoader classLoader, final String className) throws Exception {
         classLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
-        Constructor<T> constructor = CONSTRUCTOR_CACHE.get(classLoader, className);
-        if (constructor != null) {
-            return constructor.newInstance();
+        if (!CONSTRUCTOR_CACHE_DISABLED) {
+            Constructor<T> constructor = CONSTRUCTOR_CACHE.get(classLoader, className);
+            if (constructor != null) {
+                return constructor.newInstance();
+            }
         }
         Class<T> klass = (Class<T>) loadClass(classLoader, className);
         return newInstance(klass, classLoader, className);
@@ -107,7 +111,7 @@ public final class ClassLoaderUtil {
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);
         }
-        if (!shouldBypassCache(klass)) {
+        if (!shouldBypassCache(klass) && !CONSTRUCTOR_CACHE_DISABLED) {
             CONSTRUCTOR_CACHE.put(classLoader, className, constructor);
         }
         return constructor.newInstance();
