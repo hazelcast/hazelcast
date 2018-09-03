@@ -2,7 +2,11 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ==== 3.10.5 ====
 
-1. Fixes
+1. Enhancements
+
+- Introduced OperationThreadSamples as a new diagnostics plugin. It samples the operation threads and checks the running operations/tasks. See http://docs.hazelcast.org/docs/3.10.5/manual/html-single/#operationthreadsamples[OperationThreadSamples].
+
+2. Fixes
 
 - Added a workaround for the Constructor cache, which performs caching under incorrect keys, such that you have now the option not to use that cache. [#13679]
 - A client connection could not detect whether it has been idle and hence the member closes the connection. This is fixed now so that the member does not close the connections when the clients only listen. [#13576]
