@@ -96,6 +96,8 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
                 if (entry.isExpired()) {
                     // expired
                     entry.onExpire();
+                } else if (entry.isCancelled()) {
+                    entry.onCancel();
                 } else {
                     if (entry.shouldWait()) {
                         return;
@@ -179,6 +181,18 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
             Operation op = entry.getOperation();
             if (callerUuid.equals(op.getCallerUuid())) {
                 entry.setValid(false);
+            }
+        }
+    }
+
+    public void cancelAll(String callerUuid, Throwable cause) {
+        for (WaitSetEntry entry : queue) {
+            if (!entry.isValid()) {
+                continue;
+            }
+            Operation op = entry.getOperation();
+            if (callerUuid.equals(op.getCallerUuid())) {
+                entry.cancel(cause);
             }
         }
     }
