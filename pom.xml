@@ -50,7 +50,7 @@
     <mockito.version>1.10.19</mockito.version>
     <powermock.version>1.7.3</powermock.version>
 
-    <hazelcast.version>3.10</hazelcast.version>
+    <hazelcast.version>3.11-BETA-1</hazelcast.version>
     <dnsjava.version>2.1.8</dnsjava.version>
 
     <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
@@ -202,7 +202,7 @@
               com.hazelcast.config,com.hazelcast.config.properties,
               com.hazelcast.spi.discovery,com.hazelcast.core,
               com.hazelcast.logging,com.hazelcast.nio, com.hazelcast.util,
-              org.xbill.DNS,com.hazelcast.com.eclipsesource.json,javax.net.ssl,javax.security.auth.x500
+              org.xbill.DNS,com.hazelcast.internal.json,javax.net.ssl,javax.security.auth.x500
             </Import-Package>
           </instructions>
         </configuration>
