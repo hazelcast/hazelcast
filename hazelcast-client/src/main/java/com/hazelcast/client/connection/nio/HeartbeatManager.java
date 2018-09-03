@@ -97,6 +97,12 @@ public class HeartbeatManager implements Runnable {
                 connection.onHeartbeatFailed();
                 fireHeartbeatStopped(connection);
             }
+        } else {
+            if (!connection.isHeartBeating()) {
+                logger.warning("Heartbeat is back to healthy for the connection: " + connection);
+                connection.onHeartbeatResumed();
+                fireHeartbeatResumed(connection);
+            }
         }
 
         if (now - connection.lastWriteTimeMillis() > heartbeatInterval) {
@@ -119,12 +125,6 @@ public class HeartbeatManager implements Runnable {
                     }
                 }
             });
-        } else {
-            if (!connection.isHeartBeating()) {
-                logger.warning("Heartbeat is back to healthy for the connection: " + connection);
-                connection.onHeartbeatResumed();
-                fireHeartbeatResumed(connection);
-            }
         }
     }
 
