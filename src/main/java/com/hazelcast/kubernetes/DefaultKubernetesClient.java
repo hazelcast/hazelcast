@@ -16,10 +16,10 @@
 
 package com.hazelcast.kubernetes;
 
-import com.hazelcast.com.eclipsesource.json.Json;
-import com.hazelcast.com.eclipsesource.json.JsonArray;
-import com.hazelcast.com.eclipsesource.json.JsonObject;
-import com.hazelcast.com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.nio.IOUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
