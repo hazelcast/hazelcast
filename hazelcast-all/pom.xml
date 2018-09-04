@@ -105,6 +105,7 @@
                                             org.apache.commons.logging;resolution:=optional,
                                             javax.script.*;resolution:=optional,
                                             org.jclouds.*;resolution:=optional,
+                                            org.xbill.DNS.*;resolution:=optional,
                                         </Import-Package>
                                     </overrideInstructions>
                                 </transformer>
@@ -159,6 +160,11 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-aws</artifactId>
             <version>2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-kubernetes</artifactId>
+            <version>1.3</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
