@@ -62,16 +62,20 @@ public final class SourceBuilder<S> {
      * @param <T> type of the buffer item
      */
     public interface SourceBuffer<T> {
-
         /**
-         * Adds an item to the buffer.
+         * Returns the number of items the buffer holds.
          */
-        void add(@Nonnull T item);
+        int size();
 
         /**
          * Closes the buffer, signaling that all items have been emitted.
          */
         void close();
+
+        /**
+         * Adds an item to the buffer.
+         */
+        void add(@Nonnull T item);
     }
 
     /**
@@ -80,8 +84,7 @@ public final class SourceBuilder<S> {
      *
      * @param <T> type of the buffer item
      */
-    public interface TimestampedSourceBuffer<T> {
-
+    public interface TimestampedSourceBuffer<T> extends SourceBuffer<T> {
         /**
          * Adds an item to the buffer, assigning a timestamp to it. The timestamp
          * is in milliseconds.
@@ -89,9 +92,13 @@ public final class SourceBuilder<S> {
         void add(@Nonnull T item, long timestamp);
 
         /**
-         * Closes the buffer, signaling that all items have been emitted.
+         * Adds an item to the buffer, assigning {@code System.currentTimeMillis()}
+         * to it as the timestamp.
          */
-        void close();
+        @Override
+        default void add(@Nonnull T item) {
+            add(item, System.currentTimeMillis());
+        }
     }
 
     private SourceBuilder(
@@ -522,7 +529,7 @@ public final class SourceBuilder<S> {
          *                        the highest emitted timestamp so far
          */
         @Nonnull
-        public TimestampedStream<T> allowedLateness(int allowedLateness) {
+        public TimestampedStream<T> allowedLateness(long allowedLateness) {
             this.maxLag = allowedLateness;
             return this;
         }

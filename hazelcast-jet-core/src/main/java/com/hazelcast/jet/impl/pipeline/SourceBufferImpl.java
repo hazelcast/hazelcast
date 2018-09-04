@@ -42,6 +42,10 @@ public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
         buffer.add(item);
     }
 
+    public final int size() {
+        return buffer.size();
+    }
+
     @Override
     public final Traverser<T> traverse() {
         return buffer::poll;
@@ -73,5 +77,4 @@ public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
             addInternal(jetEvent(item, timestamp));
         }
     }
-
 }
