@@ -430,8 +430,9 @@ public final class Sinks {
             @Nonnull String mapName,
             @Nonnull DistributedBiFunction<? super V, ? super E, ? extends V> updateFn
     ) {
+        //noinspection Convert2MethodRef (provokes a javac 9 bug)
         return fromProcessor("mapWithUpdatingSink(" + mapName + ')',
-                updateMapP(mapName, Entry<K, V>::getKey, updateFn));
+                updateMapP(mapName, (Entry<K, V> e) -> e.getKey(), updateFn));
     }
 
     /**
@@ -457,8 +458,9 @@ public final class Sinks {
             @Nonnull DistributedBiFunction<? super V, ? super E, ? extends V> updateFn
 
     ) {
+        //noinspection Convert2MethodRef (provokes a javac 9 bug)
         return fromProcessor("remoteMapWithUpdatingSink(" + mapName + ')',
-                updateRemoteMapP(mapName, clientConfig, Entry<K, V>::getKey, updateFn));
+                updateRemoteMapP(mapName, clientConfig, (Entry<K, V> e) -> e.getKey(), updateFn));
     }
 
     /**
