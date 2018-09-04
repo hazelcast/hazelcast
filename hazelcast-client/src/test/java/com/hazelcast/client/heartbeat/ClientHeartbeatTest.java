@@ -103,7 +103,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     }
 
     @Test
-    public void testHeartbeatResumedEvent() throws InterruptedException {
+    public void testHeartbeatResumedEvent() {
         hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
@@ -116,22 +116,25 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         final ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicLong stoppedCount = new AtomicLong();
+        final AtomicLong resumedCount = new AtomicLong();
         connectionManager.addConnectionHeartbeatListener(new ConnectionHeartbeatListener() {
             @Override
             public void heartbeatResumed(Connection connection) {
                 assertEquals(instance2.getCluster().getLocalMember().getAddress(), connection.getEndPoint());
                 countDownLatch.countDown();
+                resumedCount.incrementAndGet();
             }
 
             @Override
             public void heartbeatStopped(Connection connection) {
+                stoppedCount.incrementAndGet();
             }
         });
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertNotNull(connectionManager.getActiveConnection(instance2.getCluster().getLocalMember().getAddress()));
             }
         });
@@ -141,6 +144,8 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         unblockMessagesFromInstance(instance2, client);
 
         assertOpenEventually(countDownLatch);
+        assertEquals(1, resumedCount.get());
+        assertEquals(1, stoppedCount.get());
     }
 
     @Test
