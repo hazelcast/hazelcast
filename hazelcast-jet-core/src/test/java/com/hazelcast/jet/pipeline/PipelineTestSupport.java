@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.query.TruePredicate.truePredicate;
 import static java.util.stream.Collectors.toList;
 
+@SuppressWarnings("WeakerAccess")
 public abstract class PipelineTestSupport extends TestInClusterSupport {
 
     protected int itemCount = 1_000;
@@ -56,7 +57,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
     protected IList<Object> srcList;
     protected IList<Object> sinkList;
 
-    private ICache<String, Integer> srcCache;
+    protected ICache<String, Integer> srcCache;
 
     @Before
     public void beforePipelineTestSupport() {

@@ -62,11 +62,12 @@ public interface Stage {
     Stage setLocalParallelism(int localParallelism);
 
     /**
-     * Overrides the default name of the stage with the name you choose. This
-     * can be useful for debugging purposes, to better distinguish pipeline
-     * stages in the diagnostic output.
+     * Overrides the default name of the stage with the name you choose and
+     * returns the stage. This can be useful for debugging purposes, to better
+     * distinguish pipeline stages in the diagnostic output.
      *
      * @param name the stage name
+     * @return this stage
      */
     @Nonnull
     Stage setName(@Nonnull String name);

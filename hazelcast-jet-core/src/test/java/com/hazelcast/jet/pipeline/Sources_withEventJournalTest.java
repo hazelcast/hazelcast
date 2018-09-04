@@ -25,22 +25,20 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.IListJet;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.cache.Cache;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
-import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -68,23 +66,46 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     }
 
     @Test
-    public void mapJournal() {
+    public void mapJournal_byName() {
+        // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IMapJet<String, Integer> map = jet().getMap(mapName);
+        IMap<String, Integer> map = jet().getMap(mapName);
+
+        // When
         StreamSource<Entry<String, Integer>> source = Sources.mapJournal(mapName, START_FROM_OLDEST);
+
+        // Then
+        testMapJournal(map, source);
+    }
+
+    @Test
+    public void mapJournal_byRef() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        IMap<String, Integer> map = jet().getMap(mapName);
+
+        // When
+        StreamSource<Entry<String, Integer>> source = Sources.mapJournal(map, START_FROM_OLDEST);
+
+        // Then
         testMapJournal(map, source);
     }
 
     @Test
     public void remoteMapJournal() {
+        // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
         IMap<String, Integer> map = remoteHz.getMap(mapName);
-        StreamSource<Entry<String, Integer>> source =
-                Sources.remoteMapJournal(mapName, clientConfig, START_FROM_OLDEST);
+
+        // When
+        StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
+                mapName, clientConfig, START_FROM_OLDEST);
+
+        // Then
         testMapJournal(map, source);
     }
 
-    public void testMapJournal(IMap<String, Integer> map, StreamSource<Entry<String, Integer>> source) {
+    private void testMapJournal(IMap<String, Integer> map, StreamSource<Entry<String, Integer>> source) {
         // Given a pre-populated source map...
         List<Integer> input = sequence(itemCount);
         int[] key = {0};
@@ -120,21 +141,45 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     }
 
     @Test
-    public void mapJournal_withProjectionToNull_then_nullsSkipped() {
-        // given
+    public void mapJournalByName_withProjectionToNull_then_nullsSkipped() {
+        // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
+
+        // When
+        StreamSource<String> source = Sources.mapJournal(jet().getMap(mapName), mapPutEvents(),
+                (EventJournalMapEvent<Integer, Entry<Integer, String>> entry) -> entry.getNewValue().getValue(),
+                START_FROM_OLDEST);
+
+        // Then
+        testMapJournal_withProjectionToNull_then_nullsSkipped(mapName, source);
+    }
+
+    @Test
+    public void mapJournalByRef_withProjectionToNull_then_nullsSkipped() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+
+        // When
         StreamSource<String> source = Sources.mapJournal(mapName, mapPutEvents(),
                 (EventJournalMapEvent<Integer, Entry<Integer, String>> entry) -> entry.getNewValue().getValue(),
                 START_FROM_OLDEST);
-        IMapJet<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
+
+        // Then
+        testMapJournal_withProjectionToNull_then_nullsSkipped(mapName, source);
+    }
+
+    private void testMapJournal_withProjectionToNull_then_nullsSkipped(
+            String mapName, StreamSource<String> source
+    ) {
+        // Given
+        IMap<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
         range(0, itemCount).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
-        // when
-        p.drawFrom(source)
-         .drainTo(sink);
+        // When
+        p.drawFrom(source).drainTo(sink);
         jet().newJob(p);
 
-        // then
+        // Then
         assertTrueEventually(() -> assertEquals(
                 range(0, itemCount)
                         .filter(i -> i % 2 != 0)
@@ -150,22 +195,19 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
     @Test
     public void mapJournal_withDefaultFilter() {
-        // given
+        // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        StreamSource<Entry<Integer, Integer>> source = Sources.mapJournal(mapName, START_FROM_OLDEST);
-
-        IMapJet<Integer, Integer> sourceMap = jet().getMap(mapName);
+        IMap<Integer, Integer> sourceMap = jet().getMap(mapName);
         sourceMap.put(1, 1); // ADDED
         sourceMap.remove(1); // REMOVED - filtered out
         sourceMap.put(1, 2); // ADDED
 
+        // When
+        StreamSource<Entry<Integer, Integer>> source = Sources.mapJournal(mapName, START_FROM_OLDEST);
 
-        // when
-        p.drawFrom(source)
-         .drainTo(sink);
+        // Then
+        p.drawFrom(source).drainTo(sink);
         jet().newJob(p);
-
-        // then
         IListJet<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
         assertTrueEventually(() -> {
                     assertEquals(2, sinkList.size());
@@ -184,20 +226,19 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
     @Test
     public void cacheJournal_withDefaultFilter() {
-        // given
+        // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        StreamSource<Entry<Integer, Integer>> source = Sources.cacheJournal(cacheName, START_FROM_OLDEST);
         ICache<Integer, Integer> sourceMap = jet().getCacheManager().getCache(cacheName);
         sourceMap.put(1, 1); // ADDED
         sourceMap.remove(1); // REMOVED - filtered out
         sourceMap.put(1, 2); // ADDED
 
-        // when
-        p.drawFrom(source)
-         .drainTo(sink);
-        jet().newJob(p);
+        // When
+        StreamSource<Entry<Integer, Integer>> source = Sources.cacheJournal(cacheName, START_FROM_OLDEST);
 
-        // then
+        // Then
+        p.drawFrom(source).drainTo(sink);
+        jet().newJob(p);
         IListJet<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
         assertTrueEventually(() -> {
                     assertEquals(2, sinkList.size());
@@ -215,34 +256,42 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
     @Test
     public void mapJournal_withPredicateAndProjection() {
+        // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IMapJet<String, Integer> map = jet().getMap(mapName);
+        IMap<String, Integer> map = jet().getMap(mapName);
         DistributedPredicate<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
-        StreamSource<Integer> source =
-                Sources.mapJournal(mapName, p, EventJournalMapEvent::getNewValue, START_FROM_OLDEST);
-        testMapJournal_withPredicateAndProjection(map, source);
 
+        // When
+        StreamSource<Integer> source = Sources.mapJournal(
+                mapName, p, EventJournalMapEvent::getNewValue, START_FROM_OLDEST);
+
+        // Then
+        testMapJournal_withPredicateAndProjection(map, source);
     }
 
     @Test
     public void remoteMapJournal_withPredicateAndProjectionFn() {
+        // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
         IMap<String, Integer> map = remoteHz.getMap(mapName);
         DistributedPredicate<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
+
+        // When
         StreamSource<Integer> source = Sources.remoteMapJournal(
                 mapName, clientConfig, p, EventJournalMapEvent::getNewValue, START_FROM_OLDEST);
+
+        // Then
         testMapJournal_withPredicateAndProjection(map, source);
     }
 
-    public void testMapJournal_withPredicateAndProjection(IMap<String, Integer> srcMap, StreamSource<Integer> source) {
+    private void testMapJournal_withPredicateAndProjection(IMap<String, Integer> srcMap, StreamSource<Integer> source) {
         // Given a pre-populated source map...
         List<Integer> input = sequence(itemCount);
         int[] key = {0};
         input.forEach(i -> srcMap.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
         // When we start the job...
-        p.drawFrom(source)
-         .drainTo(sink);
+        p.drawFrom(source).drainTo(sink);
         jet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
@@ -267,24 +316,46 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
 
     @Test
-    public void cacheJournal() {
+    public void cacheJournal_byName() {
+        // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        Cache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
+        ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
+
+        // When
         StreamSource<Entry<String, Integer>> source = Sources.cacheJournal(cacheName, START_FROM_OLDEST);
+
+        // Then
+        testCacheJournal(cache, source);
+    }
+
+    @Test
+    public void cacheJournal_byRef() {
+        // Given
+        String cacheName = JOURNALED_CACHE_PREFIX + randomName();
+        ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
+
+        // When
+        StreamSource<Entry<String, Integer>> source = Sources.cacheJournal(cache, START_FROM_OLDEST);
+
+        // Then
         testCacheJournal(cache, source);
     }
 
     @Test
     public void remoteCacheJournal() {
+        // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        Cache<String, Integer> cache = remoteHz.getCacheManager().getCache(cacheName);
+        ICache<String, Integer> cache = remoteHz.getCacheManager().getCache(cacheName);
+
+        // When
         StreamSource<Entry<String, Integer>> source =
                 Sources.remoteCacheJournal(cacheName, clientConfig, START_FROM_OLDEST);
+
+        // Then
         testCacheJournal(cache, source);
     }
 
-
-    public void testCacheJournal(Cache<String, Integer> cache, StreamSource<Entry<String, Integer>> source) {
+    private void testCacheJournal(ICache<String, Integer> cache, StreamSource<Entry<String, Integer>> source) {
         // Given a pre-populated source cache...
         List<Integer> input = sequence(itemCount);
         int[] key = {0};
@@ -319,30 +390,54 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         assertEquals(toBag(expected), sinkToBag());
     }
 
-
     @Test
-    public void cacheJournal_withPredicateAndProjectionFn() {
+    public void cacheJournalByName_withPredicateAndProjectionFn() {
+        // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
         DistributedPredicate<EventJournalCacheEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
-        Cache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
-        StreamSource<Integer> source =
-                Sources.cacheJournal(cacheName, p, EventJournalCacheEvent::getNewValue, START_FROM_OLDEST);
+        ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
+
+        // When
+        StreamSource<Integer> source = Sources.cacheJournal(
+                cacheName, p, EventJournalCacheEvent::getNewValue, START_FROM_OLDEST);
+
+        // Then
+        testCacheJournal_withPredicateAndProjection(cache, source);
+    }
+
+    @Test
+    public void cacheJournalByRef_withPredicateAndProjectionFn() {
+        // Given
+        String cacheName = JOURNALED_CACHE_PREFIX + randomName();
+        DistributedPredicate<EventJournalCacheEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
+        ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
+
+        // When
+        StreamSource<Integer> source = Sources.cacheJournal(
+                cache, p, EventJournalCacheEvent::getNewValue, START_FROM_OLDEST);
+
+        // Then
         testCacheJournal_withPredicateAndProjection(cache, source);
     }
 
 
     @Test
     public void remoteCacheJournal_withPredicateAndProjectionFn() {
+        // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
         DistributedPredicate<EventJournalCacheEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
-        Cache<String, Integer> cache = remoteHz.getCacheManager().getCache(cacheName);
+        ICache<String, Integer> cache = remoteHz.getCacheManager().getCache(cacheName);
+
+        // When
         StreamSource<Integer> source = Sources.remoteCacheJournal(
                 cacheName, clientConfig, p, EventJournalCacheEvent::getNewValue, START_FROM_OLDEST);
+
+        // Then
         testCacheJournal_withPredicateAndProjection(cache, source);
     }
 
-    public void testCacheJournal_withPredicateAndProjection(
-            Cache<String, Integer> srcCache, StreamSource<Integer> source
+    private void testCacheJournal_withPredicateAndProjection(
+            ICache<String, Integer> srcCache, StreamSource<Integer> source
     ) {
         // Given a pre-populated source map...
         List<Integer> input = sequence(itemCount);
@@ -373,5 +468,4 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
                 .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
-
 }
