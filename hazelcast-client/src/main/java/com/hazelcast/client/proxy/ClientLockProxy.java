@@ -92,7 +92,7 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         checkPositive(leaseTime, "leaseTime should be positive");
         ClientMessage request = LockLockCodec.encodeRequest(name,
                 getTimeInMillis(leaseTime, timeUnit), ThreadUtil.getThreadId(), referenceIdGenerator.getNextReferenceId());
-        invokeOnPartition(request);
+        invokeOnPartition(request, Long.MAX_VALUE);
     }
 
     @Override
