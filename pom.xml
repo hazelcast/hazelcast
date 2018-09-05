@@ -51,7 +51,6 @@
     <powermock.version>1.7.3</powermock.version>
 
     <hazelcast.version>3.11-BETA-1</hazelcast.version>
-    <dnsjava.version>2.1.8</dnsjava.version>
 
     <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
     <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>
@@ -121,11 +120,6 @@
       <groupId>com.hazelcast</groupId>
       <artifactId>hazelcast</artifactId>
       <version>${hazelcast.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>dnsjava</groupId>
-      <artifactId>dnsjava</artifactId>
-      <version>${dnsjava.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
@@ -202,7 +196,8 @@
               com.hazelcast.config,com.hazelcast.config.properties,
               com.hazelcast.spi.discovery,com.hazelcast.core,
               com.hazelcast.logging,com.hazelcast.nio, com.hazelcast.util,
-              org.xbill.DNS,com.hazelcast.internal.json,javax.net.ssl,javax.security.auth.x500
+              com.hazelcast.internal.json,javax.net.ssl,javax.security.auth.x500,
+              javax.naming, javax.naming.directory
             </Import-Package>
           </instructions>
         </configuration>

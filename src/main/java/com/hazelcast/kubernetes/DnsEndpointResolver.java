@@ -17,22 +17,25 @@
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
-import org.xbill.DNS.ExtendedResolver;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.SRVRecord;
-import org.xbill.DNS.TextParseException;
-import org.xbill.DNS.Type;
 
+import javax.naming.Context;
+import javax.naming.NameNotFoundException;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
@@ -40,105 +43,87 @@ final class DnsEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
 
     private final String serviceDns;
-    private final int serviceDnsTimeout;
     private final int port;
+    private final DirContext dirContext;
 
-    DnsEndpointResolver(ILogger logger, String serviceDns, int port, int serviceDnsTimeout) {
+    DnsEndpointResolver(ILogger logger, String serviceDns, int port, DirContext dirContext) {
         super(logger);
         this.serviceDns = serviceDns;
         this.port = port;
-        this.serviceDnsTimeout = serviceDnsTimeout;
+        this.dirContext = dirContext;
+    }
+
+    DnsEndpointResolver(ILogger logger, String serviceDns, int port, int serviceDnsTimeout) {
+        this(logger, serviceDns, port, createDirContext(serviceDnsTimeout));
+
+    }
+
+    @SuppressWarnings("checkstyle:magicnumber")
+    private static DirContext createDirContext(int serviceDnsTimeout) {
+        Hashtable<String, String> env = new Hashtable<String, String>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
+        env.put(Context.PROVIDER_URL, "dns:");
+        env.put("com.example.jndi.dns.timeout.initial", String.valueOf(serviceDnsTimeout * 1000L));
+        try {
+            return new InitialDirContext(env);
+        } catch (NamingException e) {
+            throw new HazelcastException("Error while initializing DirContext", e);
+        }
     }
 
     List<DiscoveryNode> resolve() {
         try {
-            Lookup lookup = buildLookup();
-            Record[] records = lookup.run();
-
-            if (lookup.getResult() != Lookup.SUCCESSFUL) {
-                logger.warning("DNS lookup for serviceDns '" + serviceDns + "' failed: " + lookup.getErrorString());
-                return Collections.emptyList();
-            }
-
-            // We collect all records as some instances seem to return multiple dns records
-            Set<Address> addresses = new HashSet<Address>();
-            for (Record record : records) {
-                // Example:
-                // nslookup u219692-hazelcast.u219692-hazelcast.svc.cluster.local 172.30.0.1
-                //      Server:         172.30.0.1
-                //      Address:        172.30.0.1#53
-                //
-                //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
-                //      Address: 10.1.2.8
-                //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
-                //      Address: 10.1.5.28
-                //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
-                //      Address: 10.1.9.33
-                SRVRecord srv = (SRVRecord) record;
-                InetAddress[] inetAddress = getAllAddresses(srv);
-                int port = (this.port > 0) ? this.port : getHazelcastPort(srv.getPort());
-                for (InetAddress i : inetAddress) {
-                    Address address = new Address(i, port);
-
-                    // If address is newly discovered and logger is finest, emit log entry
-                    if (addresses.add(address) && logger.isFinestEnabled()) {
-                        logger.finest("Found node service with address: " + address);
-                    }
-                }
-            }
-
-            if (addresses.size() == 0) {
-                logger.warning("Could not find any service for serviceDns '" + serviceDns + "'");
-                return Collections.emptyList();
-            }
-
-            return asDiscoveredNodes(addresses);
-
-        } catch (TextParseException e) {
-            throw new RuntimeException("Could not resolve services via DNS", e);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Could not resolve services via DNS", e);
+            return lookup();
+        } catch (NameNotFoundException e) {
+            logger.warning(String.format("DNS lookup for serviceDns '%s' failed: name not found", serviceDns));
+            return Collections.emptyList();
+        } catch (Exception e) {
+            logger.warning(String.format("DNS lookup for serviceDns '%s' failed", serviceDns), e);
+            return Collections.emptyList();
         }
     }
 
-    private Lookup buildLookup()
-            throws TextParseException, UnknownHostException {
+    private List<DiscoveryNode> lookup()
+            throws NamingException, UnknownHostException {
+        Attributes attributes = dirContext.getAttributes(serviceDns, new String[]{"SRV"});
+        NamingEnumeration<?> servers = attributes.get("srv").getAll();
 
-        ExtendedResolver resolver = new ExtendedResolver();
-        resolver.setTimeout(serviceDnsTimeout);
-
-        Lookup lookup = new Lookup(serviceDns, Type.SRV);
-        lookup.setResolver(resolver);
-
-        // Avoid caching temporary DNS lookup failures indefinitely in global cache
-        lookup.setCache(null);
-
-        return lookup;
-    }
-
-    private List<DiscoveryNode> asDiscoveredNodes(Set<Address> addresses) {
-        List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>();
-        for (Address address : addresses) {
-            discoveryNodes.add(new SimpleDiscoveryNode(address));
+        Set<String> addresses = new HashSet<String>();
+        while (servers.hasMore()) {
+            String server = (String) servers.next();
+            String serverHost = extractHost(server);
+            InetAddress address = InetAddress.getByName(serverHost);
+            if (addresses.add(address.getHostAddress()) && logger.isFinestEnabled()) {
+                logger.finest("Found node service with address: " + address);
+            }
         }
-        return discoveryNodes;
+
+        if (addresses.size() == 0) {
+            logger.warning("Could not find any service for serviceDns '" + serviceDns + "'");
+            return Collections.emptyList();
+        }
+
+        List<DiscoveryNode> result = new ArrayList<DiscoveryNode>();
+        for (String address : addresses) {
+            result.add(new SimpleDiscoveryNode(new Address(address, getHazelcastPort(port))));
+        }
+        return result;
     }
 
-    private int getHazelcastPort(int port) {
+    /**
+     * Extracts host from the DNS record.
+     * <p>
+     * Sample record: "10 25 0 6235386366386436.my-release-hazelcast.default.svc.cluster.local".
+     */
+    private static String extractHost(String server) {
+        String host = server.split(" ")[3];
+        return host.replaceAll("\\\\.$", "");
+    }
+
+    private static int getHazelcastPort(int port) {
         if (port > 0) {
             return port;
         }
         return NetworkConfig.DEFAULT_PORT;
-    }
-
-    private InetAddress[] getAllAddresses(SRVRecord srv)
-            throws UnknownHostException {
-
-        try {
-            return org.xbill.DNS.Address.getAllByName(srv.getTarget().canonicalize().toString(true));
-        } catch (UnknownHostException e) {
-            logger.severe("Parsing DNS records failed", e);
-            throw e;
-        }
     }
 }
