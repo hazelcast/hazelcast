@@ -63,7 +63,7 @@ final class DnsEndpointResolver
         Hashtable<String, String> env = new Hashtable<String, String>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
         env.put(Context.PROVIDER_URL, "dns:");
-        env.put("com.example.jndi.dns.timeout.initial", String.valueOf(serviceDnsTimeout * 1000L));
+        env.put("com.sun.jndi.dns.timeout.initial", String.valueOf(serviceDnsTimeout * 1000L));
         try {
             return new InitialDirContext(env);
         } catch (NamingException e) {
