@@ -19,7 +19,10 @@ package com.hazelcast.multimap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
@@ -70,13 +73,19 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {DiscardMergePolicy.class, true},
+                {DiscardMergePolicy.class, false},
                 {HigherHitsMergePolicy.class, true},
+                {HigherHitsMergePolicy.class, false},
                 {LatestAccessMergePolicy.class, true},
+                {LatestAccessMergePolicy.class, false},
                 {LatestUpdateMergePolicy.class, true},
+                {LatestUpdateMergePolicy.class, false},
                 {PassThroughMergePolicy.class, true},
+                {PassThroughMergePolicy.class, false},
                 {PutIfAbsentMergePolicy.class, true},
+                {PutIfAbsentMergePolicy.class, false},
                 {RemoveValuesMergePolicy.class, true},
-
+                {RemoveValuesMergePolicy.class, false},
                 {ReturnPiCollectionMergePolicy.class, true},
                 {ReturnPiCollectionMergePolicy.class, false},
                 {MergeCollectionOfIntegerValuesMergePolicy.class, true},
@@ -140,6 +149,11 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
         multiMapA1 = firstBrain[0].getMultiMap(multiMapNameA);
         multiMapA2 = secondBrain[0].getMultiMap(multiMapNameA);
         multiMapB2 = secondBrain[0].getMultiMap(multiMapNameB);
+
+        EntryListener<Object, Object> listener = new EmptyEntryListener<Object, Object>();
+        multiMapA1.addEntryListener(listener, true);
+        multiMapA2.addEntryListener(listener, true);
+        multiMapB2.addEntryListener(listener, true);
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterSplitDiscardMergePolicy();
@@ -458,5 +472,37 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
             actualBackupSize += values.size();
         }
         assertEqualsStringFormat("backupMultiMap should have size %d, but was %d", expectedSize, actualBackupSize);
+    }
+
+    private static class EmptyEntryListener<K, V> implements EntryListener<K, V> {
+        @Override
+        public void mapEvicted(MapEvent event) {
+
+        }
+
+        @Override
+        public void mapCleared(MapEvent event) {
+
+        }
+
+        @Override
+        public void entryUpdated(EntryEvent<K, V> event) {
+
+        }
+
+        @Override
+        public void entryRemoved(EntryEvent<K, V> event) {
+
+        }
+
+        @Override
+        public void entryEvicted(EntryEvent<K, V> event) {
+
+        }
+
+        @Override
+        public void entryAdded(EntryEvent<K, V> event) {
+
+        }
     }
 }

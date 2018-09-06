@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.impl.operations;
 
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapMergeContainer;
@@ -75,7 +74,6 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
             MultiMapValue result = container.merge(mergeContainer, mergePolicy);
             if (result != null) {
                 resultMap.put(key, result.getCollection(false));
-                publishEvent(EntryEventType.MERGED, key, result, null);
             }
         }
         response = !resultMap.isEmpty();
