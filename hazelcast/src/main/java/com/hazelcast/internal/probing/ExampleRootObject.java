@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
-import com.hazelcast.internal.probing.ProbeingCycle.Tags;
+import com.hazelcast.internal.probing.ProbingCycle.Tags;
 
 public class ExampleRootObject implements ProbeSource {
 
@@ -33,7 +33,7 @@ public class ExampleRootObject implements ProbeSource {
     }
 
     @Override
-    public void probeIn(ProbeingCycle cycle) {
+    public void probeIn(ProbingCycle cycle) {
         cycle.openContext().tag(TAG_INSTANCE, "foo").tag(TAG_TYPE, "x");
         cycle.probe(foo);
         Tags tags = cycle.openContext().tag(TAG_TYPE, "y");

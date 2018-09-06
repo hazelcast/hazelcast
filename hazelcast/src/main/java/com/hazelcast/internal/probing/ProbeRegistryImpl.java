@@ -37,7 +37,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
     }
 
-    private static final class ProbingCycleImpl implements ProbeingCycle, ProbeingCycle.Tags {
+    private static final class ProbingCycleImpl implements ProbingCycle, ProbingCycle.Tags {
 
         private final StringBuilder tags = new StringBuilder(128);
         private final ProbeRenderer renderer;
@@ -187,14 +187,14 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        public void probeIn(ProbeingCycle cycle, Object instance) {
+        public void probeIn(ProbingCycle cycle, Object instance) {
             probeMethods(cycle, instance);
             probeLongFields(cycle, instance);
             probeDoubleFields(cycle, instance);
             probeOtherFields(cycle, instance);
         }
 
-        private void probeOtherFields(ProbeingCycle cycle, Object instance) {
+        private void probeOtherFields(ProbingCycle cycle, Object instance) {
             if (!otherFields.isEmpty()) {
                 for (Entry<String, Field> f : otherFields.entrySet()) {
                     try {
@@ -206,7 +206,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        private void probeDoubleFields(ProbeingCycle cycle, Object instance) {
+        private void probeDoubleFields(ProbingCycle cycle, Object instance) {
             if (!doubleFields.isEmpty()) {
                 for (Entry<String, Field> f : doubleFields.entrySet()) {
                     try {
@@ -218,7 +218,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        private void probeLongFields(ProbeingCycle cycle, Object instance) {
+        private void probeLongFields(ProbingCycle cycle, Object instance) {
             if (!longFields.isEmpty()) {
                 for (Entry<String, Field> f : longFields.entrySet()) {
                     try {
@@ -230,7 +230,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        private void probeMethods(ProbeingCycle cycle, Object instance) {
+        private void probeMethods(ProbingCycle cycle, Object instance) {
             if (!methods.isEmpty()) {
                 for (Entry<String, Method> m : methods.entrySet()) {
                     try {

@@ -33,12 +33,12 @@ public interface ProbeRegistry {
     interface ProbeSource {
 
         /**
-         * Called for each {@link ProbeingCycle} asking this source to probe all its
+         * Called for each {@link ProbingCycle} asking this source to probe all its
          * metrics using the provided cycle instance.
          * 
          * @param cycle accumulating probing data
          */
-        void probeIn(ProbeingCycle cycle);
+        void probeIn(ProbingCycle cycle);
 
         String TAG_INSTANCE = "instance";
         String TAG_TYPE = "type";

@@ -2,7 +2,7 @@ package com.hazelcast.internal.probing;
 
 import com.hazelcast.internal.metrics.Probe;
 
-public interface ProbeingCycle {
+public interface ProbingCycle {
 
     /**
      * The main way of rendering metrics is to render instances that have methods
@@ -49,7 +49,12 @@ public interface ProbeingCycle {
     interface Tags {
 
         /**
-         * Append the tag to the context.
+         * Append the tag to the context. If the name is identical to the last name the
+         * pair is not appended but the value just changes to the new value provided.
+         * This allows to setup tags that are identical for a collection first and just
+         * switch the varying tag to the current value in the loop. This does not work
+         * with more then one tag. In such cases the context has to be opened and
+         * reconstructed for each loop iteration.
          * 
          * @param name immutable, not null
          * @param value immutable, not null
