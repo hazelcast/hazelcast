@@ -691,6 +691,7 @@ public class ConfigXmlGenerator {
            .appendProperties(p.getProperties());
         wanReplicationSyncGenerator(gen, p.getWanSyncConfig());
         awsConfigXmlGenerator(gen, p.getAwsConfig());
+        aliasedDiscoveryConfigsGenerator(gen, p.getAliasedDiscoveryConfigs());
         discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
         gen.close();
     }
@@ -734,6 +735,7 @@ public class ConfigXmlGenerator {
         multicastConfigXmlGenerator(gen, join);
         tcpConfigXmlGenerator(gen, join);
         awsConfigXmlGenerator(gen, join.getAwsConfig());
+        aliasedDiscoveryConfigsGenerator(gen, join.getAliasedDiscoveryConfigs());
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
 
@@ -1101,7 +1103,7 @@ public class ConfigXmlGenerator {
     }
 
     private static void awsConfigXmlGenerator(XmlGenerator gen, AwsConfig c) {
-        if (c == null) {
+        if (c == null || !c.isEnabled()) {
             return;
         }
         gen.open("aws", "enabled", c.isEnabled())
@@ -1114,6 +1116,19 @@ public class ConfigXmlGenerator {
                 .node("tag-key", c.getTagKey())
                 .node("tag-value", c.getTagValue())
                 .close();
+    }
+
+    private static void aliasedDiscoveryConfigsGenerator(XmlGenerator gen, List<AliasedDiscoveryConfig> configs) {
+        if (configs == null) {
+            return;
+        }
+        for (AliasedDiscoveryConfig c : configs) {
+            gen.open(c.getEnvironment(), "enabled", c.isEnabled());
+            for (String key : c.getProperties().keySet()) {
+                gen.node(key, c.getProperties().get(key));
+            }
+            gen.close();
+        }
     }
 
     private static void discoveryStrategyConfigXmlGenerator(XmlGenerator gen, DiscoveryConfig c) {

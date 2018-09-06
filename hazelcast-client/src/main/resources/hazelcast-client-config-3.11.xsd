@@ -82,20 +82,25 @@
         <xs:attribute name="class-name" use="required"/>
     </xs:complexType>
 
-    <xs:complexType name="aws">
-        <xs:all>
-            <xs:element name="inside-aws" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="access-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="secret-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="iam-role" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="region" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="host-header" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="security-group-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="tag-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="tag-value" type="xs:string" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
-        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5"/>
+    <xs:complexType name="discovery-strategy-alias">
+        <xs:sequence>
+            <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the the discovery stategy is enabled or not. Value can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5">
+            <xs:annotation>
+                <xs:documentation>
+                    The maximum amount of time Hazelcast is going to try to connect to a well known member
+                    before giving up. Please check if the specific discovery strategy supports this property.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <!--NETWORK-->
     <xs:complexType name="network">
@@ -109,7 +114,12 @@
             <xs:element ref="socket-options" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="aws" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
+            <xs:element name="gcp" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
+            <xs:element name="azure" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
+            <xs:element name="kubernetes" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
+            <xs:element name="eureka" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
+            <xs:element name="zookeeper" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
             <xs:element name="icmp-ping" type="icmp-ping" minOccurs="0" maxOccurs="1"/>

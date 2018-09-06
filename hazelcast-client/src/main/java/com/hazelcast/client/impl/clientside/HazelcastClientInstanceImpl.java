@@ -20,9 +20,7 @@ import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.ClientExtension;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
@@ -47,8 +45,6 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
-import com.hazelcast.client.spi.impl.AwsAddressProvider;
-import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -78,9 +74,12 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.AliasedDiscoveryConfigMapper;
 import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientService;
@@ -164,6 +163,7 @@ import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.ServiceLoader;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -307,12 +307,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             addressProviders.add(new DiscoveryAddressProvider(discoveryService, loggingService));
         }
 
-        ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
-        AwsAddressProvider awsAddressProvider = initAwsAddressProvider(awsConfig);
-        if (awsAddressProvider != null) {
-            addressProviders.add(awsAddressProvider);
-        }
-
         ClientCloudConfig cloudConfig = networkConfig.getCloudConfig();
         HazelcastCloudAddressProvider cloudAddressProvider = initCloudAddressProvider(cloudConfig);
         if (cloudAddressProvider != null) {
@@ -338,27 +332,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return null;
     }
 
-    private AwsAddressProvider initAwsAddressProvider(ClientAwsConfig awsConfig) {
-        if (awsConfig != null && awsConfig.isEnabled()) {
-            try {
-                return new AwsAddressProvider(awsConfig, loggingService);
-            } catch (NoClassDefFoundError e) {
-                ILogger logger = loggingService.getLogger(HazelcastClient.class);
-                logger.warning("hazelcast-aws.jar might be missing!");
-                throw e;
-            }
-        }
-        return null;
-    }
-
     private AddressTranslator createAddressTranslator() {
         ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
-        ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
         ClientCloudConfig cloudConfig = networkConfig.getCloudConfig();
 
         List<String> addresses = networkConfig.getAddresses();
         boolean addressListProvided = addresses.size() != 0;
-        boolean awsDiscoveryEnabled = awsConfig != null && awsConfig.isEnabled();
         boolean discoverySpiEnabled = discoveryService != null;
         String cloudDiscoveryToken = properties.getString(HAZELCAST_CLOUD_DISCOVERY_TOKEN);
         if (cloudDiscoveryToken != null && cloudConfig.isEnabled()) {
@@ -367,18 +346,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                     + "Hazelcast cloud discovery together. Use only one.");
         }
         boolean hazelcastCloudEnabled = cloudDiscoveryToken != null || cloudConfig.isEnabled();
-        isDiscoveryConfigurationConsistent(addressListProvided, awsDiscoveryEnabled,
-                discoverySpiEnabled, hazelcastCloudEnabled);
+        isDiscoveryConfigurationConsistent(addressListProvided, discoverySpiEnabled, hazelcastCloudEnabled);
 
-        if (awsDiscoveryEnabled) {
-            try {
-                return new AwsAddressTranslator(awsConfig, loggingService);
-            } catch (NoClassDefFoundError e) {
-                ILogger logger = loggingService.getLogger(HazelcastClient.class);
-                logger.warning("hazelcast-aws.jar might be missing!");
-                throw e;
-            }
-        } else if (discoverySpiEnabled) {
+        if (discoverySpiEnabled) {
             return new DiscoveryAddressTranslator(discoveryService,
                     getProperties().getBoolean(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
         } else if (hazelcastCloudEnabled) {
@@ -396,13 +366,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
-    private void isDiscoveryConfigurationConsistent(boolean addressListProvided, boolean awsDiscoveryEnabled,
-                                                    boolean discoverySpiEnabled, boolean hazelcastCloudEnabled) {
+    private void isDiscoveryConfigurationConsistent(boolean addressListProvided, boolean discoverySpiEnabled,
+                                                    boolean hazelcastCloudEnabled) {
         int count = 0;
         if (addressListProvided) {
-            count++;
-        }
-        if (awsDiscoveryEnabled) {
             count++;
         }
         if (discoverySpiEnabled) {
@@ -414,7 +381,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         if (count > 1) {
             throw new IllegalStateException("Only one discovery method can be enabled at a time. "
                     + "cluster members given explicitly : " + addressListProvided
-                    + ", aws discovery enabled : " + awsDiscoveryEnabled
                     + ", discovery spi enabled : " + discoverySpiEnabled
                     + ", hazelcast.cloud enabled : " + hazelcastCloudEnabled);
         }
@@ -423,7 +389,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private DiscoveryService initDiscoveryService(ClientConfig config) {
         // Prevent confusing behavior where the DiscoveryService is started
         // and strategies are resolved but the AddressProvider is never registered
-        if (!properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED)) {
+        List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs = AliasedDiscoveryConfigMapper.map(aliasedDiscoveryConfigs(config));
+
+        if (!properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED) && aliasedDiscoveryConfigs.isEmpty()) {
             return null;
         }
 
@@ -436,12 +404,25 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             factory = new DefaultDiscoveryServiceProvider();
         }
 
-        DiscoveryServiceSettings settings = new DiscoveryServiceSettings().setConfigClassLoader(config.getClassLoader())
-                .setLogger(logger).setDiscoveryMode(DiscoveryMode.Client).setDiscoveryConfig(discoveryConfig);
+        DiscoveryServiceSettings settings = new DiscoveryServiceSettings()
+                .setConfigClassLoader(config.getClassLoader())
+                .setLogger(logger)
+                .setDiscoveryMode(DiscoveryMode.Client)
+                .setAliasedDiscoveryConfigs(aliasedDiscoveryConfigs)
+                .setDiscoveryConfig(discoveryConfig);
 
         DiscoveryService discoveryService = factory.newDiscoveryService(settings);
         discoveryService.start();
         return discoveryService;
+    }
+
+    private static List<AliasedDiscoveryConfig> aliasedDiscoveryConfigs(ClientConfig config) {
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        List<AliasedDiscoveryConfig> configs = new ArrayList<AliasedDiscoveryConfig>(networkConfig.getAliasedDiscoveryConfigs());
+        if (networkConfig.getAwsConfig() != null) {
+            configs.add(networkConfig.getAwsConfig());
+        }
+        return configs;
     }
 
     private LoadBalancer initLoadBalancer(ClientConfig config) {

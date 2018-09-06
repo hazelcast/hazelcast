@@ -59,7 +59,7 @@ public class HazelcastCloudTranslatorTest {
         HazelcastCloudDiscovery cloudDiscovery = mock(HazelcastCloudDiscovery.class);
         when(cloudDiscovery.discoverNodes()).thenReturn(lookup);
 
-        ILogger logger = Logger.getLogger(com.hazelcast.client.spi.impl.AwsAddressTranslatorTest.class);
+        ILogger logger = Logger.getLogger(HazelcastCloudTranslatorTest.class);
 
         loggingService = mock(LoggingService.class);
         when(loggingService.getLogger(eq(HazelcastCloudAddressTranslator.class))).thenReturn(logger);

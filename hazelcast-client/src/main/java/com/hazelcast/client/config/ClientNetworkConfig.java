@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -46,6 +47,7 @@ public class ClientNetworkConfig {
     private SocketOptions socketOptions = new SocketOptions();
     private SSLConfig sslConfig;
     private ClientAwsConfig clientAwsConfig;
+    private final List<AliasedDiscoveryConfig> aliasedDiscoveryConfigs = new ArrayList<AliasedDiscoveryConfig>();
     private ClientCloudConfig cloudConfig = new ClientCloudConfig();
     private DiscoveryConfig discoveryConfig;
     private Collection<String> outboundPortDefinitions;
@@ -317,6 +319,15 @@ public class ClientNetworkConfig {
      */
     public ClientAwsConfig getAwsConfig() {
         return clientAwsConfig;
+    }
+
+    public List<AliasedDiscoveryConfig> getAliasedDiscoveryConfigs() {
+        return aliasedDiscoveryConfigs;
+    }
+
+    public ClientNetworkConfig addAliasedDiscoveryConfig(AliasedDiscoveryConfig aliasedDiscoveryConfig) {
+        this.aliasedDiscoveryConfigs.add(isNotNull(aliasedDiscoveryConfig, "aliasedDiscoveryConfig"));
+        return this;
     }
 
     public ClientCloudConfig getCloudConfig() {

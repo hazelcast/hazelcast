@@ -23,7 +23,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -53,6 +55,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
     private String className;
     private Object implementation;
     private AwsConfig awsConfig = new AwsConfig();
+    private final List<AliasedDiscoveryConfig> aliasedDiscoveryConfigs = new ArrayList<AliasedDiscoveryConfig>();
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
     private WanSyncConfig wanSyncConfig = new WanSyncConfig();
 
@@ -276,6 +279,15 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         return this;
     }
 
+    public List<AliasedDiscoveryConfig> getAliasedDiscoveryConfigs() {
+        return aliasedDiscoveryConfigs;
+    }
+
+    public WanPublisherConfig addDiscoveryAliasConfig(AliasedDiscoveryConfig aliasedDiscoveryConfig) {
+        this.aliasedDiscoveryConfigs.add(isNotNull(aliasedDiscoveryConfig, "aliasedDiscoveryConfig"));
+        return this;
+    }
+
     /**
      * Returns the currently defined {@link DiscoveryConfig} used by the
      * discovery mechanism for this WAN publisher.
@@ -311,6 +323,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
                 + ", className='" + className + '\''
                 + ", implementation=" + implementation
                 + ", awsConfig=" + awsConfig
+                + ", aliasedDiscoveryConfigs=" + aliasedDiscoveryConfigs
                 + ", discoveryConfig=" + discoveryConfig
                 + '}';
     }

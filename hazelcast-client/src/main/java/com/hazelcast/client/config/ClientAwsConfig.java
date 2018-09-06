@@ -16,12 +16,15 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AwsConfig;
 
 /**
- * The AWSConfig contains the configuration for client
- * to connect to nodes in aws environment.
+ * The AWSConfig contains the configuration for client to connect to nodes in aws environment.
+ *
+ * @deprecated Use {@link AliasedDiscoveryConfig} instead.
  */
+@Deprecated
 public class ClientAwsConfig extends AwsConfig {
     private boolean insideAws;
 

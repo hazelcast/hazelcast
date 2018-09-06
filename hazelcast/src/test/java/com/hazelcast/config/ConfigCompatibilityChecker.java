@@ -934,6 +934,7 @@ class ConfigCompatibilityChecker {
                     && isCompatible(c1.getMulticastConfig(), c2.getMulticastConfig())
                     && isCompatible(c1.getTcpIpConfig(), c2.getTcpIpConfig())
                     && new AwsConfigChecker().check(c1.getAwsConfig(), c2.getAwsConfig())
+                    && new AliasedDiscoveryConfigsChecker().check(c1.getAliasedDiscoveryConfigs(), c2.getAliasedDiscoveryConfigs())
                     && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig());
         }
 
@@ -1007,6 +1008,7 @@ class ConfigCompatibilityChecker {
         }
     }
 
+    @Deprecated
     private static class AwsConfigChecker extends ConfigChecker<AwsConfig> {
         @Override
         boolean check(AwsConfig c1, AwsConfig c2) {
@@ -1022,6 +1024,47 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getHostHeader(), c2.getHostHeader())
                     && nullSafeEqual(c1.getIamRole(), c2.getIamRole())
                     && nullSafeEqual(c1.getConnectionTimeoutSeconds(), c2.getConnectionTimeoutSeconds()));
+        }
+    }
+
+    private static class AliasedDiscoveryConfigsChecker extends ConfigChecker<List<AliasedDiscoveryConfig>> {
+
+        @Override
+        boolean check(List<AliasedDiscoveryConfig> t1, List<AliasedDiscoveryConfig> t2) {
+            Map<String, AliasedDiscoveryConfig> m1 = mapByEnvironment(t1);
+            Map<String, AliasedDiscoveryConfig> m2 = mapByEnvironment(t2);
+
+            if (m1.size() != m2.size()) {
+                return false;
+            }
+
+            for (String environment : m1.keySet()) {
+                AliasedDiscoveryConfig c1 = m1.get(environment);
+                AliasedDiscoveryConfig c2 = m2.get(environment);
+                if (!check(c1, c2)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static Map<String, AliasedDiscoveryConfig> mapByEnvironment(List<AliasedDiscoveryConfig> configs) {
+            Map<String, AliasedDiscoveryConfig> result = new HashMap<String, AliasedDiscoveryConfig>();
+            for (AliasedDiscoveryConfig c : configs) {
+                if (c.isEnabled()) {
+                    result.put(c.getEnvironment(), c);
+                }
+            }
+            return result;
+        }
+
+        private static boolean check(AliasedDiscoveryConfig c1, AliasedDiscoveryConfig c2) {
+            boolean c1Disabled = c1 == null || !c1.isEnabled();
+            boolean c2Disabled = c2 == null || !c2.isEnabled();
+            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getEnvironment(), c2.getEnvironment())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
     }
 
@@ -1053,6 +1096,7 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getQueueFullBehavior(), c2.getQueueFullBehavior())
                     && nullSafeEqual(c1.getInitialPublisherState(), c2.getInitialPublisherState())
                     && new AwsConfigChecker().check(c1.getAwsConfig(), c2.getAwsConfig())
+                    && new AliasedDiscoveryConfigsChecker().check(c1.getAliasedDiscoveryConfigs(), c2.getAliasedDiscoveryConfigs())
                     && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig())
                     && new WanSyncConfigChecker().check(c1.getWanSyncConfig(), c2.getWanSyncConfig())
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())

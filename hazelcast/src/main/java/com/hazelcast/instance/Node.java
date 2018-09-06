@@ -20,9 +20,12 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
+import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.AliasedDiscoveryConfigMapper;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -88,6 +91,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -222,8 +226,11 @@ public class Node {
 
             clientEngine = new ClientEngineImpl(this);
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
-            discoveryService = createDiscoveryService(
-                    this.config.getNetworkConfig().getJoin().getDiscoveryConfig().getAsReadOnly(), localMember);
+            JoinConfig joinConfig = this.config.getNetworkConfig().getJoin();
+            DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig().getAsReadOnly();
+            List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
+                    AliasedDiscoveryConfigMapper.map(aliasedDiscoveryConfigs(joinConfig));
+            discoveryService = createDiscoveryService(discoveryConfig, aliasedDiscoveryConfigs, localMember);
             partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this, localMember);
             textCommandService = nodeExtension.createTextCommandService();
@@ -258,7 +265,8 @@ public class Node {
         return classLoader;
     }
 
-    public DiscoveryService createDiscoveryService(DiscoveryConfig discoveryConfig, Member localMember) {
+    public DiscoveryService createDiscoveryService(DiscoveryConfig discoveryConfig,
+                                                   List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs, Member localMember) {
         DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();
@@ -269,10 +277,20 @@ public class Node {
                 .setConfigClassLoader(configClassLoader)
                 .setLogger(logger)
                 .setDiscoveryMode(DiscoveryMode.Member)
-                .setDiscoveryConfig(discoveryConfig).setDiscoveryNode(
+                .setDiscoveryConfig(discoveryConfig)
+                .setAliasedDiscoveryConfigs(aliasedDiscoveryConfigs)
+                .setDiscoveryNode(
                         new SimpleDiscoveryNode(localMember.getAddress(), localMember.getAttributes()));
 
         return factory.newDiscoveryService(settings);
+    }
+
+    private static List<AliasedDiscoveryConfig> aliasedDiscoveryConfigs(JoinConfig joinConfig) {
+        List<AliasedDiscoveryConfig> configs = new ArrayList<AliasedDiscoveryConfig>(joinConfig.getAliasedDiscoveryConfigs());
+        if (joinConfig.getAwsConfig() != null) {
+            configs.add(joinConfig.getAwsConfig());
+        }
+        return configs;
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
@@ -767,7 +785,8 @@ public class Node {
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.verify();
 
-        if (properties.getBoolean(DISCOVERY_SPI_ENABLED)) {
+        if (properties.getBoolean(DISCOVERY_SPI_ENABLED)
+                || !AliasedDiscoveryConfigMapper.map(aliasedDiscoveryConfigs(join)).isEmpty()) {
             //TODO: Auto-Upgrade Multicast+AWS configuration!
             logger.info("Activating Discovery SPI Joiner");
             return new DiscoveryJoiner(this, discoveryService, properties.getBoolean(DISCOVERY_SPI_PUBLIC_IP_ENABLED));

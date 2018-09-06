@@ -163,7 +163,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void readAwsConfig() {
+    public void readAliasedDiscoveryStrategyConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <group>\n"
                 + "        <name>dev</name>\n"
@@ -197,9 +197,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        AwsConfig aws = config.getNetworkConfig().getJoin().getAwsConfig();
-        assertTrue(aws.isEnabled());
-        assertAwsConfig(aws);
+
+        AliasedDiscoveryConfig aliasedConfig = config.getNetworkConfig().getJoin().getAliasedDiscoveryConfigs().get(0);
+        assertTrue(aliasedConfig.isEnabled());
+        assertAwsConfig(aliasedConfig);
     }
 
     @Test
@@ -1555,8 +1556,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("prop.publisher", pubProperties.get("custom.prop.publisher"));
         assertEquals("5", pubProperties.get("discovery.period"));
         assertEquals("2", pubProperties.get("maxEndpoints"));
-        assertFalse(publisherConfig1.getAwsConfig().isEnabled());
-        assertAwsConfig(publisherConfig1.getAwsConfig());
+        assertFalse(publisherConfig1.getAliasedDiscoveryConfigs().get(0).isEnabled());
+        assertAwsConfig(publisherConfig1.getAliasedDiscoveryConfigs().get(0));
         assertDiscoveryConfig(publisherConfig1.getDiscoveryConfig());
 
         WanPublisherConfig publisherConfig2 = publisherConfigs.get(1);
@@ -1584,16 +1585,17 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("true", props.get("key-boolean"));
     }
 
-    private void assertAwsConfig(AwsConfig aws) {
-        assertEquals(10, aws.getConnectionTimeoutSeconds());
-        assertEquals("sample-access-key", aws.getAccessKey());
-        assertEquals("sample-secret-key", aws.getSecretKey());
-        assertEquals("sample-region", aws.getRegion());
-        assertEquals("sample-header", aws.getHostHeader());
-        assertEquals("sample-group", aws.getSecurityGroupName());
-        assertEquals("sample-tag-key", aws.getTagKey());
-        assertEquals("sample-tag-value", aws.getTagValue());
-        assertEquals("sample-role", aws.getIamRole());
+    private void assertAwsConfig(AliasedDiscoveryConfig aws) {
+        assertEquals("aws", aws.getEnvironment());
+        assertEquals("sample-access-key", aws.getProperties().get("access-key"));
+        assertEquals("sample-secret-key", aws.getProperties().get("secret-key"));
+        assertEquals("sample-role", aws.getProperties().get("iam-role"));
+        assertEquals("sample-region", aws.getProperties().get("region"));
+        assertEquals("sample-header", aws.getProperties().get("host-header"));
+        assertEquals("sample-group", aws.getProperties().get("security-group-name"));
+        assertEquals("sample-tag-key", aws.getProperties().get("tag-key"));
+        assertEquals("sample-tag-value", aws.getProperties().get("tag-value"));
+        assertEquals("10", aws.getProperties().get("connection-timeout-seconds"));
     }
 
     @Test
