@@ -73,7 +73,8 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         SplitBrainHandlerService {
 
     /**
-     * Prefix of ringbuffers that are created for topics. Using a prefix prevents users accidentally retrieving the ringbuffer.
+     * Prefix of ringbuffers that are created for topics. Using a prefix prevents
+     * users accidentally retrieving the ringbuffer.
      */
     public static final String TOPIC_RB_PREFIX = "_hz_rb_";
 
@@ -85,8 +86,9 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     private static final Object NULL_OBJECT = new Object();
 
     /**
-     * Map from namespace to actual ringbuffer containers. The namespace defines the service and object name which
-     * is the owner of the ringbuffer container.
+     * Map from namespace to actual ringbuffer containers. The namespace
+     * defines the service and object name which is the owner of the ringbuffer
+     * container.
      */
     private final ConcurrentMap<Integer, Map<ObjectNamespace, RingbufferContainer>> containers
             = new ConcurrentHashMap<Integer, Map<ObjectNamespace, RingbufferContainer>>();
