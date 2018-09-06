@@ -284,24 +284,6 @@ public class SourcesTest extends PipelineTestSupport {
     }
 
     @Test
-    public void cache_byRef() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToBatchSrcCache(input);
-
-        // When
-        BatchSource<Entry<String, Integer>> source = Sources.cache(srcCache);
-
-        // Then
-        p.drawFrom(source).drainTo(sink);
-        execute();
-        List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i))
-                                                     .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
-    }
-
-    @Test
     public void remoteCache() {
         // Given
         List<Integer> input = sequence(itemCount);

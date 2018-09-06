@@ -133,27 +133,6 @@ public class SinksTest extends PipelineTestSupport {
     }
 
     @Test
-    public void cache_byRef() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToBatchSrcCache(input);
-        ICache<String, Integer> sinkCache = jet().getCacheManager().getCache(sinkName);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.cache(sinkCache);
-
-        // Then
-        p.drawFrom(Sources.<String, Integer>cache(srcName)).drainTo(sink);
-        execute();
-        List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i))
-                                                     .collect(toList());
-        ICache<String, Integer> cache = jet().getCacheManager().getCache(sinkName);
-        assertEquals(expected.size(), cache.size());
-        expected.forEach(entry -> assertEquals(entry.getValue(), cache.get(entry.getKey())));
-    }
-
-    @Test
     public void remoteCache() {
         // Given
         List<Integer> input = sequence(itemCount);

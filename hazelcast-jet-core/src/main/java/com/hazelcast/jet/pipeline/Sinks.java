@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
@@ -595,27 +594,6 @@ public final class Sinks {
     @Nonnull
     public static <T extends Entry> Sink<T> cache(@Nonnull String cacheName) {
         return fromProcessor("cacheSink(" + cacheName + ')', writeCacheP(cacheName));
-    }
-
-    /**
-     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
-     * {@code ICache} with the specified name.
-     * <p>
-     * <strong>NOTE:</strong> Jet only remembers the name of the cache you
-     * supply and acquires a cache with that name on the local cluster. If you
-     * supply a cache instance from another cluster, no error will be thrown to
-     * indicate this.
-     * <p>
-     * This sink provides the exactly-once guarantee thanks to <i>idempotent
-     * updates</i>. It means that the value with the same key is not appended,
-     * but overwritten. After the job is restarted from snapshot, duplicate
-     * items will not change the state in the target map.
-     * <p>
-     * The default local parallelism for this sink is 1.
-     */
-    @Nonnull
-    public static <K, V> Sink<Entry<K, V>> cache(@Nonnull ICache<? super K, ? super V> cache) {
-        return cache(cache.getName());
     }
 
     /**

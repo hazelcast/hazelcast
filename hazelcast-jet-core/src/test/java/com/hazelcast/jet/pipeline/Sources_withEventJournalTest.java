@@ -329,19 +329,6 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     }
 
     @Test
-    public void cacheJournal_byRef() {
-        // Given
-        String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
-
-        // When
-        StreamSource<Entry<String, Integer>> source = Sources.cacheJournal(cache, START_FROM_OLDEST);
-
-        // Then
-        testCacheJournal(cache, source);
-    }
-
-    @Test
     public void remoteCacheJournal() {
         // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
@@ -400,21 +387,6 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // When
         StreamSource<Integer> source = Sources.cacheJournal(
                 cacheName, p, EventJournalCacheEvent::getNewValue, START_FROM_OLDEST);
-
-        // Then
-        testCacheJournal_withPredicateAndProjection(cache, source);
-    }
-
-    @Test
-    public void cacheJournalByRef_withPredicateAndProjectionFn() {
-        // Given
-        String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        DistributedPredicate<EventJournalCacheEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
-        ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
-
-        // When
-        StreamSource<Integer> source = Sources.cacheJournal(
-                cache, p, EventJournalCacheEvent::getNewValue, START_FROM_OLDEST);
 
         // Then
         testCacheJournal_withPredicateAndProjection(cache, source);

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.EventJournalConfig;
@@ -695,32 +694,6 @@ public final class Sources {
     }
 
     /**
-     * Returns a source that fetches entries from the given Hazelcast {@code
-     * ICache} and emits them as {@code Map.Entry}. It leverages data locality
-     * by making each of the underlying processors fetch only those entries
-     * that are stored on the member where it is running.
-     * <p>
-     * <strong>NOTE:</strong> Jet only remembers the name of the cache you
-     * supply and acquires a cache with that name on the local cluster. If you
-     * supply a cache instance from another cluster, no error will be thrown to
-     * indicate this.
-     * <p>
-     * The source does not save any state to snapshot. If the job is restarted,
-     * it will re-emit all entries.
-     * <p>
-     * If the {@code ICache} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may
-     * miss and/or duplicate some entries.
-     * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
-     */
-    @Nonnull
-    public static <K, V> BatchSource<Entry<K, V>> cache(@Nonnull ICache<? extends K, ? extends V> cache) {
-        return cache(cache.getName());
-    }
-
-    /**
      * Returns a source that will stream the {@link EventJournalCacheEvent}
      * events of a Hazelcast {@code ICache} with the specified name. By
      * supplying a {@code predicate} and {@code projection} here instead of
@@ -779,67 +752,6 @@ public final class Sources {
     }
 
     /**
-     * Returns a source that will stream the {@link EventJournalCacheEvent}
-     * events of the given Hazelcast {@code ICache}. By supplying a {@code
-     * predicate} and {@code projection} here instead of in separate {@code
-     * map/filter} transforms you allow the source to apply these functions
-     * early, before generating any output, with the potential of significantly
-     * reducing data traffic.
-     * <p>
-     * <strong>NOTE:</strong> Jet only remembers the name of the cache you
-     * supply and acquires a cache with that name on the local cluster. If you
-     * supply a cache instance from another cluster, no error will be thrown to
-     * indicate this.
-     * <p>
-     * The source leverages data locality by making each of the underlying
-     * processors fetch only those entries that are stored on the member where
-     * it is running.
-     * <p>
-     * To use an {@code ICache} as a streaming source, you must {@link EventJournalConfig
-     * configure the event journal} for it. The journal has fixed capacity and
-     * will drop events if it overflows.
-     * <p>
-     * The source saves the journal offset to the snapshot. If the job
-     * restarts, it starts emitting from the saved offset with an
-     * exactly-once guarantee (unless the journal has overflowed).
-     * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
-     *
-     * <h4>Predicate/projection class requirements</h4>
-     *
-     * The classes implementing {@code predicateFn} and {@code projectionFn}
-     * need to be available on the cluster's classpath or loaded using
-     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * the job classpath in {@link JobConfig}. The same is true for the class
-     * of the objects stored in the cache itself. If you cannot meet these
-     * requirements, use {@link #cacheJournal(String, JournalInitialPosition)}
-     * and add a subsequent {@link GeneralStage#map map} or
-     * {@link GeneralStage#filter filter} stage.
-     *
-     * @param cache       the cache from which to draw data
-     * @param predicateFn the predicate to filter the events. You may use {@link
-     *                    com.hazelcast.jet.Util#cachePutEvents()} to pass only {@link
-     *                    com.hazelcast.cache.CacheEventType#CREATED CREATED} and {@link
-     *                    com.hazelcast.cache.CacheEventType#UPDATED UPDATED} events.
-     * @param projectionFn the projection to map the events. If the projection returns a {@code
-     *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     com.hazelcast.jet.Util#cacheEventToEntry()} to extract just the key
-     *                     and the new value.
-     * @param initialPos  describes which event to start receiving from
-     * @param <T>         type of emitted item
-     */
-    @Nonnull
-    public static <T, K, V> StreamSource<T> cacheJournal(
-            @Nonnull ICache<? extends K, ? extends V> cache,
-            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
-            @Nonnull JournalInitialPosition initialPos
-    ) {
-        return cacheJournal(cache.getName(), predicateFn, projectionFn, initialPos);
-    }
-
-    /**
      * Convenience for {@link #cacheJournal(String, DistributedPredicate,
      * DistributedFunction, JournalInitialPosition)}
      * which will pass only {@link CacheEventType#CREATED
@@ -853,27 +765,6 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return cacheJournal(cacheName, cachePutEvents(), cacheEventToEntry(), initialPos);
-    }
-
-    /**
-     * Convenience for {@link #cacheJournal(ICache, DistributedPredicate,
-     * DistributedFunction, JournalInitialPosition)}
-     * which will pass only {@link CacheEventType#CREATED
-     * CREATED} and {@link CacheEventType#UPDATED UPDATED}
-     * events and will project the event's key and new value into a {@code
-     * Map.Entry}.
-     * <p>
-     * <strong>NOTE:</strong> Jet only remembers the name of the cache you
-     * supply and acquires a cache with that name on the local cluster. If you
-     * supply a cache instance from another cluster, no error will be thrown to
-     * indicate this.
-     */
-    @Nonnull
-    public static <K, V> StreamSource<Entry<K, V>> cacheJournal(
-            @Nonnull ICache<? extends K, ? extends V> cache,
-            @Nonnull JournalInitialPosition initialPos
-    ) {
-        return cacheJournal(cache.getName(), cachePutEvents(), cacheEventToEntry(), initialPos);
     }
 
     /**
