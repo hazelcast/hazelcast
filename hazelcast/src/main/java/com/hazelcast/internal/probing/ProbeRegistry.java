@@ -21,6 +21,8 @@ public interface ProbeRegistry {
      */
     void register(ProbeSource source);
 
+    void renderTo(ProbeRenderer renderer);
+
     /**
      * Implemented by "root objects" (like core services) that know about a
      * particular set of instances they want to probe.
@@ -37,8 +39,8 @@ public interface ProbeRegistry {
          * @param cycle accumulating probing data
          */
         void probeIn(ProbeingCycle cycle);
-        
-        String INSTANCE_TAG = "instance";
-        String TYPE_TAG = "type";
+
+        String TAG_INSTANCE = "instance";
+        String TAG_TYPE = "type";
     }
 }

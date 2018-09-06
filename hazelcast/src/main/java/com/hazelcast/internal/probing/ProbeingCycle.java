@@ -15,36 +15,46 @@ public interface ProbeingCycle {
      * @param instance a obj with fields or methods annotated with {@link Probe}
      */
     void probe(Object instance);
-    
-    void probe(String name, long value);
-    
-    void probe(String name, double value);
-    
+
+    void probe(CharSequence name, long value);
+
+    void probe(CharSequence name, double value);
+
     /*
      * Just for convenience 
      */
-    
-    void probe(String name, int value);
-    
-    void probe(String name, float value);
-    
+
+    void probe(CharSequence name, int value);
+
+    void probe(CharSequence name, float value);
+
     /*
      * Tagging
      */
-    
-    interface Tags {
-        
-        Tags tag(String name, String value);
-    }
-    
+
     /**
-     * Resets the tags used by this renderer. Subsentential calls to any of the
-     * {@code render} methods assumes the context created by calls to
-     * {@link Tags#tag(String, String)} since this method was called. This provides
-     * a convenient and format independent way of tagging the rendered metrics.
+     * Resets the tags used by this cycle (to empty). This provides a convenient and
+     * format independent way of tagging the probed metrics.
+     * 
+     * After context (previously the prefix) is completed using
+     * {@link Tags#tag(CharSequence, CharSequence)} the {@code probe} methods are
+     * used to add measurements in this context. Then context is changed to next one
+     * and so forth.
      * 
      * @return the {@link Tags} abstraction to use to build the context for this
-     *         renderer.
+     *         cycle.
      */
     Tags openContext();
+
+    interface Tags {
+
+        /**
+         * Append the tag to the context.
+         * 
+         * @param name immutable, not null
+         * @param value immutable, not null
+         * @return this {@link Tags} context for chaining
+         */
+        Tags tag(CharSequence name, CharSequence value);
+    }
 }
