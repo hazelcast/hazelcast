@@ -24,98 +24,129 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.api.support.membermodification.MemberMatcher;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Name;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.SRVRecord;
 
+import javax.naming.NameNotFoundException;
+import javax.naming.NamingEnumeration;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import java.net.InetAddress;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({DnsEndpointResolver.class, Lookup.class, SRVRecord.class})
+@PrepareForTest(DnsEndpointResolver.class)
 public class DnsEndpointResolverTest {
-
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
-    private static final int SERVICE_DNS_TIMEOUT = 5;
+
+    private static final String SERVICE_DNS = "my-release-hazelcast.default.svc.cluster.local";
+    private static final int UNSET_PORT = 0;
+    private static final int DEFAULT_PORT = 5701;
+    private static final int CUSTOM_PORT = 5702;
+    private static final String DNS_SERVER_1 = String.format("12345.%s", SERVICE_DNS);
+    private static final String DNS_SERVER_2 = String.format("6789.%s", SERVICE_DNS);
+    private static final String DNS_ENTRY_SERVER_1 = String.format("10 25 0 %s", DNS_SERVER_1);
+    private static final String DNS_ENTRY_SERVER_2 = String.format("10 25 0 %s", DNS_SERVER_2);
+    private static final String IP_SERVER_1 = "192.168.0.5";
+    private static final String IP_SERVER_2 = "192.168.0.6";
 
     @Mock
-    private DefaultKubernetesClient client;
-
+    private NamingEnumeration servers;
     @Mock
-    private Lookup lookup;
-
-    @Mock
-    private SRVRecord srvRecord;
+    private DirContext dirContext;
 
     @Before
-    public void setup()
+    public void setUp()
             throws Exception {
-        PowerMockito.whenNew(DefaultKubernetesClient.class).withAnyArguments().thenReturn(client);
-        PowerMockito.whenNew(SRVRecord.class).withAnyArguments().thenReturn(srvRecord);
-        when(srvRecord.getTarget()).thenReturn(Name.fromString("127.0.0.1"));
+        PowerMockito.mockStatic(InetAddress.class);
+
+        Attributes attributes = mock(Attributes.class);
+        when(dirContext.getAttributes(SERVICE_DNS, new String[]{"SRV"})).thenReturn(attributes);
+        Attribute attribute = mock(Attribute.class);
+        when(attributes.get("srv")).thenReturn(attribute);
+        when(attribute.getAll()).thenReturn(servers);
+        when(servers.next()).thenReturn(DNS_ENTRY_SERVER_1, DNS_ENTRY_SERVER_2);
+        when(servers.hasMore()).thenReturn(true, true, false);
+        InetAddress address1 = mock(InetAddress.class);
+        PowerMockito.when(InetAddress.getByName(DNS_SERVER_1)).thenReturn(address1);
+        InetAddress address2 = mock(InetAddress.class);
+        PowerMockito.when(InetAddress.getByName(DNS_SERVER_2)).thenReturn(address2);
+        when(address1.getHostAddress()).thenReturn(IP_SERVER_1);
+        when(address2.getHostAddress()).thenReturn(IP_SERVER_2);
     }
 
     @Test
-    public void testInvalidServiceDns() {
-        DnsEndpointResolver endpointResolver = new DnsEndpointResolver(LOGGER, "http://test", 0, SERVICE_DNS_TIMEOUT);
-        List<DiscoveryNode> nodes = endpointResolver.resolve();
-        assertTrue(nodes.isEmpty());
+    public void resolve() {
+        // given
+        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, UNSET_PORT, dirContext);
+
+        // when
+        List<DiscoveryNode> result = dnsEndpointResolver.resolve();
+
+        // then
+
+        Set<?> resultAddresses = setOf(result.get(0).getPrivateAddress().getHost(), result.get(1).getPrivateAddress().getHost());
+        Set<?> resultPorts = setOf(result.get(0).getPrivateAddress().getPort(), result.get(1).getPrivateAddress().getPort());
+        assertEquals(setOf(IP_SERVER_1, IP_SERVER_2), resultAddresses);
+        assertEquals(setOf(DEFAULT_PORT), resultPorts);
     }
 
     @Test
-    public void testValidServiceDns()
-            throws Exception {
-        testValidServiceDns(0, 5701);
+    public void resolveCustomPort() {
+        // given
+        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, CUSTOM_PORT, dirContext);
+
+        // when
+        List<DiscoveryNode> result = dnsEndpointResolver.resolve();
+
+        // then
+
+        Set<?> resultAddresses = setOf(result.get(0).getPrivateAddress().getHost(), result.get(1).getPrivateAddress().getHost());
+        Set<?> resultPorts = setOf(result.get(0).getPrivateAddress().getPort(), result.get(1).getPrivateAddress().getPort());
+        assertEquals(setOf(IP_SERVER_1, IP_SERVER_2), resultAddresses);
+        assertEquals(setOf(CUSTOM_PORT), resultPorts);
     }
 
     @Test
-    public void testValidServiceDnsWithCustomPort()
+    public void resolveException()
             throws Exception {
-        testValidServiceDns(333, 333);
-    }
+        // given
+        when(dirContext.getAttributes(SERVICE_DNS, new String[]{"SRV"})).thenThrow(new NameNotFoundException());
+        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, UNSET_PORT, dirContext);
 
-    private void testValidServiceDns(final int port, final int expectedPort)
-            throws Exception {
-        DnsEndpointResolver endpointResolver = PowerMockito
-                .spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", port, SERVICE_DNS_TIMEOUT));
-        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup")).withNoArguments()
-                    .thenReturn(lookup);
-        when(lookup.getResult()).thenReturn(Lookup.SUCCESSFUL);
-        when(lookup.run()).thenReturn(getRecords());
-        List<DiscoveryNode> nodes = endpointResolver.resolve();
-        assertEquals(1, nodes.size());
-        assertEquals("127.0.0.1", nodes.get(0).getPrivateAddress().getHost());
-        assertEquals(expectedPort, nodes.get(0).getPrivateAddress().getPort());
+        // when
+        List<DiscoveryNode> result = dnsEndpointResolver.resolve();
+
+        // then
+        assertEquals(0, result.size());
     }
 
     @Test
-    public void testDnsFailFlow()
+    public void resolveNotFound()
             throws Exception {
-        DnsEndpointResolver endpointResolver = PowerMockito
-                .spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", 0, SERVICE_DNS_TIMEOUT));
-        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup")).withNoArguments()
-                    .thenReturn(lookup);
+        // given
+        when(servers.hasMore()).thenReturn(false);
+        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, UNSET_PORT, dirContext);
 
-        when(lookup.getResult()).thenReturn(Lookup.HOST_NOT_FOUND);
-        when(lookup.run()).thenReturn(getRecords());
+        // when
+        List<DiscoveryNode> result = dnsEndpointResolver.resolve();
 
-        List<DiscoveryNode> nodes = endpointResolver.resolve();
-        assertTrue(nodes.isEmpty());
-
-        verify(lookup).run();
-        verify(lookup).getResult();
-        verify(lookup).getErrorString();
+        // then
+        assertEquals(0, result.size());
     }
 
-    private Record[] getRecords() {
-        return new Record[]{srvRecord};
+    private static Set<?> setOf(Object... objects) {
+        Set<Object> result = new HashSet<Object>();
+        for (Object object : objects) {
+            result.add(object);
+        }
+        return result;
     }
 }
