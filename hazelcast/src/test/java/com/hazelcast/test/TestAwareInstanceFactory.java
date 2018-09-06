@@ -38,6 +38,8 @@ import static com.hazelcast.test.HazelcastTestSupport.getAddress;
  * {@link org.junit.After} methods (see {@link #terminateAll()}). The factory methods also sets custom group name which prevents
  * accidental joins (e.g. dangling members).
  * <p>
+ * <b>Tests using this factory should not be annotated with {@code ParallelTest} category to avoid runs in multiple JVMs.</b>
+ * <p>
  * Usage of {@link com.hazelcast.test.annotation.ParallelTest} is allowed with this instance factory.<br/>
  * Example:
  *
