@@ -79,7 +79,8 @@ public final class CompressingProbeRenderer implements ProbeRenderer {
             }
         } catch (EOFException e) {
             // done
+        } finally {
+            in.close();
         }
-        in.close();
     }
 }

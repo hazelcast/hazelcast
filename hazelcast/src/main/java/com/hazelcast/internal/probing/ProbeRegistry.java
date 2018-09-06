@@ -21,6 +21,13 @@ public interface ProbeRegistry {
      */
     void register(ProbeSource source);
 
+    /**
+     * Causes a {@link ProbingCycle} that is directed at the given
+     * {@link ProbeRenderer}.
+     * 
+     * @param renderer not null; is called for each active prove with a key and
+     *        value to convert them to the renderer specific format.
+     */
     void renderTo(ProbeRenderer renderer);
 
     /**

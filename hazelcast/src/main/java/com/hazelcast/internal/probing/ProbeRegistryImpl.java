@@ -63,6 +63,13 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         @Override
+        public void probe(CharSequence prefix, Object instance) {
+            appendName(prefix);
+            tags.append('.');
+            probe(instance);
+        }
+
+        @Override
         public void probe(CharSequence name, long value) {
             render(name, value);
         }

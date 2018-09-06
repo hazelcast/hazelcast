@@ -16,6 +16,15 @@ public interface ProbingCycle {
      */
     void probe(Object instance);
 
+    /**
+     * Similar to {@link #probe(Object)} just that all names become
+     * {@code <prefix>.<name>} instead of just {@code <name>}.
+     * 
+     * @param prefix prefix to use for all names (without dot)
+     * @param instance a obj with fields or methods annotated with {@link Probe}
+     */
+    void probe(CharSequence prefix, Object instance);
+
     void probe(CharSequence name, long value);
 
     void probe(CharSequence name, double value);
