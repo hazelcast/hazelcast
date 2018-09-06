@@ -871,11 +871,13 @@ public class MasterContext {
     }
 
     void resumeJob(Function<Long, Long> executionIdSupplier) {
-        if (jobStatus != SUSPENDED) {
-            logger.info("Not resuming " + jobIdString() + ": not " + SUSPENDED + ", but " + jobStatus);
-            return;
+        synchronized (lock) {
+            if (jobStatus != SUSPENDED) {
+                logger.info("Not resuming " + jobIdString() + ": not " + SUSPENDED + ", but " + jobStatus);
+                return;
+            }
+            jobStatus = NOT_RUNNING;
         }
-        jobStatus = NOT_RUNNING;
         logger.fine("Resuming job " + jobName);
         tryStartJob(executionIdSupplier);
     }
