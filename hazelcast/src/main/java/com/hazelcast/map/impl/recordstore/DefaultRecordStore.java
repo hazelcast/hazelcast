@@ -948,6 +948,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     private boolean canPublishLoadEvent() {
+        // RU_COMPAT_3_10
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         ClusterService clusterService = nodeEngine.getClusterService();
         boolean version311OrLater = clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_11);

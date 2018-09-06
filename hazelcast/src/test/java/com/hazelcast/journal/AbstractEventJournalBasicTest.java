@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.journal.EventJournalEventAdapter.EventType;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.ringbuffer.ReadResultSet;
@@ -179,38 +180,16 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
     @Test
     public void receiveLoadedEventsWhenLoadAll() throws Exception {
-        loadAllPublishesAdded = false;
-        init();
-
-        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
-
-        final int count = 100;
-        assertEventJournalSize(context.dataAdapter, 0);
-
-        Set<String> keys = SetUtil.createHashSet(count);
-        for (int i = 0; i < count; i++) {
-            keys.add(randomPartitionKey());
-        }
-        context.dataAdapter.loadAll(keys);
-
-        assertEventJournalSizeEventually(context, count);
-        final ReadResultSet<EJ_TYPE> events = getAllEvents(context.dataAdapter, null, null);
-        assertEquals(count, events.size());
-
-        final HashMap<String, Integer> received = new HashMap<String, Integer>();
-        final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
-        for (EJ_TYPE e : events) {
-            assertEquals(LOADED, journalAdapter.getType(e));
-            assertNull(journalAdapter.getOldValue(e));
-            received.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
-        }
-
-        assertEquals(context.dataAdapter.entrySet(), received.entrySet());
+        testLoadAll(LOADED);
     }
 
     @Test
     public void receiveAddedEventsWhenLoadAll() throws Exception {
-        loadAllPublishesAdded = true;
+        testLoadAll(ADDED);
+    }
+
+    private void testLoadAll(EventType expectedEventType) throws Exception {
+        this.loadAllPublishesAdded = expectedEventType == ADDED;
         init();
 
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
@@ -231,7 +210,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         final HashMap<String, Integer> received = new HashMap<String, Integer>();
         final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
         for (EJ_TYPE e : events) {
-            assertEquals(ADDED, journalAdapter.getType(e));
+            assertEquals(expectedEventType, journalAdapter.getType(e));
             assertNull(journalAdapter.getOldValue(e));
             received.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
         }
@@ -513,7 +492,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
     /**
      * Returns an execution callback for an event journal read operation. The
      * callback expects a single
-     * {@link com.hazelcast.journal.EventJournalEventAdapter.EventType#ADDED}
+     * {@link EventType#ADDED}
      * event for a provided {@code expectedKey} and with the provided
      * {@code expectedValue} as the new entry expectedValue.
      *
