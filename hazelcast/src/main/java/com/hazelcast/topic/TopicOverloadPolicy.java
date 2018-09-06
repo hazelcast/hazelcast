@@ -30,7 +30,7 @@ package com.hazelcast.topic;
  * This {@link TopicOverloadPolicy} controls how the publisher is going to deal with the situation that a ringbuffer is full
  *  and the oldest item in the ringbuffer is not old enough to get overwritten.
  *
- * So keep in mind that a this retention period keep the messages in memory, even though it might by that all readers already
+ * So keep in mind that this retention period keeps the messages in memory, even though all readers may already
  * have completed reading.
  */
 public enum TopicOverloadPolicy {
