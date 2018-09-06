@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import static com.hazelcast.util.MapUtil.zeroOutMillis;
 import static com.hazelcast.util.CollectionUtil.isNotEmpty;
 
 /**
@@ -93,7 +94,8 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         // we send it to backups a new record is added with same key, when we send queued item
         // to backups, backups should not remove it. Comparing creation times to be sure that
         // we are deleting correct record.
-        return existingRecord.getCreationTime() == expiredKey.getCreationTime();
+        // since 3.11, creationTime is maintained at second accuracy
+        return existingRecord.getCreationTime() == zeroOutMillis(expiredKey.getCreationTime());
     }
 
     @Override
