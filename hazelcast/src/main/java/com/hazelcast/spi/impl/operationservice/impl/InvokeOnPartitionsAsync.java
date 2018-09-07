@@ -44,6 +44,13 @@ final class InvokeOnPartitionsAsync {
     private static final int TRY_COUNT = 10;
     private static final int TRY_PAUSE_MILLIS = 300;
 
+    private static final Object NULL_RESULT = new Object() {
+        @Override
+        public String toString() {
+            return "NULL_RESULT";
+        }
+    };
+
     private final OperationServiceImpl operationService;
     private final String serviceName;
     private final OperationFactory operationFactory;
@@ -150,9 +157,11 @@ final class InvokeOnPartitionsAsync {
                 }
                 return;
             }
-            // partitionResult is null for partitions which had no keys
+
+            // partitionResult is null for partitions which had no keys and it's NULL_RESULT
+            // for partitions which had a result, but the result was null.
             if (partitionResult != null) {
-                result.put(partitionId, partitionResult);
+                result.put(partitionId, partitionResult == NULL_RESULT ? null : partitionResult);
             }
         }
         future.setResult(result);
@@ -201,7 +210,9 @@ final class InvokeOnPartitionsAsync {
     }
 
     private void setPartitionResult(int partition, Object result) {
-        assert result != null : "null result";
+        if (result == null) {
+            result = NULL_RESULT;
+        }
         boolean success = partitionResults.compareAndSet(partition, null, result);
         assert success : "two results for same partition: old=" + partitionResults.get(partition) + ", new=" + result;
     }
