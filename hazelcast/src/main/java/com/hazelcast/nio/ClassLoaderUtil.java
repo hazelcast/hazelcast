@@ -51,8 +51,15 @@ public final class ClassLoaderUtil {
 
     private static final ClassLoaderWeakCache<Constructor> CONSTRUCTOR_CACHE = new ClassLoaderWeakCache<Constructor>();
     private static final ClassLoaderWeakCache<Class> CLASS_CACHE = new ClassLoaderWeakCache<Class>();
+    private static final Constructor<?> IRRESOLVABLE_CONSTRUCTOR;
 
     static {
+        try {
+            IRRESOLVABLE_CONSTRUCTOR = IrresolvableConstructor.class.getConstructor();
+        } catch (NoSuchMethodException e) {
+            throw new Error("Couldn't initialize irresolvable constructor.", e);
+        }
+
         final Map<String, Class> primitives = new HashMap<String, Class>(10, 1.0f);
         primitives.put("boolean", boolean.class);
         primitives.put("byte", byte.class);
@@ -161,10 +168,22 @@ public final class ClassLoaderUtil {
         // we have no class loader to use
         if (cl1 != null) {
             Constructor<T> constructor = CONSTRUCTOR_CACHE.get(cl1, className);
-            if (constructor == null && cl2 != null) {
+
+            // If a constructor in question is not found in the preferred/hinted
+            // class loader (cl1) constructor cache, that doesn't mean it can't
+            // be provided by cl1. So we try to create an object instance using
+            // cl1 first if its constructor is not marked as irresolvable in cl1
+            // cache.
+            //
+            // This is important when both class loaders provide a class named
+            // exactly the same. Such situations are not prohibited by JVM and
+            // we have to resolve "conflicts" somehow, we prefer cl1 over cl2.
+
+            if (constructor == IRRESOLVABLE_CONSTRUCTOR && cl2 != null) {
                 constructor = CONSTRUCTOR_CACHE.get(cl2, className);
             }
-            if (constructor != null) {
+
+            if (constructor != null && constructor != IRRESOLVABLE_CONSTRUCTOR) {
                 return constructor.newInstance();
             }
         }
@@ -174,6 +193,10 @@ public final class ClassLoaderUtil {
             return newInstance0(cl1, className);
         } catch (ClassNotFoundException e1) {
             if (cl2 != null) {
+                // Mark as irresolvable only if we were trying to give it a
+                // priority over cl2 to save cl1 cache space.
+                CONSTRUCTOR_CACHE.put(cl1, className, IRRESOLVABLE_CONSTRUCTOR);
+
                 try {
                     return newInstance0(cl2, className);
                 } catch (ClassNotFoundException e2) {
@@ -406,4 +429,14 @@ public final class ClassLoaderUtil {
         // cached in the DistributedLoadingService (when cache is enabled)
         return (clazz.getClassLoader() instanceof ClassSource);
     }
+
+    private static final class IrresolvableConstructor {
+        /**
+         * Works as a marker for irresolvable constructors.
+         */
+        public IrresolvableConstructor() {
+            throw new UnsupportedOperationException("Irresolvable constructor should never be instantiated.");
+        }
+    }
+
 }
