@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.logging.ILogger;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -491,6 +492,7 @@ public abstract class AbstractProcessor implements Processor {
      * all defined output ordinals.
      */
     @Nonnull
+    @SuppressFBWarnings("NP_NULL_PARAM_DEREF_NONVIRTUAL") // possible spotbugs bug
     protected final <T, R> FlatMapper<T, R> flatMapper(
             @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
