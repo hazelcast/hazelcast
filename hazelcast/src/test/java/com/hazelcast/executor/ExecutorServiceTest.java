@@ -67,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.config.ExecutorConfig.DEFAULT_POOL_SIZE;
 import static org.junit.Assert.assertEquals;
@@ -1095,6 +1096,57 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         @Override
         public Object getPartitionKey() {
             return "key";
+        }
+    }
+
+
+    @Test(expected = HazelcastSerializationException.class)
+    public void testUnserializableResponse_exceptionPropagatesToCaller() throws Throwable {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+
+        IExecutorService service = instance1.getExecutorService("executor");
+        TaskWithUnserialazableResponse counterCallable = new TaskWithUnserialazableResponse();
+        Future future = service.submitToMember(counterCallable, instance2.getCluster().getLocalMember());
+        try {
+            future.get();
+        } catch (ExecutionException e) {
+            throw e.getCause();
+        }
+    }
+
+    @Test(expected = HazelcastSerializationException.class)
+    public void testUnserializableResponse_exceptionPropagatesToCallerCallback() throws Throwable {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+
+
+        IExecutorService service = instance1.getExecutorService("executor");
+        TaskWithUnserialazableResponse counterCallable = new TaskWithUnserialazableResponse();
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+        service.submitToMember(counterCallable, instance2.getCluster().getLocalMember(), new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                throwable.set(t);
+                countDownLatch.countDown();
+            }
+        });
+        assertOpenEventually(countDownLatch);
+        throw throwable.get();
+    }
+
+    private static class TaskWithUnserialazableResponse implements Callable, Serializable {
+        @Override
+        public Object call() throws Exception {
+            return new Object();
         }
     }
 }
