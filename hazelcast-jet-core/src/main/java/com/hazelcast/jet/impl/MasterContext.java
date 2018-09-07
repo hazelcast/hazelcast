@@ -80,7 +80,6 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.SnapshotRepository.snapshotDataMapName;
-import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.NO_ACTION;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL;
@@ -285,7 +284,7 @@ public class MasterContext {
                     // ignore restart, we are just starting
                     requestedTerminationMode = null;
                 } else {
-                    exception = requestedTerminationMode.createException();
+                    exception = new JobTerminateRequestedException(requestedTerminationMode);
                     break synchronized_block;
                 }
             }
@@ -633,7 +632,7 @@ public class MasterContext {
         TerminationMode mode = requestedTerminationMode;
         if (mode == CANCEL) {
             logger.fine(jobIdString() + " to be cancelled after " + opName);
-            return mode.createException();
+            return new JobTerminateRequestedException(mode);
         }
 
         if (successfulMembers.size() == executionPlanMap.size()) {
@@ -650,7 +649,7 @@ public class MasterContext {
             logger.fine(opName + " of " + jobIdString() + " terminated after a terminal snapshot");
 
             assert mode != null && mode.isWithTerminalSnapshot() : "mode=" + mode;
-            return mode.createException();
+            return new JobTerminateRequestedException(mode);
         }
 
         // If there is no user-code exception, it means at least one job participant has left the cluster.
@@ -749,8 +748,6 @@ public class MasterContext {
                 jobStatus = SUSPENDED;
                 jobRecord = jobRecord.withSuspended(true);
                 nonSynchronizedAction = () -> coordinationService.suspendJob(this);
-            } else if (terminationModeAction == NO_ACTION) {
-                jobStatus = NOT_RUNNING;
             } else {
                 jobStatus = (isSuccess ? COMPLETED : FAILED);
 
@@ -936,7 +933,7 @@ public class MasterContext {
         // If there is any member in our participants that is not among current data members,
         // this job will be restarted anyway. If it's the other way, then the sizes won't match.
         if (executionPlanMap == null || executionPlanMap.size() == currentDataMembers.size()) {
-            LoggingUtil.logFine(logger, "Not up-scaling job %s: not running or already running on all members",
+            LoggingUtil.logFine(logger, "Not scaling job %s up: not running or already running on all members",
                     jobIdString());
             return true;
         }
@@ -946,6 +943,8 @@ public class MasterContext {
             logger.info("Requested restart of " + jobIdString() + " to make use of added member(s)");
             return true;
         }
+
+        // if status was not RUNNING or requestTermination didn't succeed, we'll try again later.
         return false;
     }
 

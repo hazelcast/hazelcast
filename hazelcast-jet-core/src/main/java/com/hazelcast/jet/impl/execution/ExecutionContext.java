@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.TerminationMode;
+import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
 import com.hazelcast.jet.impl.util.Util;
@@ -181,7 +182,7 @@ public class ExecutionContext {
             if (mode == null) {
                 cancellationFuture.cancel(true);
             } else {
-                cancellationFuture.completeExceptionally(mode.createException());
+                cancellationFuture.completeExceptionally(new JobTerminateRequestedException(mode));
             }
             if (executionFuture == null) {
                 // if cancelled before execution started, then assign the already completed future.

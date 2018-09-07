@@ -16,12 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
-
 import javax.annotation.CheckReturnValue;
-import javax.annotation.Nonnull;
-import java.util.concurrent.CancellationException;
-import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
@@ -29,25 +24,22 @@ import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEN
 public enum TerminationMode {
 
     // terminate and restart the job
-    RESTART_GRACEFUL(true, RESTART, JobTerminateRequestedException::new),
-    RESTART_FORCEFUL(false, RESTART, JobTerminateRequestedException::new),
+    RESTART_GRACEFUL(true, RESTART),
+    RESTART_FORCEFUL(false, RESTART),
 
     // terminate and mark the job as suspended
-    SUSPEND_GRACEFUL(true, SUSPEND, JobTerminateRequestedException::new),
-    SUSPEND_FORCEFUL(false, SUSPEND, JobTerminateRequestedException::new),
+    SUSPEND_GRACEFUL(true, SUSPEND),
+    SUSPEND_FORCEFUL(false, SUSPEND),
 
     // terminate and complete the job
-    CANCEL(false, ActionAfterTerminate.NO_ACTION, terminationMode -> new CancellationException());
+    CANCEL(false, ActionAfterTerminate.CANCEL);
 
     private final boolean withTerminalSnapshot;
     private final ActionAfterTerminate actionAfterTerminate;
-    private final Function<TerminationMode, Exception> exceptionFactory;
 
-    TerminationMode(boolean withTerminalSnapshot, ActionAfterTerminate actionAfterTerminate,
-                    Function<TerminationMode, Exception> exceptionFactory) {
+    TerminationMode(boolean withTerminalSnapshot, ActionAfterTerminate actionAfterTerminate) {
         this.withTerminalSnapshot = withTerminalSnapshot;
         this.actionAfterTerminate = actionAfterTerminate;
-        this.exceptionFactory = exceptionFactory;
     }
 
     /**
@@ -80,17 +72,12 @@ public enum TerminationMode {
         return res;
     }
 
-    @Nonnull
-    public Exception createException() {
-        return exceptionFactory.apply(this);
-    }
-
     public enum ActionAfterTerminate {
         /** Start the job again. */
         RESTART,
         /** Don't start the job again, mark the job as suspended. */
         SUSPEND,
-        /** Used when cancelling. */
-        NO_ACTION
+        /** Cancel the job. */
+        CANCEL
     }
 }
