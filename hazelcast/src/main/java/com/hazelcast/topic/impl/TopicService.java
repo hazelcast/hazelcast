@@ -22,6 +22,8 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
@@ -39,6 +41,7 @@ import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -49,7 +52,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
-        StatisticsAwareService<LocalTopicStats> {
+        StatisticsAwareService<LocalTopicStats>, ProbeRegistry.ProbeSource {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
 
@@ -77,6 +80,18 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
             orderingLocks[i] = new ReentrantLock();
         }
         eventService = nodeEngine.getEventService();
+    }
+
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        ProbingCycle.Tags tags = cycle.openContext().tag(TAG_TYPE, "topic");
+        for (Entry<String, LocalTopicStatsImpl> e : statsMap.entrySet()) {
+            //TODO is this static?
+            if (nodeEngine.getConfig().findTopicConfig(e.getKey()).isStatisticsEnabled()) {
+                tags.tag(TAG_INSTANCE, e.getKey());
+                cycle.probe(e.getValue());
+            }
+        }
     }
 
     // only for testing

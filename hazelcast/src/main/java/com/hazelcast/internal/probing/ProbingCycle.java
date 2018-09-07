@@ -1,8 +1,24 @@
 package com.hazelcast.internal.probing;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 
 public interface ProbingCycle {
+
+    /**
+     * Allows {@link ProbeSource}s to optimize their implementations by skipping
+     * handling probes for {@link ProbeLevel}s that are not relevant.
+     * 
+     * {@link ProbeSource}s do not have to obligation to perform this check. They
+     * may just probe everything providing the level for each probe. It is the
+     * {@link ProbingCycle}s obligation to make sure only relevant probes are
+     * considered.
+     * 
+     * @param level the level to check
+     * @return true, if the level is relevant for this cycle, else false
+     */
+    boolean isProbed(ProbeLevel level);
 
     /**
      * The main way of rendering metrics is to render instances that have methods
@@ -29,13 +45,9 @@ public interface ProbingCycle {
 
     void probe(CharSequence name, double value);
 
-    /*
-     * Just for convenience 
-     */
+    void probe(ProbeLevel level, CharSequence name, long value);
 
-    void probe(CharSequence name, int value);
-
-    void probe(CharSequence name, float value);
+    void probe(ProbeLevel level, CharSequence name, double value);
 
     /*
      * Tagging
@@ -70,5 +82,14 @@ public interface ProbingCycle {
          * @return this {@link Tags} context for chaining
          */
         Tags tag(CharSequence name, CharSequence value);
+
+        /**
+         * This method is meat as a legacy support where keys are not build in terms of tags.
+         * It should only be used in exceptional cases. At some point we hopefully can remove it.
+         * 
+         * @param s not null
+         * @return this {@link Tags} context for chaining
+         */
+        Tags append(CharSequence s);
     }
 }

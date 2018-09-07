@@ -9,6 +9,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
@@ -24,13 +26,13 @@ public final class ProbeDataSender implements Runnable, Closeable {
 
     private static final ILogger LOGGER = Logger.getLogger(ProbeDataSender.class);
 
-    private final ProbeRegistry probes;
+    private final ProbeRenderContext probes;
     private final long intervalMs;
     private final HttpURLConnectionProvider connectionProvider;
     private final String timeKey;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public ProbeDataSender(ProbeRegistry probes, long intervalMs, HttpURLConnectionProvider connectionProvider, String group, String member) {
+    public ProbeDataSender(ProbeRenderContext probes, long intervalMs, HttpURLConnectionProvider connectionProvider, String group, String member) {
         this.probes = probes;
         this.intervalMs = intervalMs;
         this.connectionProvider = connectionProvider;
@@ -75,7 +77,7 @@ public final class ProbeDataSender implements Runnable, Closeable {
             CompressingProbeRenderer renderer = new CompressingProbeRenderer(out);
             // start with the common group member and time
             renderer.render(timeKey, Clock.currentTimeMillis()); 
-            probes.renderTo(renderer);
+            probes.renderAt(ProbeLevel.INFO, renderer);
             renderer.done();
             if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
                 LOGGER.warning("Failed to send probe data to " + conn.getURL() + ". Status code: "

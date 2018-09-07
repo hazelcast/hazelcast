@@ -1,5 +1,8 @@
 package com.hazelcast.internal.probing;
 
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
+
 /**
  * A service made accessible to core services so they have a chance to register
  * the "root objects" of the system.
@@ -22,20 +25,44 @@ public interface ProbeRegistry {
     void register(ProbeSource source);
 
     /**
-     * Causes a {@link ProbingCycle} that is directed at the given
-     * {@link ProbeRenderer}.
-     * 
-     * @param renderer not null; is called for each active prove with a key and
-     *        value to convert them to the renderer specific format.
+     * @return Creates a new "private "context that should be kept by the called to
+     *         render the contents of this {@link ProbeRegistry}. The implementation
+     *         will not support multi-threading as each thread should have its own
+     *         context instance.
      */
-    void renderTo(ProbeRenderer renderer);
+    ProbeRenderContext newRenderingContext();
+
+    /**
+     * From a usability point of view the {@link ProbeRenderContext} is a bit
+     * cumbersome and smells like over-abstraction. It is purely introduced to
+     * achieve the goal of rendering without creating garbage objects. That means
+     * state needs to be reused. This object is the place where state can be kept in
+     * a way that allows reuse between rendering cycles even if the
+     * {@link ProbeRenderer} itself might change.
+     */
+    interface ProbeRenderContext {
+
+        /**
+         * Causes a {@link ProbingCycle} that is directed at the given
+         * {@link ProbeRenderer}.
+         * 
+         * This method does not support multi-threading. If potentially concurrent calls
+         * to this method should be made each should originate from its own
+         * {@link ProbeRenderContext}.
+         * 
+         * @param renderer not null; is called for each active prove with a key and
+         *        value to convert them to the renderer specific format.
+         */
+        void renderAt(ProbeLevel level, ProbeRenderer renderer);
+    }
 
     /**
      * Implemented by "root objects" (like core services) that know about a
      * particular set of instances they want to probe.
      * 
-     * These can have the form of objects with annotated fields and methods or
-     * directly prove a value for a given name.
+     * Probes can have the form of objects with {@link Probe} annotated fields or
+     * methods or are directly provide a value for a given name using
+     * {@link ProbingCycle#probe(CharSequence, long)} (and its sibling methods).
      */
     interface ProbeSource {
 

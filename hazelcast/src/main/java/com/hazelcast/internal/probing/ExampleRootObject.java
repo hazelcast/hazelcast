@@ -13,6 +13,8 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 
@@ -35,15 +37,21 @@ public class ExampleRootObject implements ProbeSource {
     @Override
     public void probeIn(ProbingCycle cycle) {
         cycle.openContext().tag(TAG_INSTANCE, "foo").tag(TAG_TYPE, "x");
-        cycle.probe(foo);
+        cycle.probe("foo", foo);
         Tags tags = cycle.openContext().tag(TAG_TYPE, "y");
         for (Entry<String, Stats> bar : bars.entrySet()) {
             tags.tag(TAG_INSTANCE, bar.getKey());
             cycle.probe(bar.getValue());
         }
         cycle.openContext().tag(TAG_TYPE, "z").tag(TAG_INSTANCE, name);
-        cycle.probe("baz", bazCount);
-        cycle.probe("avgQue", avgQue);
+        cycle.probe(ProbeLevel.INFO, "baz", bazCount);
+        cycle.probe(ProbeLevel.INFO, "avgQue", avgQue);
+        cycle.openContext().append("some.").append("flexible.").append("prefix.");
+        cycle.probe(ProbeLevel.INFO, "x", 43);
+        cycle.probe(ProbeLevel.INFO, "y", 45.5d);
+        cycle.openContext().tag(TAG_TYPE, "h");
+        cycle.probe(ProbeLevel.INFO, "j", 66);
+        cycle.probe(ProbeLevel.INFO, "k", 68);
     }
 
     private static class Stats {
@@ -86,10 +94,11 @@ public class ExampleRootObject implements ProbeSource {
                 out.append(key).append(' ').append(value).append('\n');
             }
         };
-        registry.renderTo(plain);
+        ProbeRenderContext rendering = registry.newRenderingContext();
+        rendering.renderAt(ProbeLevel.DEBUG, plain);
         ByteArrayOutputStream out2 = new ByteArrayOutputStream();
         CompressingProbeRenderer compressing = new CompressingProbeRenderer(out2);
-        registry.renderTo(compressing);
+        rendering.renderAt(ProbeLevel.DEBUG, compressing);
         compressing.done();
         int plainLength = out.toString().getBytes().length;
         byte[] compressedBytes = out2.toByteArray();

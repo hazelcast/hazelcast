@@ -38,6 +38,9 @@ import com.hazelcast.internal.metrics.metricsets.StatisticsAwareMetricsSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
+import com.hazelcast.internal.probing.ProbeRegistryImpl;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.logging.ILogger;
@@ -80,6 +83,8 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import org.codehaus.plexus.interpolation.PrefixedObjectValueSource;
+
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -105,6 +110,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final LoggingServiceImpl loggingService;
     private final ILogger logger;
     private final MetricsRegistryImpl metricsRegistry;
+    private final ProbeRegistry probeRegistry;
     private final ProxyServiceImpl proxyService;
     private final ServiceManagerImpl serviceManager;
     private final ExecutionServiceImpl executionService;
@@ -157,6 +163,8 @@ public class NodeEngineImpl implements NodeEngine {
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
+            this.probeRegistry = new ProbeRegistryImpl();
+            initProbeSources();
         } catch (Throwable e) {
             try {
                 shutdown(true);
@@ -164,6 +172,16 @@ public class NodeEngineImpl implements NodeEngine {
                 ignore(ignored);
             }
             throw rethrow(e);
+        }
+    }
+
+    /**
+     * For convenience this method automatically registers services that are
+     * {@link ProbeSource}s.
+     */
+    private void initProbeSources() {
+        for (ProbeSource s : serviceManager.getServices(ProbeSource.class)) {
+            probeRegistry.register(s);
         }
     }
 
