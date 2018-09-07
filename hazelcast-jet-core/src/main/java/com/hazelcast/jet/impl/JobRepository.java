@@ -462,7 +462,7 @@ public class JobRepository {
         public Object process(Entry<Long, JobRecord> entry) {
             JobRecord jobRecord = entry.getValue();
             if (jobRecord == null) {
-                return false;
+                throw new JobNotFoundException("JobRecord for job " + idToString(entry.getKey()) + " not found");
             }
 
             JobRecord newJobRecord = updateFn.apply(jobRecord);

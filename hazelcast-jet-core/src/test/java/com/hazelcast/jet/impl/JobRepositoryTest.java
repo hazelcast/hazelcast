@@ -23,6 +23,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
@@ -180,14 +181,11 @@ public class JobRepositoryTest extends JetTestSupport {
         assertEquals(currentQuorumSize, jobRecord.getQuorumSize());
     }
 
-    @Test
-    public void when_jobIsMissing_then_jobQuorumSizeIsNotUpdated() {
+    @Test(expected = JobNotFoundException.class)
+    public void when_jobIsMissing_then_jobQuorumSizeUpdateFails() {
         long jobId = uploadResourcesForNewJob();
 
-        boolean success = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobId, 1);
-
-        assertFalse(success);
-        assertNull(jobRepository.getJobRecord(jobId));
+        jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobId, 1);
     }
 
     private long uploadResourcesForNewJob() {

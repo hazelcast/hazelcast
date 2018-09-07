@@ -106,10 +106,12 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Override
     protected long doGetJobSubmissionTime() {
         ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId());
-        return uncheckCall(() -> {
+        try {
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
             return JetGetJobSubmissionTimeCodec.decodeResponse(response).response;
-        });
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     @Override

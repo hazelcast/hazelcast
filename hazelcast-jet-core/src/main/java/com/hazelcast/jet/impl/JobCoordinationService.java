@@ -403,8 +403,14 @@ public class JobCoordinationService {
 
         MasterContext masterContext = masterContexts.get(jobId);
         if (masterContext == null) {
-            throw new RetryableHazelcastException("No MasterContext found for job " + idToString(jobId)
-                    + " for " + terminationMode);
+            JobRecord jobRecord = jobRepository.getJobRecord(jobId);
+            String message = "No MasterContext found for job " + idToString(jobId) + " for " + terminationMode;
+            if (jobRecord != null) {
+                // we'll eventually learn of the job through scanning of records or from a join operation
+                throw new RetryableHazelcastException(message);
+            } else {
+                throw new JobNotFoundException(jobId);
+            }
         }
 
         // User can cancel in any state, other terminations are allowed only when running.
