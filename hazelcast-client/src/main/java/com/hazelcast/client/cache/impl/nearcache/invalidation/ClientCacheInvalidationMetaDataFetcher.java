@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache.impl.nearcache.invalidation;
 
-
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvalidationMetadataCodec.ResponseParameters;
