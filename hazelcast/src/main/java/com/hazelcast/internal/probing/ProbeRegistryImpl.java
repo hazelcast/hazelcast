@@ -3,9 +3,12 @@ package com.hazelcast.internal.probing;
 import static com.hazelcast.util.StringUtil.getterIntoProperty;
 import static java.lang.Math.round;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -32,6 +35,11 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
     @Override
     public void register(ProbeSource source) {
+        for (ProbeSourceEntry s : sources) {
+            if (s.source == source) {
+                return; // avoid adding the very same instance more then once
+            }
+        }
         sources.add(new ProbeSourceEntry(source));
     }
 
@@ -139,7 +147,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         @Override
         public void probe(CharSequence name, double value) {
-            probe(ProbeLevel.MANDATORY, name, value);            
+            probe(ProbeLevel.MANDATORY, name, value);
         }
 
         @Override
@@ -231,16 +239,135 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
     }
 
+    /**
+     * Holds the state for a specific {@link ProbeLevel} for a specific
+     * {@link Class} type.
+     * 
+     * The unconventional usage of array pairs to model "maps" that requires
+     * cumbersome initialization code has two main goals: consume as little memory
+     * as possible while providing the possibility to iterate the "entries" without
+     * causing creation of garbage objects.
+     */
     private static final class ProbeAnnotatedTypeLevel {
 
         final ProbeLevel level;
-        final Map<String, Method> methods = new ConcurrentHashMap<String, Method>();
-        final Map<String, Field> longFields = new ConcurrentHashMap<String, Field>();
-        final Map<String, Field> doubleFields = new ConcurrentHashMap<String, Field>();
-        final Map<String, Field> otherFields = new ConcurrentHashMap<String, Field>();
+        final String[] methodNames;
+        final String[] longFieldNames;
+        final String[] doubleFieldNames;
+        final String[] otherFieldNames;
+        final Method[] methods;
+        final Field[] longFields;
+        final Field[] doubleFields;
+        final Field[] otherFields;
 
-        ProbeAnnotatedTypeLevel(ProbeLevel level) {
+        static ProbeAnnotatedTypeLevel init(ProbeLevel level, List<Method> methodProbes,
+                List<Field> fieldProbes) {
+            if (methodProbes.isEmpty() && fieldProbes.isEmpty()) {
+                return null;
+            }
+            int methodCount = countMethodProbesWith(level, methodProbes);
+            int longFieldCount = countFieldProbesWith(level, fieldProbes, long.class, int.class,
+                    short.class, char.class, byte.class);
+            int doubleFieldCount = countFieldProbesWith(level, fieldProbes, double.class,
+                    float.class);
+            int otherFieldCount = countFieldProbesWith(level, fieldProbes) - longFieldCount
+                    - doubleFieldCount;
+            if (methodCount + longFieldCount + doubleFieldCount + otherFieldCount == 0) {
+                return null;
+            }
+            return new ProbeAnnotatedTypeLevel(level, methodProbes, fieldProbes, methodCount,
+                    longFieldCount, doubleFieldCount, otherFieldCount);
+        }
+
+        ProbeAnnotatedTypeLevel(ProbeLevel level, List<Method> methodProbes,
+                List<Field> fieldProbes, int methodCount, int longFieldCount, int doubleFieldCount,
+                int otherFieldCount) {
             this.level = level;
+            this.methods = methodCount == 0 ? null : new Method[methodCount];
+            this.methodNames = methodCount == 0 ? null : new String[methodCount];
+            initMethodProbes(level, methodProbes);
+            this.longFields = longFieldCount == 0 ? null : new Field[longFieldCount];
+            this.longFieldNames = longFieldCount == 0 ? null : new String[longFieldCount];
+            this.doubleFields = doubleFieldCount == 0 ? null : new Field[doubleFieldCount];
+            this.doubleFieldNames = doubleFieldCount == 0 ? null : new String[doubleFieldCount];
+            this.otherFields = otherFieldCount == 0 ? null : new Field[otherFieldCount];
+            this.otherFieldNames = otherFieldCount == 0 ? null : new String[otherFieldCount];
+            initFieldProbes(level, fieldProbes);
+        }
+
+        private void initMethodProbes(ProbeLevel level, List<Method> probes) {
+            int i = 0;
+            for (Method m : probes) {
+                Probe p = m.getAnnotation(Probe.class);
+                if (p.level() == level) {
+                    String name = p.name();
+                    if (name.isEmpty()) {
+                        name = getterIntoProperty(m.getName());
+                    }
+                    methods[i] = m;
+                    methodNames[i++] = name;
+                }
+            }
+        }
+
+        private void initFieldProbes(ProbeLevel level, List<Field> probes) {
+            int longIndex = 0;
+            int doubleIndex = 0;
+            int otherIndex = 0;
+            for (Field f : probes) {
+                Probe p = f.getAnnotation(Probe.class);
+                if (p.level() == level) {
+                    String name = p.name();
+                    if (name.isEmpty()) {
+                        name = f.getName();
+                    }
+                    Class<?> valueType = f.getType();
+                    if (valueType.isPrimitive()) {
+                        if (valueType == double.class || valueType == float.class) {
+                            doubleFields[doubleIndex] = f;
+                            doubleFieldNames[doubleIndex++] = name;
+                        } else {
+                            longFields[longIndex] = f;
+                            longFieldNames[longIndex++] = name;
+                        }
+                    } else {
+                        otherFields[otherIndex] = f;
+                        otherFieldNames[otherIndex++] = name;
+                    }
+                }
+            }
+        }
+
+        private static int countMethodProbesWith(ProbeLevel level, List<Method> probes) {
+            int c = 0;
+            for (Method m : probes) {
+                if (m.getAnnotation(Probe.class).level() == level) {
+                    c++;
+                }
+            }
+            return c;
+        }
+
+        private static int countFieldProbesWith(ProbeLevel level, List<Field> probes, Class<?>... types) {
+            int c = 0;
+            for (Field f : probes) {
+                if (f.getAnnotation(Probe.class).level() == level && contains(types, f.getType())) {
+                    c++;
+                }
+            }
+            return c;
+        }
+
+        private static boolean contains(Class<?>[] types, Class<?> type) {
+            if (types.length == 0) {
+                return true;
+            }
+            for (Class<?> t : types) {
+                if (t == type) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         void probeIn(ProbingCycle cycle, Object instance) {
@@ -251,10 +378,10 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         private void probeOtherFields(ProbingCycle cycle, Object instance) {
-            if (!otherFields.isEmpty()) {
-                for (Entry<String, Field> f : otherFields.entrySet()) {
+            if (otherFields != null) {
+                for (int i = 0; i < otherFields.length; i++) {
                     try {
-                        cycle.probe(level, f.getKey(), toLong(f.getValue().get(instance)));
+                        cycle.probe(level, otherFieldNames[i], toLong(otherFields[i].get(instance)));
                     } catch (Exception e) {
                         // ignore it (or write -1?)
                     }
@@ -263,10 +390,10 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         private void probeDoubleFields(ProbingCycle cycle, Object instance) {
-            if (!doubleFields.isEmpty()) {
-                for (Entry<String, Field> f : doubleFields.entrySet()) {
+            if (doubleFields != null) {
+                for (int i = 0; i < doubleFields.length; i++) {
                     try {
-                        cycle.probe(level, f.getKey(), f.getValue().getDouble(instance));
+                        cycle.probe(level, doubleFieldNames[i], doubleFields[i].getDouble(instance));
                     } catch (Exception e) {
                         // ignore it (or write -1?)
                     }
@@ -275,10 +402,10 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         private void probeLongFields(ProbingCycle cycle, Object instance) {
-            if (!longFields.isEmpty()) {
-                for (Entry<String, Field> f : longFields.entrySet()) {
+            if (longFields != null) {
+                for (int i = 0; i < longFields.length; i++) {
                     try {
-                        cycle.probe(level, f.getKey(), f.getValue().getLong(instance));
+                        cycle.probe(level, longFieldNames[i], longFields[i].getLong(instance));
                     } catch (Exception e) {
                         // ignore it (or write -1?)
                     }
@@ -287,10 +414,10 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         private void probeMethods(ProbingCycle cycle, Object instance) {
-            if (!methods.isEmpty()) {
-                for (Entry<String, Method> m : methods.entrySet()) {
+            if (methods != null) {
+                for (int i = 0; i < methods.length; i++) {
                     try {
-                        cycle.probe(level, m.getKey(), toLong(m.getValue().invoke(instance)));
+                        cycle.probe(level, methodNames[i], toLong(methods[i].invoke(instance)));
                     } catch (Exception e) {
                         // ignore it (or write -1?)
                     }
@@ -325,6 +452,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                     "It is not known how to convert a value of type "
                             + value.getClass().getSimpleName() + " to primitive long.");
         }
+
     }
 
     private static final class ProbeAnnotatedType {
@@ -333,7 +461,13 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 new ProbeAnnotatedTypeLevel[ProbeLevel.values().length];
 
         ProbeAnnotatedType(Class<?> type) {
-            init(type);
+            List<Method> methodProbes = new ArrayList<Method>();
+            initMethods(type, methodProbes);
+            List<Field> fieldProbes = new ArrayList<Field>();
+            initFields(type, fieldProbes);
+            for (ProbeLevel level : ProbeLevel.values()) {
+                levels[level.ordinal()] = ProbeAnnotatedTypeLevel.init(level, methodProbes, fieldProbes);
+            }
         }
 
         void probeIn(ProbingCycle cycle, Object instance, ProbeLevel level) {
@@ -345,53 +479,33 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        private void init(Class<?> type) {
+        private void initMethods(Class<?> type, List<Method> probes) {
             for (Method m : type.getDeclaredMethods()) {
                 if (m.isAnnotationPresent(Probe.class)) {
                     m.setAccessible(true);
-                    Probe probe = m.getAnnotation(Probe.class);
-                    String name = probe.name();
-                    if (name.isEmpty()) {
-                        name = getterIntoProperty(m.getName());
-                    }
-                    getLevel(probe.level()).methods.put(name, m);
+                    probes.add(m);
                 }
             }
-            for (Field f : type.getDeclaredFields()) {
-                if (f.isAnnotationPresent(Probe.class)) {
-                    f.setAccessible(true);
-                    Probe probe = f.getAnnotation(Probe.class);
-                    String name = probe.name();
-                    ProbeAnnotatedTypeLevel level = getLevel(probe.level());
-                    if (name.isEmpty()) {
-                        name = f.getName();
-                    }
-                    Class<?> valueType = f.getType();
-                    if (valueType.isPrimitive()) {
-                        if (valueType == double.class || valueType == float.class) {
-                            level.doubleFields.put(name, f);
-                        } else {
-                            level.longFields.put(name, f);
-                        }
-                    } else {
-                        level.otherFields.put(name, f);
-                    }
-                }
+            if (type.getSuperclass() != null) {
+                initMethods(type.getSuperclass(), probes);
             }
-            Class<?> superclass = type.getSuperclass();
-            if (superclass != null) {
-                init(superclass);
+            for (Class<?> t : type.getInterfaces()) {
+                initMethods(t, probes);
             }
         }
 
-        private ProbeAnnotatedTypeLevel getLevel(ProbeLevel level) {
-            ProbeAnnotatedTypeLevel res = levels[level.ordinal()];
-            if (res == null) {
-                res = new ProbeAnnotatedTypeLevel(level);
-                levels[level.ordinal()] = res;
+        private void initFields(Class<?> type, List<Field> probes) {
+            for (Field f : type.getDeclaredFields()) {
+                if (f.isAnnotationPresent(Probe.class)) {
+                    f.setAccessible(true);
+                    probes.add(f);
+                }
             }
-            return res;
+            if (type.getSuperclass() != null) {
+                initFields(type.getSuperclass(), probes);
+            }
         }
+
 
     }
 }
