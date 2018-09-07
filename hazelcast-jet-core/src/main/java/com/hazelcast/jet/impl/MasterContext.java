@@ -842,7 +842,10 @@ public class MasterContext {
 
             if (completionCallback != null) {
                 future.andThen(callbackOf((r, throwable) -> {
-                    responses.put(member, r != null ? r : throwable != null ? peel(throwable) : NULL_OBJECT);
+                    Object response = r != null ? r : throwable != null ? peel(throwable) : NULL_OBJECT;
+                    Object oldResponse = responses.put(member, response);
+                    assert oldResponse == null :
+                            "Duplicate response for " + member + ". Old=" + oldResponse + ", new=" + response;
                     if (remainingCount.decrementAndGet() == 0) {
                         completionCallback.accept(responses);
                     }

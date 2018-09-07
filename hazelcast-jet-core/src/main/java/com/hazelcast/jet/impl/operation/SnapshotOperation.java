@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -28,6 +27,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static java.util.Objects.requireNonNull;
 
 public class SnapshotOperation extends AsyncJobOperation {
 
@@ -66,10 +66,8 @@ public class SnapshotOperation extends AsyncJobOperation {
                         "Snapshot %s for %s finished successfully on member",
                         snapshotId, ctx.jobNameAndExecutionId());
             } else {
-                getLogger().warning(String.format("Snapshot %d for %s finished with an error on member",
-                        snapshotId, ctx.jobNameAndExecutionId()), result.getError());
-                // wrap the exception
-                result.error = new JetException("Exception during snapshot: " + result.error, result.error);
+                getLogger().warning(String.format("Snapshot %d for %s finished with an error on member: %s",
+                        snapshotId, ctx.jobNameAndExecutionId(), result.getError()));
             }
             maybeSendResponse(result);
         });
@@ -113,7 +111,7 @@ public class SnapshotOperation extends AsyncJobOperation {
         private long numBytes;
         private long numKeys;
         private long numChunks;
-        private Throwable error;
+        private String error;
 
         public SnapshotOperationResult() {
         }
@@ -122,7 +120,7 @@ public class SnapshotOperation extends AsyncJobOperation {
             this.numBytes = numBytes;
             this.numKeys = numKeys;
             this.numChunks = numChunks;
-            this.error = error;
+            this.error = error == null ? null : requireNonNull(error.toString());
         }
 
         public long getNumBytes() {
@@ -137,7 +135,7 @@ public class SnapshotOperation extends AsyncJobOperation {
             return numChunks;
         }
 
-        public Throwable getError() {
+        public String getError() {
             return error;
         }
 
@@ -156,6 +154,16 @@ public class SnapshotOperation extends AsyncJobOperation {
         }
 
         @Override
+        public String toString() {
+            return "SnapshotOperationResult{" +
+                    "numBytes=" + numBytes +
+                    ", numKeys=" + numKeys +
+                    ", numChunks=" + numChunks +
+                    ", error=" + error +
+                    '}';
+        }
+
+        @Override
         public int getFactoryId() {
             return JetInitDataSerializerHook.FACTORY_ID;
         }
@@ -170,6 +178,7 @@ public class SnapshotOperation extends AsyncJobOperation {
             out.writeLong(numBytes);
             out.writeLong(numKeys);
             out.writeLong(numChunks);
+            out.writeUTF(error);
         }
 
         @Override
@@ -177,6 +186,7 @@ public class SnapshotOperation extends AsyncJobOperation {
             numBytes = in.readLong();
             numKeys = in.readLong();
             numChunks = in.readLong();
+            error = in.readUTF();
         }
     }
 }

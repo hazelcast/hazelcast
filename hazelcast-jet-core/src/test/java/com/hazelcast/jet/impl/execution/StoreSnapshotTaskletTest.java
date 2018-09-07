@@ -182,7 +182,8 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     public void when_snapshotFails_then_reportedToContext() throws Exception {
         // When
         init(singletonList(new SnapshotBarrier(2)));
-        mockSsWriter.failure = new RuntimeException("mock failure");
+        RuntimeException mockFailure = new RuntimeException("mock failure");
+        mockSsWriter.failure = mockFailure;
         CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(2, false);
         assertEquals(MADE_PROGRESS, sst.call());
         assertFalse(future.isDone());
@@ -190,7 +191,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
 
         // Then
         assertTrue(future.isDone());
-        assertEquals("mock failure", future.get().getError().getMessage());
+        assertEquals(mockFailure.toString(), future.get().getError());
         assertEquals(3, sst.pendingSnapshotId);
     }
 
