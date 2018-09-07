@@ -1153,10 +1153,18 @@ abstract class MapProxySupport<K, V>
         ExecutionCallback<Map<Integer, Object>> partialCallback = new ExecutionCallback<Map<Integer, Object>>() {
             @Override
             public void onResponse(Map<Integer, Object> response) {
-                Map<K, Object> result = createHashMap(response.size());
-                for (Object object : response.values()) {
-                    MapEntries mapEntries = (MapEntries) object;
-                    mapEntries.putAllToMap(serializationService, result);
+                Map<K, Object> result = null;
+                try {
+                    result = createHashMap(response.size());
+                    for (Object object : response.values()) {
+                        MapEntries mapEntries = (MapEntries) object;
+                        mapEntries.putAllToMap(serializationService, result);
+                    }
+                } catch (Throwable e) {
+                    resultFuture.setResult(e);
+                    if (callback != null) {
+                        callback.onFailure(e);
+                    }
                 }
                 resultFuture.setResult(result);
                 if (callback != null) {
