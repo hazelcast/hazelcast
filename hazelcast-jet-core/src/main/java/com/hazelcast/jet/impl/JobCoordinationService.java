@@ -209,7 +209,7 @@ public class JobCoordinationService {
                     } catch (Exception e) {
                         logger.severe("Quorum of job " + idToString(jobRecord.getJobId())
                                 + " could not be updated to " + currentQuorumSize
-                                + " in its MasterContext object");
+                                + " in its MasterContext object", e);
                     }
                 }
             }
