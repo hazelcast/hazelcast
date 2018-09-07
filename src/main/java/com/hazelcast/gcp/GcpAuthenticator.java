@@ -16,8 +16,8 @@
 
 package com.hazelcast.gcp;
 
-import com.hazelcast.com.eclipsesource.json.Json;
-import com.hazelcast.com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.util.Base64;
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.gcp;
 
-import com.hazelcast.com.eclipsesource.json.Json;
+import com.hazelcast.internal.json.Json;
 
 /**
  * Responsible for connecting to the Google Cloud Instance Metadata API.
