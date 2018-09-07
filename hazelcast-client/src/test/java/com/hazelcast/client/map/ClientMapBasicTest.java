@@ -46,7 +46,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -219,7 +221,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Value";
 
-        String result = map.put(key, value, 5, TimeUnit.MINUTES);
+        String result = map.put(key, value, 5, MINUTES);
         assertNull(result);
         assertEquals(value, map.get(key));
     }
@@ -232,7 +234,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String newValue = "Val";
 
         map.put(key, oldValue);
-        String result = map.put(key, newValue, 5, TimeUnit.MINUTES);
+        String result = map.put(key, newValue, 5, MINUTES);
         assertEquals(oldValue, result);
         assertEquals(newValue, map.get(key));
     }
@@ -290,7 +292,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutAsync_withKeyNull() throws Exception {
+    public void testPutAsync_withKeyNull() {
         IMap<String, String> map = client.getMap(randomString());
         String val = "Val";
 
@@ -298,7 +300,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutAsync_withValueNull() throws Exception {
+    public void testPutAsync_withValueNull() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "key";
 
@@ -311,7 +313,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Val";
 
-        Future result = map.putAsync(key, value, 5, TimeUnit.MINUTES);
+        Future result = map.putAsync(key, value, 5, MINUTES);
 
         assertNull(result.get());
         assertEquals(value, map.get(key));
@@ -325,7 +327,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String newValue = "Val";
 
         map.put(key, oldValue);
-        Future result = map.putAsync(key, newValue, 5, TimeUnit.MINUTES);
+        Future result = map.putAsync(key, newValue, 5, MINUTES);
 
         assertEquals(oldValue, result.get());
         assertEquals(newValue, map.get(key));
@@ -371,7 +373,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testSetAsync_withKeyNull() throws Exception {
+    public void testSetAsync_withKeyNull() {
         IMap<String, String> map = client.getMap(randomString());
         String val = "Val";
 
@@ -379,7 +381,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testSetAsync_withValueNull() throws Exception {
+    public void testSetAsync_withValueNull() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "key";
 
@@ -392,7 +394,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Val";
 
-        Future<Void> result = map.setAsync(key, value, 5, TimeUnit.MINUTES);
+        Future<Void> result = map.setAsync(key, value, 5, MINUTES);
 
         result.get();
         assertEquals(value, map.get(key));
@@ -437,7 +439,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testTryPut_whenNotLocked() throws Exception {
+    public void testTryPut_whenNotLocked() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "value";
@@ -449,7 +451,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testTryPut_whenKeyPresentAndNotLocked() throws Exception {
+    public void testTryPut_whenKeyPresentAndNotLocked() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String oldValue = "oldValue";
@@ -463,21 +465,21 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutIfAbsent_whenKeyNull() throws Exception {
+    public void testPutIfAbsent_whenKeyNull() {
         IMap<String, String> map = client.getMap(randomString());
         String value = "Value";
         map.putIfAbsent(null, value);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutIfAbsent_whenValueNull() throws Exception {
+    public void testPutIfAbsent_whenValueNull() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "key";
         map.putIfAbsent(key, null);
     }
 
     @Test
-    public void testPutIfAbsent() throws Exception {
+    public void testPutIfAbsent() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "Value";
@@ -489,7 +491,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testPutIfAbsent_whenKeyPresent() throws Exception {
+    public void testPutIfAbsent_whenKeyPresent() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "Value";
@@ -502,7 +504,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testPutIfAbsentNewValue_whenKeyPresent() throws Exception {
+    public void testPutIfAbsentNewValue_whenKeyPresent() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "Value";
@@ -516,19 +518,19 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testPutIfAbsentTTL() throws Exception {
+    public void testPutIfAbsentTTL() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "Value";
 
-        String result = map.putIfAbsent(key, value, 5, TimeUnit.MINUTES);
+        String result = map.putIfAbsent(key, value, 5, MINUTES);
 
         assertNull(result);
         assertEquals(value, map.get(key));
     }
 
     @Test
-    public void testPutIfAbsentTTL_whenExpire() throws Exception {
+    public void testPutIfAbsentTTL_whenExpire() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "Value";
@@ -541,7 +543,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testPutIfAbsentTTL_whenKeyPresentAfterExpire() throws Exception {
+    public void testPutIfAbsentTTL_whenKeyPresentAfterExpire() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "Value";
@@ -554,41 +556,41 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testPutIfAbsentTTL_whenKeyPresent() throws Exception {
+    public void testPutIfAbsentTTL_whenKeyPresent() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "Value";
 
         map.put(key, value);
-        String result = map.putIfAbsent(key, value, 5, TimeUnit.MINUTES);
+        String result = map.putIfAbsent(key, value, 5, MINUTES);
 
         assertEquals(value, result);
         assertEquals(value, map.get(key));
     }
 
     @Test
-    public void testPutIfAbsentNewValueTTL_whenKeyPresent() throws Exception {
+    public void testPutIfAbsentNewValueTTL_whenKeyPresent() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "Value";
         String newValue = "newValue";
 
         map.put(key, value);
-        String result = map.putIfAbsent(key, newValue, 5, TimeUnit.MINUTES);
+        String result = map.putIfAbsent(key, newValue, 5, MINUTES);
 
         assertEquals(value, result);
         assertEquals(value, map.get(key));
     }
 
     @Test
-    public void testClear_whenEmpty() throws Exception {
+    public void testClear_whenEmpty() {
         IMap<String, String> map = client.getMap(randomString());
         map.clear();
         assertTrue(map.isEmpty());
     }
 
     @Test
-    public void testClear() throws Exception {
+    public void testClear() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "Value";
@@ -691,7 +693,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testGetAsync_whenKeyNull() throws Exception {
+    public void testGetAsync_whenKeyNull() {
         IMap<String, String> map = client.getMap(randomString());
         map.getAsync(null);
     }
@@ -724,7 +726,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String val = "Val";
 
-        map.set(key, val, 5, TimeUnit.MINUTES);
+        map.set(key, val, 5, MINUTES);
         assertEquals(val, map.get(key));
     }
 
@@ -829,7 +831,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testRemoveAsync_whenKeyNull() throws Exception {
+    public void testRemoveAsync_whenKeyNull() {
         IMap<String, String> map = client.getMap(randomString());
         map.removeAsync(null);
     }
@@ -884,20 +886,20 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testEvict_whenKeyAbsent() throws InterruptedException {
+    public void testEvict_whenKeyAbsent() {
         IMap<String, String> map = client.getMap(randomString());
         boolean result = map.evict("NOT_THERE");
         assertFalse(result);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testEvict_whenKeyNull() throws InterruptedException {
+    public void testEvict_whenKeyNull() {
         IMap<String, String> map = client.getMap(randomString());
         map.evict(null);
     }
 
     @Test
-    public void testEvict() throws InterruptedException {
+    public void testEvict() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "value";
@@ -946,6 +948,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         }
     }
 
+    @Test
     public void testGetAll_whenMapEmpty() {
         int max = 10;
         IMap<Integer, Integer> map = client.getMap(randomString());
@@ -960,7 +963,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testReplace_whenKeyValueAbsent() throws Exception {
+    public void testReplace_whenKeyValueAbsent() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "value";
@@ -970,7 +973,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testReplace() throws Exception {
+    public void testReplace() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String oldValue = "value";
@@ -984,7 +987,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testReplaceKeyValue() throws Exception {
+    public void testReplaceKeyValue() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "value";
@@ -998,7 +1001,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testReplaceKeyValue_whenValueAbsent() throws Exception {
+    public void testReplaceKeyValue_whenValueAbsent() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "value";
@@ -1012,17 +1015,17 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testPutTransient() throws InterruptedException {
+    public void testPutTransient() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "value";
 
-        map.putTransient(key, value, 5, TimeUnit.MINUTES);
+        map.putTransient(key, value, 5, MINUTES);
         assertEquals(value, map.get(key));
     }
 
     @Test
-    public void testPutTransient_whenExpire() throws InterruptedException {
+    public void testPutTransient_whenExpire() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String value = "value";
@@ -1033,19 +1036,19 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testPutTransient_whenKeyPresent() throws InterruptedException {
+    public void testPutTransient_whenKeyPresent() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String oldValue = "oldValue";
         String newValue = "newValue";
 
         map.put(key, oldValue);
-        map.putTransient(key, newValue, 5, TimeUnit.MINUTES);
+        map.putTransient(key, newValue, 5, MINUTES);
         assertEquals(newValue, map.get(key));
     }
 
     @Test
-    public void testPutTransient_whenKeyPresentAfterExpire() throws InterruptedException {
+    public void testPutTransient_whenKeyPresentAfterExpire() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String oldValue = "oldValue";
@@ -1076,7 +1079,62 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
         assertEquals(key, view.getKey());
         assertEquals(value, view.getValue());
+        assertEquals((Long) Long.MAX_VALUE, view.getMaxIdle());
+        assertEquals(Long.MAX_VALUE, view.getTtl());
     }
+
+    @Test
+    public void testGetEntryView_withExpirationSettings() {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Value";
+
+        long maxIdleMins = 33;
+        long ttlMins = 20;
+
+        map.put(key, value, ttlMins, MINUTES, maxIdleMins, MINUTES);
+        EntryView view = map.getEntryView(key);
+
+        assertEquals(key, view.getKey());
+        assertEquals(value, view.getValue());
+        assertEquals((Long) MINUTES.toMillis(maxIdleMins), view.getMaxIdle());
+        assertEquals(MINUTES.toMillis(ttlMins), view.getTtl());
+    }
+
+    @Test
+    public void testGetEntryView_withExpirationSettings_infMaxIdle() {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Value";
+
+        long ttlMins = 20;
+
+        map.put(key, value, ttlMins, MINUTES, 0, MILLISECONDS);
+        EntryView view = map.getEntryView(key);
+
+        assertEquals(key, view.getKey());
+        assertEquals(value, view.getValue());
+        assertEquals((Long) Long.MAX_VALUE, view.getMaxIdle());
+        assertEquals(MINUTES.toMillis(ttlMins), view.getTtl());
+    }
+
+    @Test
+    public void testGetEntryView_withExpirationSettings_mapDefault() {
+        IMap<String, String> map = client.getMap("mapWithMaxIdle");
+        String key = "Key";
+        String value = "Value";
+
+        long ttlMins = 20;
+
+        map.put(key, value, ttlMins, MINUTES, -1, SECONDS);
+        EntryView view = map.getEntryView(key);
+
+        assertEquals(key, view.getKey());
+        assertEquals(value, view.getValue());
+        assertEquals(Long.valueOf(11000), view.getMaxIdle());
+        assertEquals(MINUTES.toMillis(ttlMins), view.getTtl());
+    }
+
 
     @Test
     public void testKeySet_whenEmpty() {
@@ -1203,7 +1261,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
     private static class TestPagingPredicate extends PagingPredicate {
 
-        public TestPagingPredicate(int pageSize) {
+        TestPagingPredicate(int pageSize) {
             super(pageSize);
         }
 
