@@ -19,6 +19,7 @@ package com.hazelcast.kubernetes;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoints;
 import com.hazelcast.kubernetes.KubernetesClient.EntrypointAddress;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -31,15 +32,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertTrue;
 
 public class DefaultKubernetesClientTest {
     private static final String KUBERNETES_MASTER_IP = "localhost";
-    private static final int KUBERNETES_MASTER_PORT = 8089;
-    private static final String KUBERNETES_MASTER_URL = String
-            .format("http://%s:%d", KUBERNETES_MASTER_IP, KUBERNETES_MASTER_PORT);
 
     private static final String TOKEN = "sample-token";
     private static final String NAMESPACE = "sample-namespace";
@@ -54,9 +53,15 @@ public class DefaultKubernetesClientTest {
     private static final String SAMPLE_NOT_READY_IP = ipPort(SAMPLE_NOT_READY_ADDRESS, null);
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(KUBERNETES_MASTER_PORT);
+    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
-    private final DefaultKubernetesClient kubernetesClient = new DefaultKubernetesClient(KUBERNETES_MASTER_URL, TOKEN);
+    private DefaultKubernetesClient kubernetesClient;
+
+    @Before
+    public void setUp() {
+        String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
+        kubernetesClient = new DefaultKubernetesClient(kubernetesMasterUrl, TOKEN);
+    }
 
     @Test
     public void endpointsByNamespace() {
