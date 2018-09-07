@@ -95,6 +95,24 @@ public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicT
         // not tested
     }
 
+    @Override
+    @Ignore
+    public void receiveLoadedEventsWhenLoad() {
+        // not tested
+    }
+
+    @Override
+    @Ignore
+    public void receiveLoadedEventsWhenLoadAll() {
+        // not tested
+    }
+
+    @Override
+    @Ignore
+    public void receiveAddedEventsWhenLoadAll() {
+        // not tested
+    }
+
     protected CacheManager createCacheManager() {
         CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(getRandomInstance());
         return cachingProvider.getCacheManager();

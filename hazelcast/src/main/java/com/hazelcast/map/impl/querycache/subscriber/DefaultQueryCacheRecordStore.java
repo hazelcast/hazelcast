@@ -83,6 +83,11 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     public QueryCacheRecord add(Data keyData, Data valueData) {
         evictionOperator.evictIfRequired();
 
+        return addWithoutEvictionCheck(keyData, valueData);
+    }
+
+    @Override
+    public QueryCacheRecord addWithoutEvictionCheck(Data keyData, Data valueData) {
         QueryCacheRecord newRecord = recordFactory.createRecord(valueData);
         QueryCacheRecord oldRecord = cache.put(keyData, newRecord);
         saveIndex(keyData, newRecord, oldRecord);
@@ -151,15 +156,10 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
 
     @Override
     public int clear() {
-        int removeCount = 0;
-        Set<Data> dataKeys = keySet();
-        for (Data dataKey : dataKeys) {
-            QueryCacheRecord oldRecord = remove(dataKey);
-            if (oldRecord != null) {
-                removeCount++;
-            }
-        }
-        return removeCount;
+        int removedEntryCount = cache.size();
+        cache.clear();
+        indexes.clearAll();
+        return removedEntryCount;
     }
 
     @Override

@@ -58,7 +58,9 @@ public class ClientCacheEventJournalBasicTest extends CacheEventJournalBasicTest
 
     @After
     public final void terminate() {
-        factory.terminateAll();
+        if (factory != null) {
+            factory.terminateAll();
+        }
         HazelcastClientManager.shutdownAll();
     }
 }

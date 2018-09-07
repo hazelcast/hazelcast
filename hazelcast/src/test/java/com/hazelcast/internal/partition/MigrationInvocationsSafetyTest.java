@@ -276,6 +276,11 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
             final AtomicReference<MigrationInfo> committedMigrationInfoRef = new AtomicReference<MigrationInfo>();
 
             @Override
+            public void onMigrationStart(MigrationParticipant participant, MigrationInfo migrationInfo) {
+               assertClusterStateEventually(ClusterState.ACTIVE, destination);
+            }
+
+            @Override
             public void onMigrationCommit(MigrationParticipant participant, MigrationInfo migrationInfo) {
                 if (participant == MigrationParticipant.DESTINATION && committedMigrationInfoRef.compareAndSet(null, migrationInfo)) {
                     dropOperationsBetween(destination, master, SpiDataSerializerHook.F_ID, singletonList(NORMAL_RESPONSE));

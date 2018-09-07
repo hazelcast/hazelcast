@@ -83,10 +83,13 @@ public class ItemCounterTest extends HazelcastTestSupport {
         Object object = new Object();
 
         counter.set(object, Long.MIN_VALUE);
+
+        long oldTotal = counter.total();
         counter.set(object, value);
         long count = counter.get(object);
 
         assertEquals(value, count);
+        assertEquals(Long.MAX_VALUE, counter.total());
     }
 
     @Test
@@ -98,6 +101,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
         long count = counter.get(object);
 
         assertEquals(delta, count);
+        assertEquals(1, counter.total());
     }
 
     @Test
@@ -111,6 +115,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
         long count = counter.get(object);
 
         assertEquals(delta + initialValue, count);
+        assertEquals(2, counter.total());
     }
 
     @Test
@@ -129,6 +134,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
 
         assertEquals(0, count1);
         assertEquals(0, count2);
+        assertEquals(0, counter.total());
     }
 
     @Test
@@ -141,13 +147,14 @@ public class ItemCounterTest extends HazelcastTestSupport {
 
         count = counter.get(object);
         assertEquals(newValue, count);
+        assertEquals(newValue, counter.total());
     }
 
     @Test
     public void testGetAndSet_overridePreviousValue() {
         Object object = new Object();
-        long initialValue = Long.MIN_VALUE;
-        long newValue = Long.MAX_VALUE;
+        long initialValue = 10;
+        long newValue = 20;
 
         counter.set(object, initialValue);
 
@@ -156,6 +163,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
 
         count = counter.get(object);
         assertEquals(newValue, count);
+        assertEquals(count, counter.total());
     }
 
     @Test

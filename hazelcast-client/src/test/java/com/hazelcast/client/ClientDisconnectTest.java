@@ -25,12 +25,18 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.Message;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ReliableMessageListener;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,6 +47,7 @@ import java.util.concurrent.CountDownLatch;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -53,12 +60,11 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-
     @Test
     public void testClientOperationCancelled_whenDisconnected() throws Exception {
         Config config = new Config();
         config.setProperty(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
-        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
         final String queueName = "q";
 
         final HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient();
@@ -111,7 +117,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
     public void testClientOperationCancelled_whenDisconnected_lock() throws Exception {
         Config config = new Config();
         config.setProperty(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
-        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
         final String name = "m";
 
         final IMap<Object, Object> map = hazelcastInstance.getMap(name);
@@ -162,4 +168,112 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
         }, 3);
     }
 
+    @Test
+    public void testPendingInvocationAndWaitEntryCancelled_whenDisconnected_withLock() {
+        Config config = new Config();
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
+        final String name = randomName();
+        server.getLock(name).lock();
+
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    client.getLock(name).lock();
+                } catch (Throwable ignored) {
+                }
+            }
+        });
+
+        assertNonEmptyPendingInvocationAndWaitSet(server);
+
+        client.shutdown();
+
+        assertEmptyPendingInvocationAndWaitSet(server);
+    }
+
+    @Test
+    public void testPendingInvocationAndWaitEntryCancelled_whenDisconnected_withReliableTopic() {
+        Config config = new Config();
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        // ReliableTopic listener registers a blocking invocation
+        client.getReliableTopic(randomName()).addMessageListener(new NopReliableMessageListener());
+
+        assertNonEmptyPendingInvocationAndWaitSet(server);
+
+        client.shutdown();
+
+        assertEmptyPendingInvocationAndWaitSet(server);
+    }
+
+    private void assertNonEmptyPendingInvocationAndWaitSet(HazelcastInstance server) {
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(server);
+        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        final InvocationRegistry invocationRegistry = operationService.getInvocationRegistry();
+        final OperationParkerImpl operationParker = (OperationParkerImpl) nodeEngine.getOperationParker();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse(invocationRegistry.entrySet().isEmpty());
+            }
+        });
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(operationParker.getTotalParkedOperationCount() > 0);
+            }
+        });
+    }
+
+    private void assertEmptyPendingInvocationAndWaitSet(HazelcastInstance server) {
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(server);
+        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        final InvocationRegistry invocationRegistry = operationService.getInvocationRegistry();
+        final OperationParkerImpl operationParker = (OperationParkerImpl) nodeEngine.getOperationParker();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(invocationRegistry.entrySet().isEmpty());
+            }
+        });
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(0, operationParker.getTotalParkedOperationCount());
+            }
+        });
+    }
+
+    private static class NopReliableMessageListener implements ReliableMessageListener<Object> {
+        @Override
+        public long retrieveInitialSequence() {
+            return 0;
+        }
+
+        @Override
+        public void storeSequence(long sequence) {
+        }
+
+        @Override
+        public boolean isLossTolerant() {
+            return false;
+        }
+
+        @Override
+        public boolean isTerminal(Throwable failure) {
+            return false;
+        }
+
+        @Override
+        public void onMessage(Message<Object> message) {
+        }
+    }
 }

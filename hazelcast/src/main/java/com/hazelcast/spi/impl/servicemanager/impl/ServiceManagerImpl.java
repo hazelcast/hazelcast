@@ -286,7 +286,11 @@ public final class ServiceManagerImpl implements ServiceManager {
             } catch (NoSuchMethodException ignored) {
                 ignore(ignored);
             }
-            return ClassLoaderUtil.newInstance(serviceClass, classLoader, className);
+            final Constructor constructor = serviceClass.getDeclaredConstructor();
+            if (!constructor.isAccessible()) {
+                constructor.setAccessible(true);
+            }
+            return constructor.newInstance();
         } catch (Exception e) {
             logger.severe(e);
         }

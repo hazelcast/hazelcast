@@ -142,10 +142,9 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
 
         valid = false;
         if (expired) {
-            blockingOperation.onWaitExpire();
+            onExpire();
         } else {
-            OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-            responseHandler.sendResponse(op, cancelResponse);
+            onCancel();
         }
     }
 
@@ -192,6 +191,11 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
 
     public void onExpire() {
         blockingOperation.onWaitExpire();
+    }
+
+    public void onCancel() {
+        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
+        responseHandler.sendResponse(op, cancelResponse);
     }
 
     public void cancel(Object error) {

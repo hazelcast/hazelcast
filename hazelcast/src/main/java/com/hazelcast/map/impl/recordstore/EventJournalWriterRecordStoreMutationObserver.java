@@ -23,14 +23,14 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 
-public class EventJournalUpdaterRecordStoreMutationObserver implements RecordStoreMutationObserver {
+public class EventJournalWriterRecordStoreMutationObserver implements RecordStoreMutationObserver {
     private final MapEventJournal eventJournal;
     private final int partitionId;
     private final EventJournalConfig eventJournalConfig;
     private final ObjectNamespace objectNamespace;
 
-    public EventJournalUpdaterRecordStoreMutationObserver(MapEventJournal eventJournal, MapContainer mapContainer,
-                                                          int partitionId) {
+    public EventJournalWriterRecordStoreMutationObserver(MapEventJournal eventJournal, MapContainer mapContainer,
+                                                         int partitionId) {
         this.eventJournal = eventJournal;
         this.partitionId = partitionId;
         this.eventJournalConfig = mapContainer.getEventJournalConfig();
@@ -66,6 +66,11 @@ public class EventJournalUpdaterRecordStoreMutationObserver implements RecordSto
     @Override
     public void onEvictRecord(Data key, Record record) {
         eventJournal.writeEvictEvent(eventJournalConfig, objectNamespace, partitionId, record.getKey(), record.getValue());
+    }
+
+    @Override
+    public void onLoadRecord(Data key, Record record) {
+        eventJournal.writeLoadEvent(eventJournalConfig, objectNamespace, partitionId, record.getKey(), record.getValue());
     }
 
     @Override

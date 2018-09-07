@@ -28,6 +28,9 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.Partition;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -81,7 +84,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value0", 1, TimeUnit.SECONDS);
-        sleepSeconds(1);
+        sleepAtLeastSeconds(1);
 
         assertFalse(map.containsKey(1));
     }
@@ -91,7 +94,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value0", 0, TimeUnit.SECONDS, 1, TimeUnit.SECONDS);
-        sleepSeconds(1);
+        sleepAtLeastSeconds(1);
 
         assertFalse(map.containsKey(1));
     }
@@ -106,14 +109,40 @@ public class EvictionTest extends HazelcastTestSupport {
         String keyOwnedByInstanceA = generateKeyOwnedBy(instance);
 
         IMap<String, String> map = instance.getMap("Test");
-        map.put(keyOwnedByInstanceA, "value0", 0, TimeUnit.SECONDS, 5, TimeUnit.SECONDS);
-        instance.shutdown();
+        map.put(keyOwnedByInstanceA, "value0", 0, TimeUnit.SECONDS, 3, TimeUnit.SECONDS);
+        // Wait enough time for the ClearExpiredOperation to kick-in (default 5 seconds)
+        sleepAtLeastSeconds(10);
 
-        waitAllForSafeState(instanceB);
-        sleepSeconds(10);
+        Partition partition = instanceB.getPartitionService().getPartition(keyOwnedByInstanceA);
+        MapService service = getNodeEngineImpl(instanceB).getService(MapService.SERVICE_NAME);
+        RecordStore store = service.getMapServiceContext()
+                                   .getPartitionContainer(partition.getPartitionId())
+                                   .getExistingRecordStore("Test");
 
-        map = instanceB.getMap("Test");
-        assertFalse(map.containsKey(keyOwnedByInstanceA));
+        assertEquals(0, store.size());
+    }
+
+    @Test
+    public void testMaxIdle_backupRecordStore_mustBeExpirable() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
+
+        HazelcastInstance instanceB = factory.newHazelcastInstance(getConfig());
+
+        String keyOwnedByInstanceA = generateKeyOwnedBy(instance);
+
+        IMap<String, String> map = instance.getMap("Test");
+        map.put(keyOwnedByInstanceA, "value0", 0, TimeUnit.SECONDS, 30, TimeUnit.SECONDS);
+        sleepAtLeastSeconds(2);
+
+        Partition partition = instanceB.getPartitionService().getPartition(keyOwnedByInstanceA);
+        MapService service = getNodeEngineImpl(instanceB).getService(MapService.SERVICE_NAME);
+        RecordStore store = service.getMapServiceContext()
+                                   .getPartitionContainer(partition.getPartitionId())
+                                   .getExistingRecordStore("Test");
+
+        assertEquals(1, store.size());
+        assertEquals(true, store.isExpirable());
     }
 
     @Test
@@ -122,7 +151,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, "value0", 2, TimeUnit.SECONDS);
         map.put(1, "value1", 0, TimeUnit.SECONDS);
-        sleepSeconds(3);
+        sleepAtLeastSeconds(3);
 
         assertTrue(map.containsKey(1));
     }
@@ -133,7 +162,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, "value0", 0, TimeUnit.SECONDS, 1, TimeUnit.SECONDS);
         map.put(1, "value1", 0, TimeUnit.SECONDS, 0, TimeUnit.SECONDS);
-        sleepSeconds(3);
+        sleepAtLeastSeconds(3);
 
         assertTrue(map.containsKey(1));
     }
@@ -187,23 +216,23 @@ public class EvictionTest extends HazelcastTestSupport {
         assertTrue(map.containsKey(1));
 
         map.putAsync(1, "value4").get();
-        sleepSeconds(2);
+        sleepAtLeastSeconds(2);
         assertTrue(map.containsKey(1));
 
         map.setAsync(1, "value5").get();
-        sleepSeconds(2);
+        sleepAtLeastSeconds(2);
         assertTrue(map.containsKey(1));
 
         assertTrue(map.tryPut(1, "value6", 333, TimeUnit.MILLISECONDS));
-        sleepSeconds(2);
+        sleepAtLeastSeconds(2);
         assertTrue(map.containsKey(1));
 
         map.replace(1, "value7");
-        sleepSeconds(2);
+        sleepAtLeastSeconds(2);
         assertTrue(map.containsKey(1));
 
         map.replace(1, "value7", "value8");
-        sleepSeconds(2);
+        sleepAtLeastSeconds(2);
         assertTrue(map.containsKey(1));
     }
 
@@ -212,7 +241,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value", 1, TimeUnit.SECONDS);
-        sleepSeconds(2);
+        sleepAtLeastSeconds(2);
 
         EntryView<Integer, String> entryView = map.getEntryView(1);
 
@@ -234,7 +263,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<String, String> map = h.getMap("testIssue455ZeroTTLShouldPreventEviction");
         map.put("key", "value", 1, TimeUnit.SECONDS);
         map.put("key", "value2", 0, TimeUnit.SECONDS);
-        sleepSeconds(2);
+        sleepAtLeastSeconds(2);
         assertEquals("value2", map.get("key"));
     }
 
@@ -253,7 +282,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<String, String> map = h.getMap("testIssue585ZeroTTLShouldPreventEvictionWithSet");
         map.set("key", "value", 1, TimeUnit.SECONDS);
         map.set("key", "value2", 0, TimeUnit.SECONDS);
-        sleepSeconds(2);
+        sleepAtLeastSeconds(2);
         assertEquals("value2", map.get("key"));
     }
 
@@ -297,7 +326,7 @@ public class EvictionTest extends HazelcastTestSupport {
         String key = "key";
         for (int i = 0; i < 5; i++) {
             map.put(key, System.currentTimeMillis());
-            sleepMillis(500);
+            sleepAtLeastMillis(500);
         }
         assertEquals(evictCount.get(), 0);
         assertNotNull(map.get(key));
@@ -330,14 +359,14 @@ public class EvictionTest extends HazelcastTestSupport {
         new Thread() {
             @Override
             public void run() {
-                sleepSeconds(1);
+                sleepAtLeastSeconds(1);
                 while (latch.getCount() != 0) {
                     int mapSize = firstMap.size();
                     if (mapSize > (size * clusterSize + size * clusterSize * 10 / 100)) {
                         success.set(false);
                         break;
                     }
-                    sleepSeconds(1);
+                    sleepAtLeastSeconds(1);
                 }
             }
         }.start();
@@ -385,12 +414,12 @@ public class EvictionTest extends HazelcastTestSupport {
         new Thread() {
             @Override
             public void run() {
-                sleepSeconds(1);
+                sleepAtLeastSeconds(1);
                 while (latch.getCount() != 0) {
                     if (firstMap.size() > (size * partitionCount * 1.2)) {
                         error.set(true);
                     }
-                    sleepSeconds(1);
+                    sleepAtLeastSeconds(1);
                 }
             }
         }.start();
@@ -470,7 +499,7 @@ public class EvictionTest extends HazelcastTestSupport {
             }
         }
         // give some time to eviction thread run
-        sleepSeconds(3);
+        sleepAtLeastSeconds(3);
 
         int recentlyUsedEvicted = 0;
         for (int i = 0; i < size / 2; i++) {
@@ -721,7 +750,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = instance.getMap(mapName);
         map.put(1, 1);
 
-        sleepSeconds(waitSeconds);
+        sleepAtLeastSeconds(waitSeconds);
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
         long lastAccessTime = entryView.getLastAccessTime();
@@ -938,7 +967,7 @@ public class EvictionTest extends HazelcastTestSupport {
         map.put(1, 1, 100, TimeUnit.MILLISECONDS);
         map.put(2, 1, 100, TimeUnit.MILLISECONDS);
         map.put(3, 1, 100, TimeUnit.MILLISECONDS);
-        sleepSeconds(2);
+        sleepAtLeastSeconds(2);
         return map;
     }
 
@@ -965,7 +994,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i, i);
         }
         // wait some time for idle expiration
-        sleepSeconds(2);
+        sleepAtLeastSeconds(2);
 
         for (int i = 0; i < numberOfEntriesToBeAdded; i++) {
             map.get(i);
@@ -974,7 +1003,7 @@ public class EvictionTest extends HazelcastTestSupport {
         assertOpenEventually(evictedEntryLatch, 600);
         // sleep some seconds to be sure that
         // we did not receive more than expected number of events
-        sleepSeconds(10);
+        sleepAtLeastSeconds(10);
         assertEquals(numberOfEntriesToBeAdded, count.get());
     }
 
@@ -1018,7 +1047,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         instances[0].shutdown();
 
-        sleepSeconds(3);
+        sleepAtLeastSeconds(3);
 
         // force entries to expire by touching each one
         for (int i = 0; i < numberOfItemsToBeAdded; i++) {

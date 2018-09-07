@@ -19,14 +19,23 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.MapStore;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.MapUtil;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+
+import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -37,11 +46,18 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
 
     @Override
     protected Config getConfig() {
+        final MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(EAGER)
+                .setImplementation(new CustomMapStore());
+
         final MapConfig nonExpiringMapConfig = new MapConfig(NON_EXPIRING_MAP)
-                .setInMemoryFormat(getInMemoryFormat());
+                .setInMemoryFormat(getInMemoryFormat())
+                .setMapStoreConfig(mapStoreConfig);
 
         final MapConfig expiringMapConfig = new MapConfig(EXPIRING_MAP).setTimeToLiveSeconds(1)
                                                                        .setInMemoryFormat(getInMemoryFormat());
+
         return super.getConfig()
                     .addMapConfig(nonExpiringMapConfig)
                     .addMapConfig(expiringMapConfig);
@@ -58,5 +74,47 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
                 new EventJournalMapDataStructureAdapter<K, V>(getRandomInstance().<K, V>getMap(EXPIRING_MAP)),
                 new EventJournalMapEventAdapter<K, V>()
         );
+    }
+
+    public static class CustomMapStore implements MapStore<Object, Object> {
+
+        @Override
+        public void store(Object key, Object value) {
+            // NOP
+        }
+
+        @Override
+        public void storeAll(Map<Object, Object> map) {
+            // NOP
+        }
+
+        @Override
+        public void delete(Object key) {
+            // NOP
+        }
+
+        @Override
+        public void deleteAll(Collection<Object> keys) {
+            // NOP
+        }
+
+        @Override
+        public Object load(Object key) {
+            return key;
+        }
+
+        @Override
+        public Map<Object, Object> loadAll(Collection<Object> keys) {
+            Map<Object, Object> map = MapUtil.createHashMap(keys.size());
+            for (Object key : keys) {
+                map.put(key, key);
+            }
+            return map;
+        }
+
+        @Override
+        public Iterable<Object> loadAllKeys() {
+            return Collections.emptySet();
+        }
     }
 }
