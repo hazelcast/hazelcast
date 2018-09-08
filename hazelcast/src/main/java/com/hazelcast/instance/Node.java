@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -108,6 +109,7 @@ import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.Thread.currentThread;
@@ -777,18 +779,33 @@ public class Node {
                 logger.info("Creating TcpIpJoiner");
                 return new TcpIpJoiner(this);
             } else if (join.getAwsConfig().isEnabled()) {
-                Class clazz;
-                try {
-                    logger.info("Creating AWSJoiner");
-                    clazz = Class.forName("com.hazelcast.cluster.impl.TcpIpJoinerOverAWS");
-                    Constructor constructor = clazz.getConstructor(Node.class);
-                    return (Joiner) constructor.newInstance(this);
-                } catch (Exception e) {
-                    throw rethrow(e);
-                }
+                logger.info("Creating AWSJoiner");
+                return createAwsJoiner();
             }
         }
         return null;
+    }
+
+    private Joiner createAwsJoiner() {
+        try {
+            Class clazz = Class.forName("com.hazelcast.cluster.impl.TcpIpJoinerOverAWS");
+            Constructor constructor = clazz.getConstructor(Node.class);
+            return (Joiner) constructor.newInstance(this);
+        } catch (ClassNotFoundException e) {
+            StringBuilder message = new StringBuilder("Your Hazelcast network configuration has AWS discovery ")
+                    .append("enabled, but there is no Hazelcast AWS module on a classpath. ")
+                    .append(LINE_SEPARATOR)
+                    .append("Hint: If you are using Maven then add this dependency into your pom.xml:")
+                    .append(LINE_SEPARATOR)
+                    .append("<dependency>").append(LINE_SEPARATOR)
+                    .append("    <groupId>com.hazelcast</groupId>").append(LINE_SEPARATOR)
+                    .append("    <artifactId>hazelcast-aws</artifactId>").append(LINE_SEPARATOR)
+                    .append("    <version>${hazelcast-aws.version}</version>").append(LINE_SEPARATOR)
+                    .append("</dependency>").append(LINE_SEPARATOR);
+            throw new ConfigurationException(message.toString(), e);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     public String getThisUuid() {
