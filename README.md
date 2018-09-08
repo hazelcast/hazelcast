@@ -5,6 +5,7 @@
 # Table of Contents
 
   * [Requirements](#requirements)
+  * [Maven Coordinates](#maven-coordinates)
   * [Discovering Members within EC2 Cloud](#discovering-members-within-ec2-cloud)
     * [Zone Aware Support](#zone-aware-support)
     * [Configuring Hazelcast Members with Discovery SPI](#configuring-hazelcast-members-with-discovery-spi)
