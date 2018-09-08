@@ -33,6 +33,15 @@
 - Hazelcast 3.6+
 - Linux Kernel 3.19+ (TCP connections may get stuck when used with older Kernel versions, resulting in undefined timeouts)
 
+## Maven Coordinates
+```xml
+<dependency>
+    <groupId>com.hazelcast</groupId>
+    <artifactId>hazelcast-aws</artifactId>
+    <version>${hazelcast-aws.version}</version>
+</dependency>
+```
+
 ## Discovering Members within EC2 Cloud
 
 Hazelcast supports EC2 auto-discovery. It is useful when you do not want to provide or you cannot provide the list of possible IP addresses. 
