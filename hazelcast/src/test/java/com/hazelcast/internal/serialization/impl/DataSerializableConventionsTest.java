@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.query.impl.SkipIndexPredicate;
 import com.hazelcast.spi.AbstractLocalOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -338,6 +339,7 @@ public class DataSerializableConventionsTest {
         whiteList.add(Permission.class);
         whiteList.add(PermissionCollection.class);
         whiteList.add(WanMapEntryView.class);
+        whiteList.add(SkipIndexPredicate.class);
         return whiteList;
     }
 }
