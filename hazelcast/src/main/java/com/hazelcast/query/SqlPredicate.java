@@ -18,11 +18,12 @@ package com.hazelcast.query;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.SkipIndexPredicate;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.CompoundPredicate;
 import com.hazelcast.query.impl.predicates.OrPredicate;
@@ -55,6 +56,8 @@ import static com.hazelcast.query.Predicates.regex;
 @BinaryInterface
 public class SqlPredicate
         implements IndexAwarePredicate, VisitablePredicate, IdentifiedDataSerializable {
+
+    private static final boolean SKIP_INDEX_ENABLED = !Boolean.getBoolean("hazelcast.query.disableSkipIndex");
 
     private static final long serialVersionUID = 1;
 
@@ -117,7 +120,7 @@ public class SqlPredicate
         return (phrase.length() > 2) ? phrase.replace("''", "'") : phrase;
     }
 
-    private Predicate createPredicate(String sql) {
+    protected Predicate createPredicate(String sql) {
         String paramSql = sql;
         Map<String, String> mapPhrases = new HashMap<String, String>();
         int apoIndex = getApostropheIndex(paramSql, 0);
@@ -163,63 +166,104 @@ public class SqlPredicate
                     if ("=".equals(token) || "==".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
-                        Object first = toValue(tokens.remove(position), mapPhrases);
-                        Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, equal((String) first, (Comparable) second));
+                        String first = (String) toValue(tokens.remove(position), mapPhrases);
+                        Comparable second = (Comparable) toValue(tokens.remove(position), mapPhrases);
+
+                        if (skipIndex(first)) {
+                            first = first.substring(1);
+                            setOrAdd(tokens, position, new SkipIndexPredicate(equal(first, second)));
+                        } else {
+                            setOrAdd(tokens, position, equal(first, second));
+                        }
                     } else if ("!=".equals(token) || "<>".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
-                        Object first = toValue(tokens.remove(position), mapPhrases);
-                        Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, notEqual((String) first, (Comparable) second));
+                        String first = (String) toValue(tokens.remove(position), mapPhrases);
+                        Comparable second = (Comparable) toValue(tokens.remove(position), mapPhrases);
+
+                        if (skipIndex(first)) {
+                            first = first.substring(1);
+                            setOrAdd(tokens, position, new SkipIndexPredicate(notEqual(first, second)));
+                        } else {
+                            setOrAdd(tokens, position, notEqual(first, second));
+                        }
                     } else if (">".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
-                        Object first = toValue(tokens.remove(position), mapPhrases);
-                        Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, greaterThan((String) first, (Comparable) second));
+                        String first = (String) toValue(tokens.remove(position), mapPhrases);
+                        Comparable second = (Comparable) toValue(tokens.remove(position), mapPhrases);
+
+                        if (skipIndex(first)) {
+                            first = first.substring(1);
+                            setOrAdd(tokens, position, new SkipIndexPredicate(greaterThan(first, second)));
+                        } else {
+                            setOrAdd(tokens, position, greaterThan(first, second));
+                        }
                     } else if (">=".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
-                        Object first = toValue(tokens.remove(position), mapPhrases);
-                        Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, greaterEqual((String) first, (Comparable) second));
+                        String first = (String) toValue(tokens.remove(position), mapPhrases);
+                        Comparable second = (Comparable) toValue(tokens.remove(position), mapPhrases);
+
+                        if (skipIndex(first)) {
+                            first = first.substring(1);
+                            setOrAdd(tokens, position, new SkipIndexPredicate(greaterEqual(first, second)));
+                        } else {
+                            setOrAdd(tokens, position, greaterEqual(first, second));
+                        }
                     } else if ("<=".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
-                        Object first = toValue(tokens.remove(position), mapPhrases);
-                        Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, lessEqual((String) first, (Comparable) second));
+                        String first = (String) toValue(tokens.remove(position), mapPhrases);
+                        Comparable second = (Comparable) toValue(tokens.remove(position), mapPhrases);
+
+                        if (skipIndex(first)) {
+                            first = first.substring(1);
+                            setOrAdd(tokens, position, new SkipIndexPredicate(lessEqual(first, second)));
+                        } else {
+                            setOrAdd(tokens, position, lessEqual(first, second));
+                        }
                     } else if ("<".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
-                        Object first = toValue(tokens.remove(position), mapPhrases);
-                        Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, lessThan((String) first, (Comparable) second));
+                        String first = (String) toValue(tokens.remove(position), mapPhrases);
+                        Comparable second = (Comparable) toValue(tokens.remove(position), mapPhrases);
+                        if (skipIndex(first)) {
+                            first = first.substring(1);
+                            setOrAdd(tokens, position, new SkipIndexPredicate(lessThan(first, second)));
+                        } else {
+                            setOrAdd(tokens, position, lessThan(first, second));
+                        }
                     } else if ("LIKE".equalsIgnoreCase(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
-                        Object first = toValue(tokens.remove(position), mapPhrases);
-                        Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, like((String) first, (String) second));
+                        String first = (String) toValue(tokens.remove(position), mapPhrases);
+                        String second = (String) toValue(tokens.remove(position), mapPhrases);
+                        setOrAdd(tokens, position, like(first, second));
                     } else if ("ILIKE".equalsIgnoreCase(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
-                        Object first = toValue(tokens.remove(position), mapPhrases);
-                        Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, ilike((String) first, (String) second));
+                        String first = (String) toValue(tokens.remove(position), mapPhrases);
+                        String second = (String) toValue(tokens.remove(position), mapPhrases);
+                        setOrAdd(tokens, position, ilike(first, second));
                     } else if ("REGEX".equalsIgnoreCase(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
-                        Object first = toValue(tokens.remove(position), mapPhrases);
-                        Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, regex((String) first, (String) second));
+                        String first = (String) toValue(tokens.remove(position), mapPhrases);
+                        String second = (String) toValue(tokens.remove(position), mapPhrases);
+                        setOrAdd(tokens, position, regex(first, second));
                     } else if ("IN".equalsIgnoreCase(token)) {
                         int position = i - 2;
                         validateOperandPosition(position);
-                        Object exp = toValue(tokens.remove(position), mapPhrases);
+                        String exp = (String) toValue(tokens.remove(position), mapPhrases);
                         String[] values = toValue(((String) tokens.remove(position)).split(","), mapPhrases);
-                        setOrAdd(tokens, position, Predicates.in((String) exp, values));
+
+                        if (skipIndex(exp)) {
+                            exp = exp.substring(1);
+                            setOrAdd(tokens, position, new SkipIndexPredicate(Predicates.in(exp, values)));
+                        } else {
+                            setOrAdd(tokens, position, Predicates.in(exp, values));
+                        }
                     } else if ("NOT".equalsIgnoreCase(token)) {
                         int position = i - 1;
                         validateOperandPosition(position);
@@ -228,10 +272,10 @@ public class SqlPredicate
                     } else if ("BETWEEN".equalsIgnoreCase(token)) {
                         int position = i - 3;
                         validateOperandPosition(position);
-                        Object expression = tokens.remove(position);
-                        Object from = toValue(tokens.remove(position), mapPhrases);
-                        Object to = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, between((String) expression, (Comparable) from, (Comparable) to));
+                        String expression = (String) tokens.remove(position);
+                        Comparable from = (Comparable) toValue(tokens.remove(position), mapPhrases);
+                        Comparable to = (Comparable) toValue(tokens.remove(position), mapPhrases);
+                        setOrAdd(tokens, position, between(expression, from, to));
                     } else if ("AND".equalsIgnoreCase(token)) {
                         int position = i - 2;
                         validateOperandPosition(position);
@@ -255,6 +299,10 @@ public class SqlPredicate
             }
         }
         return (Predicate) tokens.get(0);
+    }
+
+    private boolean skipIndex(String first) {
+        return SKIP_INDEX_ENABLED && first.startsWith("%");
     }
 
     private void validateOperandPosition(int pos) {
@@ -308,7 +356,6 @@ public class SqlPredicate
     /**
      * Return a {@link CompoundPredicate}, possibly flattened if one or both arguments is an instance of
      * {@code CompoundPredicate}.
-     *
      */
     static <T extends CompoundPredicate> T flattenCompound(Predicate predicateLeft, Predicate predicateRight, Class<T> klass) {
         // The following could have been achieved with {@link com.hazelcast.query.impl.predicates.FlatteningVisitor},
@@ -322,7 +369,7 @@ public class SqlPredicate
             predicates = new Predicate[left.length + right.length];
             ArrayUtils.concat(left, right, predicates);
         } else {
-            predicates = new Predicate[] {predicateLeft, predicateRight};
+            predicates = new Predicate[]{predicateLeft, predicateRight};
         }
         try {
             CompoundPredicate compoundPredicate = klass.newInstance();
