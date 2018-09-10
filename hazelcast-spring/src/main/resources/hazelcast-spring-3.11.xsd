@@ -3256,7 +3256,15 @@
     </xs:complexType>
     <xs:complexType name="client-security">
         <xs:sequence>
-            <xs:element name="credentials" type="credentials" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="credentials" type="credentials" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="credentials-factory" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                    </xs:sequence>
+                    <xs:attributeGroup ref="class-or-bean-name"/>
+                </xs:complexType>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="credentials">

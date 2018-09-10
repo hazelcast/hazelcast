@@ -16,32 +16,72 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.security.Credentials;
 
 /**
- * Contains the security configuration for a client.
+ * Contains the security configuration for the client.
+ * Credentials object is used for both authentication and authorization
+ * Credentials is used with ClusterLoginModule for authentication
+ * It is also used with SecurityInterceptor and to define principal in client-permissions for authorization.
+ *
+ * @see Credentials#getPrincipal()
+ * @see com.hazelcast.security.SecurityInterceptor
  */
 public class ClientSecurityConfig {
 
     private Credentials credentials;
-
     private String credentialsClassname;
+    private CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig();
 
     public Credentials getCredentials() {
         return credentials;
     }
 
+    /**
+     * @param credentials that will be used when
+     * @return configured {@link com.hazelcast.client.config.ClientSecurityConfig} for chaining
+     */
     public ClientSecurityConfig setCredentials(Credentials credentials) {
         this.credentials = credentials;
         return this;
     }
 
+    /**
+     * @return configured class name for credentials
+     */
     public String getCredentialsClassname() {
         return credentialsClassname;
     }
 
+    /**
+     * Credentials class will be instantiated from class name when setCredentialsFactoryConfig and  setCredentials
+     * are not used. The class will be instantiated with empty constructor.
+     *
+     * @param credentialsClassname class name for credentials
+     * @return configured {@link com.hazelcast.client.config.ClientSecurityConfig} for chaining
+     */
     public ClientSecurityConfig setCredentialsClassname(String credentialsClassname) {
         this.credentialsClassname = credentialsClassname;
+        return this;
+    }
+
+    /**
+     * @return credentials factory config
+     */
+    public CredentialsFactoryConfig getCredentialsFactoryConfig() {
+        return credentialsFactoryConfig;
+    }
+
+    /**
+     * Credentials Factory Config allows user to pass custom properties and use group config when instantiating
+     * a credentials object.
+     *
+     * @param credentialsFactoryConfig the config that will be used to create credentials factory
+     * @return configured {@link com.hazelcast.client.config.ClientSecurityConfig} for chaining
+     */
+    public ClientSecurityConfig setCredentialsFactoryConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
+        this.credentialsFactoryConfig = credentialsFactoryConfig;
         return this;
     }
 }

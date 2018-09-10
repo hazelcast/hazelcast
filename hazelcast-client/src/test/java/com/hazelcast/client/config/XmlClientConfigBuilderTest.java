@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -391,13 +392,18 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSecurityConfig() {
+        ClientSecurityConfig securityConfig = fullClientConfig.getSecurityConfig();
+        assertEquals("com.hazelcast.security.UsernamePasswordCredentials", securityConfig.getCredentialsClassname());
+        CredentialsFactoryConfig credentialsFactoryConfig = securityConfig.getCredentialsFactoryConfig();
+        assertEquals("com.hazelcast.examples.MyCredentialsFactory", credentialsFactoryConfig.getClassName());
+        Properties properties = credentialsFactoryConfig.getProperties();
+        assertEquals("value", properties.getProperty("property"));
+    }
+
+    @Test
     public void testLeftovers() {
         assertEquals(40, fullClientConfig.getExecutorPoolSize());
-
-        assertEquals("com.hazelcast.security.UsernamePasswordCredentials",
-                fullClientConfig.getSecurityConfig().getCredentialsClassname());
-        assertEquals(40, fullClientConfig.getExecutorPoolSize());
-
         assertEquals("com.hazelcast.client.util.RandomLB", fullClientConfig.getLoadBalancer().getClass().getName());
 
         final List<ListenerConfig> listenerConfigs = fullClientConfig.getListenerConfigs();
