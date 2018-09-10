@@ -31,6 +31,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertEquals;
 
@@ -71,5 +73,29 @@ public class ClientConfigTest {
         Map<Integer, com.hazelcast.nio.serialization.PortableFactory> factories = serializationConfig.getPortableFactories();
         assertEquals(1, factories.size());
         assertEquals(factories.get(PortableFactory.FACTORY_ID).create(Employee.CLASS_ID).getClassId(), Employee.CLASS_ID);
+    }
+
+    @Test
+    public void testUserContext_passContext() {
+        hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        ConcurrentMap<String, Object> context = new ConcurrentHashMap<String, Object>();
+        context.put("key1", "value1");
+        Object value2 = new Object();
+        context.put("key2", value2);
+
+        // check set setter returns ClientConfig instance
+        clientConfig = clientConfig.setUserContext(context);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        ConcurrentMap<String, Object> returnedContext = client.getUserContext();
+        assertEquals(context, returnedContext);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUserContext_throwExceptionWhenContextNull() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setUserContext(null);
     }
 }

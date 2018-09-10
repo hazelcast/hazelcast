@@ -256,6 +256,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         invocationService = initInvocationService();
         listenerService = initListenerService();
         userContext = new ConcurrentHashMap<String, Object>();
+        userContext.putAll(config.getUserContext());
         diagnostics = initDiagnostics();
 
         hazelcastCacheManager = new ClientICacheManager(this);

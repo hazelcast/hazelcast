@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
@@ -121,6 +122,8 @@ public class ClientConfig {
 
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
             new ConcurrentHashMap<String, ClientFlakeIdGeneratorConfig>();
+
+    private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
     /**
      * Sets the pattern matcher which is used to match item names to
@@ -958,5 +961,17 @@ public class ClientConfig {
         }
 
         return lookupByPattern(configPatternMatcher, queryCacheConfigsForMap, cacheName);
+    }
+
+    public ClientConfig setUserContext(ConcurrentMap<String, Object> userContext) {
+        if (userContext == null) {
+            throw new IllegalArgumentException("userContext can't be null");
+        }
+        this.userContext = userContext;
+        return this;
+    }
+
+    public ConcurrentMap<String, Object> getUserContext() {
+        return userContext;
     }
 }
