@@ -1187,12 +1187,12 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
-    ClientMessage clientMessage = MapSetTTLCodec.encodeRequest(   aString ,   aData ,   aLong   );
+    ClientMessage clientMessage = MapSetTtlCodec.encodeRequest(   aString ,   aData ,   aLong   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = MapSetTTLCodec.encodeResponse( );
+    ClientMessage clientMessage = MapSetTtlCodec.encodeResponse(   aBoolean   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -4079,7 +4079,7 @@ public class BinaryCompatibilityNullFileGenerator {
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = CacheSetExpiryPolicyCodec.encodeResponse( );
+    ClientMessage clientMessage = CacheSetExpiryPolicyCodec.encodeResponse(   aBoolean   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }

@@ -292,6 +292,11 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         setExpiryPolicyInternal(keys, policy);
     }
 
+    @Override
+    public boolean setExpiryPolicy(K key, ExpiryPolicy expiryPolicy) {
+        return setExpiryPolicyInternal(key, expiryPolicy);
+    }
+
     protected void setExpiryPolicyInternal(Set<? extends K> keys, ExpiryPolicy policy) {
         setExpiryPolicyInternal(keys, policy, null);
     }
@@ -402,7 +407,6 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         for (int partitionId = 0; partitionId < keysByPartition.length; partitionId++) {
             List<Data> keys = keysByPartition[partitionId];
             if (keys != null) {
-                int completionId = nextCompletionId();
                 ClientMessage request = CacheSetExpiryPolicyCodec.encodeRequest(nameWithPrefix, keys, policyData);
                 futures.add(invoke(request, partitionId, IGNORE_COMPLETION));
             }

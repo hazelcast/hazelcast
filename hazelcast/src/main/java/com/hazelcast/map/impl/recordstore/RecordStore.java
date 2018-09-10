@@ -115,7 +115,7 @@ public interface RecordStore<R extends Record> {
 
     boolean remove(Data dataKey, Object testValue);
 
-    void setTTL(Data key, long ttl);
+    boolean setTtl(Data key, long ttl);
 
     /**
      * Similar to {@link RecordStore##remove(Data, CallerProvenance)}

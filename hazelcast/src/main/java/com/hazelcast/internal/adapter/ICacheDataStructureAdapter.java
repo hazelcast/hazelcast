@@ -114,7 +114,7 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
 
     @Override
     @MethodNotAvailable
-    public void setTTL(K key, long duration, TimeUnit timeUnit) {
+    public void setTtl(K key, long duration, TimeUnit timeUnit) {
         throw new MethodNotAvailableException();
     }
 
@@ -260,6 +260,11 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     @Override
     public void setExpiryPolicy(Set<K> keys, ExpiryPolicy expiryPolicy) {
         cache.setExpiryPolicy(keys, expiryPolicy);
+    }
+
+    @Override
+    public boolean setExpiryPolicy(K key, ExpiryPolicy expiryPolicy) {
+        return cache.setExpiryPolicy(key, expiryPolicy);
     }
 
     @Override

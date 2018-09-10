@@ -115,8 +115,8 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
-    public void setTTL(K key, long duration, TimeUnit timeUnit) {
-        map.setTTL(key, duration, timeUnit);
+    public void setTtl(K key, long duration, TimeUnit timeUnit) {
+        map.setTtl(key, duration, timeUnit);
     }
 
     @Override
@@ -260,6 +260,12 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     @Override
     @MethodNotAvailable
     public void setExpiryPolicy(Set<K> keys, ExpiryPolicy expiryPolicy) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public boolean setExpiryPolicy(K key, ExpiryPolicy expiryPolicy) {
         throw new MethodNotAvailableException();
     }
 

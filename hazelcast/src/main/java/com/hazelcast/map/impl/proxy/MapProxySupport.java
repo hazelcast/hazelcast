@@ -603,14 +603,14 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+    protected boolean setTtlInternal(Object key, long ttl, TimeUnit timeUnit) {
         if (isClusterVersionLessThan(Versions.V3_11)) {
             throw new UnsupportedOperationException("Modifying TTL is available when cluster version is 3.11 or higher");
         }
         long ttlInMillis = timeUnit.toMillis(ttl);
         Data keyData = serializationService.toData(key);
-        MapOperation operation = operationProvider.createSetTTLOperation(name, keyData, ttlInMillis);
-        invokeOperation(keyData, operation);
+        MapOperation operation = operationProvider.createSetTtlOperation(name, keyData, ttlInMillis);
+        return (Boolean) invokeOperation(keyData, operation);
     }
 
     protected InternalCompletableFuture<Data> removeAsyncInternal(Object key) {
