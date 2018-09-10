@@ -5,6 +5,76 @@ issues at https://github.com/hazelcast/hazelcast-jet/issues/<issue number>.
 
 The label in the brackets refer to the respective module.
 
+** Hazelcast Jet 0.7 **
+
+1. New Features
+
+[pipeline-api] Add JMS connectors [#874]
+[pipeline-api] New Merge and distinct operations and simpler co-aggregation [#885]
+[pipeline-api] Add Avro connector for working with Avro files [#890, #925]
+[pipeline-api] Add map/flatMap/filterUsingContext for keyed streams [#892]
+[pipeline-api] Add JDBC connector [#931]
+[pipeline-api] Add convenient enrichment from IMap and ReplicatedMap [#924]
+[pipeline-api] Add a source builder for building custom sources [#989]
+[core] Expose metrics through JMX [#926]
+[core] Add full job elasticity with graceful shutdown and suspend and resume [#946]
+
+2. Enhancements
+
+[pipeline-api] Add support for DOT file visualization for DAG and Pipeline API [#891]
+[pipeline-api] Add name to SinkBuilder [#894]
+[pipeline-api] File sources and sinks have been converted to use builders for more convenience [#913]
+[pipeline-api] Add exception throwing methods to distributed lambdas [#951]
+[pipeline-api] Add "AggregateOperation.andThen" [#959]
+[pipeline-api] Add Tuple4 and Tuple5 [#964]
+[core] Improve Watermark diagnostics logging [#872]
+[core] Processors should be closed as soon as processor is completed [#934]
+[core] jobId(), executionId() and jobConfig() are now available on Processor.Context [#934]
+[core] Use job name in logs [#939]
+[core] Add JetClientConfig which uses the default jet group name and password [#950]
+[core] Update Hazelcast to 3.10.5 [#1005]
+
+3. Fixes
+
+[pipeline-api] Using results of a window aggregation in another window shouldn't cause a window shift [#898]
+[pipeline-api] mapToOutputFn in aggregations should support returning nulls [#938]
+[pipeline-api] Fix for mapWithMerging which shouldn't use a stateful flush function [#968]
+[kafka] Handle InterruptException in StreamKafkaP.close() [#870]
+[java.util.stream] java.util.stream implementation is removed. It has been superceeded by the Pipeline API [#983]
+[spring] Spring module should no longer add dependency to hazelcast when used with spring boot [#977]
+[spring] Spring context should be injected to wrapped processors as well [#999]
+
+4. Breaking Changes
+
+[pipeline-api] API for co-aggregation has been simplified
+[pipeline-api] File sources and sinks have been replaced with a builder API through Sources.filesBuilder()
+[pipeline-api] SinkBuilder now requires a name and takes Processor.Context as input in createFn
+[core] AbstractProcessor.setCooperative is removed
+[core] Remove tempDir from config as it was unused
+[core] Processor.close() no longer receives the exception for the job
+
+** Hazelcast Jet 0.6.1 **
+
+1. New Features
+
+[core] Add support for configuring a custom classloader per job [770]
+
+2. Enhancements
+
+[pipeline-api] Add a noop sink [827]
+[core] Optimize in memory layout of snapshot data, reducing memory usage by up to 75% [822]
+[core] Update Hazelcast to 3.10-GA [833]
+[core] Idle CPU usage improvements when there's a large number of non-cooperative processors [816]
+[core] Utility methods to load JetConfig from XML file or resource directly [856]
+
+3. Fixes
+
+[pipeline-api] Fix generic output type for aggregate operations with a custom mapToOutputFn [823]
+[pipeline-api] SinkBuilder shouldn't call destroyFn if createFn wasn't called [826]
+[core] Don't shrink receive window during lulls which can lead to reduced throughput [798]
+[kafka] Kafka source should handle InterruptException in all cases
+[hadoop] When matching HDFS hostnames against member hostnames, use alternative ways than just reverse DNS [858]
+
 ** Hazelcast Jet 0.6 **
 
 1. New Features

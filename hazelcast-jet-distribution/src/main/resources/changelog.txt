@@ -1,3 +1,32 @@
+** Hazelcast Jet 0.7 **
+
+* Several new additions to pipeline API including:
+  - A new SourceBuilder API which can be used to build both streaming and batch sources
+  - Merge and distinct operations
+  - Simplified ways to do aggregations on more than one input (co-aggregation)
+  - Support for rolling aggregations
+  - Keyed map/flatMap/filterUsingContext operations
+  - Convenience functions for enriching a stream directly from an IMap or ReplicatedMap
+* Several additions to job management:
+  - Jobs can now be automatically both scaled up and down without disruption when new nodes are added or removed.
+  - Jobs can now be suspended and resumed.
+* Several new default connectors are added:
+  - JMS
+  - JDBC
+  - Avro Files
+* Distributed java.util.stream implementation has been removed with this release.
+  Please refer to the Pipeline API instead.
+* It's now possible to get Jet metrics through a JMX interface.
+* First version of Jet Management Center is released
+* Update Hazelcast version to 3.10.5
+* Security suite available in Jet enterprise version
+
+** Hazelcast Jet 0.6.1 **
+
+* Optimize in memory layout of snapshot data, reducing memory usage by up to 75%
+* Add support for configuring a custom classloader per job
+* Update Hazelcast version to final released version (3.10)
+
 ** Hazelcast Jet 0.6 **
 
 * Pipeline API has been extended with support for windowing operations
