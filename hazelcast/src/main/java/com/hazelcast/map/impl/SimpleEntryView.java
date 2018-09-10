@@ -214,7 +214,7 @@ public class SimpleEntryView<K, V>
     }
 
     @Override
-    public long getMaxIdle() {
+    public Long getMaxIdle() {
         return maxIdle;
     }
 

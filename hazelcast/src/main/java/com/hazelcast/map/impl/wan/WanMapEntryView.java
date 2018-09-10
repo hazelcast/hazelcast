@@ -118,27 +118,13 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     }
 
     @Override
-    public long getMaxIdle() {
-        return 0;
-    }
-
-    /**
-     * Needed for client protocol compatibility.
-     */
-    @SuppressWarnings("unused")
-    public long getEvictionCriteriaNumber() {
-        return 0;
-    }
-
-    /**
-     * Needed for client protocol compatibility.
-     */
-    @SuppressWarnings("unused")
-    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
+    public Long getMaxIdle() {
+        return null;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        // the serialized format must match the serialized format for a 3.8 SimpleEntryView
         IOUtil.writeObject(out, key);
         IOUtil.writeObject(out, value);
         out.writeLong(cost);
@@ -149,7 +135,6 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
-        // writes the deprecated evictionCriteriaNumber to the data output (client protocol compatibility)
         out.writeLong(0);
         out.writeLong(ttl);
     }

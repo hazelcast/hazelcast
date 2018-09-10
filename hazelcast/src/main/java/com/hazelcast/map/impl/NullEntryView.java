@@ -88,7 +88,7 @@ class NullEntryView<K, V> implements EntryView<K, V> {
     }
 
     @Override
-    public long getMaxIdle() {
-        return 0;
+    public Long getMaxIdle() {
+        return 0L;
     }
 }
