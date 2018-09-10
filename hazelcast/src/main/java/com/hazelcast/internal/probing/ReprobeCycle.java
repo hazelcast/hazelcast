@@ -11,7 +11,7 @@ import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 
 /**
  * Marks the method of a {@link ProbeSource} that should be called when it is
- * time to update the probe state.
+ * time to update the probe state by calling the annotated method.
  * 
  * This can be used as an alternative when computing current values for or
  * during each {@link ProbingCycle} is too "expensive". Updating instead is
@@ -20,7 +20,7 @@ import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface Reprobe {
+public @interface ReprobeCycle {
 
     int value() default 1;
 

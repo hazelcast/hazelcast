@@ -25,9 +25,9 @@ public interface ProbeRegistry {
     void register(ProbeSource source);
 
     /**
-     * @return Creates a new "private "context that should be kept by the called to
+     * @return Creates a new "private "context that should be kept by the caller to
      *         render the contents of this {@link ProbeRegistry}. The implementation
-     *         will not support multi-threading as each thread should have its own
+     *         will not support multi-threading as each thread should create its own
      *         context instance.
      */
     ProbeRenderContext newRenderingContext();
@@ -37,8 +37,10 @@ public interface ProbeRegistry {
      * cumbersome and smells like over-abstraction. It is purely introduced to
      * achieve the goal of rendering without creating garbage objects. That means
      * state needs to be reused. This object is the place where state can be kept in
-     * a way that allows reuse between rendering cycles even if the
-     * {@link ProbeRenderer} itself might change.
+     * a way that allows reuse between rendering cycles.
+     * 
+     * The {@link ProbeRenderer} itself usually changes for each cycle as it tends
+     * to be dependent on output stream objects handed to it.
      */
     interface ProbeRenderContext {
 

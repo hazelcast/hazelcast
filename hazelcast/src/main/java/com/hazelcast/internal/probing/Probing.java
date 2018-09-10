@@ -97,7 +97,7 @@ public final class Probing {
             cycle.probe("gc", this);
         }
 
-        @Reprobe(4)
+        @ReprobeCycle(4)
         public void refresh() {
             long minorCount = 0;
             long minorTime = 0;

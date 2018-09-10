@@ -32,7 +32,8 @@ public final class ProbeDataSender implements Runnable, Closeable {
     private final String timeKey;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public ProbeDataSender(ProbeRenderContext probes, long intervalMs, HttpURLConnectionProvider connectionProvider, String group, String member) {
+    public ProbeDataSender(ProbeRenderContext probes, long intervalMs, 
+            HttpURLConnectionProvider connectionProvider, String group, String member) {
         this.probes = probes;
         this.intervalMs = intervalMs;
         this.connectionProvider = connectionProvider;

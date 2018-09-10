@@ -54,6 +54,7 @@ public class ExampleRootObject implements ProbeSource {
         cycle.probe(ProbeLevel.INFO, "k", 68);
     }
 
+    @Probe(name = "prefi=x")
     private static class Stats {
 
         @Probe
@@ -73,6 +74,9 @@ public class ExampleRootObject implements ProbeSource {
 
         @Probe
         private float floating = 3.2f;
+        
+        @Probe
+        private boolean flag = true;
 
         @Probe
         private Collection<String> set = Arrays.asList("a", "b");
