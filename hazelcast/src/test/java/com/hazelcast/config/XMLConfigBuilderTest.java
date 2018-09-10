@@ -266,6 +266,28 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSymmetricEncryptionConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <network>\n"
+                + "      <symmetric-encryption enabled=\"true\">\n"
+                + "        <algorithm>AES</algorithm>\n"
+                + "        <salt>thesalt</salt>\n"
+                + "        <password>thepass</password>\n"
+                + "        <iteration-count>7531</iteration-count>\n"
+                + "      </symmetric-encryption>"
+                + "    </network>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        SymmetricEncryptionConfig symmetricEncryptionConfig = config.getNetworkConfig().getSymmetricEncryptionConfig();
+        assertTrue(symmetricEncryptionConfig.isEnabled());
+        assertEquals("AES", symmetricEncryptionConfig.getAlgorithm());
+        assertEquals("thesalt", symmetricEncryptionConfig.getSalt());
+        assertEquals("thepass", symmetricEncryptionConfig.getPassword());
+        assertEquals(7531, symmetricEncryptionConfig.getIterationCount());
+    }
+
+    @Test
     public void readPortCount() {
         // check when it is explicitly set
         Config config = buildConfig(HAZELCAST_START_TAG

@@ -2166,7 +2166,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="iteration-count" type="xs:unsignedByte" default="19">
+            <xs:element name="iteration-count" type="xs:int" default="19">
                 <xs:annotation>
                     <xs:documentation>
                         Iteration count to use when generating the secret key.
