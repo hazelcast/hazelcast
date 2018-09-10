@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
+import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,12 +30,14 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.util.StringUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -106,7 +109,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
         }
-        map.addInterceptor(new NegativeInterceptor());
+        map.addInterceptor(new NegativeGetInterceptor());
         for (int i = 0; i < 100; i++) {
             assertEquals(i * -1, map.get(i));
         }
@@ -215,6 +218,63 @@ public class InterceptorTest extends HazelcastTestSupport {
         }, 15);
     }
 
+    @Test
+    public void testInterceptPut_replicatedToBackups() {
+        String name = randomString();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        Config config = getConfig();
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        IMap<Object, Object> map = hz2.getMap(name);
+        map.addInterceptor(new NegativePutInterceptor());
+
+        int count = 1000;
+        for (int i = 1; i <= count; i++) {
+            map.set(i, i);
+        }
+        waitAllForSafeState(hz1, hz2);
+
+        hz1.getLifecycleService().terminate();
+
+        for (int i = 1; i <= count; i++) {
+            assertEquals(-i, map.get(i));
+        }
+    }
+
+    @Test
+    public void testInterceptPut_replicatedToBackups_usingTransactions() {
+        final String name = randomString();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        Config config = getConfig();
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        IMap<Object, Object> map = hz2.getMap(name);
+        map.addInterceptor(new NegativePutInterceptor());
+
+        final int count = 1000;
+        hz2.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalMap<Object, Object> txMap = context.getMap(name);
+                for (int i = 1; i <= count; i++) {
+                    txMap.set(i, i);
+                }
+                return null;
+            }
+        });
+        waitAllForSafeState(hz1, hz2);
+
+        hz1.getLifecycleService().terminate();
+
+        for (int i = 1; i <= count; i++) {
+            assertEquals(-i, map.get(i));
+        }
+    }
+
     static class DummyLoader implements MapLoader<Integer, String> {
         @Override
         public String load(Integer key) {
@@ -263,46 +323,11 @@ public class InterceptorTest extends HazelcastTestSupport {
         }
     }
 
-    public static class SimpleInterceptor implements MapInterceptor, Serializable {
+    static class MapInterceptorAdaptor implements MapInterceptor {
 
         @Override
         public Object interceptGet(Object value) {
-            if (value == null) {
-                return null;
-            }
-            return value + ":";
-        }
-
-        @Override
-        public void afterGet(Object value) {
-        }
-
-        @Override
-        public Object interceptPut(Object oldValue, Object newValue) {
-            return newValue.toString().toUpperCase(StringUtil.LOCALE_INTERNAL);
-        }
-
-        @Override
-        public void afterPut(Object value) {
-        }
-
-        @Override
-        public Object interceptRemove(Object removedValue) {
-            if (removedValue.equals("ISTANBUL")) {
-                throw new RuntimeException("you can not remove this");
-            }
-            return removedValue;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
-        }
-    }
-
-    static class NegativeInterceptor implements MapInterceptor, Serializable {
-        @Override
-        public Object interceptGet(Object value) {
-            return ((Integer) value) * -1;
+            return value;
         }
 
         @Override
@@ -325,6 +350,45 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         @Override
         public void afterRemove(Object value) {
+        }
+    }
+
+    public static class SimpleInterceptor extends MapInterceptorAdaptor {
+        @Override
+        public Object interceptGet(Object value) {
+            if (value == null) {
+                return null;
+            }
+            return value + ":";
+        }
+
+        @Override
+        public Object interceptPut(Object oldValue, Object newValue) {
+            return newValue.toString().toUpperCase(StringUtil.LOCALE_INTERNAL);
+        }
+
+        @Override
+        public Object interceptRemove(Object removedValue) {
+            if (removedValue.equals("ISTANBUL")) {
+                throw new RuntimeException("you can not remove this");
+            }
+            return removedValue;
+        }
+    }
+
+    static class NegativeGetInterceptor extends MapInterceptorAdaptor {
+
+        @Override
+        public Object interceptGet(Object value) {
+            return ((Integer) value) * -1;
+        }
+    }
+
+    static class NegativePutInterceptor extends MapInterceptorAdaptor {
+
+        @Override
+        public Object interceptPut(Object oldValue, Object newValue) {
+            return ((Integer) newValue) * -1;
         }
     }
 }
