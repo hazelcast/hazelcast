@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
 import com.hazelcast.wan.merkletree.ConsistencyCheckResult;
@@ -39,14 +40,28 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private static final AtomicLongFieldUpdater<LocalWanPublisherStatsImpl> TOTAL_PUBLISHED_EVENT_COUNT =
             newUpdater(LocalWanPublisherStatsImpl.class, "totalPublishedEventCount");
 
+    @Probe
     private volatile boolean connected;
     private volatile WanPublisherState state;
+    @Probe
     private volatile int outboundQueueSize;
+    @Probe
     private volatile long totalPublishLatency;
+    @Probe
     private volatile long totalPublishedEventCount;
     private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
     private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;
     private volatile Map<String, ConsistencyCheckResult> lastConsistencyCheckResults;
+
+    @Probe
+    private boolean paused(){
+        return state == WanPublisherState.PAUSED;
+    }
+
+    @Probe
+    private boolean stopped(){
+        return state == WanPublisherState.STOPPED;
+    }
 
     @Override
     public boolean isConnected() {
@@ -57,7 +72,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
         this.connected = connected;
     }
 
-    @Override
+    @Override@Probe
     public int getOutboundQueueSize() {
         return outboundQueueSize;
     }
