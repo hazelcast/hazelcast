@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapSetTTLCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSetTtlCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapService;
@@ -30,9 +30,9 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-public class MapSetTTLMessageTask extends AbstractMapPartitionMessageTask<MapSetTTLCodec.RequestParameters> {
+public class MapSetTtlMessageTask extends AbstractMapPartitionMessageTask<MapSetTtlCodec.RequestParameters> {
 
-    public MapSetTTLMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MapSetTtlMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -47,17 +47,17 @@ public class MapSetTTLMessageTask extends AbstractMapPartitionMessageTask<MapSet
     @Override
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        return operationProvider.createSetTTLOperation(parameters.name, parameters.key, parameters.ttl);
+        return operationProvider.createSetTtlOperation(parameters.name, parameters.key, parameters.ttl);
     }
 
     @Override
-    protected MapSetTTLCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapSetTTLCodec.decodeRequest(clientMessage);
+    protected MapSetTtlCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapSetTtlCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapSetTTLCodec.encodeResponse();
+        return MapSetTtlCodec.encodeResponse((Boolean) response);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class MapSetTTLMessageTask extends AbstractMapPartitionMessageTask<MapSet
 
     @Override
     public String getMethodName() {
-        return "setTTL";
+        return "setTtl";
     }
 
     @Override

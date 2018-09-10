@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllKeysCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheSetExpiryPolicyCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
@@ -54,7 +55,9 @@ import javax.cache.event.CacheEntryListener;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.Closeable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -134,6 +137,13 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
             return (T) Boolean.valueOf(CachePutIfAbsentCodec.decodeResponse(clientMessage).response);
+        }
+    };
+
+    private static final ClientMessageDecoder SET_EXPIRY_POLICY_DECODER = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) Boolean.valueOf(CacheSetExpiryPolicyCodec.decodeResponse(clientMessage).response);
         }
     };
 
@@ -475,6 +485,25 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
             return null;
         }
         return statsHandler.newOnPutCallback(isGet, System.nanoTime());
+    }
+
+    protected boolean setExpiryPolicyInternal(K key, ExpiryPolicy expiryPolicy) {
+        ensureOpen();
+        validateNotNull(key);
+        validateNotNull(expiryPolicy);
+
+        Data keyData = toData(key);
+        Data expiryPolicyData = toData(expiryPolicy);
+
+        List<Data> list = Collections.singletonList(keyData);
+        ClientMessage request = CacheSetExpiryPolicyCodec.encodeRequest(nameWithPrefix, list, expiryPolicyData);
+        ClientInvocationFuture future = invoke(request, keyData, IGNORE_COMPLETION);
+        ClientDelegatingFuture<Boolean> delegatingFuture = newDelegatingFuture(future, SET_EXPIRY_POLICY_DECODER);
+        try {
+            return delegatingFuture.get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
     }
 
     protected Object putIfAbsentInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean withCompletionEvent, boolean async) {

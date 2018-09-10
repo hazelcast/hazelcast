@@ -1487,7 +1487,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source) {
+    public boolean setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source) {
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
             throw new UnsupportedOperationException("Modifying expiry policy is available when cluster version is at least 3.11");
         }
@@ -1495,13 +1495,16 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (expiryPolicy instanceof Data) {
             expiryPolicyInstance = (ExpiryPolicy) toValue(expiryPolicy);
         }
+        boolean atLeastOneKey = false;
         for (Data key : keys) {
             R record = records.get(key);
             if (record != null) {
                 updateExpiryPolicyOfRecord(key, record, expiryPolicy);
                 updateRecordWithExpiry(key, record, expiryPolicyInstance, System.currentTimeMillis(), source);
+                atLeastOneKey = true;
             }
         }
+        return atLeastOneKey;
     }
 
     @Override

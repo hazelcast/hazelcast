@@ -34,6 +34,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -229,6 +230,28 @@ abstract class AbstractCacheProxy<K, V>
             putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy);
         } catch (Exception e) {
             throw rethrow(e);
+        }
+    }
+
+    @Override
+    public boolean setExpiryPolicy(K key, ExpiryPolicy expiryPolicy) {
+        if (isClusterVersionLessThan(Versions.V3_11)) {
+            throw new UnsupportedOperationException("setExpiryPolicy operation is available"
+                    + "when cluster version is 3.11 or higher");
+        }
+        try {
+            ensureOpen();
+            validateNotNull(key);
+            validateNotNull(expiryPolicy);
+
+            Data keyData = serializationService.toData(key);
+            Data expiryPolicyData = serializationService.toData(expiryPolicy);
+            List<Data> list = Collections.singletonList(keyData);
+            Operation operation = operationProvider.createSetExpiryPolicyOperation(list, expiryPolicyData);
+            Future<Boolean> future = invoke(operation, keyData, true);
+            return future.get();
+        } catch (Exception e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 

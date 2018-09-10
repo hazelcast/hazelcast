@@ -135,10 +135,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+    protected boolean setTtlInternal(Object key, long ttl, TimeUnit timeUnit) {
         key = toNearCacheKey(key);
         try {
-            super.setTTLInternal(key, ttl, timeUnit);
+            return super.setTtlInternal(key, ttl, timeUnit);
         } finally {
             invalidateNearCache(key);
         }

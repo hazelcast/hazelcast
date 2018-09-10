@@ -96,11 +96,33 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
+    public void testSetTtlReturnsTrue() {
+        final IMap<String, String> map = client.getMap(randomString());
+
+        map.put("key", "value");
+        assertTrue(map.setTtl("key", 10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testSetTtlReturnsFalse_whenKeyDoesNotExist() {
+        final IMap<String, String> map = client.getMap(randomString());
+        assertFalse(map.setTtl("key", 10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testSetTtlReturnsFalse_whenKeyIsAlreadyExpired() {
+        final IMap<String, String> map = client.getMap(randomString());
+        map.put("key", "value", 1, TimeUnit.SECONDS);
+        sleepAtLeastSeconds(5);
+        assertFalse(map.setTtl("key", 10, TimeUnit.SECONDS));
+    }
+
+    @Test
     public void testAlterTTLOfAnEternalKey() {
         final IMap<String, String> map = client.getMap(randomString());
 
         map.put("key", "value");
-        map.setTTL("key", 1000, TimeUnit.MILLISECONDS);
+        map.setTtl("key", 1000, TimeUnit.MILLISECONDS);
 
         sleepAtLeastMillis(1000);
 
@@ -115,7 +137,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
         sleepAtLeastMillis(SECONDS.toMillis(1));
         //Make the entry eternal
-        map.setTTL("key", 0, TimeUnit.DAYS);
+        map.setTtl("key", 0, TimeUnit.DAYS);
 
         sleepAtLeastMillis(SECONDS.toMillis(15));
 
@@ -123,10 +145,10 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testSetTTLConfiguresMapPolicyIfTTLIsNegative() {
+    public void testSetTtlConfiguresMapPolicyIfTTLIsNegative() {
         final IMap<String, String> map = client.getMap("mapWithTTL");
         map.put("tempKey", "tempValue", 10, TimeUnit.SECONDS);
-        map.setTTL("tempKey", -1, TimeUnit.SECONDS);
+        map.setTtl("tempKey", -1, TimeUnit.SECONDS);
         sleepAtLeastMillis(1000);
         assertNull(map.get("tempKey"));
     }
@@ -697,7 +719,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testMapSetTTl() {
+    public void testMapSetTtl() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String val = "Val";
@@ -707,7 +729,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testMapSetTTl_whenExpired() {
+    public void testMapSetTtl_whenExpired() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String val = "Val";
@@ -718,7 +740,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void testMapSetTTl_whenReplacingKeyAndExpired() {
+    public void testMapSetTtl_whenReplacingKeyAndExpired() {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";
         String newValue = "newValue";
