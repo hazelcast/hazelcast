@@ -18,15 +18,16 @@ package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.monitor.impl.LocalFlakeIdGeneratorStatsImpl;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class FlakeIdGeneratorService implements ManagedService, RemoteService,
-        StatisticsAwareService<LocalFlakeIdGeneratorStats> {
+        ProbeRegistry.ProbeSource {
 
     public static final String SERVICE_NAME = "hz:impl:flakeIdGeneratorService";
 
@@ -44,8 +45,9 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     private final ConstructorFunction<String, LocalFlakeIdGeneratorStatsImpl> localFlakeIdStatsConstructorFunction
         = new ConstructorFunction<String, LocalFlakeIdGeneratorStatsImpl>() {
         public LocalFlakeIdGeneratorStatsImpl createNew(String key) {
-            return new LocalFlakeIdGeneratorStatsImpl();
-        }
+                    return new LocalFlakeIdGeneratorStatsImpl(nodeEngine.getConfig()
+                            .findFlakeIdGeneratorConfig(key).isStatisticsEnabled());
+                }
     };
 
     public FlakeIdGeneratorService(NodeEngine nodeEngine) {
@@ -78,8 +80,13 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     }
 
     @Override
-    public Map<String, LocalFlakeIdGeneratorStats> getStats() {
-        return new HashMap<String, LocalFlakeIdGeneratorStats>(statsMap);
+    public void probeIn(ProbingCycle cycle) {
+        Probing.probeIn(cycle, "flakeIdGenerator", statsMap);
+    }
+
+    // for testing only
+    public Map<String, ? extends LocalFlakeIdGeneratorStats> getStats() {
+        return statsMap;
     }
 
     /**

@@ -18,6 +18,9 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
@@ -28,7 +31,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -50,7 +52,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class DistributedExecutorService implements ManagedService, RemoteService,
-        StatisticsAwareService<LocalExecutorStats>, QuorumAwareService {
+    QuorumAwareService, ProbeRegistry.ProbeSource {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
@@ -75,8 +77,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     private final ConstructorFunction<String, LocalExecutorStatsImpl> localExecutorStatsConstructorFunction
             = new ConstructorFunction<String, LocalExecutorStatsImpl>() {
         public LocalExecutorStatsImpl createNew(String key) {
-            return new LocalExecutorStatsImpl();
-        }
+                    return new LocalExecutorStatsImpl(
+                            nodeEngine.getConfig().findExecutorConfig(key).isStatisticsEnabled());
+                }
     };
 
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
@@ -202,12 +205,13 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     @Override
-    public Map<String, LocalExecutorStats> getStats() {
-        Map<String, LocalExecutorStats> executorStats = MapUtil.createHashMap(statsMap.size());
-        for (Map.Entry<String, LocalExecutorStatsImpl> queueStat : statsMap.entrySet()) {
-            executorStats.put(queueStat.getKey(), queueStat.getValue());
-        }
-        return executorStats;
+    public void probeIn(ProbingCycle cycle) {
+        Probing.probeIn(cycle, "executor", statsMap);
+    }
+
+    // for testing only
+    public Map<String, ? extends LocalExecutorStats> getStats() {
+        return statsMap;
     }
 
     /**

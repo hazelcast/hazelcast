@@ -66,7 +66,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
     public void testSerialization() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
 
-        LocalReplicatedMapStatsImpl replicatedMapStats = new LocalReplicatedMapStatsImpl();
+        LocalReplicatedMapStatsImpl replicatedMapStats = new LocalReplicatedMapStatsImpl(true);
         replicatedMapStats.incrementPuts(30);
         CacheStatisticsImpl cacheStatistics = new CacheStatisticsImpl(Clock.currentTimeMillis());
         cacheStatistics.increaseCacheHits(5);
@@ -99,16 +99,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         MemberStateImpl memberState = timedMemberState.getMemberState();
         memberState.setAddress("memberStateAddress:Port");
-        memberState.putLocalMapStats("mapStats", new LocalMapStatsImpl());
-        memberState.putLocalMultiMapStats("multiMapStats", new LocalMultiMapStatsImpl());
-        memberState.putLocalQueueStats("queueStats", new LocalQueueStatsImpl());
-        memberState.putLocalTopicStats("topicStats", new LocalTopicStatsImpl());
-        memberState.putLocalReliableTopicStats("reliableTopicStats", new LocalTopicStatsImpl());
-        memberState.putLocalPNCounterStats("pnCounterStats", new LocalPNCounterStatsImpl());
-        memberState.putLocalExecutorStats("executorStats", new LocalExecutorStatsImpl());
-        memberState.putLocalReplicatedMapStats("replicatedMapStats", replicatedMapStats);
         memberState.putLocalCacheStats("cacheStats", new LocalCacheStatsImpl(cacheStatistics));
-        memberState.putLocalFlakeIdStats("flakeIdStats", new LocalFlakeIdGeneratorStatsImpl());
         memberState.setRuntimeProps(runtimeProps);
         memberState.setLocalMemoryStats(new LocalMemoryStatsImpl());
         memberState.setOperationStats(new LocalOperationStatsImpl());
@@ -122,17 +113,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         deserialized.fromJson(memberState.toJson());
 
         assertEquals("memberStateAddress:Port", deserialized.getAddress());
-        assertNotNull(deserialized.getLocalMapStats("mapStats").toString());
-        assertNotNull(deserialized.getLocalMultiMapStats("multiMapStats").toString());
-        assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());
-        assertNotNull(deserialized.getLocalTopicStats("topicStats").toString());
-        assertNotNull(deserialized.getReliableLocalTopicStats("reliableTopicStats").toString());
-        assertNotNull(deserialized.getLocalPNCounterStats("pnCounterStats").toString());
-        assertNotNull(deserialized.getLocalExecutorStats("executorStats").toString());
-        assertNotNull(deserialized.getLocalReplicatedMapStats("replicatedMapStats").toString());
-        assertEquals(1, deserialized.getLocalReplicatedMapStats("replicatedMapStats").getPutOperationCount());
         assertNotNull(deserialized.getLocalCacheStats("cacheStats").toString());
-        assertNotNull(deserialized.getLocalFlakeIdGeneratorStats("flakeIdStats").toString());
         assertEquals(5, deserialized.getLocalCacheStats("cacheStats").getCacheHits());
         assertNotNull(deserialized.getRuntimeProps());
         assertEquals(Long.valueOf(598123L), deserialized.getRuntimeProps().get("prop1"));

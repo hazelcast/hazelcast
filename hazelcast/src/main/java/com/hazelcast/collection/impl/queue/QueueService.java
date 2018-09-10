@@ -26,6 +26,9 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
@@ -45,7 +48,6 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
@@ -76,7 +78,6 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
 
 /**
@@ -85,8 +86,8 @@ import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService, RemoteService,
-        EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>, QuorumAwareService,
-        SplitBrainHandlerService {
+        EventPublishingService<QueueEvent, ItemListener>,  QuorumAwareService,
+        SplitBrainHandlerService, ProbeRegistry.ProbeSource {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
 
@@ -100,8 +101,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             = new ConstructorFunction<String, LocalQueueStatsImpl>() {
         @Override
         public LocalQueueStatsImpl createNew(String key) {
-            return new LocalQueueStatsImpl();
-        }
+                    return new LocalQueueStatsImpl(
+                            nodeEngine.getConfig().findQueueConfig(key).isStatisticsEnabled());
+                }
     };
 
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
@@ -365,14 +367,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public Map<String, LocalQueueStats> getStats() {
-        Map<String, LocalQueueStats> queueStats = createHashMap(containerMap.size());
-        for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
-            String name = entry.getKey();
-            LocalQueueStats queueStat = createLocalQueueStats(name);
-            queueStats.put(name, queueStat);
-        }
-        return queueStats;
+    public void probeIn(ProbingCycle cycle) {
+        Probing.probeIn(cycle, "queue", statsMap);
     }
 
     @Override

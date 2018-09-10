@@ -34,7 +34,7 @@ public class LocalExecutorStatsImplTest {
 
     @Test
     public void testDefaultConstructor() {
-        LocalExecutorStatsImpl localExecutorStats = new LocalExecutorStatsImpl();
+        LocalExecutorStatsImpl localExecutorStats = new LocalExecutorStatsImpl(true);
 
         assertTrue(localExecutorStats.getCreationTime() > 0);
         assertEquals(0, localExecutorStats.getPendingTaskCount());
@@ -48,7 +48,7 @@ public class LocalExecutorStatsImplTest {
 
     @Test
     public void testSerialization() {
-        LocalExecutorStatsImpl localExecutorStats = new LocalExecutorStatsImpl();
+        LocalExecutorStatsImpl localExecutorStats = new LocalExecutorStatsImpl(true);
         localExecutorStats.startPending();
         localExecutorStats.startPending();
         localExecutorStats.startPending();
@@ -62,7 +62,7 @@ public class LocalExecutorStatsImplTest {
         localExecutorStats.cancelExecution();
 
         JsonObject serialized = localExecutorStats.toJson();
-        LocalExecutorStatsImpl deserialized = new LocalExecutorStatsImpl();
+        LocalExecutorStatsImpl deserialized = new LocalExecutorStatsImpl(true);
         deserialized.fromJson(serialized);
 
         assertEquals(1, deserialized.getPendingTaskCount());

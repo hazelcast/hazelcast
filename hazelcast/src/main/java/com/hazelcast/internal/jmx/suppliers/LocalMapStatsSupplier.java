@@ -33,7 +33,7 @@ public class LocalMapStatsSupplier implements StatsSupplier<LocalMapStats> {
 
     @Override
     public LocalMapStats getEmpty() {
-        return new LocalMapStatsImpl();
+        return new LocalMapStatsImpl(false);
     }
 
     @Override

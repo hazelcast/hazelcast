@@ -90,7 +90,7 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
         gen.newId();
 
         FlakeIdGeneratorService service = getNodeEngineImpl(instance).getService(FlakeIdGeneratorService.SERVICE_NAME);
-        Map<String, LocalFlakeIdGeneratorStats> stats = service.getStats();
+        Map<String, ? extends LocalFlakeIdGeneratorStats> stats = service.getStats();
         assertTrue(!stats.isEmpty());
         assertTrue(stats.containsKey("gen"));
         LocalFlakeIdGeneratorStats genStats = stats.get("gen");

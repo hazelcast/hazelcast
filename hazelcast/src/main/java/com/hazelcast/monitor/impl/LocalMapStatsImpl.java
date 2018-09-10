@@ -43,7 +43,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 /**
  * Default implementation of {@link LocalMapStats}
  */
-public class LocalMapStatsImpl implements LocalMapStats {
+public class LocalMapStatsImpl extends LocalDistributedObjectStats implements LocalMapStats {
 
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_ACCESS_TIME =
             newUpdater(LocalMapStatsImpl.class, "lastAccessTime");
@@ -134,7 +134,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Probe
     private volatile long indexedQueryCount;
 
-    public LocalMapStatsImpl() {
+    public LocalMapStatsImpl(boolean statisticsEnabled) {
+        super(statisticsEnabled);
         creationTime = Clock.currentTimeMillis();
     }
 

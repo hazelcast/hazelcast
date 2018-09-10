@@ -42,6 +42,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -56,7 +57,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class LocalMapStatsProvider {
 
-    public static final LocalMapStats EMPTY_LOCAL_MAP_STATS = new LocalMapStatsImpl();
+    public static final LocalMapStats EMPTY_LOCAL_MAP_STATS = new LocalMapStatsImpl(false);
 
     private static final int RETRY_COUNT = 3;
     private static final int WAIT_PARTITION_TABLE_UPDATE_MILLIS = 100;
@@ -72,7 +73,8 @@ public class LocalMapStatsProvider {
     private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction =
             new ConstructorFunction<String, LocalMapStatsImpl>() {
                 public LocalMapStatsImpl createNew(String key) {
-                    return new LocalMapStatsImpl();
+                    return new LocalMapStatsImpl(
+                            nodeEngine.getConfig().findMapConfig(key).isStatisticsEnabled());
                 }
             };
 
@@ -90,6 +92,10 @@ public class LocalMapStatsProvider {
         return mapServiceContext;
     }
 
+    Map<String, LocalMapStatsImpl> getStats() {
+        return statsMap;
+    }
+
     public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, constructorFunction);
     }
@@ -98,18 +104,19 @@ public class LocalMapStatsProvider {
         statsMap.remove(name);
     }
 
-    public LocalMapStatsImpl createLocalMapStats(String mapName) {
+    public LocalMapStatsImpl getAndUpdateLocalMapStats(String mapName) {
         LocalMapStatsImpl stats = getLocalMapStatsImpl(mapName);
         LocalMapOnDemandCalculatedStats onDemandStats = new LocalMapOnDemandCalculatedStats();
         addNearCacheStats(mapName, stats, onDemandStats);
         addIndexStats(mapName, stats);
         updateMapOnDemandStats(mapName, onDemandStats);
 
-        return onDemandStats.updateAndGet(stats);
+        onDemandStats.updateAndGet(stats);
+        return stats;
     }
 
-    public Map<String, LocalMapStats> createAllLocalMapStats() {
-        Map statsPerMap = new HashMap();
+    public void updateAllLocalMapStats() {
+        Map<String, LocalMapOnDemandCalculatedStats> statsPerMap = new HashMap<String, LocalMapOnDemandCalculatedStats>();
 
         PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
         for (PartitionContainer partitionContainer : partitionContainers) {
@@ -120,43 +127,37 @@ public class LocalMapStatsProvider {
                 }
                 IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId(), false);
                 if (partition.isLocal()) {
-                    addPrimaryStatsOf(recordStore, getOrCreateOnDemandStats(statsPerMap, recordStore));
+                    addPrimaryStatsOf(recordStore, getOrCreateOnDemandStats(statsPerMap, recordStore.getName()));
                 } else {
-                    addReplicaStatsOf(recordStore, getOrCreateOnDemandStats(statsPerMap, recordStore));
+                    addReplicaStatsOf(recordStore, getOrCreateOnDemandStats(statsPerMap, recordStore.getName()));
                 }
             }
         }
 
-        // reuse same HashMap to return calculated LocalMapStats.
-        for (Object object : statsPerMap.entrySet()) {
-            Map.Entry entry = (Map.Entry) object;
-            String mapName = ((String) entry.getKey());
+        for (Entry<String, LocalMapOnDemandCalculatedStats> entry : statsPerMap.entrySet()) {
+            String mapName = entry.getKey();
             LocalMapStatsImpl existingStats = getLocalMapStatsImpl(mapName);
-            LocalMapOnDemandCalculatedStats onDemand = ((LocalMapOnDemandCalculatedStats) entry.getValue());
+            LocalMapOnDemandCalculatedStats onDemand = entry.getValue();
             addNearCacheStats(mapName, existingStats, onDemand);
             addIndexStats(mapName, existingStats);
             addStructureStats(mapName, onDemand);
 
-            LocalMapStatsImpl updatedStats = onDemand.updateAndGet(existingStats);
-            entry.setValue(updatedStats);
+            onDemand.updateAndGet(existingStats);
         }
 
-        addStatsOfNoDataIncludedMaps(statsPerMap);
-
-        return statsPerMap;
+        forceStatsExistsForAllMaps();
     }
 
     /**
      * Some maps may have a proxy but no data has been put yet. Think of one created a proxy but not put any data in it.
-     * By calling this method we are returning an empty stats object for those maps. This is helpful to monitor those kind
-     * of maps.
+     * By calling this method we force the creation of a statistics object as soon as the distributed object has been created.
      */
-    private void addStatsOfNoDataIncludedMaps(Map statsPerMap) {
+    private void forceStatsExistsForAllMaps() {
         ProxyService proxyService = nodeEngine.getProxyService();
         Collection<String> mapNames = proxyService.getDistributedObjectNames(SERVICE_NAME);
         for (String mapName : mapNames) {
-            if (!statsPerMap.containsKey(mapName)) {
-                statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
+            if (!statsMap.containsKey(mapName)) {
+                getLocalMapStatsImpl(mapName);
             }
         }
     }
@@ -165,16 +166,14 @@ public class LocalMapStatsProvider {
         return recordStore.getMapContainer().getMapConfig().isStatisticsEnabled();
     }
 
-    private static LocalMapOnDemandCalculatedStats getOrCreateOnDemandStats(Map<String, Object> onDemandStats,
-                                                                            RecordStore recordStore) {
-        String mapName = recordStore.getName();
-
-        Object stats = onDemandStats.get(mapName);
+    private static LocalMapOnDemandCalculatedStats getOrCreateOnDemandStats(
+            Map<String, LocalMapOnDemandCalculatedStats> onDemandStats, String mapName) {
+        LocalMapOnDemandCalculatedStats stats = onDemandStats.get(mapName);
         if (stats == null) {
             stats = new LocalMapOnDemandCalculatedStats();
             onDemandStats.put(mapName, stats);
         }
-        return ((LocalMapOnDemandCalculatedStats) stats);
+        return stats;
     }
 
     private void updateMapOnDemandStats(String mapName, LocalMapOnDemandCalculatedStats onDemandStats) {
@@ -488,7 +487,7 @@ public class LocalMapStatsProvider {
             this.merkleTreesCost += merkleTreeCost;
         }
 
-        public LocalMapStatsImpl updateAndGet(LocalMapStatsImpl stats) {
+        public void updateAndGet(LocalMapStatsImpl stats) {
             stats.setBackupCount(backupCount);
             stats.setHits(hits);
             stats.setOwnedEntryCount(ownedEntryCount);
@@ -501,7 +500,6 @@ public class LocalMapStatsProvider {
             stats.setDirtyEntryCount(dirtyEntryCount);
             stats.setLastAccessTime(lastAccessTime);
             stats.setLastUpdateTime(lastUpdateTime);
-            return stats;
         }
 
         public void setLastAccessTime(long lastAccessTime) {

@@ -34,7 +34,8 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * able to transform those between wire format and instance view.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
+public class LocalReplicatedMapStatsImpl extends LocalDistributedObjectStats
+        implements LocalReplicatedMapStats {
 
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_ACCESS_TIME =
             newUpdater(LocalReplicatedMapStatsImpl.class, "lastAccessTime");
@@ -104,7 +105,8 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     @Probe
     private volatile long ownedEntryMemoryCost;
 
-    public LocalReplicatedMapStatsImpl() {
+    public LocalReplicatedMapStatsImpl(boolean statisticsEnabled) {
+        super(statisticsEnabled);
         creationTime = Clock.currentTimeMillis();
     }
 

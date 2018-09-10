@@ -29,7 +29,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 /**
  * Local PN counter statistics thread safe implementation
  */
-public class LocalPNCounterStatsImpl implements LocalPNCounterStats {
+public class LocalPNCounterStatsImpl extends LocalDistributedObjectStats implements LocalPNCounterStats {
     private static final AtomicLongFieldUpdater<LocalPNCounterStatsImpl> TOTAL_INCREMENT_OPERATION_COUNT =
             newUpdater(LocalPNCounterStatsImpl.class, "totalIncrementOperationCount");
     private static final AtomicLongFieldUpdater<LocalPNCounterStatsImpl> TOTAL_DECREMENT_OPERATION_COUNT =
@@ -43,7 +43,8 @@ public class LocalPNCounterStatsImpl implements LocalPNCounterStats {
     @Probe
     private volatile long totalDecrementOperationCount;
 
-    public LocalPNCounterStatsImpl() {
+    public LocalPNCounterStatsImpl(boolean statisticsEnabled) {
+        super(statisticsEnabled);
         creationTime = Clock.currentTimeMillis();
     }
 

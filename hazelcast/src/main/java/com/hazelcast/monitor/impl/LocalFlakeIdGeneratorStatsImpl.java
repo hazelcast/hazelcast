@@ -26,7 +26,8 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
-public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStats {
+public class LocalFlakeIdGeneratorStatsImpl extends LocalDistributedObjectStats
+        implements LocalFlakeIdGeneratorStats {
 
     private static final AtomicLongFieldUpdater<LocalFlakeIdGeneratorStatsImpl> BATCH_COUNT =
             newUpdater(LocalFlakeIdGeneratorStatsImpl.class, "batchCount");
@@ -41,7 +42,8 @@ public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStat
     @Probe
     private volatile long idCount;
 
-    public LocalFlakeIdGeneratorStatsImpl() {
+    public LocalFlakeIdGeneratorStatsImpl(boolean statisticsEnabled) {
+        super(statisticsEnabled);
         creationTime = Clock.currentTimeMillis();
     }
 

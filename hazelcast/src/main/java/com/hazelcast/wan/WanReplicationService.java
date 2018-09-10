@@ -16,12 +16,13 @@
 
 package com.hazelcast.wan;
 
+import java.util.Map;
+
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.spi.CoreService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
 
 /**
@@ -30,7 +31,7 @@ import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
  * to replicate values to other clusters over the wide area network, so it has to deal with long
  * delays, slow uploads and higher latencies.
  */
-public interface WanReplicationService extends CoreService, StatisticsAwareService<LocalWanStats> {
+public interface WanReplicationService extends CoreService {
 
     /**
      * Service name.
@@ -170,4 +171,13 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param dataStructureName the distributed object name
      */
     void removeWanEventCounters(String serviceName, String dataStructureName);
+
+    /**
+     * This method is exposed solely so that code depending on statistics data has a
+     * way of accessing it while the actual providing implementation is in EE
+     * codebase.
+     * 
+     * @return statistics per replication configuration for read-only purposes.
+     */
+    Map<String, LocalWanStats> getStats();
 }

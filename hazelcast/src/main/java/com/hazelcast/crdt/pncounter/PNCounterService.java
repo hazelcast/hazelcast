@@ -22,6 +22,9 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.crdt.CRDTReplicationAwareService;
 import com.hazelcast.crdt.CRDTReplicationContainer;
 import com.hazelcast.crdt.MutationDisallowedException;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.util.Memoizer;
 import com.hazelcast.monitor.LocalPNCounterStats;
 import com.hazelcast.monitor.impl.LocalPNCounterStatsImpl;
@@ -29,11 +32,9 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.UuidUtil;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -51,7 +52,7 @@ public class PNCounterService implements
         RemoteService,
         CRDTReplicationAwareService<PNCounterImpl>,
         QuorumAwareService,
-        StatisticsAwareService<LocalPNCounterStats> {
+        ProbeRegistry.ProbeSource {
     /** The name under which this service is registered */
     public static final String SERVICE_NAME = "hz:impl:PNCounterService";
 
@@ -85,14 +86,13 @@ public class PNCounterService implements
     /** Map from PN counter name to counter statistics */
     private final ConcurrentMap<String, LocalPNCounterStatsImpl> statsMap
             = new ConcurrentHashMap<String, LocalPNCounterStatsImpl>();
-    /** Unmodifiable statistics map to return from {@link #getStats()} */
-    private Map unmodifiableStatsMap = Collections.unmodifiableMap(statsMap);
 
     /** Constructor function for PN counter statistics */
     private final ConstructorFunction<String, LocalPNCounterStatsImpl> statsConstructorFunction =
             new ConstructorFunction<String, LocalPNCounterStatsImpl>() {
                 public LocalPNCounterStatsImpl createNew(String name) {
-                    return new LocalPNCounterStatsImpl();
+                    return new LocalPNCounterStatsImpl(
+                            nodeEngine.getConfig().findPNCounterConfig(name).isStatisticsEnabled());
                 }
             };
 
@@ -249,8 +249,12 @@ public class PNCounterService implements
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Map<String, LocalPNCounterStats> getStats() {
-        return unmodifiableStatsMap;
+    public void probeIn(ProbingCycle cycle) {
+        Probing.probeIn(cycle, "pnCounter", statsMap);
+    }
+
+    // for testing only
+    public Map<String, ? extends LocalPNCounterStats> getStats() {
+        return statsMap;
     }
 }

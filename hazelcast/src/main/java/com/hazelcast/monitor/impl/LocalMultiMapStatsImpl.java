@@ -19,4 +19,8 @@ package com.hazelcast.monitor.impl;
 import com.hazelcast.monitor.LocalMultiMapStats;
 
 public class LocalMultiMapStatsImpl extends LocalMapStatsImpl implements LocalMultiMapStats {
+
+    public LocalMultiMapStatsImpl(boolean statisticsEnabled) {
+        super(statisticsEnabled);
+    }
 }

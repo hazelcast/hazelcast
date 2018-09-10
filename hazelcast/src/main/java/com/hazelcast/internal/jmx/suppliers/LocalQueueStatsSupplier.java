@@ -33,7 +33,7 @@ public class LocalQueueStatsSupplier implements StatsSupplier<LocalQueueStats> {
 
     @Override
     public LocalQueueStats getEmpty() {
-        return new LocalQueueStatsImpl();
+        return new LocalQueueStatsImpl(true);
     }
 
     @Override

@@ -1214,7 +1214,7 @@ abstract class MapProxySupport<K, V>
         if (!mapConfig.isStatisticsEnabled()) {
             return EMPTY_LOCAL_MAP_STATS;
         }
-        return mapServiceContext.getLocalMapStatsProvider().createLocalMapStats(name);
+        return mapServiceContext.getLocalMapStatsProvider().getAndUpdateLocalMapStats(name);
     }
 
     @Override

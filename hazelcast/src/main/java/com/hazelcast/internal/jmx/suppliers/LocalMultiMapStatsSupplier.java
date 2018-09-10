@@ -33,7 +33,7 @@ public class LocalMultiMapStatsSupplier implements StatsSupplier<LocalMultiMapSt
 
     @Override
     public LocalMultiMapStats getEmpty() {
-        return new LocalMultiMapStatsImpl();
+        return new LocalMultiMapStatsImpl(false);
     }
 
     @Override

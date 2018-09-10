@@ -63,7 +63,7 @@ public class MapStatisticsAwareServiceTest extends HazelcastTestSupport {
 
     private void assertStatsObjectCreated() {
         MapService mapService = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
-        Map<String, LocalMapStats> mapStats = mapService.getStats();
+        Map<String, ? extends LocalMapStats> mapStats = mapService.getStats();
 
         // then we obtain 1 local map stats instance
         assertEquals(1, mapStats.size());

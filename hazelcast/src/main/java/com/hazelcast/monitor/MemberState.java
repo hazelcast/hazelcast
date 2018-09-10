@@ -33,27 +33,9 @@ public interface MemberState extends JsonSerializable {
 
     Map<String, Long> getRuntimeProps();
 
-    LocalMapStats getLocalMapStats(String mapName);
-
-    LocalMultiMapStats getLocalMultiMapStats(String mapName);
-
-    LocalQueueStats getLocalQueueStats(String queueName);
-
-    LocalTopicStats getLocalTopicStats(String topicName);
-
-    LocalTopicStats getReliableLocalTopicStats(String reliableTopicName);
-
-    LocalPNCounterStats getLocalPNCounterStats(String pnCounterName);
-
-    LocalReplicatedMapStats getLocalReplicatedMapStats(String replicatedMapName);
-
-    LocalExecutorStats getLocalExecutorStats(String executorName);
-
     LocalCacheStats getLocalCacheStats(String cacheName);
 
     LocalWanStats getLocalWanStats(String schemeName);
-
-    LocalFlakeIdGeneratorStats getLocalFlakeIdGeneratorStats(String flakeIdName);
 
     Collection<ClientEndPointDTO> getClients();
 

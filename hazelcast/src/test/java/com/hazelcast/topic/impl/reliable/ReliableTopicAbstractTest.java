@@ -268,7 +268,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         });
 
         final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
-        final Map<String, LocalTopicStats> stats = reliableTopicService.getStats();
+        final Map<String, ? extends LocalTopicStats> stats = reliableTopicService.getStats();
         assertEquals(2, stats.size());
         assertEquals(messageCount, stats.get(topic.getName()).getPublishOperationCount());
         assertEquals(messageCount, stats.get(topic.getName()).getReceiveOperationCount());
@@ -281,7 +281,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         topic.publish("foobar");
 
         final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
-        final Map<String, LocalTopicStats> stats = reliableTopicService.getStats();
+        final Map<String, ? extends LocalTopicStats> stats = reliableTopicService.getStats();
         assertEquals(1, stats.size());
         assertEquals(1, stats.get(topic.getName()).getPublishOperationCount());
 

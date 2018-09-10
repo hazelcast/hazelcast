@@ -134,7 +134,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         allIndexes.addAll(getAllIndexes(map1));
         allIndexes.addAll(getAllIndexes(map2));
 
-        LocalMapStatsImpl combinedStats = new LocalMapStatsImpl();
+        LocalMapStatsImpl combinedStats = new LocalMapStatsImpl(true);
 
         assertEquals(stats1.getQueryCount(), stats2.getQueryCount());
         combinedStats.setQueryCount(stats1.getQueryCount());

@@ -18,30 +18,35 @@ package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.MapUtil;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class ReliableTopicService implements ManagedService, RemoteService, StatisticsAwareService {
+public class ReliableTopicService
+        implements ManagedService, RemoteService, ProbeRegistry.ProbeSource {
 
     public static final String SERVICE_NAME = "hz:impl:reliableTopicService";
     private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
     private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction =
             new ConstructorFunction<String, LocalTopicStatsImpl>() {
                 public LocalTopicStatsImpl createNew(String mapName) {
-                    return new LocalTopicStatsImpl();
+                    return new LocalTopicStatsImpl(nodeEngine.getConfig()
+                            .findReliableTopicConfig(mapName).isStatisticsEnabled());
                 }
             };
 
@@ -74,12 +79,13 @@ public class ReliableTopicService implements ManagedService, RemoteService, Stat
     }
 
     @Override
-    public Map<String, LocalTopicStats> getStats() {
-        Map<String, LocalTopicStats> topicStats = MapUtil.createHashMap(statsMap.size());
-        for (Map.Entry<String, LocalTopicStatsImpl> queueStat : statsMap.entrySet()) {
-            topicStats.put(queueStat.getKey(), queueStat.getValue());
-        }
-        return topicStats;
+    public void probeIn(ProbingCycle cycle) {
+        Probing.probeIn(cycle, "reliableTopic", statsMap);
+    }
+
+    // for tests only
+    public Map<String, ? extends LocalTopicStats> getStats() {
+        return statsMap;
     }
 
     @Override
@@ -95,4 +101,5 @@ public class ReliableTopicService implements ManagedService, RemoteService, Stat
     public void shutdown(boolean terminate) {
         reset();
     }
+
 }

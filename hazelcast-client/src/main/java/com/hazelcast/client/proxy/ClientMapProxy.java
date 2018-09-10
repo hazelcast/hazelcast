@@ -1365,7 +1365,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public LocalMapStats getLocalMapStats() {
-        return new LocalMapStatsImpl();
+        return new LocalMapStatsImpl(false);
     }
 
     @Override

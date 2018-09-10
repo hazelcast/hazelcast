@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
-public class LocalTopicStatsImpl implements LocalTopicStats {
+public class LocalTopicStatsImpl extends LocalDistributedObjectStats implements LocalTopicStats {
 
     private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_PUBLISHES =
             newUpdater(LocalTopicStatsImpl.class, "totalPublishes");
@@ -41,8 +41,8 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
     @Probe
     private volatile long totalReceivedMessages;
 
-    public LocalTopicStatsImpl() {
-        creationTime = Clock.currentTimeMillis();
+    public LocalTopicStatsImpl(boolean statisticsEnabled) {
+        super(statisticsEnabled);
     }
 
     @Override

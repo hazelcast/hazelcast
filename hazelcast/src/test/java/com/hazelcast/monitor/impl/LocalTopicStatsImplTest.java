@@ -37,7 +37,7 @@ public class LocalTopicStatsImplTest {
 
     @Before
     public void setUp() {
-        localTopicStats = new LocalTopicStatsImpl();
+        localTopicStats = new LocalTopicStatsImpl(true);
 
         localTopicStats.incrementPublishes();
         localTopicStats.incrementPublishes();
@@ -57,7 +57,7 @@ public class LocalTopicStatsImplTest {
     @Test
     public void testSerialization() {
         JsonObject serialized = localTopicStats.toJson();
-        LocalTopicStatsImpl deserialized = new LocalTopicStatsImpl();
+        LocalTopicStatsImpl deserialized = new LocalTopicStatsImpl(true);
         deserialized.fromJson(serialized);
 
         assertTrue(deserialized.getCreationTime() > 0);

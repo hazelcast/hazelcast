@@ -24,6 +24,10 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.ReprobeCycle;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
@@ -48,7 +52,6 @@ import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -76,6 +79,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMultiMapConfig;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
@@ -86,7 +90,7 @@ import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
-        EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService<LocalMultiMapStats>,
+        EventPublishingService<EventData, EntryListener>, TransactionalService, ProbeRegistry.ProbeSource,
         QuorumAwareService, SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
@@ -103,8 +107,9 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction
             = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
         public LocalMultiMapStatsImpl createNew(String key) {
-            return new LocalMultiMapStatsImpl();
-        }
+                    return new LocalMultiMapStatsImpl(
+                            nodeEngine.getConfig().findMultiMapConfig(key).isStatisticsEnabled());
+                }
     };
     private final MultiMapEventsDispatcher dispatcher;
     private final MultiMapEventsPublisher publisher;
@@ -377,7 +382,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         }
     }
 
-    public LocalMultiMapStats createStats(String name) {
+    public LocalMultiMapStatsImpl createStats(String name) {
         LocalMultiMapStatsImpl stats = getLocalMultiMapStatsImpl(name);
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
@@ -452,16 +457,15 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     @Override
-    public Map<String, LocalMultiMapStats> getStats() {
-        Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
-        for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
-            for (String name : partitionContainer.containerMap.keySet()) {
-                if (!multiMapStats.containsKey(name)) {
-                    multiMapStats.put(name, createStats(name));
-                }
-            }
+    public void probeIn(ProbingCycle cycle) {
+        Probing.probeIn(cycle, "multiMap", statsMap);
+    }
+
+    @ReprobeCycle(5)
+    private void updateStats() {
+        for (String name : nodeEngine.getProxyService().getDistributedObjectNames(SERVICE_NAME)) {
+            createStats(name);
         }
-        return multiMapStats;
     }
 
     private Address getReplicaAddress(IPartition partition, int backupCount, int replicaIndex) {

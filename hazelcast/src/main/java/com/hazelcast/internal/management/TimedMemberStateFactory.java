@@ -19,17 +19,12 @@ package com.hazelcast.internal.management;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
-import com.hazelcast.crdt.pncounter.PNCounterService;
-import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -38,17 +33,8 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.monitor.LocalExecutorStats;
-import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMemoryStats;
-import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalOperationStats;
-import com.hazelcast.monitor.LocalPNCounterStats;
-import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
-import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.monitor.impl.HotRestartStateImpl;
@@ -58,15 +44,10 @@ import com.hazelcast.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.monitor.impl.NodeStateImpl;
-import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.topic.impl.TopicService;
-import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.ArrayList;
@@ -118,10 +99,9 @@ public class TimedMemberStateFactory {
 
     public TimedMemberState createTimedMemberState() {
         MemberStateImpl memberState = new MemberStateImpl();
-        Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
 
         TimedMemberState timedMemberState = new TimedMemberState();
-        createMemberState(memberState, services);
+        createMemberState(memberState);
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<String>());
         if (timedMemberState.isMaster()) {
@@ -153,8 +133,7 @@ public class TimedMemberStateFactory {
         return new LocalOperationStatsImpl(instance.node);
     }
 
-    private void createMemberState(MemberStateImpl memberState,
-                                   Collection<StatisticsAwareService> services) {
+    private void createMemberState(MemberStateImpl memberState) {
         Node node = instance.node;
 
         final Collection<Client> clients = instance.node.clientEngine.getClients();
@@ -184,7 +163,7 @@ public class TimedMemberStateFactory {
         memberState.setLocalMemoryStats(getMemoryStats());
         memberState.setOperationStats(getOperationStats());
         TimedMemberStateFactoryHelper.createRuntimeProps(memberState);
-        createMemState(memberState, services);
+        createMemState(memberState);
 
         createNodeState(memberState);
         createHotRestartState(memberState);
@@ -226,34 +205,8 @@ public class TimedMemberStateFactory {
         }
     }
 
-    private void createMemState(MemberStateImpl memberState,
-                                Collection<StatisticsAwareService> services) {
+    private void createMemState(MemberStateImpl memberState) {
         int count = 0;
-        Config config = instance.getConfig();
-        for (StatisticsAwareService service : services) {
-            if (service instanceof MapService) {
-                count = handleMap(memberState, count, config, ((MapService) service).getStats());
-            } else if (service instanceof MultiMapService) {
-                count = handleMultimap(memberState, count, config, ((MultiMapService) service).getStats());
-            } else if (service instanceof QueueService) {
-                count = handleQueue(memberState, count, config, ((QueueService) service).getStats());
-            } else if (service instanceof TopicService) {
-                count = handleTopic(memberState, count, config, ((TopicService) service).getStats());
-            } else if (service instanceof ReliableTopicService) {
-                count = handleReliableTopic(memberState, count, config,
-                        ((ReliableTopicService) service).getStats());
-            } else if (service instanceof DistributedExecutorService) {
-                count = handleExecutorService(memberState, count, config,
-                        ((DistributedExecutorService) service).getStats());
-            } else if (service instanceof ReplicatedMapService) {
-                count = handleReplicatedMap(memberState, count, config, ((ReplicatedMapService) service).getStats());
-            } else if (service instanceof PNCounterService) {
-                count = handlePNCounter(memberState, count, config, ((PNCounterService) service).getStats());
-            } else if (service instanceof FlakeIdGeneratorService) {
-                count = handleFlakeIdGenerator(memberState, count, config,
-                        ((FlakeIdGeneratorService) service).getStats());
-            }
-        }
 
         WanReplicationService wanReplicationService = instance.node.nodeEngine.getWanReplicationService();
         Map<String, LocalWanStats> wanStats = wanReplicationService.getStats();
@@ -274,119 +227,6 @@ public class TimedMemberStateFactory {
                 }
             }
         }
-    }
-
-    private int handleFlakeIdGenerator(MemberStateImpl memberState, int count, Config config,
-            Map<String, LocalFlakeIdGeneratorStats> flakeIdstats) {
-        for (Map.Entry<String, LocalFlakeIdGeneratorStats> entry : flakeIdstats.entrySet()) {
-            String name = entry.getKey();
-            if (config.findFlakeIdGeneratorConfig(name).isStatisticsEnabled()) {
-                LocalFlakeIdGeneratorStats stats = entry.getValue();
-                memberState.putLocalFlakeIdStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int handleExecutorService(MemberStateImpl memberState, int count, Config config,
-                                      Map<String, LocalExecutorStats> executorServices) {
-
-        for (Map.Entry<String, LocalExecutorStats> entry : executorServices.entrySet()) {
-            String name = entry.getKey();
-            if (config.findExecutorConfig(name).isStatisticsEnabled()) {
-                LocalExecutorStats stats = entry.getValue();
-                memberState.putLocalExecutorStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int handleMultimap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMultiMapStats> multiMaps) {
-        for (Map.Entry<String, LocalMultiMapStats> entry : multiMaps.entrySet()) {
-            String name = entry.getKey();
-            if (config.findMultiMapConfig(name).isStatisticsEnabled()) {
-                LocalMultiMapStats stats = entry.getValue();
-                memberState.putLocalMultiMapStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int handleReplicatedMap(MemberStateImpl memberState, int count, Config
-            config, Map<String, LocalReplicatedMapStats> replicatedMaps) {
-        for (Map.Entry<String, LocalReplicatedMapStats> entry : replicatedMaps.entrySet()) {
-            String name = entry.getKey();
-            if (config.findReplicatedMapConfig(name).isStatisticsEnabled()) {
-                LocalReplicatedMapStats stats = entry.getValue();
-                memberState.putLocalReplicatedMapStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int handlePNCounter(MemberStateImpl memberState, int count, Config config,
-                                Map<String, LocalPNCounterStats> counters) {
-        for (Map.Entry<String, LocalPNCounterStats> entry : counters.entrySet()) {
-            String name = entry.getKey();
-            if (config.findPNCounterConfig(name).isStatisticsEnabled()) {
-                LocalPNCounterStats stats = entry.getValue();
-                memberState.putLocalPNCounterStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int handleReliableTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics) {
-        for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
-            String name = entry.getKey();
-            if (config.findReliableTopicConfig(name).isStatisticsEnabled()) {
-                LocalTopicStats stats = entry.getValue();
-                memberState.putLocalReliableTopicStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int handleTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics) {
-        for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
-            String name = entry.getKey();
-            if (config.findTopicConfig(name).isStatisticsEnabled()) {
-                LocalTopicStats stats = entry.getValue();
-                memberState.putLocalTopicStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int handleQueue(MemberStateImpl memberState, int count, Config config, Map<String, LocalQueueStats> queues) {
-        for (Map.Entry<String, LocalQueueStats> entry : queues.entrySet()) {
-            String name = entry.getKey();
-            if (config.findQueueConfig(name).isStatisticsEnabled()) {
-                LocalQueueStats stats = entry.getValue();
-                memberState.putLocalQueueStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStats> maps) {
-        for (Map.Entry<String, LocalMapStats> entry : maps.entrySet()) {
-            String name = entry.getKey();
-            if (config.findMapConfig(name).isStatisticsEnabled()) {
-                LocalMapStats stats = entry.getValue();
-                memberState.putLocalMapStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
     }
 
     private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalWanStats> wans) {

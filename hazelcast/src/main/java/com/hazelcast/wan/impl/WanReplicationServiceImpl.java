@@ -20,6 +20,10 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.ProbingCycle.Tags;
+import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.ConstructorFunction;
@@ -29,6 +33,7 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.getOrCreate;
@@ -37,7 +42,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 /**
  * Open source implementation of the {@link com.hazelcast.wan.WanReplicationService}
  */
-public class WanReplicationServiceImpl implements WanReplicationService {
+public class WanReplicationServiceImpl implements WanReplicationService, ProbeRegistry.ProbeSource {
 
     private final Node node;
 
@@ -154,6 +159,19 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     @Override
     public Map<String, LocalWanStats> getStats() {
         return null;
+    }
+
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        for (Entry<String, LocalWanStats> config : getStats().entrySet()) {
+            Tags tags = cycle.openContext().tag(TAG_TYPE, "wan").tag(TAG_INSTANCE, config.getKey());
+            for (Map.Entry<String, LocalWanPublisherStats> stats : config.getValue()
+                    .getLocalWanPublisherStats().entrySet()) {
+                tags.tag(TAG_TARGET, stats.getKey());
+                cycle.probe(stats.getValue());
+            }
+        }
+        //TODO WAN sync state
     }
 
     private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {

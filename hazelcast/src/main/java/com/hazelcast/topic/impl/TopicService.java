@@ -23,8 +23,8 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -34,14 +34,10 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.HashUtil;
-import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -52,7 +48,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
-        StatisticsAwareService<LocalTopicStats>, ProbeRegistry.ProbeSource {
+        ProbeRegistry.ProbeSource {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
 
@@ -65,7 +61,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction =
             new ConstructorFunction<String, LocalTopicStatsImpl>() {
                 public LocalTopicStatsImpl createNew(String mapName) {
-                    return new LocalTopicStatsImpl();
+                    return new LocalTopicStatsImpl(
+                            nodeEngine.getConfig().findTopicConfig(mapName).isStatisticsEnabled());
                 }
             };
     private EventService eventService;
@@ -84,14 +81,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        ProbingCycle.Tags tags = cycle.openContext().tag(TAG_TYPE, "topic");
-        for (Entry<String, LocalTopicStatsImpl> e : statsMap.entrySet()) {
-            //TODO is this static?
-            if (nodeEngine.getConfig().findTopicConfig(e.getKey()).isStatisticsEnabled()) {
-                tags.tag(TAG_INSTANCE, e.getKey());
-                cycle.probe(e.getValue());
-            }
-        }
+        Probing.probeIn(cycle, "topic", statsMap);
     }
 
     // only for testing
@@ -200,12 +190,4 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
     }
 
-    @Override
-    public Map<String, LocalTopicStats> getStats() {
-        Map<String, LocalTopicStats> topicStats = MapUtil.createHashMap(statsMap.size());
-        for (Map.Entry<String, LocalTopicStatsImpl> queueStat : statsMap.entrySet()) {
-            topicStats.put(queueStat.getKey(), queueStat.getValue());
-        }
-        return topicStats;
-    }
 }

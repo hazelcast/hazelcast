@@ -78,5 +78,6 @@ public interface ProbeRegistry {
 
         String TAG_INSTANCE = "instance";
         String TAG_TYPE = "type";
+        String TAG_TARGET = "target";
     }
 }

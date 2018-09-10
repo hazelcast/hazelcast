@@ -41,7 +41,7 @@ public class LocalMapStatsImplTest {
 
     @Before
     public void setUp() {
-        localMapStats = new LocalMapStatsImpl();
+        localMapStats = new LocalMapStatsImpl(true);
 
         localMapStats.setOwnedEntryCount(5);
         localMapStats.setBackupEntryCount(3);
@@ -119,7 +119,7 @@ public class LocalMapStatsImplTest {
     @Test
     public void testSerialization() {
         JsonObject serialized = localMapStats.toJson();
-        LocalMapStatsImpl deserialized = new LocalMapStatsImpl();
+        LocalMapStatsImpl deserialized = new LocalMapStatsImpl(true);
         deserialized.fromJson(serialized);
 
         assertTrue(deserialized.getCreationTime() > 0);

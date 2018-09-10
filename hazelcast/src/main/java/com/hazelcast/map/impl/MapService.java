@@ -20,8 +20,14 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.ProbingCycle.Tags;
+import com.hazelcast.internal.probing.ReprobeCycle;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.EventFilter;
@@ -42,7 +48,6 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
@@ -51,8 +56,12 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationEvent;
 
+import static java.util.Collections.emptyMap;
+
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
@@ -76,7 +85,7 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
  */
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
-        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, ProbeRegistry.ProbeSource,
         PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener,
         ClusterVersionListener {
 
@@ -90,7 +99,6 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     protected PostJoinAwareService postJoinAwareService;
     protected SplitBrainHandlerService splitBrainHandlerService;
     protected ReplicationSupportingService replicationSupportingService;
-    protected StatisticsAwareService statisticsAwareService;
     protected PartitionAwareService partitionAwareService;
     protected ClientAwareService clientAwareService;
     protected MapQuorumAwareService quorumAwareService;
@@ -199,8 +207,17 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public Map<String, LocalMapStats> getStats() {
-        return statisticsAwareService.getStats();
+    public void probeIn(ProbingCycle cycle) {
+        Probing.probeIn(cycle, "map", mapServiceContext.getLocalMapStatsProvider().getStats());
+    }
+
+    public Map<String, ? extends LocalMapStats> getStats() {
+        return mapServiceContext.getLocalMapStatsProvider().getStats();
+    }
+
+    @ReprobeCycle(5)
+    private void updateStats() {
+        mapServiceContext.getLocalMapStatsProvider().updateAllLocalMapStats();
     }
 
     @Override

@@ -56,17 +56,8 @@ public class MemberStateImpl implements MemberState {
 
     private String address;
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
-    private Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
-    private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
-    private Map<String, LocalQueueStats> queueStats = new HashMap<String, LocalQueueStats>();
-    private Map<String, LocalTopicStats> topicStats = new HashMap<String, LocalTopicStats>();
-    private Map<String, LocalTopicStats> reliableTopicStats = new HashMap<String, LocalTopicStats>();
-    private Map<String, LocalPNCounterStats> pnCounterStats = new HashMap<String, LocalPNCounterStats>();
-    private Map<String, LocalExecutorStats> executorStats = new HashMap<String, LocalExecutorStats>();
-    private Map<String, LocalReplicatedMapStats> replicatedMapStats = new HashMap<String, LocalReplicatedMapStats>();
     private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
     private Map<String, LocalWanStats> wanStats = new HashMap<String, LocalWanStats>();
-    private Map<String, LocalFlakeIdGeneratorStats> flakeIdGeneratorStats = new HashMap<String, LocalFlakeIdGeneratorStats>();
     private Collection<ClientEndPointDTO> clients = new HashSet<ClientEndPointDTO>();
     private Map<String, String> clientStats = new HashMap<String, String>();
     private MXBeansDTO beans = new MXBeansDTO();
@@ -91,46 +82,6 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
-    public LocalMapStats getLocalMapStats(String mapName) {
-        return mapStats.get(mapName);
-    }
-
-    @Override
-    public LocalMultiMapStats getLocalMultiMapStats(String mapName) {
-        return multiMapStats.get(mapName);
-    }
-
-    @Override
-    public LocalQueueStats getLocalQueueStats(String queueName) {
-        return queueStats.get(queueName);
-    }
-
-    @Override
-    public LocalTopicStats getLocalTopicStats(String topicName) {
-        return topicStats.get(topicName);
-    }
-
-    @Override
-    public LocalTopicStats getReliableLocalTopicStats(String reliableTopicName) {
-        return reliableTopicStats.get(reliableTopicName);
-    }
-
-    @Override
-    public LocalPNCounterStats getLocalPNCounterStats(String pnCounterName) {
-        return pnCounterStats.get(pnCounterName);
-    }
-
-    @Override
-    public LocalReplicatedMapStats getLocalReplicatedMapStats(String replicatedMapName) {
-        return replicatedMapStats.get(replicatedMapName);
-    }
-
-    @Override
-    public LocalExecutorStats getLocalExecutorStats(String executorName) {
-        return executorStats.get(executorName);
-    }
-
-    @Override
     public LocalCacheStats getLocalCacheStats(String cacheName) {
         return cacheStats.get(cacheName);
     }
@@ -138,11 +89,6 @@ public class MemberStateImpl implements MemberState {
     @Override
     public LocalWanStats getLocalWanStats(String schemeName) {
         return wanStats.get(schemeName);
-    }
-
-    @Override
-    public LocalFlakeIdGeneratorStats getLocalFlakeIdGeneratorStats(String flakeIdName) {
-        return flakeIdGeneratorStats.get(flakeIdName);
     }
 
     @Override
@@ -154,48 +100,12 @@ public class MemberStateImpl implements MemberState {
         this.address = address;
     }
 
-    public void putLocalMapStats(String name, LocalMapStats localMapStats) {
-        mapStats.put(name, localMapStats);
-    }
-
-    public void putLocalMultiMapStats(String name, LocalMultiMapStats localMultiMapStats) {
-        multiMapStats.put(name, localMultiMapStats);
-    }
-
-    public void putLocalQueueStats(String name, LocalQueueStats localQueueStats) {
-        queueStats.put(name, localQueueStats);
-    }
-
-    public void putLocalReplicatedMapStats(String name, LocalReplicatedMapStats localReplicatedMapStats) {
-        replicatedMapStats.put(name, localReplicatedMapStats);
-    }
-
-    public void putLocalTopicStats(String name, LocalTopicStats localTopicStats) {
-        topicStats.put(name, localTopicStats);
-    }
-
-    public void putLocalReliableTopicStats(String name, LocalTopicStats localTopicStats) {
-        reliableTopicStats.put(name, localTopicStats);
-    }
-
-    public void putLocalPNCounterStats(String name, LocalPNCounterStats localPNCounterStats) {
-        pnCounterStats.put(name, localPNCounterStats);
-    }
-
-    public void putLocalExecutorStats(String name, LocalExecutorStats localExecutorStats) {
-        executorStats.put(name, localExecutorStats);
-    }
-
     public void putLocalCacheStats(String name, LocalCacheStats localCacheStats) {
         cacheStats.put(name, localCacheStats);
     }
 
     public void putLocalWanStats(String name, LocalWanStats localWanStats) {
         wanStats.put(name, localWanStats);
-    }
-
-    public void putLocalFlakeIdStats(String name, LocalFlakeIdGeneratorStats localFlakeIdStats) {
-        flakeIdGeneratorStats.put(name, localFlakeIdStats);
     }
 
     public Collection<ClientEndPointDTO> getClients() {
@@ -286,17 +196,8 @@ public class MemberStateImpl implements MemberState {
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("address", address);
-        serializeMap(root, "mapStats", mapStats);
-        serializeMap(root, "multiMapStats", multiMapStats);
-        serializeMap(root, "replicatedMapStats", replicatedMapStats);
-        serializeMap(root, "queueStats", queueStats);
-        serializeMap(root, "topicStats", topicStats);
-        serializeMap(root, "reliableTopicStats", reliableTopicStats);
-        serializeMap(root, "pnCounterStats", pnCounterStats);
-        serializeMap(root, "executorStats", executorStats);
         serializeMap(root, "cacheStats", cacheStats);
         serializeMap(root, "wanStats", wanStats);
-        serializeMap(root, "flakeIdStats", flakeIdGeneratorStats);
 
         final JsonObject runtimePropsObject = new JsonObject();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
@@ -338,46 +239,6 @@ public class MemberStateImpl implements MemberState {
     @SuppressWarnings("checkstyle:methodlength")
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
-        for (JsonObject.Member next : getObject(json, "mapStats")) {
-            LocalMapStatsImpl stats = new LocalMapStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            mapStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "multiMapStats")) {
-            LocalMultiMapStatsImpl stats = new LocalMultiMapStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            multiMapStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "replicatedMapStats", new JsonObject())) {
-            LocalReplicatedMapStats stats = new LocalReplicatedMapStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            replicatedMapStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "queueStats")) {
-            LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            queueStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "topicStats")) {
-            LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            topicStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "reliableTopicStats")) {
-            LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            reliableTopicStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "pnCounterStats")) {
-            LocalPNCounterStatsImpl stats = new LocalPNCounterStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            pnCounterStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "executorStats")) {
-            LocalExecutorStatsImpl stats = new LocalExecutorStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            executorStats.put(next.getName(), stats);
-        }
         for (JsonObject.Member next : getObject(json, "cacheStats", new JsonObject())) {
             LocalCacheStats stats = new LocalCacheStatsImpl();
             stats.fromJson(next.getValue().asObject());
@@ -387,11 +248,6 @@ public class MemberStateImpl implements MemberState {
             LocalWanStats stats = new LocalWanStatsImpl();
             stats.fromJson(next.getValue().asObject());
             wanStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "flakeIdStats", new JsonObject())) {
-            LocalFlakeIdGeneratorStats stats = new LocalFlakeIdGeneratorStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            flakeIdGeneratorStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "runtimeProps")) {
             runtimeProps.put(next.getName(), next.getValue().asLong());
@@ -447,14 +303,6 @@ public class MemberStateImpl implements MemberState {
         return "MemberStateImpl{"
                 + "address=" + address
                 + ", runtimeProps=" + runtimeProps
-                + ", mapStats=" + mapStats
-                + ", multiMapStats=" + multiMapStats
-                + ", replicatedMapStats=" + replicatedMapStats
-                + ", queueStats=" + queueStats
-                + ", topicStats=" + topicStats
-                + ", reliableTopicStats=" + reliableTopicStats
-                + ", pnCounterStats=" + pnCounterStats
-                + ", executorStats=" + executorStats
                 + ", cacheStats=" + cacheStats
                 + ", memoryStats=" + memoryStats
                 + ", operationStats=" + operationStats
@@ -463,7 +311,6 @@ public class MemberStateImpl implements MemberState {
                 + ", hotRestartState=" + hotRestartState
                 + ", clusterHotRestartStatus=" + clusterHotRestartStatus
                 + ", wanSyncState=" + wanSyncState
-                + ", flakeIdStats=" + flakeIdGeneratorStats
                 + ", clientStats=" + clientStats
                 + '}';
     }

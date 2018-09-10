@@ -30,8 +30,10 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -54,7 +56,6 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
@@ -84,7 +85,7 @@ import static java.lang.Math.max;
  * manages the backing {@link PartitionContainer}s that actually hold the data
  */
 public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
-        MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService<LocalReplicatedMapStats>, QuorumAwareService {
+        MigrationAwareService, SplitBrainHandlerService, ProbeRegistry.ProbeSource, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
     public static final int INVOCATION_TRY_COUNT = 3;
@@ -111,8 +112,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private final ConstructorFunction<String, LocalReplicatedMapStatsImpl> statsConstructorFunction =
             new ConstructorFunction<String, LocalReplicatedMapStatsImpl>() {
                 @Override
-                public LocalReplicatedMapStatsImpl createNew(String arg) {
-                    return new LocalReplicatedMapStatsImpl();
+                public LocalReplicatedMapStatsImpl createNew(String name) {
+                    return new LocalReplicatedMapStatsImpl(nodeEngine.getConfig()
+                            .findReplicatedMapConfig(name).isStatisticsEnabled());
                 }
             };
 
@@ -360,10 +362,15 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     @Override
-    public Map<String, LocalReplicatedMapStats> getStats() {
+    public void probeIn(ProbingCycle cycle) {
+        Probing.probeIn(cycle, "replicatedMap", getStats());
+    }
+
+    // for testing only
+    public Map<String, LocalReplicatedMapStatsImpl> getStats() {
         Collection<String> maps = getNodeEngine().getProxyService().getDistributedObjectNames(SERVICE_NAME);
-        Map<String, LocalReplicatedMapStats> mapStats = new
-                HashMap<String, LocalReplicatedMapStats>(maps.size());
+        Map<String, LocalReplicatedMapStatsImpl> mapStats = new
+                HashMap<String, LocalReplicatedMapStatsImpl>(maps.size());
         for (String map : maps) {
             mapStats.put(map, createReplicatedMapStats(map));
         }

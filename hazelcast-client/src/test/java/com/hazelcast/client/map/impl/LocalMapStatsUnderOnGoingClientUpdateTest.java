@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -72,7 +71,7 @@ public class LocalMapStatsUnderOnGoingClientUpdateTest extends HazelcastTestSupp
 
         // get internal StatisticsAwareService.
         MapService mapService = getNodeEngineImpl(member).getService(SERVICE_NAME);
-        Map<String, LocalMapStats> stats = ((StatisticsAwareService) mapService).getStats();
+        Map<String, ? extends LocalMapStats> stats = mapService.getStats();
         LocalMapStats localMapStats = stats.get(mapName);
 
         // StatisticsAwareService should give right stats.

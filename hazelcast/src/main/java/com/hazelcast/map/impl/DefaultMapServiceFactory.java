@@ -25,7 +25,6 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 
@@ -94,11 +93,6 @@ class DefaultMapServiceFactory extends AbstractMapServiceFactory {
     @Override
     ReplicationSupportingService createReplicationSupportingService() {
         return new MapReplicationSupportingService(mapServiceContext);
-    }
-
-    @Override
-    StatisticsAwareService createStatisticsAwareService() {
-        return new MapStatisticsAwareService(mapServiceContext);
     }
 
     @Override

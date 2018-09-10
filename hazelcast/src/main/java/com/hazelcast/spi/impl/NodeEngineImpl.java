@@ -34,7 +34,6 @@ import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
 import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
 import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
-import com.hazelcast.internal.metrics.metricsets.StatisticsAwareMetricsSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -217,9 +216,6 @@ public class NodeEngineImpl implements NodeEngine {
         ThreadMetricSet.register(metricsRegistry);
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
-        if (node.getProperties().getBoolean(METRICS_DISTRIBUTED_DATASTRUCTURES)) {
-            new StatisticsAwareMetricsSet(serviceManager, this).register(metricsRegistry);
-        }
         metricsRegistry.scanAndRegister(node.getNodeExtension().getMemoryStats(), "memory");
         metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
 

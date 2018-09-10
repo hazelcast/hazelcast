@@ -34,7 +34,7 @@ public class LocalQueueStatsImplTest {
 
     @Test
     public void testDefaultConstructor() {
-        LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl();
+        LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl(true);
         localQueueStats.setMinAge(13);
         localQueueStats.setMaxAge(28);
         localQueueStats.setAveAge(18);
@@ -52,7 +52,7 @@ public class LocalQueueStatsImplTest {
 
     @Test
     public void testSerialization() {
-        LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl();
+        LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl(true);
 
         localQueueStats.incrementOtherOperations();
         localQueueStats.incrementOtherOperations();
@@ -71,7 +71,7 @@ public class LocalQueueStatsImplTest {
         localQueueStats.incrementReceivedEvents();
 
         JsonObject serialized = localQueueStats.toJson();
-        LocalQueueStatsImpl deserialized = new LocalQueueStatsImpl();
+        LocalQueueStatsImpl deserialized = new LocalQueueStatsImpl(true);
         deserialized.fromJson(serialized);
 
         assertTrue(deserialized.getCreationTime() > 0);

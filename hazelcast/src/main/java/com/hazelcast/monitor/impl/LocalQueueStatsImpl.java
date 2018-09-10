@@ -27,7 +27,7 @@ import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
-public class LocalQueueStatsImpl implements LocalQueueStats {
+public class LocalQueueStatsImpl extends LocalDistributedObjectStats implements LocalQueueStats {
 
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS =
             newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");
@@ -69,7 +69,8 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
     @Probe
     private volatile long numberOfEvents;
 
-    public LocalQueueStatsImpl() {
+    public LocalQueueStatsImpl(boolean statisticsEnabled) {
+        super(statisticsEnabled);
         creationTime = Clock.currentTimeMillis();
     }
 

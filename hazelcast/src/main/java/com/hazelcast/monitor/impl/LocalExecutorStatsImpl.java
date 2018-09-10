@@ -25,7 +25,8 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 
-public class LocalExecutorStatsImpl implements LocalExecutorStats {
+public class LocalExecutorStatsImpl extends LocalDistributedObjectStats
+        implements LocalExecutorStats {
 
     private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> PENDING = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "pending");
@@ -55,7 +56,8 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
     @Probe
     private volatile long totalExecutionTime;
 
-    public LocalExecutorStatsImpl() {
+    public LocalExecutorStatsImpl(boolean statisticsEnabled) {
+        super(statisticsEnabled);
         creationTime = Clock.currentTimeMillis();
     }
 

@@ -1,6 +1,8 @@
 package com.hazelcast.internal.probing;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_INSTANCE;
+import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_TYPE;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 import java.io.File;
@@ -10,10 +12,17 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
+import com.hazelcast.monitor.LocalIndexStats;
+import com.hazelcast.monitor.LocalInstanceStats;
+import com.hazelcast.monitor.impl.LocalDistributedObjectStats;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 
 /**
  * Utility providing common metrics on common types of objects that cannot be
@@ -56,6 +65,31 @@ public final class Probing {
         cycle.probe("peakThreadCount", bean.getPeakThreadCount());
         cycle.probe("daemonThreadCount", bean.getDaemonThreadCount());
         cycle.probe("totalStartedThreadCount", bean.getTotalStartedThreadCount());
+    }
+
+    public static <T extends LocalDistributedObjectStats> void probeIn(ProbingCycle cycle,
+            String type, Map<String, T> stats) {
+        ProbingCycle.Tags tags = cycle.openContext().tag(TAG_TYPE, type);
+        for (Entry<String, T> e : stats.entrySet()) {
+            T val = e.getValue();
+            if (val.isStatisticsEnabled()) {
+                tags.tag(TAG_INSTANCE, e.getKey());
+                cycle.probe(val);
+                if (val instanceof LocalMapStatsImpl) {
+                    LocalMapStatsImpl mapStats = (LocalMapStatsImpl) val;
+                    cycle.probe("nearcache", mapStats.getNearCacheStats());
+                    Map<String, LocalIndexStats> indexStats = mapStats.getIndexStats();
+                    if (!indexStats.isEmpty()) {
+                        for (Entry<String, LocalIndexStats> index : indexStats.entrySet()) {
+                            tags.tag("index", index.getKey());
+                            cycle.probe(index.getValue());
+                        }
+                        // restore context after adding 2nd tag
+                        tags = cycle.openContext().tag(TAG_TYPE, type); 
+                    }
+                }
+            }
+        }
     }
 
     public static ProbeSource GC = new GcProbeSource();
