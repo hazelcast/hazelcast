@@ -26,7 +26,7 @@
         http://www.springframework.org/schema/context
         http://www.springframework.org/schema/context/spring-context.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
 
     <context:property-placeholder location="classpath:timeout.properties"/>
 
