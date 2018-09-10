@@ -5,6 +5,7 @@
 # Table of Contents
 
   * [Requirements](#requirements)
+  * [Maven Coordinates](#maven-coordinates)
   * [Discovering Members within EC2 Cloud](#discovering-members-within-ec2-cloud)
     * [Zone Aware Support](#zone-aware-support)
     * [Configuring Hazelcast Members with Discovery SPI](#configuring-hazelcast-members-with-discovery-spi)
@@ -32,6 +33,15 @@
 
 - Hazelcast 3.6+
 - Linux Kernel 3.19+ (TCP connections may get stuck when used with older Kernel versions, resulting in undefined timeouts)
+
+## Maven Coordinates
+```xml
+<dependency>
+    <groupId>com.hazelcast</groupId>
+    <artifactId>hazelcast-aws</artifactId>
+    <version>${hazelcast-aws.version}</version>
+</dependency>
+```
 
 ## Discovering Members within EC2 Cloud
 
