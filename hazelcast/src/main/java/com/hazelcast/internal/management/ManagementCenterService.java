@@ -105,7 +105,6 @@ public class ManagementCenterService {
 
     private final ConsoleCommandHandler commandHandler;
     private final ManagementCenterConfig managementCenterConfig;
-    private final ManagementCenterIdentifier identifier;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
     private final ManagementCenterConnectionFactory connectionFactory;
@@ -128,8 +127,6 @@ public class ManagementCenterService {
         this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         this.connectionFactory = instance.node.getNodeExtension().getManagementCenterConnectionFactory();
 
-        this.identifier = newManagementCenterIdentifier();
-
         if (this.managementCenterConfig.isEnabled()) {
             this.instance.getCluster().addMembershipListener(new ManagementCenterService.MemberListenerImpl());
             start();
@@ -146,13 +143,6 @@ public class ManagementCenterService {
             throw new IllegalStateException("ManagementCenterConfig can't be null!");
         }
         return config;
-    }
-
-    private ManagementCenterIdentifier newManagementCenterIdentifier() {
-        Address address = instance.node.address;
-        String groupName = instance.getConfig().getGroupConfig().getName();
-        String version = instance.node.getBuildInfo().getVersion();
-        return new ManagementCenterIdentifier(version, groupName, address.getHost() + ":" + address.getPort());
     }
 
     static String cleanupUrl(String url) {
@@ -381,7 +371,6 @@ public class ManagementCenterService {
                 writer = new OutputStreamWriter(outputStream, "UTF-8");
 
                 JsonObject root = new JsonObject();
-                root.add("identifier", identifier.toJson());
                 TimedMemberState memberState = timedMemberState.get();
                 if (memberState != null) {
                     root.add("timedMemberState", memberState.toJson());
@@ -574,7 +563,6 @@ public class ManagementCenterService {
             final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
             try {
                 JsonObject root = new JsonObject();
-                root.add("identifier", identifier.toJson());
                 root.add("taskId", taskId);
                 root.add("type", task.getType());
                 task.writeResponse(ManagementCenterService.this, root);
