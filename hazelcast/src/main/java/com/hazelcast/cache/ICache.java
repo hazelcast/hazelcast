@@ -125,10 +125,11 @@ public interface ICache<K, V>
      *
      * @param   key The key that is associated with the specified expiry policy.
      * @param   expiryPolicy custom expiry policy for this operation
+     * @return {@code true} if the entry is affected, {@code false} otherwise
      * @throws  NullPointerException if {@code keys} or {@code expiryPolicy} is null.
      * @since 3.11
      */
-    void setExpiryPolicy(K key, ExpiryPolicy expiryPolicy);
+    boolean setExpiryPolicy(K key, ExpiryPolicy expiryPolicy);
 
     /**
      * Associates the specified key with the given {@link javax.cache.expiry.ExpiryPolicy}.

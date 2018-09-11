@@ -1218,11 +1218,33 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSetTtlReturnsTrue() {
+        final IMap<String, String> map = getInstance().getMap(randomString());
+
+        map.put("key", "value");
+        assertTrue(map.setTtl("key", 10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testSetTtlReturnsFalse_whenKeyDoesNotExist() {
+        final IMap<String, String> map = getInstance().getMap(randomString());
+        assertFalse(map.setTtl("key", 10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testSetTtlReturnsFalse_whenKeyIsAlreadyExpired() {
+        final IMap<String, String> map = getInstance().getMap(randomString());
+        map.put("key", "value", 1, TimeUnit.SECONDS);
+        sleepAtLeastSeconds(5);
+        assertFalse(map.setTtl("key", 10, TimeUnit.SECONDS));
+    }
+
+    @Test
     public void testAlterTTLOfAnEternalKey() {
         final IMap<String, String> map = getInstance().getMap("testSetTTL");
 
         map.put("key", "value");
-        map.setTTL("key", 1, TimeUnit.SECONDS);
+        map.setTtl("key", 1, TimeUnit.SECONDS);
 
         sleepAtLeastMillis(2000);
 
@@ -1237,7 +1259,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         sleepAtLeastMillis(SECONDS.toMillis(1));
         //Make the entry eternal
-        map.setTTL("key", 0, TimeUnit.DAYS);
+        map.setTtl("key", 0, TimeUnit.DAYS);
 
         sleepAtLeastMillis(SECONDS.toMillis(15));
 
@@ -1248,7 +1270,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testSetTTLConfiguresMapPolicyIfTTLIsNegative() {
         final IMap<String, String> map = getInstance().getMap("mapWithTTL");
         map.put("tempKey", "tempValue", 10, TimeUnit.SECONDS);
-        map.setTTL("tempKey", -1, TimeUnit.SECONDS);
+        map.setTtl("tempKey", -1, TimeUnit.SECONDS);
         sleepAtLeastMillis(1000);
         assertNull(map.get("tempKey"));
     }

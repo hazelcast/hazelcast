@@ -88,7 +88,7 @@ public class ExpirationListenerTest extends HazelcastTestSupport {
         }
 
         for (int i = 0; i < numberOfPutOperations; i++) {
-            map.setTTL(i, 100, TimeUnit.MILLISECONDS);
+            map.setTtl(i, 100, TimeUnit.MILLISECONDS);
         }
 
         // wait expiration of entries

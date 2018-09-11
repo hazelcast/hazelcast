@@ -48,7 +48,7 @@ import static com.hazelcast.test.backup.TestBackupUtils.newMapAccessor;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MapSetTTLBackupTest extends HazelcastTestSupport {
+public class MapSetTtlBackupTest extends HazelcastTestSupport {
 
     private static final int CLUSTER_SIZE = 3;
 
@@ -93,7 +93,7 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
         HazelcastInstance instance = instances[0];
 
         putKeys(instance, mapName, null, 0, 1000);
-        setTTL(instance, mapName, 0, 1000, 1, TimeUnit.SECONDS);
+        setTtl(instance, mapName, 0, 1000, 1, TimeUnit.SECONDS);
 
         sleepAtLeastMillis(1001);
         for (int i = 0; i < CLUSTER_SIZE; i++) {
@@ -107,7 +107,7 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
         HazelcastInstance instance = instances[0];
 
         putKeys(instance, mapName, 10, 0, 20);
-        setTTL(instance, mapName, 0, 20, 0, TimeUnit.SECONDS);
+        setTtl(instance, mapName, 0, 20, 0, TimeUnit.SECONDS);
         sleepAtLeastMillis(10100);
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             assertKeys(instances, mapName, 0, 20);
@@ -131,10 +131,10 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private static void setTTL(HazelcastInstance instance, String mapName, int from, int to, long ttl, TimeUnit timeUnit) {
+    private static void setTtl(HazelcastInstance instance, String mapName, int from, int to, long ttl, TimeUnit timeUnit) {
         IMap<Integer, Integer> map = instance.getMap(mapName);
         for (int i = from; i < to; i++) {
-            map.setTTL(i, ttl, timeUnit);
+            map.setTtl(i, ttl, timeUnit);
         }
     }
 

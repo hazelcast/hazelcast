@@ -23,13 +23,13 @@ import com.hazelcast.spi.BackupOperation;
 
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 
-public class SetTTLBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+public class SetTtlBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
-    public SetTTLBackupOperation() {
+    public SetTtlBackupOperation() {
 
     }
 
-    public SetTTLBackupOperation(String name, Data dataKey, long ttl) {
+    public SetTtlBackupOperation(String name, Data dataKey, long ttl) {
         super(name, dataKey, ttl, DEFAULT_MAX_IDLE);
     }
 
@@ -40,7 +40,7 @@ public class SetTTLBackupOperation extends KeyBasedMapOperation implements Backu
 
     @Override
     public void run() throws Exception {
-        recordStore.setTTL(dataKey, ttl);
+        recordStore.setTtl(dataKey, ttl);
     }
 
     @Override

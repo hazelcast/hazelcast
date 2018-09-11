@@ -46,7 +46,7 @@ public interface MapOperationProvider {
 
     MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl, long maxIdle);
 
-    MapOperation createSetTTLOperation(String name, Data key, long ttl);
+    MapOperation createSetTtlOperation(String name, Data key, long ttl);
 
     MapOperation createTryRemoveOperation(String name, Data dataKey, long timeout);
 

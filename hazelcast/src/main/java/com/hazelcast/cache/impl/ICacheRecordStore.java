@@ -287,7 +287,7 @@ public interface ICacheRecordStore {
      * @param keys         keys for the entries
      * @param expiryPolicy custom expiry policy or null to use configured default value
      */
-    void setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source);
+    boolean setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source);
 
     Object getExpiryPolicy(Data key);
 
