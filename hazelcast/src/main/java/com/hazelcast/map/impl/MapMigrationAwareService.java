@@ -209,10 +209,10 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     private void removeRecordStoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         if (thresholdReplicaIndex < 0) {
             mapServiceContext.removeRecordStoresFromPartitionMatchingWith(allRecordStores(), partitionId,
-                    false, false);
+                    false, true);
         } else {
             mapServiceContext.removeRecordStoresFromPartitionMatchingWith(lesserBackupMapsThen(thresholdReplicaIndex),
-                    partitionId, false, false);
+                    partitionId, false, true);
         }
     }
 
