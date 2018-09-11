@@ -154,13 +154,17 @@ class LoadTracker {
         long pipelineLoad = getLoadSinceLastCheck(pipeline);
         pipelineLoadCount.set(pipeline, pipelineLoad);
         NioThread owner = pipeline.owner();
+        if (owner == null) {
+            // the pipeline is currently being migrated - owner is null
+            return;
+        }
         ownerLoad.add(owner, pipelineLoad);
         ownerToPipelines.get(owner).add(pipeline);
     }
 
     private long getLoadSinceLastCheck(MigratablePipeline pipeline) {
         long load = pipeline.load();
-        Long lastLoad = lastLoadCounter.getAndSet(pipeline, load);
+        long lastLoad = lastLoadCounter.getAndSet(pipeline, load);
         return load - lastLoad;
     }
 
