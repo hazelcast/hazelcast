@@ -28,13 +28,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
-public class LockClusterStateOp  extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
+public class LockClusterStateOp  extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
+        IdentifiedDataSerializable {
 
     private ClusterStateChange stateChange;
     private Address initiator;
