@@ -2991,7 +2991,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
      *
-     * If there is no entry with key {@code key}, this call has no effect.
+     * If there is no entry with key {@code key} or is already expired, this call makes no changes to entries stored in
+     * this map.
      *
      * <b>Warning:</b>
      * <p>
@@ -3000,7 +3001,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param key      the key of the map entry
      * @param ttl      maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
      * @param timeunit time unit for the TTL
-     * @return 'true' if the entry is affected, 'false' otherwise
+     * @return {@code true} if the entry exists and its ttl value is changed, {@code false} otherwise
      * @throws NullPointerException if the specified {@code key} or {@code timeunit} is null.
      * @since 3.11
      */
