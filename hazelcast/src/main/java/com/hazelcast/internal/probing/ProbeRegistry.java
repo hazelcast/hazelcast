@@ -2,6 +2,7 @@ package com.hazelcast.internal.probing;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 
 /**
  * A service made accessible to core services so they have a chance to register
@@ -65,6 +66,11 @@ public interface ProbeRegistry {
      * Probes can have the form of objects with {@link Probe} annotated fields or
      * methods or are directly provide a value for a given name using
      * {@link ProbingCycle#probe(CharSequence, long)} (and its sibling methods).
+     * 
+     * Implementations of {@link ProbeSource}s that are registered services at the
+     * {@link ServiceManager} do not need explicit registration in the
+     * {@link ProbeRegistry} as all services implementing the interface are
+     * registered automatically at the end of the node startup.
      */
     interface ProbeSource {
 

@@ -36,6 +36,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     public void register(ProbeSource source) {
         for (ProbeSourceEntry e : sources) {
             if (e.source.equals(source)) {
+                LOGGER.info("Probe source registered more then once: "
+                        + source.getClass().getSimpleName());
                 return; // avoid adding the very same instance more then once
             }
         }
@@ -45,6 +47,10 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     @Override
     public ProbeRenderContext newRenderingContext() {
         return new ProbingCycleImpl(sources);
+    }
+
+    static long updateInterval(ReprobeCycle reprobe) {
+        return reprobe == null ? -1L : reprobe.unit().toMillis(reprobe.value());
     }
 
     /**
@@ -62,8 +68,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             this.source = source;
             this.update = reprobeFor(source.getClass());
             if (update != null) {
-                ReprobeCycle reprobe = update.getAnnotation(ReprobeCycle.class);
-                updateIntervalMs = reprobe.unit().toMillis(reprobe.value());
+                updateIntervalMs = updateInterval(update.getAnnotation(ReprobeCycle.class));
             } else {
                 updateIntervalMs = -1L;
             }
@@ -78,7 +83,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                         update.invoke(source);
                     } catch (Exception e) {
                         LOGGER.warning("Failed to update source: "
-                                + update.getClass().getSimpleName() + "." + update.getName(), e);
+                                + update.getDeclaringClass().getSimpleName() + "."
+                                + update.getName(), e);
                     }
                 }
             }
@@ -86,8 +92,10 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         static Method reprobeFor(Class<?> type) {
             for (Method m : type.getDeclaredMethods()) {
-                if (m.isAnnotationPresent(ReprobeCycle.class))
+                if (m.isAnnotationPresent(ReprobeCycle.class)) {
+                    m.setAccessible(true);
                     return m;
+                }
             }
             return null;
         }
@@ -531,8 +539,10 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         private void collectProbeMethods(Class<?> type, List<Method> probes) {
             for (Method m : type.getDeclaredMethods()) {
                 if (m.isAnnotationPresent(Probe.class)) {
-                    m.setAccessible(true);
-                    probes.add(m);
+                    if (!type.isInterface() || !hasMethod(m, probes)) {
+                        m.setAccessible(true);
+                        probes.add(m);
+                    }
                 }
             }
             if (type.getSuperclass() != null) {
@@ -541,6 +551,14 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             for (Class<?> t : type.getInterfaces()) {
                 collectProbeMethods(t, probes);
             }
+        }
+
+        private boolean hasMethod(Method probe, List<Method> probes) {
+            for (Method p : probes) {
+                if (p.getName().equals(probe.getName()))
+                    return true;
+            }
+            return false;
         }
 
         private void collectProbeFields(Class<?> type, List<Field> probes) {
