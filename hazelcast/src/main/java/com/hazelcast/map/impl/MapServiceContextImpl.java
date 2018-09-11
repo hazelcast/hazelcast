@@ -316,7 +316,7 @@ class MapServiceContextImpl implements MapServiceContext {
                 RecordStore recordStore = iter.next();
                 final MapContainer mapContainer = recordStore.getMapContainer();
                 if (backupCount > mapContainer.getTotalBackupCount()) {
-                    recordStore.clearPartition(false, false);
+                    recordStore.clearPartition(false, true);
                     iter.remove();
                 }
             }
@@ -328,7 +328,7 @@ class MapServiceContextImpl implements MapServiceContext {
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
             for (RecordStore mapPartition : container.getMaps().values()) {
-                mapPartition.clearPartition(false, false);
+                mapPartition.clearPartition(false, true);
             }
             container.getMaps().clear();
         }
