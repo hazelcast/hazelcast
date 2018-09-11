@@ -530,10 +530,4 @@ public interface RecordStore<R extends Record> {
      * Destroys data in this record store.
      */
     void destroy();
-
-    /**
-     * Like {@link #destroy()} but does not touch state on other services
-     * like lock service or event journal service.
-     */
-    void destroyInternals();
 }
