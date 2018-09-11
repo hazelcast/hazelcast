@@ -49,26 +49,32 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
-    private static final Set<String> WHITELIST = setOf("hazelcast-sample-service.xsd");
+
+    // list of schema location URLs which we do not want to check
+    private static final Set<String> WHITELIST = setOf(
+            "hazelcast-sample-service.xsd"// ServiceConfigTest has example of a custom Hazelcast service.
+                                          // The example defines own schema, but the schema is not available anywhere
+                                          // on the internet. It's just an example after all -> the test has to skip it.
+    );
 
     private static final String XML_SCHEMA_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance";
     private static final String XML_SCHEMA_LOCATION_ATTRIBUTE = "schemaLocation";
 
-    private CloseableHttpClient client;
+    private CloseableHttpClient httpClient;
     private DocumentBuilderFactory documentBuilderFactory;
-    private Set<String> urlCache;
+    private Set<String> validUrlsCache;
 
     @Before
     public void setUp() {
-        client = HttpClients.createDefault();
+        httpClient = HttpClients.createDefault();
         documentBuilderFactory = DocumentBuilderFactory.newInstance();
         documentBuilderFactory.setNamespaceAware(true);
-        urlCache = new HashSet<String>();
+        validUrlsCache = new HashSet<String>();
     }
 
     @After
     public void tearDown() {
-        IOUtil.closeResource(client);
+        IOUtil.closeResource(httpClient);
     }
 
     @Test
@@ -115,7 +121,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
                 throw new IllegalStateException("Error while validating schema location '" + nameSpaceUrl + "' from '" + originalLocation + "'", e);
             }
             assertEquals("Schema location '" + nameSpaceUrl + "' from '" + originalLocation + "' does not return HTTP 200 ", 200, responseCode);
-            urlCache.add(nameSpaceUrl);
+            validUrlsCache.add(nameSpaceUrl);
         }
     }
 
@@ -144,7 +150,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
         if (WHITELIST.contains(nameSpaceUrl)) {
             return true;
         }
-        if (urlCache.contains(nameSpaceUrl)) {
+        if (validUrlsCache.contains(nameSpaceUrl)) {
             return true;
         }
         return false;
@@ -154,7 +160,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
         HttpGet httpGet = new HttpGet(url);
         CloseableHttpResponse response = null;
         try {
-            response = client.execute(httpGet);
+            response = httpClient.execute(httpGet);
             return response.getStatusLine().getStatusCode();
         } finally {
             IOUtil.closeResource(response);
