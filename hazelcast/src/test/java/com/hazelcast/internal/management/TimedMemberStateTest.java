@@ -18,8 +18,6 @@ package com.hazelcast.internal.management;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -29,7 +27,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -81,11 +78,4 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertNotNull(deserialized.toString());
     }
 
-    @Test
-    public void testReplicatedMapGetStats() {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        hz.getReplicatedMap("replicatedMap");
-        ReplicatedMapService replicatedMapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
-        assertNotNull(replicatedMapService.getStats().get("replicatedMap"));
-    }
 }

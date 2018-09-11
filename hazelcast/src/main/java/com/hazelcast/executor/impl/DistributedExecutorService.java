@@ -22,7 +22,6 @@ import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.ExecutionService;
@@ -35,10 +34,8 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.MapUtil;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -207,11 +204,6 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     @Override
     public void probeIn(ProbingCycle cycle) {
         Probing.probeIn(cycle, "executor", statsMap);
-    }
-
-    // for testing only
-    public Map<String, ? extends LocalExecutorStats> getStats() {
-        return statsMap;
     }
 
     /**

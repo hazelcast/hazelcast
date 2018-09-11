@@ -250,11 +250,11 @@ public class PNCounterService implements
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        Probing.probeIn(cycle, "pnCounter", statsMap);
+        Probing.probeIn(cycle, "pNCounter", statsMap);
     }
 
     // for testing only
-    public Map<String, ? extends LocalPNCounterStats> getStats() {
+    Map<String, ? extends LocalPNCounterStats> getStats() {
         return statsMap;
     }
 }

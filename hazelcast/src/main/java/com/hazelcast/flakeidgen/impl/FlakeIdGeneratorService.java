@@ -85,7 +85,7 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     }
 
     // for testing only
-    public Map<String, ? extends LocalFlakeIdGeneratorStats> getStats() {
+    Map<String, ? extends LocalFlakeIdGeneratorStats> getStats() {
         return statsMap;
     }
 

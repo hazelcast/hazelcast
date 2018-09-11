@@ -27,11 +27,9 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.MapUtil;
 
 import java.util.Map;
 import java.util.Properties;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -84,7 +82,7 @@ public class ReliableTopicService
     }
 
     // for tests only
-    public Map<String, ? extends LocalTopicStats> getStats() {
+    Map<String, ? extends LocalTopicStats> getStats() {
         return statsMap;
     }
 

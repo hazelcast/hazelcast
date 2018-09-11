@@ -23,11 +23,9 @@ import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.probing.ReprobeCycle;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.EventFilter;
@@ -56,12 +54,8 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationEvent;
 
-import static java.util.Collections.emptyMap;
-
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
@@ -215,9 +209,9 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
         return mapServiceContext.getLocalMapStatsProvider().getStats();
     }
 
-    @ReprobeCycle(5)
+    @ReprobeCycle
     private void updateStats() {
-        mapServiceContext.getLocalMapStatsProvider().updateAllLocalMapStats();
+        mapServiceContext.getLocalMapStatsProvider().updateStats();
     }
 
     @Override

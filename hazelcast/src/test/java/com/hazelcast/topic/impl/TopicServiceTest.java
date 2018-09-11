@@ -1,0 +1,45 @@
+package com.hazelcast.topic.impl;
+
+import static org.junit.Assert.assertFalse;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class TopicServiceTest extends HazelcastTestSupport {
+
+    @Test
+    public void testDestroyTopicRemovesStatistics() {
+        String randomTopicName = randomString();
+
+        HazelcastInstance instance = createHazelcastInstance();
+        final ITopic<String> topic = instance.getTopic(randomTopicName);
+        topic.publish("foobar");
+
+        // we need to give the message the chance to be processed, else the topic statistics are recreated
+        // so in theory the destroy for the topic is broken
+        sleepSeconds(1);
+
+        topic.destroy();
+
+        final TopicService topicService = getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                boolean containsStats = topicService.getStatsMap().containsKey(topic.getName());
+                assertFalse(containsStats);
+            }
+        });
+    }
+}

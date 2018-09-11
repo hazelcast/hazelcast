@@ -85,7 +85,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     // only for testing
-    public ConcurrentMap<String, LocalTopicStatsImpl> getStatsMap() {
+    ConcurrentMap<String, LocalTopicStatsImpl> getStatsMap() {
         return statsMap;
     }
 

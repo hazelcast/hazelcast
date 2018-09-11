@@ -22,6 +22,9 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+
+import static org.junit.Assert.assertNotNull;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,11 +34,12 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class ReplicatedMapServiceTest extends HazelcastTestSupport {
 
+    private HazelcastInstance hazelcastInstance;
     private NodeEngine nodeEngine;
 
     @Before
     public void setUp() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        hazelcastInstance = createHazelcastInstance();
         nodeEngine = getNodeEngineImpl(hazelcastInstance);
     }
 
@@ -52,5 +56,13 @@ public class ReplicatedMapServiceTest extends HazelcastTestSupport {
         ReplicatedMapService service = new ReplicatedMapService(nodeEngine);
 
         service.shutdown(true);
+    }
+
+    @Test
+    public void testReplicatedMapGetStats() {
+        hazelcastInstance.getReplicatedMap("replicatedMap");
+        ReplicatedMapService service = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
+        service.updateStats();
+        assertNotNull(service.getStats().get("replicatedMap"));
     }
 }

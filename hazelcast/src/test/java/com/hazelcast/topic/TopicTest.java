@@ -67,31 +67,6 @@ import static org.junit.Assert.assertTrue;
 public class TopicTest extends HazelcastTestSupport {
 
     @Test
-    public void testDestroyTopicRemovesStatistics() {
-        String randomTopicName = randomString();
-
-        HazelcastInstance instance = createHazelcastInstance();
-        final ITopic<String> topic = instance.getTopic(randomTopicName);
-        topic.publish("foobar");
-
-        // we need to give the message the chance to be processed, else the topic statistics are recreated
-        // so in theory the destroy for the topic is broken
-        sleepSeconds(1);
-
-        topic.destroy();
-
-        final TopicService topicService = getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                boolean containsStats = topicService.getStatsMap().containsKey(topic.getName());
-                assertFalse(containsStats);
-            }
-        });
-    }
-
-    @Test
     public void testTopicPublishingMember() {
         final int nodeCount = 3;
         final String randomName = "testTopicPublishingMember" + generateRandomString(5);
