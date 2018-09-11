@@ -792,17 +792,16 @@ public class Node {
             Constructor constructor = clazz.getConstructor(Node.class);
             return (Joiner) constructor.newInstance(this);
         } catch (ClassNotFoundException e) {
-            StringBuilder message = new StringBuilder("Your Hazelcast network configuration has AWS discovery ")
-                    .append("enabled, but there is no Hazelcast AWS module on a classpath. ")
-                    .append(LINE_SEPARATOR)
-                    .append("Hint: If you are using Maven then add this dependency into your pom.xml:")
-                    .append(LINE_SEPARATOR)
-                    .append("<dependency>").append(LINE_SEPARATOR)
-                    .append("    <groupId>com.hazelcast</groupId>").append(LINE_SEPARATOR)
-                    .append("    <artifactId>hazelcast-aws</artifactId>").append(LINE_SEPARATOR)
-                    .append("    <version>${hazelcast-aws.version}</version>").append(LINE_SEPARATOR)
-                    .append("</dependency>").append(LINE_SEPARATOR);
-            throw new ConfigurationException(message.toString(), e);
+            String message = "Your Hazelcast network configuration has AWS discovery "
+                     + "enabled, but there is no Hazelcast AWS module on a classpath. " + LINE_SEPARATOR
+                     + "Hint: If you are using Maven then add this dependency into your pom.xml:" + LINE_SEPARATOR
+                     + "<dependency>" + LINE_SEPARATOR
+                     + "    <groupId>com.hazelcast</groupId>" + LINE_SEPARATOR
+                     + "    <artifactId>hazelcast-aws</artifactId>" + LINE_SEPARATOR
+                     + "    <version>insert hazelcast-aws version</version>" + LINE_SEPARATOR
+                     + "</dependency>" + LINE_SEPARATOR
+                     + " See https://github.com/hazelcast/hazelcast-aws for additional details";
+            throw new ConfigurationException(message, e);
         } catch (Exception e) {
             throw rethrow(e);
         }
