@@ -463,14 +463,13 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aBoolean, params.response));
 }
 {
-    ClientMessage clientMessage = MapTryPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong ,    aLong   );
+    ClientMessage clientMessage = MapTryPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     MapTryPutCodec.RequestParameters params = MapTryPutCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(aData, params.key));
             assertTrue(isEqual(aData, params.value));
             assertTrue(isEqual(aLong, params.threadId));
             assertTrue(isEqual(aLong, params.timeout));
-            assertTrue(isEqual(aLong, params.maxIdle));
 }
 {
     ClientMessage clientMessage = MapTryPutCodec.encodeResponse(    aBoolean   );

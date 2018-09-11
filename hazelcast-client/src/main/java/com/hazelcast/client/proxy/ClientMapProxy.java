@@ -520,17 +520,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return tryPutInternal(timeout, timeunit, DEFAULT_MAX_IDLE, MILLISECONDS, key, value);
+        return tryPutInternal(timeout, timeunit, key, value);
     }
 
-    protected boolean tryPutInternal(long timeout, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit,
-                                     Object key, Object value) {
+    protected boolean tryPutInternal(long timeout, TimeUnit timeunit, Object key, Object value) {
         Data keyData = toData(key);
         Data valueData = toData(value);
         long timeoutMillis = getTimeInMillis(timeout, timeunit);
-        long maxIdleMillis = getTimeInMillis(maxIdle, maxIdleUnit);
-        ClientMessage request = MapTryPutCodec.encodeRequest(name, keyData, valueData,
-                getThreadId(), timeoutMillis, maxIdleMillis);
+        ClientMessage request = MapTryPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), timeoutMillis);
         ClientMessage response = invoke(request, keyData);
         MapTryPutCodec.ResponseParameters resultParameters = MapTryPutCodec.decodeResponse(response);
         return resultParameters.response;
