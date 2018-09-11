@@ -18,6 +18,8 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
@@ -46,6 +48,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -73,7 +76,6 @@ public class ClientTxnMapTest {
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
-
 
     @Test
     public void testUnlockAfterRollback() {
@@ -553,4 +555,52 @@ public class ClientTxnMapTest {
         txMap.values(null);
     }
 
+    @Test
+    public void txn_map_get_skips_server_side_near_cache() {
+        String mapName = "test";
+        int keyInServerNearCache = 1;
+
+        IMap serverMap = prepareServerAndGetServerMap(mapName, keyInServerNearCache);
+        TransactionalMap clientTxnMap = getClientTransactionalMap(mapName);
+
+        assertNotNull(clientTxnMap.get(keyInServerNearCache));
+        assertEquals(0, serverMap.getLocalMapStats().getNearCacheStats().getHits());
+    }
+
+    @Test
+    public void txn_map_containsKey_skips_server_side_near_cache() {
+        String mapName = "test";
+        int keyInServerNearCache = 1;
+
+        IMap serverMap = prepareServerAndGetServerMap(mapName, keyInServerNearCache);
+        TransactionalMap clientTxnMap = getClientTransactionalMap(mapName);
+
+        assertTrue(clientTxnMap.containsKey(keyInServerNearCache));
+        assertEquals(0, serverMap.getLocalMapStats().getNearCacheStats().getHits());
+    }
+
+    private IMap prepareServerAndGetServerMap(String mapName, int keyInServerNearCache) {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setCacheLocalEntries(true);
+
+        Config serverConfig = new Config();
+        serverConfig.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
+
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(serverConfig);
+
+        // populate server near cache.
+        IMap map = server.getMap(mapName);
+        map.put(keyInServerNearCache, 1);
+        map.get(keyInServerNearCache);
+
+        return map;
+    }
+
+    private TransactionalMap getClientTransactionalMap(String mapName) {
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        TransactionContext clientTxnContext = client.newTransactionContext();
+        clientTxnContext.beginTransaction();
+        return clientTxnContext.getMap(mapName);
+    }
 }
