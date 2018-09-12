@@ -31,6 +31,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 
 import static com.hazelcast.nio.ConnectionType.MEMBER;
 import static com.hazelcast.nio.ConnectionType.NONE;
@@ -219,6 +220,11 @@ public class TcpIpConnection implements Connection {
     }
 
     private void logClose() {
+        Level logLevel = resolveLogLevelOnClose();
+        if (!logger.isLoggable(logLevel)) {
+            return;
+        }
+
         String message = toString() + " closed. Reason: ";
         if (closeReason != null) {
             message += closeReason;
@@ -228,22 +234,27 @@ public class TcpIpConnection implements Connection {
             message += "Socket explicitly closed";
         }
 
-        if (ioService.isActive()) {
-            if (closeCause == null || closeCause instanceof EOFException || closeCause instanceof CancelledKeyException) {
-                if (type == ConnectionType.REST_CLIENT || type == ConnectionType.MEMCACHE_CLIENT) {
-                    logger.fine(message);
-                } else {
-                    logger.info(message);
-                }
+        if (closeCause == null) {
+            logger.log(logLevel, message);
+        } else {
+            logger.log(logLevel, message, closeCause);
+        }
+    }
+
+    private Level resolveLogLevelOnClose() {
+        if (!ioService.isActive()) {
+            return Level.FINEST;
+        }
+
+        if (closeCause == null || closeCause instanceof EOFException || closeCause instanceof CancelledKeyException) {
+            if (type == ConnectionType.REST_CLIENT || type == ConnectionType.MEMCACHE_CLIENT) {
+                // text-based clients are expected to come and go frequently.
+                return Level.FINE;
             } else {
-                logger.warning(message, closeCause);
+                return Level.INFO;
             }
         } else {
-            if (closeCause == null) {
-                logger.finest(message);
-            } else {
-                logger.finest(message, closeCause);
-            }
+            return Level.WARNING;
         }
     }
 
