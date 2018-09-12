@@ -142,7 +142,7 @@ public class DefaultNodeContext implements NodeContext {
                 ioService,
                 serverSocketChannel,
                 node.loggingService,
-                node.nodeEngine.getMetricsRegistry(),
+                node.nodeEngine.getProbeRegistry(),
                 networking,
                 node.getProperties());
     }
@@ -160,7 +160,6 @@ public class DefaultNodeContext implements NodeContext {
         return new NioNetworking(
                 new NioNetworking.Context()
                         .loggingService(loggingService)
-                        .metricsRegistry(node.nodeEngine.getMetricsRegistry())
                         .threadNamePrefix(node.hazelcastInstance.getName())
                         .errorHandler(errorHandler)
                         .inputThreadCount(props.getInteger(IO_INPUT_THREAD_COUNT))

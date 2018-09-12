@@ -38,6 +38,25 @@ public final class Probing {
         // utility
     }
 
+    /**
+     * An allocation free check if a {@link CharSequence} starts with a given prefix.
+     * 
+     * @param prefix not null
+     * @param s not null
+     * @return true, if s starts with prefix, else false
+     */
+    public static boolean startsWith(CharSequence prefix, CharSequence s) {
+        int len = prefix.length();
+        if (len > s.length()) {
+            return false;
+        }
+        for (int i = 0; i < len; i++) {
+            if (prefix.charAt(i) != s.charAt(i))
+                return false;
+        }
+        return true;
+    }
+
     public static void probeIn(ProbingCycle cycle, File f) {
         cycle.probe("freeSpace", f.getFreeSpace());
         cycle.probe("totalSpace", f.getTotalSpace());

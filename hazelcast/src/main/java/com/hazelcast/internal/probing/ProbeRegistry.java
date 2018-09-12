@@ -26,6 +26,15 @@ public interface ProbeRegistry {
     void register(ProbeSource source);
 
     /**
+     * Legacy support instances only known by their interface with implementations
+     * that possibly implement {@link ProbeSource}.
+     * 
+     * @param source a object possibly implementing {@link ProbeSource}, might be
+     *        null as well
+     */
+    void registerIfSource(Object source);
+
+    /**
      * @return Creates a new "private "context that should be kept by the caller to
      *         render the contents of this {@link ProbeRegistry}. The implementation
      *         will not support multi-threading as each thread should create its own

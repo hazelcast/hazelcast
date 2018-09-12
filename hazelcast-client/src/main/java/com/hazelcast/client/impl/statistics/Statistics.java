@@ -24,9 +24,11 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.metrics.Gauge;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
@@ -39,6 +41,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.probing.Probing.startsWith;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -68,7 +71,7 @@ public class Statistics {
     private static final char KEY_VALUE_SEPARATOR = '=';
     private static final char ESCAPE_CHAR = '\\';
 
-    private final MetricsRegistry metricsRegistry;
+    private final ProbeRegistry.ProbeRenderContext metricsRegistry;
     private final boolean enabled;
     private final HazelcastProperties properties;
     private final ILogger logger = Logger.getLogger(this.getClass());
@@ -77,8 +80,6 @@ public class Statistics {
 
     private final boolean enterprise;
 
-    private PeriodicStatistics periodicStats;
-
     private volatile Address ownerAddress;
 
     public Statistics(final HazelcastClientInstanceImpl clientInstance) {
@@ -86,7 +87,7 @@ public class Statistics {
         this.enabled = properties.getBoolean(ENABLED);
         this.client = clientInstance;
         this.enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
-        this.metricsRegistry = clientInstance.getMetricsRegistry();
+        this.metricsRegistry = clientInstance.getProbeRegistry().newRenderingContext();
     }
 
     /**
@@ -105,10 +106,6 @@ public class Statistics {
                     + " seconds as the configuration. Client will use the default value of " + defaultValue + " instead.");
             periodSeconds = defaultValue;
         }
-
-        // Note that the OperatingSystemMetricSet and RuntimeMetricSet are already registered during client start,
-        // hence we do not re-register
-        periodicStats = new PeriodicStatistics();
 
         schedulePeriodicStatisticsSendTask(periodSeconds);
 
@@ -148,6 +145,7 @@ public class Statistics {
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
+        final ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
         client.getClientExecutionService().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
@@ -159,7 +157,7 @@ public class Statistics {
 
                 final StringBuilder stats = new StringBuilder();
 
-                periodicStats.fillMetrics(stats, ownerConnection);
+                fillMetrics(stats, ownerConnection, probeLevel);
 
                 addNearCacheStats(stats);
 
@@ -199,11 +197,11 @@ public class Statistics {
         }
     }
 
-    private void addStat(final StringBuilder stats, final String name, long value) {
+    private void addStat(final StringBuilder stats, final CharSequence name, long value) {
         addStat(stats, null, name, value);
     }
 
-    private void addStat(final StringBuilder stats, final String keyPrefix, final String name, long value) {
+    private void addStat(final StringBuilder stats, final String keyPrefix, final CharSequence name, long value) {
         stats.append(STAT_SEPARATOR);
         if (null != keyPrefix) {
             stats.append(keyPrefix);
@@ -338,48 +336,34 @@ public class Statistics {
         }
     }
 
-    class PeriodicStatistics {
-        private final Gauge[] allGauges = {
-                    metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
-                    metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
-                    metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
-                    metricsRegistry.newLongGauge("os.maxFileDescriptorCount"),
-                    metricsRegistry.newLongGauge("os.openFileDescriptorCount"),
-                    metricsRegistry.newLongGauge("os.processCpuTime"),
-                    metricsRegistry.newDoubleGauge("os.systemLoadAverage"),
-                    metricsRegistry.newLongGauge("os.totalPhysicalMemorySize"),
-                    metricsRegistry.newLongGauge("os.totalSwapSpaceSize"),
-                    metricsRegistry.newLongGauge("runtime.availableProcessors"),
-                    metricsRegistry.newLongGauge("runtime.freeMemory"),
-                    metricsRegistry.newLongGauge("runtime.maxMemory"),
-                    metricsRegistry.newLongGauge("runtime.totalMemory"),
-                    metricsRegistry.newLongGauge("runtime.uptime"),
-                    metricsRegistry.newLongGauge("runtime.usedMemory"),
-                    metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
-                };
+    void fillMetrics(final StringBuilder stats, final ClientConnection ownerConnection, ProbeLevel level) {
+        stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
+        addStat(stats, "enterprise", enterprise);
+        addStat(stats, "clientType", ClientType.JAVA.toString());
+        addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion());
+        addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
 
-        void fillMetrics(final StringBuilder stats, final ClientConnection ownerConnection) {
-            stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
-            addStat(stats, "enterprise", enterprise);
-            addStat(stats, "clientType", ClientType.JAVA.toString());
-            addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion());
-            addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
+        stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
+        .append(ownerConnection.getLocalSocketAddress().getAddress().getHostAddress()).append(":")
+        .append(ownerConnection.getLocalSocketAddress().getPort());
 
-            stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
-                 .append(ownerConnection.getLocalSocketAddress().getAddress().getHostAddress()).append(":")
-                 .append(ownerConnection.getLocalSocketAddress().getPort());
+        addStat(stats, "clientName", client.getName());
 
-            addStat(stats, "clientName", client.getName());
-
-            Credentials credentials = client.getCredentials();
-            if (!(credentials instanceof UsernamePasswordCredentials)) {
-                addStat(stats, "credentials.principal", credentials.getPrincipal());
-            }
-
-            for (Gauge gauge : allGauges) {
-                stats.append(STAT_SEPARATOR).append(gauge.getName()).append(KEY_VALUE_SEPARATOR);
-                gauge.render(stats);
-            }
+        Credentials credentials = client.getCredentials();
+        if (!(credentials instanceof UsernamePasswordCredentials)) {
+            addStat(stats, "credentials.principal", credentials.getPrincipal());
         }
+        metricsRegistry.renderAt(level, new ProbeRenderer() {
+
+            @Override
+            public void render(CharSequence key, long value) {
+                if (startsWith("os.", key) || startsWith("runtime.", key)) {
+                    addStat(stats, key, value);
+                } else if ("executionService.userExecutorQueueSize".contentEquals(key)) {
+                    addStat(stats, key, value);
+                }
+            }
+        });
     }
+
 }

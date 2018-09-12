@@ -191,6 +191,11 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         return loggingService;
     }
 
+    public ProbeRegistry getProbeRegistry() {
+        return probeRegistry;
+    }
+    
+    @Deprecated // remove later
     public MetricsRegistry getMetricsRegistry() {
         return metricsRegistry;
     }

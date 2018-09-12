@@ -25,6 +25,10 @@ import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.ReprobeCycle;
+import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
@@ -72,12 +76,11 @@ import static java.util.logging.Level.INFO;
  * feature and will cause the io threads to run hot. For this reason, when this feature
  * is enabled, the number of io threads should be reduced (preferably 1).
  */
-public final class NioNetworking implements Networking {
+public final class NioNetworking implements Networking, ProbeRegistry.ProbeSource {
 
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
-    private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
     private final String threadNamePrefix;
     private final ChannelErrorHandler errorHandler;
@@ -96,7 +99,6 @@ public final class NioNetworking implements Networking {
 
     public NioNetworking(Context ctx) {
         this.threadNamePrefix = ctx.threadNamePrefix;
-        this.metricsRegistry = ctx.metricsRegistry;
         this.loggingService = ctx.loggingService;
         this.inputThreadCount = ctx.inputThreadCount;
         this.outputThreadCount = ctx.outputThreadCount;
@@ -124,6 +126,35 @@ public final class NioNetworking implements Networking {
     }
 
     @Override
+    public void probeIn(ProbingCycle cycle) {
+        Tags tags = cycle.openContext().tag(TAG_TYPE, "inputThread");
+        for (int i = 0; i < inputThreads.length; i++) {
+            NioThread thread = inputThreads[i];
+            if (thread.isAlive()) {
+                tags.tag(TAG_INSTANCE, thread.getName());
+                cycle.probe("tcp", thread);
+            }
+        }
+        tags = cycle.openContext().tag(TAG_TYPE, "outputThread");
+        for (int i = 0; i < outputThreads.length; i++) {
+            NioThread thread = outputThreads[i];
+            if (thread.isAlive()) {
+                tags.tag(TAG_INSTANCE, thread.getName());
+                cycle.probe("tcp", thread);
+            }
+        }
+        for (NioChannel c : channels) {
+            cycle.openContext().tag(TAG_TYPE, "channel")
+                .tag("from", c.localSocketAddress().toString())
+                .tag("to", c.remoteSocketAddress().toString());
+            cycle.probe("tcp.connection.out", c.outboundPipeline);
+            cycle.probe("tcp.connection.in", c.inboundPipeline);
+        }
+        cycle.openContext();
+        cycle.probe("tcp.balancer", ioBalancer);
+    }
+
+    @Override
     public void start() {
         if (logger.isFineEnabled()) {
             logger.fine("TcpIpConnectionManager configured with Non Blocking IO-threading model: "
@@ -144,7 +175,6 @@ public final class NioNetworking implements Networking {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inputThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp.inputThread[" + thread.getName() + "]");
             thread.start();
         }
 
@@ -159,21 +189,15 @@ public final class NioNetworking implements Networking {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             outputThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp.outputThread[" + thread.getName() + "]");
             thread.start();
         }
 
         startIOBalancer();
-
-        if (metricsRegistry.minimumLevel().isEnabled(DEBUG)) {
-            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS);
-        }
     }
 
     private void startIOBalancer() {
         ioBalancer = new IOBalancer(inputThreads, outputThreads, threadNamePrefix, balancerIntervalSeconds, loggingService);
         ioBalancer.start();
-        metricsRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
     }
 
     @Override
@@ -211,10 +235,6 @@ public final class NioNetworking implements Networking {
         channels.add(channel);
 
         channel.init(inboundPipeline, outboundPipeline);
-
-        String metricsId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
-        metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
-        metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
 
         ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
 
@@ -260,37 +280,32 @@ public final class NioNetworking implements Networking {
             channels.remove(channel);
 
             ioBalancer.channelRemoved(nioChannel.inboundPipeline(), nioChannel.outboundPipeline());
-
-            metricsRegistry.deregister(nioChannel.inboundPipeline());
-            metricsRegistry.deregister(nioChannel.outboundPipeline());
         }
     }
 
-    private class PublishAllTask implements Runnable {
-        @Override
-        public void run() {
-            for (NioChannel channel : channels) {
-                final NioInboundPipeline inboundPipeline = channel.inboundPipeline;
-                NioThread inputThread = inboundPipeline.owner();
-                if (inputThread != null) {
-                    inputThread.addTaskAndWakeup(new Runnable() {
-                        @Override
-                        public void run() {
-                            inboundPipeline.publishMetrics();
-                        }
-                    });
-                }
+    @ReprobeCycle(level = DEBUG)
+    public void updateChannels() {
+        for (NioChannel channel : channels) {
+            final NioInboundPipeline inboundPipeline = channel.inboundPipeline;
+            NioThread inputThread = inboundPipeline.owner();
+            if (inputThread != null) {
+                inputThread.addTaskAndWakeup(new Runnable() {
+                    @Override
+                    public void run() {
+                        inboundPipeline.publishMetrics();
+                    }
+                });
+            }
 
-                final NioOutboundPipeline outboundPipeline = channel.outboundPipeline;
-                NioThread outputThread = outboundPipeline.owner();
-                if (outputThread != null) {
-                    outputThread.addTaskAndWakeup(new Runnable() {
-                        @Override
-                        public void run() {
-                            outboundPipeline.publishMetrics();
-                        }
-                    });
-                }
+            final NioOutboundPipeline outboundPipeline = channel.outboundPipeline;
+            NioThread outputThread = outboundPipeline.owner();
+            if (outputThread != null) {
+                outputThread.addTaskAndWakeup(new Runnable() {
+                    @Override
+                    public void run() {
+                        outboundPipeline.publishMetrics();
+                    }
+                });
             }
         }
     }
@@ -298,7 +313,6 @@ public final class NioNetworking implements Networking {
     public static class Context {
         private BackoffIdleStrategy idleStrategy;
         private LoggingService loggingService;
-        private MetricsRegistry metricsRegistry;
         private String threadNamePrefix = "hz";
         private ChannelErrorHandler errorHandler;
         private int inputThreadCount = 1;
@@ -335,11 +349,6 @@ public final class NioNetworking implements Networking {
 
         public Context loggingService(LoggingService loggingService) {
             this.loggingService = loggingService;
-            return this;
-        }
-
-        public Context metricsRegistry(MetricsRegistry metricsRegistry) {
-            this.metricsRegistry = metricsRegistry;
             return this;
         }
 

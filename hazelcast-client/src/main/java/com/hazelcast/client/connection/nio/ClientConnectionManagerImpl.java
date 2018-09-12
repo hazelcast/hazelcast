@@ -200,7 +200,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return new NioNetworking(
                 new NioNetworking.Context()
                         .loggingService(client.getLoggingService())
-                        .metricsRegistry(client.getMetricsRegistry())
                         .threadNamePrefix(client.getName())
                         .errorHandler(new ClientConnectionChannelErrorHandler())
                         .inputThreadCount(inputThreads)

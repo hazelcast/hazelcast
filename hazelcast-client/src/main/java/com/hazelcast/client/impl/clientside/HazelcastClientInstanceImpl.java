@@ -119,11 +119,12 @@ import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbeRegistryImpl;
 import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -176,7 +177,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
 
-public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
+public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport, 
+    ProbeRegistry.ProbeSource {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final short PROTOCOL_VERSION = ClientMessage.VERSION;
@@ -201,7 +203,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final Credentials credentials;
     private final DiscoveryService discoveryService;
     private final LoggingService loggingService;
-    private final MetricsRegistryImpl metricsRegistry;
     private final ProbeRegistry probeRegistry;
     private final Statistics statistics;
     private final Diagnostics diagnostics;
@@ -214,6 +215,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
                                        AddressProvider externalAddressProvider) {
+        probeRegistry = new ProbeRegistryImpl();
         this.config = config;
         if (config.getInstanceName() != null) {
             instanceName = config.getInstanceName();
@@ -233,13 +235,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         lifecycleService = new LifecycleServiceImpl(this);
         properties = new HazelcastProperties(config.getProperties());
 
-        metricsRegistry = initMetricsRegistry();
         serializationService = clientExtension.createSerializationService((byte) -1);
-        metricsRegistry.collectMetrics(clientExtension);
 
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();
-        metricsRegistry.collectMetrics(executionService);
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
@@ -263,7 +262,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExceptionFactory = initClientExceptionFactory();
         statistics = new Statistics(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
-        probeRegistry = new ProbeRegistryImpl();
         initProbeSources();
     }
 
@@ -282,14 +280,17 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private void initProbeSources() {
         probeRegistry.register(Probing.GC);
         probeRegistry.register(Probing.OS);
+        probeRegistry.register(this);
+        probeRegistry.register(connectionManager.getNetworking());
+        probeRegistry.registerIfSource(clientExtension);
     }
 
-    private MetricsRegistryImpl initMetricsRegistry() {
-        ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
-        ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(getName(), logger, probeLevel);
-        metricsRegistry.scanAndRegister(clientExtension.getMemoryStats(), "memory");
-        return metricsRegistry;
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        cycle.probe("invocations", invocationService);
+        cycle.probe("executionService", executionService);
+        cycle.probe("listeners", listenerService);
+        cycle.probe("memory", clientExtension.getMemoryStats());
     }
 
     private Collection<AddressProvider> createAddressProviders(AddressProvider externalAddressProvider) {
@@ -540,7 +541,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         // periodic loggers
         diagnostics.register(
-                new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
+                new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), probeRegistry, properties));
         diagnostics.register(
                 new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
         diagnostics.register(
@@ -549,8 +550,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics.register(
                 new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
                         properties));
-
-        metricsRegistry.collectMetrics(listenerService);
 
         proxyManager.init(config, clientContext);
         listenerService.start();
@@ -567,8 +566,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxyManager.createDistributedObjectsOnCluster(ownerConnection);
     }
 
-    public MetricsRegistryImpl getMetricsRegistry() {
-        return metricsRegistry;
+    public ProbeRegistry getProbeRegistry() {
+        return probeRegistry;
     }
 
     @Override
@@ -916,7 +915,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         if (discoveryService != null) {
             discoveryService.destroy();
         }
-        metricsRegistry.shutdown();
         diagnostics.shutdown();
         ((InternalSerializationService) serializationService).dispose();
     }

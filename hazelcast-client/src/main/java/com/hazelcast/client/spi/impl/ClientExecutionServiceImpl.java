@@ -43,7 +43,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.properties.GroupProperty.TASK_SCHEDULER_REMOVE_ON_CANCEL;
 import static java.lang.Thread.currentThread;
 
-public final class ClientExecutionServiceImpl implements ClientExecutionService, MetricsProvider {
+public final class ClientExecutionServiceImpl implements ClientExecutionService {
 
     public static final HazelcastProperty INTERNAL_EXECUTOR_POOL_SIZE
             = new HazelcastProperty("hazelcast.client.internal.executor.pool.size", 3);
@@ -136,8 +136,4 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
         }
     }
 
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "executionService");
-    }
 }

@@ -21,6 +21,8 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -60,7 +62,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.newSetFromMap;
 
-public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet> {
+public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet>, 
+    ProbeRegistry.ProbeSource {
 
     private static final int RETRY_NUMBER = 5;
     private static final long DELAY_FACTOR = 100L;
@@ -106,7 +109,6 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final Networking networking;
-    private final MetricsRegistry metricsRegistry;
 
     private final ServerSocketChannel serverSocketChannel;
 
@@ -127,15 +129,15 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
-                                  MetricsRegistry metricsRegistry,
+                                  ProbeRegistry probeRegistry,
                                   Networking networking) {
-        this(ioService, serverSocketChannel, loggingService, metricsRegistry, networking, null);
+        this(ioService, serverSocketChannel, loggingService, probeRegistry, networking, null);
     }
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
-                                  MetricsRegistry metricsRegistry,
+                                  ProbeRegistry probeRegistry,
                                   Networking networking,
                                   HazelcastProperties properties) {
         this.ioService = ioService;
@@ -143,12 +145,19 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
-        this.metricsRegistry = metricsRegistry;
         this.connector = new TcpIpConnector(this);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpConnectionManager")));
         this.spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
-        metricsRegistry.scanAndRegister(this, "tcp.connection");
+        probeRegistry.register(this);
+    }
+
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        cycle.probe("tcp.connection", this);
+        if (acceptor != null) {
+            cycle.probe(acceptor);
+        }
     }
 
     public IOService getIoService() {
@@ -477,7 +486,6 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         }
 
         acceptor = new TcpIpAcceptor(serverSocketChannel, this).start();
-        metricsRegistry.collectMetrics(acceptor);
     }
 
     @Override
@@ -531,7 +539,6 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     private void shutdownAcceptor() {
         if (acceptor != null) {
             acceptor.shutdown();
-            metricsRegistry.deregister(acceptor);
             acceptor = null;
         }
     }

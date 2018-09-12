@@ -7,6 +7,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 
 /**
@@ -25,4 +26,12 @@ public @interface ReprobeCycle {
     int value() default 1;
 
     TimeUnit unit() default TimeUnit.SECONDS;
+
+    /**
+     * By setting a {@link ProbeLevel} with less precedence this the update can
+     * effectively be disabled when rendering is on a higher precedence level.
+     * 
+     * @return the minimum level for which the update should occur
+     */
+    ProbeLevel level() default ProbeLevel.MANDATORY;
 }

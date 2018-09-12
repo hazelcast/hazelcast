@@ -58,7 +58,7 @@ import java.util.concurrent.ThreadFactory;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
-public abstract class AbstractClientListenerService implements ClientListenerService, MetricsProvider, ConnectionListener {
+public abstract class AbstractClientListenerService implements ClientListenerService, ConnectionListener {
 
     protected final HazelcastClientInstanceImpl client;
     protected final SerializationService serializationService;
@@ -153,11 +153,6 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
             return true;
         }
 
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "listeners");
     }
 
     @Probe(level = MANDATORY)

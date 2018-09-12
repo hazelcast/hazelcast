@@ -16,8 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -28,7 +29,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A {@link DiagnosticsPlugin} that displays the content of the
- * {@link MetricsRegistry}.
+ * {@link ProbeRegistry}.
  */
 public class MetricsPlugin extends DiagnosticsPlugin {
 
@@ -46,17 +47,17 @@ public class MetricsPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty PERIOD_SECONDS
             = new HazelcastProperty(PREFIX + ".metrics.period.seconds", 60, SECONDS);
 
-    private final MetricsRegistry metricsRegistry;
+    private final ProbeRegistry.ProbeRenderContext probeRenderContext;
     private final long periodMillis;
     private final ProbeRendererImpl probeRenderer = new ProbeRendererImpl();
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getProperties());
+        this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getProbeRegistry(), nodeEngine.getProperties());
     }
 
-    public MetricsPlugin(ILogger logger, MetricsRegistry metricsRegistry, HazelcastProperties properties) {
+    public MetricsPlugin(ILogger logger, ProbeRegistry probeRegistry, HazelcastProperties properties) {
         super(logger);
-        this.metricsRegistry = metricsRegistry;
+        this.probeRenderContext = probeRegistry.newRenderingContext();
         this.periodMillis = properties.getMillis(PERIOD_SECONDS);
     }
 
@@ -76,7 +77,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
         // the same timestamp
         probeRenderer.timeMillis = System.currentTimeMillis();
-        metricsRegistry.render(probeRenderer);
+        probeRenderContext.renderAt(ProbeLevel.DEBUG, probeRenderer);
         probeRenderer.writer = null;
     }
 
@@ -87,23 +88,8 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         private long timeMillis;
 
         @Override
-        public void renderLong(String name, long value) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
-        }
-
-        @Override
-        public void renderDouble(String name, double value) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
-        }
-
-        @Override
-        public void renderException(String name, Exception e) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, e.getClass().getName() + ':' + e.getMessage());
-        }
-
-        @Override
-        public void renderNoValue(String name) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, "NA");
+        public void render(CharSequence key, long value) {
+            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, key.toString(), value);
         }
     }
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.NetworkingFactory;
 import com.hazelcast.nio.tcp.MockIOService;
@@ -31,13 +30,12 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
 public class Select_NioNetworkingFactory implements NetworkingFactory {
 
     @Override
-    public NioNetworking create(MockIOService ioService, MetricsRegistry metricsRegistry) {
+    public NioNetworking create(MockIOService ioService) {
         HazelcastProperties properties = ioService.properties();
         LoggingService loggingService = ioService.loggingService;
         return new NioNetworking(
                 new NioNetworking.Context()
                         .loggingService(loggingService)
-                        .metricsRegistry(metricsRegistry)
                         .threadNamePrefix(ioService.getHazelcastName())
                         .errorHandler(
                                 new TcpIpConnectionChannelErrorHandler(

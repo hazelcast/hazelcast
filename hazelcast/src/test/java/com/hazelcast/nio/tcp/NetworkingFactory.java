@@ -16,9 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.Networking;
 
 public interface NetworkingFactory {
-    Networking create(MockIOService ioService, MetricsRegistry metricsRegistry);
+    Networking create(MockIOService ioService);
 }

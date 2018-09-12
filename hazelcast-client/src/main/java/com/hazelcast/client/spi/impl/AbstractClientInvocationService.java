@@ -82,8 +82,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         boolean isBackPressureEnabled = maxAllowedConcurrentInvocations != Integer.MAX_VALUE;
         callIdSequence = CallIdFactory
                 .newCallIdSequence(isBackPressureEnabled, maxAllowedConcurrentInvocations, backofftimeoutMs);
-
-        client.getMetricsRegistry().scanAndRegister(this, "invocations");
     }
 
     private long initInvocationRetryPauseMillis() {

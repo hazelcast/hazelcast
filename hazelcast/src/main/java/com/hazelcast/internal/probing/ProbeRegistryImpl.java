@@ -48,6 +48,13 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     }
 
     @Override
+    public void registerIfSource(Object source) {
+        if (source instanceof ProbeSource) {
+            register((ProbeSource) source);
+        }
+    }
+
+    @Override
     public ProbeRenderContext newRenderingContext() {
         return new ProbingCycleImpl(sources);
     }
@@ -66,14 +73,18 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         final Method update;
         final long updateIntervalMs;
         final AtomicLong nextUpdateTimeMs = new AtomicLong();
+        final ProbeLevel updateLevel;
 
         public ProbeSourceEntry(ProbeSource source) {
             this.source = source;
             this.update = reprobeFor(source.getClass());
             if (update != null) {
-                updateIntervalMs = updateInterval(update.getAnnotation(ReprobeCycle.class));
+                ReprobeCycle reprobe = update.getAnnotation(ReprobeCycle.class);
+                updateIntervalMs = updateInterval(reprobe);
+                updateLevel = reprobe.level();
             } else {
                 updateIntervalMs = -1L;
+                updateLevel = ProbeLevel.DEBUG;
             }
         }
 
@@ -127,7 +138,9 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             this.renderer = renderer;
             openContext(); // reset
             for (ProbeSourceEntry entry : sources) {
-                entry.updateIfNeeded();
+                if (isProbed(entry.updateLevel)) {
+                    entry.updateIfNeeded();
+                }
                 try {
                     openContext(); // just to be sure it is done even if ommitted in the source
                     entry.source.probeIn(this);
