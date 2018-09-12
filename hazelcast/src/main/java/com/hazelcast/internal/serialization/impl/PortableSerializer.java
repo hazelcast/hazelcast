@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
@@ -35,6 +36,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
 
     private final PortableContextImpl context;
     private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
+    private volatile boolean destroyed;
 
     PortableSerializer(PortableContextImpl context, Map<Integer, ? extends PortableFactory> portableFactories) {
         this.context = context;
@@ -106,15 +108,23 @@ final class PortableSerializer implements StreamSerializer<Portable> {
     }
 
     private Portable createNewPortableInstance(int factoryId, int classId) {
-        final PortableFactory portableFactory = factories.get(factoryId);
-        if (portableFactory == null) {
-            throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId);
-        }
+        final PortableFactory portableFactory = getFactoryOrThrowException(factoryId);
         final Portable portable = portableFactory.create(classId);
         if (portable == null) {
             throw new HazelcastSerializationException("Could not create Portable for class-id: " + classId);
         }
         return portable;
+    }
+
+    private PortableFactory getFactoryOrThrowException(int factoryId) {
+        final PortableFactory portableFactory = factories.get(factoryId);
+        if (portableFactory != null) {
+            return portableFactory;
+        }
+        if (destroyed) {
+            throw new HazelcastInstanceNotActiveException();
+        }
+        throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId);
     }
 
     Portable readAndInitialize(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
@@ -175,6 +185,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
 
     @Override
     public void destroy() {
+        destroyed = true;
         factories.clear();
     }
 }

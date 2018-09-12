@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.logging.Logger;
@@ -58,6 +59,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
 
     private final Version version = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
     private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<DataSerializableFactory>();
+    private volatile boolean destroyed;
 
     DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                                ClassLoader classLoader) {
@@ -112,18 +114,10 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         return readInternal(in, aClass);
     }
 
-    private DataSerializable readInternal(ObjectDataInput in, Class aClass)
+    private DataSerializable readInternal(ObjectDataInput in, Class requestedClass)
             throws IOException {
         setInputVersion(in, version);
-        DataSerializable ds = null;
-        if (null != aClass) {
-            try {
-                ds = (DataSerializable) aClass.newInstance();
-            } catch (Exception e) {
-                e = tryClarifyInstantiationException(aClass, e);
-                throw new HazelcastSerializationException("Requested class " + aClass + " could not be instantiated.", e);
-            }
-        }
+        DataSerializable ds = createInstanceOfRequestedClass(requestedClass);
 
         final byte header = in.readByte();
         int id = 0;
@@ -134,21 +128,14 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             // BasicOperationService::extractOperationCallId
             if (isFlagSet(header, IDS_FLAG)) {
                 factoryId = in.readInt();
-                final DataSerializableFactory dsf = factories.get(factoryId);
-                if (dsf == null) {
-                    throw new HazelcastSerializationException("No DataSerializerFactory registered for namespace: " + factoryId);
-                }
                 id = in.readInt();
-                if (null == aClass) {
-                    ds = dsf.create(id);
-                    if (ds == null) {
-                        throw new HazelcastSerializationException(dsf
-                                + " is not be able to create an instance for ID: " + id + " on factory ID: " + factoryId);
-                    }
+                final DataSerializableFactory dsf = getFactoryOrThrowException(factoryId);
+                if (requestedClass == null) {
+                    ds = createNewIdsInstance(dsf, factoryId, id);
                 }
             } else {
                 className = in.readUTF();
-                if (null == aClass) {
+                if (requestedClass == null) {
                     ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
                 }
             }
@@ -165,6 +152,39 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         }
     }
 
+    private DataSerializable createInstanceOfRequestedClass(Class requestedClass) {
+        if (requestedClass == null) {
+            return null;
+        }
+        try {
+            return (DataSerializable) requestedClass.newInstance();
+        } catch (Exception e) {
+            e = tryClarifyInstantiationException(requestedClass, e);
+            throw new HazelcastSerializationException("Requested class " + requestedClass
+                    + " could not be instantiated.", e);
+        }
+    }
+
+    private DataSerializable createNewIdsInstance(DataSerializableFactory dsf, int factoryId, int id) {
+        DataSerializable ds = dsf.create(id);
+        if (ds == null) {
+            throw new HazelcastSerializationException(dsf
+                    + " is not be able to create an instance for ID: " + id + " on factory ID: " + factoryId);
+        }
+        return ds;
+    }
+
+    private DataSerializableFactory getFactoryOrThrowException(int factoryId) {
+        final DataSerializableFactory dsf = factories.get(factoryId);
+        if (dsf != null) {
+            return dsf;
+        }
+        if (destroyed) {
+            throw new HazelcastInstanceNotActiveException();
+        }
+        throw new HazelcastSerializationException("No DataSerializerFactory registered for namespace: " + factoryId);
+    }
+
     public static boolean isFlagSet(byte value, byte flag) {
         return (value & flag) != 0;
     }
@@ -175,6 +195,9 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         }
         if (e instanceof HazelcastSerializationException) {
             throw (HazelcastSerializationException) e;
+        }
+        if (e instanceof HazelcastInstanceNotActiveException) {
+            throw (HazelcastInstanceNotActiveException) e;
         }
         throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: "
                 + factoryId
@@ -246,6 +269,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
 
     @Override
     public void destroy() {
+        destroyed = true;
         factories.clear();
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -42,6 +43,18 @@ public class PortableTest {
 
     static final int PORTABLE_FACTORY_ID = TestSerializationConstants.PORTABLE_FACTORY_ID;
     static final int IDENTIFIED_FACTORY_ID = TestSerializationConstants.DATA_SERIALIZABLE_FACTORY_ID;
+
+    @Test(expected = HazelcastInstanceNotActiveException.class)
+    public void givenSerializationDisposed_whenAttemptToDeserializePortable_thenThrowInstanceNotActive() {
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory())
+                .build();
+        Data data = serializationService.toData(new TestObject2());
+
+        serializationService.dispose();
+
+        serializationService.toObject(data);
+    }
 
     @Test
     public void testBasics() {

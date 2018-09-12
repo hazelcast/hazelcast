@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -46,6 +48,18 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
 
     private SerializationService ss = new DefaultSerializationServiceBuilder().setVersion(InternalSerializationService.VERSION_1)
                                                                               .build();
+
+    @Test(expected = HazelcastInstanceNotActiveException.class)
+    public void givenSerializationDisposed_whenAttemptToDeserializeIDS_thenThrowInstanceNotActive() {
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .addDataSerializableFactory(1, new IDSPersonFactory())
+                .build();
+        Data data = serializationService.toData(new IDSPerson("James Bond"));
+
+        serializationService.dispose();
+
+        serializationService.toObject(data);
+    }
 
     @Test
     public void serializeAndDeserialize_DataSerializable() {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -59,6 +60,9 @@ public final class SerializationUtil {
         }
         if (e instanceof HazelcastSerializationException) {
             throw (HazelcastSerializationException) e;
+        }
+        if (e instanceof HazelcastInstanceNotActiveException) {
+            throw (HazelcastInstanceNotActiveException) e;
         }
         throw new HazelcastSerializationException(e);
     }
