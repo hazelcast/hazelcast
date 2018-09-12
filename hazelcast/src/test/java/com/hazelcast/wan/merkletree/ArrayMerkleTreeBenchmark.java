@@ -29,20 +29,21 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode({Mode.AverageTime})
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 10, time = 100, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-@Fork(value = 5, jvmArgsAppend = {"-Xms512g", "-Xmx512g"})
+@Fork(value = 5, jvmArgsAppend = {"-Xms512m", "-Xmx512m"})
 @State(Scope.Benchmark)
 public class ArrayMerkleTreeBenchmark {
     private static final int HUGE_PRIME = 982455757;
@@ -51,22 +52,22 @@ public class ArrayMerkleTreeBenchmark {
     private int anInt = HUGE_PRIME;
 
     @Benchmark
-    @Fork(value = 5, jvmArgsAppend = {"-Xms4g", "-Xmx4g"})
-    public void updateAdd_heap_4G(BenchmarkContext context) {
+    @Fork(jvmArgsAppend = {"-Xms4g", "-Xmx4g"})
+    public void updateAdd_heap_4G(EmptyBenchmarkContext context) {
         int anEntry = getAnInt();
         context.merkleTree.updateAdd(anEntry, anEntry);
     }
 
     @Benchmark
-    @Fork(value = 5, jvmArgsAppend = {"-Xms2g", "-Xmx2g"})
-    public void updateAdd_heap_2G(BenchmarkContext context) {
+    @Fork(jvmArgsAppend = {"-Xms2g", "-Xmx2g"})
+    public void updateAdd_heap_2G(EmptyBenchmarkContext context) {
         int anEntry = getAnInt();
         context.merkleTree.updateAdd(anEntry, anEntry);
     }
 
     @Benchmark
-    @Fork(value = 5, jvmArgsAppend = {"-Xms1g", "-Xmx1g"})
-    public void updateAdd_heap_1G(BenchmarkContext context) {
+    @Fork(jvmArgsAppend = {"-Xms1g", "-Xmx1g"})
+    public void updateAdd_heap_1G(EmptyBenchmarkContext context) {
         int anEntry = getAnInt();
         context.merkleTree.updateAdd(anEntry, anEntry);
     }
@@ -86,6 +87,48 @@ public class ArrayMerkleTreeBenchmark {
         context.merkleTree.updateRemove(key, value);
     }
 
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    @BenchmarkMode(Mode.SingleShotTime)
+    @Measurement(batchSize = 100)
+    @Benchmark
+    public void clear_100(PreFilledBenchmarkContext context) {
+        context.merkleTree.clear();
+    }
+
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    @BenchmarkMode(Mode.SingleShotTime)
+    @Measurement(batchSize = 271)
+    @Benchmark
+    public void clear_271(PreFilledBenchmarkContext context) {
+        context.merkleTree.clear();
+    }
+
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    @BenchmarkMode(Mode.SingleShotTime)
+    @Warmup(iterations = 0)
+    @Measurement(iterations = 1, batchSize = 100)
+    @Fork(jvmArgsAppend = {"-Xms4g", "-Xmx4g"})
+    @Benchmark
+    public ArrayMerkleTree createMerkleTree_100(CreateInstanceBenchmarkContext context) {
+        return createMerkleTree(context);
+    }
+
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    @BenchmarkMode(Mode.SingleShotTime)
+    @Warmup(iterations = 0)
+    @Measurement(iterations = 1, batchSize = 271)
+    @Fork(jvmArgsAppend = {"-Xms4g", "-Xmx4g"})
+    @Benchmark
+    public ArrayMerkleTree createMerkleTree_271(CreateInstanceBenchmarkContext context) {
+        return createMerkleTree(context);
+    }
+
+    private ArrayMerkleTree createMerkleTree(CreateInstanceBenchmarkContext context) {
+        ArrayMerkleTree merkleTree = new ArrayMerkleTree(context.depth);
+        context.merkleTrees.add(merkleTree);
+        return merkleTree;
+    }
+
     private int getAnInt() {
         anInt += HUGE_PRIME;
         return anInt;
@@ -97,26 +140,23 @@ public class ArrayMerkleTreeBenchmark {
     }
 
     @State(Scope.Benchmark)
-    public static class BenchmarkContext {
-        @Param({"8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"})
-        protected int depth;
-
-        protected MerkleTree merkleTree;
+    public static class EmptyBenchmarkContext extends BenchmarkContext {
+        MerkleTree merkleTree;
 
         @Setup(Level.Trial)
         public void setUp() {
-            merkleTree = new ArrayMerkleTree(depth, 100000);
+            merkleTree = new ArrayMerkleTree(depth);
         }
 
         @TearDown(Level.Trial)
         public void tearDown() {
-            System.out.println("Depth: " + depth);
-            System.out.println("Footprint: " + merkleTree.footprint() / 1024 + " (KB)");
+            //            System.out.println("Depth: " + depth);
+            //            System.out.println("Footprint: " + merkleTree.footprint() / 1024 + " (KB)");
         }
     }
 
     @State(Scope.Benchmark)
-    public static class PreFilledBenchmarkContext extends BenchmarkContext {
+    public static class PreFilledBenchmarkContext extends EmptyBenchmarkContext {
 
         @Setup(Level.Trial)
         public void setUp() {
@@ -128,13 +168,25 @@ public class ArrayMerkleTreeBenchmark {
         }
     }
 
+    @State(Scope.Benchmark)
+    public static class CreateInstanceBenchmarkContext extends BenchmarkContext {
+        List<MerkleTree> merkleTrees = new LinkedList<MerkleTree>();
+    }
+
+    @State(Scope.Benchmark)
+    public static class BenchmarkContext {
+        @Param({"8", "10", "12", "14", "16", "18"})
+        protected int depth;
+
+    }
+
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(ArrayMerkleTreeBenchmark.class.getSimpleName())
                 .resultFormat(ResultFormatType.JSON)
                 //                .addProfiler(SafepointsProfiler.class)
                 //                .addProfiler(LinuxPerfProfiler.class)
-                .addProfiler(GCProfiler.class)
+                //                .addProfiler(GCProfiler.class)
                 //                .addProfiler(HotspotMemoryProfiler.class)
                 //                .verbosity(VerboseMode.SILENT)
                 .build();

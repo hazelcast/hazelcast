@@ -56,15 +56,23 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void testFootprint() {
-        MerkleTree merkleTree1 = new ArrayMerkleTree(3, 10);
-        MerkleTree merkleTree2 = new ArrayMerkleTree(3, 100);
+        MerkleTree merkleTree1 = new ArrayMerkleTree(3);
+        MerkleTree merkleTree2 = new ArrayMerkleTree(3);
+
+        for (int i = 0; i < 10; i++) {
+            merkleTree1.updateAdd(i, i);
+        }
+
+        for (int i = 0; i < 100; i++) {
+            merkleTree2.updateAdd(i, i);
+        }
 
         assertTrue(merkleTree2.footprint() > merkleTree1.footprint());
     }
 
     @Test
     public void testFootprintChanges() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3, 10);
+        MerkleTree merkleTree = new ArrayMerkleTree(3);
 
         long footprintBeforeAdd = merkleTree.footprint();
         for (int i = 0; i < 100; i++) {
