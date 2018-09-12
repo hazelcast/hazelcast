@@ -19,24 +19,14 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.journal.AbstractEventJournalExpiringTest;
 import com.hazelcast.journal.EventJournalTestContext;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.MapUtil;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-
-import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelTest.class})
