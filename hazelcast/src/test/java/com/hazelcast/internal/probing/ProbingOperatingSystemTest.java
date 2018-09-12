@@ -108,7 +108,7 @@ public class ProbingOperatingSystemTest extends ProbingTest {
 
     @Test
     public void registerMethod_whenNotExist() {
-        assertProbedTimes(0, probe("notExist"));
+        assertNotProbed("notExist");
     }
 
     public static class FakeOperatingSystemBean {

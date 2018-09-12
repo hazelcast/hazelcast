@@ -548,7 +548,13 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         private static void collectProbeMethods(Class<?> type, List<Method> probes) {
             for (Method m : type.getDeclaredMethods()) {
                 if (m.isAnnotationPresent(Probe.class)) {
-                    if (!type.isInterface() || !hasMethod(m, probes)) {
+                    if (m.getReturnType() == void.class) {
+                        LOGGER.warning("@Probe annotated method must not return void: "
+                                + m.toGenericString());
+                    } else if (m.getParameterCount() > 0) {
+                        LOGGER.warning("@Probe annotated method must not have parameters: "
+                                + m.toGenericString());
+                    } else if (!type.isInterface() || !hasMethod(m, probes)) {
                         m.setAccessible(true);
                         probes.add(m);
                     }

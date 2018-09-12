@@ -38,6 +38,10 @@ public abstract class ProbingTest extends HazelcastTestSupport {
         assertProbeValue(expectedValue, renderer.value, absoluteDelta);
     }
 
+    final void assertNotProbed(String notExpectedKey) {
+        assertProbedTimes(0, probe(notExpectedKey));
+    }
+
     static void assertProbedTimes(int expectedTimes, CountingProbeRenderer actual) {
         assertEquals("probe `" + actual.expectedKey + "` found " + actual.matches
                 + " times but expeced " + expectedTimes, expectedTimes, actual.matches);
@@ -55,7 +59,7 @@ public abstract class ProbingTest extends HazelcastTestSupport {
 
     CountingProbeRenderer probe(final String expectedKey) {
         CountingProbeRenderer renderer = new CountingProbeRenderer(expectedKey);
-        rendering.renderAt(ProbeLevel.MANDATORY, renderer);
+        rendering.renderAt(ProbeLevel.DEBUG, renderer);
         return renderer;
     }
 
