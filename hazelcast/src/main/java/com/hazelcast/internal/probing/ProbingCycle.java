@@ -4,6 +4,8 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 
+import net.bytebuddy.implementation.Implementation;
+
 /**
  * For each probe measurement a {@link ProbingCycle} is passed to all
  * {@link ProbeSource}s. The {@link ProbeSource} uses the API to communicate its
@@ -66,6 +68,15 @@ public interface ProbingCycle {
      * @param instance a obj with fields or methods annotated with {@link Probe}
      */
     void probe(Object instance);
+
+    /**
+     * Default method to call {@link #probe(Object)} for an array of instances. This
+     * is mostly useful for types that implement {@link Tagging} and thereby provide
+     * their own context.
+     * 
+     * @param instances may be null (no effect)
+     */
+    void probe(Object[] instances);
 
     /**
      * Similar to {@link #probe(Object)} just that all names become
@@ -164,5 +175,25 @@ public interface ProbingCycle {
          * @return this {@link Tags} context for chaining
          */
         Tags prefix(CharSequence prefix);
+    }
+
+    /**
+     * Can be implemented by instances passed to {@link ProbingCycle#probe(Object)}
+     * (and its sibling methods) to provided the {@link Tags} context by the object
+     * itself instead of before calling {@code probe}.
+     */
+    interface Tagging {
+
+        /**
+         * The implementing object (with probed fields or methods) is asked to provide
+         * the {@link Tags} context for the object.
+         * 
+         * This is an alternative to building the context in the
+         * {@link ProbeSource#probeIn(ProbingCycle)} implementation.
+         * 
+         * @param context to use to build the objects context using the {@link Tags}
+         *        methods.
+         */
+        void tagIn(Tags context);
     }
 }

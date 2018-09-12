@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
+import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.impl.LocalDistributedObjectStats;
@@ -51,8 +52,9 @@ public final class Probing {
             return false;
         }
         for (int i = 0; i < len; i++) {
-            if (prefix.charAt(i) != s.charAt(i))
+            if (prefix.charAt(i) != s.charAt(i)) {
                 return false;
+            }
         }
         return true;
     }
@@ -88,6 +90,14 @@ public final class Probing {
         cycle.probe("peakThreadCount", bean.getPeakThreadCount());
         cycle.probe("daemonThreadCount", bean.getDaemonThreadCount());
         cycle.probe("totalStartedThreadCount", bean.getTotalStartedThreadCount());
+    }
+
+    public static void probeIn(ProbingCycle cycle, String type, Thread[] threads) {
+        Tags tags = cycle.openContext().tag(TAG_TYPE, type);
+        for (int i = 0; i < threads.length; i++) {
+            tags.tag(TAG_INSTANCE, threads[i].getName());
+            cycle.probe(threads[i]);
+        }
     }
 
     public static <T extends LocalDistributedObjectStats> void probeIn(ProbingCycle cycle,

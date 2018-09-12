@@ -20,6 +20,10 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
@@ -77,7 +81,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class OperationExecutorImpl implements OperationExecutor, MetricsProvider {
+public final class OperationExecutorImpl implements OperationExecutor, ProbeRegistry.ProbeSource {
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
 
@@ -215,16 +219,15 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
         return threads;
     }
-
+    
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
-
-        registry.collectMetrics((Object[]) genericThreads);
-        registry.collectMetrics((Object[]) partitionThreads);
-        registry.collectMetrics(adHocOperationRunner);
-        registry.collectMetrics((Object[]) genericOperationRunners);
-        registry.collectMetrics((Object[]) partitionOperationRunners);
+    public void probeIn(ProbingCycle cycle) {
+        cycle.probe("operation", this);
+        Probing.probeIn(cycle, "operation.thread", genericThreads);
+        Probing.probeIn(cycle, "operation.thread", partitionThreads);
+        cycle.probe(genericOperationRunners);
+        cycle.probe(partitionOperationRunners);
+        cycle.probe(adHocOperationRunner);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")

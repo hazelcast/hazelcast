@@ -92,7 +92,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * event can be retransmitted causing it to be received by the target node at a later time.
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class EventServiceImpl implements InternalEventService, MetricsProvider {
+public class EventServiceImpl implements InternalEventService {
 
     public static final String SERVICE_NAME = "hz:core:eventService";
 
@@ -193,11 +193,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         } catch (Exception e) {
             return EVENT_SYNC_FREQUENCY;
         }
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "event");
     }
 
     @Override

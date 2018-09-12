@@ -24,10 +24,10 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
@@ -78,6 +78,8 @@ import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
 import static com.hazelcast.spi.properties.GroupProperty.DISABLE_STALE_READ_ON_PARTITION_MIGRATION;
+import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_TYPE;
+import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_INSTANCE;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
@@ -86,7 +88,7 @@ import static java.util.logging.Level.WARNING;
  * Responsible for processing an Operation.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
+class OperationRunnerImpl extends OperationRunner implements ProbingCycle.Tagging {
 
     static final int AD_HOC_PARTITION_ID = -2;
 
@@ -139,13 +141,13 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
+    public void tagIn(Tags context) {
         if (partitionId >= 0) {
-            registry.scanAndRegister(this, "operation.partition[" + partitionId + "]");
+            context.tag(TAG_TYPE, "operation.partition").tag(TAG_INSTANCE, String.valueOf(partitionId));
         } else if (partitionId == -1) {
-            registry.scanAndRegister(this, "operation.generic[" + genericId + "]");
+            context.tag(TAG_TYPE, "operation.generic").tag(TAG_INSTANCE, String.valueOf(genericId));
         } else {
-            registry.scanAndRegister(this, "operation.adhoc");
+            context.tag(TAG_TYPE, "operation.generic");
         }
     }
 

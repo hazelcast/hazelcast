@@ -170,9 +170,11 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.inboundResponseHandlerSupplier = new InboundResponseHandlerSupplier(
                 configClassLoader, invocationRegistry, hzName, nodeEngine);
 
-        this.operationExecutor = new OperationExecutorImpl(
+        OperationExecutorImpl operationExecutorImpl = new OperationExecutorImpl(
                 node.getProperties(), node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
                 node.getNodeExtension(), hzName, configClassLoader);
+        this.operationExecutor = operationExecutorImpl;
+        nodeEngine.getProbeRegistry().register(operationExecutorImpl);
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),

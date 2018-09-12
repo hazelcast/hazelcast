@@ -19,6 +19,7 @@ import java.util.function.Function;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.probing.ProbingCycle.Tagging;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -172,6 +173,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
                 @Override
                 public ProbeAnnotatedType apply(Class<?> type) {
+                    //TODO use EMPTY constant or null for types that do not have probes at all
                     return new ProbeAnnotatedType(type);
                 }
             }).probeIn(this, instance, level);
@@ -183,6 +185,15 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             prefix(prefix);
             probe(instance);
             tags.setLength(len);
+        }
+
+        @Override
+        public void probe(Object[] instances) {
+            if (instances != null) {
+                for (int i = 0; i < instances.length; i++) {
+                    probe(instances[i]); 
+                }
+            }
         }
 
         @Override
@@ -502,17 +513,20 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
     private static final class ProbeAnnotatedType {
 
+        private final boolean tagging;
         private final String prefix;
         private final ProbeAnnotatedTypeLevel[] levels = 
                 new ProbeAnnotatedTypeLevel[ProbeLevel.values().length];
 
         ProbeAnnotatedType(Class<?> type) {
+            tagging = Tagging.class.isAssignableFrom(type);
             prefix = type.isAnnotationPresent(Probe.class) ? type.getAnnotation(Probe.class).name()
                     : null;
             initByAnnotations(type);
         }
 
         ProbeAnnotatedType(Class<?> type, ProbeLevel level, String... methodNames) {
+            tagging = Tagging.class.isAssignableFrom(type);
             prefix = null;
             initByNameList(type, level, methodNames);
         }
@@ -550,6 +564,9 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             int len = cycle.tags.length();
             if (prefix != null) {
                 cycle.prefix(prefix);
+            }
+            if (tagging) {
+                ((Tagging) instance).tagIn(cycle);
             }
             for (int i = 0; i < levels.length; i++) {
                 ProbeAnnotatedTypeLevel l = levels[i];

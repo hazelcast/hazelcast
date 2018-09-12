@@ -215,7 +215,7 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        //TODO
+        cycle.probe("event", eventService);
     }
 
     public void start() {
