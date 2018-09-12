@@ -112,5 +112,4 @@ public interface Data {
      * @return true if source object is <tt>Portable</tt>, false otherwise.
      */
     boolean isPortable();
-
 }

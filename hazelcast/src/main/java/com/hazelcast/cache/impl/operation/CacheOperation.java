@@ -23,6 +23,7 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -37,7 +38,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
-import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 
 /**
  * Base Cache Operation. Cache operations are named operations. Key based operations are subclasses of this base
@@ -181,7 +181,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
 
         NodeEngine nodeEngine = getNodeEngine();
         SerializationService serializationService = nodeEngine.getSerializationService();
-        Data dataValue = toHeapData(serializationService.toData(record.getValue()));
+        Data dataValue = HeapData.toOnHeap(serializationService.toData(record.getValue()));
         publishWanUpdate(dataKey, dataValue, record);
     }
 
@@ -192,7 +192,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
         NodeEngine nodeEngine = getNodeEngine();
         SerializationService serializationService = nodeEngine.getSerializationService();
 
-        Data dataExpiryPolicy = toHeapData(serializationService.toData(record.getExpiryPolicy()));
+        Data dataExpiryPolicy = HeapData.toOnHeap(serializationService.toData(record.getExpiryPolicy()));
         publishWanUpdate(dataKey, dataValue, dataExpiryPolicy, record);
     }
 
@@ -203,8 +203,8 @@ public abstract class CacheOperation extends AbstractNamedOperation
             return;
         }
 
-        CacheEntryView<Data, Data> entryView = createDefaultEntryView(toHeapData(dataKey),
-                toHeapData(dataValue), toHeapData(dataExpiryPolicy), record);
+        CacheEntryView<Data, Data> entryView = createDefaultEntryView(HeapData.toOnHeap(dataKey),
+                HeapData.toOnHeap(dataValue), HeapData.toOnHeap(dataExpiryPolicy), record);
         wanEventPublisher.publishWanUpdate(name, entryView);
     }
 
@@ -213,6 +213,6 @@ public abstract class CacheOperation extends AbstractNamedOperation
             return;
         }
 
-        wanEventPublisher.publishWanRemove(name, toHeapData(dataKey));
+        wanEventPublisher.publishWanRemove(name, HeapData.toOnHeap(dataKey));
     }
 }

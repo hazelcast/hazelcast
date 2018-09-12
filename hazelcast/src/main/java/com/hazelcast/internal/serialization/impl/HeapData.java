@@ -162,6 +162,19 @@ public class HeapData implements Data {
         return SerializationConstants.CONSTANT_TYPE_PORTABLE == getType();
     }
 
+    /**
+     * Converts Data to HeapData. Useful for offheap conversion.
+     *
+     * @param data
+     * @return the onheap representation of data. If data is null, null is returned.
+     */
+    public static Data toOnHeap(Data data) {
+        if (data == null || data instanceof HeapData) {
+            return data;
+        }
+        return new HeapData(data.toByteArray());
+    }
+
     @Override
     public String toString() {
         return "HeapData{"

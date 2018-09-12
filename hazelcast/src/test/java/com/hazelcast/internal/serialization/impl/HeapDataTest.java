@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -23,7 +24,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -55,5 +58,18 @@ public class HeapDataTest {
         heap.copyTo(bytes, 0);
 
         assertEquals(new String(inputBytes), new String(bytes));
+    }
+
+    @Test
+    public void toHeapData() throws Exception {
+        HeapData anotherHeapData = new HeapData();
+        Data toOnHeap = HeapData.toOnHeap(anotherHeapData);
+        assertInstanceOf(HeapData.class, toOnHeap);
+    }
+
+    @Test
+    public void whenNull() throws Exception {
+        Data toOnHeap = HeapData.toOnHeap(null);
+        assertNull(toOnHeap);
     }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -27,17 +28,16 @@ import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.wan.impl.CallerProvenance;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.List;
 
-import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
@@ -216,8 +216,8 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
             return;
         }
 
-        Data dataValue = toHeapData(mapServiceContext.toData(value));
-        EntryView entryView = createSimpleEntryView(toHeapData(dataKey), dataValue, record);
+        Data dataValue = HeapData.toOnHeap(mapServiceContext.toData(value));
+        EntryView entryView = createSimpleEntryView(HeapData.toOnHeap(dataKey), dataValue, record);
 
         mapEventPublisher.publishWanUpdate(name, entryView, hasLoadProvenance);
     }
@@ -231,7 +231,7 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
             return;
         }
 
-        mapEventPublisher.publishWanRemove(name, toHeapData(dataKey));
+        mapEventPublisher.publishWanRemove(name, HeapData.toOnHeap(dataKey));
     }
 
     private boolean canPublishWANEvent() {
