@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +27,8 @@ import com.hazelcast.util.Clock;
 public final class ProbeRegistryImpl implements ProbeRegistry {
 
     private static final ILogger LOGGER = Logger.getLogger(ProbeRegistryImpl.class);
+
+    private static final Object[] EMPTY_ARGS = new Object[0];
 
     private static final Map<Class<?>, ProbeAnnotatedType> PROBE_METADATA = 
             new ConcurrentHashMap<Class<?>, ProbeAnnotatedType>();
@@ -80,7 +83,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 if (Clock.currentTimeMillis() > next 
                         && nextUpdateTimeMs.compareAndSet(next, next + updateIntervalMs)) {
                     try {
-                        update.invoke(source);
+                        update.invoke(source, EMPTY_ARGS);
                     } catch (Exception e) {
                         LOGGER.warning("Failed to update source: "
                                 + update.getDeclaringClass().getSimpleName() + "."
@@ -126,6 +129,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             for (ProbeSourceEntry entry : sources) {
                 entry.updateIfNeeded();
                 try {
+                    openContext(); // just to be sure it is done even if ommitted in the source
                     entry.source.probeIn(this);
                 } catch (Exception e) {
                     LOGGER.warning("Exception while probing source "
@@ -135,21 +139,37 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         @Override
+        public void probe(final ProbeLevel level, Object instance, final String... methods) {
+            if (!isProbed(level)) {
+                return;
+            }
+            PROBE_METADATA.computeIfAbsent(instance.getClass(), new Function<Class<?>, ProbeAnnotatedType>() {
+
+                @Override
+                public ProbeAnnotatedType apply(Class<?> type) {
+                    return new ProbeAnnotatedType(type, level, methods);
+                }
+            }).probeIn(this, instance, this.level);
+        }
+
+        @Override
         public void probe(Object instance) {
             PROBE_METADATA.computeIfAbsent(instance.getClass(), 
                     new Function<Class<?>, ProbeAnnotatedType>() {
 
                 @Override
-                public ProbeAnnotatedType apply(Class<?> key) {
-                    return new ProbeAnnotatedType(key);
+                public ProbeAnnotatedType apply(Class<?> type) {
+                    return new ProbeAnnotatedType(type);
                 }
             }).probeIn(this, instance, level);
         }
 
         @Override
         public void probe(CharSequence prefix, Object instance) {
-            append(prefix).append(".");
+            int len = tags.length();
+            prefix(prefix);
             probe(instance);
+            tags.setLength(len);
         }
 
         @Override
@@ -217,6 +237,14 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             return this;
         }
 
+        @Override
+        public Tags prefix(CharSequence prefix) {
+            if (prefix.length() > 0) {
+                return append(prefix).append(".");
+            }
+            return this;
+        }
+
         private void appendSpaceToPriorTag() {
             if (endsWithTag) {
                 tags.append(' ');
@@ -252,10 +280,6 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         @Override
         public boolean isProbed(ProbeLevel level) {
             return level.isEnabled(this.level);
-        }
-
-        private static long toLong(double value) {
-            return round(value * 10000d);
         }
     }
 
@@ -323,8 +347,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             int i = 0;
             for (Method m : probes) {
                 Probe p = m.getAnnotation(Probe.class);
-                if (p.level() == level) {
-                    String name = p.name();
+                if (p == null || p.level() == level) {
+                    String name = p == null ? "" : p.name();
                     if (name.isEmpty()) {
                         name = getterIntoProperty(m.getName());
                     }
@@ -369,7 +393,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         private static int countMethodProbesWith(ProbeLevel level, List<Method> probes) {
             int c = 0;
             for (Method m : probes) {
-                if (m.getAnnotation(Probe.class).level() == level) {
+                Probe probe = m.getAnnotation(Probe.class);
+                if (probe == null || probe.level() == level) {
                     c++;
                 }
             }
@@ -459,50 +484,16 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (methods != null) {
                 for (int i = 0; i < methods.length; i++) {
                     try {
-                        cycle.probe(level, methodNames[i], toLong(methods[i].invoke(instance)));
+                        cycle.probe(level, methodNames[i], 
+                                toLong(methods[i].invoke(instance, EMPTY_ARGS)));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read method probe", e);
                     }
                 }
             }
         }
-
-        private static long toLong(Object value) {
-            if (value == null) {
-                return -1L;
-            }
-            Class<?> type = value.getClass();
-            if (value instanceof Number) {
-                if (type == Float.class || type == Double.class) {
-                    return toLong(((Number) value).doubleValue());
-                }
-                return ((Number) value).longValue();
-            }
-            if (type == Boolean.class) {
-                return ((Boolean) value).booleanValue() ? 1 : 0;
-            }
-            if (type == AtomicBoolean.class) {
-                return ((AtomicBoolean) value).get() ? 1 : 0;
-            }
-            if (value instanceof Collection) {
-                return ((Collection<?>) value).size();
-            }
-            if (value instanceof Map) {
-                return ((Map<?, ?>) value).size();
-            }
-            if (value instanceof Counter) {
-                return ((Counter) value).get();
-            }
-            if (value instanceof Semaphore) {
-                return ((Semaphore) value).availablePermits();
-            }
-            throw new UnsupportedOperationException(
-                    "It is not known how to convert a value of type "
-                            + value.getClass().getSimpleName() + " to primitive long.");
-        }
-
     }
-
+    
     private static final class ProbeAnnotatedType {
 
         private final String prefix;
@@ -510,6 +501,33 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 new ProbeAnnotatedTypeLevel[ProbeLevel.values().length];
 
         ProbeAnnotatedType(Class<?> type) {
+            prefix = type.isAnnotationPresent(Probe.class) ? type.getAnnotation(Probe.class).name()
+                    : null;
+            initByAnnotations(type);
+        }
+
+        ProbeAnnotatedType(Class<?> type, ProbeLevel level, String... methodNames) {
+            prefix = null;
+            initByNameList(type, level, methodNames);
+        }
+
+        private void initByNameList(Class<?> type, ProbeLevel level, String... methodNames) {
+            List<Method> probedMethods = new ArrayList<Method>();
+            for (String name : methodNames) {
+                try {
+                    Method m = type.getDeclaredMethod(name);
+                    m.setAccessible(true);
+                    probedMethods.add(m);
+                } catch (Exception e) {
+                    LOGGER.warning("Expected probe method `" + name + "` does not exist for type: "
+                            + type.getName());
+                }
+            }
+            levels[level.ordinal()] = ProbeAnnotatedTypeLevel.createIfNeeded(level, probedMethods,
+                    Collections.<Field>emptyList());
+        }
+
+        private void initByAnnotations(Class<?> type) {
             List<Method> probedMethods = new ArrayList<Method>();
             collectProbeMethods(type, probedMethods);
             List<Field> probedFields = new ArrayList<Field>();
@@ -520,13 +538,11 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                             probedMethods, probedFields);
                 }
             }
-            prefix = type.isAnnotationPresent(Probe.class) ? type.getAnnotation(Probe.class).name()
-                    : null;
         }
 
         void probeIn(ProbingCycleImpl cycle, Object instance, ProbeLevel level) {
             if (prefix != null) {
-                cycle.append(prefix).append(".");
+                cycle.prefix(prefix);
             }
             for (int i = 0; i < levels.length; i++) {
                 ProbeAnnotatedTypeLevel l = levels[i];
@@ -536,7 +552,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        private void collectProbeMethods(Class<?> type, List<Method> probes) {
+        private static void collectProbeMethods(Class<?> type, List<Method> probes) {
             for (Method m : type.getDeclaredMethods()) {
                 if (m.isAnnotationPresent(Probe.class)) {
                     if (!type.isInterface() || !hasMethod(m, probes)) {
@@ -553,7 +569,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        private boolean hasMethod(Method probe, List<Method> probes) {
+        private static boolean hasMethod(Method probe, List<Method> probes) {
             for (Method p : probes) {
                 if (p.getName().equals(probe.getName()))
                     return true;
@@ -561,7 +577,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             return false;
         }
 
-        private void collectProbeFields(Class<?> type, List<Field> probes) {
+        private static void collectProbeFields(Class<?> type, List<Field> probes) {
             for (Field f : type.getDeclaredFields()) {
                 if (f.isAnnotationPresent(Probe.class)) {
                     f.setAccessible(true);
@@ -572,5 +588,43 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 collectProbeFields(type.getSuperclass(), probes);
             }
         }
+    }
+
+    static long toLong(double value) {
+        return round(value * 10000d);
+    }
+
+    static long toLong(Object value) {
+        if (value == null) {
+            return -1L;
+        }
+        Class<?> type = value.getClass();
+        if (value instanceof Number) {
+            if (type == Float.class || type == Double.class) {
+                return toLong(((Number) value).doubleValue());
+            }
+            return ((Number) value).longValue();
+        }
+        if (type == Boolean.class) {
+            return ((Boolean) value).booleanValue() ? 1 : 0;
+        }
+        if (type == AtomicBoolean.class) {
+            return ((AtomicBoolean) value).get() ? 1 : 0;
+        }
+        if (value instanceof Collection) {
+            return ((Collection<?>) value).size();
+        }
+        if (value instanceof Map) {
+            return ((Map<?, ?>) value).size();
+        }
+        if (value instanceof Counter) {
+            return ((Counter) value).get();
+        }
+        if (value instanceof Semaphore) {
+            return ((Semaphore) value).availablePermits();
+        }
+        throw new UnsupportedOperationException(
+                "It is not known how to convert a value of type "
+                        + value.getClass().getSimpleName() + " to primitive long.");
     }
 }

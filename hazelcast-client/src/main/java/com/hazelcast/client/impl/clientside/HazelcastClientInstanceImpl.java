@@ -120,13 +120,10 @@ import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
-import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
-import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
-import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
-import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
-import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeRegistryImpl;
+import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -205,6 +202,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final DiscoveryService discoveryService;
     private final LoggingService loggingService;
     private final MetricsRegistryImpl metricsRegistry;
+    private final ProbeRegistry probeRegistry;
     private final Statistics statistics;
     private final Diagnostics diagnostics;
     private final SerializationService serializationService;
@@ -265,6 +263,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExceptionFactory = initClientExceptionFactory();
         statistics = new Statistics(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
+        probeRegistry = new ProbeRegistryImpl();
+        initProbeSources();
     }
 
     private int getConnectionTimeoutMillis() {
@@ -279,16 +279,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return new Diagnostics(name, logger, instanceName, properties);
     }
 
+    private void initProbeSources() {
+        probeRegistry.register(Probing.GC);
+        probeRegistry.register(Probing.OS);
+    }
+
     private MetricsRegistryImpl initMetricsRegistry() {
         ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(getName(), logger, probeLevel);
-        RuntimeMetricSet.register(metricsRegistry);
-        GarbageCollectionMetricSet.register(metricsRegistry);
-        OperatingSystemMetricSet.register(metricsRegistry);
-        ThreadMetricSet.register(metricsRegistry);
-        ClassLoadingMetricSet.register(metricsRegistry);
-        FileMetricSet.register(metricsRegistry);
         metricsRegistry.scanAndRegister(clientExtension.getMemoryStats(), "memory");
         return metricsRegistry;
     }

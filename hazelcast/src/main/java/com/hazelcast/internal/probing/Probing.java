@@ -9,13 +9,17 @@ import java.io.File;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.monitor.LocalIndexStats;
@@ -92,7 +96,53 @@ public final class Probing {
         }
     }
 
-    public static ProbeSource GC = new GcProbeSource();
+    private static final String[] PROBED_OS_METHODS = { "getCommittedVirtualMemorySize",
+            "getFreePhysicalMemorySize", "getFreeSwapSpaceSize", "getProcessCpuTime",
+            "getTotalPhysicalMemorySize", "getTotalSwapSpaceSize", "getMaxFileDescriptorCount",
+            "getOpenFileDescriptorCount", "getProcessCpuLoad", "getSystemCpuLoad" };
+
+    public static void probeIn(ProbingCycle cycle, OperatingSystemMXBean bean) {
+        cycle.probe(MANDATORY, bean, PROBED_OS_METHODS);
+        cycle.probe("systemLoadAverage", bean.getSystemLoadAverage());
+    }
+
+
+    /**
+     * A {@link ProbeSource} providing information on runtime, threads,
+     * class-loading and OS properties
+     */
+    public static final ProbeSource OS = new OsProbeSource();
+
+    private static final class OsProbeSource implements ProbeSource {
+
+        final Runtime runtime = Runtime.getRuntime();
+        final RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+        final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        final File userHome = new File(System.getProperty("user.home"));
+        final ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
+        final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
+
+        @Override
+        public void probeIn(ProbingCycle cycle) {
+            cycle.openContext().prefix("runtime");
+            Probing.probeIn(cycle, runtime);
+            Probing.probeIn(cycle, runtimeMXBean);
+            cycle.openContext().prefix("thread");
+            Probing.probeIn(cycle, threadMXBean);
+            cycle.openContext().prefix("file.partition[user.home]");
+            Probing.probeIn(cycle, userHome);
+            cycle.openContext().prefix("classloading");
+            Probing.probeIn(cycle, classLoadingMXBean);
+            cycle.openContext().prefix("os");
+            Probing.probeIn(cycle, operatingSystemMXBean);
+        }
+
+    }
+
+    /**
+     * A {@link ProbeSource} providing information about GC activity
+     */
+    public static final ProbeSource GC = new GcProbeSource();
 
     private static final class GcProbeSource implements ProbeSource {
 
@@ -128,11 +178,12 @@ public final class Probing {
 
         @Override
         public void probeIn(ProbingCycle cycle) {
+            cycle.openContext();
             cycle.probe("gc", this);
         }
 
         @ReprobeCycle(4)
-        public void refresh() {
+        public void update() {
             long minorCount = 0;
             long minorTime = 0;
             long majorCount = 0;

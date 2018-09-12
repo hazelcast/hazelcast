@@ -14,79 +14,67 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics.metricsets;
+package com.hazelcast.internal.probing;
 
-import com.hazelcast.internal.metrics.LongGauge;
-import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
-
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
-import static org.junit.Assert.assertEquals;
+import java.lang.management.ThreadMXBean;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
+public class ProbingThreadTest extends ProbingTest {
 
-    private static final ClassLoadingMXBean BEAN = ManagementFactory.getClassLoadingMXBean();
-
-    private MetricsRegistryImpl metricsRegistry;
+    private static final ThreadMXBean MX_BEAN = ManagementFactory.getThreadMXBean();
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-        ClassLoadingMetricSet.register(metricsRegistry);
+        registry.register(Probing.OS);
     }
 
     @Test
-    public void utilityConstructor() {
-        assertUtilityConstructor(ClassLoadingMetricSet.class);
-    }
-
-    @Test
-    public void loadedClassesCount() {
-        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.loadedClassesCount");
-
+    public void threadCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(BEAN.getLoadedClassCount(), gauge.read(), 100);
+                assertProbed("thread.threadCount", MX_BEAN.getThreadCount(), 10);
             }
         });
     }
 
     @Test
-    public void totalLoadedClassesCount() {
-        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.totalLoadedClassesCount");
-
+    public void peakThreadCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(BEAN.getTotalLoadedClassCount(), gauge.read(), 100);
+                assertProbed("thread.peakThreadCount", MX_BEAN.getPeakThreadCount(), 10);
             }
         });
     }
 
     @Test
-    public void unloadedClassCount() {
-        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.unloadedClassCount");
-
+    public void daemonThreadCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(BEAN.getUnloadedClassCount(), gauge.read(), 100);
+                assertProbed("thread.daemonThreadCount", MX_BEAN.getDaemonThreadCount(), 10);
             }
         });
     }
 
+    @Test
+    public void totalStartedThreadCount() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertProbed("thread.totalStartedThreadCount", MX_BEAN.getTotalStartedThreadCount(), 10);
+            }
+        });
+    }
 }

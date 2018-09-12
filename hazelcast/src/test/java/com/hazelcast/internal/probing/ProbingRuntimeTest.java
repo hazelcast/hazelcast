@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics.metricsets;
+package com.hazelcast.internal.probing;
 
-import com.hazelcast.internal.metrics.LongGauge;
-import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,74 +25,75 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
-import static org.junit.Assert.assertEquals;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ThreadMetricSetTest extends HazelcastTestSupport {
+public class ProbingRuntimeTest extends ProbingTest {
 
-    private static final ThreadMXBean MX_BEAN = ManagementFactory.getThreadMXBean();
+    private static final int TEN_MB = 10 * 1024 * 1024;
 
-    private MetricsRegistryImpl metricsRegistry;
+    private Runtime runtime;
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-        ThreadMetricSet.register(metricsRegistry);
+        registry.register(Probing.OS);
+        runtime = Runtime.getRuntime();
     }
 
     @Test
-    public void utilityConstructor() {
-        assertUtilityConstructor(ThreadMetricSet.class);
-    }
-
-    @Test
-    public void threadCount() {
-        final LongGauge gauge = metricsRegistry.newLongGauge("thread.threadCount");
-
+    public void freeMemory() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(MX_BEAN.getThreadCount(), gauge.read(), 10);
+                assertProbed("runtime.freeMemory", runtime.freeMemory(), TEN_MB);
             }
         });
     }
 
     @Test
-    public void peakThreadCount() {
-        final LongGauge gauge = metricsRegistry.newLongGauge("thread.peakThreadCount");
-
+    public void totalMemory() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(MX_BEAN.getPeakThreadCount(), gauge.read(), 10);
+                assertProbed("runtime.totalMemory", runtime.totalMemory(), TEN_MB);
             }
         });
     }
 
     @Test
-    public void daemonThreadCount() {
-        final LongGauge gauge = metricsRegistry.newLongGauge("thread.daemonThreadCount");
-
+    public void maxMemory() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(MX_BEAN.getDaemonThreadCount(), gauge.read(), 10);
+                assertProbed("runtime.maxMemory", runtime.maxMemory(), TEN_MB);
             }
         });
     }
 
     @Test
-    public void totalStartedThreadCount() {
-        final LongGauge gauge = metricsRegistry.newLongGauge("thread.totalStartedThreadCount");
-
+    public void usedMemory() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(MX_BEAN.getTotalStartedThreadCount(), gauge.read(), 10);
+                long expected = runtime.totalMemory() - runtime.freeMemory();
+                assertProbed("runtime.usedMemory", expected, TEN_MB);
+            }
+        });
+    }
+
+    @Test
+    public void availableProcessors() {
+        assertProbed("runtime.availableProcessors", runtime.availableProcessors());
+    }
+
+    @Test
+    public void uptime() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                long expected = ManagementFactory.getRuntimeMXBean().getUptime();
+                assertProbed("runtime.uptime", expected, TimeUnit.MINUTES.toMillis(1));
             }
         });
     }

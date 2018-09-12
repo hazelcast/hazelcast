@@ -71,10 +71,30 @@ public interface ProbingCycle {
      * Similar to {@link #probe(Object)} just that all names become
      * {@code <prefix>.<name>} instead of just {@code <name>}.
      * 
+     * The prefix given will <b>not</b> remain in the overall path when this method
+     * returns so that further instances probed with other or without prefixed do
+     * not share the prefix given here.
+     * 
      * @param prefix prefix to use for all names (provided without dot)
      * @param instance a obj with fields or methods annotated with {@link Probe}
      */
     void probe(CharSequence prefix, Object instance);
+
+    /**
+     * Similar to {@link #probe(Object)} just that probed methods are not identified
+     * using annotations but given as a list. All methods use the specified level.
+     * No fields will be probed.
+     * 
+     * This can be used to probe beans that cannot be annotated. To prefix this
+     * {@link Tags#prefix(CharSequence)} can be used. Remember though that the
+     * prefix will remain in the context.
+     * 
+     * @param level the level to use for all probes created
+     * @param instance the obj whose methods to probe.
+     * @param methods the names of the methods to probe. Methods that do not exist
+     *        or have the wrong number of arguments (not none) are ignored.
+     */
+    void probe(ProbeLevel level, Object instance, String... methods);
 
     void probe(CharSequence name, long value);
 
@@ -87,7 +107,6 @@ public interface ProbingCycle {
     void probe(ProbeLevel level, CharSequence name, double value);
 
     void probe(ProbeLevel level, CharSequence name, boolean value);
-
 
     /*
      * Describing probing context to the cycle:
@@ -136,5 +155,14 @@ public interface ProbingCycle {
          * @return this {@link Tags} context for chaining
          */
         Tags append(CharSequence s);
+
+        /**
+         * Same as {@link #append(CharSequence)} + {@code append(".")} unless the prefix
+         * is empty in which case nothing is appended.
+         * 
+         * @param prefix not null, only guaranteed to be stable throughout the call
+         * @return this {@link Tags} context for chaining
+         */
+        Tags prefix(CharSequence prefix);
     }
 }

@@ -29,17 +29,13 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
-import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
-import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
-import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
-import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
-import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbeRegistryImpl;
+import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.logging.ILogger;
@@ -82,13 +78,13 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import org.codehaus.plexus.interpolation.PrefixedObjectValueSource;
-
-import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
+
+import java.io.File;
+import java.lang.management.ManagementFactory;
 
 /**
  * The NodeEngineImpl is the where the construction of the Hazelcast dependencies take place. It can be
@@ -100,7 +96,7 @@ import static java.lang.System.currentTimeMillis;
  * we don't leak {@link com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl} to the outside.
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class NodeEngineImpl implements NodeEngine {
+public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
 
     private static final String JET_SERVICE_NAME = "hz:impl:jetService";
 
@@ -174,16 +170,6 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    /**
-     * For convenience this method automatically registers services that are
-     * {@link ProbeSource}s.
-     */
-    private void initProbeSources() {
-        for (ProbeSource s : serviceManager.getServices(ProbeSource.class)) {
-            probeRegistry.register(s);
-        }
-    }
-
     private MetricsRegistryImpl newMetricRegistry(Node node) {
         ProbeLevel probeLevel = node.getProperties().getEnum(METRICS_LEVEL, ProbeLevel.class);
         return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class), probeLevel);
@@ -209,13 +195,25 @@ public class NodeEngineImpl implements NodeEngine {
         return metricsRegistry;
     }
 
+    /**
+     * For convenience this method automatically registers services that are
+     * {@link ProbeSource}s.
+     */
+    private void initProbeSources() {
+        probeRegistry.register(this);
+        probeRegistry.register(Probing.GC);
+        probeRegistry.register(Probing.OS);
+        for (ProbeSource s : serviceManager.getServices(ProbeSource.class)) {
+            probeRegistry.register(s);
+        }
+    }
+
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        //TODO
+    }
+
     public void start() {
-        RuntimeMetricSet.register(metricsRegistry);
-        GarbageCollectionMetricSet.register(metricsRegistry);
-        OperatingSystemMetricSet.register(metricsRegistry);
-        ThreadMetricSet.register(metricsRegistry);
-        ClassLoadingMetricSet.register(metricsRegistry);
-        FileMetricSet.register(metricsRegistry);
         metricsRegistry.scanAndRegister(node.getNodeExtension().getMemoryStats(), "memory");
         metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
 
