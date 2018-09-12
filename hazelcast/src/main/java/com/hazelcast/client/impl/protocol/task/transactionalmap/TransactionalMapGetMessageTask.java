@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.tx.TransactionalMapProxy;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -40,7 +41,7 @@ public class TransactionalMapGetMessageTask
     protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
-        Object response = map.get(parameters.key);
+        Object response = ((TransactionalMapProxy) map).get(parameters.key, true);
         return serializationService.toData(response);
     }
 

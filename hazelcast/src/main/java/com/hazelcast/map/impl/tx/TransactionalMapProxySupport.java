@@ -56,7 +56,6 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
 
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
 
-    protected final boolean nearCacheEnabled;
     protected final String name;
     protected final MapServiceContext mapServiceContext;
     protected final MapNearCacheManager mapNearCacheManager;
@@ -67,6 +66,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     protected final InternalSerializationService ss;
 
     private final boolean serializeKeys;
+    private final boolean nearCacheEnabled;
     private final RecordComparator recordComparator;
 
     TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
@@ -107,8 +107,8 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         }
     }
 
-    boolean containsKeyInternal(Data dataKey, Object objectKey) {
-        if (nearCacheEnabled) {
+    boolean containsKeyInternal(Data dataKey, Object objectKey, boolean skipNearCacheLookup) {
+        if (!skipNearCacheLookup && nearCacheEnabled) {
             Object nearCacheKey = serializeKeys ? dataKey : objectKey;
             Object cachedValue = getCachedValue(nearCacheKey, false);
             if (cachedValue != NOT_CACHED) {
@@ -127,8 +127,8 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         }
     }
 
-    Object getInternal(Object nearCacheKey, Data keyData) {
-        if (nearCacheEnabled) {
+    Object getInternal(Object nearCacheKey, Data keyData, boolean skipNearCacheLookup) {
+        if (!skipNearCacheLookup && nearCacheEnabled) {
             Object value = getCachedValue(nearCacheKey, true);
             if (value != NOT_CACHED) {
                 return value;
