@@ -198,6 +198,8 @@ public interface Channel extends Closeable {
      * <li>if there is a timeout.</li>
      * </ol>
      *
+     * In case of failure, channel is closed automatically and exception is thrown to user.
+     *
      * @param address       the address to connect to.
      * @param timeoutMillis the timeout in millis, or 0 if waiting indefinitely.
      * @throws IOException if connecting fails.
