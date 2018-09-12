@@ -118,17 +118,18 @@ public interface ICache<K, V>
     /**
      * Associates the specified key with the given {@link javax.cache.expiry.ExpiryPolicy}.
      * {@code expiryPolicy} takes precedence for this particular {@code key} against any cache wide expiry policy.
-     * If {@code key} does not exist or is already expired, this call has no effect.
+     * If {@code key} does not exist or is already expired, this call makes no changes to entries stored in this cache.
      *
      * Note: New time-to-live duration is calculated using newly added entry policy's getExpiryForUpdate method
      * immediately after this operation succeeds.
      *
      * @param   key The key that is associated with the specified expiry policy.
      * @param   expiryPolicy custom expiry policy for this operation
+     * @return {@code true} if the entry exists and its expiry policy is changed, {@code false} otherwise
      * @throws  NullPointerException if {@code keys} or {@code expiryPolicy} is null.
      * @since 3.11
      */
-    void setExpiryPolicy(K key, ExpiryPolicy expiryPolicy);
+    boolean setExpiryPolicy(K key, ExpiryPolicy expiryPolicy);
 
     /**
      * Associates the specified key with the given {@link javax.cache.expiry.ExpiryPolicy}.

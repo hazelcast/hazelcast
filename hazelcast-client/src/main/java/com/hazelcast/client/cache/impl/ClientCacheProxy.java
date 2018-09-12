@@ -483,11 +483,6 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
     }
 
     @Override
-    public void setExpiryPolicy(K key, ExpiryPolicy expiryPolicy) {
-        setExpiryPolicy(Collections.singleton(key), expiryPolicy);
-    }
-
-    @Override
     public String addPartitionLostListener(CachePartitionLostListener listener) {
         EventHandler<ClientMessage> handler = new ClientCachePartitionLostEventHandler(listener);
         injectDependencies(listener);

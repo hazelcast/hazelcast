@@ -73,7 +73,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCo
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
-import com.hazelcast.client.impl.protocol.codec.MapSetTTLCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSetTtlCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSubmitToKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryLockCodec;
@@ -520,17 +520,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return tryPutInternal(timeout, timeunit, DEFAULT_MAX_IDLE, MILLISECONDS, key, value);
+        return tryPutInternal(timeout, timeunit, key, value);
     }
 
-    protected boolean tryPutInternal(long timeout, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit,
-                                     Object key, Object value) {
+    protected boolean tryPutInternal(long timeout, TimeUnit timeunit, Object key, Object value) {
         Data keyData = toData(key);
         Data valueData = toData(value);
         long timeoutMillis = getTimeInMillis(timeout, timeunit);
-        long maxIdleMillis = getTimeInMillis(maxIdle, maxIdleUnit);
-        ClientMessage request = MapTryPutCodec.encodeRequest(name, keyData, valueData,
-                getThreadId(), timeoutMillis, maxIdleMillis);
+        ClientMessage request = MapTryPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), timeoutMillis);
         ClientMessage response = invoke(request, keyData);
         MapTryPutCodec.ResponseParameters resultParameters = MapTryPutCodec.decodeResponse(response);
         return resultParameters.response;
@@ -1369,17 +1366,19 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public void setTTL(K key, long ttl, TimeUnit timeunit) {
+    public boolean setTtl(K key, long ttl, TimeUnit timeunit) {
         checkNotNull(key);
         checkNotNull(timeunit);
-        setTTLInternal(key, ttl, timeunit);
+        return setTtlInternal(key, ttl, timeunit);
     }
 
-    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+    protected boolean setTtlInternal(Object key, long ttl, TimeUnit timeUnit) {
         long ttlMillis = timeUnit.toMillis(ttl);
         Data keyData = toData(key);
-        ClientMessage request = MapSetTTLCodec.encodeRequest(getName(), keyData, ttlMillis);
-        invoke(request, keyData);
+        ClientMessage request = MapSetTtlCodec.encodeRequest(getName(), keyData, ttlMillis);
+        ClientMessage result = invoke(request, keyData);
+        MapSetTtlCodec.ResponseParameters resultParameters = MapSetTtlCodec.decodeResponse(result);
+        return resultParameters.response;
     }
 
     @Override

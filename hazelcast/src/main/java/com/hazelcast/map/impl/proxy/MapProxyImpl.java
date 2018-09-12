@@ -444,10 +444,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public void setTTL(K key, long ttl, TimeUnit timeunit) {
+    public boolean setTtl(K key, long ttl, TimeUnit timeunit) {
         checkNotNull(key);
         checkNotNull(timeunit);
-        setTTLInternal(key, ttl, timeunit);
+        return setTtlInternal(key, ttl, timeunit);
     }
 
     @Override

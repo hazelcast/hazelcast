@@ -34,6 +34,7 @@ public class CacheSetExpiryPolicyOperation extends CacheOperation
 
     private List<Data> keys;
     private Data expiryPolicy;
+    private transient boolean response;
 
     public CacheSetExpiryPolicyOperation() {
 
@@ -50,7 +51,7 @@ public class CacheSetExpiryPolicyOperation extends CacheOperation
         if (recordStore == null) {
             return;
         }
-        recordStore.setExpiryPolicy(keys, expiryPolicy, getCallerUuid());
+        response = recordStore.setExpiryPolicy(keys, expiryPolicy, getCallerUuid());
     }
 
     @Override
@@ -62,6 +63,11 @@ public class CacheSetExpiryPolicyOperation extends CacheOperation
                 publishWanUpdate(key, record);
             }
         }
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 
     @Override

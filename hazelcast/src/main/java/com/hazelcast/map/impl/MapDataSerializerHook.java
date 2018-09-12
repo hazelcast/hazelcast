@@ -111,8 +111,8 @@ import com.hazelcast.map.impl.operation.RemoveOperation;
 import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
 import com.hazelcast.map.impl.operation.ReplaceOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
-import com.hazelcast.map.impl.operation.SetTTLBackupOperation;
-import com.hazelcast.map.impl.operation.SetTTLOperation;
+import com.hazelcast.map.impl.operation.SetTtlBackupOperation;
+import com.hazelcast.map.impl.operation.SetTtlOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
 import com.hazelcast.map.impl.operation.TryPutOperation;
@@ -1048,13 +1048,13 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[SET_TTL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetTTLOperation();
+                return new SetTtlOperation();
             }
         };
         constructors[SET_TTL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetTTLBackupOperation();
+                return new SetTtlBackupOperation();
             }
         };
         constructors[MERKLE_TREE_NODE_ENTRIES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
