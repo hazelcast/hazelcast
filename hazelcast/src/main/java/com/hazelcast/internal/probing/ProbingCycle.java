@@ -65,6 +65,8 @@ public interface ProbingCycle {
      * set of supported types with a known mapping is fix and implementation
      * dependent.
      * 
+     * The method exits with the same {@link Tags} context it is called with.
+     * 
      * @param instance a obj with fields or methods annotated with {@link Probe}
      */
     void probe(Object instance);
@@ -74,6 +76,9 @@ public interface ProbingCycle {
      * is mostly useful for types that implement {@link Tagging} and thereby provide
      * their own context.
      * 
+     * The method exits with the same {@link Tags} context it is called with.
+     * Instances do not affect each others context.
+     * 
      * @param instances may be null (no effect)
      */
     void probe(Object[] instances);
@@ -82,9 +87,7 @@ public interface ProbingCycle {
      * Similar to {@link #probe(Object)} just that all names become
      * {@code <prefix>.<name>} instead of just {@code <name>}.
      * 
-     * The prefix given will <b>not</b> remain in the overall path when this method
-     * returns so that further instances probed with other or without prefixed do
-     * not share the prefix given here.
+     * The method exits with the same {@link Tags} context it is called with.
      * 
      * @param prefix prefix to use for all names (provided without dot)
      * @param instance a obj with fields or methods annotated with {@link Probe}
@@ -152,6 +155,8 @@ public interface ProbingCycle {
          * with more then one tag. In such cases the context has to be opened and
          * reconstructed for each loop iteration.
          * 
+         * The given {@link CharSequence} for {@code value} will always be escaped.
+         * 
          * @param name not null, only guaranteed to be stable throughout the call
          * @param value not null, only guaranteed to be stable throughout the call
          * @return this {@link Tags} context for chaining
@@ -162,6 +167,8 @@ public interface ProbingCycle {
          * This method is meat as a legacy support where keys are not build in terms of tags.
          * It should only be used in exceptional cases. At some point we hopefully can remove it.
          * 
+         * The given {@link CharSequence} will always be escaped.
+         * 
          * @param s not null, only guaranteed to be stable throughout the call
          * @return this {@link Tags} context for chaining
          */
@@ -170,6 +177,8 @@ public interface ProbingCycle {
         /**
          * Same as {@link #append(CharSequence)} + {@code append(".")} unless the prefix
          * is empty in which case nothing is appended.
+         * 
+         * The given {@link CharSequence} will always be escaped.
          * 
          * @param prefix not null, only guaranteed to be stable throughout the call
          * @return this {@link Tags} context for chaining
@@ -187,6 +196,9 @@ public interface ProbingCycle {
         /**
          * The implementing object (with probed fields or methods) is asked to provide
          * the {@link Tags} context for the object.
+         * 
+         * The performed tagging is relative to potential parent context {@link Tags}
+         * that were added before probing the implementing instance.
          * 
          * This is an alternative to building the context in the
          * {@link ProbeSource#probeIn(ProbingCycle)} implementation.
