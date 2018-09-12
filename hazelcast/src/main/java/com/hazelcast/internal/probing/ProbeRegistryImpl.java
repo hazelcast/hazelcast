@@ -105,7 +105,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     }
 
     private static final class ProbingCycleImpl
-            implements ProbingCycle, ProbingCycle.Tags, ProbeRenderContext {
+    implements ProbingCycle, ProbingCycle.Tags, ProbeRenderContext {
 
         private final StringBuilder tags = new StringBuilder(128);
         private final Set<ProbeSourceEntry> sources;
@@ -486,7 +486,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
     }
-    
+
     private static final class ProbeAnnotatedType {
 
         private final String prefix;
@@ -534,6 +534,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         void probeIn(ProbingCycleImpl cycle, Object instance, ProbeLevel level) {
+            int len = cycle.tags.length();
             if (prefix != null) {
                 cycle.prefix(prefix);
             }
@@ -543,6 +544,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                     l.probeIn(cycle, instance);
                 }
             }
+            cycle.tags.setLength(len); // as a good measure in case a prefix was used
         }
 
         private static void collectProbeMethods(Class<?> type, List<Method> probes) {
