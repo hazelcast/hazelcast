@@ -1496,9 +1496,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             expiryPolicyInstance = (ExpiryPolicy) toValue(expiryPolicy);
         }
         boolean atLeastOneKey = false;
+        long now = System.currentTimeMillis();
         for (Data key : keys) {
             R record = records.get(key);
-            if (record != null) {
+            if (record != null && !processExpiredEntry(key, record, now)) {
                 updateExpiryPolicyOfRecord(key, record, expiryPolicy);
                 updateRecordWithExpiry(key, record, expiryPolicyInstance, System.currentTimeMillis(), source);
                 atLeastOneKey = true;

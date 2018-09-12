@@ -31,6 +31,7 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,6 +46,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -128,12 +130,16 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testExtendTTLOfAKeyBeforeItExpires() {
-        final IMap<String, String> map = client.getMap(randomString());
-        map.put("key", "value", 1, TimeUnit.SECONDS);
+        final IMap<String, String> map = client.getMap("testSetTTLExtend");
+        map.put("key", "value", 10, TimeUnit.SECONDS);
+
+        sleepAtLeastMillis(SECONDS.toMillis(1));
+        //Make the entry eternal
         map.setTtl("key", 0, TimeUnit.DAYS);
 
-        sleepAtLeastMillis(1200);
+        sleepAtLeastMillis(SECONDS.toMillis(15));
 
         assertEquals("value", map.get("key"));
     }

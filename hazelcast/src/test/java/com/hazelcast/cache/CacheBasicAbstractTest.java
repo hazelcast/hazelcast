@@ -936,7 +936,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     public void testSetExpiryPolicyReturnsFalse_whenKeyIsAlreadyExpired() {
         ICache<Integer, String> cache = createCache();
         cache.put(1, "value", new CreatedExpiryPolicy(new Duration(TimeUnit.SECONDS, 1)));
-        sleepAtLeastSeconds(5);
+        sleepAtLeastSeconds(2);
         assertFalse(cache.setExpiryPolicy(1, new TouchedExpiryPolicy(Duration.FIVE_MINUTES)));
     }
 

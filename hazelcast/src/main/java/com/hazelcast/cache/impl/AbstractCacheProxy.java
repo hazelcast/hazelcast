@@ -250,7 +250,7 @@ abstract class AbstractCacheProxy<K, V>
             Operation operation = operationProvider.createSetExpiryPolicyOperation(list, expiryPolicyData);
             Future<Boolean> future = invoke(operation, keyData, true);
             return future.get();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
