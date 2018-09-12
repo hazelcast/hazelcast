@@ -259,14 +259,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
          * and backslash ({@code "\"}) with another backslash.
          */
         private void appendEscaped(CharSequence value) {
-            int len = value.length();
-            for (int i = 0; i < len; i++) {
-                char c = value.charAt(i);
-                if (c == ',' || c == ' ' || c == '\\' || c == '=') {
-                    tags.append('\\');
-                }
-                tags.append(c);
-            }
+            ProbeRegistryImpl.appendEscaped(tags, value);
         }
 
         private void render(CharSequence name, long value) {
@@ -587,6 +580,17 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (type.getSuperclass() != null) {
                 collectProbeFields(type.getSuperclass(), probes);
             }
+        }
+    }
+
+    static void appendEscaped(StringBuilder buf, CharSequence value) {
+        int len = value.length();
+        for (int i = 0; i < len; i++) {
+            char c = value.charAt(i);
+            if (c == ',' || c == ' ' || c == '\\' || c == '=') {
+                buf.append('\\');
+            }
+            buf.append(c);
         }
     }
 
