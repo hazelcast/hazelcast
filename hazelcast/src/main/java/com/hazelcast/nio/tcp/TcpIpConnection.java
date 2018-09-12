@@ -32,6 +32,9 @@ import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.nio.ConnectionType.MEMBER;
+import static com.hazelcast.nio.ConnectionType.NONE;
+
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
  * <p>
@@ -59,7 +62,7 @@ public class TcpIpConnection implements Connection {
 
     private TcpIpConnectionErrorHandler errorHandler;
 
-    private volatile ConnectionType type = ConnectionType.NONE;
+    private volatile ConnectionType type = NONE;
 
     private volatile Throwable closeCause;
 
@@ -87,8 +90,14 @@ public class TcpIpConnection implements Connection {
 
     @Override
     public void setType(ConnectionType type) {
-        if (this.type == ConnectionType.NONE) {
-            this.type = type;
+        if (this.type != NONE) {
+            return;
+        }
+
+        this.type = type;
+        if (type == MEMBER) {
+            logger.info("Initialized new cluster connection between "
+                        + channel.localSocketAddress() + " and " + channel.remoteSocketAddress());
         }
     }
 
@@ -152,7 +161,7 @@ public class TcpIpConnection implements Connection {
     @Override
     public boolean isClient() {
         ConnectionType t = type;
-        return t != null && t != ConnectionType.NONE && t.isClient();
+        return t != null && t != NONE && t.isClient();
     }
 
     @Override
@@ -221,7 +230,11 @@ public class TcpIpConnection implements Connection {
 
         if (ioService.isActive()) {
             if (closeCause == null || closeCause instanceof EOFException || closeCause instanceof CancelledKeyException) {
-                logger.info(message);
+                if (type == ConnectionType.REST_CLIENT || type == ConnectionType.MEMCACHE_CLIENT) {
+                    logger.fine(message);
+                } else {
+                    logger.info(message);
+                }
             } else {
                 logger.warning(message, closeCause);
             }
