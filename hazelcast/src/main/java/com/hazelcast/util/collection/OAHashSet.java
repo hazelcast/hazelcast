@@ -29,8 +29,6 @@ import java.util.Set;
 import static com.hazelcast.nio.Bits.FLOAT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -103,8 +101,17 @@ public class OAHashSet<E> extends AbstractSet<E> {
      * @param loadFactor      the load factor of the set to be created
      */
     public OAHashSet(int initialCapacity, float loadFactor) {
-        checkNotNegative(initialCapacity, "Illegal initial capacity: " + initialCapacity);
-        checkFalse(loadFactor <= 0 || loadFactor >= 1 || Float.isNaN(loadFactor), "Illegal load factor: " + loadFactor);
+        // the parameter checks below are intentionally not done via Preconditions
+        // the error messages provided to the preconditions are created unconditionally
+        // which creates plenty StringBuilders and for building the error message
+        // if many instances are created in a loop this increases the GC pressure significantly
+        if (initialCapacity < 0) {
+            throw new IllegalArgumentException("Illegal initial capacity: " + initialCapacity);
+        }
+
+        if (loadFactor <= 0 || loadFactor >= 1 || Float.isNaN(loadFactor)) {
+            throw new IllegalArgumentException("Illegal load factor: " + loadFactor);
+        }
 
         this.capacity = QuickMath.nextPowerOfTwo(initialCapacity);
         this.loadFactor = loadFactor;
