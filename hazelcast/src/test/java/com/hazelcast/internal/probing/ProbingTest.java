@@ -43,8 +43,7 @@ public abstract class ProbingTest extends HazelcastTestSupport {
     }
 
     static void assertProbedTimes(int expectedTimes, CountingProbeRenderer actual) {
-        assertEquals("probe `" + actual.expectedKey + "` found " + actual.matches
-                + " times but expeced " + expectedTimes, expectedTimes, actual.matches);
+        assertEquals("probe `" + actual.expectedKey + "` occurence ", expectedTimes, actual.matches);
     }
 
     static void assertProbeValue(final long expected, long actual, final long absoluteDelta) {

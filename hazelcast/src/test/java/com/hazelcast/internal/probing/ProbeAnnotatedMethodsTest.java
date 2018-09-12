@@ -40,7 +40,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbingAnnotatedMethodsTest extends ProbingTest implements ProbeSource {
+public class ProbeAnnotatedMethodsTest extends ProbingTest implements ProbeSource {
 
     @Before
     public void setUp() {
@@ -49,7 +49,7 @@ public class ProbingAnnotatedMethodsTest extends ProbingTest implements ProbeSou
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        cycle.probe("foo", new ProbingAnnotatedMethods());
+        cycle.probe("foo", new ProbeAnnotatedMethods());
         cycle.probe("foo", new SubclassWithProbes());
     }
 
@@ -58,7 +58,7 @@ public class ProbingAnnotatedMethodsTest extends ProbingTest implements ProbeSou
         int interfaceMethod();
     }
 
-    private static final class ProbingAnnotatedMethods implements SomeInterface {
+    private static final class ProbeAnnotatedMethods implements SomeInterface {
         @Override
         public int interfaceMethod() {
             return 10;
