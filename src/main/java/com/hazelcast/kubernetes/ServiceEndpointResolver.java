@@ -64,7 +64,6 @@ class ServiceEndpointResolver
         if (StringUtil.isNullOrEmpty(token)) {
             token = getAccountToken();
         }
-        logger.info("Kubernetes Discovery: Bearer Token { " + token + " }");
         return new RetryKubernetesClient(new DefaultKubernetesClient(kubernetesMaster, token));
     }
 
