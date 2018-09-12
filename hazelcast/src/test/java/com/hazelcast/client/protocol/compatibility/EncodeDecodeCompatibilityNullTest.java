@@ -875,9 +875,10 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aLong, params.threadId));
 }
 {
-    ClientMessage clientMessage = MapGetEntryViewCodec.encodeResponse(    null   );
+    ClientMessage clientMessage = MapGetEntryViewCodec.encodeResponse(    null ,    aLong   );
     MapGetEntryViewCodec.ResponseParameters params = MapGetEntryViewCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(null, params.response));
+            assertTrue(isEqual(aLong, params.maxIdle));
 }
 {
     ClientMessage clientMessage = MapEvictCodec.encodeRequest(    aString ,    aData ,    aLong   );
