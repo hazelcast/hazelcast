@@ -288,6 +288,7 @@
                 <property name="response.timeout.millis">60000</property>
                 <property name="ack.type">ACK_ON_OPERATION_COMPLETE</property>
                 <property name="snapshot.enabled">false</property>
+                <property name="group.name">nyc-override</property>
                 <property name="group.password">nyc-pass</property>
             </properties>
             <!--<aws enabled="false">-->

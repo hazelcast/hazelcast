@@ -75,22 +75,38 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
     }
 
     /**
-     * Returns the group name of this publisher. The group name is used for
-     * identifying the publisher in a {@link WanReplicationConfig} and for
-     * authentication on the target endpoint.
+     * Returns the WAN publisher name used for identifying the publisher in
+     * a {@link WanReplicationConfig}.
+     * <p>
+     * This name will also be used as an endpoint group name for authentication
+     * on the target endpoint.
+     * <p>
+     * The group name can also be defined in the publisher properties which
+     * takes precedence over this value. In such cases, this value will only
+     * be used as part of a WAN publisher identifier and the value defined in
+     * the properties will be used for authentication.
+     * This value must be unique for a single WAN replication scheme.
      *
-     * @return the publisher group name
+     * @return the WAN publisher name and endpoint group name
      */
     public String getGroupName() {
         return groupName;
     }
 
     /**
-     * Set the group name of this publisher. The group name is used for
-     * identifying the publisher in a {@link WanReplicationConfig} and for
-     * authentication on the target endpoint.
+     * Sets the WAN publisher name used for identifying the publisher in
+     * a {@link WanReplicationConfig}.
+     * <p>
+     * This name will also be used as an endpoint group name for authentication
+     * on the target endpoint.
+     * <p>
+     * The group name can also be defined in the publisher properties which
+     * takes precedence over this value. In such cases, this value will only
+     * be used as part of a WAN publisher identifier and the value defined in
+     * the properties will be used for authentication.
+     * This value must be unique for a single WAN replication scheme.
      *
-     * @param groupName the publisher group name
+     * @param groupName the WAN publisher name and publisher group name
      * @return this config
      */
     public WanPublisherConfig setGroupName(String groupName) {
