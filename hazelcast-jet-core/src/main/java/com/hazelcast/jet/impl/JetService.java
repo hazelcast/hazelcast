@@ -51,21 +51,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class JetService
         implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, MembershipAwareService,
         LiveOperationsTracker {
 
+    public static final String SERVICE_NAME = "hz:impl:jetService";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
-    public static final String SERVICE_NAME = "hz:impl:jetService";
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final LiveOperationRegistry liveOperationRegistry;
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean();
+    private final Thread shutdownHookThread;
 
     private JetConfig config;
     private JetInstance jetInstance;
@@ -83,6 +86,7 @@ public class JetService
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
+        this.shutdownHookThread = shutdownHookThread(nodeEngine);
     }
 
     @Override
@@ -114,6 +118,11 @@ public class JetService
         ExceptionUtil.registerJetExceptions(clientEngine.getClientExceptionFactory());
 
         jobCoordinationService.init();
+
+        if (Boolean.parseBoolean(properties.getProperty(SHUTDOWNHOOK_ENABLED.getName()))) {
+            logger.finest("Adding Jet shutdown hook");
+            Runtime.getRuntime().addShutdownHook(shutdownHookThread);
+        }
 
         JetBuildInfo jetBuildInfo = BuildInfoProvider.getBuildInfo().getJetBuildInfo();
         logger.info(String.format("Starting Jet %s (%s - %s)",
@@ -174,6 +183,8 @@ public class JetService
 
     @Override
     public void shutdown(boolean forceful) {
+        Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
+
         jobCoordinationService.shutdown();
         jobExecutionService.shutdown(false);
         taskletExecutionService.shutdown(false);
@@ -278,5 +289,16 @@ public class JetService
             }
         }
         return keys;
+    }
+
+    private Thread shutdownHookThread(NodeEngine nodeEngine) {
+        return new Thread(() -> {
+            String policy = nodeEngine.getProperties().getString(SHUTDOWNHOOK_POLICY);
+            if (policy.equals("TERMINATE")) {
+                jetInstance.getHazelcastInstance().getLifecycleService().terminate();
+            } else {
+                jetInstance.shutdown();
+            }
+        }, "jet.ShutdownThread");
     }
 }

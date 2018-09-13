@@ -33,9 +33,9 @@ import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
-import com.hazelcast.jet.impl.JetInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.metrics.JetMetricsService;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -45,6 +45,7 @@ import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
 import static com.hazelcast.jet.impl.metrics.JetMetricsService.applyMetricsConfig;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_RESULTS_TTL_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 
 /**
  * Entry point to the Jet product.
@@ -67,7 +68,7 @@ public final class Jet {
         configureJetService(config);
         HazelcastInstanceImpl hazelcastInstance = ((HazelcastInstanceProxy)
                 Hazelcast.newHazelcastInstance(config.getHazelcastConfig())).getOriginal();
-        return new JetInstanceImpl(hazelcastInstance, config);
+        return Util.getJetInstance(hazelcastInstance.node.nodeEngine);
     }
 
     /**
@@ -114,11 +115,22 @@ public final class Jet {
             throw new UnsupportedOperationException("Custom config pattern matcher is not supported in Jet");
         }
 
+        Properties jetProps = jetConfig.getProperties();
+        Properties hzProperties = hzConfig.getProperties();
+
+        // copy Jet Config properties as HZ properties
+        for (String prop : jetProps.stringPropertyNames()) {
+            hzProperties.setProperty(prop, jetProps.getProperty(prop));
+        }
+
+        HazelcastProperties properties = new HazelcastProperties(hzProperties);
+
         ServicesConfig servicesConfig = hzConfig.getServicesConfig();
         servicesConfig
                 .addServiceConfig(new ServiceConfig().setEnabled(true)
                         .setName(JetService.SERVICE_NAME)
                         .setClassName(JetService.class.getName())
+                        .setProperties(jetServiceProperties(properties))
                         .setConfigObject(jetConfig));
 
         servicesConfig
@@ -127,7 +139,6 @@ public final class Jet {
                         .setClassName(JetMetricsService.class.getName())
                         .setConfigObject(jetConfig.getMetricsConfig()));
 
-        HazelcastProperties properties = new HazelcastProperties(jetConfig.getProperties());
 
         MapConfig metadataMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + "*")
                 .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
@@ -146,9 +157,13 @@ public final class Jet {
         MetricsConfig metricsConfig = jetConfig.getMetricsConfig();
         applyMetricsConfig(hzConfig, metricsConfig);
 
-        Properties jetProps = jetConfig.getProperties();
-        for (String prop : jetProps.stringPropertyNames()) {
-            hzConfig.getProperties().setProperty(prop, jetProps.getProperty(prop));
-        }
+        // Force disable IMDG shutdown hook, we will use the Jet property instead
+        hzConfig.setProperty(SHUTDOWNHOOK_ENABLED.getName(), "false");
+    }
+
+    private static Properties jetServiceProperties(HazelcastProperties hzProperties) {
+        Properties properties = new Properties();
+        properties.setProperty(SHUTDOWNHOOK_ENABLED.getName(), hzProperties.getString(SHUTDOWNHOOK_ENABLED));
+        return properties;
     }
 }
