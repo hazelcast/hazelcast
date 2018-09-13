@@ -187,7 +187,7 @@ public class MapMergingEntryImpl
         return maxIdle;
     }
 
-    public MapMergingEntryImpl setMaxIdle(long maxIdle) {
+    public MapMergingEntryImpl setMaxIdle(Long maxIdle) {
         this.maxIdle = maxIdle;
         return this;
     }
