@@ -29,6 +29,9 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeRegistryImpl;
+import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,6 +48,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.internal.probing.Probing.startsWith;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -84,7 +88,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             map.removeAsync(key);
         }
 
-        assertHasStatsEventually("map[" + MAP_NAME + "]");
+        assertHasStatsEventually("map", MAP_NAME);
     }
 
     @Test
@@ -107,7 +111,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         latch.await();
 
-        assertHasStatsEventually("executor[" + EXECUTOR_NAME + "]");
+        assertHasStatsEventually("executor", EXECUTOR_NAME);
     }
 
     @Test
@@ -119,7 +123,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         q.poll();
 
-        assertHasStatsEventually("queue[" + QUEUE_NAME + "]");
+        assertHasStatsEventually("queue", QUEUE_NAME);
     }
 
     @Test
@@ -131,7 +135,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         replicatedMap.remove(0);
 
-        assertHasStatsEventually("replicatedMap[" + REPLICATED_MAP_NAME + "]");
+        assertHasStatsEventually("replicatedMap", REPLICATED_MAP_NAME);
     }
 
     @Test
@@ -142,7 +146,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             topic.publish(i);
         }
 
-        assertHasStatsEventually("topic[" + TOPIC_NAME + "]");
+        assertHasStatsEventually("topic", TOPIC_NAME);
     }
 
     @Test
@@ -154,16 +158,24 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        assertHasStatsEventually("map[" + NEAR_CACHE_MAP_NAME + "].nearcache");
+        assertHasStatsEventually("map", NEAR_CACHE_MAP_NAME, "nearcache");
     }
 
-    private void assertHasStatsEventually(final String prefix) {
-        final MetricsRegistry registry = getNode(hz).nodeEngine.getMetricsRegistry();
+    private void assertHasStatsEventually(String type, String name) {
+        assertHasStatsEventually(type, name, "");
+    }
+
+    private void assertHasStatsEventually(String type, String name, String propertyPrefix) {
+        final String prefix = ProbeRegistry.ProbeSource.TAG_TYPE + "=" + type + " "
+                + ProbeRegistry.ProbeSource.TAG_INSTANCE + "=" + name + " "
+                + (propertyPrefix.isEmpty() ? "" : propertyPrefix + ".");
+        final ProbeRegistry registry = getNode(hz).nodeEngine.getProbeRegistry();
+        final ProbeRegistry.ProbeRenderContext renderContext = registry.newRenderingContext();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
-                registry.render(renderer);
+                renderContext.renderAt(ProbeLevel.INFO, renderer);
                 assertTrue(!renderer.probes.isEmpty());
             }
         });
@@ -176,7 +188,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
     }
 
-    static class StringProbeRenderer implements ProbeRenderer {
+    static class StringProbeRenderer implements com.hazelcast.internal.probing.ProbeRenderer {
         final HashMap<String, Object> probes = new HashMap<String, Object>();
         private final String prefix;
 
@@ -185,30 +197,9 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void renderLong(String name, long value) {
-            if (name.startsWith(prefix)) {
-                probes.put(name, value);
-            }
-        }
-
-        @Override
-        public void renderDouble(String name, double value) {
-            if (name.startsWith(prefix)) {
-                probes.put(name, value);
-            }
-        }
-
-        @Override
-        public void renderException(String name, Exception e) {
-            if (name.startsWith(prefix)) {
-                probes.put(name, e);
-            }
-        }
-
-        @Override
-        public void renderNoValue(String name) {
-            if (name.startsWith(prefix)) {
-                probes.put(name, null);
+        public void render(CharSequence key, long value) {
+            if (startsWith(prefix, key)) {
+                probes.put(key.toString(), value);
             }
         }
 

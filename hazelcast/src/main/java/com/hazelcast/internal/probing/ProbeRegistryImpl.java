@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -40,7 +41,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     public void register(ProbeSource source) {
         for (ProbeSourceEntry e : sources) {
             if (e.source.equals(source)) {
-                LOGGER.info("Probe source registered more then once: "
+                LOGGER.info("Probe source tried to register more then once: "
                         + source.getClass().getSimpleName());
                 return; // avoid adding the very same instance more then once
             }
@@ -60,8 +61,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         return new ProbingCycleImpl(sources);
     }
 
-    static long updateInterval(ReprobeCycle reprobe) {
-        return reprobe == null ? -1L : reprobe.unit().toMillis(reprobe.value());
+    static long updateInterval(int value, TimeUnit unit) {
+        return unit.toMillis(value);
     }
 
     /**
@@ -81,7 +82,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             this.update = reprobeFor(source.getClass());
             if (update != null) {
                 ReprobeCycle reprobe = update.getAnnotation(ReprobeCycle.class);
-                updateIntervalMs = updateInterval(reprobe);
+                updateIntervalMs = updateInterval(reprobe.value(), reprobe.unit());
                 updateLevel = reprobe.level();
             } else {
                 updateIntervalMs = -1L;
@@ -92,8 +93,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         void updateIfNeeded() {
             if (update != null) {
                 long next = nextUpdateTimeMs.get();
-                if (Clock.currentTimeMillis() > next 
-                        && nextUpdateTimeMs.compareAndSet(next, next + updateIntervalMs)) {
+                long now = Clock.currentTimeMillis();
+                if (now > next && nextUpdateTimeMs.compareAndSet(next, now + updateIntervalMs)) {
                     try {
                         update.invoke(source, EMPTY_ARGS);
                     } catch (Exception e) {
@@ -123,7 +124,6 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         private final Set<ProbeSourceEntry> sources;
         private CharSequence lastTagName;
         private int lastTagValuePosition;
-        private boolean endsWithTag = false;
 
         // render cycle state
         private ProbeRenderer renderer;
@@ -154,7 +154,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         @Override
         public void probe(final ProbeLevel level, Object instance, final String... methods) {
-            if (!isProbed(level)) {
+            if (instance == null || !isProbed(level)) {
                 return;
             }
             PROBE_METADATA.computeIfAbsent(instance.getClass(), new Function<Class<?>, ProbeAnnotatedType>() {
@@ -173,6 +173,9 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         @Override
         public void probe(CharSequence prefix, Object instance) {
+            if (instance == null) {
+                return;
+            }
             PROBE_METADATA.computeIfAbsent(instance.getClass(), 
                     new Function<Class<?>, ProbeAnnotatedType>() {
 
@@ -229,7 +232,6 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         public Tags openContext() {
             tags.setLength(0);
             lastTagName = null;
-            endsWithTag = false;
             return this;
         }
 
@@ -238,23 +240,20 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (name == lastTagName) {
                 tags.setLength(lastTagValuePosition);
                 appendEscaped(value);
-                endsWithTag = true;
+                tags.append(' ');
                 return this;
             }
-            appendSpaceToPriorTag();
             tags.append(name).append('=');
             lastTagName = name;
             lastTagValuePosition = tags.length();
             appendEscaped(value);
-            endsWithTag = true;
+            tags.append(' ');
             return this;
         }
 
         @Override
         public Tags append(CharSequence s) {
-            appendSpaceToPriorTag();
             appendEscaped(s); // this might contain user supplied values
-            endsWithTag = false;
             return this;
         }
 
@@ -264,13 +263,6 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 return append(prefix).append(".");
             }
             return this;
-        }
-
-        private void appendSpaceToPriorTag() {
-            if (endsWithTag) {
-                tags.append(' ');
-                endsWithTag = false;
-            }
         }
 
         /**
@@ -284,7 +276,6 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         private void render(CharSequence name, long value) {
-            appendSpaceToPriorTag();
             int len = tags.length();
             appendEscaped(name);
             renderer.render(tags, value);
@@ -579,11 +570,9 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
          */
         private void probeTagging(ProbingCycleImpl cycle, ProbeLevel level,
                 CharSequence dynamicPrefix, Object instance) {
-            boolean endsWithTag = cycle.endsWithTag;
             CharSequence lastTagName = cycle.lastTagName;
             int lastTagValuePosition = cycle.lastTagValuePosition;
             probeNotTagging(cycle, level, dynamicPrefix, instance);
-            cycle.endsWithTag = endsWithTag;
             cycle.lastTagName = lastTagName;
             cycle.lastTagValuePosition = lastTagValuePosition;
         }

@@ -2,11 +2,13 @@ package com.hazelcast.internal.probing;
 
 import static com.hazelcast.internal.probing.ProbeRegistryImpl.appendEscaped;
 import static com.hazelcast.internal.probing.ProbeRegistryImpl.toLong;
+import static com.hazelcast.internal.probing.ProbeRegistryImpl.updateInterval;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -70,6 +72,12 @@ public class ProbeCycleTest {
     @Test(expected = UnsupportedOperationException.class)
     public void objectToLongConversion_Unsupported() {
         assertEquals(-1L, toLong(new Character('a')));
+    }
+    
+    @Test
+    public void reprobingCycleTimeToMillis() {
+        assertEquals(1000L, updateInterval(1, TimeUnit.SECONDS));
+        assertEquals(500L, updateInterval(500, TimeUnit.MILLISECONDS));
     }
 
     private static void assertEscapes(String unescaped, String escaped) {

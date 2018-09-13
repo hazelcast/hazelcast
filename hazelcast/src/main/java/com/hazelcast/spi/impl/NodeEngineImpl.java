@@ -236,9 +236,9 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
     }
 
     public void start() {
+        serviceManager.start();
         initProbeSources();
 
-        serviceManager.start();
         proxyService.init();
         operationService.start();
         quorumService.start();

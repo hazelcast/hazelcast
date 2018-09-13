@@ -4,6 +4,7 @@ import static com.hazelcast.internal.probing.Probing.probeAllInstances;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +48,8 @@ public class ProbeRegistryTest extends ProbingTest implements ProbeSource {
         map.put("y", b);
         map.put("z", c);
         probeAllInstances(cycle, "map", map);
+        cycle.openContext(); // needed to reset context
+        cycle.probe(this);
     }
 
     private static final class LevelBean implements Tagging {
@@ -80,11 +83,11 @@ public class ProbeRegistryTest extends ProbingTest implements ProbeSource {
         assertProbeCount(6);
         assertProbes("mandatory", 1);
         setLevel(ProbeLevel.INFO);
-        assertProbeCount(12);
+        assertProbeCount(13);
         assertProbes("mandatory", 1);
         assertProbes("info", 2);
         setLevel(ProbeLevel.DEBUG);
-        assertProbeCount(18);
+        assertProbeCount(19);
         assertProbes("mandatory", 1);
         assertProbes("info", 2);
         assertProbes("debug", 3);
@@ -99,6 +102,23 @@ public class ProbeRegistryTest extends ProbingTest implements ProbeSource {
         assertProbed(t + "=map " + i + "=a " + name, value);
         assertProbed(t + "=map " + i + "=b " + name, value);
         assertProbed(t + "=map " + i + "=z " + name, value);
+    }
+
+    @Probe
+    private int updates = 0;
+
+    @ReprobeCycle(value = 500, unit = TimeUnit.MILLISECONDS)
+    private void update() {
+        updates++;
+    }
+
+    @Test
+    public void reprobingOccursInSpecifiedCycleTime() {
+        assertProbed("updates", 1);
+        assertProbed("updates", 1);
+        sleepAtLeastMillis(500L);
+        assertProbed("updates", 2);
+        assertProbed("updates", 2);
     }
 
 }

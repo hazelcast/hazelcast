@@ -18,8 +18,6 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +26,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
@@ -37,7 +34,6 @@ import static org.junit.Assert.assertEquals;
 public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
 
     private MetricsPlugin plugin;
-    private MetricsRegistry metricsRegistry;
 
     @Before
     public void setup() {
@@ -46,7 +42,6 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
                 .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
         HazelcastInstance hz = createHazelcastInstance(config);
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
-        metricsRegistry = nodeEngineImpl.getMetricsRegistry();
         plugin = new MetricsPlugin(nodeEngineImpl);
         plugin.onStart();
     }
@@ -55,19 +50,6 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
     public void testGetPeriodMillis() {
         long periodMillis = plugin.getPeriodMillis();
         assertEquals(SECONDS.toMillis(1), periodMillis);
-    }
-
-    @Test
-    public void testRunWithProblematicProbe() {
-        metricsRegistry.register(this, "broken", MANDATORY, new LongProbeFunction() {
-            @Override
-            public long get(Object source) {
-                throw new RuntimeException("error");
-            }
-        });
-
-        plugin.run(logWriter);
-        assertContains("broken=java.lang.RuntimeException:error");
     }
 
     @Test

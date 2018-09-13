@@ -216,7 +216,7 @@ public final class OperationExecutorImpl implements OperationExecutor, ProbeRegi
 
         return threads;
     }
-    
+
     @Override
     public void probeIn(ProbingCycle cycle) {
         cycle.probe("operation", this);

@@ -21,10 +21,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+
+import org.apache.commons.httpclient.methods.multipart.PartSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +40,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -51,7 +57,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
     private Diagnostics diagnostics;
     private DiagnosticsLogFile diagnosticsLogFile;
-    private MetricsRegistry metricsRegistry;
+    private ProbeRegistry probeRegistry;
 
     @Before
     public void setup() {
@@ -65,7 +71,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
         diagnostics = AbstractDiagnosticsPluginTest.getDiagnostics(hz);
         diagnosticsLogFile = diagnostics.diagnosticsLogFile;
-        metricsRegistry = getMetricsRegistry(hz);
+        probeRegistry = getNodeEngineImpl(hz).getProbeRegistry();
     }
 
     @After
@@ -91,17 +97,18 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
     @Test
     public void testRollover() {
-        // we register 50 probes to quickly fill up the diagnostics log file
-        String id = generateRandomString(10000);
-        LongProbeFunction probe = new LongProbeFunction() {
+        final String id = generateRandomString(10000);
+        probeRegistry.register(new ProbeSource() {
+
             @Override
-            public long get(Object source) {
-                return 0;
+            public void probeIn(ProbingCycle cycle) {
+                // we render 50 probes to quickly fill up the diagnostics log file
+                for (int k = 0; k < 50; k++) {
+                    cycle.probe(id + k, k);
+                }
+
             }
-        };
-        for (int k = 0; k < 50; k++) {
-            metricsRegistry.register(this, id + k, ProbeLevel.MANDATORY, probe);
-        }
+        });
 
         // we run for some time to make sure we get enough rollovers
         final List<File> files = new LinkedList<File>();

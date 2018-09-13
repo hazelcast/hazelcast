@@ -21,6 +21,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.monitor.LocalIndexStats;
+import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalDistributedObjectStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 
@@ -88,6 +89,9 @@ public final class Probing {
     }
 
     public static void probeIn(ProbingCycle cycle, String type, Thread[] threads) {
+        if (threads.length == 0) {
+            return; // avoid unnecessary context manipulation
+        }
         Tags tags = cycle.openContext().tag(TAG_TYPE, type);
         for (int i = 0; i < threads.length; i++) {
             tags.tag(TAG_INSTANCE, threads[i].getName());
@@ -96,6 +100,9 @@ public final class Probing {
     }
 
     public static <T> void probeAllInstances(ProbingCycle cycle, String type, Map<String, T> entries) {
+        if (entries.isEmpty()) {
+            return; // avoid unnecessary context manipulation
+        }
         Tags tags = cycle.openContext().tag(TAG_TYPE, type);
         for (Entry<String, T> e : entries.entrySet()) {
             tags.tag(TAG_INSTANCE, e.getKey());
@@ -105,6 +112,9 @@ public final class Probing {
 
     public static <T extends LocalDistributedObjectStats> void probeIn(ProbingCycle cycle,
             String type, Map<String, T> stats) {
+        if (stats.isEmpty()) {
+            return; // avoid unnecessary context manipulation
+        }
         ProbingCycle.Tags tags = cycle.openContext().tag(TAG_TYPE, type);
         for (Entry<String, T> e : stats.entrySet()) {
             T val = e.getValue();
@@ -113,9 +123,12 @@ public final class Probing {
                 cycle.probe(val);
                 if (val instanceof LocalMapStatsImpl) {
                     LocalMapStatsImpl mapStats = (LocalMapStatsImpl) val;
-                    cycle.probe("nearcache", mapStats.getNearCacheStats());
+                    NearCacheStats nearCacheStats = mapStats.getNearCacheStats();
+                    if (nearCacheStats != null) {
+                        cycle.probe("nearcache", nearCacheStats);
+                    }
                     Map<String, LocalIndexStats> indexStats = mapStats.getIndexStats();
-                    if (!indexStats.isEmpty()) {
+                    if (indexStats != null && !indexStats.isEmpty()) {
                         for (Entry<String, LocalIndexStats> index : indexStats.entrySet()) {
                             tags.tag("index", index.getKey());
                             cycle.probe(index.getValue());

@@ -163,12 +163,15 @@ public class WanReplicationServiceImpl implements WanReplicationService, ProbeRe
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        for (Entry<String, LocalWanStats> config : getStats().entrySet()) {
-            Tags tags = cycle.openContext().tag(TAG_TYPE, "wan").tag(TAG_INSTANCE, config.getKey());
-            for (Map.Entry<String, LocalWanPublisherStats> stats : config.getValue()
-                    .getLocalWanPublisherStats().entrySet()) {
-                tags.tag(TAG_TARGET, stats.getKey());
-                cycle.probe(stats.getValue());
+        Map<String, LocalWanStats> wanStats = getStats();
+        if (wanStats != null && !wanStats.isEmpty()) {
+            for (Entry<String, LocalWanStats> config : wanStats.entrySet()) {
+                Tags tags = cycle.openContext().tag(TAG_TYPE, "wan").tag(TAG_INSTANCE, config.getKey());
+                for (Map.Entry<String, LocalWanPublisherStats> stats : config.getValue()
+                        .getLocalWanPublisherStats().entrySet()) {
+                    tags.tag(TAG_TARGET, stats.getKey());
+                    cycle.probe(stats.getValue());
+                }
             }
         }
         //TODO WAN sync state
