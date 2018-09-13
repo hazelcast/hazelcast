@@ -104,7 +104,6 @@ public class MethodProbeTest extends ProbingTest implements ProbeRegistry.ProbeS
         assertProbed(fieldName, expected == -1d ? -1L : toLong(expected));
     }
 
-
     private static final class SomeSource {
         @Probe
         private byte byteMethod() {
@@ -178,7 +177,7 @@ public class MethodProbeTest extends ProbingTest implements ProbeRegistry.ProbeS
         }
 
         @Probe
-        private Map<Integer, Integer> mapMethod() {
+        private Map<String, Integer> mapMethod() {
             return createMap(10);
         }
 

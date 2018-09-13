@@ -3,6 +3,8 @@ package com.hazelcast.internal.probing;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
+import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * For each probe measurement a {@link ProbingCycle} is passed to all
@@ -34,6 +36,8 @@ import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
  * }
  * </pre>
  */
+@Beta
+@PrivateApi
 public interface ProbingCycle {
 
     /*

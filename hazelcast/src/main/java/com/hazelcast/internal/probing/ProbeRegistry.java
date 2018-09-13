@@ -2,6 +2,8 @@ package com.hazelcast.internal.probing;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 
 /**
@@ -16,6 +18,8 @@ import com.hazelcast.spi.impl.servicemanager.ServiceManager;
  * {@link ProbeSource} (existing since the startup) that does probe the
  * available instances as they appear and stops doing that as they disappear.
  */
+@Beta
+@PrivateApi
 public interface ProbeRegistry {
 
     /**
@@ -86,6 +90,9 @@ public interface ProbeRegistry {
         /**
          * Called for each {@link ProbingCycle} asking this source to probe all its
          * metrics using the provided cycle instance.
+         * 
+         * Implementations can expect a clean context and do not have to start with
+         * {@link ProbingCycle#openContext()}.
          * 
          * @param cycle accumulating probing data
          */

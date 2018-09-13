@@ -1,5 +1,10 @@
 package com.hazelcast.internal.probing;
 
+import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.annotation.PrivateApi;
+
+@Beta
+@PrivateApi
 public interface ProbeRenderer {
 
     /**

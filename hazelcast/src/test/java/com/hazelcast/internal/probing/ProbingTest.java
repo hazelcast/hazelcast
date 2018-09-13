@@ -10,6 +10,8 @@ import static org.junit.Assert.assertThat;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.Before;
+
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -18,6 +20,16 @@ public abstract class ProbingTest extends HazelcastTestSupport {
 
     final ProbeRegistry registry = new ProbeRegistryImpl();
     final ProbeRenderContext rendering = registry.newRenderingContext();
+    private ProbeLevel level = ProbeLevel.DEBUG;
+
+    @Before
+    public void setUp() {
+        setLevel(ProbeLevel.DEBUG); // reset level to debug as default for all tests
+    }
+
+    public void setLevel(ProbeLevel level) {
+        this.level = level;
+    }
 
     final void assertProbed(final String expectedKey) {
         CountingProbeRenderer renderer = probe(expectedKey);
@@ -45,6 +57,11 @@ public abstract class ProbingTest extends HazelcastTestSupport {
         assertProbedTimes(0, probe(notExpectedKey));
     }
 
+    final void assertProbeCount(int expectedCount) {
+        CountingProbeRenderer renderer = probe("");
+        assertEquals(expectedCount, renderer.count);
+    }
+
     static void assertProbedTimes(int expectedTimes, CountingProbeRenderer actual) {
         assertEquals("probe `" + actual.expectedKey + "` occurence ", expectedTimes, actual.matches);
     }
@@ -61,7 +78,7 @@ public abstract class ProbingTest extends HazelcastTestSupport {
 
     CountingProbeRenderer probe(final String expectedKey) {
         CountingProbeRenderer renderer = new CountingProbeRenderer(expectedKey);
-        rendering.renderAt(ProbeLevel.DEBUG, renderer);
+        rendering.renderAt(level, renderer);
         return renderer;
     }
 
@@ -69,13 +86,14 @@ public abstract class ProbingTest extends HazelcastTestSupport {
         final String expectedKey;
         long value = -1;
         int matches = 0;
-
+        int count = 0;
         private CountingProbeRenderer(String expectedKey) {
             this.expectedKey = expectedKey;
         }
 
         @Override
         public void render(CharSequence key, long value) {
+            count++;
             if (expectedKey.contentEquals(key)) {
                 matches++;
                 this.value = value;
@@ -83,10 +101,10 @@ public abstract class ProbingTest extends HazelcastTestSupport {
         }
     }
 
-    static Map<Integer, Integer> createMap(int size) {
-        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+    static Map<String, Integer> createMap(int size) {
+        Map<String, Integer> map = new HashMap<String, Integer>();
         for (int k = 0; k < size; k++) {
-            map.put(k, k);
+            map.put(String.valueOf(k), k);
         }
         return map;
     }

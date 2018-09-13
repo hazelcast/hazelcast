@@ -143,7 +143,7 @@ public class FieldProbeTest extends ProbingTest implements ProbeRegistry.ProbeSo
         @Probe
         private Collection<String> nullCollectionField;
         @Probe
-        private Map<Integer, Integer> mapField = createMap(10);
+        private Map<String, Integer> mapField = createMap(10);
         @Probe
         private Map<Integer, Integer> nullMapField;
         @Probe
