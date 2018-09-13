@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -24,7 +23,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
@@ -56,8 +54,6 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     public ClientEndpointManagerImpl(NodeEngine nodeEngine) {
         this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
         this.eventService = nodeEngine.getEventService();
-        MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
-        metricsRegistry.scanAndRegister(this, "client.endpoint");
     }
 
     @Override

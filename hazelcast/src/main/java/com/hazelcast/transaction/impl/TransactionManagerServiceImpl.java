@@ -93,8 +93,6 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(TransactionManagerService.class);
         this.finalizeExceptionHandler = logAllExceptions(logger, "Error while rolling-back tx!", Level.WARNING);
-
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "transactions");
     }
 
     public String getGroupName() {

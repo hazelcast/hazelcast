@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.cluster.impl.BindMessage;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.Networking;
@@ -156,7 +155,8 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     public void probeIn(ProbingCycle cycle) {
         cycle.probe("tcp.connection", this);
         if (acceptor != null) {
-            cycle.probe(acceptor);
+            cycle.openContext().tag(TAG_TYPE, "acceptor").tag(TAG_INSTANCE, acceptor.getName());
+            cycle.probe("tcp.thread", acceptor);
         }
     }
 

@@ -31,6 +31,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbeRegistryImpl;
@@ -82,9 +83,6 @@ import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
-
-import java.io.File;
-import java.lang.management.ManagementFactory;
 
 /**
  * The NodeEngineImpl is the where the construction of the Hazelcast dependencies take place. It can be
@@ -159,7 +157,6 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
             this.probeRegistry = new ProbeRegistryImpl();
-            initProbeSources();
         } catch (Throwable e) {
             try {
                 shutdown(true);
@@ -170,6 +167,7 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         }
     }
 
+    //TODO replace
     private MetricsRegistryImpl newMetricRegistry(Node node) {
         ProbeLevel probeLevel = node.getProperties().getEnum(METRICS_LEVEL, ProbeLevel.class);
         return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class), probeLevel);
@@ -206,8 +204,13 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
      */
     private void initProbeSources() {
         probeRegistry.register(this);
+        probeRegistry.register(node.getClusterService());
         probeRegistry.register(Probing.GC);
         probeRegistry.register(Probing.OS);
+        probeRegistry.register(executionService);
+        probeRegistry.register(eventService);
+        probeRegistry.registerIfSource(operationService.getOperationExecutor());
+        probeRegistry.registerIfSource(node.getNodeExtension());
         for (ProbeSource s : serviceManager.getServices(ProbeSource.class)) {
             probeRegistry.register(s);
         }
@@ -215,12 +218,25 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        cycle.probe("event", eventService);
+        cycle.probe("proxy", proxyService);
+        cycle.probe("memory", node.getNodeExtension().getMemoryStats());
+        cycle.probe("operation", operationService);
+        cycle.probe("operation", operationService.getInvocationRegistry());
+        cycle.probe("operation", operationService.getInboundResponseHandlerSupplier());
+        cycle.probe("operation.invocations", operationService.getInvocationMonitor());
+        cycle.probe("operation-parker", operationParker);
+        cycle.probe("client.endpoint", node.getClientEngine().getEndpointManager());
+        //TODO iterate the client endpoints (peter branch)
+        InternalPartitionServiceImpl partitionService = node.partitionService;
+        cycle.probe("partitions", partitionService);
+        cycle.probe("partitions", partitionService.getPartitionStateManager());
+        cycle.probe("partitions", partitionService.getMigrationManager());
+        cycle.probe("partitions", partitionService.getReplicaManager());
+        cycle.probe("transactions", transactionManagerService);
     }
 
     public void start() {
-        metricsRegistry.scanAndRegister(node.getNodeExtension().getMemoryStats(), "memory");
-        metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
+        initProbeSources();
 
         serviceManager.start();
         proxyService.init();

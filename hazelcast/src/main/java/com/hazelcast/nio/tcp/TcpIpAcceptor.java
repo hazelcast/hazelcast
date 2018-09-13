@@ -17,8 +17,6 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.nio.SelectorMode;
@@ -51,7 +49,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * of the 'client' side of a connection and the {@link TcpIpAcceptor} is the 'server' side of a connection (each connection
  * has a client and server-side
  */
-public class TcpIpAcceptor implements MetricsProvider {
+public class TcpIpAcceptor {
     private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
     private static final long SELECT_TIMEOUT_MILLIS = SECONDS.toMillis(60);
     private static final int SELECT_IDLE_COUNT_THRESHOLD = 10;
@@ -88,6 +86,10 @@ public class TcpIpAcceptor implements MetricsProvider {
         this.acceptorThread = new AcceptorIOThread();
     }
 
+    String getName() {
+        return acceptorThread.getName();
+    }
+
     /**
      * A probe that measure how long this {@link TcpIpAcceptor} has not received any events.
      *
@@ -96,11 +98,6 @@ public class TcpIpAcceptor implements MetricsProvider {
     @Probe
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "tcp." + acceptorThread.getName());
     }
 
     public TcpIpAcceptor start() {

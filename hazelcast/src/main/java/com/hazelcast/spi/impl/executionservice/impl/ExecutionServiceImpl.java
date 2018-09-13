@@ -21,7 +21,8 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
@@ -52,11 +53,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.probing.Probing.probeAllInstances;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public final class ExecutionServiceImpl implements InternalExecutionService {
+public final class ExecutionServiceImpl implements InternalExecutionService, ProbeRegistry.ProbeSource {
 
     private static final int CORE_POOL_SIZE = 3;
     private static final long KEEP_ALIVE_TIME = 60L;
@@ -113,11 +115,8 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             };
 
 
-    private final MetricsRegistry metricsRegistry;
-
     public ExecutionServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.metricsRegistry = nodeEngine.getMetricsRegistry();
 
         Node node = nodeEngine.getNode();
         this.logger = node.getLogger(ExecutionService.class.getName());
@@ -161,6 +160,11 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     }
 
     @Override
+    public void probeIn(ProbingCycle cycle) {
+        probeAllInstances(cycle, "internal-executor", executors);
+    }
+
+    @Override
     public ManagedExecutorService register(String name, int defaultPoolSize, int defaultQueueCapacity, ExecutorType type) {
         ExecutorConfig config = nodeEngine.getConfig().getExecutorConfigs().get(name);
 
@@ -179,8 +183,6 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         if (executors.putIfAbsent(name, executor) != null) {
             throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
         }
-
-        metricsRegistry.scanAndRegister(executor, "internal-executor" + name + "]");
 
         return executor;
     }

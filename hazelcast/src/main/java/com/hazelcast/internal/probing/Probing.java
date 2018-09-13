@@ -12,22 +12,17 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.monitor.LocalIndexStats;
-import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.impl.LocalDistributedObjectStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 
 /**
  * Utility providing common metrics on common types of objects that cannot be
@@ -97,6 +92,14 @@ public final class Probing {
         for (int i = 0; i < threads.length; i++) {
             tags.tag(TAG_INSTANCE, threads[i].getName());
             cycle.probe(threads[i]);
+        }
+    }
+
+    public static <T> void probeAllInstances(ProbingCycle cycle, String type, Map<String, T> entries) {
+        Tags tags = cycle.openContext().tag(TAG_TYPE, type);
+        for (Entry<String, T> e : entries.entrySet()) {
+            tags.tag(TAG_INSTANCE, e.getKey());
+            cycle.probe(e.getValue());
         }
     }
 

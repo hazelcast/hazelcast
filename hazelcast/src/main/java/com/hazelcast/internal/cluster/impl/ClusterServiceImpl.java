@@ -39,6 +39,8 @@ import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -84,7 +86,8 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
-        EventPublishingService<MembershipEvent, MembershipListener>, TransactionalService {
+        EventPublishingService<MembershipEvent, MembershipListener>, TransactionalService,
+        ProbeRegistry.ProbeSource {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 
@@ -143,14 +146,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         node.connectionManager.addConnectionListener(this);
         //MEMBERSHIP_EVENT_EXECUTOR is a single threaded executor to ensure that events are executed in correct order.
         nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
-        registerMetrics();
     }
 
-    private void registerMetrics() {
-        MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(clusterClock, "cluster.clock");
-        metricsRegistry.scanAndRegister(clusterHeartbeatManager, "cluster.heartbeat");
-        metricsRegistry.scanAndRegister(this, "cluster");
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        cycle.probe("cluster.clock", clusterClock);
+        cycle.probe("cluster.heartbeat", clusterHeartbeatManager);
+        cycle.probe("cluster", this);
     }
 
     @Override

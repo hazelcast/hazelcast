@@ -14,124 +14,98 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics.impl;
+package com.hazelcast.internal.probing;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.impl.MethodProbe.LongMethodProbe;
 import com.hazelcast.internal.util.counters.Counter;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
+import static com.hazelcast.internal.probing.ProbeRegistryImpl.toLong;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.util.CollectionUtil.getItemAtPositionOrNull;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MethodProbeTest extends HazelcastTestSupport {
+public class MethodProbeTest extends ProbingTest implements ProbeRegistry.ProbeSource {
 
-    @Test
-    public void getLong() throws Exception {
-        getLong("byteMethod", 10);
-        getLong("shortMethod", 10);
-        getLong("intMethod", 10);
-        getLong("longMethod", 10);
-        getLong("atomicLongMethod", 10);
-        getLong("atomicIntegerMethod", 10);
-        getLong("counterMethod", 10);
-        getLong("collectionMethod", 10);
-        getLong("mapMethod", 10);
+    @Before
+    public void setUp() {
+        registry.register(this);
+    }
 
-        getLong("ByteMethod", 10);
-        getLong("ShortMethod", 10);
-        getLong("IntegerMethod", 10);
-        getLong("LongMethod", 10);
-        getLong("SemaphoreMethod", 10);
-
-        getLong("nullAtomicLongMethod", 0);
-        getLong("nullAtomicIntegerMethod", 0);
-        getLong("nullCounterMethod", 0);
-        getLong("nullCollectionMethod", 0);
-        getLong("nullMapMethod", 0);
-        getLong("nullByteMethod", 0);
-        getLong("nullShortMethod", 0);
-        getLong("nullIntegerMethod", 0);
-        getLong("nullLongMethod", 0);
-        getLong("nullSemaphoreMethod", 0);
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        cycle.probe(new SomeSource());
     }
 
     @Test
-    public void testGeneratedMethodProbeName_removeGetPrefix() throws NoSuchMethodException {
-        SomeSource source = new SomeSource();
-        Method method = source.getClass().getDeclaredMethod("getSomeIntegerMethod");
-        Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+    public void longValueMethodProbes() {
+        assertLong("byteMethod", 10);
+        assertLong("shortMethod", 10);
+        assertLong("intMethod", 10);
+        assertLong("longMethod", 10);
+        assertLong("atomicLongMethod", 10);
+        assertLong("atomicIntegerMethod", 10);
+        assertLong("counterMethod", 10);
+        assertLong("collectionMethod", 10);
+        assertLong("mapMethod", 10);
 
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(mock(ILogger.class), ProbeLevel.DEBUG);
-        methodProbe.register(metricsRegistry, source, "prefix");
+        assertLong("ByteMethod", 10);
+        assertLong("ShortMethod", 10);
+        assertLong("IntegerMethod", 10);
+        assertLong("LongMethod", 10);
+        assertLong("SemaphoreMethod", 10);
 
-        Set<String> names = metricsRegistry.getNames();
-        assertEquals(1, names.size());
-        String probeName = getItemAtPositionOrNull(names, 0);
-        assertEquals("prefix.someIntegerMethod", probeName);
+        assertLong("nullAtomicLongMethod", -1);
+        assertLong("nullAtomicIntegerMethod", -1);
+        assertLong("nullCounterMethod", -1);
+        assertLong("nullCollectionMethod", -1);
+        assertLong("nullMapMethod", -1);
+        assertLong("nullByteMethod", -1);
+        assertLong("nullShortMethod", -1);
+        assertLong("nullIntegerMethod", -1);
+        assertLong("nullLongMethod", -1);
+        assertLong("nullSemaphoreMethod", -1);
     }
-
-    public void getLong(String methodName, int expectedValue) throws Exception {
-        SomeSource source = new SomeSource();
-        Method method = source.getClass().getDeclaredMethod(methodName);
-        Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
-
-        LongMethodProbe longMethodProbe = assertInstanceOf(LongMethodProbe.class, methodProbe);
-
-        long value = longMethodProbe.get(source);
-
-        assertEquals(expectedValue, value);
-    }
-
 
     @Test
-    public void getDouble() throws Exception {
-        getDouble("floatMethod", 10);
-        getDouble("doubleMethod", 10);
-        getDouble("DoubleMethod", 10);
-        getDouble("FloatMethod", 10);
-        getDouble("nullDoubleMethod", 0);
-        getDouble("nullFloatMethod", 0);
+    public void probeNameRemovesGetPrefix() {
+        assertLong("someIntegerMethod", 10);
     }
 
-    public void getDouble(String fieldName, double expected) throws Exception {
-        SomeSource source = new SomeSource();
-        Method method = source.getClass().getDeclaredMethod(fieldName);
-        Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+    private void assertLong(String methodName, int expectedValue) {
+        assertProbed(methodName, expectedValue);
+    }
 
-        MethodProbe.DoubleMethodProbe doubleMethodProbe = assertInstanceOf(MethodProbe.DoubleMethodProbe.class, methodProbe);
-        double value = doubleMethodProbe.get(source);
+    @Test
+    public void doubleValueMethodProbes() throws Exception {
+        assertDouble("floatMethod", 10);
+        assertDouble("doubleMethod", 10);
+        assertDouble("DoubleMethod", 10);
+        assertDouble("FloatMethod", 10);
+        assertDouble("nullDoubleMethod", -1d);
+        assertDouble("nullFloatMethod", -1d);
+    }
 
-        assertEquals(expected, value, 0.1);
+    private void assertDouble(String fieldName, double expected) throws Exception {
+        assertProbed(fieldName, expected == -1d ? -1L : toLong(expected));
     }
 
 
-    private class SomeSource {
+    private static final class SomeSource {
         @Probe
         private byte byteMethod() {
             return 10;
@@ -194,22 +168,22 @@ public class MethodProbeTest extends HazelcastTestSupport {
         }
 
         @Probe
-        private Collection collectionMethod() {
+        private Collection<Integer> collectionMethod() {
             return Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         }
 
         @Probe
-        private Collection nullCollectionMethod() {
+        private Collection<Integer> nullCollectionMethod() {
             return null;
         }
 
         @Probe
-        private Map mapMethod() {
-            return MetricsUtils.createMap(10);
+        private Map<Integer, Integer> mapMethod() {
+            return createMap(10);
         }
 
         @Probe
-        private Map nullMapMethod() {
+        private Map<Integer, Integer> nullMapMethod() {
             return null;
         }
 
@@ -285,7 +259,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
 
         @Probe
         private Integer getSomeIntegerMethod() {
-            return null;
+            return 10;
         }
     }
 }

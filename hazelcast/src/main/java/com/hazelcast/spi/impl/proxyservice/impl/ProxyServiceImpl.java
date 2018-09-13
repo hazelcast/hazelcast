@@ -20,8 +20,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
-import com.hazelcast.internal.metrics.MetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -63,7 +61,7 @@ import static java.util.logging.Level.WARNING;
 
 public class ProxyServiceImpl
         implements InternalProxyService, PostJoinAwareService,
-        EventPublishingService<DistributedObjectEventPacket, Object>, MetricsProvider {
+        EventPublishingService<DistributedObjectEventPacket, Object> {
 
     public static final String SERVICE_NAME = "hz:core:proxyService";
 
@@ -102,11 +100,6 @@ public class ProxyServiceImpl
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ProxyService.class.getName());
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "proxy");
     }
 
     public void init() {

@@ -28,7 +28,6 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -178,12 +177,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         partitionMigrationTimeout = properties.getMillis(GroupProperty.PARTITION_MIGRATION_TIMEOUT);
 
         proxy = new PartitionServiceProxy(nodeEngine, this);
-
-        MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(this, "partitions");
-        metricsRegistry.scanAndRegister(partitionStateManager, "partitions");
-        metricsRegistry.scanAndRegister(migrationManager, "partitions");
-        metricsRegistry.scanAndRegister(replicaManager, "partitions");
     }
 
     @Override

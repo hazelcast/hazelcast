@@ -4,8 +4,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 
-import net.bytebuddy.implementation.Implementation;
-
 /**
  * For each probe measurement a {@link ProbingCycle} is passed to all
  * {@link ProbeSource}s. The {@link ProbeSource} uses the API to communicate its
@@ -28,7 +26,6 @@ import net.bytebuddy.implementation.Implementation;
  * repeating the two steps:
  * 
  * <pre>
- * &#64;Override
  * public void probeIn(ProbingCycle cycle) {
  *     cycle.openContext().tag(TAG_TYPE, "x").tag(TAG_INSTANCE, "foo");
  *     cycle.probe(foo);

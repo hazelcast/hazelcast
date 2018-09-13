@@ -95,7 +95,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @see TargetInvocation
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public final class OperationServiceImpl implements InternalOperationService, MetricsProvider, LiveOperationsTracker {
+public final class OperationServiceImpl implements InternalOperationService, LiveOperationsTracker {
 
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
@@ -170,11 +170,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.inboundResponseHandlerSupplier = new InboundResponseHandlerSupplier(
                 configClassLoader, invocationRegistry, hzName, nodeEngine);
 
-        OperationExecutorImpl operationExecutorImpl = new OperationExecutorImpl(
+        this.operationExecutor = new OperationExecutorImpl(
                 node.getProperties(), node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
                 node.getNodeExtension(), hzName, configClassLoader);
-        this.operationExecutor = operationExecutorImpl;
-        nodeEngine.getProbeRegistry().register(operationExecutorImpl);
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),
@@ -425,12 +423,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public void reset() {
         Throwable cause = new LocalMemberResetException(node.getLocalMember() + " has reset.");
         invocationRegistry.reset(cause);
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
-        registry.collectMetrics(invocationRegistry, invocationMonitor, inboundResponseHandlerSupplier, operationExecutor);
     }
 
     public void start() {

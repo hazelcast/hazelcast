@@ -180,9 +180,6 @@ public class CachePutAllTest extends CacheTestSupport {
         Cache<String, String> cache = createCache(cacheConfig);
 
         String key = generateKeyOwnedBy(hazelcastInstance);
-        // need to count the number of backup failures on backup member
-        OperationService operationService = getOperationService(hazelcastInstances[1]);
-        MetricsRegistry metricsRegistry = getMetricsRegistry(hazelcastInstances[1]);
         assertEquals(0L, OperationServiceAccessor.getFailedBackupsCount(hazelcastInstances[1]).get());
 
         Map<String, String> entries = new HashMap<String, String>();
@@ -190,8 +187,6 @@ public class CachePutAllTest extends CacheTestSupport {
         cache.putAll(entries);
 
         assertNull(cache.get(key));
-        // force collect metrics
-        metricsRegistry.collectMetrics(operationService);
         assertEquals(0L, OperationServiceAccessor.getFailedBackupsCount(hazelcastInstances[1]).get());
     }
 }

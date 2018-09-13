@@ -7,6 +7,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -78,5 +81,13 @@ public abstract class ProbingTest extends HazelcastTestSupport {
                 this.value = value;
             }
         }
+    }
+
+    static Map<Integer, Integer> createMap(int size) {
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        for (int k = 0; k < size; k++) {
+            map.put(k, k);
+        }
+        return map;
     }
 }

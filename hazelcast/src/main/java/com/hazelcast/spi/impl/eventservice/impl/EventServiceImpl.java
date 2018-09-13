@@ -19,9 +19,10 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -40,6 +41,7 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOpe
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.function.Supplier;
@@ -57,12 +59,14 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.probing.Probing.probeAllInstances;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
@@ -92,7 +96,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * event can be retransmitted causing it to be received by the target node at a later time.
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class EventServiceImpl implements InternalEventService {
+public class EventServiceImpl implements InternalEventService, ProbeRegistry.ProbeSource {
 
     public static final String SERVICE_NAME = "hz:core:eventService";
 
@@ -162,6 +166,15 @@ public class EventServiceImpl implements InternalEventService {
 
     private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
+
+    private final ConstructorFunction<String, EventServiceSegment> segmentConstructor = 
+            new ConstructorFunction<String, EventServiceSegment>() {
+
+        @Override
+        public EventServiceSegment createNew(String serviceName) {
+            return new EventServiceSegment(serviceName, nodeEngine.getService(serviceName));
+        }
+    };
 
     public EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -529,19 +542,15 @@ public class EventServiceImpl implements InternalEventService {
      * @return the segment for the service or null if there is no segment and {@code forceCreate} is {@code false}
      */
     public EventServiceSegment getSegment(String service, boolean forceCreate) {
-        EventServiceSegment segment = segments.get(service);
-        if (segment == null && forceCreate) {
-            // we can't make use of the ConcurrentUtil; we need to register the segment to the metricsRegistry in case of creation
-            EventServiceSegment newSegment = new EventServiceSegment(service, nodeEngine.getService(service));
-            EventServiceSegment existingSegment = segments.putIfAbsent(service, newSegment);
-            if (existingSegment == null) {
-                segment = newSegment;
-                nodeEngine.getMetricsRegistry().scanAndRegister(newSegment, "event.[" + service + "]");
-            } else {
-                segment = existingSegment;
-            }
-        }
-        return segment;
+        return forceCreate 
+                ? getOrPutIfAbsent(segments, service, segmentConstructor)
+                : segments.get(service);
+    }
+
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        cycle.probe("event", this);
+        probeAllInstances(cycle, "event", segments);
     }
 
     /** Returns {@code true} if the subscriber of the registration is this node */
