@@ -23,14 +23,16 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.impl.util.Util.exceptionallyCompletedFuture;
-import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -46,8 +48,12 @@ public class JobResult implements IdentifiedDataSerializable {
     public JobResult() {
     }
 
-    public JobResult(long jobId, JobConfig jobConfig, String coordinatorUUID, long creationTime, Long completionTime,
-                     Throwable failure) {
+    public JobResult(long jobId,
+                     @Nonnull JobConfig jobConfig,
+                     @Nonnull String coordinatorUUID,
+                     long creationTime, long completionTime,
+                     @Nullable Throwable failure
+    ) {
         this.jobId = jobId;
         this.jobConfig = jobConfig;
         this.coordinatorUUID = coordinatorUUID;
@@ -60,10 +66,12 @@ public class JobResult implements IdentifiedDataSerializable {
         return jobId;
     }
 
+    @Nonnull
     public JobConfig getJobConfig() {
         return jobConfig;
     }
 
+    @Nonnull
     public String getCoordinatorUUID() {
         return coordinatorUUID;
     }
@@ -84,16 +92,29 @@ public class JobResult implements IdentifiedDataSerializable {
         return failure == null || failure instanceof CancellationException;
     }
 
+    @Nullable
     public Throwable getFailure() {
         return failure;
     }
 
+    @Nullable
+    public String getFailureReason() {
+        return failure == null ? null : failure.toString();
+    }
+
+    @Nonnull
     public JobStatus getJobStatus() {
         return isSuccessfulOrCancelled() ? COMPLETED : FAILED;
     }
 
+    @Nonnull
     public CompletableFuture<Void> asCompletableFuture() {
         return failure == null ? completedFuture(null) : exceptionallyCompletedFuture(failure);
+    }
+
+    @Nonnull
+    public String getJobNameOrId() {
+        return jobConfig.getName() != null ? jobConfig.getName() : idToString(jobId);
     }
 
     @Override

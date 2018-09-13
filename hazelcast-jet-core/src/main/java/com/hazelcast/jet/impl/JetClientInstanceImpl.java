@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.util.ClientDelegatingFuture;
@@ -125,6 +126,20 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         return new ClientDelegatingFuture<>(
                 invocation.invoke(), serializationService, decodeMetricsResponse, false
         );
+    }
+
+    /**
+     * Returns a list of jobs and a summary of their details.
+     */
+    @Nonnull
+    public List<JobSummary> getJobSummaryList() {
+        ClientMessage request = JetGetJobSummaryListCodec.encodeRequest();
+        ClientInvocation invocation = new ClientInvocation(client, request, null, masterAddress(client.getCluster()));
+
+        return uncheckCall(() -> {
+            ClientMessage response = invocation.invoke().get();
+            return serializationService.toObject(JetGetJobSummaryListCodec.decodeResponse(response).response);
+        });
     }
 
     @Nonnull

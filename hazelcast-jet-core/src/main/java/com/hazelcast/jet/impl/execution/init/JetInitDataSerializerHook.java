@@ -26,7 +26,9 @@ import com.hazelcast.jet.impl.JobRepository.FilterJobResultByNamePredicate;
 import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordEntryBackupProcessor;
 import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordEntryProcessor;
 import com.hazelcast.jet.impl.JobResult;
+import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
+import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
@@ -86,6 +88,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int SNAPSHOT_OPERATION_RESULT = 29;
     public static final int RESUME_JOB_OP = 30;
     public static final int NOTIFY_MEMBER_SHUTDOWN_OP = 31;
+    public static final int GET_JOB_SUMMARY_LIST_OP = 32;
+    public static final int JOB_SUMMARY = 33;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -169,6 +173,10 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new ResumeJobOperation();
                 case NOTIFY_MEMBER_SHUTDOWN_OP:
                     return new NotifyMemberShutdownOperation();
+                case JOB_SUMMARY:
+                    return new JobSummary();
+                case GET_JOB_SUMMARY_LIST_OP:
+                    return new GetJobSummaryListOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

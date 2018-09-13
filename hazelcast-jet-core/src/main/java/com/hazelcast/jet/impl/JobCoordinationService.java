@@ -228,10 +228,7 @@ public class JobCoordinationService {
      * which represents result of the job.
      */
     public void submitJob(long jobId, Data dag, JobConfig config) {
-        if (!isMaster()) {
-            throw new JetException("Cannot submit job " + idToString(jobId) + ". Master address: "
-                    + nodeEngine.getClusterService().getMasterAddress());
-        }
+        assertIsMaster("Cannot submit job " + idToString(jobId) + " from non-master node");
 
         if (isShutdown) {
             throw new ShutdownInProgressException();
@@ -285,10 +282,7 @@ public class JobCoordinationService {
     }
 
     public CompletableFuture<Void> joinSubmittedJob(long jobId) {
-        if (!isMaster()) {
-            throw new JetException("Cannot join job " + idToString(jobId) + ". Master address: "
-                    + nodeEngine.getClusterService().getMasterAddress());
-        }
+        assertIsMaster("Cannot join job " + idToString(jobId) + " from non-master node");
 
         if (isShutdown) {
             throw new ShutdownInProgressException();
@@ -386,10 +380,7 @@ public class JobCoordinationService {
     }
 
     public void terminateJob(long jobId, TerminationMode terminationMode) {
-        if (!isMaster()) {
-            throw new JetException("Cannot " + terminationMode + " job " + idToString(jobId) + ". Master address: "
-                    + nodeEngine.getClusterService().getMasterAddress());
-        }
+        assertIsMaster("Cannot " + terminationMode + " job " + idToString(jobId) + " from non-master node");
 
         JobResult jobResult = jobRepository.getJobResult(jobId);
         if (jobResult != null) {
@@ -438,6 +429,8 @@ public class JobCoordinationService {
     }
 
     public Set<Long> getAllJobIds() {
+        assertIsMaster("Cannot query list of job ids from non-master node");
+
         Set<Long> jobIds = new HashSet<>(jobRepository.getAllJobIds());
         jobIds.addAll(masterContexts.keySet());
         return jobIds;
@@ -448,10 +441,7 @@ public class JobCoordinationService {
      * if the requested job is not found.
      */
     public JobStatus getJobStatus(long jobId) {
-        if (!isMaster()) {
-            throw new JetException("Cannot query status of job " + idToString(jobId) + ". Master address: "
-                    + nodeEngine.getClusterService().getMasterAddress());
-        }
+        assertIsMaster("Cannot query status of job " + idToString(jobId) + " from non-master node");
 
         // first check if there is a job result present.
         // this map is updated first during completion.
@@ -490,10 +480,7 @@ public class JobCoordinationService {
      * if the requested job is not found.
      */
     public long getJobSubmissionTime(long jobId) {
-        if (!isMaster()) {
-            throw new JetException("Cannot query submission time of job " + idToString(jobId) + ". Master address: "
-                    + nodeEngine.getClusterService().getMasterAddress());
-        }
+        assertIsMaster("Cannot query submission time of job " + idToString(jobId) + " from non-master node");
 
         JobRecord jobRecord = jobRepository.getJobRecord(jobId);
         if (jobRecord != null) {
@@ -539,6 +526,8 @@ public class JobCoordinationService {
     }
 
     public void resumeJob(long jobId) {
+        assertIsMaster("Cannot resume job " + idToString(jobId) + " from non-master node");
+
         if (jobRepository.updateJobSuspendedStatus(jobId, false)) {
             JobRecord jobRecord = jobRepository.getJobRecord(jobId);
             if (jobRecord != null) {
@@ -609,7 +598,7 @@ public class JobCoordinationService {
                     numChunks);
             logger.info(String.format("Snapshot %d for %s completed with status %s in %dms, " +
                             "%,d bytes, %,d keys in %,d chunks", snapshotId, masterContext.jobIdString(), status, elapsed,
-                            numBytes, numKeys, numChunks));
+                    numBytes, numKeys, numChunks));
         } catch (Exception e) {
             logger.warning("Cannot update snapshot status for " + masterContext.jobIdString() + " snapshot "
                     + snapshotId + " isSuccess: " + isSuccess, e);
@@ -632,7 +621,7 @@ public class JobCoordinationService {
         }
         // if any of the members is in shutdown process, don't start jobs
         if (nodeEngine.getClusterService().getMembers().stream()
-                      .anyMatch(m -> membersShuttingDown.contains(m.getUuid()))) {
+                .anyMatch(m -> membersShuttingDown.contains(m.getUuid()))) {
             LoggingUtil.logFine(logger, "Not starting jobs because members are shutting down: %s", membersShuttingDown);
             return false;
         }
@@ -651,15 +640,44 @@ public class JobCoordinationService {
         jobRepository.getJobRecords(name).forEach(r -> jobs.put(r.getJobId(), r.getCreationTime()));
 
         masterContexts.values().stream()
-                      .filter(ctx -> name.equals(ctx.jobConfig().getName()))
-                      .forEach(ctx -> jobs.put(ctx.jobId(), ctx.jobRecord().getCreationTime()));
+                .filter(ctx -> name.equals(ctx.jobConfig().getName()))
+                .forEach(ctx -> jobs.put(ctx.jobId(), ctx.jobRecord().getCreationTime()));
 
         jobRepository.getJobResults(name)
-                  .forEach(r -> jobs.put(r.getJobId(), r.getCreationTime()));
+                .forEach(r -> jobs.put(r.getJobId(), r.getCreationTime()));
 
         return jobs.entrySet().stream()
-                   .sorted(comparing((Function<Entry<Long, Long>, Long>) Entry::getValue).reversed())
-                   .map(Entry::getKey).collect(toList());
+                .sorted(comparing((Function<Entry<Long, Long>, Long>) Entry::getValue).reversed())
+                .map(Entry::getKey).collect(toList());
+    }
+
+    /**
+     * Return a summary of all jobs
+     */
+    public List<JobSummary> getJobSummaryList() {
+        Map<Long, JobSummary> jobs = new HashMap<>();
+
+        // running jobs
+        jobRepository.getJobRecords().stream().map(this::getJobSummary).forEach(s -> jobs.put(s.getJobId(), s));
+
+        // completed jobs
+        jobRepository.getJobResults().stream()
+                .map(r -> new JobSummary(
+                        r.getJobId(), r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
+                        r.getCompletionTime(), r.getFailureReason())
+                ).forEach(s -> jobs.put(s.getJobId(), s));
+
+        return jobs.values().stream().sorted(comparing(JobSummary::getSubmissionTime).reversed()).collect(toList());
+    }
+
+    private JobSummary getJobSummary(JobRecord record) {
+        MasterContext ctx = masterContexts.get(record.getJobId());
+        long execId = ctx == null ? 0 : ctx.executionId();
+        JobStatus status = ctx == null ?
+                record.isSuspended() ? JobStatus.SUSPENDED : JobStatus.NOT_RUNNING
+                :
+                ctx.jobStatus();
+        return new JobSummary(record.getJobId(), execId, record.getJobNameOrId(), status, record.getCreationTime());
     }
 
     private InternalPartitionServiceImpl getInternalPartitionService() {
@@ -689,9 +707,9 @@ public class JobCoordinationService {
         try {
             Collection<JobRecord> jobs = jobRepository.getJobRecords();
             jobs.stream()
-                .filter(jobRecord -> !jobRecord.isSuspended())
-                .forEach(jobRecord ->
-                        startJobIfNotStartedOrCompleted(jobRecord, "discovered by scanning of JobRecords", false));
+                    .filter(jobRecord -> !jobRecord.isSuspended())
+                    .forEach(jobRecord ->
+                            startJobIfNotStartedOrCompleted(jobRecord, "discovered by scanning of JobRecords", false));
 
             performCleanup();
         } catch (Exception e) {
@@ -706,6 +724,12 @@ public class JobCoordinationService {
     private void performCleanup() {
         Set<Long> runningJobIds = masterContexts.keySet();
         jobRepository.cleanup(runningJobIds);
+    }
+
+    private void assertIsMaster(String error) {
+        if (!isMaster()) {
+            throw new JetException(error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress());
+        }
     }
 
     private boolean isMaster() {
@@ -749,14 +773,14 @@ public class JobCoordinationService {
                 // We use async version because we acquire a lock in the action: the completing thread could
                 // hold another locks, opening the possibility of a deadlock.
                 CompletableFuture.allOf(futures)
-                                 .whenCompleteAsync(withTryCatch(logger, (r, e) -> {
-                                     synchronized (lock) {
-                                         if (--awaitedTerminatingMembersCount == 0) {
-                                             terminalSnapshotsFuture.complete(null);
-                                             terminalSnapshotsFuture = null;
-                                         }
-                                     }
-                                 }));
+                        .whenCompleteAsync(withTryCatch(logger, (r, e) -> {
+                            synchronized (lock) {
+                                if (--awaitedTerminatingMembersCount == 0) {
+                                    terminalSnapshotsFuture.complete(null);
+                                    terminalSnapshotsFuture = null;
+                                }
+                            }
+                        }));
             } else {
                 if (result == null) {
                     // The member was already added and the future that was created for it

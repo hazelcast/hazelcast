@@ -374,6 +374,10 @@ public class JobRepository {
         return jobResults.get(jobId);
     }
 
+    Collection<JobResult> getJobResults() {
+        return jobResults.values();
+    }
+
     List<JobResult> getJobResults(String name) {
         return jobResults.values(new FilterJobResultByNamePredicate(name)).stream()
                   .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
