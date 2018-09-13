@@ -18,6 +18,7 @@ package com.hazelcast.nio.ssl;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,8 +47,8 @@ public abstract class SSLEngineFactorySupport {
         String keyManagerAlgorithm = getProperty(properties, "keyManagerAlgorithm", KeyManagerFactory.getDefaultAlgorithm());
         String keyStoreType = getProperty(properties, "keyStoreType", "JKS");
 
-        String trustStore = getProperty(properties, "trustStore", keyStore);
-        String trustStorePassword = getProperty(properties, "trustStorePassword", keyStorePassword);
+        String trustStore = getProperty(properties, "trustStore");
+        String trustStorePassword = getProperty(properties, "trustStorePassword");
         String trustManagerAlgorithm
                 = getProperty(properties, "trustManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
         String trustStoreType = getProperty(properties, "trustStoreType", "JKS");
@@ -67,14 +68,14 @@ public abstract class SSLEngineFactorySupport {
                                                               String trustStore,
                                                               String trustManagerAlgorithm,
                                                               String trustStoreType) throws Exception {
-        if (trustStore == null) {
-            return null;
-        }
-
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerAlgorithm);
-        char[] passPhrase = trustStorePassword == null ? null : trustStorePassword.toCharArray();
         KeyStore ts = KeyStore.getInstance(trustStoreType);
-        loadKeyStore(ts, passPhrase, trustStore);
+        if (trustStore == null) {
+            ts.load(null, null);
+        } else {
+            char[] passPhrase = trustStorePassword == null ? null : trustStorePassword.toCharArray();
+            loadKeyStore(ts, passPhrase, trustStore);
+        }
         tmf.init(ts);
         return tmf;
     }
@@ -111,7 +112,7 @@ public abstract class SSLEngineFactorySupport {
         }
     }
 
-    protected static String getProperty(Properties properties, String property) {
+    public static String getProperty(Properties properties, String property) {
         String value = properties.getProperty(property);
         if (value == null) {
             value = properties.getProperty(JAVA_NET_SSL_PREFIX + property);
@@ -122,7 +123,7 @@ public abstract class SSLEngineFactorySupport {
         return value;
     }
 
-    protected static String getProperty(Properties properties, String property, String defaultValue) {
+    public static String getProperty(Properties properties, String property, String defaultValue) {
         String value = getProperty(properties, property);
         return value != null ? value : defaultValue;
     }
