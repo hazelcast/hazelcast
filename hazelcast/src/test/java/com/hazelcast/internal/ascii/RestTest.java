@@ -232,8 +232,7 @@ public class RestTest extends HazelcastTestSupport {
         Set<PermissionConfig> permissionConfigs = new HashSet<PermissionConfig>();
         permissionConfigs.add(new PermissionConfig(PermissionConfig.PermissionType.MAP, "test", "*"));
         UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest(permissionConfigs);
-        String result = communicator.updatePermissions(config.getGroupConfig().getName(),
-                config.getGroupConfig().getPassword(), request.toJson().toString());
+        String result = communicator.updatePermissions(config.getGroupConfig().getName(), request.toJson().toString());
         assertEquals("{\"status\":\"forbidden\"}", result);
     }
 

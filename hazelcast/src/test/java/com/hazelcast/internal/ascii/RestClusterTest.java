@@ -89,7 +89,7 @@ public class RestClusterTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance2);
 
-        assertEquals(HttpURLConnection.HTTP_OK, communicator.shutdownCluster("dev", "dev-pass"));
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.shutdownCluster("dev"));
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -110,11 +110,11 @@ public class RestClusterTest extends HazelcastTestSupport {
 
         instance1.getCluster().changeClusterState(ClusterState.FROZEN);
         assertEquals("{\"status\":\"success\",\"state\":\"frozen\"}",
-                communicator1.getClusterState("dev", "dev-pass"));
+                communicator1.getClusterState("dev"));
 
         instance1.getCluster().changeClusterState(ClusterState.PASSIVE);
         assertEquals("{\"status\":\"success\",\"state\":\"passive\"}",
-                communicator2.getClusterState("dev", "dev-pass"));
+                communicator2.getClusterState("dev"));
     }
 
     @Test
@@ -123,8 +123,8 @@ public class RestClusterTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
 
-        assertEquals(STATUS_FORBIDDEN, communicator.changeClusterState("dev1", "dev-pass", "frozen").response);
-        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterState("dev", "dev-pass", "frozen").responseCode);
+        assertEquals(STATUS_FORBIDDEN, communicator.changeClusterState("dev1", "frozen").response);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterState("dev", "frozen").responseCode);
 
         assertClusterStateEventually(ClusterState.FROZEN, instance1);
         assertClusterStateEventually(ClusterState.FROZEN, instance2);
@@ -143,19 +143,19 @@ public class RestClusterTest extends HazelcastTestSupport {
     public void testChangeClusterVersion() throws IOException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterVersion("dev", "dev-pass",
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterVersion("dev",
                 instance.getCluster().getClusterVersion().toString()).responseCode);
-        assertEquals(STATUS_FORBIDDEN, communicator.changeClusterVersion("dev1", "dev-pass", "1.2.3").response);
+        assertEquals(STATUS_FORBIDDEN, communicator.changeClusterVersion("dev1", "1.2.3").response);
     }
 
     @Test
     public void testHotBackup() throws IOException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        assertEquals(HttpURLConnection.HTTP_OK, communicator.hotBackup("dev", "dev-pass").responseCode);
-        assertEquals(STATUS_FORBIDDEN, communicator.hotBackup("dev1", "dev-pass").response);
-        assertEquals(HttpURLConnection.HTTP_OK, communicator.hotBackupInterrupt("dev", "dev-pass").responseCode);
-        assertEquals(STATUS_FORBIDDEN, communicator.hotBackupInterrupt("dev1", "dev-pass").response);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.hotBackup("dev").responseCode);
+        assertEquals(STATUS_FORBIDDEN, communicator.hotBackup("dev1").response);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.hotBackupInterrupt("dev").responseCode);
+        assertEquals(STATUS_FORBIDDEN, communicator.hotBackupInterrupt("dev1").response);
     }
 
     @Test
@@ -163,10 +163,10 @@ public class RestClusterTest extends HazelcastTestSupport {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
-        assertEquals(HttpURLConnection.HTTP_OK, communicator.forceStart("dev", "dev-pass").responseCode);
-        assertEquals(STATUS_FORBIDDEN, communicator.forceStart("dev1", "dev-pass").response);
-        assertEquals(HttpURLConnection.HTTP_OK, communicator.partialStart("dev", "dev-pass").responseCode);
-        assertEquals(STATUS_FORBIDDEN, communicator.partialStart("dev1", "dev-pass").response);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.forceStart("dev").responseCode);
+        assertEquals(STATUS_FORBIDDEN, communicator.forceStart("dev1").response);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.partialStart("dev").responseCode);
+        assertEquals(STATUS_FORBIDDEN, communicator.partialStart("dev1").response);
     }
 
     @Test
@@ -174,7 +174,7 @@ public class RestClusterTest extends HazelcastTestSupport {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
         assertEquals(HttpURLConnection.HTTP_NO_CONTENT,
-                communicator.changeManagementCenterUrl("dev", "dev-pass", "http://bla").responseCode);
+                communicator.changeManagementCenterUrl("dev", "http://bla").responseCode);
     }
 
     @Test
@@ -186,7 +186,7 @@ public class RestClusterTest extends HazelcastTestSupport {
                 instance.getCluster().getLocalMember().toString(),
                 BuildInfoProvider.getBuildInfo().getVersion(),
                 System.getProperty("java.version"));
-        assertEquals(result, communicator.listClusterNodes("dev", "dev-pass"));
+        assertEquals(result, communicator.listClusterNodes("dev"));
     }
 
     @Test
@@ -194,7 +194,7 @@ public class RestClusterTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
         HazelcastTestSupport.waitInstanceForSafeState(instance1);
-        assertEquals(STATUS_FORBIDDEN, communicator.listClusterNodes("dev1", "dev-pass"));
+        assertEquals(STATUS_FORBIDDEN, communicator.listClusterNodes("dev1"));
     }
 
     @Test
@@ -213,7 +213,7 @@ public class RestClusterTest extends HazelcastTestSupport {
         });
 
         try {
-            assertEquals("{\"status\":\"success\"}", communicator.shutdownMember("dev", "dev-pass"));
+            assertEquals("{\"status\":\"success\"}", communicator.shutdownMember("dev"));
         } catch (ConnectException ignored) {
             // if node shuts down before response is received, `java.net.ConnectException: Connection refused` is expected
         } catch (NoHttpResponseException ignored) {
@@ -231,7 +231,7 @@ public class RestClusterTest extends HazelcastTestSupport {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
-        assertEquals(STATUS_FORBIDDEN, communicator.shutdownMember("dev1", "dev-pass"));
+        assertEquals(STATUS_FORBIDDEN, communicator.shutdownMember("dev1"));
     }
 
     @Test

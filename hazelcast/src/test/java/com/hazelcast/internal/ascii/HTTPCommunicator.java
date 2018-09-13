@@ -168,24 +168,24 @@ public class HTTPCommunicator {
         return doDelete(url);
     }
 
-    public int shutdownCluster(String groupName, String groupPassword) throws IOException {
+    public int shutdownCluster(String groupName) throws IOException {
         String url = address + "management/cluster/clusterShutdown";
-        return doPost(url, groupName, groupPassword).responseCode;
+        return doPost(url, groupName).responseCode;
     }
 
-    public String shutdownMember(String groupName, String groupPassword) throws IOException {
+    public String shutdownMember(String groupName) throws IOException {
         String url = address + "management/cluster/memberShutdown";
-        return doPost(url, groupName, groupPassword).response;
+        return doPost(url, groupName).response;
     }
 
-    public String getClusterState(String groupName, String groupPassword) throws IOException {
+    public String getClusterState(String groupName) throws IOException {
         String url = address + "management/cluster/state";
-        return doPost(url, groupName, groupPassword).response;
+        return doPost(url, groupName).response;
     }
 
-    public ConnectionResponse changeClusterState(String groupName, String groupPassword, String newState) throws IOException {
+    public ConnectionResponse changeClusterState(String groupName, String newState) throws IOException {
         String url = address + "management/cluster/changeState";
-        return doPost(url, groupName, groupPassword, newState);
+        return doPost(url, groupName, newState);
     }
 
     public String getClusterVersion() throws IOException {
@@ -193,40 +193,39 @@ public class HTTPCommunicator {
         return doGet(url).response;
     }
 
-    public ConnectionResponse changeClusterVersion(String groupName, String groupPassword, String version) throws IOException {
+    public ConnectionResponse changeClusterVersion(String groupName, String version) throws IOException {
         String url = address + "management/cluster/version";
-        return doPost(url, groupName, groupPassword, version);
+        return doPost(url, groupName, version);
     }
 
-    public ConnectionResponse hotBackup(String groupName, String groupPassword) throws IOException {
+    public ConnectionResponse hotBackup(String groupName) throws IOException {
         String url = address + "management/cluster/hotBackup";
-        return doPost(url, groupName, groupPassword);
+        return doPost(url, groupName);
     }
 
-    public ConnectionResponse hotBackupInterrupt(String groupName, String groupPassword) throws IOException {
+    public ConnectionResponse hotBackupInterrupt(String groupName) throws IOException {
         String url = address + "management/cluster/hotBackupInterrupt";
-        return doPost(url, groupName, groupPassword);
+        return doPost(url, groupName);
     }
 
-    public ConnectionResponse forceStart(String groupName, String groupPassword) throws IOException {
+    public ConnectionResponse forceStart(String groupName) throws IOException {
         String url = address + "management/cluster/forceStart";
-        return doPost(url, groupName, groupPassword);
+        return doPost(url, groupName);
     }
 
-    public ConnectionResponse changeManagementCenterUrl(String groupName,
-                                                        String groupPassword, String newUrl) throws IOException {
+    public ConnectionResponse changeManagementCenterUrl(String groupName, String newUrl) throws IOException {
         String url = address + "mancenter/changeurl";
-        return doPost(url, groupName, groupPassword, newUrl);
+        return doPost(url, groupName, newUrl);
     }
 
-    public ConnectionResponse partialStart(String groupName, String groupPassword) throws IOException {
+    public ConnectionResponse partialStart(String groupName) throws IOException {
         String url = address + "management/cluster/partialStart";
-        return doPost(url, groupName, groupPassword);
+        return doPost(url, groupName);
     }
 
-    public String listClusterNodes(String groupName, String groupPassword) throws IOException {
+    public String listClusterNodes(String groupName) throws IOException {
         String url = address + "management/cluster/nodes";
-        return doPost(url, groupName, groupPassword).response;
+        return doPost(url, groupName).response;
     }
 
     public String syncMapOverWAN(String wanRepName, String publisherId, String mapName) throws IOException {
@@ -269,9 +268,9 @@ public class HTTPCommunicator {
         return doPost(url, wanRepConfigJson).response;
     }
 
-    public String updatePermissions(String groupName, String groupPassword, String permConfJson) throws IOException {
+    public String updatePermissions(String groupName, String permConfJson) throws IOException {
         String url = address + "mancenter/security/permissions";
-        return doPost(url, groupName, groupPassword, permConfJson).response;
+        return doPost(url, groupName, permConfJson).response;
     }
 
     static class ConnectionResponse {

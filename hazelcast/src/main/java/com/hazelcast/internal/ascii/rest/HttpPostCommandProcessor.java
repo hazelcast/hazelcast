@@ -121,14 +121,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
         String groupName = URLDecoder.decode(strList[0], "UTF-8");
-        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
-        String stateParam = URLDecoder.decode(strList[2], "UTF-8");
+        String stateParam = URLDecoder.decode(strList[1], "UTF-8");
         String res;
         try {
             Node node = textCommandService.getNode();
             ClusterService clusterService = node.getClusterService();
             GroupConfig groupConfig = node.getConfig().getGroupConfig();
-            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
+            if (!(groupConfig.getName().equals(groupName))) {
                 res = response(ResponseType.FORBIDDEN);
             } else {
                 ClusterState state = ClusterState.valueOf(upperCaseInternal(stateParam));
@@ -168,14 +167,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
         String groupName = URLDecoder.decode(strList[0], "UTF-8");
-        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
-        String versionParam = URLDecoder.decode(strList[2], "UTF-8");
+        String versionParam = URLDecoder.decode(strList[1], "UTF-8");
         String res;
         try {
             Node node = textCommandService.getNode();
             ClusterService clusterService = node.getClusterService();
             GroupConfig groupConfig = node.getConfig().getGroupConfig();
-            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
+            if (!(groupConfig.getName().equals(groupName))) {
                 res = response(ResponseType.FORBIDDEN);
             } else {
                 Version version = Version.of(versionParam);
@@ -356,12 +354,11 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             byte[] data = command.getData();
             String[] strList = bytesToString(data).split("&");
             String cluster = URLDecoder.decode(strList[0], "UTF-8");
-            String pass = URLDecoder.decode(strList[1], "UTF-8");
-            String url = URLDecoder.decode(strList[2], "UTF-8");
+            String url = URLDecoder.decode(strList[1], "UTF-8");
 
             ManagementCenterService managementCenterService = textCommandService.getNode().getManagementCenterService();
             if (managementCenterService != null) {
-                res = managementCenterService.clusterWideUpdateManagementCenterUrl(cluster, pass, url);
+                res = managementCenterService.clusterWideUpdateManagementCenterUrl(cluster, url);
             }
             command.setResponse(res);
         } else {
@@ -683,13 +680,12 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private boolean checkCredentials(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         final String[] strList = bytesToString(data).split("&");
-        if (strList.length < 2) {
+        if (strList.length == 0) {
             return false;
         }
         final String groupName = URLDecoder.decode(strList[0], "UTF-8");
-        final String groupPass = URLDecoder.decode(strList[1], "UTF-8");
         final GroupConfig groupConfig = textCommandService.getNode().getConfig().getGroupConfig();
-        return groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass);
+        return groupConfig.getName().equals(groupName);
     }
 
     private void sendResponse(HttpPostCommand command, String value) {

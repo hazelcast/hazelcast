@@ -193,10 +193,10 @@ public class ManagementCenterService {
         }
     }
 
-    public byte[] clusterWideUpdateManagementCenterUrl(String groupName, String groupPass, String newUrl) {
+    public byte[] clusterWideUpdateManagementCenterUrl(String groupName, String newUrl) {
         try {
             GroupConfig groupConfig = instance.getConfig().getGroupConfig();
-            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
+            if (!(groupConfig.getName().equals(groupName))) {
                 return HttpCommand.RES_403;
             }
 
