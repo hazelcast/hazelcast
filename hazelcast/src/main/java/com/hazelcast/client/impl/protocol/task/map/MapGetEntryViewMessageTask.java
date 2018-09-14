@@ -54,7 +54,7 @@ public class MapGetEntryViewMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         SimpleEntryView<Data, Data> dataEntryView = (SimpleEntryView<Data, Data>) response;
-        return MapGetEntryViewCodec.encodeResponse(dataEntryView);
+        return MapGetEntryViewCodec.encodeResponse(dataEntryView, dataEntryView != null ? dataEntryView.getMaxIdle() : 0);
     }
 
     public Permission getRequiredPermission() {

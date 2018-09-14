@@ -1067,7 +1067,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 .withLastUpdateTime(dataEntryView.getLastUpdateTime())
                 .withVersion(dataEntryView.getVersion())
                 .withHits(dataEntryView.getHits())
-                .withTtl(dataEntryView.getTtl());
+                .withTtl(dataEntryView.getTtl())
+                .withMaxIdle(parameters.maxIdle);
     }
 
     @Override
