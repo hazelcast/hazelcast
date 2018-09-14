@@ -18,63 +18,58 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ITopic;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
-import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.ProbeRegistryImpl;
-import com.hazelcast.internal.probing.Probing;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static java.util.Collections.singletonList;
+
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.internal.probing.Probing.startsWith;
-import static org.junit.Assert.assertTrue;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
+public class DistributedDatastructuresMetricsTest extends AbstractMetricsTest {
 
     private static final int EVENT_COUNTER = 1000;
 
     private static final String MAP_NAME = "myMap";
+    private static final String MULTI_MAP_NAME = "myMultiMap";
     private static final String EXECUTOR_NAME = "myExecutor";
     private static final String QUEUE_NAME = "myQueue";
     private static final String REPLICATED_MAP_NAME = "myReplicatedMap";
     private static final String TOPIC_NAME = "myTopic";
+    private static final String RELIABLE_TOPIC_NAME = "myReliableTopic";
+    private static final String PN_COUNTER_NAME = "myPnCounter";
+    private static final String FLAKE_ID_GEN_NAME = "myFlakeIdGenerator";
     private static final String NEAR_CACHE_MAP_NAME = "nearCacheMap";
-    private HazelcastInstance hz;
+    private static final String INDEX_MAP_NAME = "indexMap";
 
-    @Before
-    public void setup() {
+    @Override
+    Config configure() {
         Config config = new Config()
                 .setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name())
                 .setProperty(Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES.getName(), "true");
         config.addMapConfig(new MapConfig(NEAR_CACHE_MAP_NAME).setNearCacheConfig(new NearCacheConfig("nearCache")));
-
-        hz = createHazelcastInstance(config);
-
-        warmUpPartitions(hz);
+        config.addMapConfig(new MapConfig(INDEX_MAP_NAME).setMapIndexConfigs(
+                singletonList(new MapIndexConfig("age", true))));
+        return config;
     }
 
     @Test
@@ -88,7 +83,21 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             map.removeAsync(key);
         }
 
-        assertHasStatsEventually("map", MAP_NAME);
+        assertHasStatsEventually(18, "map", MAP_NAME);
+    }
+
+    @Test
+    public void testMultiMap() {
+        final MultiMap<Object, Object> map = hz.getMultiMap(MULTI_MAP_NAME);
+
+        Random random = new Random();
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            int key = random.nextInt(Integer.MAX_VALUE);
+            map.put(key, 23);
+            map.remove(key);
+        }
+
+        assertHasStatsEventually(18, "multiMap", MULTI_MAP_NAME);
     }
 
     @Test
@@ -111,7 +120,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         latch.await();
 
-        assertHasStatsEventually("executor", EXECUTOR_NAME);
+        assertHasStatsEventually(6, "executor", EXECUTOR_NAME);
     }
 
     @Test
@@ -123,7 +132,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         q.poll();
 
-        assertHasStatsEventually("queue", QUEUE_NAME);
+        assertHasStatsEventually(12, "queue", QUEUE_NAME);
     }
 
     @Test
@@ -135,7 +144,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         replicatedMap.remove(0);
 
-        assertHasStatsEventually("replicatedMap", REPLICATED_MAP_NAME);
+        assertHasStatsEventually(16, "replicatedMap", REPLICATED_MAP_NAME);
     }
 
     @Test
@@ -146,11 +155,44 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             topic.publish(i);
         }
 
-        assertHasStatsEventually("topic", TOPIC_NAME);
+        assertHasStatsEventually(3, "topic", TOPIC_NAME);
     }
 
     @Test
-    public void testNearCache() {
+    public void testReliableTopic() {
+        final ITopic<Object> topic = hz.getReliableTopic(RELIABLE_TOPIC_NAME);
+
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            topic.publish(i);
+        }
+
+        assertHasStatsEventually(3, "reliableTopic", RELIABLE_TOPIC_NAME);
+    }
+
+    @Test
+    public void testPnCounter() {
+        final PNCounter counter = hz.getPNCounter(PN_COUNTER_NAME);
+
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            counter.incrementAndGet();
+        }
+
+        assertHasStatsEventually(4, "pNCounter", PN_COUNTER_NAME);
+    }
+
+    @Test
+    public void testFlakeIdGenerator() {
+        final FlakeIdGenerator gen = hz.getFlakeIdGenerator(FLAKE_ID_GEN_NAME);
+
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            gen.newId();
+        }
+
+        assertHasStatsEventually(3, "flakeIdGenerator", FLAKE_ID_GEN_NAME);
+    }
+
+    @Test
+    public void testMapNearCache() {
         final IMap<Object, Object> map = hz.getMap(NEAR_CACHE_MAP_NAME);
 
         for (int i = 0; i < EVENT_COUNTER; i++) {
@@ -158,27 +200,27 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        assertHasStatsEventually("map", NEAR_CACHE_MAP_NAME, "nearcache");
+        assertHasStatsEventually(14, "map", NEAR_CACHE_MAP_NAME, "nearcache.");
     }
 
-    private void assertHasStatsEventually(String type, String name) {
-        assertHasStatsEventually(type, name, "");
+    @Test
+    public void testMapIndex() {
+        final IMap<Object, Object> map = hz.getMap(INDEX_MAP_NAME);
+
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            map.put(i, new Person(i));
+            map.get(i);
+        }
+
+        assertHasStatsEventually(12, "map", INDEX_MAP_NAME, "index=");
     }
 
-    private void assertHasStatsEventually(String type, String name, String propertyPrefix) {
-        final String prefix = ProbeRegistry.ProbeSource.TAG_TYPE + "=" + type + " "
-                + ProbeRegistry.ProbeSource.TAG_INSTANCE + "=" + name + " "
-                + (propertyPrefix.isEmpty() ? "" : propertyPrefix + ".");
-        final ProbeRegistry registry = getNode(hz).nodeEngine.getProbeRegistry();
-        final ProbeRegistry.ProbeRenderContext renderContext = registry.newRenderingContext();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
-                renderContext.renderAt(ProbeLevel.INFO, renderer);
-                assertTrue(!renderer.probes.isEmpty());
-            }
-        });
+    private static class Person implements Serializable {
+        final int age;
+
+        Person(int age) {
+            this.age = age;
+        }
     }
 
     static class EmptyRunnable implements Runnable, Serializable {
@@ -188,28 +230,4 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
     }
 
-    static class StringProbeRenderer implements com.hazelcast.internal.probing.ProbeRenderer {
-        final HashMap<String, Object> probes = new HashMap<String, Object>();
-        private final String prefix;
-
-        StringProbeRenderer(String prefix) {
-            this.prefix = prefix;
-        }
-
-        @Override
-        public void render(CharSequence key, long value) {
-            if (startsWith(prefix, key)) {
-                probes.put(key.toString(), value);
-            }
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            for (Entry<String, Object> probe : probes.entrySet()) {
-                sb.append(probe.getKey()).append(" - ").append(probe.getValue()).append("\n");
-            }
-            return sb.toString();
-        }
-    }
 }

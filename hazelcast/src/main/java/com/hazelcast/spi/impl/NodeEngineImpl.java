@@ -204,11 +204,9 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
      */
     private void initProbeSources() {
         probeRegistry.register(this);
-        probeRegistry.register(node.getClusterService());
         probeRegistry.register(Probing.GC);
         probeRegistry.register(Probing.OS);
         probeRegistry.register(executionService);
-        probeRegistry.register(eventService);
         probeRegistry.registerIfSource(operationService.getOperationExecutor());
         probeRegistry.registerIfSource(node.getNodeExtension());
         for (ProbeSource s : serviceManager.getServices(ProbeSource.class)) {
@@ -237,7 +235,6 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
 
     public void start() {
         serviceManager.start();
-        initProbeSources();
 
         proxyService.init();
         operationService.start();
@@ -245,6 +242,8 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         diagnostics.start();
 
         node.getNodeExtension().registerPlugins(diagnostics);
+
+        initProbeSources();
     }
 
     public Consumer<Packet> getPacketDispatcher() {

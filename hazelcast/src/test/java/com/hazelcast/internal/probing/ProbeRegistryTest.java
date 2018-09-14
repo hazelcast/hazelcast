@@ -37,8 +37,11 @@ public class ProbeRegistryTest extends ProbingTest implements ProbeSource {
         LevelBean a = new LevelBean("a");
         LevelBean b = new LevelBean("b");
         LevelBean c = new LevelBean("");
+        LevelBean d = new LevelBean("special");
         // context should be clean - no openContext required
         cycle.probe("foo", a); // should be context neutral
+        // context should still be clean, again no openContext
+        cycle.probe(d); // should be context neutral
         // context should still be clean, again no openContext
         cycle.probe("bar", b);
         // and again
@@ -47,6 +50,7 @@ public class ProbeRegistryTest extends ProbingTest implements ProbeSource {
         map.put("x", a);
         map.put("y", b);
         map.put("z", c);
+        map.put("s", d);
         probeAllInstances(cycle, "map", map);
         cycle.openContext(); // needed to reset context
         cycle.probe(this);
@@ -71,7 +75,9 @@ public class ProbeRegistryTest extends ProbingTest implements ProbeSource {
 
         @Override
         public void tagIn(Tags context) {
-            if (!name.isEmpty()) {
+            if (name.equals("special")) {
+                context.tag(TAG_TARGET, name);
+            } else if (!name.isEmpty()) {
                 context.tag(TAG_INSTANCE, name);
             }
         }
@@ -80,14 +86,14 @@ public class ProbeRegistryTest extends ProbingTest implements ProbeSource {
     @Test
     public void onlyProbesOfEnabledLevelsAreRendered() {
         setLevel(ProbeLevel.MANDATORY);
-        assertProbeCount(6);
+        assertProbeCount(8);
         assertProbes("mandatory", 1);
         setLevel(ProbeLevel.INFO);
-        assertProbeCount(13);
+        assertProbeCount(17); // 2x8 + 1
         assertProbes("mandatory", 1);
         assertProbes("info", 2);
         setLevel(ProbeLevel.DEBUG);
-        assertProbeCount(19);
+        assertProbeCount(25); // 3x8 + 1
         assertProbes("mandatory", 1);
         assertProbes("info", 2);
         assertProbes("debug", 3);
@@ -99,9 +105,11 @@ public class ProbeRegistryTest extends ProbingTest implements ProbeSource {
         assertProbed(i + "=a foo." + name, value);
         assertProbed(i + "=b bar." + name, value);
         assertProbed("baz." + name, value);
+        assertProbed("target=special " + name, value);
         assertProbed(t + "=map " + i + "=a " + name, value);
         assertProbed(t + "=map " + i + "=b " + name, value);
         assertProbed(t + "=map " + i + "=z " + name, value);
+        assertProbed(t + "=map " + i + "=s target=special " + name, value);
     }
 
     @Probe
@@ -116,7 +124,7 @@ public class ProbeRegistryTest extends ProbingTest implements ProbeSource {
     public void reprobingOccursInSpecifiedCycleTime() {
         assertProbed("updates", 1);
         assertProbed("updates", 1);
-        sleepAtLeastMillis(500L);
+        sleepAtLeastMillis(501L);
         assertProbed("updates", 2);
         assertProbed("updates", 2);
     }
