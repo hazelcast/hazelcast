@@ -3,6 +3,8 @@ package com.hazelcast.internal.diagnostics;
 import static com.hazelcast.internal.probing.Probing.startsWith;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -57,6 +59,15 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
         final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
         renderContext.renderAt(ProbeLevel.INFO, renderer);
         assertThat("minimum number of probes ", renderer.probes.size(), greaterThanOrEqualTo(minimumProbes));
+        if (minimumProbes > 0) {
+            for (String key : renderer.probes.keySet()) {
+                if (key.contains("creationTime")) {
+                    return;
+                }
+            }
+            fail("Expected at least one metric with name `creationTime` but found: "
+                    + renderer.probes.keySet());
+        }
     }
 
     static class StringProbeRenderer implements com.hazelcast.internal.probing.ProbeRenderer {
