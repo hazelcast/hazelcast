@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -271,6 +272,26 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         assertEquals(1, clientMap.get(keyOwnedBy2));
 
         testFinished.countDown();
+
+    }
+
+    @Test
+    public void testNioChannelLeakTest() {
+        ClientConfig config = new ClientConfig();
+        config.getConnectionStrategyConfig().setAsyncStart(true).
+                setReconnectMode(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)
+                .getConnectionRetryConfig().setEnabled(true).setInitialBackoffMillis(1).setMaxBackoffMillis(1000);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+        final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        final ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) clientInstanceImpl.getConnectionManager();
+        sleepSeconds(2);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(0, connectionManager.getNetworking().getChannels().size());
+            }
+        });
+        client.shutdown();
 
     }
 }

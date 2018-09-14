@@ -129,7 +129,7 @@ class ClusterConnector {
         this.ownerConnectionAddress = ownerConnectionAddress;
     }
 
-    Connection connectAsOwner(Address address) {
+    private Connection connectAsOwner(Address address) {
         Connection connection = null;
         try {
             logger.info("Trying to connect to " + address + " as owner member");

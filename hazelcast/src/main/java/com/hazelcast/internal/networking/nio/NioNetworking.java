@@ -119,6 +119,11 @@ public final class NioNetworking implements Networking {
         return outputThreads;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
+    public Set<NioChannel> getChannels() {
+        return channels;
+    }
+
     public IOBalancer getIOBalancer() {
         return ioBalancer;
     }

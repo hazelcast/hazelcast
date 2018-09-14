@@ -18,6 +18,7 @@ package com.hazelcast.internal.networking;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -108,27 +109,35 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public void connect(InetSocketAddress address, int timeoutMillis) throws IOException {
-        checkNotNull(address, "address");
-        checkNotNegative(timeoutMillis, "timeoutMillis can't be negative");
-
-        // since the connect method is blocking, we need to configure blocking.
-        socketChannel.configureBlocking(true);
-
         try {
-            if (timeoutMillis > 0) {
-                socketChannel.socket().connect(address, timeoutMillis);
-            } else {
-                socketChannel.connect(address);
-            }
-        } catch (SocketException ex) {
-            //we want to include the address in the exception.
-            SocketException newEx = new SocketException(ex.getMessage() + " to address " + address);
-            newEx.setStackTrace(ex.getStackTrace());
-            throw newEx;
-        }
+            checkNotNull(address, "address");
+            checkNotNegative(timeoutMillis, "timeoutMillis can't be negative");
 
-        if (logger.isFinestEnabled()) {
-            logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
+            // since the connect method is blocking, we need to configure blocking.
+            socketChannel.configureBlocking(true);
+
+            try {
+                if (timeoutMillis > 0) {
+                    socketChannel.socket().connect(address, timeoutMillis);
+                } else {
+                    socketChannel.connect(address);
+                }
+            } catch (SocketException ex) {
+                //we want to include the address in the exception.
+                SocketException newEx = new SocketException(ex.getMessage() + " to address " + address);
+                newEx.setStackTrace(ex.getStackTrace());
+                throw newEx;
+            }
+
+            if (logger.isFinestEnabled()) {
+                logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
+            }
+        } catch (RuntimeException e) {
+            IOUtil.closeResource(this);
+            throw e;
+        } catch (IOException e) {
+            IOUtil.closeResource(this);
+            throw e;
         }
     }
 
