@@ -77,6 +77,10 @@ import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
+import static java.lang.String.format;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.WARNING;
 
 /**
  * Maintains migration system state and manages migration operations performed within the cluster.
@@ -938,7 +942,7 @@ public class MigrationManager {
                 Boolean result = executeMigrateOperation(partitionOwner);
                 processMigrationResult(result);
             } catch (Throwable t) {
-                final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINE;
+                final Level level = migrationInfo.isValid() ? WARNING : FINE;
                 logger.log(level, "Error [" + t.getClass() + ": " + t.getMessage() + "] during " + migrationInfo);
                 logger.finest(t);
                 migrationOperationFailed();
@@ -1004,7 +1008,7 @@ public class MigrationManager {
                 }
                 migrationOperationSucceeded();
             } else {
-                Level level = nodeEngine.isRunning() && migrationInfo.isValid() ? Level.WARNING : Level.FINE;
+                Level level = nodeEngine.isRunning() && migrationInfo.isValid() ? WARNING : FINE;
                 if (logger.isLoggable(level)) {
                     logger.log(level, "Migration failed: " + migrationInfo);
                 }
@@ -1029,9 +1033,9 @@ public class MigrationManager {
                 Object response = future.get();
                 return (Boolean) nodeEngine.toObject(response);
             } catch (Throwable e) {
-                Level level = nodeEngine.isRunning() && migrationInfo.isValid() ? Level.WARNING : Level.FINE;
+                Level level = nodeEngine.isRunning() && migrationInfo.isValid() ? WARNING : FINE;
                 if (e instanceof ExecutionException && e.getCause() instanceof PartitionStateVersionMismatchException) {
-                    level = Level.FINE;
+                    level = FINE;
                 }
                 if (logger.isLoggable(level)) {
                     logger.log(level, "Failed migration from " + fromMember + " for " + migrationInfo, e);
@@ -1386,13 +1390,12 @@ public class MigrationManager {
                             + " since this node is shutting down.");
                     return;
                 }
-                if (logger.isFinestEnabled()) {
-                    logger.warning("Promotion commit failed for " + migrations
-                            + " since destination " + destination + " left the cluster");
-                } else {
-                    logger.warning("Promotion commit failed for "
-                            + (migrationsSize == 1 ? migrations.iterator().next() : migrationsSize + " migrations")
-                            + " since destination " + destination + " left the cluster");
+                Level level = logger.isFinestEnabled() ? FINEST : WARNING;
+                if (logger.isLoggable(level)) {
+                    String message = format("Promotion commit failed for %s migrations since destination"
+                                    + " %s left the cluster",
+                            (migrationsSize == 1 ? migrations.iterator().next() : migrationsSize), destination);
+                    logger.log(level, message);
                 }
                 return;
             }
