@@ -1,12 +1,19 @@
 package com.hazelcast.internal.diagnostics;
 
+import static com.hazelcast.test.OverridePropertyRule.set;
+import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
+
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -87,5 +94,25 @@ public class NodeMetricsTest extends AbstractMetricsTest {
         assertHasStatsEventually(5, "operation.responses.");
         assertHasStatsEventually(3, "operation.invocations.");
         assertHasStatsEventually(2, "operation.parker.");
+    }
+
+    @Test
+    public void executorServiceStats() {
+        assertHasStatsEventually(5, "internal-executor", ExecutionService.ASYNC_EXECUTOR);
+        assertHasStatsEventually(5, "internal-executor", ExecutionService.CLIENT_EXECUTOR);
+        assertHasStatsEventually(5, "internal-executor", ExecutionService.SCHEDULED_EXECUTOR);
+        assertHasStatsEventually(5, "internal-executor", ExecutionService.QUERY_EXECUTOR);
+        assertHasStatsEventually(5, "internal-executor", ExecutionService.SYSTEM_EXECUTOR);
+    }
+
+    /**
+     * In order to get the TCP statistics we need a real {@link ConnectionManager}.
+     */
+    @Rule
+    public final OverridePropertyRule useRealNetwork = set(HAZELCAST_TEST_USE_NETWORK, "true");
+
+    @Test
+    public void connectionManagerStats() {
+        assertHasStatsEventually(10, "tcp.connection.");
     }
 }

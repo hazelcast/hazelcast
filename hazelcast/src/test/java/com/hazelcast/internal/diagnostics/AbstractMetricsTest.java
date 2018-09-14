@@ -1,12 +1,16 @@
 package com.hazelcast.internal.diagnostics;
 
 import static com.hazelcast.internal.probing.Probing.startsWith;
+import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.junit.Before;
 
@@ -59,7 +63,15 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
         final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
         renderContext.renderAt(ProbeLevel.INFO, renderer);
         assertThat("minimum number of probes ", renderer.probes.size(), greaterThanOrEqualTo(minimumProbes));
-        if (minimumProbes > 0 && prefix.contains(ProbeRegistry.ProbeSource.TAG_INSTANCE + "=")) {
+        if (minimumProbes > 0) {
+            assertHasCreationTime(prefix, renderer);
+        }
+    }
+
+    private static void assertHasCreationTime(String prefix, StringProbeRenderer renderer) {
+        boolean expectCreationTime = prefix.contains(ProbeRegistry.ProbeSource.TAG_INSTANCE + "=")
+                && !prefix.contains("type=internal-");
+        if (expectCreationTime) {
             for (String key : renderer.probes.keySet()) {
                 if (key.contains("creationTime")) {
                     return;
@@ -70,19 +82,48 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
         }
     }
 
+    final void assertHasAllStatsEventually(String... expectedKeys) {
+        final Set<String> prefixes = new HashSet<String>(asList(expectedKeys));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final StringProbeRenderer renderer = new StringProbeRenderer(prefixes);
+                renderContext.renderAt(ProbeLevel.INFO, renderer);
+                if (!renderer.probes.keySet().containsAll(prefixes)) {
+                    HashSet<String> missing = new HashSet<String>(prefixes);
+                    missing.removeAll(renderer.probes.keySet());
+                    fail("Missing statistics are: " + missing);
+                }
+            }
+        });
+    }
+
     static class StringProbeRenderer implements com.hazelcast.internal.probing.ProbeRenderer {
         final HashMap<String, Object> probes = new HashMap<String, Object>();
-        private final String prefix;
+        private final Set<String> expectedPrefixes;
 
         StringProbeRenderer(String prefix) {
-            this.prefix = prefix;
+            this(Collections.singleton(prefix));
+        }
+
+        StringProbeRenderer(Set<String> expectedPrefixes) {
+            this.expectedPrefixes = expectedPrefixes;
         }
 
         @Override
         public void render(CharSequence key, long value) {
-            if (startsWith(prefix, key)) {
+            if (startsWithAnyPrefix(key)) {
                 probes.put(key.toString(), value);
             }
+        }
+
+        private boolean startsWithAnyPrefix(CharSequence key) {
+            for (String prefix : expectedPrefixes) {
+                if (startsWith(prefix, key)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
