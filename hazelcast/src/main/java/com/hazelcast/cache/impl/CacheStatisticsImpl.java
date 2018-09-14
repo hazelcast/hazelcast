@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -62,18 +63,30 @@ public class CacheStatisticsImpl
     /**
      * This field is not mutated (read only) so no need to define it as volatile.
      */
+    @Probe
     protected long creationTime;
 
+    @Probe
     protected volatile long lastAccessTime;
+    @Probe
     protected volatile long lastUpdateTime;
+    @Probe
     protected volatile long removals;
+    @Probe
     protected volatile long expiries;
+    @Probe
     protected volatile long puts;
+    @Probe
     protected volatile long hits;
+    @Probe
     protected volatile long misses;
+    @Probe
     protected volatile long evictions;
+    @Probe
     protected volatile long putTimeTakenNanos;
+    @Probe
     protected volatile long getCacheTimeTakenNanos;
+    @Probe
     protected volatile long removeTimeTakenNanos;
 
     protected final CacheEntryCountResolver cacheEntryCountResolver;
@@ -102,6 +115,7 @@ public class CacheStatisticsImpl
         return lastUpdateTime;
     }
 
+    @Probe
     @Override
     public long getOwnedEntryCount() {
         if (cacheEntryCountResolver != null) {
@@ -165,6 +179,7 @@ public class CacheStatisticsImpl
         return removeTimeTakenNanos;
     }
 
+    @Probe
     @Override
     public float getCacheHitPercentage() {
         final long cacheHits = getCacheHits();
@@ -175,6 +190,7 @@ public class CacheStatisticsImpl
         return (float) cacheHits / cacheGets * FLOAT_HUNDRED;
     }
 
+    @Probe
     @Override
     public float getCacheMissPercentage() {
         final long cacheMisses = getCacheMisses();
@@ -185,6 +201,7 @@ public class CacheStatisticsImpl
         return (float) cacheMisses / cacheGets * FLOAT_HUNDRED;
     }
 
+    @Probe
     @Override
     public float getAverageGetTime() {
         final long cacheGetTimeTakenNanos = getCacheGetTimeTakenNanos();
@@ -195,6 +212,7 @@ public class CacheStatisticsImpl
         return ((1f * cacheGetTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
+    @Probe
     @Override
     public float getAveragePutTime() {
         final long cachePutTimeTakenNanos = getCachePutTimeTakenNanos();
@@ -205,6 +223,7 @@ public class CacheStatisticsImpl
         return ((1f * cachePutTimeTakenNanos) / cachePuts) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
+    @Probe
     @Override
     public float getAverageRemoveTime() {
         final long cacheRemoveTimeTakenNanos = getCacheRemoveTimeTakenNanos();

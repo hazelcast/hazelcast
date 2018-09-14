@@ -34,6 +34,8 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
@@ -79,6 +81,7 @@ import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
+import static com.hazelcast.internal.probing.Probing.probeAllInstances;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
@@ -86,7 +89,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
-        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService {
+        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ProbeRegistry.ProbeSource {
 
     private static final String SETUP_REF = "setupRef";
 
@@ -165,6 +168,11 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         this.mergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
 
         postInit(nodeEngine, properties);
+    }
+
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        probeAllInstances(cycle, "cache", statistics);
     }
 
     public CacheMergePolicyProvider getMergePolicyProvider() {

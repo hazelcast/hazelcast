@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.cache.ICache;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
@@ -58,6 +60,7 @@ public class DistributedDatastructuresMetricsTest extends AbstractMetricsTest {
     private static final String RELIABLE_TOPIC_NAME = "myReliableTopic";
     private static final String PN_COUNTER_NAME = "myPnCounter";
     private static final String FLAKE_ID_GEN_NAME = "myFlakeIdGenerator";
+    private static final String CACHE_NAME = "myCache";
     private static final String NEAR_CACHE_MAP_NAME = "nearCacheMap";
     private static final String INDEX_MAP_NAME = "indexMap";
 
@@ -69,6 +72,7 @@ public class DistributedDatastructuresMetricsTest extends AbstractMetricsTest {
         config.addMapConfig(new MapConfig(NEAR_CACHE_MAP_NAME).setNearCacheConfig(new NearCacheConfig("nearCache")));
         config.addMapConfig(new MapConfig(INDEX_MAP_NAME).setMapIndexConfigs(
                 singletonList(new MapIndexConfig("age", true))));
+        config.addCacheConfig(new CacheSimpleConfig().setName(CACHE_NAME).setStatisticsEnabled(true));
         return config;
     }
 
@@ -192,6 +196,17 @@ public class DistributedDatastructuresMetricsTest extends AbstractMetricsTest {
     }
 
     @Test
+    public void testCache() {
+        final ICache<Object, Object> cache = hz.getCacheManager().getCache(CACHE_NAME);
+
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            cache.put(i, i);
+        }
+
+        assertHasStatsEventually(12, "cache", "/hz/" + CACHE_NAME);
+    }
+
+    @Test
     public void testMapNearCache() {
         final IMap<Object, Object> map = hz.getMap(NEAR_CACHE_MAP_NAME);
 
@@ -216,6 +231,7 @@ public class DistributedDatastructuresMetricsTest extends AbstractMetricsTest {
     }
 
     private static class Person implements Serializable {
+        @SuppressWarnings("unused")
         final int age;
 
         Person(int age) {
