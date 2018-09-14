@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
@@ -142,7 +143,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         return result;
     }
 
-    @Probe(name = "responses[normal]", level = MANDATORY)
+    @Probe(name = "responses.normal", level = MANDATORY)
     long responsesNormal() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -151,7 +152,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         return result;
     }
 
-    @Probe(name = "responses[timeout]", level = MANDATORY)
+    @Probe(name = "responses.timeout", level = MANDATORY)
     long responsesTimeout() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -160,7 +161,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         return result;
     }
 
-    @Probe(name = "responses[backup]", level = MANDATORY)
+    @Probe(name = "responses.backup", level = MANDATORY)
     long responsesBackup() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -169,7 +170,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         return result;
     }
 
-    @Probe(name = "responses[error]", level = MANDATORY)
+    @Probe(name = "responses.error", level = MANDATORY)
     long responsesError() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -178,7 +179,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         return result;
     }
 
-    @Probe(name = "responses[missing]", level = MANDATORY)
+    @Probe(name = "responses.missing", level = MANDATORY)
     long responsesMissing() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {

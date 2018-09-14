@@ -59,7 +59,7 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
         final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
         renderContext.renderAt(ProbeLevel.INFO, renderer);
         assertThat("minimum number of probes ", renderer.probes.size(), greaterThanOrEqualTo(minimumProbes));
-        if (minimumProbes > 0) {
+        if (minimumProbes > 0 && prefix.contains(ProbeRegistry.ProbeSource.TAG_INSTANCE + "=")) {
             for (String key : renderer.probes.keySet()) {
                 if (key.contains("creationTime")) {
                     return;

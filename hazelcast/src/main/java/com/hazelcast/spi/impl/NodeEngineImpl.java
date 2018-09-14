@@ -192,7 +192,7 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
     public ProbeRegistry getProbeRegistry() {
         return probeRegistry;
     }
-    
+
     @Deprecated // remove later
     public MetricsRegistry getMetricsRegistry() {
         return metricsRegistry;
@@ -222,7 +222,7 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         cycle.probe("operation", operationService.getInvocationRegistry());
         cycle.probe("operation", operationService.getInboundResponseHandlerSupplier());
         cycle.probe("operation.invocations", operationService.getInvocationMonitor());
-        cycle.probe("operation-parker", operationParker);
+        cycle.probe("operation.parker", operationParker);
         cycle.probe("client.endpoint", node.getClientEngine().getEndpointManager());
         //TODO iterate the client endpoints (peter branch)
         InternalPartitionServiceImpl partitionService = node.partitionService;

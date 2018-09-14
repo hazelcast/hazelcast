@@ -59,6 +59,7 @@ public final class Probing {
         cycle.probe("freeSpace", f.getFreeSpace());
         cycle.probe("totalSpace", f.getTotalSpace());
         cycle.probe("usableSpace", f.getUsableSpace());
+        cycle.probe("creationTime", f.lastModified());
     }
 
     public static void probeIn(ProbingCycle cycle, ClassLoadingMXBean bean) {
@@ -174,12 +175,12 @@ public final class Probing {
             Probing.probeIn(cycle, runtimeMXBean);
             cycle.openContext().prefix("thread");
             Probing.probeIn(cycle, threadMXBean);
-            cycle.openContext().prefix("file.partition[user.home]");
-            Probing.probeIn(cycle, userHome);
             cycle.openContext().prefix("classloading");
             Probing.probeIn(cycle, classLoadingMXBean);
             cycle.openContext().prefix("os");
             Probing.probeIn(cycle, operatingSystemMXBean);
+            cycle.openContext().tag(TAG_TYPE, "file.partition").tag(TAG_INSTANCE, "user.home");
+            Probing.probeIn(cycle, userHome);
         }
 
     }
