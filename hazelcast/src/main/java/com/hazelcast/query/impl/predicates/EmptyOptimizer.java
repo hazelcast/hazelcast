@@ -17,16 +17,50 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Indexes;
 
 /**
  * Optimizer which just returns the original predicate.
  * It's useful when optimizer is disabled.
- *
  */
-public class EmptyOptimizer implements QueryOptimizer {
+public class EmptyOptimizer extends AbstractPredicateVisitor implements QueryOptimizer {
+
     @Override
     public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, Indexes indexes) {
-        return predicate;
+        if (predicate instanceof VisitablePredicate) {
+            return (Predicate) ((VisitablePredicate) predicate).visit(this);
+        } else {
+            return predicate;
+        }
+    }
+
+    @Override
+    public Predicate visit(BetweenPredicate predicate) {
+        if (predicate.attributeName.startsWith("%-")) {
+            return new BetweenPredicate(predicate.attributeName.substring(2), predicate.from, predicate.to);
+        } else {
+            return predicate;
+        }
+    }
+
+    @Override
+    public Predicate visit(EqualPredicate predicate) {
+        return super.visit(predicate);
+    }
+
+    @Override
+    public Predicate visit(NotEqualPredicate predicate) {
+        return super.visit(predicate);
+    }
+
+    @Override
+    public Predicate visit(GreaterLessPredicate predicate) {
+        return super.visit(predicate);
+    }
+
+    @Override
+    public Predicate visit(InPredicate predicate) {
+        return super.visit(predicate);
     }
 }

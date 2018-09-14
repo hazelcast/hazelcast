@@ -57,6 +57,11 @@ public final class OrPredicate
     }
 
     @Override
+    public <T> T visit(PredicateVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
+    @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         List<Set<QueryableEntry>> indexedResults = new LinkedList<Set<QueryableEntry>>();
         for (Predicate predicate : predicates) {
@@ -133,14 +138,14 @@ public final class OrPredicate
         return sb.toString();
     }
 
-    @Override
-    public Predicate accept(Visitor visitor, Indexes indexes) {
-        Predicate[] result = VisitorUtils.acceptVisitor(predicates, visitor, indexes);
-        if (result != predicates) {
-            return visitor.visit(new OrPredicate(result), indexes);
-        }
-        return visitor.visit(this, indexes);
-    }
+//    @Override
+//    public Predicate accept(PredicateVisitor visitor, Indexes indexes) {
+//        Predicate[] result = VisitorUtils.acceptVisitor(predicates, visitor, indexes);
+//        if (result != predicates) {
+//            return visitor.visit(new OrPredicate(result), indexes);
+//        }
+//        return visitor.visit(this, indexes);
+//    }
 
     @Override
     public Predicate negate() {

@@ -32,18 +32,18 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class AbstractVisitorTest {
+public class AbstractPredicateVisitorTest {
 
     @Test
     public void testAllVisitMethodReturnTheOriginalPredicate() throws Exception {
-        // Contract of AbstractVisitor mandates to return original predicate
-        // for all methods on Visitor interface.
+        // Contract of AbstractPredicateVisitor mandates to return original predicate
+        // for all methods on PredicateVisitor interface.
 
-        // This test makes sure if a new method is added into Visitor interface
-        // then it's added to AbstractVisitor and honour its contract
-        AbstractVisitor visitor = new AbstractVisitor() {
+        // This test makes sure if a new method is added into PredicateVisitor interface
+        // then it's added to AbstractPredicateVisitor and honour its contract
+        AbstractPredicateVisitor visitor = new AbstractPredicateVisitor() {
         };
-        Method[] methods = Visitor.class.getMethods();
+        Method[] methods = PredicateVisitor.class.getMethods();
         for (Method method : methods) {
             Class<?> predicateType = method.getParameterTypes()[0];
             Predicate predicate = (Predicate) predicateType.newInstance();
@@ -51,7 +51,7 @@ public class AbstractVisitorTest {
             Object result = method.invoke(visitor, predicate, indexes);
 
             assertSame("Method " + method + " does not return identity of the original predicate."
-                    + " See contract of " + AbstractVisitor.class.getSimpleName(), predicate, result);
+                    + " See contract of " + AbstractPredicateVisitor.class.getSimpleName(), predicate, result);
         }
     }
 }

@@ -19,6 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.query.VisitablePredicate;
 
 import java.io.IOException;
 import java.util.Map;
@@ -29,7 +30,7 @@ import java.util.regex.Pattern;
  * Like Predicate
  */
 @BinaryInterface
-public class LikePredicate extends AbstractPredicate {
+public class LikePredicate extends AbstractPredicate implements VisitablePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -42,6 +43,11 @@ public class LikePredicate extends AbstractPredicate {
     public LikePredicate(String attributeName, String expression) {
         super(attributeName);
         this.expression = expression;
+    }
+
+    @Override
+    public <T> T visit(PredicateVisitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     @Override

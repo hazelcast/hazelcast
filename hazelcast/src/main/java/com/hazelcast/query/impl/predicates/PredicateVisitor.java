@@ -17,22 +17,36 @@
 package com.hazelcast.query.impl.predicates;
 
 
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
-
 /**
- * Visitor can inspect internal state of a node,
+ * PredicateVisitor can inspect internal state of a node,
  * but it's not allowed to mutate its internal state.
  *
- * Visitor can return a new instance of predicate
+ * PredicateVisitor can return a new instance of predicate
  * if modification is needed
- *
- *
  */
-public interface Visitor {
-    Predicate visit(AndPredicate predicate, Indexes indexes);
+public interface PredicateVisitor<T> {
 
-    Predicate visit(OrPredicate predicate, Indexes indexes);
+    T visit(AndPredicate predicate);
 
-    Predicate visit(NotPredicate predicate, Indexes indexes);
+    T visit(OrPredicate predicate);
+
+    T visit(NotPredicate predicate);
+
+    T visit(BetweenPredicate predicate);
+
+    T visit(EqualPredicate predicate);
+
+    T visit(NotEqualPredicate predicate);
+
+    T visit(GreaterLessPredicate predicate);
+
+    T visit(InPredicate predicate);
+
+    T visit(InstanceOfPredicate predicate);
+
+    T visit(LikePredicate predicate);
+
+    T visit(RegexPredicate predicate);
+
+    T visit(IndexSupressionPredicate predicate);
 }

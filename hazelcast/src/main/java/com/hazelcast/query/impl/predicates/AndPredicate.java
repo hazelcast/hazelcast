@@ -24,7 +24,6 @@ import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.AndResultSet;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -58,15 +57,20 @@ public final class AndPredicate
     }
 
     @Override
-    public Predicate accept(Visitor visitor, Indexes indexes) {
-        Predicate[] result = VisitorUtils.acceptVisitor(predicates, visitor, indexes);
-        if (result != predicates) {
-            //inner predicates were modified by a visitor
-            AndPredicate newPredicate = new AndPredicate(result);
-            return visitor.visit(newPredicate, indexes);
-        }
-        return visitor.visit(this, indexes);
+    public <T> T visit(PredicateVisitor<T> visitor) {
+       return visitor.visit(this);
     }
+//
+//    @Override
+//    public Predicate accept(PredicateVisitor visitor, Indexes indexes) {
+//        Predicate[] result = VisitorUtils.acceptVisitor(predicates, visitor, indexes);
+//        if (result != predicates) {
+//            //inner predicates were modified by a visitor
+//            AndPredicate newPredicate = new AndPredicate(result);
+//            return visitor.visit(newPredicate, indexes);
+//        }
+//        return visitor.visit(this, indexes);
+//    }
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {

@@ -37,13 +37,13 @@ public final class VisitorUtils {
      * @param visitor
      * @return
      */
-    public static Predicate[] acceptVisitor(Predicate[] predicates, Visitor visitor, Indexes indexes) {
+    public static Predicate[] acceptVisitor(Predicate[] predicates, PredicateVisitor visitor) {
         Predicate[] target = predicates;
         boolean copyCreated = false;
         for (int i = 0; i < predicates.length; i++) {
             Predicate predicate = predicates[i];
             if (predicate instanceof VisitablePredicate) {
-                Predicate transformed = ((VisitablePredicate) predicate).accept(visitor, indexes);
+                Predicate transformed = (Predicate)((VisitablePredicate) predicate).visit(visitor);
                 if (transformed != predicate) {
                     if (!copyCreated) {
                         copyCreated = true;

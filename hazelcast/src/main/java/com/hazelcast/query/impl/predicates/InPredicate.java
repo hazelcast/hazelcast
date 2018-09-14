@@ -19,6 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -34,7 +35,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  * In Predicate
  */
 @BinaryInterface
-public class InPredicate extends AbstractIndexAwarePredicate {
+public class InPredicate extends AbstractIndexAwarePredicate implements VisitablePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -51,6 +52,11 @@ public class InPredicate extends AbstractIndexAwarePredicate {
             throw new NullPointerException("Array can't be null");
         }
         this.values = values;
+    }
+
+    @Override
+    public <T> T visit(PredicateVisitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     @Override

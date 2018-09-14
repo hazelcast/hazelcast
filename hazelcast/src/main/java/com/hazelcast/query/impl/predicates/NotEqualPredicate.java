@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -28,7 +29,7 @@ import java.util.Set;
  * Not Equal Predicate
  */
 @BinaryInterface
-public final class NotEqualPredicate extends EqualPredicate {
+public final class NotEqualPredicate extends EqualPredicate implements VisitablePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -37,6 +38,11 @@ public final class NotEqualPredicate extends EqualPredicate {
 
     public NotEqualPredicate(String attribute, Comparable value) {
         super(attribute, value);
+    }
+
+    @Override
+    public <T> T visit(PredicateVisitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     @Override

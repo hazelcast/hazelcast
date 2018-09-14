@@ -78,7 +78,7 @@ public class AndPredicateTest {
 
     @Test
     public void accept_whenEmptyPredicate_thenReturnItself() {
-        Visitor mockVisitor = createPassthroughVisitor();
+        PredicateVisitor mockVisitor = createPassthroughVisitor();
         Indexes mockIndexes = mock(Indexes.class);
 
         AndPredicate andPredicate = new AndPredicate(new Predicate[0]);
@@ -89,7 +89,7 @@ public class AndPredicateTest {
 
     @Test
     public void accept_whenInnerPredicateChangedOnAccept_thenReturnAndNewAndPredicate() {
-        Visitor mockVisitor = createPassthroughVisitor();
+        PredicateVisitor mockVisitor = createPassthroughVisitor();
         Indexes mockIndexes = mock(Indexes.class);
 
         Predicate transformed = mock(Predicate.class);
@@ -109,7 +109,7 @@ public class AndPredicateTest {
     @Test
     public void accept_whenVisitorReturnsNewInstance_thenReturnTheNewInstance() {
         Predicate delegate = mock(Predicate.class);
-        Visitor mockVisitor = createDelegatingVisitor(delegate);
+        PredicateVisitor mockVisitor = createDelegatingVisitor(delegate);
         Indexes mockIndexes = mock(Indexes.class);
         Predicate innerPredicate = mock(Predicate.class);
         Predicate[] innerPredicates = new Predicate[1];

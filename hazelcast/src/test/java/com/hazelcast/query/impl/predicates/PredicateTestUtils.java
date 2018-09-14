@@ -57,18 +57,18 @@ public final class PredicateTestUtils {
 
     static Predicate createMockVisitablePredicate() {
         VisitablePredicate visitablePredicate = mock(VisitablePredicate.class, withSettings().extraInterfaces(Predicate.class));
-        when(visitablePredicate.accept((Visitor) anyObject(), (Indexes) anyObject())).thenReturn((Predicate) visitablePredicate);
+        when(visitablePredicate.accept((PredicateVisitor) anyObject(), (Indexes) anyObject())).thenReturn((Predicate) visitablePredicate);
         return (Predicate) visitablePredicate;
     }
 
     static Predicate createMockVisitablePredicate(Predicate transformed) {
         VisitablePredicate visitablePredicate = mock(VisitablePredicate.class, withSettings().extraInterfaces(Predicate.class));
-        when(visitablePredicate.accept((Visitor) anyObject(), (Indexes) anyObject())).thenReturn(transformed);
+        when(visitablePredicate.accept((PredicateVisitor) anyObject(), (Indexes) anyObject())).thenReturn(transformed);
         return (Predicate) visitablePredicate;
     }
 
-    static Visitor createPassthroughVisitor() {
-        Visitor visitor = mock(Visitor.class);
+    static PredicateVisitor createPassthroughVisitor() {
+        PredicateVisitor visitor = mock(PredicateVisitor.class);
         when(visitor.visit((AndPredicate) anyObject(), (Indexes) anyObject())).thenAnswer(new ReturnsArgumentAt(0));
         when(visitor.visit((OrPredicate) anyObject(), (Indexes) anyObject())).thenAnswer(new ReturnsArgumentAt(0));
         when(visitor.visit((NotPredicate) anyObject(), (Indexes) anyObject())).thenAnswer(new ReturnsArgumentAt(0));
@@ -76,8 +76,8 @@ public final class PredicateTestUtils {
         return visitor;
     }
 
-    static Visitor createDelegatingVisitor(Predicate delegate) {
-        Visitor visitor = mock(Visitor.class);
+    static PredicateVisitor createDelegatingVisitor(Predicate delegate) {
+        PredicateVisitor visitor = mock(PredicateVisitor.class);
         when(visitor.visit((AndPredicate) anyObject(), (Indexes) anyObject())).thenReturn(delegate);
         when(visitor.visit((OrPredicate) anyObject(), (Indexes) anyObject())).thenReturn(delegate);
         when(visitor.visit((NotPredicate) anyObject(), (Indexes) anyObject())).thenReturn(delegate);

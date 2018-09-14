@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.ComparisonType;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
@@ -33,7 +34,8 @@ import java.util.Set;
  * Greater Less Predicate
  */
 @BinaryInterface
-public final class GreaterLessPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
+public final class GreaterLessPredicate extends AbstractIndexAwarePredicate
+        implements NegatablePredicate, VisitablePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -54,6 +56,11 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         this.value = value;
         this.equal = equal;
         this.less = less;
+    }
+
+    @Override
+    public <T> T visit(PredicateVisitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     @Override

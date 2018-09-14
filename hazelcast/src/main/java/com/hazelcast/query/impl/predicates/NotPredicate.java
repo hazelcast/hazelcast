@@ -48,6 +48,11 @@ public final class NotPredicate
     }
 
     @Override
+    public <T> T visit(PredicateVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
+    @Override
     public boolean apply(Map.Entry mapEntry) {
         return !predicate.apply(mapEntry);
     }
@@ -66,23 +71,23 @@ public final class NotPredicate
     public String toString() {
         return "NOT(" + predicate + ")";
     }
-
-    @Override
-    public Predicate accept(Visitor visitor, Indexes indexes) {
-        Predicate target = predicate;
-        if (predicate instanceof VisitablePredicate) {
-            target = ((VisitablePredicate) predicate).accept(visitor, indexes);
-        }
-        if (target == predicate) {
-            // visitor didn't change the inner predicate
-            return visitor.visit(this, indexes);
-        }
-
-        // visitor returned a different copy of the inner predicate.
-        // We have to create our copy with the new inner predicate to maintained immutability
-        NotPredicate copy = new NotPredicate(target);
-        return visitor.visit(copy, indexes);
-    }
+//
+//    @Override
+//    public Predicate accept(PredicateVisitor visitor, Indexes indexes) {
+//        Predicate target = predicate;
+//        if (predicate instanceof VisitablePredicate) {
+//            target = ((VisitablePredicate) predicate).accept(visitor, indexes);
+//        }
+//        if (target == predicate) {
+//            // visitor didn't change the inner predicate
+//            return visitor.visit(this, indexes);
+//        }
+//
+//        // visitor returned a different copy of the inner predicate.
+//        // We have to create our copy with the new inner predicate to maintained immutability
+//        NotPredicate copy = new NotPredicate(target);
+//        return visitor.visit(copy, indexes);
+//    }
 
     @Override
     public Predicate negate() {

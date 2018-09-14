@@ -19,6 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.query.VisitablePredicate;
 
 import java.io.IOException;
 import java.util.Map;
@@ -29,7 +30,7 @@ import java.util.regex.Pattern;
  * Regex Predicate
  */
 @BinaryInterface
-public class RegexPredicate extends AbstractPredicate {
+public class RegexPredicate extends AbstractPredicate implements VisitablePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -42,6 +43,11 @@ public class RegexPredicate extends AbstractPredicate {
     public RegexPredicate(String attributeName, String regex) {
         super(attributeName);
         this.regex = regex;
+    }
+
+    @Override
+    public <T> T visit(PredicateVisitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     @Override

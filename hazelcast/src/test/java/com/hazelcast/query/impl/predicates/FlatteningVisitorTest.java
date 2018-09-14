@@ -43,7 +43,7 @@ import static org.mockito.Mockito.withSettings;
 @Category({QuickTest.class, ParallelTest.class})
 public class FlatteningVisitorTest {
 
-    private FlatteningVisitor visitor;
+    private RuleBasedQueryOptimizer.FlatteningVisitor visitor;
     private Indexes mockIndexes;
     private InternalIndex mockIndex;
 
@@ -52,7 +52,7 @@ public class FlatteningVisitorTest {
         mockIndexes = mock(Indexes.class);
         mockIndex = mock(InternalIndex.class);
         when(mockIndexes.getIndex(anyString())).thenReturn(mockIndex);
-        visitor = new FlatteningVisitor();
+        visitor = new RuleBasedQueryOptimizer.FlatteningVisitor();
         useConverter(INTEGER_CONVERTER);
     }
 

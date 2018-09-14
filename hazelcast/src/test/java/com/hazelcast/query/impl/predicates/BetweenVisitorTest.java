@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class BetweenVisitorTest {
 
-    private BetweenVisitor visitor;
+    private RuleBasedQueryOptimizer.BetweenVisitor visitor;
     private Indexes mockIndexes;
     private InternalIndex mockIndex;
 
@@ -57,7 +57,7 @@ public class BetweenVisitorTest {
         mockIndexes = mock(Indexes.class);
         mockIndex = mock(InternalIndex.class);
         when(mockIndexes.getIndex(anyString())).thenReturn(mockIndex);
-        visitor = new BetweenVisitor();
+        visitor = new RuleBasedQueryOptimizer.BetweenVisitor();
         useConverter(INTEGER_CONVERTER);
     }
 

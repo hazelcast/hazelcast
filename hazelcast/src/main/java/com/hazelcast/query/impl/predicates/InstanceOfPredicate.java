@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.VisitablePredicate;
 
 import java.io.IOException;
 import java.util.Map;
@@ -35,7 +36,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  */
 @BinaryInterface
 public class InstanceOfPredicate
-        implements Predicate, IdentifiedDataSerializable {
+        implements Predicate, IdentifiedDataSerializable, VisitablePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -46,6 +47,11 @@ public class InstanceOfPredicate
     }
 
     public InstanceOfPredicate() {
+    }
+
+    @Override
+    public <T> T visit(PredicateVisitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     @Override

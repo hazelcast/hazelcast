@@ -91,7 +91,7 @@ public class NotPredicateTest {
 
     @Test
     public void accept_whenNullPredicate_thenReturnItself() {
-        Visitor mockVisitor = createPassthroughVisitor();
+        PredicateVisitor mockVisitor = createPassthroughVisitor();
         Indexes mockIndexes = mock(Indexes.class);
 
         NotPredicate notPredicate = new NotPredicate(null);
@@ -102,7 +102,7 @@ public class NotPredicateTest {
 
     @Test
     public void accept_whenPredicateChangedOnAccept_thenReturnAndNewNotPredicate() {
-        Visitor mockVisitor = createPassthroughVisitor();
+        PredicateVisitor mockVisitor = createPassthroughVisitor();
         Indexes mockIndexes = mock(Indexes.class);
 
         Predicate transformed = mock(Predicate.class);

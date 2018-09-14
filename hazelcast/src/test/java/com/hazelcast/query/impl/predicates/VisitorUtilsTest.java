@@ -53,7 +53,7 @@ public class VisitorUtilsTest extends HazelcastTestSupport {
 
     @Test
     public void acceptVisitor_whenEmptyInputArray_thenReturnOriginalArray() {
-        Visitor mockVisitor = mock(Visitor.class);
+        PredicateVisitor mockVisitor = mock(PredicateVisitor.class);
         Predicate[] predicates = new Predicate[0];
         Predicate[] result = VisitorUtils.acceptVisitor(predicates, mockVisitor, mockIndexes);
 
@@ -62,7 +62,7 @@ public class VisitorUtilsTest extends HazelcastTestSupport {
 
     @Test
     public void acceptVisitor_whenNoChange_thenReturnOriginalArray() {
-        Visitor mockVisitor = mock(Visitor.class);
+        PredicateVisitor mockVisitor = mock(PredicateVisitor.class);
 
         Predicate[] predicates = new Predicate[1];
         Predicate predicate = createMockVisitablePredicate();
@@ -74,7 +74,7 @@ public class VisitorUtilsTest extends HazelcastTestSupport {
 
     @Test
     public void acceptVisitor_whenThereIsChange_thenReturnNewArray() {
-        Visitor mockVisitor = mock(Visitor.class);
+        PredicateVisitor mockVisitor = mock(PredicateVisitor.class);
 
         Predicate[] predicates = new Predicate[2];
         Predicate p1 = createMockVisitablePredicate();
@@ -92,7 +92,7 @@ public class VisitorUtilsTest extends HazelcastTestSupport {
 
     @Test
     public void acceptVisitor_whenThereIsNonVisitablePredicateAndNewArraysIsCreated_thenJustCopyTheNonVisitablePredicate() {
-        Visitor mockVisitor = mock(Visitor.class);
+        PredicateVisitor mockVisitor = mock(PredicateVisitor.class);
 
         Predicate[] predicates = new Predicate[3];
         Predicate p1 = mock(Predicate.class);

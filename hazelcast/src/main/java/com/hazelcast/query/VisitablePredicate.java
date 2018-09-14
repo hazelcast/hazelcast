@@ -16,24 +16,25 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.predicates.Visitor;
+import com.hazelcast.query.impl.predicates.PredicateVisitor;
 
 /**
  * Predicates which can be visited by optimizer.
  *
  */
-public interface VisitablePredicate {
+public interface VisitablePredicate extends Predicate {
 
-    /**
-     * Accept visitor. Predicate can either return it's own instance if no modification
-     * was done as a result of the visit. In the case there is a change needed then
-     * the predicate has to return changed copy of itself. Predicates has to be treated
-     * as immutable for optimization purposes.
-     *
-     * @param visitor visitor to accept
-     * @param indexes indexes
-     * @return itself or its changed copy
-     */
-    Predicate accept(Visitor visitor, Indexes indexes);
+//    /**
+//     * Accept visitor. Predicate can either return it's own instance if no modification
+//     * was done as a result of the visit. In the case there is a change needed then
+//     * the predicate has to return changed copy of itself. Predicates has to be treated
+//     * as immutable for optimization purposes.
+//     *
+//     * @param visitor visitor to accept
+//     * @param indexes indexes
+//     * @return itself or its changed copy
+//     */
+//    Predicate accept(PredicateVisitor visitor, Indexes indexes);
+
+    <T> T visit(PredicateVisitor<T> visitor);
 }

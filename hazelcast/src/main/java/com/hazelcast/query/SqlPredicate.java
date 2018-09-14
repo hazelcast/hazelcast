@@ -27,7 +27,7 @@ import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.CompoundPredicate;
 import com.hazelcast.query.impl.predicates.OrPredicate;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
-import com.hazelcast.query.impl.predicates.Visitor;
+import com.hazelcast.query.impl.predicates.PredicateVisitor;
 import com.hazelcast.util.collection.ArrayUtils;
 
 import java.io.IOException;
@@ -311,7 +311,7 @@ public class SqlPredicate
      *
      */
     static <T extends CompoundPredicate> T flattenCompound(Predicate predicateLeft, Predicate predicateRight, Class<T> klass) {
-        // The following could have been achieved with {@link com.hazelcast.query.impl.predicates.FlatteningVisitor},
+        // The following could have been achieved with {@link com.hazelcast.query.impl.predicates.RuleBasedQueryOptimizer.FlatteningVisitor},
         // however since we only care for 2-argument flattening, we can avoid constructing a visitor and its internals
         // for each token pass at the cost of the following explicit code.
         Predicate[] predicates;
@@ -368,7 +368,7 @@ public class SqlPredicate
     }
 
     @Override
-    public Predicate accept(Visitor visitor, Indexes indexes) {
+    public Predicate accept(PredicateVisitor visitor, Indexes indexes) {
         Predicate target = predicate;
         if (predicate instanceof VisitablePredicate) {
             target = ((VisitablePredicate) predicate).accept(visitor, indexes);

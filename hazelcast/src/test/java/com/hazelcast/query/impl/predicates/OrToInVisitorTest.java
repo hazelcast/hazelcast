@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class OrToInVisitorTest {
 
-    private OrToInVisitor visitor;
+    private RuleBasedQueryOptimizer.OrToInVisitor visitor;
     private Indexes mockIndexes;
     private InternalIndex mockIndex;
 
@@ -54,7 +54,7 @@ public class OrToInVisitorTest {
         mockIndexes = mock(Indexes.class);
         mockIndex = mock(InternalIndex.class);
         when(mockIndexes.getIndex(anyString())).thenReturn(mockIndex);
-        visitor = new OrToInVisitor();
+        visitor = new RuleBasedQueryOptimizer.OrToInVisitor();
         useConverter(INTEGER_CONVERTER);
     }
 
