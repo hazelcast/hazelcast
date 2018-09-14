@@ -17,6 +17,8 @@
 package com.hazelcast.query.impl.predicates;
 
 
+import com.hazelcast.query.SqlPredicate;
+
 /**
  * PredicateVisitor can inspect internal state of a node,
  * but it's not allowed to mutate its internal state.
@@ -49,4 +51,6 @@ public interface PredicateVisitor<T> {
     T visit(RegexPredicate predicate);
 
     T visit(IndexSupressionPredicate predicate);
+
+    T visit(SqlPredicate sqlPredicate);
 }

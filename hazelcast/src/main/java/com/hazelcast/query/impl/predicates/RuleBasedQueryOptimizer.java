@@ -43,19 +43,19 @@ public final class RuleBasedQueryOptimizer implements QueryOptimizer {
         Predicate optimized = predicate;
 
         if (optimized instanceof VisitablePredicate) {
-            optimized = ((VisitablePredicate) optimized).visit(new FlatteningVisitor());
+            optimized = (Predicate)((VisitablePredicate) optimized).visit(new FlatteningVisitor());
         }
 
         if (optimized instanceof VisitablePredicate) {
-            optimized = ((VisitablePredicate) optimized).visit(new BetweenVisitor(indexes));
+            optimized = (Predicate)((VisitablePredicate) optimized).visit(new BetweenVisitor(indexes));
         }
 
         if (optimized instanceof VisitablePredicate) {
-            optimized = ((VisitablePredicate) optimized).visit(new OrToInVisitor());
+            optimized = (Predicate)((VisitablePredicate) optimized).visit(new OrToInVisitor());
         }
 
         if (optimized instanceof VisitablePredicate) {
-            optimized = ((VisitablePredicate) optimized).visit(new IndexSkipOptimizer());
+            optimized = (Predicate)((VisitablePredicate) optimized).visit(new IndexSkipOptimizer());
         }
 
         return optimized;
@@ -303,11 +303,6 @@ public final class RuleBasedQueryOptimizer implements QueryOptimizer {
         }
 
         @Override
-        public Object visitDefault(VisitablePredicate p) {
-            return p;
-        }
-
-        @Override
         public Predicate visit(AndPredicate andPredicate) {
             final Predicate[] originalPredicates = andPredicate.predicates;
             InternalListMultiMap<String, GreaterLessPredicate> candidates = findCandidatesAndGroupByAttribute(originalPredicates, indexes);
@@ -520,8 +515,6 @@ public final class RuleBasedQueryOptimizer implements QueryOptimizer {
             Comparable leftValue = converter.convert(leftPredicate.value);
             return rightValue.compareTo(leftValue) < 0;
         }
-
-
     }
 
     public static class IndexSkipOptimizer extends AbstractPredicateVisitor  implements QueryOptimizer{

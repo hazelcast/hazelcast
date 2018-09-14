@@ -58,12 +58,10 @@ public class SqlPredicate
 
     private static final long serialVersionUID = 1;
 
-    transient Predicate predicate;
-    private String sql;
+     private String sql;
 
     public SqlPredicate(String sql) {
         this.sql = sql;
-        predicate = createPredicate(sql);
     }
 
     public SqlPredicate() {
@@ -367,13 +365,19 @@ public class SqlPredicate
         return sql.hashCode();
     }
 
+//    @Override
+//    public Predicate accept(PredicateVisitor visitor, Indexes indexes) {
+//        Predicate target = predicate;
+//        if (predicate instanceof VisitablePredicate) {
+//            target = ((VisitablePredicate) predicate).accept(visitor, indexes);
+//        }
+//        return target;
+//    }
+
+
     @Override
-    public Predicate accept(PredicateVisitor visitor, Indexes indexes) {
-        Predicate target = predicate;
-        if (predicate instanceof VisitablePredicate) {
-            target = ((VisitablePredicate) predicate).accept(visitor, indexes);
-        }
-        return target;
+    public <T> T visit(PredicateVisitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     public Predicate getPredicate() {

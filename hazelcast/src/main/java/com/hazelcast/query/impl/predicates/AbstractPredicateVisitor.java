@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.VisitablePredicate;
 
 import static com.hazelcast.util.collection.ArrayUtils.createCopy;
@@ -25,8 +26,7 @@ import static com.hazelcast.util.collection.ArrayUtils.createCopy;
  * Base class for all visitors. It returns the original predicate without touching.
  * Concrete PredicateVisitor can just override the method for predicate the visitor is interested in.
  */
-public abstract class AbstractPredicateVisitor<T> implements PredicateVisitor<Predicate> {
-
+public abstract class AbstractPredicateVisitor implements PredicateVisitor<Predicate> {
 
     public static Predicate[] visitAll(Predicate[] predicates, PredicateVisitor visitor) {
         Predicate[] target = predicates;
@@ -67,6 +67,11 @@ public abstract class AbstractPredicateVisitor<T> implements PredicateVisitor<Pr
 
         Predicate result = ((VisitablePredicate) predicate.predicate).visit(this);
         return result == predicate.predicate ? predicate : new NotPredicate(result);
+    }
+
+    @Override
+    public Predicate visit(SqlPredicate sqlPredicate) {
+        return null;
     }
 
     @Override
@@ -115,6 +120,6 @@ public abstract class AbstractPredicateVisitor<T> implements PredicateVisitor<Pr
     }
 
     public Predicate visitDefault(VisitablePredicate p) {
-        return this;
+        return p;
     }
 }
