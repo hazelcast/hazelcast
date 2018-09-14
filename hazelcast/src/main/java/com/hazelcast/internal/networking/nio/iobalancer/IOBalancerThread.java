@@ -18,8 +18,12 @@ package com.hazelcast.internal.networking.nio.iobalancer;
 
 import com.hazelcast.logging.ILogger;
 
+import java.util.concurrent.BlockingQueue;
+
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static java.lang.System.currentTimeMillis;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 class IOBalancerThread extends Thread {
@@ -27,14 +31,20 @@ class IOBalancerThread extends Thread {
 
     private final IOBalancer ioBalancer;
     private final ILogger log;
-    private final int balancerIntervalSeconds;
+    private final long balancerIntervalMs;
+    private final BlockingQueue<Runnable> workQueue;
     private volatile boolean shutdown;
 
-    IOBalancerThread(IOBalancer ioBalancer, int balancerIntervalSeconds, String hzName, ILogger log) {
+    IOBalancerThread(IOBalancer ioBalancer,
+                     int balancerIntervalSeconds,
+                     String hzName,
+                     ILogger log,
+                     BlockingQueue<Runnable> workQueue) {
         super(createThreadName(hzName, THREAD_NAME_PREFIX));
         this.ioBalancer = ioBalancer;
         this.log = log;
-        this.balancerIntervalSeconds = balancerIntervalSeconds;
+        this.balancerIntervalMs = SECONDS.toMillis(balancerIntervalSeconds);
+        this.workQueue = workQueue;
     }
 
     void shutdown() {
@@ -46,10 +56,21 @@ class IOBalancerThread extends Thread {
     public void run() {
         try {
             log.finest("Starting IOBalancer thread");
+            long nextRebalanceMs = currentTimeMillis() + balancerIntervalMs;
             while (!shutdown) {
-                ioBalancer.checkInboundPipelines();
-                ioBalancer.checkOutboundPipelines();
-                SECONDS.sleep(balancerIntervalSeconds);
+                for (; ; ) {
+                    long maxPollDurationMs = nextRebalanceMs - currentTimeMillis();
+                    Runnable task = maxPollDurationMs <= 0 ? workQueue.poll() : workQueue.poll(maxPollDurationMs, MILLISECONDS);
+                    if (task == null) {
+                        // we are finished with taking task from the queue, lets
+                        // do a bit of rebalancing.
+                        break;
+                    }
+                    task.run();
+                }
+
+                ioBalancer.rebalance();
+                nextRebalanceMs = currentTimeMillis() + balancerIntervalMs;
             }
         } catch (InterruptedException e) {
             log.finest("IOBalancer thread stopped");
