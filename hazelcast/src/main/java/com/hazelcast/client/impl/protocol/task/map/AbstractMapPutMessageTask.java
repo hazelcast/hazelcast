@@ -53,7 +53,7 @@ public abstract class AbstractMapPutMessageTask<P> extends AbstractMapPartitionM
 
     void checkCompatibility(boolean maxIdleExists) {
         if (maxIdleExists && nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
-            throw new UnsupportedOperationException("Settig MaxIdle is available when cluster version is 3.11 or higher");
+            throw new UnsupportedOperationException("Setting MaxIdle is available when cluster version is 3.11 or higher");
         }
     }
 
