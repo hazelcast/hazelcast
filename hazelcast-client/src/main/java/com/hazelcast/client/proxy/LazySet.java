@@ -20,9 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.IFunction;
 
 import java.util.AbstractSet;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -34,7 +35,7 @@ class LazySet<E> extends AbstractSet<E> {
     final ClientMessage response;
     final IFunction<ClientMessage, E> function;
 
-    Collection<E> backing;
+    List<E> list;
 
     private LazySet(int size, ClientMessage response, IFunction<ClientMessage, E> function) {
         this.size = size;
@@ -52,46 +53,35 @@ class LazySet<E> extends AbstractSet<E> {
     }
 
     @Override
-    public boolean contains(Object o) {
-        if (backing == null) {
-            return super.contains(o);
-        } else {
-            return backing.contains(o);
-        }
-    }
-
-    @Override
     public Iterator<E> iterator() {
         return new Iterator<E>() {
-            Iterator<E> iterator;
-            boolean iteratorInitialized;
+            int visited;
 
             @Override
             public boolean hasNext() {
-                init();
-                return iterator.hasNext();
+                return visited != size;
             }
 
             @Override
             public E next() {
-                init();
-                return iterator.next();
-            }
-
-            private void init() {
-                if (iteratorInitialized) {
-                    return;
+                if (visited >= size) {
+                    throw new NoSuchElementException();
                 }
 
-                if (backing == null) {
-                    backing = new HashSet<E>(size);
-                    for (int i = 0; i < size; i++) {
-                        backing.add(function.apply(response));
-                    }
+                if (list != null && visited < list.size()) {
+                    visited++;
+                    return list.get(visited);
                 }
 
-                iterator = backing.iterator();
-                iteratorInitialized = true;
+                if (list == null) {
+                    list = new ArrayList<E>(size);
+                }
+
+                E element = function.apply(response);
+                list.add(element);
+
+                visited++;
+                return element;
             }
 
             @Override
