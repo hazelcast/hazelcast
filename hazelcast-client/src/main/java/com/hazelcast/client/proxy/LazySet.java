@@ -30,7 +30,7 @@ import java.util.Set;
  * @param <E>
  */
 @SuppressWarnings("checkstyle:anoninnerlength")
-class LazySet<E> extends AbstractSet<E> {
+final class LazySet<E> extends AbstractSet<E> {
     final int size;
     final ClientMessage response;
     final IFunction<ClientMessage, E> function;
