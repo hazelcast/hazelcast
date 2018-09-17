@@ -185,8 +185,12 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     protected abstract void processMessage() throws Throwable;
 
     protected void sendResponse(Object response) {
-        ClientMessage clientMessage = encodeResponse(response);
-        sendClientMessage(clientMessage);
+        try {
+            ClientMessage clientMessage = encodeResponse(response);
+            sendClientMessage(clientMessage);
+        } catch (Exception e) {
+            handleProcessingFailure(e);
+        }
     }
 
     protected void sendClientMessage(ClientMessage resultClientMessage) {
