@@ -69,8 +69,7 @@ final class LazySet<E> extends AbstractSet<E> {
                 }
 
                 if (list != null && visited < list.size()) {
-                    visited++;
-                    return list.get(visited);
+                    return list.get(visited++);
                 }
 
                 if (list == null) {
