@@ -45,8 +45,7 @@ public class IOBalancerTest {
 
         ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
 
-        assertTrue(ioBalancer.getInLoadTracker().tasks.isEmpty());
-        assertTrue(ioBalancer.getOutLoadTracker().tasks.isEmpty());
+        assertTrue(ioBalancer.getWorkQueue().isEmpty());
     }
 
     // https://github.com/hazelcast/hazelcast/issues/11501
@@ -58,7 +57,6 @@ public class IOBalancerTest {
 
         ioBalancer.channelRemoved(inboundPipeline, outboundPipelines);
 
-        assertTrue(ioBalancer.getInLoadTracker().tasks.isEmpty());
-        assertTrue(ioBalancer.getOutLoadTracker().tasks.isEmpty());
+        assertTrue(ioBalancer.getWorkQueue().isEmpty());
     }
 }

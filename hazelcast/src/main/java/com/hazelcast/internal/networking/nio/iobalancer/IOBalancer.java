@@ -27,6 +27,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.GroupProperty;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
@@ -66,6 +69,7 @@ public class IOBalancer {
     private final LoadTracker inLoadTracker;
     private final LoadTracker outLoadTracker;
     private final String hzName;
+    private final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>();
     private volatile boolean enabled;
     private IOBalancerThread ioBalancerThread;
 
@@ -103,31 +107,30 @@ public class IOBalancer {
         return outLoadTracker;
     }
 
+    // just for testing
+    BlockingQueue<Runnable> getWorkQueue() {
+        return workQueue;
+    }
+
     public void channelAdded(MigratablePipeline inboundPipeline, MigratablePipeline outboundPipeline) {
         // if not enabled, then don't schedule tasks that will not get processed.
         // See https://github.com/hazelcast/hazelcast/issues/11501
-        if (!enabled) {
-            return;
+        if (enabled) {
+            workQueue.add(new AddPipelineTask(inboundPipeline, outboundPipeline));
         }
-
-        inLoadTracker.notifyPipelineAdded(inboundPipeline);
-        outLoadTracker.notifyPipelineAdded(outboundPipeline);
     }
 
     public void channelRemoved(MigratablePipeline inboundPipeline, MigratablePipeline outboundPipeline) {
         // if not enabled, then don't schedule tasks that will not get processed.
         // See https://github.com/hazelcast/hazelcast/issues/11501
-        if (!enabled) {
-            return;
+        if (enabled) {
+            workQueue.add(new RemovePipelineTask(inboundPipeline, outboundPipeline));
         }
-
-        inLoadTracker.notifyPipelineRemoved(inboundPipeline);
-        outLoadTracker.notifyPipelineRemoved(outboundPipeline);
     }
 
     public void start() {
         if (enabled) {
-            ioBalancerThread = new IOBalancerThread(this, balancerIntervalSeconds, hzName, logger);
+            ioBalancerThread = new IOBalancerThread(this, balancerIntervalSeconds, hzName, logger, workQueue);
             ioBalancerThread.start();
         }
     }
@@ -138,12 +141,9 @@ public class IOBalancer {
         }
     }
 
-    void checkOutboundPipelines() {
-        scheduleMigrationIfNeeded(outLoadTracker);
-    }
-
-    void checkInboundPipelines() {
+    void rebalance() {
         scheduleMigrationIfNeeded(inLoadTracker);
+        scheduleMigrationIfNeeded(outLoadTracker);
     }
 
     private void scheduleMigrationIfNeeded(LoadTracker loadTracker) {
@@ -214,5 +214,47 @@ public class IOBalancer {
 
     public void signalMigrationComplete() {
         migrationCompletedCount.inc();
+    }
+
+    private final class RemovePipelineTask implements Runnable {
+
+        private final MigratablePipeline inboundPipeline;
+        private final MigratablePipeline outboundPipeline;
+
+        private RemovePipelineTask(MigratablePipeline inboundPipeline, MigratablePipeline outboundPipeline) {
+            this.inboundPipeline = inboundPipeline;
+            this.outboundPipeline = outboundPipeline;
+        }
+
+        @Override
+        public void run() {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Removing pipelines: " + inboundPipeline + ", " + outboundPipeline);
+            }
+
+            inLoadTracker.removePipeline(inboundPipeline);
+            outLoadTracker.removePipeline(outboundPipeline);
+        }
+    }
+
+    private final class AddPipelineTask implements Runnable {
+
+        private final MigratablePipeline inboundPipeline;
+        private final MigratablePipeline outboundPipeline;
+
+        private AddPipelineTask(MigratablePipeline inboundPipeline, MigratablePipeline outboundPipeline) {
+            this.inboundPipeline = inboundPipeline;
+            this.outboundPipeline = outboundPipeline;
+        }
+
+        @Override
+        public void run() {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Adding pipelines: " + inboundPipeline + ", " + outboundPipeline);
+            }
+
+            inLoadTracker.addPipeline(inboundPipeline);
+            outLoadTracker.addPipeline(outboundPipeline);
+        }
     }
 }
