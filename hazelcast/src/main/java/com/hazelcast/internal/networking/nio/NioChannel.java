@@ -17,6 +17,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.AbstractChannel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
@@ -37,12 +38,17 @@ public final class NioChannel extends AbstractChannel {
     NioInboundPipeline inboundPipeline;
     NioOutboundPipeline outboundPipeline;
 
+    private final MetricsRegistry metricsRegistry;
     private final ChannelInitializer channelInitializer;
     private final NioChannelOptions config;
 
-    public NioChannel(SocketChannel socketChannel, boolean clientMode, ChannelInitializer channelInitializer) {
+    public NioChannel(SocketChannel socketChannel,
+                      boolean clientMode,
+                      ChannelInitializer channelInitializer,
+                      MetricsRegistry metricsRegistry) {
         super(socketChannel, clientMode);
         this.channelInitializer = channelInitializer;
+        this.metricsRegistry = metricsRegistry;
         this.config = new NioChannelOptions(socketChannel.socket());
     }
 
@@ -71,6 +77,13 @@ public final class NioChannel extends AbstractChannel {
         }
         outboundPipeline.write(frame);
         return true;
+    }
+
+    @Override
+    protected void onConnect() {
+        String metricsId = localSocketAddress() + "->" + remoteSocketAddress();
+        metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
+        metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
     }
 
     @Override

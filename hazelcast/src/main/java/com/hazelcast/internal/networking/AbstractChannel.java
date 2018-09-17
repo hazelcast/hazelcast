@@ -129,6 +129,8 @@ public abstract class AbstractChannel implements Channel {
                 throw newEx;
             }
 
+            onConnect();
+
             if (logger.isFinestEnabled()) {
                 logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
             }
@@ -139,6 +141,13 @@ public abstract class AbstractChannel implements Channel {
             IOUtil.closeResource(this);
             throw e;
         }
+    }
+
+    /**
+     * Template method that can be implemented when the {@link #connect(InetSocketAddress, int)}
+     * has completed.
+     */
+    protected void onConnect() {
     }
 
     @Override
