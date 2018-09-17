@@ -39,6 +39,7 @@ public class WanPublisherConfigDTO implements JsonSerializable {
     public JsonObject toJson() {
         JsonObject object = new JsonObject();
         object.add("groupName", config.getGroupName());
+        object.add("publisherId", config.getPublisherId());
         object.add("queueCapacity", config.getQueueCapacity());
         object.add("className", config.getClassName());
         object.add("queueFullBehavior", config.getQueueFullBehavior().getId());
@@ -54,6 +55,7 @@ public class WanPublisherConfigDTO implements JsonSerializable {
     public void fromJson(JsonObject json) {
         config = new WanPublisherConfig();
         config.setGroupName(json.get("groupName").asString());
+        config.setPublisherId(json.get("publisherId").asString());
         config.setQueueCapacity(json.get("queueCapacity").asInt());
         config.setClassName(json.get("className").asString());
         int queueFullBehavior = json.get("queueFullBehavior").asInt();
