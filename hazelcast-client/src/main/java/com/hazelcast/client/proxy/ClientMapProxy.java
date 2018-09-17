@@ -102,6 +102,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
@@ -150,11 +151,11 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.collection.InflatableSet;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -163,6 +164,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.proxy.LazySet.newLazySet;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
@@ -1155,15 +1157,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public Set<K> keySet() {
         ClientMessage request = MapKeySetCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
-        MapKeySetCodec.ResponseParameters resultParameters = MapKeySetCodec.decodeResponse(response);
-
-        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        for (Data data : resultParameters.response) {
-            K key = toObject(data);
-            setBuilder.add(key);
-        }
-        return setBuilder.build();
+        final ClientMessage response = invoke(request);
+        return newKeySet(response);
     }
 
     @Override
@@ -1247,16 +1242,43 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public Set<Entry<K, V>> entrySet() {
         ClientMessage request = MapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
+        return newEntrySet(response);
+    }
 
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        InternalSerializationService serializationService = ((InternalSerializationService) getContext()
-                .getSerializationService());
-        for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
-            setBuilder.add(entry);
+    private Set<Entry<K, V>> newEntrySet(final ClientMessage response) {
+        final int size = response.getInt();
+        if (size == 0) {
+            return Collections.emptySet();
         }
-        return setBuilder.build();
+
+        final InternalSerializationService ss
+                = ((InternalSerializationService) getContext().getSerializationService());
+        IFunction<ClientMessage, Entry<K, V>> function = new IFunction<ClientMessage, Entry<K, V>>() {
+            @Override
+            public Entry<K, V> apply(ClientMessage input) {
+                Data dataKey = response.getData();
+                Data dataValue = response.getData();
+                return new LazyMapEntry<K, V>(dataKey, dataValue, ss);
+            }
+        };
+
+        return newLazySet(size, response, function);
+    }
+
+    private Set<K> newKeySet(final ClientMessage response) {
+        final int size = response.getInt();
+        if (size == 0) {
+            return Collections.emptySet();
+        }
+
+        IFunction<ClientMessage, K> function = new IFunction<ClientMessage, K>() {
+            @Override
+            public K apply(ClientMessage input) {
+                return toObject(response.getData());
+            }
+        };
+
+        return newLazySet(size, response, function);
     }
 
     @Override
@@ -1268,14 +1290,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMessage request = MapKeySetWithPredicateCodec.encodeRequest(name, toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
-        MapKeySetWithPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPredicateCodec.decodeResponse(response);
-
-        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        for (Data data : resultParameters.response) {
-            K key = toObject(data);
-            setBuilder.add(key);
-        }
-        return setBuilder.build();
+        return newKeySet(response);
     }
 
     @SuppressWarnings("unchecked")
@@ -1303,18 +1318,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
             return entrySetWithPagingPredicate(predicate);
         }
         ClientMessage request = MapEntriesWithPredicateCodec.encodeRequest(name, toData(predicate));
-
         ClientMessage response = invokeWithPredicate(request, predicate);
-        MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
-
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        InternalSerializationService serializationService = ((InternalSerializationService) getContext()
-                .getSerializationService());
-        for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
-            setBuilder.add(entry);
-        }
-        return setBuilder.build();
+        return newEntrySet(response);
     }
 
     @SuppressWarnings("unchecked")
