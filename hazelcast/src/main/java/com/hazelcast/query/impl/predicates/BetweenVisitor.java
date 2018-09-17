@@ -56,7 +56,7 @@ public class BetweenVisitor extends AbstractVisitor {
             return andPredicate;
         }
 
-        //how many predicates is eliminated
+        //how many predicates are eliminated
         int toBeRemovedCounter = 0;
         boolean modified = false;
         Predicate[] target = originalPredicates;
@@ -74,7 +74,7 @@ public class BetweenVisitor extends AbstractVisitor {
 
             if (boundaries.isOverlapping()) {
                 // the predicate is never true. imagine this: `foo >= 5 and foo <= 4`
-                // it can never be true, we can't replace the whole AND Node with FalsePredicate
+                // this expression can never be true -> we can replace the whole AND Node with FalsePredicate
 
                 // We can return FalsePredicate even if there are additional predicate
                 // as `foo >= 5 and foo <= 5 and bar = 3` is still always false. the `bar = 3` can
