@@ -23,7 +23,6 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -181,7 +180,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
 
         NodeEngine nodeEngine = getNodeEngine();
         SerializationService serializationService = nodeEngine.getSerializationService();
-        Data dataValue = HeapData.toOnHeap(serializationService.toData(record.getValue()));
+        Data dataValue = serializationService.toData(record.getValue()).toHeap();
         publishWanUpdate(dataKey, dataValue, record);
     }
 
@@ -192,7 +191,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
         NodeEngine nodeEngine = getNodeEngine();
         SerializationService serializationService = nodeEngine.getSerializationService();
 
-        Data dataExpiryPolicy = HeapData.toOnHeap(serializationService.toData(record.getExpiryPolicy()));
+        Data dataExpiryPolicy = serializationService.toData(record.getExpiryPolicy()).toHeap();
         publishWanUpdate(dataKey, dataValue, dataExpiryPolicy, record);
     }
 
@@ -203,8 +202,8 @@ public abstract class CacheOperation extends AbstractNamedOperation
             return;
         }
 
-        CacheEntryView<Data, Data> entryView = createDefaultEntryView(HeapData.toOnHeap(dataKey),
-                HeapData.toOnHeap(dataValue), HeapData.toOnHeap(dataExpiryPolicy), record);
+        CacheEntryView<Data, Data> entryView = createDefaultEntryView(dataKey.toHeap(),
+                dataValue.toHeap(), (dataExpiryPolicy.toHeap()), record);
         wanEventPublisher.publishWanUpdate(name, entryView);
     }
 
@@ -213,6 +212,6 @@ public abstract class CacheOperation extends AbstractNamedOperation
             return;
         }
 
-        wanEventPublisher.publishWanRemove(name, HeapData.toOnHeap(dataKey));
+        wanEventPublisher.publishWanRemove(name, dataKey.toHeap());
     }
 }

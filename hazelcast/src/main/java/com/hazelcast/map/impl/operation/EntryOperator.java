@@ -20,7 +20,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
@@ -337,7 +336,7 @@ public final class EntryOperator {
 
     private void publishEntryEvent() {
         Object oldValue = getOrNullOldValue();
-        mapEventPublisher.publishEvent(callerAddress, mapName, eventType, HeapData.toOnHeap(dataKey), oldValue, newValue);
+        mapEventPublisher.publishEvent(callerAddress, mapName, eventType, dataKey.toHeap(), oldValue, newValue);
     }
 
     /**

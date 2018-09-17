@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
 
 public class WanEventHolder {
@@ -26,8 +25,8 @@ public class WanEventHolder {
     private final EntryEventType eventType;
 
     public WanEventHolder(Data key, Data value, EntryEventType eventType) {
-        this.key = HeapData.toOnHeap(key);
-        this.value = HeapData.toOnHeap(value);
+        this.key = key.toHeap();
+        this.value = value.toHeap();
         this.eventType = eventType;
     }
 

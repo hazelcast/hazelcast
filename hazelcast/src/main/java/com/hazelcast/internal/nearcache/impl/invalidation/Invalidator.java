@@ -17,7 +17,6 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.IFunction;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
@@ -108,7 +107,7 @@ public abstract class Invalidator {
     protected Invalidation newInvalidation(Data key, String dataStructureName, String sourceUuid, int partitionId) {
         long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
-        return new SingleNearCacheInvalidation(HeapData.toOnHeap(key), dataStructureName, sourceUuid, partitionUuid, sequence);
+        return new SingleNearCacheInvalidation(key.toHeap(), dataStructureName, sourceUuid, partitionUuid, sequence);
     }
 
     private int getPartitionId(Data o) {

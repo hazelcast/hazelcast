@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -216,8 +215,8 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
             return;
         }
 
-        Data dataValue = HeapData.toOnHeap(mapServiceContext.toData(value));
-        EntryView entryView = createSimpleEntryView(HeapData.toOnHeap(dataKey), dataValue, record);
+        Data dataValue = mapServiceContext.toData(value).toHeap();
+        EntryView entryView = createSimpleEntryView(dataKey.toHeap(), dataValue, record);
 
         mapEventPublisher.publishWanUpdate(name, entryView, hasLoadProvenance);
     }
@@ -231,7 +230,7 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
             return;
         }
 
-        mapEventPublisher.publishWanRemove(name, HeapData.toOnHeap(dataKey));
+        mapEventPublisher.publishWanRemove(name, dataKey.toHeap());
     }
 
     private boolean canPublishWANEvent() {

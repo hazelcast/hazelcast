@@ -112,4 +112,11 @@ public interface Data {
      * @return true if source object is <tt>Portable</tt>, false otherwise.
      */
     boolean isPortable();
+
+    /**
+     * Converts Data to HeapData. Useful for offheap conversion.
+     *
+     * @return the onheap representation of data. If data is null, null is returned.
+     */
+    Data toHeap();
 }
