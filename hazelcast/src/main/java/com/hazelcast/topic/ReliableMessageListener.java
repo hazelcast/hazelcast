@@ -66,7 +66,7 @@ public interface ReliableMessageListener<E> extends MessageListener<E> {
      * Return {@code -1} if there is no initial sequence and you want to start
      * from the next published message.
      * <p>
-     * If you intent to create a durable subscriber so you continue from where
+     * If you intend to create a durable subscriber so you continue from where
      * you stopped the previous time, load the previous sequence and add 1.
      * If you don't add one, then you will be receiving the same message twice.
      *

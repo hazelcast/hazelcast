@@ -66,7 +66,7 @@ public enum OverflowPolicy {
     /**
      * Gets the ID for the given OverflowPolicy.
      *
-     * This reason this ID is used instead of an the ordinal value is that the
+     * The reason this ID is used instead of an the ordinal value is that the
      * ordinal value is more prone to changes due to reordering.
      *
      * @return the ID
