@@ -408,7 +408,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         AtomicLong lastCorrelationId = ConcurrencyUtil.getOrPutIfAbsent(lastAuthenticationCorrelationIds,
                 clientUuid,
                 LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC);
-        return ConcurrencyUtil.setIfGreaterThan(lastCorrelationId, newCorrelationId);
+        return ConcurrencyUtil.setIfEqualOrGreaterThan(lastCorrelationId, newCorrelationId);
     }
 
     public String addOwnershipMapping(String clientUuid, String ownerUuid) {

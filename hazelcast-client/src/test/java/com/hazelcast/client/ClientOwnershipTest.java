@@ -18,9 +18,12 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -34,8 +37,11 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -107,6 +113,23 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
 
             }
         });
+    }
+
+    @Test
+    public void test_ClientReAuthOperation_retry() throws ExecutionException, InterruptedException {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        InternalOperationService operationService = getHazelcastInstanceImpl(instance).node.nodeEngine.getOperationService();
+
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        ClientReAuthOperation reAuthOperation = new ClientReAuthOperation("clientUUId", 1);
+        Future<Object> future = operationService.invokeOnTarget(ClientEngineImpl.SERVICE_NAME, reAuthOperation, address);
+        future.get();
+
+        //retrying ClientReAuthOperation with same parameters, should not throw exception
+        ClientReAuthOperation reAuthOperation2 = new ClientReAuthOperation("clientUUId", 1);
+        Future<Object> future2 = operationService.invokeOnTarget(ClientEngineImpl.SERVICE_NAME, reAuthOperation2, address);
+        future2.get();
+
     }
 
     @Test
