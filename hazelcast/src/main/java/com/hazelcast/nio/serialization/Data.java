@@ -116,7 +116,7 @@ public interface Data {
     /**
      * Converts Data to HeapData. Useful for offheap conversion.
      *
-     * @return the onheap representation of data. If data is null, null is returned.
+     * @return the onheap representation of data.
      */
     Data toHeap();
 }

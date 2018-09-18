@@ -24,7 +24,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -61,8 +60,8 @@ public class HeapDataTest {
 
     @Test
     public void toHeapData() {
-        HeapData anotherHeapData = new HeapData();
-        Data toOnHeap = anotherHeapData.toHeap();
-        assertInstanceOf(HeapData.class, toOnHeap);
+        Data data = new HeapData();
+        Data toHeap = data.toHeap();
+        assertEquals(data, toHeap);
     }
 }
