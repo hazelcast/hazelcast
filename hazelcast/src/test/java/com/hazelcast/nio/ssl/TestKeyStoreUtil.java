@@ -39,6 +39,10 @@ public final class TestKeyStoreUtil {
     public static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
     public static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
     public static final String JAVAX_NET_SSL_MUTUAL_AUTHENTICATION = "javax.net.ssl.mutualAuthentication";
+    public static final String JAVAX_NET_SSL_KEY_FILE = "javax.net.ssl.keyFile";
+    public static final String JAVAX_NET_SSL_KEY_CERT_CHAIN_FILE = "javax.net.ssl.keyCertChainFile";
+    public static final String JAVAX_NET_SSL_TRUST_CERT_COLLECTION_FILE = "javax.net.ssl.trustCertCollectionFile";
+    public static final String KEY_FILE = "keyFile";
 
     private static final ILogger LOGGER = Logger.getLogger(TestKeyStoreUtil.class.getName());
 
@@ -46,48 +50,74 @@ public final class TestKeyStoreUtil {
     private static String trustStore;
     private static String wrongKeyStore;
     private static String malformedKeystore;
+    private static String keyFile;
+    private static String certFile;
 
     private TestKeyStoreUtil() {
     }
 
     public static Properties createSslProperties() {
+        return createSslProperties(false);
+    }
+
+    public static Properties createSslProperties(boolean openSsl) {
         Properties props = new Properties();
-        props.setProperty(JAVAX_NET_SSL_KEY_STORE, getKeyStoreFilePath());
-        props.setProperty(JAVAX_NET_SSL_TRUST_STORE, getTrustStoreFilePath());
-        props.setProperty(JAVAX_NET_SSL_KEY_STORE_PASSWORD, "123456");
-        props.setProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, "123456");
+        if (openSsl) {
+            props.setProperty(JAVAX_NET_SSL_KEY_FILE, getKeyFilePath());
+            props.setProperty(JAVAX_NET_SSL_KEY_CERT_CHAIN_FILE, getCertFilePath());
+            props.setProperty(JAVAX_NET_SSL_TRUST_CERT_COLLECTION_FILE, getCertFilePath());
+        } else {
+            props.setProperty(JAVAX_NET_SSL_KEY_STORE, getKeyStoreFilePath());
+            props.setProperty(JAVAX_NET_SSL_TRUST_STORE, getTrustStoreFilePath());
+            props.setProperty(JAVAX_NET_SSL_KEY_STORE_PASSWORD, "123456");
+            props.setProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, "123456");
+        }
         return props;
     }
 
     public static synchronized String getKeyStoreFilePath() {
         if (keyStore == null || !new File(keyStore).exists()) {
-            keyStore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast.keystore").getAbsolutePath();
+            keyStore = createTempFile("com/hazelcast/nio/ssl/hazelcast.keystore").getAbsolutePath();
         }
         return keyStore;
     }
 
+    public static synchronized String getKeyFilePath() {
+        if (keyFile == null || !new File(keyFile).exists()) {
+            keyFile = createTempFile("com/hazelcast/nio/ssl/hazelcast-privkey.pem").getAbsolutePath();
+        }
+        return keyFile;
+    }
+
+    public static synchronized String getCertFilePath() {
+        if (certFile == null || !new File(certFile).exists()) {
+            certFile = createTempFile("com/hazelcast/nio/ssl/hazelcast.crt").getAbsolutePath();
+        }
+        return certFile;
+    }
+
     public static synchronized String getTrustStoreFilePath() {
         if (trustStore == null || !new File(trustStore).exists()) {
-            trustStore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast.truststore").getAbsolutePath();
+            trustStore = createTempFile("com/hazelcast/nio/ssl/hazelcast.truststore").getAbsolutePath();
         }
         return trustStore;
     }
 
     public static synchronized String getWrongKeyStoreFilePath() {
         if (wrongKeyStore == null || !new File(wrongKeyStore).exists()) {
-            wrongKeyStore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast_wrong.keystore").getAbsolutePath();
+            wrongKeyStore = createTempFile("com/hazelcast/nio/ssl/hazelcast_wrong.keystore").getAbsolutePath();
         }
         return wrongKeyStore;
     }
 
     public static synchronized String getMalformedKeyStoreFilePath() {
         if (malformedKeystore == null || !new File(malformedKeystore).exists()) {
-            malformedKeystore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast_malformed.keystore").getAbsolutePath();
+            malformedKeystore = createTempFile("com/hazelcast/nio/ssl/hazelcast_malformed.keystore").getAbsolutePath();
         }
         return malformedKeystore;
     }
 
-    private static File createTempKeyStoreFile(String resource) {
+    private static File createTempFile(String resource) {
         InputStream in = null;
         OutputStream out = null;
         try {
