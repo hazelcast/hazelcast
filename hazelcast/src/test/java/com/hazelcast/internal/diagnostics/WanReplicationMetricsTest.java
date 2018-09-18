@@ -42,7 +42,7 @@ public class WanReplicationMetricsTest extends AbstractMetricsTest {
     public void setUp() {
         Config config = new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
         hz = HazelcastInstanceFactory.newHazelcastInstance(config, randomName(),
-                new WanServiceMockingNodeContext());   
+                new WanServiceMockingNodeContext());
         renderContext = getNode(hz).nodeEngine.getProbeRegistry().newRenderingContext();
     }
 

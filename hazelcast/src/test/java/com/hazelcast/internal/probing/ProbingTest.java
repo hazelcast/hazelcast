@@ -16,9 +16,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.wan.WanSyncStatus;
 
 /**
  * Tests for the {@link Probing} utility methods. 
@@ -56,6 +58,8 @@ public class ProbingTest {
         assertEquals(1L, toLong(singletonMap("x", "y")));
         assertEquals(42L, toLong(new Semaphore(42)));
         assertEquals(42L, toLong(SwCounter.newSwCounter(42)));
+        assertEquals(WanPublisherState.PAUSED.getCode(), toLong(WanPublisherState.PAUSED));
+        assertEquals(WanSyncStatus.FAILED.getCode(), toLong(WanSyncStatus.FAILED));
     }
 
     @Test(expected = UnsupportedOperationException.class)

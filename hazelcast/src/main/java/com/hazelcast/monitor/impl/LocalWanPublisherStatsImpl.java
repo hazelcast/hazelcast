@@ -45,9 +45,8 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private final long creationTime;
     @Probe
     private volatile boolean connected;
-    private volatile WanPublisherState state;
     @Probe
-    private volatile int stateId;
+    private volatile WanPublisherState state;
     @Probe
     private volatile int outboundQueueSize;
     @Probe
@@ -87,7 +86,6 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     public void setState(WanPublisherState state) {
         this.state = state;
-        this.stateId = state.getId();
     }
 
     @Override

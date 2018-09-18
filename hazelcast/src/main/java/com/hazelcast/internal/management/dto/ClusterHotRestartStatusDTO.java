@@ -18,6 +18,8 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.probing.CodedEnum;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
@@ -34,17 +36,43 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  */
 public class ClusterHotRestartStatusDTO implements JsonSerializable {
 
-    public enum ClusterHotRestartStatus {
-        UNKNOWN, IN_PROGRESS, FAILED, SUCCEEDED
+    public enum ClusterHotRestartStatus implements CodedEnum {
+        UNKNOWN(0), IN_PROGRESS(1), FAILED(2), SUCCEEDED(3);
+
+        private final int code;
+
+        ClusterHotRestartStatus(int code) {
+            this.code = code;
+        }
+
+        @Override
+        public int getCode() {
+            return code;
+        }
     }
 
-    public enum MemberHotRestartStatus {
-        PENDING, LOAD_IN_PROGRESS, SUCCESSFUL, FAILED
+    public enum MemberHotRestartStatus implements CodedEnum {
+        PENDING(1), LOAD_IN_PROGRESS(2), SUCCESSFUL(3), FAILED(4);
+
+        private final int code;
+
+        MemberHotRestartStatus(int code) {
+            this.code = code;
+        }
+
+        @Override
+        public int getCode() {
+            return code;
+        }
     }
 
+    @Probe
     private HotRestartClusterDataRecoveryPolicy dataRecoveryPolicy;
+    @Probe(name = "status")
     private ClusterHotRestartStatus hotRestartStatus;
+    @Probe
     private long remainingValidationTimeMillis;
+    @Probe
     private long remainingDataLoadTimeMillis;
     private Map<String, MemberHotRestartStatus> memberHotRestartStatusMap;
 
@@ -54,10 +82,10 @@ public class ClusterHotRestartStatusDTO implements JsonSerializable {
     }
 
     public ClusterHotRestartStatusDTO(HotRestartClusterDataRecoveryPolicy dataRecoveryPolicy,
-                                      ClusterHotRestartStatus hotRestartStatus,
-                                      long remainingValidationTimeMillis,
-                                      long remainingDataLoadTimeMillis,
-                                      Map<String, MemberHotRestartStatus> memberHotRestartStatusMap) {
+            ClusterHotRestartStatus hotRestartStatus,
+            long remainingValidationTimeMillis,
+            long remainingDataLoadTimeMillis,
+            Map<String, MemberHotRestartStatus> memberHotRestartStatusMap) {
         isNotNull(dataRecoveryPolicy, "dataRecoveryPolicy");
         isNotNull(hotRestartStatus, "hotRestartStatus");
         isNotNull(memberHotRestartStatusMap, "memberHotRestartStatusMap");

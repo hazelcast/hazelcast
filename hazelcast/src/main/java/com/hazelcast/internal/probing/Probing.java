@@ -68,8 +68,9 @@ public final class Probing {
      * Converts instances to their long representation.
      * 
      * Supported are: Primitive wrapper types for {@link Number}s, atomic
-     * {@link Number}s, {@link Counter}s, {@link Boolean} and {@link AtomicBoolean}.
-     * In case of {@link Collection} and {@link Map} their size is returned.
+     * {@link Number}s, {@link Counter}s, {@link Boolean} and {@link AtomicBoolean}
+     * as well as {@link CodedEnum}s. In case of {@link Collection} and {@link Map}
+     * their size is returned.
      * 
      * @param value a value of a set of supported types
      * @return the long representing the passed object value
@@ -90,6 +91,9 @@ public final class Probing {
         }
         if (type == AtomicBoolean.class) {
             return Probing.toLong(((AtomicBoolean) value).get());
+        }
+        if (type.isEnum() && value instanceof CodedEnum) {
+            return ((CodedEnum) value).getCode();
         }
         if (value instanceof Collection) {
             return ((Collection<?>) value).size();

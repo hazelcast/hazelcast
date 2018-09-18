@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -26,6 +27,9 @@ import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
+import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.ClusterHotRestartStatus;
+import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.MemberHotRestartStatus;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
@@ -78,6 +82,7 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map.Entry;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -229,6 +234,16 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         cycle.probe("partitions", partitionService.getMigrationManager());
         cycle.probe("partitions", partitionService.getReplicaManager());
         cycle.probe("transactions", transactionManagerService);
+        InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+        ClusterHotRestartStatusDTO hotRestart = hotRestartService.getCurrentClusterHotRestartStatus();
+        if (hotRestart != null && hotRestart.getHotRestartStatus() != ClusterHotRestartStatus.UNKNOWN) {
+            cycle.probe("hotRestart", hotRestart);
+            for (Entry<String, MemberHotRestartStatus> memberStatus : 
+                hotRestart.getMemberHotRestartStatusMap().entrySet()) {
+                cycle.openContext().tag(TAG_INSTANCE, memberStatus.getKey()).prefix("hotRestart");
+                cycle.probe(ProbeLevel.INFO, "memberStatus", memberStatus.getValue().getCode());
+            }
+        }
     }
 
     public void start() {
