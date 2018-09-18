@@ -5,7 +5,6 @@ import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 import static org.junit.Assert.assertEquals;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
@@ -20,6 +19,7 @@ import org.junit.runner.RunWith;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.statistics.Statistics;
@@ -79,6 +79,16 @@ public class ClientMetricsTest extends AbstractMetricsTest {
     @Override
     protected ProbeRenderContext getRenderContext() {
         return renderContext;
+    }
+
+    /**
+     * These are available even without client statistics being send as they reflect
+     * information the member has about a {@link ClientEndpoint}.
+     */
+    @Test
+    public void clientEndpointStats() {
+        final HazelcastClientInstanceImpl client = createHazelcastClient();
+        assertHasStatsEventually(3, "client", getUuid(client));
     }
 
     @Test
