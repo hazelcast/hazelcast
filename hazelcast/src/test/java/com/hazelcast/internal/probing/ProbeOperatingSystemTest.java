@@ -35,7 +35,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ProbingOperatingSystemTest extends ProbingTest {
+public class ProbeOperatingSystemTest extends AbstractProbeTest {
 
     private final ProbeSource OS = new ProbeSource() {
 
@@ -98,7 +98,7 @@ public class ProbingOperatingSystemTest extends ProbingTest {
 
     @Test
     public void registerMethod_whenDouble() {
-        assertProbed("doubleMethod", ProbeRegistryImpl.toLong(10d));
+        assertProbed("doubleMethod", Probing.toLong(10d));
     }
 
     @Test

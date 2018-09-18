@@ -28,7 +28,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbingFileTest extends ProbingTest {
+public class ProbeFileTest extends AbstractProbeTest {
 
     final File userHome = new File(System.getProperty("user.home"));
 
@@ -39,17 +39,17 @@ public class ProbingFileTest extends ProbingTest {
 
     @Test
     public void freeSpace() {
-        assertProbed("file.partition[user.home].freeSpace", userHome.getFreeSpace(), 0.1);
+        assertProbed("type=file.partition instance=user.home freeSpace", userHome.getFreeSpace(), 0.1);
     }
 
     @Test
     public void totalSpace() {
-        assertProbed("file.partition[user.home].totalSpace", userHome.getTotalSpace(),  0.1);
+        assertProbed("type=file.partition instance=user.home totalSpace", userHome.getTotalSpace(),  0.1);
     }
 
     @Test
     public void usableSpace() {
-        assertProbed("file.partition[user.home].usableSpace", userHome.getUsableSpace(), 0.1);
+        assertProbed("type=file.partition instance=user.home usableSpace", userHome.getUsableSpace(), 0.1);
     }
 
 }

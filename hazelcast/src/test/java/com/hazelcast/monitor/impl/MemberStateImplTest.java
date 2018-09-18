@@ -91,9 +91,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus, true, backupDirectory);
         final WanSyncState wanSyncState = new WanSyncStateImpl(WanSyncStatus.IN_PROGRESS, 86, "atob", "B");
 
-        Map<String, String> clientStats = new HashMap<String, String>();
-        clientStats.put("abc123456", "someStats");
-
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
         TimedMemberState timedMemberState = factory.createTimedMemberState();
 
@@ -107,7 +104,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.setNodeState(state);
         memberState.setHotRestartState(hotRestartState);
         memberState.setWanSyncState(wanSyncState);
-        memberState.setClientStats(clientStats);
 
         MemberStateImpl deserialized = new MemberStateImpl();
         deserialized.fromJson(memberState.toJson());
@@ -149,8 +145,5 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(-1, clusterHotRestartStatus.getRemainingValidationTimeMillis());
         assertEquals(-1, clusterHotRestartStatus.getRemainingDataLoadTimeMillis());
         assertTrue(clusterHotRestartStatus.getMemberHotRestartStatusMap().isEmpty());
-
-        Map<String, String> deserializedClientStats = deserialized.getClientStats();
-        assertEquals("someStats", deserializedClientStats.get("abc123456"));
     }
 }

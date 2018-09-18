@@ -262,7 +262,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExceptionFactory = initClientExceptionFactory();
         statistics = new Statistics(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
-        initProbeSources();
     }
 
     private int getConnectionTimeoutMillis() {
@@ -281,7 +280,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         probeRegistry.register(Probing.GC);
         probeRegistry.register(Probing.OS);
         probeRegistry.register(this);
-        probeRegistry.register(connectionManager.getNetworking());
+        probeRegistry.register(statistics);
+        //null? why? probeRegistry.register(connectionManager.getNetworking());
         probeRegistry.registerIfSource(clientExtension);
     }
 
@@ -555,8 +555,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         listenerService.start();
         loadBalancer.init(getCluster(), config);
         partitionService.start();
-        statistics.start();
         clientExtension.afterStart(this);
+        initProbeSources();
+        statistics.start();
     }
 
     public void onClusterConnect(Connection ownerConnection) throws Exception {

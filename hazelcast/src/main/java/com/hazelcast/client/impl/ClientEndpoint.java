@@ -118,4 +118,6 @@ public interface ClientEndpoint extends Client {
      * @return statistics string for the client
      */
     String getClientStatistics();
+
+    String getClientVersionString();
 }

@@ -123,6 +123,16 @@ public interface ProbingCycle {
 
     void probe(ProbeLevel level, CharSequence name, boolean value);
 
+    /**
+     * Used to forward metrics received from the client. This is only different from
+     * {@link #probe(CharSequence, long)} except that it will not escape the name
+     * but un-escaping escaped backslashes.
+     * 
+     * @param name a properly escaped name (as written before)
+     * @param value value as written before (double already converted to long)
+     */
+    void probeForwarded(CharSequence name, long value);
+
     /*
      * Describing probing context to the cycle:
      */

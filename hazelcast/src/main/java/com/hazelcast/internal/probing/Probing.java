@@ -1,9 +1,12 @@
 package com.hazelcast.internal.probing;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.probing.CharSequenceUtils.startsWith;
 import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_INSTANCE;
+import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_TARGET;
 import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_TYPE;
 import static com.hazelcast.util.SetUtil.createHashSet;
+import static java.lang.Math.round;
 
 import java.io.File;
 import java.lang.management.ClassLoadingMXBean;
@@ -12,14 +15,20 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.probing.CharSequenceUtils.Lines;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
+import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalDistributedObjectStats;
@@ -35,24 +44,50 @@ public final class Probing {
         // utility
     }
 
-    /**
-     * An allocation free check if a {@link CharSequence} starts with a given prefix.
-     * 
-     * @param prefix not null
-     * @param s not null
-     * @return true, if s starts with prefix, else false
-     */
-    public static boolean startsWith(CharSequence prefix, CharSequence s) {
-        int len = prefix.length();
-        if (len > s.length()) {
-            return false;
+    static long toLong(double value) {
+        return round(value * 10000d);
+    }
+
+    static long toLong(boolean value) {
+        return value ? 1 : 0;
+    }
+
+    static long toLong(Object value) {
+        if (value == null) {
+            return -1L;
         }
-        for (int i = 0; i < len; i++) {
-            if (prefix.charAt(i) != s.charAt(i)) {
-                return false;
+        Class<?> type = value.getClass();
+        if (value instanceof Number) {
+            if (type == Float.class || type == Double.class) {
+                return Probing.toLong(((Number) value).doubleValue());
             }
+            return ((Number) value).longValue();
         }
-        return true;
+        if (type == Boolean.class) {
+            return Probing.toLong(((Boolean) value).booleanValue());
+        }
+        if (type == AtomicBoolean.class) {
+            return Probing.toLong(((AtomicBoolean) value).get());
+        }
+        if (value instanceof Collection) {
+            return ((Collection<?>) value).size();
+        }
+        if (value instanceof Map) {
+            return ((Map<?, ?>) value).size();
+        }
+        if (value instanceof Counter) {
+            return ((Counter) value).get();
+        }
+        if (value instanceof Semaphore) {
+            return ((Semaphore) value).availablePermits();
+        }
+        throw new UnsupportedOperationException(
+                "It is not known how to convert a value of type "
+                        + value.getClass().getSimpleName() + " to primitive long.");
+    }
+
+    static long updateInterval(int value, TimeUnit unit) {
+        return unit.toMillis(value);
     }
 
     public static void probeIn(ProbingCycle cycle, File f) {
@@ -138,6 +173,29 @@ public final class Probing {
                         tags = cycle.openContext().tag(TAG_TYPE, type); 
                     }
                 }
+            }
+        }
+    }
+
+    public static void probeClientStats(ProbingCycle cycle, String uuid, CharSequence stats) {
+        if (stats == null) {
+            return;
+        }
+        if (startsWith("1\n", stats)) { // protocol version 1 (since 3.12)
+            Lines lines = new Lines(stats);
+            lines.next(); // gobble protocol
+            cycle.openContext().tag("origin", uuid)
+            .tag(TAG_TYPE, lines.next())
+            .tag(TAG_INSTANCE, lines.next())
+            .tag(TAG_TARGET, lines.next())
+            .tag("version", lines.next());
+            // this additional metric is used to convey client details via tags
+            cycle.probe("principal", "?".contentEquals(lines.next()));
+            cycle.openContext().tag("origin", uuid);
+            lines.next();
+            while (lines.length() > 0) {
+                cycle.probeForwarded(lines.key(), lines.value());
+                lines.next().next(); // first to end of current line as key goes back
             }
         }
     }
@@ -263,4 +321,5 @@ public final class Probing {
             this.unknownTime = unknownTime;
         }
     }
+
 }

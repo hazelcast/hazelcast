@@ -16,84 +16,65 @@
 
 package com.hazelcast.internal.probing;
 
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.lang.management.ManagementFactory;
-import java.util.concurrent.TimeUnit;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbingRuntimeTest extends ProbingTest {
+public class ProbeThreadTest extends AbstractProbeTest {
 
-    private static final int TEN_MB = 10 * 1024 * 1024;
-
-    private Runtime runtime;
+    private static final ThreadMXBean MX_BEAN = ManagementFactory.getThreadMXBean();
 
     @Before
     public void setup() {
         registry.register(Probing.OS);
-        runtime = Runtime.getRuntime();
     }
 
     @Test
-    public void freeMemory() {
+    public void threadCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("runtime.freeMemory", runtime.freeMemory(), TEN_MB);
+                assertProbed("thread.threadCount", MX_BEAN.getThreadCount(), 10);
             }
         });
     }
 
     @Test
-    public void totalMemory() {
+    public void peakThreadCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("runtime.totalMemory", runtime.totalMemory(), TEN_MB);
+                assertProbed("thread.peakThreadCount", MX_BEAN.getPeakThreadCount(), 10);
             }
         });
     }
 
     @Test
-    public void maxMemory() {
+    public void daemonThreadCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("runtime.maxMemory", runtime.maxMemory(), TEN_MB);
+                assertProbed("thread.daemonThreadCount", MX_BEAN.getDaemonThreadCount(), 10);
             }
         });
     }
 
     @Test
-    public void usedMemory() {
+    public void totalStartedThreadCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                long expected = runtime.totalMemory() - runtime.freeMemory();
-                assertProbed("runtime.usedMemory", expected, TEN_MB);
-            }
-        });
-    }
-
-    @Test
-    public void availableProcessors() {
-        assertProbed("runtime.availableProcessors", runtime.availableProcessors());
-    }
-
-    @Test
-    public void uptime() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                long expected = ManagementFactory.getRuntimeMXBean().getUptime();
-                assertProbed("runtime.uptime", expected, TimeUnit.MINUTES.toMillis(1));
+                assertProbed("thread.totalStartedThreadCount", MX_BEAN.getTotalStartedThreadCount(), 10);
             }
         });
     }

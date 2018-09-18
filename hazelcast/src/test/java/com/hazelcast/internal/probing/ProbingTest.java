@@ -1,111 +1,71 @@
 package com.hazelcast.internal.probing;
 
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.lessThan;
+import static com.hazelcast.internal.probing.Probing.toLong;
+import static com.hazelcast.internal.probing.Probing.updateInterval;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
-import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 
-public abstract class ProbingTest extends HazelcastTestSupport {
+/**
+ * Tests for the {@link Probing} utility methods. 
+ */
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
+public class ProbingTest {
 
-    final ProbeRegistry registry = new ProbeRegistryImpl();
-    final ProbeRenderContext rendering = registry.newRenderingContext();
-    private ProbeLevel level = ProbeLevel.DEBUG;
-
-    @Before
-    public void setUp() {
-        setLevel(ProbeLevel.DEBUG); // reset level to debug as default for all tests
+    @Test
+    public void doubleToLongConversion() {
+        assertEquals(10000L, Probing.toLong(1d));
+        assertEquals(20000L, Probing.toLong(2d));
+        assertEquals(1000L, Probing.toLong(0.1d));
+        assertEquals(54000L, Probing.toLong(5.4d));
+        assertEquals(12345L, Probing.toLong(1.2345d));
+        assertEquals(12345L, Probing.toLong(1.23451d));
+        assertEquals(12346L, Probing.toLong(1.23456d));
     }
 
-    public void setLevel(ProbeLevel level) {
-        this.level = level;
+    @Test
+    public void objectToLongConversion() {
+        assertEquals(-1L,  toLong(null));
+        assertEquals(42L, toLong(new AtomicLong(42L)));
+        assertEquals(42L, toLong(new AtomicInteger(42)));
+        assertEquals(1L, toLong(new AtomicBoolean(true)));
+        assertEquals(0L, toLong(new AtomicBoolean(false)));
+        assertEquals(1L, toLong(Boolean.TRUE));
+        assertEquals(0L, toLong(Boolean.FALSE));
+        assertEquals(42L, toLong(new Long(42L)));
+        assertEquals(42L, toLong(new Integer(42)));
+        assertEquals(42L, toLong(new Short((short) 42)));
+        assertEquals(Probing.toLong(42d), toLong(new Float(42)));
+        assertEquals(Probing.toLong(42d), toLong(new Double(42)));
+        assertEquals(1L, toLong(singletonList("x")));
+        assertEquals(1L, toLong(singletonMap("x", "y")));
+        assertEquals(42L, toLong(new Semaphore(42)));
+        assertEquals(42L, toLong(SwCounter.newSwCounter(42)));
     }
 
-    final void assertProbed(final String expectedKey) {
-        CountingProbeRenderer renderer = probe(expectedKey);
-        assertProbedTimes(1, renderer);
-        assertNotEquals(-1L, renderer.value);
+    @Test(expected = UnsupportedOperationException.class)
+    public void objectToLongConversion_Unsupported() {
+        assertEquals(-1L, toLong(new Character('a')));
     }
 
-    final void assertProbed(final String expectedKey, long expectedValue, 
-            double deltaFactor) {
-        assertProbed(expectedKey, expectedValue, (long)(expectedValue * deltaFactor));
-    }
-
-    final void assertProbed(final String expectedKey, final long expectedValue) {
-        assertProbed(expectedKey, expectedValue, 0L);
-    }
-
-    final void assertProbed(final String expectedKey, final long expectedValue,
-            final long absoluteDelta) {
-        CountingProbeRenderer renderer = probe(expectedKey);
-        assertProbedTimes(1, renderer);
-        assertProbeValue(expectedValue, renderer.value, absoluteDelta);
-    }
-
-    final void assertNotProbed(String notExpectedKey) {
-        assertProbedTimes(0, probe(notExpectedKey));
-    }
-
-    final void assertProbeCount(int expectedCount) {
-        CountingProbeRenderer renderer = probe("");
-        assertEquals(expectedCount, renderer.count);
-    }
-
-    static void assertProbedTimes(int expectedTimes, CountingProbeRenderer actual) {
-        assertEquals("probe `" + actual.expectedKey + "` occurence ", expectedTimes, actual.matches);
-    }
-
-    static void assertProbeValue(final long expected, long actual, final long absoluteDelta) {
-        if (absoluteDelta == 0L) {
-            assertEquals(expected, actual);
-        } else {
-            assertThat(actual, allOf(
-                    greaterThan(expected - absoluteDelta),
-                    lessThan(expected + absoluteDelta)));
-        }
-    }
-
-    CountingProbeRenderer probe(final String expectedKey) {
-        CountingProbeRenderer renderer = new CountingProbeRenderer(expectedKey);
-        rendering.renderAt(level, renderer);
-        return renderer;
-    }
-
-    static final class CountingProbeRenderer implements ProbeRenderer {
-        final String expectedKey;
-        long value = -1;
-        int matches = 0;
-        int count = 0;
-        private CountingProbeRenderer(String expectedKey) {
-            this.expectedKey = expectedKey;
-        }
-
-        @Override
-        public void render(CharSequence key, long value) {
-            count++;
-            if (expectedKey.contentEquals(key)) {
-                matches++;
-                this.value = value;
-            }
-        }
-    }
-
-    static Map<String, Integer> createMap(int size) {
-        Map<String, Integer> map = new HashMap<String, Integer>();
-        for (int k = 0; k < size; k++) {
-            map.put(String.valueOf(k), k);
-        }
-        return map;
+    @Test
+    public void reprobingCycleTimeToMillis() {
+        assertEquals(1000L, updateInterval(1, TimeUnit.SECONDS));
+        assertEquals(500L, updateInterval(500, TimeUnit.MILLISECONDS));
     }
 }

@@ -17,7 +17,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
-public class HealthMonitorMetricsTest extends AbstractMetricsTest {
+public class HealthMonitorMetricsTest extends DefaultMetricsTest {
 
     @Override
     Config configure() {

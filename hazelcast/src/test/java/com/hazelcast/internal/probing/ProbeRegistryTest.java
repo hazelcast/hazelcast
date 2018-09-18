@@ -25,7 +25,7 @@ import com.hazelcast.test.annotation.QuickTest;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeRegistryTest extends ProbingTest implements ProbeSource {
+public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource {
 
     @Before
     public void setUp() {

@@ -30,7 +30,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbingClassLoadingTest extends ProbingTest {
+public class ProbeClassLoadingTest extends AbstractProbeTest {
 
     private static final ClassLoadingMXBean BEAN = ManagementFactory.getClassLoadingMXBean();
 

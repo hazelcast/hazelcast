@@ -5,6 +5,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
+import com.hazelcast.util.function.Predicate;
 
 /**
  * A service made accessible to core services so they have a chance to register
@@ -45,6 +46,8 @@ public interface ProbeRegistry {
      *         context instance.
      */
     ProbeRenderContext newRenderingContext();
+
+    ProbeRenderContext newRenderingContext(Predicate<Class<? extends ProbeSource>> filter);
 
     /**
      * From a usability point of view the {@link ProbeRenderContext} is a bit

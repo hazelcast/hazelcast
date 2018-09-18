@@ -16,16 +16,7 @@
 
 package com.hazelcast.internal.probing;
 
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.counters.Counter;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,12 +25,20 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.probing.ProbeRegistryImpl.toLong;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MethodProbeTest extends ProbingTest implements ProbeRegistry.ProbeSource {
+public class ProbeAnnotatedMethods2Test extends AbstractProbeTest implements ProbeRegistry.ProbeSource {
 
     @Before
     public void setUp() {
@@ -101,7 +100,7 @@ public class MethodProbeTest extends ProbingTest implements ProbeRegistry.ProbeS
     }
 
     private void assertDouble(String fieldName, double expected) throws Exception {
-        assertProbed(fieldName, expected == -1d ? -1L : toLong(expected));
+        assertProbed(fieldName, expected == -1d ? -1L : Probing.toLong(expected));
     }
 
     private static final class SomeSource {

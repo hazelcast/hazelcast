@@ -1,30 +1,28 @@
 package com.hazelcast.internal.probing;
 
+import static com.hazelcast.internal.probing.CharSequenceUtils.appendEscaped;
+import static com.hazelcast.internal.probing.CharSequenceUtils.appendUnescaped;
 import static com.hazelcast.util.StringUtil.getterIntoProperty;
-import static java.lang.Math.round;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbingCycle.Tagging;
-import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.function.Predicate;
 
 public final class ProbeRegistryImpl implements ProbeRegistry {
 
@@ -61,8 +59,15 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         return new ProbingCycleImpl(sources);
     }
 
-    static long updateInterval(int value, TimeUnit unit) {
-        return unit.toMillis(value);
+    @Override
+    public ProbeRenderContext newRenderingContext(Predicate<Class<? extends ProbeSource>> filter) {
+        Set<ProbeSourceEntry> filtered = new HashSet<ProbeSourceEntry>();
+        for (ProbeSourceEntry e : sources) {
+            if (filter.test(e.source.getClass())) {
+                filtered.add(e);
+            }
+        }
+        return new ProbingCycleImpl(filtered);
     }
 
     /**
@@ -82,7 +87,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             this.update = reprobeFor(source.getClass());
             if (update != null) {
                 ReprobeCycle reprobe = update.getAnnotation(ReprobeCycle.class);
-                updateIntervalMs = updateInterval(reprobe.value(), reprobe.unit());
+                updateIntervalMs = Probing.updateInterval(reprobe.value(), reprobe.unit());
                 updateLevel = reprobe.level();
             } else {
                 updateIntervalMs = -1L;
@@ -220,12 +225,20 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         @Override
         public void probe(ProbeLevel level, CharSequence name, double value) {
-            probe(level, name, toLong(value));
+            probe(level, name, Probing.toLong(value));
         }
 
         @Override
         public void probe(ProbeLevel level, CharSequence name, boolean value) {
             probe(level, name, value ? 1 : 0);
+        }
+
+        @Override
+        public void probeForwarded(CharSequence name, long value) {
+            int len0 = tags.length();
+            appendUnescaped(tags, name);
+            renderer.render(tags, value);
+            tags.setLength(len0);
         }
 
         @Override
@@ -239,21 +252,21 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         public Tags tag(CharSequence name, CharSequence value) {
             if (name == lastTagName) {
                 tags.setLength(lastTagValuePosition);
-                appendEscaped(value);
+                appendEscaped(tags, value);
                 tags.append(' ');
                 return this;
             }
             tags.append(name).append('=');
             lastTagName = name;
             lastTagValuePosition = tags.length();
-            appendEscaped(value);
+            appendEscaped(tags, value);
             tags.append(' ');
             return this;
         }
 
         @Override
         public Tags append(CharSequence s) {
-            appendEscaped(s); // this might contain user supplied values
+            appendEscaped(tags, s); // this might contain user supplied values
             return this;
         }
 
@@ -265,21 +278,11 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             return this;
         }
 
-        /**
-         * Escapes a user-supplied string values.
-         * 
-         * Prefixes comma ({@code ","}), space ({@code " "}), equals sign ({@code "="})
-         * and backslash ({@code "\"}) with another backslash.
-         */
-        private void appendEscaped(CharSequence value) {
-            ProbeRegistryImpl.appendEscaped(tags, value);
-        }
-
         private void render(CharSequence name, long value) {
-            int len = tags.length();
-            appendEscaped(name);
+            int len0 = tags.length();
+            appendEscaped(tags, name);
             renderer.render(tags, value);
-            tags.setLength(len);
+            tags.setLength(len0);
         }
 
         @Override
@@ -446,7 +449,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (otherFields != null) {
                 for (int i = 0; i < otherFields.length; i++) {
                     try {
-                        cycle.probe(level, otherFieldNames[i], toLong(otherFields[i].get(instance)));
+                        cycle.probe(level, otherFieldNames[i], Probing.toLong(otherFields[i].get(instance)));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read field probe", e);
                     }
@@ -495,7 +498,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 for (int i = 0; i < methods.length; i++) {
                     try {
                         cycle.probe(level, methodNames[i], 
-                                toLong(methods[i].invoke(instance, EMPTY_ARGS)));
+                                Probing.toLong(methods[i].invoke(instance, EMPTY_ARGS)));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read method probe: " + methods[i].getName(), e);
                     }
@@ -579,7 +582,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         private void probeNotTagging(ProbingCycleImpl cycle, ProbeLevel level,
                 CharSequence dynamicPrefix, Object instance) {
-            int len = cycle.tags.length();
+            int len0 = cycle.tags.length();
             if (tagging) {
                 ((Tagging) instance).tagIn(cycle);
             }
@@ -595,7 +598,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                     l.probeIn(cycle, instance);
                 }
             }
-            cycle.tags.setLength(len); // as a good measure in case a prefix was used
+            cycle.tags.setLength(len0); // as a good measure in case a prefix was used
         }
 
         private static void collectProbeMethods(Class<?> type, List<Method> probes) {
@@ -646,55 +649,4 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
     }
 
-    /**
-     * Extracted to be unit testable.
-     */
-    static void appendEscaped(StringBuilder buf, CharSequence value) {
-        int len = value.length();
-        for (int i = 0; i < len; i++) {
-            char c = value.charAt(i);
-            if (c == ',' || c == ' ' || c == '\\' || c == '=') {
-                buf.append('\\');
-            }
-            buf.append(c);
-        }
-    }
-
-    static long toLong(double value) {
-        return round(value * 10000d);
-    }
-
-    static long toLong(Object value) {
-        if (value == null) {
-            return -1L;
-        }
-        Class<?> type = value.getClass();
-        if (value instanceof Number) {
-            if (type == Float.class || type == Double.class) {
-                return toLong(((Number) value).doubleValue());
-            }
-            return ((Number) value).longValue();
-        }
-        if (type == Boolean.class) {
-            return ((Boolean) value).booleanValue() ? 1 : 0;
-        }
-        if (type == AtomicBoolean.class) {
-            return ((AtomicBoolean) value).get() ? 1 : 0;
-        }
-        if (value instanceof Collection) {
-            return ((Collection<?>) value).size();
-        }
-        if (value instanceof Map) {
-            return ((Map<?, ?>) value).size();
-        }
-        if (value instanceof Counter) {
-            return ((Counter) value).get();
-        }
-        if (value instanceof Semaphore) {
-            return ((Semaphore) value).availablePermits();
-        }
-        throw new UnsupportedOperationException(
-                "It is not known how to convert a value of type "
-                        + value.getClass().getSimpleName() + " to primitive long.");
-    }
 }

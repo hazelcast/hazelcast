@@ -29,19 +29,17 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeRenderer;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
-import static com.hazelcast.internal.probing.Probing.startsWith;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -50,7 +48,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * statistics to the cluster. If the client statistics feature is enabled,
  * it will be scheduled for periodic statistics collection and sent.
  */
-public class Statistics {
+public class Statistics implements ProbeRegistry.ProbeSource {
     /**
      * Use to enable the client statistics collection.
      * <p>
@@ -64,14 +62,10 @@ public class Statistics {
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
             SECONDS);
 
-    private static final String NEAR_CACHE_CATEGORY_PREFIX = "nc.";
-    private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.9";
+    private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.11"; //TODO later set to 3.12
     private static final int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
-    private static final char STAT_SEPARATOR = ',';
-    private static final char KEY_VALUE_SEPARATOR = '=';
-    private static final char ESCAPE_CHAR = '\\';
 
-    private final ProbeRegistry.ProbeRenderContext metricsRegistry;
+    private final ProbeRegistry.ProbeRenderContext probeRenderContext;
     private final boolean enabled;
     private final HazelcastProperties properties;
     private final ILogger logger = Logger.getLogger(this.getClass());
@@ -80,14 +74,18 @@ public class Statistics {
 
     private final boolean enterprise;
 
-    private volatile Address ownerAddress;
+    private volatile ClientConnection ownerConnection;
+    private volatile ClientConnection lastOwnerConnection;
+    private final StringBuilder stats = new StringBuilder();
+    private final ProbeLevel probeLevel;
 
     public Statistics(final HazelcastClientInstanceImpl clientInstance) {
         this.properties = clientInstance.getProperties();
         this.enabled = properties.getBoolean(ENABLED);
         this.client = clientInstance;
         this.enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
-        this.metricsRegistry = clientInstance.getProbeRegistry().newRenderingContext();
+        this.probeRenderContext = clientInstance.getProbeRegistry().newRenderingContext();
+        this.probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
     }
 
     /**
@@ -113,221 +111,71 @@ public class Statistics {
     }
 
     /**
-     * @return the owner connection to the server for the client only if the server supports the client statistics feature
+     * Updates the owner connection to the server for the client only if the server
+     * supports the client statistics feature.
+     * 
+     * @return true, if an owner connection is set, else false
      */
-    private ClientConnection getOwnerConnection() {
-        ClientConnection connection = client.getConnectionManager().getOwnerConnection();
-        if (null == connection) {
-            return null;
+    private boolean updateOwnerConnection() {
+        ownerConnection = client.getConnectionManager().getOwnerConnection();
+        if (null == ownerConnection) {
+            return false; 
         }
-
-        Address ownerConnectionAddress = client.getConnectionManager().getOwnerConnectionAddress();
-        int serverVersion = connection.getConnectedServerVersion();
+        int serverVersion = ownerConnection.getConnectedServerVersion();
         if (serverVersion < FEATURE_SUPPORTED_SINCE_VERSION) {
             // do not print too many logs if connected to an old version server
-            if (ownerAddress == null || !ownerConnectionAddress.equals(ownerAddress)) {
+            if (lastOwnerConnection != ownerConnection) {
+                // cache the last connected server connection for decreasing the log prints
+                lastOwnerConnection = ownerConnection;
                 if (logger.isFinestEnabled()) {
-                    logger.finest(
-                            format("Client statistics can not be sent to server " + ownerConnectionAddress + " since, connected "
-                                            + "owner server version is less than the minimum supported server version %s",
-                                    FEATURE_SUPPORTED_SINCE_VERSION_STRING));
+                    logger.finest(format("Client statistics can not be sent to server "
+                            + ownerConnection.getRemoteSocketAddress() + " since, connected "
+                            + "owner server version is less than the minimum supported server version %s",
+                            FEATURE_SUPPORTED_SINCE_VERSION_STRING));
                 }
             }
-            // cache the last connected server address for decreasing the log prints
-            ownerAddress = ownerConnectionAddress;
-            return null;
+            ownerConnection = null;
+            return false;
         }
-
-        return connection;
+        return true;
     }
 
     /**
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
-        final ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
         client.getClientExecutionService().scheduleWithRepetition(new Runnable() {
+
             @Override
             public void run() {
-                ClientConnection ownerConnection = getOwnerConnection();
-                if (null == ownerConnection) {
-                    logger.finest("Can not send client statistics to the server. No owner connection.");
-                    return;
+                if (updateOwnerConnection()) {
+                    renderStats();
+                    sendStats();
                 }
-
-                final StringBuilder stats = new StringBuilder();
-
-                fillMetrics(stats, ownerConnection, probeLevel);
-
-                addNearCacheStats(stats);
-
-                sendStats(stats.toString(), ownerConnection);
             }
         }, 0, periodSeconds, SECONDS);
     }
 
-    private void addNearCacheStats(final StringBuilder stats) {
-        for (NearCache nearCache : client.getNearCacheManager().listAllNearCaches()) {
-            String nearCacheName = nearCache.getName();
-            StringBuilder nearCacheNameWithPrefix = getNameWithPrefix(nearCacheName);
-
-            nearCacheNameWithPrefix.append('.');
-
-            NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
-
-            String prefix = nearCacheNameWithPrefix.toString();
-
-            addStat(stats, prefix, "creationTime", nearCacheStats.getCreationTime());
-            addStat(stats, prefix, "evictions", nearCacheStats.getEvictions());
-            addStat(stats, prefix, "hits", nearCacheStats.getHits());
-            addStat(stats, prefix, "lastPersistenceDuration", nearCacheStats.getLastPersistenceDuration());
-            addStat(stats, prefix, "lastPersistenceKeyCount", nearCacheStats.getLastPersistenceKeyCount());
-            addStat(stats, prefix, "lastPersistenceTime", nearCacheStats.getLastPersistenceTime());
-            addStat(stats, prefix, "lastPersistenceWrittenBytes", nearCacheStats.getLastPersistenceWrittenBytes());
-            addStat(stats, prefix, "misses", nearCacheStats.getMisses());
-            addStat(stats, prefix, "ownedEntryCount", nearCacheStats.getOwnedEntryCount());
-            addStat(stats, prefix, "expirations", nearCacheStats.getExpirations());
-            addStat(stats, prefix, "invalidations", nearCacheStats.getInvalidations());
-            addStat(stats, prefix, "invalidationRequests", nearCacheStats.getInvalidationRequests());
-            addStat(stats, prefix, "ownedEntryMemoryCost", nearCacheStats.getOwnedEntryMemoryCost());
-            String persistenceFailure = nearCacheStats.getLastPersistenceFailure();
-            if (persistenceFailure != null && !persistenceFailure.isEmpty()) {
-                addStat(stats, prefix, "lastPersistenceFailure", persistenceFailure);
+    static void appendEscapingLineFeed(StringBuilder buf, CharSequence value) {
+        int len = value.length();
+        for (int i = 0; i < len; i++) {
+            char c = value.charAt(i);
+            if (c == '\n') {
+                buf.append('\\');
             }
+            buf.append(c);
         }
     }
 
-    private void addStat(final StringBuilder stats, final CharSequence name, long value) {
-        addStat(stats, null, name, value);
-    }
-
-    private void addStat(final StringBuilder stats, final String keyPrefix, final CharSequence name, long value) {
-        stats.append(STAT_SEPARATOR);
-        if (null != keyPrefix) {
-            stats.append(keyPrefix);
+    private void sendStats() {
+        Connection conn = ownerConnection;
+        if (conn == null) {
+            logger.finest("Can not send client statistics to the server. No owner connection.");
+            return;
         }
-        stats.append(name).append(KEY_VALUE_SEPARATOR).append(value);
-    }
-
-    private void addStat(StringBuilder stats, String name, String value) {
-        addStat(stats, null, name, value);
-    }
-
-    private void addStat(StringBuilder stats, String keyPrefix, String name, String value) {
-        stats.append(STAT_SEPARATOR);
-        if (null != keyPrefix) {
-            stats.append(keyPrefix);
-        }
-        stats.append(name).append(KEY_VALUE_SEPARATOR).append(value);
-    }
-
-    private void addStat(StringBuilder stats, String name, boolean value) {
-        stats.append(STAT_SEPARATOR).append(name).append(KEY_VALUE_SEPARATOR).append(value);
-    }
-
-    private StringBuilder getNameWithPrefix(String name) {
-        StringBuilder escapedName = new StringBuilder(NEAR_CACHE_CATEGORY_PREFIX);
-        int prefixLen = NEAR_CACHE_CATEGORY_PREFIX.length();
-        escapedName.append(name);
-        if (escapedName.charAt(prefixLen) == '/') {
-            escapedName.deleteCharAt(prefixLen);
-        }
-
-        escapeSpecialCharacters(escapedName, prefixLen);
-        return escapedName;
-    }
-
-    /**
-     * @param buffer the string for which the special characters ',', '=', '\' are escaped properly
-     */
-    public static void escapeSpecialCharacters(StringBuilder buffer) {
-        escapeSpecialCharacters(buffer, 0);
-    }
-
-    public static void escapeSpecialCharacters(StringBuilder buffer, int start) {
-        for (int i = start; i < buffer.length(); ++i) {
-            char c = buffer.charAt(i);
-            if (c == '=' || c == '.' || c == ',' || c == ESCAPE_CHAR) {
-                buffer.insert(i, ESCAPE_CHAR);
-                ++i;
-            }
-        }
-    }
-
-    /**
-     * @param buffer the string for which the escape character '\' is removed properly
-     * @return the unescaped string
-     */
-    public static String unescapeSpecialCharacters(String buffer) {
-        return unescapeSpecialCharacters(buffer, 0);
-    }
-
-    public static String unescapeSpecialCharacters(String buffer, int start) {
-        StringBuilder result = new StringBuilder(buffer);
-        unescapeSpecialCharacters(result, start);
-        return result.toString();
-    }
-
-    public static void unescapeSpecialCharacters(StringBuilder buffer, int start) {
-        for (int i = start; i < buffer.length() - 1; ++i) {
-            char c = buffer.charAt(i);
-            if (c == ESCAPE_CHAR) {
-                buffer.deleteCharAt(i);
-            }
-        }
-    }
-
-    /**
-     * This method uses ',' character by default. It is for splitting into key=value tokens.
-     *
-     * @param statString the statistics string to be split
-     * @return a list of split strings
-     */
-    public static List<String> split(String statString) {
-        return split(statString, 0, STAT_SEPARATOR);
-    }
-
-    /**
-     * @param stat      statistics string to be split
-     * @param start     the start index for splitting
-     * @param splitChar A special character to be used for split, e.g. '='
-     * @return a list of split strings
-     */
-    public static List<String> split(String stat, int start, char splitChar) {
-        int bufferLen = stat.length();
-        if (bufferLen == 0) {
-            return null;
-        }
-
-        List<String> result = new ArrayList<String>();
-        int strStart = start;
-        int index = start;
-        // just initialize to a non-special character
-        char previousChar = 'a';
-        for (char currentChar; index < bufferLen; previousChar = currentChar, ++index) {
-            currentChar = stat.charAt(index);
-            if (currentChar == splitChar) {
-                if (previousChar == ESCAPE_CHAR) {
-                    continue;
-                }
-
-                result.add(stat.substring(strStart, index));
-                strStart = index + 1;
-            }
-        }
-
-        // add the last string if exists
-        if (index > strStart) {
-            result.add(stat.substring(strStart, index));
-        }
-
-        return result;
-    }
-
-    private void sendStats(String newStats, ClientConnection ownerConnection) {
-        ClientMessage request = ClientStatisticsCodec.encodeRequest(newStats);
+        ClientMessage request = ClientStatisticsCodec.encodeRequest(stats.toString());
         try {
-            new ClientInvocation(client, request, null, ownerConnection).invoke();
+            new ClientInvocation(client, request, null, conn).invoke();
         } catch (Exception e) {
             // suppress exception, do not print too many messages
             if (logger.isFinestEnabled()) {
@@ -336,32 +184,55 @@ public class Statistics {
         }
     }
 
-    void fillMetrics(final StringBuilder stats, final ClientConnection ownerConnection, ProbeLevel level) {
-        stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
-        addStat(stats, "enterprise", enterprise);
-        addStat(stats, "clientType", ClientType.JAVA.toString());
-        addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion());
-        addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
-
-        stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
-        .append(ownerConnection.getLocalSocketAddress().getAddress().getHostAddress()).append(":")
-        .append(ownerConnection.getLocalSocketAddress().getPort());
-
-        addStat(stats, "clientName", client.getName());
-
-        Credentials credentials = client.getCredentials();
-        if (!(credentials instanceof UsernamePasswordCredentials)) {
-            addStat(stats, "credentials.principal", credentials.getPrincipal());
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        cycle.probe("enterprise", enterprise);
+        cycle.probe("lastStatisticsCollectionTime", System.currentTimeMillis());
+        cycle.probe("clusterConnectionTimestamp", ownerConnection.getStartTime());
+        Collection<NearCache> caches = client.getNearCacheManager().listAllNearCaches();
+        if (caches.isEmpty()) {
+            return; // done
         }
-        metricsRegistry.renderAt(level, new ProbeRenderer() {
+        for (NearCache<?, ?> nearCache : caches) {
+            String name = nearCache.getName();
+            cycle.openContext()
+                .tag(TAG_TYPE, name.startsWith("/hz/") ? "cache" : "map")
+                .tag(TAG_INSTANCE, name);
+            cycle.probe("nearcache", nearCache.getNearCacheStats());
+        }
+    }
+
+    /**
+     * Besides the actual metrics (numbers) some base information are also send to
+     * server as part of the metrics data. These values don't really belong here but
+     * for now have to be included. Later improvements should separate metric data
+     * from informational key-value data. Also use of a {@link String} as aggregate
+     * is not ideal but can only be changed by changing the message format.
+     */
+    private void appendHeader(final StringBuilder stats) {
+        stats.append("1\n"); // start with a protocol version: 1 (to identify the new metrics format)
+        stats.append(ClientType.JAVA.toString()).append('\n');
+        appendEscapingLineFeed(stats, client.getName());
+        stats.append('\n');
+        stats.append(ownerConnection.getLocalSocketAddress().getAddress().getHostAddress()).append(":")
+        .append(ownerConnection.getLocalSocketAddress().getPort()).append('\n');
+        stats.append(BuildInfoProvider.getBuildInfo().getVersion()).append('\n');
+        Credentials credentials = client.getCredentials();
+        String principal = !(credentials instanceof UsernamePasswordCredentials) ? credentials.getPrincipal() : "?";
+        stats.append(principal).append('\n');
+    }
+
+    void renderStats() {
+        stats.setLength(0); // reset buffer
+        // writing header: type, name, address, version, principal (each on a line)
+        appendHeader(stats);
+        // body: render metrics
+        probeRenderContext.renderAt(probeLevel, new ProbeRenderer() {
 
             @Override
             public void render(CharSequence key, long value) {
-                if (startsWith("os.", key) || startsWith("runtime.", key)) {
-                    addStat(stats, key, value);
-                } else if ("executionService.userExecutorQueueSize".contentEquals(key)) {
-                    addStat(stats, key, value);
-                }
+                appendEscapingLineFeed(stats, key);
+                stats.append(' ').append(value).append('\n');
             }
         });
     }

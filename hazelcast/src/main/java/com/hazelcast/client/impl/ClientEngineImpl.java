@@ -37,6 +37,9 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -71,6 +74,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
+
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -88,6 +92,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.probing.Probing.probeClientStats;
 import static com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
@@ -96,7 +101,8 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAwareService,
-        ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener> {
+        ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener>,
+        ProbeRegistry.ProbeSource {
 
     /**
      * Service name to be used in requests.
@@ -148,6 +154,34 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         this.clientExceptions = initClientExceptionFactory();
         this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
         this.partitionListenerService = new ClientPartitionListenerService(nodeEngine);
+    }
+
+    @Override
+    public void probeIn(ProbingCycle cycle) {
+        cycle.probe("client.endpoint", endpointManager);
+        Collection<ClientEndpoint> endpoints = endpointManager.getEndpoints();
+        if (!endpoints.isEmpty()) {
+            for (ClientEndpoint endpoint : endpoints) {
+                Tags tags = cycle.openContext().tag(TAG_TYPE, "client");
+                if (endpoint.isAlive()) {
+                    tags.tag(TAG_INSTANCE, endpoint.getUuid());
+                    cycle.probe(endpoint);
+                    String type = endpoint.getClientType().name().toLowerCase();
+                    InetSocketAddress remote = endpoint.getConnection().getRemoteSocketAddress();
+                    String address = remote == null ? "?" : remote.getAddress().getHostAddress() + ":" + remote.getPort();
+                    String version = endpoint.getClientVersionString();
+                    tags.tag(TAG_TARGET, type)
+                        .tag("version", version == null ? "?" : version)
+                        .tag("address", address);
+                    // this particular metric is used to convey details of the endpoint via tags
+                    boolean isOwnerConnection = endpoint.isOwnerConnection();
+                    cycle.probe("ownerConnection", isOwnerConnection);
+                    if (isOwnerConnection) {
+                        probeClientStats(cycle, endpoint.getUuid(), endpoint.getClientStatistics());
+                    }
+                }
+            }
+        }
     }
 
     private ClientExceptions initClientExceptionFactory() {
@@ -602,19 +636,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         resultMap.put(ClientType.OTHER, numberOfOtherClients);
 
         return resultMap;
-    }
-
-    @Override
-    public Map<String, String> getClientStatistics() {
-        Collection<ClientEndpoint> clientEndpoints = endpointManager.getEndpoints();
-        Map<String, String> statsMap = new HashMap<String, String>(clientEndpoints.size());
-        for (ClientEndpoint e : clientEndpoints) {
-            String statistics = e.getClientStatistics();
-            if (null != statistics) {
-                statsMap.put(e.getUuid(), statistics);
-            }
-        }
-        return statsMap;
     }
 
     private static class PriorityPartitionSpecificRunnable implements PartitionSpecificRunnable, UrgentSystemOperation {

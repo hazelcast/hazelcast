@@ -148,6 +148,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpConnectionManager")));
         this.spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
+        // the problem is that this is behind a delegate and therefore not automatically recognized as probe source
         probeRegistry.register(this);
     }
 

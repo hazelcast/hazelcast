@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.probing;
 
-import static com.hazelcast.internal.probing.ProbeRegistryImpl.toLong;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeAnnotatedMethodsTest extends ProbingTest implements ProbeSource {
+public class ProbeAnnotatedMethodsTest extends AbstractProbeTest implements ProbeSource {
 
     @Before
     public void setUp() {
@@ -216,12 +215,12 @@ public class ProbeAnnotatedMethodsTest extends ProbingTest implements ProbeSourc
 
     @Test
     public void primitiveFloat() {
-        assertProbed("foo.floatMethod", toLong(10d));
+        assertProbed("foo.floatMethod", Probing.toLong(10d));
     }
 
     @Test
     public void primitiveDouble() {
-        assertProbed("foo.doubleMethod", toLong(10d));
+        assertProbed("foo.doubleMethod", Probing.toLong(10d));
     }
 
     @Test

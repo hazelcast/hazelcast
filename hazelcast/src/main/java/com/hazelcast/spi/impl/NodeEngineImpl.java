@@ -223,8 +223,6 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         cycle.probe("operation", operationService.getInboundResponseHandlerSupplier());
         cycle.probe("operation.invocations", operationService.getInvocationMonitor());
         cycle.probe("operation.parker", operationParker);
-        cycle.probe("client.endpoint", node.getClientEngine().getEndpointManager());
-        //TODO iterate the client endpoints (peter branch)
         InternalPartitionServiceImpl partitionService = node.partitionService;
         cycle.probe("partitions", partitionService);
         cycle.probe("partitions", partitionService.getPartitionStateManager());

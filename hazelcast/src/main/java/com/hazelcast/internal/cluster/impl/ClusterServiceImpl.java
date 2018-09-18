@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberAttributeOperationType;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
@@ -38,6 +39,7 @@ import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbingCycle;
@@ -127,10 +129,15 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private volatile String clusterId;
 
+    @Probe(level = ProbeLevel.MANDATORY)
+    private final boolean sslEnabled;
 
     public ClusterServiceImpl(Node node, MemberImpl localMember) {
         this.node = node;
         this.localMember = localMember;
+        SSLConfig sslConfig = node.getConfig().getNetworkConfig().getSSLConfig();
+        sslEnabled = sslConfig != null ? sslConfig.isEnabled() : false;
+
         nodeEngine = node.nodeEngine;
 
         logger = node.getLogger(ClusterService.class.getName());
@@ -689,6 +696,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return masterAddress;
     }
 
+    @Probe(level = ProbeLevel.MANDATORY)
     @Override
     public boolean isMaster() {
         return node.getThisAddress().equals(masterAddress);

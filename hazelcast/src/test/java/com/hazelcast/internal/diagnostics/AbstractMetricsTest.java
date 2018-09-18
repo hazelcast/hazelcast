@@ -1,6 +1,6 @@
 package com.hazelcast.internal.diagnostics;
 
-import static com.hazelcast.internal.probing.Probing.startsWith;
+import static com.hazelcast.internal.probing.CharSequenceUtils.startsWith;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
@@ -12,10 +12,6 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.junit.Before;
-
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
@@ -24,25 +20,13 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 public abstract class AbstractMetricsTest extends HazelcastTestSupport {
 
-    protected HazelcastInstance hz;
-    private ProbeRegistry registry;
-    private ProbeRenderContext renderContext;
+    protected abstract ProbeRenderContext getRenderContext();
 
-    abstract Config configure();
-
-    @Before
-    public void setup() {
-        hz = createHazelcastInstance(configure());
-        registry = getNode(hz).nodeEngine.getProbeRegistry();
-        renderContext = registry.newRenderingContext();
-        warmUpPartitions(hz);
-    }
-
-    final void assertHasStatsEventually(int minimumProbes, String type, String name) {
+    protected final void assertHasStatsEventually(int minimumProbes, String type, String name) {
         assertHasStatsEventually(minimumProbes, type, name, "");
     }
 
-    final void assertHasStatsEventually(int minimumProbes, String type, String name,
+    protected final void assertHasStatsEventually(int minimumProbes, String type, String name,
             String additionalPrefix) {
         assertHasStatsEventually(minimumProbes,
                   ProbeRegistry.ProbeSource.TAG_TYPE + "=" + type + " "
@@ -50,7 +34,7 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
                 + additionalPrefix);
     }
 
-    final void assertHasStatsEventually(final int minimumProbes, final String prefix) {
+    protected final void assertHasStatsEventually(final int minimumProbes, final String prefix) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -59,11 +43,11 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
         });
     }
 
-    final void assertHasStatsWith(int minimumProbes, final String prefix) {
+    protected final void assertHasStatsWith(int minimumProbes, final String prefix) {
         final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
-        renderContext.renderAt(ProbeLevel.INFO, renderer);
+        getRenderContext().renderAt(ProbeLevel.INFO, renderer);
         assertThat("minimum number of probes ", renderer.probes.size(), greaterThanOrEqualTo(minimumProbes));
-        if (minimumProbes > 0) {
+        if (minimumProbes > 1) {
             assertHasCreationTime(prefix, renderer);
         }
     }
@@ -82,13 +66,13 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
         }
     }
 
-    final void assertHasAllStatsEventually(String... expectedKeys) {
+    protected final void assertHasAllStatsEventually(String... expectedKeys) {
         final Set<String> prefixes = new HashSet<String>(asList(expectedKeys));
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 final StringProbeRenderer renderer = new StringProbeRenderer(prefixes);
-                renderContext.renderAt(ProbeLevel.INFO, renderer);
+                getRenderContext().renderAt(ProbeLevel.INFO, renderer);
                 if (!renderer.probes.keySet().containsAll(prefixes)) {
                     HashSet<String> missing = new HashSet<String>(prefixes);
                     missing.removeAll(renderer.probes.keySet());

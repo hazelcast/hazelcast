@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -51,6 +52,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             = new ConcurrentHashMap<String, TransactionContext>();
     private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
     private final SocketAddress socketAddress;
+    @Probe
     private final long creationTime;
 
     private LoginContext loginContext;
@@ -88,6 +90,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         return principal != null ? principal.getUuid() : null;
     }
 
+    @Probe
     @Override
     public boolean isAlive() {
         return connection.isAlive();
@@ -132,6 +135,11 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public int getClientVersion() {
         return clientVersion;
+    }
+
+    @Override
+    public String getClientVersionString() {
+        return clientVersionString;
     }
 
     @Override
