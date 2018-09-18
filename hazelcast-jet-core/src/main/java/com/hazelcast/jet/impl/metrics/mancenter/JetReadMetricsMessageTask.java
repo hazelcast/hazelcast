@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InvocationBuilder;
@@ -52,7 +53,9 @@ public class JetReadMetricsMessageTask extends AbstractInvocationMessageTask<Req
                             + ", but local member is " + nodeEngine.getLocalMember().getUuid()
             );
         }
-        return new ReadMetricsOperation(parameters.fromSequence);
+        JetService service = getService(JetService.SERVICE_NAME);
+        int collectionInterval = service.getJetInstance().getConfig().getMetricsConfig().getCollectionIntervalSeconds();
+        return new ReadMetricsOperation(parameters.fromSequence, collectionInterval);
     }
 
     @Override

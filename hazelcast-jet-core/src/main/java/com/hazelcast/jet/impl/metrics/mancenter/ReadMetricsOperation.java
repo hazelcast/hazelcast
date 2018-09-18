@@ -16,21 +16,27 @@
 
 package com.hazelcast.jet.impl.metrics.mancenter;
 
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.jet.impl.metrics.mancenter.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
-public class ReadMetricsOperation extends Operation implements BlockingOperation {
+public class ReadMetricsOperation extends Operation implements BlockingOperation, ReadonlyOperation {
 
+    private static final int MIN_TIMEOUT_SECONDS = 5;
     private long offset;
     private RingbufferSlice<Entry<Long, byte[]>> resultSet;
 
-    public ReadMetricsOperation(long offset) {
+    public ReadMetricsOperation(long offset, int collectionIntervalSeconds) {
         this.offset = offset;
+        int timeoutSeconds = Math.min(MIN_TIMEOUT_SECONDS, collectionIntervalSeconds * 2);
+        setWaitTimeout(TimeUnit.SECONDS.toMillis(timeoutSeconds));
     }
 
     @Override
@@ -58,7 +64,7 @@ public class ReadMetricsOperation extends Operation implements BlockingOperation
 
     @Override
     public void onWaitExpire() {
-
+        sendResponse(new OperationTimeoutException("No metrics were retrieved for " + getWaitTimeout() + "ms"));
     }
 
 }
