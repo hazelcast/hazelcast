@@ -21,6 +21,7 @@ import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalWanPublisherStats;
+import com.hazelcast.util.Clock;
 import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
 import com.hazelcast.wan.merkletree.ConsistencyCheckResult;
 
@@ -41,6 +42,8 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
             newUpdater(LocalWanPublisherStatsImpl.class, "totalPublishedEventCount");
 
     @Probe
+    private final long creationTime;
+    @Probe
     private volatile boolean connected;
     private volatile WanPublisherState state;
     @Probe
@@ -54,6 +57,10 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
     private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;
     private volatile Map<String, ConsistencyCheckResult> lastConsistencyCheckResults;
+
+    public LocalWanPublisherStatsImpl() {
+        this.creationTime = Clock.currentTimeMillis();
+    }
 
     @Override
     public boolean isConnected() {

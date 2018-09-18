@@ -3,13 +3,30 @@ package com.hazelcast.internal.diagnostics;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.config.WanPublisherState;
+import com.hazelcast.instance.DefaultNodeContext;
+import com.hazelcast.instance.DefaultNodeExtension;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.monitor.LocalWanPublisherStats;
+import com.hazelcast.monitor.LocalWanStats;
+import com.hazelcast.monitor.WanSyncState;
+import com.hazelcast.monitor.impl.LocalWanPublisherStatsImpl;
+import com.hazelcast.monitor.impl.LocalWanStatsImpl;
+import com.hazelcast.monitor.impl.WanSyncStateImpl;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.WanSyncStatus;
+import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class NetworkMetricsTest extends DefaultMetricsTest {
@@ -32,4 +49,5 @@ public class NetworkMetricsTest extends DefaultMetricsTest {
                 "tcp.connection.count",
                 "tcp.connection.clientCount");
     }
+
 }
