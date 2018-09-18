@@ -112,12 +112,12 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     @Probe
     private boolean paused(){
-        return !state.isReplicateEnqueuedEvents();
+        return state == WanPublisherState.PAUSED;
     }
 
     @Probe
     private boolean stopped(){
-        return !state.isEnqueueNewEvents();
+        return state == WanPublisherState.STOPPED;
     }
 
     @Override
@@ -127,8 +127,8 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
         root.add("totalPublishLatencies", totalPublishLatency);
         root.add("totalPublishedEventCount", totalPublishedEventCount);
         root.add("outboundQueueSize", outboundQueueSize);
-        root.add("paused", !state.isReplicateEnqueuedEvents());
-        root.add("stopped", !state.isEnqueueNewEvents());
+        root.add("paused", paused());
+        root.add("stopped", stopped());
         return root;
     }
 

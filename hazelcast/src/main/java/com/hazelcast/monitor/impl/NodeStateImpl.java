@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;

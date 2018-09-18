@@ -19,6 +19,7 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
@@ -64,6 +65,7 @@ import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -124,7 +126,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private volatile Address masterAddress;
 
     private volatile String clusterId;
-
+    
+    private final RuntimeProperties properties = new RuntimeProperties();
 
     public ClusterServiceImpl(Node node, MemberImpl localMember) {
         this.node = node;
@@ -152,6 +155,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         metricsRegistry.scanAndRegister(clusterClock, "cluster.clock");
         metricsRegistry.scanAndRegister(clusterHeartbeatManager, "cluster.heartbeat");
         metricsRegistry.scanAndRegister(this, "cluster");
+        metricsRegistry.scanAndRegister(properties, "property");
     }
 
     @Override
@@ -698,6 +702,29 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private boolean isSslEnabled() {
     	SSLConfig sslConfig = node.getConfig().getNetworkConfig().getSSLConfig();
 		return sslConfig != null ? sslConfig.isEnabled() : false;
+    }
+    
+    @Probe
+    private boolean isLiteMember() {
+    	return node.isLiteMember();
+    }
+    
+    @Probe
+    private boolean isSocketInterceptorEnabled() {
+    	SocketInterceptorConfig config = node.getConfig().getNetworkConfig().getSocketInterceptorConfig();
+        return config != null && config.isEnabled();
+    }
+    
+    @Probe(name = "version")
+    private int getClusterVersionAsInt() {
+    	Version v = node.clusterService.getClusterVersion();
+		return (v.getMajor() & 0xFF) << 8 | v.getMinor() & 0xFF;
+    }
+    
+    @Probe(name = "member.version")
+    private int getMemberVersionAsInt() {
+    	MemberVersion v = node.getVersion();
+		return (v.getMajor() & 0xFF) << 16 | (v.getMinor() & 0xFF) << 8 | v.getPatch() & 0xFF;
     }
 
     @Override

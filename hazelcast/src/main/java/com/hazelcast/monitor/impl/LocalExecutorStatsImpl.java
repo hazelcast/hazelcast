@@ -39,6 +39,8 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
             .newUpdater(LocalExecutorStatsImpl.class, "totalStartLatency");
     private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> TOTAL_EXECUTION_TIME = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "totalExecutionTime");
+    
+    @Probe
     private long creationTime;
 
     // These fields are only accessed through the updaters

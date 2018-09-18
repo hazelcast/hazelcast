@@ -78,9 +78,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.clientType = "undefined";
         clients.add(client);
 
-        Map<String, Long> runtimeProps = new HashMap<String, Long>();
-        runtimeProps.put("prop1", 598123L);
-
         ClusterState clusterState = ClusterState.ACTIVE;
         com.hazelcast.instance.NodeState nodeState = com.hazelcast.instance.NodeState.PASSIVE;
         Version clusterVersion = Version.of("3.9.0");
@@ -108,7 +105,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.putLocalReplicatedMapStats("replicatedMapStats", replicatedMapStats);
         memberState.putLocalCacheStats("cacheStats", new LocalCacheStatsImpl(cacheStatistics));
         memberState.putLocalFlakeIdStats("flakeIdStats", new LocalFlakeIdGeneratorStatsImpl());
-        memberState.setRuntimeProps(runtimeProps);
         memberState.setLocalMemoryStats(new LocalMemoryStatsImpl());
         memberState.setOperationStats(new LocalOperationStatsImpl());
         memberState.setClients(clients);
@@ -133,8 +129,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertNotNull(deserialized.getLocalCacheStats("cacheStats").toString());
         assertNotNull(deserialized.getLocalFlakeIdGeneratorStats("flakeIdStats").toString());
         assertEquals(5, deserialized.getLocalCacheStats("cacheStats").getCacheHits());
-        assertNotNull(deserialized.getRuntimeProps());
-        assertEquals(Long.valueOf(598123L), deserialized.getRuntimeProps().get("prop1"));
         assertNotNull(deserialized.getLocalMemoryStats());
         assertNotNull(deserialized.getOperationStats());
         assertNotNull(deserialized.getMXBeans());

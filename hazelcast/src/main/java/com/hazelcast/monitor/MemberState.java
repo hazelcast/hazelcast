@@ -31,8 +31,6 @@ public interface MemberState extends JsonSerializable {
 
     String getAddress();
 
-    Map<String, Long> getRuntimeProps();
-
     LocalMapStats getLocalMapStats(String mapName);
 
     LocalMultiMapStats getLocalMultiMapStats(String mapName);

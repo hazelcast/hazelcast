@@ -186,7 +186,6 @@ public class TimedMemberStateFactory {
 
         memberState.setLocalMemoryStats(getMemoryStats());
         memberState.setOperationStats(getOperationStats());
-        TimedMemberStateFactoryHelper.createRuntimeProps(memberState);
         createMemState(memberState, services);
 
         createNodeState(memberState);

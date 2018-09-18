@@ -51,8 +51,6 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  */
 final class TimedMemberStateFactoryHelper {
 
-    private static final int PERCENT_MULTIPLIER = 100;
-
     private TimedMemberStateFactoryHelper() { }
 
     static void registerJMXBeans(HazelcastInstanceImpl instance, MemberStateImpl memberState) {
@@ -99,76 +97,6 @@ final class TimedMemberStateFactoryHelper {
         beans.putManagedExecutor(ExecutionService.IO_EXECUTOR, ioExecutorDTO);
         beans.putManagedExecutor(ExecutionService.OFFLOADABLE_EXECUTOR, offloadableExecutorDTO);
         memberState.setBeans(beans);
-    }
-
-    static void createRuntimeProps(MemberStateImpl memberState) {
-        Runtime runtime = Runtime.getRuntime();
-        ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
-        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        ClassLoadingMXBean clMxBean = ManagementFactory.getClassLoadingMXBean();
-        MemoryMXBean memoryMxBean = ManagementFactory.getMemoryMXBean();
-        MemoryUsage heapMemory = memoryMxBean.getHeapMemoryUsage();
-        MemoryUsage nonHeapMemory = memoryMxBean.getNonHeapMemoryUsage();
-        final int propertyCount = 29;
-        Map<String, Long> map = createHashMap(propertyCount);
-        map.put("runtime.availableProcessors", (long) RuntimeAvailableProcessors.get());
-        map.put("date.startTime", runtimeMxBean.getStartTime());
-        map.put("seconds.upTime", runtimeMxBean.getUptime());
-        map.put("memory.maxMemory", runtime.maxMemory());
-        map.put("memory.freeMemory", runtime.freeMemory());
-        map.put("memory.totalMemory", runtime.totalMemory());
-        map.put("memory.heapMemoryMax", heapMemory.getMax());
-        map.put("memory.heapMemoryUsed", heapMemory.getUsed());
-        map.put("memory.nonHeapMemoryMax", nonHeapMemory.getMax());
-        map.put("memory.nonHeapMemoryUsed", nonHeapMemory.getUsed());
-        map.put("runtime.totalLoadedClassCount", clMxBean.getTotalLoadedClassCount());
-        map.put("runtime.loadedClassCount", (long) clMxBean.getLoadedClassCount());
-        map.put("runtime.unloadedClassCount", clMxBean.getUnloadedClassCount());
-        map.put("runtime.totalStartedThreadCount", threadMxBean.getTotalStartedThreadCount());
-        map.put("runtime.threadCount", (long) threadMxBean.getThreadCount());
-        map.put("runtime.peakThreadCount", (long) threadMxBean.getPeakThreadCount());
-        map.put("runtime.daemonThreadCount", (long) threadMxBean.getDaemonThreadCount());
-
-        OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
-        map.put("osMemory.freePhysicalMemory", get(osMxBean, "getFreePhysicalMemorySize", 0L));
-        map.put("osMemory.committedVirtualMemory", get(osMxBean, "getCommittedVirtualMemorySize", 0L));
-        map.put("osMemory.totalPhysicalMemory", get(osMxBean, "getTotalPhysicalMemorySize", 0L));
-
-        map.put("osSwap.freeSwapSpace", get(osMxBean, "getFreeSwapSpaceSize", 0L));
-        map.put("osSwap.totalSwapSpace", get(osMxBean, "getTotalSwapSpaceSize", 0L));
-        map.put("os.maxFileDescriptorCount", get(osMxBean, "getMaxFileDescriptorCount", 0L));
-        map.put("os.openFileDescriptorCount", get(osMxBean, "getOpenFileDescriptorCount", 0L));
-        map.put("os.processCpuLoad", get(osMxBean, "getProcessCpuLoad", -1L));
-        map.put("os.systemLoadAverage", get(osMxBean, "getSystemLoadAverage", -1L));
-        map.put("os.systemCpuLoad", get(osMxBean, "getSystemCpuLoad", -1L));
-        map.put("os.processCpuTime", get(osMxBean, "getProcessCpuTime", 0L));
-
-        map.put("os.availableProcessors", get(osMxBean, "getAvailableProcessors", 0L));
-
-        memberState.setRuntimeProps(map);
-    }
-
-    private static Long get(OperatingSystemMXBean mbean, String methodName, Long defaultValue) {
-        try {
-            Method method = mbean.getClass().getMethod(methodName);
-            method.setAccessible(true);
-            Object value = method.invoke(mbean);
-            if (value instanceof Integer) {
-                return (long) (Integer) value;
-            }
-            if (value instanceof Double) {
-                double v = (Double) value;
-                return Math.round(v * PERCENT_MULTIPLIER);
-            }
-            if (value instanceof Long) {
-                return (Long) value;
-            }
-            return defaultValue;
-        } catch (RuntimeException e) {
-            return defaultValue;
-        } catch (Exception e) {
-            return defaultValue;
-        }
     }
 
 }

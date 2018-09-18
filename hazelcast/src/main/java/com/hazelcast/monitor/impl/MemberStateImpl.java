@@ -55,7 +55,6 @@ import static com.hazelcast.util.JsonUtil.getString;
 public class MemberStateImpl implements MemberState {
 
     private String address;
-    private Map<String, Long> runtimeProps = new HashMap<String, Long>();
     private Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
     private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
     private Map<String, LocalQueueStats> queueStats = new HashMap<String, LocalQueueStats>();
@@ -79,15 +78,6 @@ public class MemberStateImpl implements MemberState {
     private WanSyncState wanSyncState = new WanSyncStateImpl();
 
     public MemberStateImpl() {
-    }
-
-    @Override
-    public Map<String, Long> getRuntimeProps() {
-        return runtimeProps;
-    }
-
-    public void setRuntimeProps(Map<String, Long> runtimeProps) {
-        this.runtimeProps = runtimeProps;
     }
 
     @Override
@@ -298,12 +288,6 @@ public class MemberStateImpl implements MemberState {
         serializeMap(root, "wanStats", wanStats);
         serializeMap(root, "flakeIdStats", flakeIdGeneratorStats);
 
-        final JsonObject runtimePropsObject = new JsonObject();
-        for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
-            runtimePropsObject.add(entry.getKey(), entry.getValue());
-        }
-        root.add("runtimeProps", runtimePropsObject);
-
         final JsonArray clientsArray = new JsonArray();
         for (ClientEndPointDTO client : clients) {
             clientsArray.add(client.toJson());
@@ -393,9 +377,6 @@ public class MemberStateImpl implements MemberState {
             stats.fromJson(next.getValue().asObject());
             flakeIdGeneratorStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "runtimeProps")) {
-            runtimeProps.put(next.getName(), next.getValue().asLong());
-        }
         final JsonArray jsonClients = getArray(json, "clients");
         for (JsonValue jsonClient : jsonClients) {
             final ClientEndPointDTO client = new ClientEndPointDTO();
@@ -446,7 +427,6 @@ public class MemberStateImpl implements MemberState {
     public String toString() {
         return "MemberStateImpl{"
                 + "address=" + address
-                + ", runtimeProps=" + runtimeProps
                 + ", mapStats=" + mapStats
                 + ", multiMapStats=" + multiMapStats
                 + ", replicatedMapStats=" + replicatedMapStats
