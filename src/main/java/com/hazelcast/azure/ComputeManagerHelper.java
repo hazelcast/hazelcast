@@ -24,11 +24,11 @@ import java.util.Map;
 import static com.hazelcast.azure.AzureProperties.*;
 
 /**
- * Azure client helper
+ * Azure {@link ComputeManager} helper
  */
-public final class AzureClientHelper {
+public final class ComputeManagerHelper {
 
-    private AzureClientHelper() {
+    private ComputeManagerHelper() {
     }
 
     /**

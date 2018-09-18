@@ -27,9 +27,8 @@ import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.microsoft.azure.CloudException;
 import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.compute.InstanceViewStatus;
+import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.compute.VirtualMachineInstanceView;
 import com.microsoft.azure.management.compute.implementation.ComputeManager;
 import com.microsoft.azure.management.network.NetworkInterface;
 import com.microsoft.azure.management.network.NicIPConfiguration;
@@ -68,7 +67,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
     @Override
     public void start() {
         try {
-            computeManager = AzureClientHelper.getComputeManager(properties);
+            computeManager = ComputeManagerHelper.getComputeManager(properties);
         } catch (CloudException e) {
             LOGGER.severe("Failed to start Azure SPI", e);
         }
@@ -100,13 +99,12 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
                     continue;
                 }
 
-                VirtualMachineInstanceView instanceView = vm.instanceView();
                 // skip any deallocated vms
-                if (!isVirtualMachineOn(instanceView)) {
+                if (!PowerState.RUNNING.equals(vm.powerState())) {
                     continue;
                 }
 
-                Integer faultDomainId = instanceView.platformFaultDomain();
+                Integer faultDomainId = vm.instanceView().platformFaultDomain();
                 if (faultDomainId != null) {
                     memberMetaData.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, faultDomainId.toString());
                 }
@@ -129,22 +127,6 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
     @Override
     public void destroy() {
         // no native resources were allocated so nothing to do here
-    }
-
-    /**
-     * Determines if a VM is allocated, or not
-     *
-     * @param instanceView the VirtualMachine to check
-     * @return boolean true if VirtualMachine is on
-     */
-    private boolean isVirtualMachineOn(VirtualMachineInstanceView instanceView) {
-        for (InstanceViewStatus status : instanceView.statuses()) {
-            if (status.code().equals("PowerState/running")) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

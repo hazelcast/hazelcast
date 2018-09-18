@@ -17,7 +17,7 @@
 package com.hazelcast.azure.integration;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.azure.AzureClientHelper;
+import com.hazelcast.azure.ComputeManagerHelper;
 import com.hazelcast.azure.AzureDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -84,7 +84,7 @@ public class LiveTest extends HazelcastTestSupport {
         parameters.put("ubuntuOSVersion", ImmutableMap.of("value", "14.04.2-LTS"));
 
 
-        ComputeManager computeManager = AzureClientHelper.getComputeManager(getProperties());
+        ComputeManager computeManager = ComputeManagerHelper.getComputeManager(getProperties());
 
         ResourceManager resourceManager = computeManager.resourceManager();
         ResourceGroups resourceGroups = resourceManager.resourceGroups();
@@ -114,7 +114,7 @@ public class LiveTest extends HazelcastTestSupport {
 
     @After
     public void cleanupVirtualMachines() {
-        ComputeManager computeManager = AzureClientHelper.getComputeManager(getProperties());
+        ComputeManager computeManager = ComputeManagerHelper.getComputeManager(getProperties());
 
         ResourceManager resourceManager = computeManager.resourceManager();
         ResourceGroups resourceGroups = resourceManager.resourceGroups();

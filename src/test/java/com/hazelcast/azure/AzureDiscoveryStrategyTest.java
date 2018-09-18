@@ -15,14 +15,13 @@
  */
 package com.hazelcast.azure;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.microsoft.azure.Page;
 import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.compute.InstanceViewStatus;
+import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.compute.VirtualMachineInstanceView;
 import com.microsoft.azure.management.compute.VirtualMachines;
@@ -44,7 +43,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.azure.AzureClientHelper.getComputeManager;
+import static com.hazelcast.azure.ComputeManagerHelper.getComputeManager;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
@@ -54,7 +53,7 @@ import static org.mockito.Mockito.*;
         "com.microsoft.windowsazure.core.*",
         "com.microsoft.azure.management.compute.*",
         "com.microsoft.azure.management.network.*",
-        "com.hazelcast.azure.AzureClientHelper"
+        "com.hazelcast.azure.ComputeManagerHelper"
 })
 public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
 
@@ -78,7 +77,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        PowerMockito.mockStatic(AzureClientHelper.class);
+        PowerMockito.mockStatic(ComputeManagerHelper.class);
         Mockito.when(getComputeManager(properties)).thenReturn(computeManager);
         when(computeManager.virtualMachines()).thenReturn(vms);
     }
@@ -116,7 +115,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         when(vm.tags()).thenReturn(ImmutableMap.of(properties.get("cluster-id").toString(), "5701"));
         VirtualMachineInstanceView vmInstance = mock(VirtualMachineInstanceView.class);
         when(vm.instanceView()).thenReturn(vmInstance);
-        when(vmInstance.statuses()).thenReturn(ImmutableList.of(new InstanceViewStatus().withCode("PowerState/running")));
+        when(vm.powerState()).thenReturn(PowerState.RUNNING);
         when(vmInstance.platformFaultDomain()).thenReturn(FAULT_DOMAIN_ID);
 
         NetworkInterface networkInterface = mock(NetworkInterface.class);
@@ -221,9 +220,9 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         buildFakeVmList(4);
         VirtualMachine vmToTurnOff = virtualMachines.remove(2);
         // turn off the vm
+        when(vmToTurnOff.powerState()).thenReturn(PowerState.DEALLOCATED);
         VirtualMachineInstanceView vmiw = mock(VirtualMachineInstanceView.class);
         when(vmToTurnOff.instanceView()).thenReturn(vmiw);
-        when(vmiw.statuses()).thenReturn(ImmutableList.of(new InstanceViewStatus().withCode("PowerState/deallocated")));
         when(vmiw.platformFaultDomain()).thenReturn(FAULT_DOMAIN_ID);
 
         // should only recognize 3 hazelcast instances now
