@@ -63,7 +63,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
     private final NodeEngine nodeEngine;
     private final boolean useBigEndian;
     private final int memberCount;
-    private IMap<SnapshotDataKey, byte[]> currentMap;
+    private Supplier<IMap<SnapshotDataKey, byte[]>> currentMap;
     private final AtomicReference<Throwable> lastError = new AtomicReference<>();
     private final AtomicInteger numActiveFlushes = new AtomicInteger();
 
@@ -82,7 +82,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
         @Override
         public void onFailure(Throwable t) {
-            logger.severe("Error writing to snapshot map '" + currentMap.getName() + "'", t);
+            logger.severe("Error writing to snapshot map '" + currentMap.get().getName() + "'", t);
             lastError.compareAndSet(null, t);
             numActiveFlushes.decrementAndGet();
             numConcurrentAsyncOps.decrementAndGet();
@@ -131,10 +131,11 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
         if (currentMap != null && logger.isFineEnabled()) {
             logger.fine(String.format("Stats for %s: keys=%,d, chunks=%,d, bytes=%,d",
-                    currentMap.getName(), totalKeys, totalChunks, totalPayloadBytes));
+                    currentMap.get().getName(), totalKeys, totalChunks, totalPayloadBytes));
         }
 
-        currentMap = nodeEngine.getHazelcastInstance().getMap(mapName);
+        // lazily get map, since it forces creation of actual map upon request
+        currentMap = Util.memoize(() -> nodeEngine.getHazelcastInstance().getMap(mapName));
 
         // reset stats
         totalKeys = totalChunks = totalPayloadBytes = 0;
@@ -228,7 +229,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         }
 
         // we put a Data instance to the map directly to avoid the serialization of the byte array
-        ICompletableFuture<Object> future = ((IMap) currentMap).putAsync(
+        ICompletableFuture<Object> future = ((IMap) currentMap.get()).putAsync(
                 new SnapshotDataKey(partitionKeys[partitionId], partitionSequence), dataSupplier.get());
         partitionSequence += memberCount;
         future.andThen(callback);

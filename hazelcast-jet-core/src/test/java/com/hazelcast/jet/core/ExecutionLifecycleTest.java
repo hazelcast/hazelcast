@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.IMap;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
@@ -28,6 +30,7 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPMS;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -465,6 +468,21 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
     public void when_deserializationOnMasterFails_then_jobSubmissionFails_client() throws Throwable {
         createJetMember();
         when_deserializationOnMasterFails_then_jobSubmissionFails(createJetClient());
+    }
+
+    @Test
+    public void when_job_withNoSnapshots_completed_then_noSnapshotMapsLeft() {
+        JetInstance instance = createJetMember();
+        DAG dag = new DAG();
+        dag.newVertex("noop", Processors.noopP());
+        instance.newJob(dag).join();
+        Collection<DistributedObject> objects = instance.getHazelcastInstance().getDistributedObjects();
+        long snapshotMaps = objects.stream()
+                .filter(obj -> obj instanceof IMap)
+                .filter(obj -> obj.getName().contains("snapshots.data"))
+                .count();
+
+        assertEquals(0, snapshotMaps);
     }
 
     private void when_deserializationOnMasterFails_then_jobSubmissionFails(JetInstance instance) throws Throwable {
