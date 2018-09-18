@@ -183,7 +183,9 @@ public class JetService
 
     @Override
     public void shutdown(boolean forceful) {
-        Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
+        if (!Thread.currentThread().equals(shutdownHookThread)) {
+            Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
+        }
 
         jobCoordinationService.shutdown();
         jobExecutionService.shutdown(false);
