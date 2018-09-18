@@ -120,6 +120,7 @@ import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbeRegistryImpl;
@@ -281,7 +282,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         probeRegistry.register(Probing.OS);
         probeRegistry.register(this);
         probeRegistry.register(statistics);
-        //null? why? probeRegistry.register(connectionManager.getNetworking());
+        NioNetworking networking = connectionManager.getNetworking();
+        if (networking != null) { // null when testing with mock
+            probeRegistry.register(networking);
+        }
         probeRegistry.registerIfSource(clientExtension);
     }
 
