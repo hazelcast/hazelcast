@@ -29,6 +29,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGenerator
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMerkleTreeConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddPNCounterConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
@@ -464,9 +465,11 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
-        final String mapName = merkleTreeConfig.getMapName();
+        String mapName = merkleTreeConfig.getMapName();
         Preconditions.checkHasText(mapName, "Merkle tree config must define a map name");
-        // TODO add client invocation
+        ClientMessage request = DynamicConfigAddMerkleTreeConfigCodec.encodeRequest(
+                merkleTreeConfig.getMapName(), merkleTreeConfig.isEnabled(), merkleTreeConfig.getDepth());
+        invoke(request);
         return this;
     }
 
