@@ -35,8 +35,10 @@ import com.hazelcast.monitor.impl.LocalDistributedObjectStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 
 /**
- * Utility providing common metrics on common types of objects that cannot be
- * annotated.
+ * Provides utilities around probing.
+ * 
+ * This includes general conversion functionality like {@link #toLong(boolean)}
+ * as well as common metrics on core types of objects that cannot be annotated.
  */
 public final class Probing {
 
@@ -44,14 +46,34 @@ public final class Probing {
         // utility
     }
 
+    /**
+     * @param value any double value
+     * @return the long value representing the double as expected by a
+     *         {@link ProbeRenderer} that only works in longs
+     */
     static long toLong(double value) {
         return round(value * 10000d);
     }
 
+    /**
+     * @param value any boolean value
+     * @return the long representing the boolean as expected by a
+     *         {@link ProbeRenderer} that only works in longs
+     */
     static long toLong(boolean value) {
         return value ? 1 : 0;
     }
 
+    /**
+     * Converts instances to their long representation.
+     * 
+     * Supported are: Primitive wrapper types for {@link Number}s, atomic
+     * {@link Number}s, {@link Counter}s, {@link Boolean} and {@link AtomicBoolean}.
+     * In case of {@link Collection} and {@link Map} their size is returned.
+     * 
+     * @param value a value of a set of supported types
+     * @return the long representing the passed object value
+     */
     static long toLong(Object value) {
         if (value == null) {
             return -1L;

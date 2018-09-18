@@ -7,13 +7,15 @@ package com.hazelcast.internal.probing;
  */
 public final class CharSequenceUtils {
 
+    private CharSequenceUtils() {
+        // utility
+    }
+
     /**
-     * Escapes a user-supplied string values.
+     * Escapes a user-supplied name.
      * 
-     * Prefixes comma ({@code ","}), space ({@code " "}), equals sign ({@code "="})
-     * and backslash ({@code "\"}) with another backslash.
-     * 
-     * Extracted to be unit testable.
+     * Effectively adds a backslash before comma ({@code ","}), space ({@code " "}),
+     * equals sign ({@code "="}) and backslash ({@code "\"}).
      */
     static void appendEscaped(StringBuilder buf, CharSequence name) {
         int len = name.length();
@@ -27,10 +29,9 @@ public final class CharSequenceUtils {
     }
 
     /**
-     * Removes escaping for a user supplied name as received from client where
-     * line-feeds need extra level of escaping.
-     * 
-     * Extracted to be unit testable.
+     * Removes backslash escaping of line feeds for a for a user supplied name (as
+     * received from client where line-feeds need extra level of escaping when all
+     * metrics are transported as a {@link String}).
      */
     static void appendUnescaped(StringBuilder buf, CharSequence name) {
         int len = name.length();
@@ -43,10 +44,13 @@ public final class CharSequenceUtils {
     }
 
     /**
-     * An allocation free check if a {@link CharSequence} starts with a given prefix.
+     * Check if a {@link CharSequence} starts with a given prefix.
+     * 
+     * This helps to avoid allocation of intermediate {@link String} objects to
+     * perform {@link String#startsWith(String)} that would be required otherwise.
      * 
      * @param prefix not null
-     * @param s not null
+     * @param s search string, not null
      * @return true, if s starts with prefix, else false
      */
     public static boolean startsWith(CharSequence prefix, CharSequence s) {
@@ -63,8 +67,11 @@ public final class CharSequenceUtils {
     }
 
     /**
-     * Helps to avoid allocation when parsing longs as {@link Long}s utility methods
-     * unnecessarily require a {@link String} to be passed what would cause
+     * Parses a long value from the complete sequence of a given
+     * {@link CharSequence}.
+     * 
+     * This helps to avoid allocation when parsing longs as {@link Long}s utility
+     * methods unnecessarily require a {@link String} to be passed what would cause
      * intermediate garbage objects.
      * 
      * Implementation is inspired by {@link Long#parseLong(String)}.
@@ -100,8 +107,17 @@ public final class CharSequenceUtils {
     }
 
     /**
-     * Allows to loop the wrapped {@link String} line by line and split into key and
-     * value without creating intermediate objects.
+     * Allows to split a wrapped {@link CharSequence} in lines without creating
+     * intermediate objects.
+     * 
+     * The {@link Lines} instance therefore becomes a {@link CharSequence}
+     * representing one line at a time.
+     * 
+     * The {@link #next()} method is used to forward to the next line.
+     * {@link #key()} can be used to go backwards to end of previous key (expected
+     * to be called at a line end representing a key value pair separated by space)
+     * {@link #value()} can be used to read the value after the current position
+     * without changing the sequence this represents.
      */
     static final class Lines implements CharSequence {
 
