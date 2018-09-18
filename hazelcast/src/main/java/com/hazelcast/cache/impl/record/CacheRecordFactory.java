@@ -81,4 +81,28 @@ public class CacheRecordFactory<R extends CacheRecord> {
         return expirationTime > -1 && expirationTime <= now;
     }
 
+    public boolean isEqual(Object existingValue, Object newValue) {
+        if (existingValue == newValue) {
+            return true;
+        }
+        if (existingValue == null || newValue == null) {
+            return false;
+        }
+
+        switch (inMemoryFormat) {
+            case BINARY:
+                Data dataExistingValue = serializationService.toData(existingValue);
+                Data dataNewValue = serializationService.toData(newValue);
+                return dataExistingValue.equals(dataNewValue);
+            case OBJECT:
+                Object objectExistingValue = serializationService.toObject(existingValue);
+                Object objectNewValue = serializationService.toObject(newValue);
+                return objectExistingValue.equals(objectNewValue);
+            case NATIVE:
+                throw new IllegalArgumentException("Native storage format is supported in Hazelcast Enterprise only. "
+                        + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
+            default:
+                throw new IllegalArgumentException("Invalid storage format: " + inMemoryFormat);
+        }
+    }
 }

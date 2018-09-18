@@ -28,6 +28,7 @@ import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -472,7 +473,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         if (simpleName == null) {
             return null;
         }
-        CacheSimpleConfig cacheSimpleConfig = nodeEngine.getConfig().findCacheConfigOrNull(simpleName);
+        Config config = nodeEngine.getConfig();
+        CacheSimpleConfig cacheSimpleConfig = config.findCacheConfigOrNull(simpleName);
         if (cacheSimpleConfig == null) {
             return null;
         }

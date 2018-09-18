@@ -16,15 +16,21 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheEntryView;
+import com.hazelcast.cache.CacheMergePolicy;
+import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
+import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
 import com.hazelcast.cache.impl.operation.KeyBasedCacheOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.Clock;
+
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
@@ -55,13 +61,11 @@ public class CacheRecordStore
         extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap> {
 
     protected SerializationService serializationService;
-    protected CacheRecordFactory cacheRecordFactory;
 
     public CacheRecordStore(String cacheNameWithPrefix, int partitionId, NodeEngine nodeEngine,
                             AbstractCacheService cacheService) {
         super(cacheNameWithPrefix, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
-        this.cacheRecordFactory = createCacheRecordFactory();
     }
 
     /**
@@ -100,11 +104,6 @@ public class CacheRecordStore
     protected CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key, CacheRecord record,
                                                                       long now, int completionId) {
         return new CacheEntryProcessorEntry(key, record, this, now, completionId);
-    }
-
-    protected CacheRecordFactory createCacheRecordFactory() {
-        return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                nodeEngine.getSerializationService());
     }
 
     @Override
@@ -169,5 +168,78 @@ public class CacheRecordStore
         } else {
             return serializationService.toData(obj);
         }
+    }
+
+    private CacheEntryView createCacheEntryView(Object key, Object value, long creationTime,
+                                                long expirationTime, long lastAccessTime,
+                                                long accessHit, CacheMergePolicy mergePolicy) {
+        SerializationService ss =
+                mergePolicy instanceof StorageTypeAwareCacheMergePolicy
+                        // Null serialization service means that use as storage type without convertion
+                        ? null
+                        //  Non-null serialization service means that convertion is required
+                        : serializationService;
+        return new LazyCacheEntryView(key, value, creationTime, expirationTime, lastAccessTime, accessHit, ss);
+    }
+
+    public CacheRecord merge2(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy) {
+        final long now = Clock.currentTimeMillis();
+        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
+
+        boolean merged = false;
+        Data key = cacheEntryView.getKey();
+        Data value = cacheEntryView.getValue();
+        long expiryTime = cacheEntryView.getExpirationTime();
+        CacheRecord record = records.get(key);
+        boolean isExpired = processExpiredEntry(key, record, now);
+
+        if (record == null || isExpired) {
+            Object newValue =
+                    mergePolicy.merge(name,
+                            createCacheEntryView(
+                                    key,
+                                    value,
+                                    cacheEntryView.getCreationTime(),
+                                    cacheEntryView.getExpirationTime(),
+                                    cacheEntryView.getLastAccessTime(),
+                                    cacheEntryView.getAccessHit(),
+                                    mergePolicy),
+                            null);
+            if (newValue != null) {
+                record = createRecordWithExpiry(key, newValue, expiryTime, now, true, IGNORE_COMPLETION);
+                merged = record != null;
+            }
+        } else {
+            Object existingValue = record.getValue();
+            Object newValue =
+                    mergePolicy.merge(name,
+                            createCacheEntryView(
+                                    key,
+                                    value,
+                                    cacheEntryView.getCreationTime(),
+                                    cacheEntryView.getExpirationTime(),
+                                    cacheEntryView.getLastAccessTime(),
+                                    cacheEntryView.getAccessHit(),
+                                    mergePolicy),
+                            createCacheEntryView(
+                                    key,
+                                    existingValue,
+                                    cacheEntryView.getCreationTime(),
+                                    record.getExpirationTime(),
+                                    record.getLastAccessTime(),
+                                    record.getAccessHit(),
+                                    mergePolicy));
+
+            if (!cacheRecordFactory.isEqual(existingValue, newValue)) {
+                merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
+            }
+        }
+
+        if (merged && isStatisticsEnabled()) {
+            statistics.increaseCachePuts(1);
+            statistics.addPutTimeNanos(System.nanoTime() - start);
+        }
+
+        return merged ? record : null;
     }
 }

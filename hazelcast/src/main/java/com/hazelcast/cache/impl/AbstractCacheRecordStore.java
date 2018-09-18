@@ -25,6 +25,7 @@ import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker;
 import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
 import com.hazelcast.cache.impl.operation.CacheExpireBatchBackupOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
@@ -122,6 +123,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final EvictionChecker evictionChecker;
     protected final ObjectNamespace objectNamespace;
     protected final AbstractCacheService cacheService;
+    protected final CacheRecordFactory cacheRecordFactory;
     protected final EventJournalConfig eventJournalConfig;
     protected final SamplingEvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
@@ -191,12 +193,18 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         evictionStrategy = createEvictionStrategy(evictionConfig);
         objectNamespace = CacheService.getObjectNamespace(cacheNameWithPrefix);
         persistWanReplicatedData = canPersistWanReplicatedData(cacheConfig, nodeEngine);
+        cacheRecordFactory = createCacheRecordFactory();
 
         injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
         registerResourceIfItIsClosable(cacheWriter);
         registerResourceIfItIsClosable(cacheLoader);
         registerResourceIfItIsClosable(defaultExpiryPolicy);
         init();
+    }
+
+    protected CacheRecordFactory createCacheRecordFactory() {
+        return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
+                nodeEngine.getSerializationService());
     }
 
     private boolean canPersistWanReplicatedData(CacheConfig cacheConfig, NodeEngine nodeEngine) {
@@ -1782,7 +1790,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             Data oldValue = serializationService.toData(record.getValue());
             CacheMergeTypes existingEntry = createMergingEntry(serializationService, key, oldValue, record);
             Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
-            if (newValue != null && newValue != oldValue) {
+            if (!cacheRecordFactory.isEqual(oldValue, newValue)) {
                 merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, disableWriteThrough, IGNORE_COMPLETION);
             }
         }
@@ -1845,7 +1853,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                             record.getAccessHit(),
                             record.getExpiryPolicy(),
                             mergePolicy));
-            if (existingValue != newValue) {
+
+            if (!cacheRecordFactory.isEqual(existingValue, newValue)) {
                 merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, disableWriteThrough, IGNORE_COMPLETION);
             }
         }
