@@ -44,6 +44,8 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private volatile boolean connected;
     private volatile WanPublisherState state;
     @Probe
+    private volatile int stateId;
+    @Probe
     private volatile int outboundQueueSize;
     @Probe
     private volatile long totalPublishLatency;
@@ -52,16 +54,6 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
     private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;
     private volatile Map<String, ConsistencyCheckResult> lastConsistencyCheckResults;
-
-    @Probe
-    private boolean paused(){
-        return state == WanPublisherState.PAUSED;
-    }
-
-    @Probe
-    private boolean stopped(){
-        return state == WanPublisherState.STOPPED;
-    }
 
     @Override
     public boolean isConnected() {
@@ -72,7 +64,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
         this.connected = connected;
     }
 
-    @Override@Probe
+    @Override
     public int getOutboundQueueSize() {
         return outboundQueueSize;
     }
@@ -88,6 +80,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     public void setState(WanPublisherState state) {
         this.state = state;
+        this.stateId = state.getId();
     }
 
     @Override

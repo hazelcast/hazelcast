@@ -1,35 +1,18 @@
 package com.hazelcast.internal.diagnostics;
 
-import static com.hazelcast.test.OverridePropertyRule.set;
-import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
-
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 
+/**
+ * @see NetworkMetricsTest#healthMonitorMetrics() 
+ */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
 public class HealthMonitorMetricsTest extends DefaultMetricsTest {
-
-    @Override
-    Config configure() {
-        return new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(),
-                ProbeLevel.INFO.name());
-    }
-
-    /**
-     * In order to get the TCP statistics we need a real {@link ConnectionManager}.
-     */
-    @Rule
-    public final OverridePropertyRule useRealNetwork = set(HAZELCAST_TEST_USE_NETWORK, "true");
 
     /**
      * Check that the statistics used by the {@link HealthMonitor} are available.
@@ -82,11 +65,7 @@ public class HealthMonitorMetricsTest extends DefaultMetricsTest {
                 "operation.invocations.pending",
                 "operation.invocations.usedPercentage",
 
-                "proxy.proxyCount",
-
-                "tcp.connection.activeCount",
-                "tcp.connection.count",
-                "tcp.connection.clientCount");
+                "proxy.proxyCount");
     }
 
 }

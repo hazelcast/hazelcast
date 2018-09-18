@@ -27,6 +27,7 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
@@ -52,6 +53,7 @@ public class PartitionStateManager {
     private final ILogger logger;
     private final InternalPartitionServiceImpl partitionService;
 
+    @Probe(level = ProbeLevel.MANDATORY)
     private final int partitionCount;
     private final InternalPartitionImpl[] partitions;
 
@@ -87,7 +89,12 @@ public class PartitionStateManager {
         partitionStateGenerator = new PartitionStateGeneratorImpl();
     }
 
-    @Probe
+    @Probe(level = ProbeLevel.MANDATORY)
+    private boolean isMemberStateSafe() {
+        return partitionService.isMemberStateSafe();
+    }
+
+    @Probe(level = ProbeLevel.MANDATORY)
     private int localPartitionCount() {
         int count = 0;
         for (InternalPartition partition : partitions) {

@@ -65,7 +65,7 @@ public class DistributedDatastructuresMetricsTest extends DefaultMetricsTest {
     private static final String INDEX_MAP_NAME = "indexMap";
 
     @Override
-    Config configure() {
+    protected Config configure() {
         Config config = new Config()
                 .setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name())
                 .setProperty(Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES.getName(), "true");
