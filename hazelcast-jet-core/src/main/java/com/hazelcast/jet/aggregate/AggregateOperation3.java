@@ -22,10 +22,15 @@ import com.hazelcast.jet.function.DistributedFunction;
 import javax.annotation.Nonnull;
 
 /**
- * Specialization of {@link AggregateOperation} to the "arity-3" case with
- * three data streams being aggregated over. This example constructs an operation
- * that sums up {@code long} values from three streams:
- *
+ * Specialization of {@code AggregateOperation} (refer to its {@linkplain
+ * AggregateOperation extensive documentation}) to the "arity-3" case with
+ * three data streams being aggregated over. {@link AggregateOperations}
+ * contains factories for the built-in implementations and you can create
+ * your own using the {@linkplain AggregateOperation#withCreate aggregate
+ * operation builder}.
+ * <p>
+ * This example constructs an operation that sums up {@code long} values
+ * from three streams:
  * <pre>{@code
  * AggregateOperation3<Long, Long, Long, LongAccumulator, Long> aggrOp = AggregateOperation
  *     .withCreate(LongAccumulator::new)

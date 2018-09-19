@@ -23,8 +23,12 @@ import javax.annotation.Nonnull;
 import java.util.stream.Collector;
 
 /**
- * Specialization of {@link AggregateOperation} to the "arity-1" case with
- * a single data stream being aggregated over.
+ * Specialization of {@code AggregateOperation} (refer to its {@linkplain
+ * AggregateOperation extensive documentation}) to the "arity-1" case with
+ * a single data stream being aggregated over. {@link AggregateOperations}
+ * contains factories for the built-in implementations and you can create
+ * your own using the {@linkplain AggregateOperation#withCreate aggregate
+ * operation builder}.
  *
  * @param <T> the type of the stream item
  * @param <A> the type of the accumulator

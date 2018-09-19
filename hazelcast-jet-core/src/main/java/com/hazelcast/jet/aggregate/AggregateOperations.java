@@ -54,7 +54,9 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * Utility class with factory methods for several useful aggregate
- * operations.
+ * operations. See the Javadoc on {@link AggregateOperation}. You can
+ * also create your own aggregate operation using the {@link
+ * AggregateOperation#withCreate builder object}.
  */
 public final class AggregateOperations {
 
