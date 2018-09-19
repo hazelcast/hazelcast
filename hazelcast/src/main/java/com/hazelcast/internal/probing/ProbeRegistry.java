@@ -47,7 +47,7 @@ public interface ProbeRegistry {
      */
     ProbeRenderContext newRenderingContext();
 
-    ProbeRenderContext newRenderingContext(Predicate<Class<? extends ProbeSource>> filter);
+    ProbeRenderContext newRenderingContext(Class<? extends ProbeSource>... filter);
 
     /**
      * From a usability point of view the {@link ProbeRenderContext} is a bit

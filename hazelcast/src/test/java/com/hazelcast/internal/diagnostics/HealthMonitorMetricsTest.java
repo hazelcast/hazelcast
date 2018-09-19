@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -22,6 +23,7 @@ public class HealthMonitorMetricsTest extends DefaultMetricsTest {
      */
     @Test
     public void healthMonitorMetrics() {
+        setProbeLevel(ProbeLevel.MANDATORY);
         assertHasAllStatsEventually(
                 "client.endpoint.count",
                 "cluster.clock.clusterTimeDiff",

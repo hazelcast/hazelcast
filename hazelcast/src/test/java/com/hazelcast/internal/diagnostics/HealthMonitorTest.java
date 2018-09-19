@@ -18,9 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.metrics.DoubleProbeFunction;
-import com.hazelcast.internal.metrics.Metric;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,7 +27,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_LEVEL;
 import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE;
@@ -42,7 +39,6 @@ import static org.junit.Assert.assertTrue;
 public class HealthMonitorTest extends HazelcastTestSupport {
 
     private HealthMonitor.HealthMetrics metrics;
-    private MetricsRegistry metricsRegistry;
 
     @Before
     public void setup() {
@@ -54,60 +50,48 @@ public class HealthMonitorTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
         HealthMonitor healthMonitor = new HealthMonitor(getNode(hz));
-        metricsRegistry = getMetricsRegistry(hz);
         metrics = healthMonitor.healthMetrics;
-    }
-
-    private void registerMetric(Metric metric, final int value) {
-        metricsRegistry.register(this, metric.getName(), MANDATORY,
-                new DoubleProbeFunction<HealthMonitorTest>() {
-                    @Override
-                    public double get(HealthMonitorTest source) throws Exception {
-                        return value;
-                    }
-                });
     }
 
     @Test
     public void exceedsThreshold_when_notTooHigh() {
-        registerMetric(metrics.osProcessCpuLoad, 0);
-        registerMetric(metrics.operationServicePendingInvocationsPercentage, 0);
-        registerMetric(metrics.osSystemCpuLoad, 0);
-        registerMetric(metrics.runtimeUsedMemory, 0);
-        registerMetric(metrics.runtimeMaxMemory, 100);
+        metrics.updateThreshHoldMetrics();
+        metrics.render("os.processCpuLoad", 0);
+        metrics.render("operation.invocations.pending", 0);
+        metrics.render("os.systemCpuLoad", 0);
+        metrics.render("runtime.usedMemory", 0);
+        metrics.render("runtime.maxMemory", 100);
 
-        boolean result = metrics.exceedsThreshold();
-        assertFalse(result);
+        assertFalse(metrics.exceedsThreshold());
     }
 
     @Test
     public void exceedsThreshold_when_osProcessCpuLoad_tooHigh() {
-        registerMetric(metrics.osProcessCpuLoad, 90);
-        boolean result = metrics.exceedsThreshold();
-        assertTrue(result);
+        metrics.updateThreshHoldMetrics();
+        metrics.render("os.processCpuLoad", Probing.toLong(90d));
+        assertTrue(metrics.exceedsThreshold());
     }
 
     @Test
     public void exceedsThreshold_when_osSystemCpuLoad_TooHigh() {
-        registerMetric(metrics.osSystemCpuLoad, 90);
-        boolean result = metrics.exceedsThreshold();
-        assertTrue(result);
+        metrics.updateThreshHoldMetrics();
+        metrics.render("os.systemCpuLoad", Probing.toLong(90d));
+        assertTrue(metrics.exceedsThreshold());
     }
 
     @Test
     public void exceedsThreshold_operationServicePendingInvocationsPercentage() {
-        registerMetric(metrics.operationServicePendingInvocationsPercentage, 90);
-        boolean result = metrics.exceedsThreshold();
-        assertTrue(result);
+        metrics.updateThreshHoldMetrics();
+        metrics.render("operation.invocations.usedPercentage", Probing.toLong(90d));
+        assertTrue(metrics.exceedsThreshold());
     }
 
     @Test
     public void exceedsThreshold_memoryUsedOfMaxPercentage() {
-        registerMetric(metrics.runtimeUsedMemory, 90);
-        registerMetric(metrics.runtimeMaxMemory, 100);
-        metrics.update();
-        boolean result = metrics.exceedsThreshold();
-        assertTrue(result);
+        metrics.updateThreshHoldMetrics();
+        metrics.render("runtime.usedMemory", 90);
+        metrics.render("runtime.maxMemory", 100);
+        assertTrue(metrics.exceedsThreshold());
     }
 
     @Test

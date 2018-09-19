@@ -34,7 +34,6 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
@@ -279,10 +278,6 @@ public abstract class HazelcastTestSupport {
 
     public static OperationServiceImpl getOperationServiceImpl(HazelcastInstance hz) {
         return (OperationServiceImpl) getNodeEngineImpl(hz).getOperationService();
-    }
-
-    public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz) {
-        return getNodeEngineImpl(hz).getMetricsRegistry();
     }
 
     public static Address getAddress(HazelcastInstance hz) {

@@ -3,10 +3,12 @@ package com.hazelcast.internal.probing;
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendEscaped;
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendUnescaped;
 import static com.hazelcast.util.StringUtil.getterIntoProperty;
+import static java.util.Arrays.asList;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -60,11 +62,13 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     }
 
     @Override
-    public ProbeRenderContext newRenderingContext(Predicate<Class<? extends ProbeSource>> filter) {
+    public ProbeRenderContext newRenderingContext(Class<? extends ProbeSource>... filter) {
         Set<ProbeSourceEntry> filtered = new HashSet<ProbeSourceEntry>();
         for (ProbeSourceEntry e : sources) {
-            if (filter.test(e.source.getClass())) {
-                filtered.add(e);
+            for (Class<?> accepted : filter) {
+                if (accepted == e.source.getClass()) {
+                    filtered.add(e);
+                }
             }
         }
         return new ProbingCycleImpl(filtered);

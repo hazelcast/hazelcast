@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
@@ -47,6 +48,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.probing.Probing.probeAllThreads;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
 import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
@@ -220,11 +222,13 @@ public final class OperationExecutorImpl implements OperationExecutor, ProbeRegi
     @Override
     public void probeIn(ProbingCycle cycle) {
         cycle.probe("operation", this);
-        Probing.probeIn(cycle, "operation.thread", genericThreads);
-        Probing.probeIn(cycle, "operation.thread", partitionThreads);
-        cycle.probe(genericOperationRunners);
-        cycle.probe(partitionOperationRunners);
-        cycle.probe(adHocOperationRunner);
+        if (cycle.isProbed(ProbeLevel.INFO)) {
+            probeAllThreads(cycle, "operation.thread", genericThreads);
+            probeAllThreads(cycle, "operation.thread", partitionThreads);
+            cycle.probe(genericOperationRunners);
+            cycle.probe(partitionOperationRunners);
+            cycle.probe(adHocOperationRunner);
+        }
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -256,7 +260,7 @@ public final class OperationExecutorImpl implements OperationExecutor, ProbeRegi
         }
     }
 
-    @Probe(name = "runningCount")
+    @Probe(name = "runningCount", level = MANDATORY)
     @Override
     public int getRunningOperationCount() {
         return getRunningPartitionOperationCount() + getRunningGenericOperationCount();

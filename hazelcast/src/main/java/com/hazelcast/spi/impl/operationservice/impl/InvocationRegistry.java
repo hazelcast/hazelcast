@@ -80,7 +80,7 @@ public class InvocationRegistry implements Iterable<Invocation> {
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
     }
 
-    @Probe(name = "invocations.usedPercentage")
+    @Probe(name = "invocations.usedPercentage", level = MANDATORY)
     private double invocationsUsedPercentage() {
         int maxConcurrentInvocations = callIdSequence.getMaxConcurrentInvocations();
         if (maxConcurrentInvocations == Integer.MAX_VALUE) {

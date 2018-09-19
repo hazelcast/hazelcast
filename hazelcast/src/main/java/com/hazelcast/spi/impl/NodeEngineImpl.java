@@ -32,9 +32,7 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.ClusterHotRestartStatus;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.MemberHotRestartStatus;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -109,7 +107,6 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
     private final SerializationService serializationService;
     private final LoggingServiceImpl loggingService;
     private final ILogger logger;
-    private final MetricsRegistryImpl metricsRegistry;
     private final ProbeRegistry probeRegistry;
     private final ProxyServiceImpl proxyService;
     private final ServiceManagerImpl serviceManager;
@@ -132,7 +129,6 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
             this.serializationService = node.getSerializationService();
             this.loggingService = node.loggingService;
             this.logger = node.getLogger(NodeEngine.class.getName());
-            this.metricsRegistry = newMetricRegistry(node);
             this.proxyService = new ProxyServiceImpl(this);
             this.serviceManager = new ServiceManagerImpl(this);
             this.executionService = new ExecutionServiceImpl(this);
@@ -174,12 +170,6 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         }
     }
 
-    //TODO replace
-    private MetricsRegistryImpl newMetricRegistry(Node node) {
-        ProbeLevel probeLevel = node.getProperties().getEnum(METRICS_LEVEL, ProbeLevel.class);
-        return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class), probeLevel);
-    }
-
     private Diagnostics newDiagnostics() {
         Address address = node.getThisAddress();
         String addressString = address.getHost().replace(":", "_") + "_" + address.getPort();
@@ -198,11 +188,6 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
 
     public ProbeRegistry getProbeRegistry() {
         return probeRegistry;
-    }
-
-    @Deprecated // remove later
-    public MetricsRegistry getMetricsRegistry() {
-        return metricsRegistry;
     }
 
     /**
@@ -229,15 +214,17 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         cycle.probe("operation", operationService.getInvocationRegistry());
         cycle.probe("operation", operationService.getInboundResponseHandlerSupplier());
         cycle.probe("operation.invocations", operationService.getInvocationMonitor());
-        cycle.probe("operation.parker", operationParker);
-        InternalPartitionServiceImpl partitionService = node.partitionService;
-        cycle.probe("partitions", partitionService);
-        cycle.probe("partitions", partitionService.getPartitionStateManager());
-        cycle.probe("partitions", partitionService.getMigrationManager());
-        cycle.probe("partitions", partitionService.getReplicaManager());
-        cycle.probe("transactions", transactionManagerService);
-        probeHotRestartStateIn(cycle);
-        probeHotBackupStateIn(cycle);
+        if (cycle.isProbed(ProbeLevel.INFO)) {
+            cycle.probe("operation.parker", operationParker);
+            InternalPartitionServiceImpl partitionService = node.partitionService;
+            cycle.probe("partitions", partitionService);
+            cycle.probe("partitions", partitionService.getPartitionStateManager());
+            cycle.probe("partitions", partitionService.getMigrationManager());
+            cycle.probe("partitions", partitionService.getReplicaManager());
+            cycle.probe("transactions", transactionManagerService);
+            probeHotRestartStateIn(cycle);
+            probeHotBackupStateIn(cycle);
+        }
     }
 
     private void probeHotBackupStateIn(ProbingCycle cycle) {
@@ -558,9 +545,6 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         }
         if (executionService != null) {
             executionService.shutdown();
-        }
-        if (metricsRegistry != null) {
-            metricsRegistry.shutdown();
         }
         if (diagnostics != null) {
             diagnostics.shutdown();

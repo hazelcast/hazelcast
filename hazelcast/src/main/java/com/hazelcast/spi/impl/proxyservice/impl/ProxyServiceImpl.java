@@ -106,7 +106,7 @@ public class ProxyServiceImpl
         nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, new Object());
     }
 
-    @Probe(name = "proxyCount")
+    @Probe(name = "proxyCount", level = MANDATORY)
     @Override
     public int getProxyCount() {
         int count = 0;

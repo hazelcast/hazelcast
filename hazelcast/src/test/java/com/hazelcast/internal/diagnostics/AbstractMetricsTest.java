@@ -22,6 +22,12 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
 
     protected abstract ProbeRenderContext getRenderContext();
 
+    private ProbeLevel probeLevel = ProbeLevel.INFO;
+
+    public void setProbeLevel(ProbeLevel probeLevel) {
+        this.probeLevel = probeLevel;
+    }
+
     protected final void assertHasStatsEventually(int minimumProbes, String type, String name) {
         assertHasStatsEventually(minimumProbes, type, name, "");
     }
@@ -29,9 +35,9 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
     protected final void assertHasStatsEventually(int minimumProbes, String type, String name,
             String additionalPrefix) {
         assertHasStatsEventually(minimumProbes,
-                  ProbeRegistry.ProbeSource.TAG_TYPE + "=" + type + " "
-                + ProbeRegistry.ProbeSource.TAG_INSTANCE + "=" + name + " "
-                + additionalPrefix);
+                ProbeRegistry.ProbeSource.TAG_TYPE + "=" + type + " "
+                        + ProbeRegistry.ProbeSource.TAG_INSTANCE + "=" + name + " "
+                        + additionalPrefix);
     }
 
     protected final void assertHasStatsEventually(final int minimumProbes, final String prefix) {
@@ -45,7 +51,7 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
 
     protected final void assertHasStatsWith(int minimumProbes, final String prefix) {
         final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
-        getRenderContext().renderAt(ProbeLevel.INFO, renderer);
+        getRenderContext().renderAt(probeLevel, renderer);
         assertThat("minimum number of probes ", renderer.probes.size(), greaterThanOrEqualTo(minimumProbes));
         if (minimumProbes > 1) {
             assertHasCreationTime(prefix, renderer);
@@ -72,7 +78,7 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 final StringProbeRenderer renderer = new StringProbeRenderer(prefixes);
-                getRenderContext().renderAt(ProbeLevel.INFO, renderer);
+                getRenderContext().renderAt(probeLevel, renderer);
                 if (!renderer.probes.keySet().containsAll(prefixes)) {
                     HashSet<String> missing = new HashSet<String>(prefixes);
                     missing.removeAll(renderer.probes.keySet());

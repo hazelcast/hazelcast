@@ -37,6 +37,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
@@ -159,6 +160,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     @Override
     public void probeIn(ProbingCycle cycle) {
         cycle.probe("client.endpoint", endpointManager);
+        if (!cycle.isProbed(ProbeLevel.INFO)) {
+            return;
+        }
         Collection<ClientEndpoint> endpoints = endpointManager.getEndpoints();
         if (!endpoints.isEmpty()) {
             for (ClientEndpoint endpoint : endpoints) {
