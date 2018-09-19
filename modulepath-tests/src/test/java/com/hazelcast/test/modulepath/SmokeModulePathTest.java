@@ -37,6 +37,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.internal.util.ModularJavaUtils;
 
 /**
  * Basic test which checks if correct Hazelcast modules are on the modulepath. It also checks that Hazelcast members and clients
@@ -71,6 +72,14 @@ public class SmokeModulePathTest {
         Set<String> hazelcastModuleNames = ModuleLayer.boot().modules().stream().map(Module::getName)
                 .filter(s -> s.contains("hazelcast")).collect(Collectors.toSet());
         assertThat(hazelcastModuleNames, hasItems("com.hazelcast.core", "com.hazelcast.client", "com.hazelcast.tests"));
+    }
+
+    /**
+     * Verify the name of Hazelcast module returned by {@link ModularJavaUtils#getHazelcastModuleName()}.
+     */
+    @Test
+    public void testHazelcastModuleName() {
+        assertEquals("com.hazelcast.core", ModularJavaUtils.getHazelcastModuleName());
     }
 
     /**
