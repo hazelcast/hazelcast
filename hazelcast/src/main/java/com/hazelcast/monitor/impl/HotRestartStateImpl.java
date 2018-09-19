@@ -16,38 +16,20 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.hotrestart.BackupTaskState;
-import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.HotRestartState;
 
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getString;
 
 public class HotRestartStateImpl implements HotRestartState {
 
-    private BackupTaskStatus backupTaskStatus;
-    private boolean isHotBackupEnabled;
     private String backupDirectory;
 
     public HotRestartStateImpl() {
     }
 
-    public HotRestartStateImpl(BackupTaskStatus backupTaskStatus, boolean isHotBackupEnabled, String backupDirectory) {
-        this.backupTaskStatus = backupTaskStatus;
-        this.isHotBackupEnabled = isHotBackupEnabled;
+    public HotRestartStateImpl(String backupDirectory) {
         this.backupDirectory = backupDirectory;
-    }
-
-    @Override
-    public BackupTaskStatus getBackupTaskStatus() {
-        return backupTaskStatus;
-    }
-
-    @Override
-    public boolean isHotBackupEnabled() {
-        return this.isHotBackupEnabled;
     }
 
     @Override
@@ -58,11 +40,7 @@ public class HotRestartStateImpl implements HotRestartState {
     @Override
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
-        if (backupTaskStatus != null) {
-            root.add("backupTaskState", backupTaskStatus.getState().name());
-            root.add("backupTaskCompleted", backupTaskStatus.getCompleted());
-            root.add("backupTaskTotal", backupTaskStatus.getTotal());
-            root.add("isHotBackupEnabled", isHotBackupEnabled);
+        if (backupDirectory != null) {
             root.add("backupDirectory", backupDirectory);
         }
         return root;
@@ -70,20 +48,13 @@ public class HotRestartStateImpl implements HotRestartState {
 
     @Override
     public void fromJson(JsonObject json) {
-        final String jsonBackupTaskState = getString(json, "backupTaskState", null);
-        final int jsonBackupTaskCompleted = getInt(json, "backupTaskCompleted", 0);
-        final int jsonBackupTaskTotal = getInt(json, "backupTaskTotal", 0);
-        backupTaskStatus = jsonBackupTaskState != null ? new BackupTaskStatus(BackupTaskState.valueOf(jsonBackupTaskState),
-                jsonBackupTaskCompleted, jsonBackupTaskTotal) : null;
-        isHotBackupEnabled = getBoolean(json, "isHotBackupEnabled", false);
         backupDirectory = getString(json, "backupDirectory", null);
     }
 
     @Override
     public String toString() {
-        return "HotRestartStateImpl{backupTaskStatus=" + backupTaskStatus
-                + ", isHotBackupEnabled=" + isHotBackupEnabled
-                + ", backupDirectory=" + backupDirectory
+        return "HotRestartStateImpl{"
+                + "backupDirectory=" + backupDirectory
                 + '}';
     }
 }

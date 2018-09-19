@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getInt;
 
 /**
  * This class holds partition related statistics.
@@ -36,30 +34,10 @@ public class MemberPartitionStateImpl implements MemberPartitionState {
     public static final int DEFAULT_PARTITION_COUNT = 271;
 
     List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
-    boolean memberStateSafe;
-    long migrationQueueSize;
 
     @Override
     public List<Integer> getPartitions() {
         return partitions;
-    }
-
-    @Override
-    public boolean isMemberStateSafe() {
-        return memberStateSafe;
-    }
-
-    public void setMemberStateSafe(boolean memberStateSafe) {
-        this.memberStateSafe = memberStateSafe;
-    }
-
-    @Override
-    public long getMigrationQueueSize() {
-        return migrationQueueSize;
-    }
-
-    public void setMigrationQueueSize(long migrationQueueSize) {
-        this.migrationQueueSize = migrationQueueSize;
     }
 
     @Override
@@ -70,8 +48,6 @@ public class MemberPartitionStateImpl implements MemberPartitionState {
             partitionsArray.add(lsPartition);
         }
         root.add("partitions", partitionsArray);
-        root.add("memberStateSafe", memberStateSafe);
-        root.add("migrationQueueSize", migrationQueueSize);
         return root;
     }
 
@@ -81,16 +57,12 @@ public class MemberPartitionStateImpl implements MemberPartitionState {
         for (JsonValue jsonPartition : jsonPartitions) {
             partitions.add(jsonPartition.asInt());
         }
-        memberStateSafe = getBoolean(json, "memberStateSafe");
-        migrationQueueSize = getInt(json, "migrationQueueSize");
     }
 
     @Override
     public String toString() {
         return "MemberPartitionStateImpl{"
                 + "partitions=" + partitions
-                + ", memberStateSafe=" + memberStateSafe
-                + ", migrationQueueSize=" + migrationQueueSize
                 + '}';
     }
 }

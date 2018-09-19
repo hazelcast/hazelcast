@@ -27,7 +27,6 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -39,16 +38,12 @@ public class MemberPartitionStateImplTest {
     public void setUp() {
         memberPartitionState = new MemberPartitionStateImpl();
 
-        memberPartitionState.setMemberStateSafe(true);
-        memberPartitionState.setMigrationQueueSize(125342);
         memberPartitionState.getPartitions().add(5);
         memberPartitionState.getPartitions().add(18);
     }
 
     @Test
     public void testDefaultConstructor() {
-        assertTrue(memberPartitionState.isMemberStateSafe());
-        assertEquals(125342, memberPartitionState.getMigrationQueueSize());
         assertNotNull(memberPartitionState.getPartitions());
         assertEquals(2, memberPartitionState.getPartitions().size());
         assertNotNull(memberPartitionState.toString());
@@ -60,8 +55,6 @@ public class MemberPartitionStateImplTest {
         MemberPartitionStateImpl deserialized = new MemberPartitionStateImpl();
         deserialized.fromJson(serialized);
 
-        assertTrue(deserialized.isMemberStateSafe());
-        assertEquals(125342, deserialized.getMigrationQueueSize());
         assertNotNull(deserialized.getPartitions());
         assertEquals(2, deserialized.getPartitions().size());
         assertNotNull(deserialized.toString());

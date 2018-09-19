@@ -43,6 +43,7 @@ public class LocalTopicStatsImpl extends LocalDistributedObjectStats implements 
 
     public LocalTopicStatsImpl(boolean statisticsEnabled) {
         super(statisticsEnabled);
+        creationTime = Clock.currentTimeMillis();
     }
 
     @Override

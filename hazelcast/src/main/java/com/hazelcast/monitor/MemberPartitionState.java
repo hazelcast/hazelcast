@@ -32,18 +32,4 @@ public interface MemberPartitionState extends JsonSerializable {
      * @return list of owned partitions of the member
      */
     List<Integer> getPartitions();
-
-    /**
-     * Returns whether member is safe for shutdown.
-     *
-     * @return {@code true} if member is safe for shutdown, {@code false} otherwise
-     */
-    boolean isMemberStateSafe();
-
-    /**
-     * Returns the migration queue size (this statistic is valid only for master).
-     *
-     * @return migration queue size
-     */
-    long getMigrationQueueSize();
 }

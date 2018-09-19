@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -27,9 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -40,48 +36,8 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
-        hz.getMap("trial").put(1, 1);
-        hz.getMultiMap("trial").put(2, 2);
-        hz.getQueue("trial").offer(3);
-        hz.getTopic("trial").publish("Hello");
-        hz.getReliableTopic("trial").publish("Hello");
-        hz.getReplicatedMap("trial").put(3, 3);
-        hz.getExecutorService("trial");
-
         TimedMemberState timedMemberState = factory.createTimedMemberState();
         assertEquals("dev", timedMemberState.clusterName);
     }
 
-    @Test
-    public void testSSL_defaultConfig() {
-        HazelcastInstance hz = createHazelcastInstance();
-        TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
-
-        TimedMemberState timedMemberState = factory.createTimedMemberState();
-        assertFalse(timedMemberState.sslEnabled);
-    }
-
-    @Test
-    public void testSSL_enabled() {
-        testSSL(true);
-    }
-
-    @Test
-    public void testSSL_disabled() {
-        testSSL(false);
-    }
-
-    private void testSSL(boolean enabled) {
-        SSLConfig sslConfig = new SSLConfig();
-        sslConfig.setEnabled(enabled);
-
-        Config config = getConfig();
-        config.getNetworkConfig().setSSLConfig(sslConfig);
-
-        HazelcastInstance hz = createHazelcastInstance(config);
-        TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
-
-        TimedMemberState timedMemberState = factory.createTimedMemberState();
-        assertEquals(enabled, timedMemberState.sslEnabled);
-    }
 }

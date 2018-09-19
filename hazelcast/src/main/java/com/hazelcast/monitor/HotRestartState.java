@@ -16,20 +16,12 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.internal.management.JsonSerializable;
 
 /**
  * Hot Restart statistics to be used by {@link MemberState} implementations.
  */
 public interface HotRestartState extends JsonSerializable {
-
-    /**
-     * Returns the local hot restart backup task status (not the cluster backup status).
-     */
-    BackupTaskStatus getBackupTaskStatus();
-
-    boolean isHotBackupEnabled();
 
     String getBackupDirectory();
 }

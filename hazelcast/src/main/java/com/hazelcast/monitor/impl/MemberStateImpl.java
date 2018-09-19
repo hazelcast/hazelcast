@@ -16,78 +16,22 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.management.dto.ClientEndPointDTO;
-import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
-import com.hazelcast.internal.management.dto.MXBeansDTO;
-import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.monitor.HotRestartState;
-import com.hazelcast.monitor.LocalCacheStats;
-import com.hazelcast.monitor.LocalExecutorStats;
-import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.LocalMemoryStats;
-import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalOperationStats;
-import com.hazelcast.monitor.LocalPNCounterStats;
-import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
-import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
-import com.hazelcast.monitor.NodeState;
-import com.hazelcast.monitor.WanSyncState;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
 
-@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class MemberStateImpl implements MemberState {
 
     private String address;
-    private Map<String, Long> runtimeProps = new HashMap<String, Long>();
-    private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
-    private Map<String, LocalWanStats> wanStats = new HashMap<String, LocalWanStats>();
-    private Collection<ClientEndPointDTO> clients = new HashSet<ClientEndPointDTO>();
-    private MXBeansDTO beans = new MXBeansDTO();
-    private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
-    private NodeState nodeState = new NodeStateImpl();
     private HotRestartState hotRestartState = new HotRestartStateImpl();
-    private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
-    private WanSyncState wanSyncState = new WanSyncStateImpl();
 
     public MemberStateImpl() {
-    }
-
-    @Override
-    public Map<String, Long> getRuntimeProps() {
-        return runtimeProps;
-    }
-
-    public void setRuntimeProps(Map<String, Long> runtimeProps) {
-        this.runtimeProps = runtimeProps;
-    }
-
-    @Override
-    public LocalCacheStats getLocalCacheStats(String cacheName) {
-        return cacheStats.get(cacheName);
-    }
-
-    @Override
-    public LocalWanStats getLocalWanStats(String schemeName) {
-        return wanStats.get(schemeName);
     }
 
     @Override
@@ -97,40 +41,6 @@ public class MemberStateImpl implements MemberState {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public void putLocalCacheStats(String name, LocalCacheStats localCacheStats) {
-        cacheStats.put(name, localCacheStats);
-    }
-
-    public void putLocalWanStats(String name, LocalWanStats localWanStats) {
-        wanStats.put(name, localWanStats);
-    }
-
-    public Collection<ClientEndPointDTO> getClients() {
-        return clients;
-    }
-
-    @Override
-    public MXBeansDTO getMXBeans() {
-        return beans;
-    }
-
-    public void setBeans(MXBeansDTO beans) {
-        this.beans = beans;
-    }
-
-    public void setClients(Collection<ClientEndPointDTO> clients) {
-        this.clients = clients;
-    }
-
-    @Override
-    public LocalMemoryStats getLocalMemoryStats() {
-        return memoryStats;
-    }
-
-    public void setLocalMemoryStats(LocalMemoryStats memoryStats) {
-        this.memoryStats = memoryStats;
     }
 
     @Override
@@ -148,15 +58,6 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
-    public NodeState getNodeState() {
-        return nodeState;
-    }
-
-    public void setNodeState(NodeState nodeState) {
-        this.nodeState = nodeState;
-    }
-
-    @Override
     public HotRestartState getHotRestartState() {
         return hotRestartState;
     }
@@ -166,89 +67,18 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
-    public ClusterHotRestartStatusDTO getClusterHotRestartStatus() {
-        return clusterHotRestartStatus;
-    }
-
-    public void setClusterHotRestartStatus(ClusterHotRestartStatusDTO clusterHotRestartStatus) {
-        this.clusterHotRestartStatus = clusterHotRestartStatus;
-    }
-
-    @Override
-    public WanSyncState getWanSyncState() {
-        return wanSyncState;
-    }
-
-    public void setWanSyncState(WanSyncState wanSyncState) {
-        this.wanSyncState = wanSyncState;
-    }
-
-    @Override
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("address", address);
-        serializeMap(root, "cacheStats", cacheStats);
-        serializeMap(root, "wanStats", wanStats);
-
-        final JsonObject runtimePropsObject = new JsonObject();
-        for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
-            runtimePropsObject.add(entry.getKey(), entry.getValue());
-        }
-        root.add("runtimeProps", runtimePropsObject);
-
-        final JsonArray clientsArray = new JsonArray();
-        for (ClientEndPointDTO client : clients) {
-            clientsArray.add(client.toJson());
-        }
-        root.add("clients", clientsArray);
-        root.add("beans", beans.toJson());
-        root.add("memoryStats", memoryStats.toJson());
         root.add("operationStats", operationStats.toJson());
         root.add("memberPartitionState", memberPartitionState.toJson());
-        root.add("nodeState", nodeState.toJson());
         root.add("hotRestartState", hotRestartState.toJson());
-        root.add("clusterHotRestartStatus", clusterHotRestartStatus.toJson());
-        root.add("wanSyncState", wanSyncState.toJson());
         return root;
     }
 
-    private static void serializeMap(JsonObject root, String key, Map<String, ? extends JsonSerializable> map) {
-        final JsonObject jsonObject = new JsonObject();
-        for (Entry<String, ? extends JsonSerializable> e : map.entrySet()) {
-            jsonObject.add(e.getKey(), e.getValue().toJson());
-        }
-        root.add(key, jsonObject);
-    }
-
     @Override
-    @SuppressWarnings("checkstyle:methodlength")
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
-        for (JsonObject.Member next : getObject(json, "cacheStats", new JsonObject())) {
-            LocalCacheStats stats = new LocalCacheStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            cacheStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "wanStats", new JsonObject())) {
-            LocalWanStats stats = new LocalWanStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            wanStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "runtimeProps")) {
-            runtimeProps.put(next.getName(), next.getValue().asLong());
-        }
-        final JsonArray jsonClients = getArray(json, "clients");
-        for (JsonValue jsonClient : jsonClients) {
-            final ClientEndPointDTO client = new ClientEndPointDTO();
-            client.fromJson(jsonClient.asObject());
-            clients.add(client);
-        }
-        beans = new MXBeansDTO();
-        beans.fromJson(getObject(json, "beans"));
-        JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
-        if (jsonMemoryStats != null) {
-            memoryStats.fromJson(jsonMemoryStats);
-        }
         JsonObject jsonOperationStats = getObject(json, "operationStats", null);
         if (jsonOperationStats != null) {
             operationStats.fromJson(jsonOperationStats);
@@ -258,25 +88,10 @@ public class MemberStateImpl implements MemberState {
             memberPartitionState = new MemberPartitionStateImpl();
             memberPartitionState.fromJson(jsonMemberPartitionState);
         }
-        JsonObject jsonNodeState = getObject(json, "nodeState", null);
-        if (jsonNodeState != null) {
-            nodeState = new NodeStateImpl();
-            nodeState.fromJson(jsonNodeState);
-        }
         JsonObject jsonHotRestartState = getObject(json, "hotRestartState", null);
         if (jsonHotRestartState != null) {
             hotRestartState = new HotRestartStateImpl();
             hotRestartState.fromJson(jsonHotRestartState);
-        }
-        JsonObject jsonClusterHotRestartStatus = getObject(json, "clusterHotRestartStatus", null);
-        if (jsonClusterHotRestartStatus != null) {
-            clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
-            clusterHotRestartStatus.fromJson(jsonClusterHotRestartStatus);
-        }
-        JsonObject jsonWanSyncState = getObject(json, "wanSyncState", null);
-        if (jsonWanSyncState != null) {
-            wanSyncState = new WanSyncStateImpl();
-            wanSyncState.fromJson(jsonWanSyncState);
         }
     }
 
@@ -284,15 +99,9 @@ public class MemberStateImpl implements MemberState {
     public String toString() {
         return "MemberStateImpl{"
                 + "address=" + address
-                + ", runtimeProps=" + runtimeProps
-                + ", cacheStats=" + cacheStats
-                + ", memoryStats=" + memoryStats
                 + ", operationStats=" + operationStats
                 + ", memberPartitionState=" + memberPartitionState
-                + ", nodeState=" + nodeState
                 + ", hotRestartState=" + hotRestartState
-                + ", clusterHotRestartStatus=" + clusterHotRestartStatus
-                + ", wanSyncState=" + wanSyncState
                 + '}';
     }
 }

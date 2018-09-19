@@ -173,7 +173,6 @@ public class ManagementCenterService {
             return;
         }
 
-        timedMemberStateFactory.init();
         try {
             if (connectionFactory != null) {
                 connectionFactory.init(managementCenterConfig.getMutualAuthConfig());

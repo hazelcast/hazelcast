@@ -17,12 +17,6 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.management.dto.ClientEndPointDTO;
-import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
-import com.hazelcast.internal.management.dto.MXBeansDTO;
-
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * Local statistics for a Hazelcast member.
@@ -30,18 +24,6 @@ import java.util.Map;
 public interface MemberState extends JsonSerializable {
 
     String getAddress();
-
-    Map<String, Long> getRuntimeProps();
-
-    LocalCacheStats getLocalCacheStats(String cacheName);
-
-    LocalWanStats getLocalWanStats(String schemeName);
-
-    Collection<ClientEndPointDTO> getClients();
-
-    MXBeansDTO getMXBeans();
-
-    LocalMemoryStats getLocalMemoryStats();
 
     /**
      * Returns the local operation statistics.
@@ -52,11 +34,6 @@ public interface MemberState extends JsonSerializable {
 
     MemberPartitionState getMemberPartitionState();
 
-    NodeState getNodeState();
-
     HotRestartState getHotRestartState();
 
-    ClusterHotRestartStatusDTO getClusterHotRestartStatus();
-
-    WanSyncState getWanSyncState();
 }
