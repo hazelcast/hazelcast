@@ -852,7 +852,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
      * @return ICompletableFuture from which the old value of the key can be retrieved
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
      * @see ICompletableFuture
      * @see #setAsync(Object, Object, long, TimeUnit)
      */
@@ -997,7 +997,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param ttlUnit  time unit for the TTL
      * @return ICompletableFuture on which client code can block waiting for the operation to complete
      * or provide an {@link ExecutionCallback} to be invoked upon set operation completion
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key, value, ttlUnit
      * @see ICompletableFuture
      */
     ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit ttlUnit);
@@ -1078,7 +1078,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param maxIdleUnit time unit for the Max-Idle
      * @return ICompletableFuture on which client code can block waiting for the operation to complete
      * or provide an {@link ExecutionCallback} to be invoked upon set operation completion
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
      * @see ICompletableFuture
      */
     ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
@@ -1295,7 +1295,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
      * @return old value of the entry
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
      */
     V put(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
 
@@ -1356,7 +1356,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param maxIdle     maximum time for this entry to stay idle in the map.
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
      */
     void putTransient(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
 
@@ -1498,7 +1498,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
      * @return old value of the entry
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
      */
     V putIfAbsent(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
     /**
@@ -1683,7 +1683,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param maxIdle     maximum time for this entry to stay idle in the map.
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
      */
     void set(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
 
@@ -2985,12 +2985,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     /**
      * Updates TTL (time to live) value of the entry specified by {@code key} with a new TTL value.
      * New TTL value is valid starting from the time this operation is invoked, not since the time the entry was created.
+     * If the entry does not exist or is already expired, this call has no effect.
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
      *
-     * If there is no entry with key {@code key}, this call has no effect.
+     * If there is no entry with key {@code key} or is already expired, this call makes no changes to entries stored in
+     * this map.
      *
      * <b>Warning:</b>
      * <p>
@@ -2999,8 +3001,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param key      the key of the map entry
      * @param ttl      maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
      * @param timeunit time unit for the TTL
+     * @return {@code true} if the entry exists and its ttl value is changed, {@code false} otherwise
      * @throws NullPointerException if the specified {@code key} or {@code timeunit} is null.
      * @since 3.11
      */
-    void setTTL(K key, long ttl, TimeUnit timeunit);
+    boolean setTtl(K key, long ttl, TimeUnit timeunit);
 }

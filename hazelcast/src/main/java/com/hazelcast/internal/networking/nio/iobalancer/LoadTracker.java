@@ -22,11 +22,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ItemCounter;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
@@ -39,8 +36,6 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
  * {@link #removePipeline(MigratablePipeline)}
  */
 class LoadTracker {
-    final Queue<Runnable> tasks = new LinkedBlockingQueue<Runnable>();
-
     private final ILogger logger;
 
     //all known IO ioThreads. we assume no. of ioThreads is constant during a lifespan of a member
@@ -80,21 +75,11 @@ class LoadTracker {
      * @return recalculated imbalance
      */
     LoadImbalance updateImbalance() {
-        handleAddedOrRemovedConnections();
         clearWorkingImbalance();
         updateNewWorkingImbalance();
         updateNewFinalImbalance();
         printDebugTable();
         return imbalance;
-    }
-
-    private void handleAddedOrRemovedConnections() {
-        Iterator<Runnable> iterator = tasks.iterator();
-        while (iterator.hasNext()) {
-            Runnable task = iterator.next();
-            task.run();
-            iterator.remove();
-        }
     }
 
     // just for testing
@@ -136,13 +121,6 @@ class LoadTracker {
         }
     }
 
-    void notifyPipelineAdded(MigratablePipeline pipeline) {
-        tasks.offer(new AddPipelineTask(pipeline));
-    }
-
-    void notifyPipelineRemoved(MigratablePipeline pipeline) {
-        tasks.offer(new RemovePipelineTask(pipeline));
-    }
 
     private void updateNewWorkingImbalance() {
         for (MigratablePipeline pipeline : pipelines) {
@@ -154,13 +132,17 @@ class LoadTracker {
         long pipelineLoad = getLoadSinceLastCheck(pipeline);
         pipelineLoadCount.set(pipeline, pipelineLoad);
         NioThread owner = pipeline.owner();
+        if (owner == null) {
+            // the pipeline is currently being migrated - owner is null
+            return;
+        }
         ownerLoad.add(owner, pipelineLoad);
         ownerToPipelines.get(owner).add(pipeline);
     }
 
     private long getLoadSinceLastCheck(MigratablePipeline pipeline) {
         long load = pipeline.load();
-        Long lastLoad = lastLoadCounter.getAndSet(pipeline, load);
+        long lastLoad = lastLoadCounter.getAndSet(pipeline, load);
         return load - lastLoad;
     }
 
@@ -176,7 +158,7 @@ class LoadTracker {
         pipelines.add(pipeline);
     }
 
-    private void removePipeline(MigratablePipeline pipeline) {
+    public void removePipeline(MigratablePipeline pipeline) {
         pipelines.remove(pipeline);
         pipelineLoadCount.remove(pipeline);
         lastLoadCounter.remove(pipeline);
@@ -251,39 +233,5 @@ class LoadTracker {
         sb.append(LINE_SEPARATOR);
     }
 
-    class RemovePipelineTask implements Runnable {
 
-        private final MigratablePipeline pipeline;
-
-        RemovePipelineTask(MigratablePipeline pipeline) {
-            this.pipeline = pipeline;
-        }
-
-        @Override
-        public void run() {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Removing pipeline: " + pipeline);
-            }
-
-            removePipeline(pipeline);
-        }
-    }
-
-    class AddPipelineTask implements Runnable {
-
-        private final MigratablePipeline pipeline;
-
-        AddPipelineTask(MigratablePipeline pipeline) {
-            this.pipeline = pipeline;
-        }
-
-        @Override
-        public void run() {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Adding pipeline: " + pipeline);
-            }
-
-            addPipeline(pipeline);
-        }
-    }
 }

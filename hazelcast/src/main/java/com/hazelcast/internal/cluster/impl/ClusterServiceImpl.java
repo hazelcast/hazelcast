@@ -87,6 +87,7 @@ import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
+import static java.lang.String.format;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
@@ -394,7 +395,15 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
             checkMemberUpdateContainsLocalMember(membersView, targetUuid);
 
-            initialClusterState(clusterState, clusterVersion);
+            try {
+                initialClusterState(clusterState, clusterVersion);
+            } catch (VersionMismatchException e) {
+                // node should shutdown since it cannot handle the cluster version
+                // it is safe to do so here because no operations have been executed yet
+                logger.severe(format("This member will shutdown because it cannot join the cluster: %s", e.getMessage()));
+                node.shutdown(true);
+                return false;
+            }
             setClusterId(clusterId);
             ClusterClockImpl clusterClock = getClusterClock();
             clusterClock.setClusterStartTime(clusterStartTime);

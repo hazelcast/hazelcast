@@ -22,6 +22,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.util.TimeUtil.zeroOutMs;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -35,7 +36,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
      * Base time to be used for storing time values as diffs (int) rather than full blown epoch based vals (long)
      * This allows for a space in seconds, of roughly 68 years.
      */
-    public static final long EPOCH_TIME = zeroOutMillis(System.currentTimeMillis());
+    public static final long EPOCH_TIME = zeroOutMs(System.currentTimeMillis());
 
     private static final int NUMBER_OF_LONGS = 2;
     private static final int NUMBER_OF_INTS = 5;
@@ -268,7 +269,4 @@ public abstract class AbstractRecord<V> implements Record<V> {
         return diff;
     }
 
-    private static long zeroOutMillis(long value) {
-        return SECONDS.toMillis(MILLISECONDS.toSeconds(value));
-    }
 }

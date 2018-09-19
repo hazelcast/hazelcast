@@ -117,6 +117,7 @@ public class ClusterStateManager {
             }
             // no need to validate again
             logger.fine("Setting initial cluster state: " + initialState + " and version: " + version);
+            validateNodeCompatibleWith(version);
             setClusterStateAndVersion(initialState, version, true);
         } finally {
             clusterServiceLock.unlock();
@@ -322,7 +323,9 @@ public class ClusterStateManager {
                 }
             } else if (stateChange.isOfType(Version.class)) {
                 // version is validated on cluster-state-lock, thus we can commit without checking compatibility
-                doSetClusterVersion((Version) stateChange.getNewState());
+                Version newVersion = (Version) stateChange.getNewState();
+                logger.info("Cluster version set to " + newVersion);
+                doSetClusterVersion(newVersion);
                 node.getClusterService().getMembershipManager().scheduleMemberListVersionIncrement();
             } else {
                 throw new IllegalArgumentException("Illegal ClusterStateChange of type " + stateChange.getType() + ".");

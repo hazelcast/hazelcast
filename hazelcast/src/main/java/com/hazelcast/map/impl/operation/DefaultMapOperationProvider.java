@@ -81,8 +81,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createSetTTLOperation(String name, Data key, long ttl) {
-        return new SetTTLOperation(name, key, ttl);
+    public MapOperation createSetTtlOperation(String name, Data key, long ttl) {
+        return new SetTtlOperation(name, key, ttl);
     }
 
     @Override

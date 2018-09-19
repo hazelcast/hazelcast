@@ -373,7 +373,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     @Test
     public void testPutTtl() {
         final IMap<String, String> map = createMap();
-        map.put("key1", "value1", 1, TimeUnit.SECONDS);
+        map.put("key1", "value1", 10, TimeUnit.SECONDS);
         assertNotNull(map.get("key1"));
         assertTrueEventually(new AssertTask() {
             @Override
@@ -393,7 +393,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     @Test
     public void testPutIfAbsentTtl() {
         final IMap<String, String> map = createMap();
-        assertNull(map.putIfAbsent("key1", "value1", 1, TimeUnit.SECONDS));
+        assertNull(map.putIfAbsent("key1", "value1", 10, TimeUnit.SECONDS));
         assertEquals("value1", map.putIfAbsent("key1", "value3", 1, TimeUnit.SECONDS));
         assertTrueEventually(new AssertTask() {
             @Override

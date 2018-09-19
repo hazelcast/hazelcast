@@ -36,6 +36,12 @@ public class MapPutMessageTask
     }
 
     @Override
+    protected void beforeProcess() {
+        super.beforeProcess();
+        checkCompatibility(parameters.maxIdleExist);
+    }
+
+    @Override
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         MapOperation op = operationProvider.createPutOperation(parameters.name, parameters.key,

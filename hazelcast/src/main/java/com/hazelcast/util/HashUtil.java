@@ -334,12 +334,10 @@ public final class HashUtil {
         checkPositive(length, "length must be larger than 0");
 
         if (hash == Integer.MIN_VALUE) {
-            hash = 0;
-        } else {
-            hash = abs(hash);
+            return 0;
         }
 
-        return hash % length;
+        return abs(hash) % length;
     }
 
     /**

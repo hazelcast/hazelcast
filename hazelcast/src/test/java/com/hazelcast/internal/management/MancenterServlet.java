@@ -61,8 +61,6 @@ public class MancenterServlet extends HttpServlet {
     }
 
     public void process(JsonObject json) {
-        ManagementCenterIdentifier identifier = new ManagementCenterIdentifier();
-        identifier.fromJson(json.get("identifier").asObject());
         memberState = new TimedMemberState();
         memberState.fromJson(json.get("timedMemberState").asObject());
     }

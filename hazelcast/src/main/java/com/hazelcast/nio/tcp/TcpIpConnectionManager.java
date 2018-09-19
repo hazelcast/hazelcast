@@ -380,8 +380,10 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
             connection.setEndPoint(endpoint);
             activeConnections.add(connection);
 
-            logger.info("Established socket connection between "
-                    + channel.localSocketAddress() + " and " + channel.remoteSocketAddress());
+            if (logger.isFineEnabled()) {
+                logger.fine("Established socket connection between "
+                        + channel.localSocketAddress() + " and " + channel.remoteSocketAddress());
+            }
             openedCount.inc();
 
             channel.start();

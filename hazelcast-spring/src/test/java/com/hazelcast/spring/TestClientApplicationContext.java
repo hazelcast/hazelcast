@@ -23,6 +23,7 @@ import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
+import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -32,6 +33,7 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -125,6 +127,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client14-reliable-topic")
     private HazelcastClientProxy hazelcastReliableTopic;
+
+    @Resource(name = "client15-credentials-factory")
+    private HazelcastClientProxy credentialsFactory;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -405,6 +410,15 @@ public class TestClientApplicationContext {
         assertEquals("gen1", config.getName());
         assertEquals(3, config.getPrefetchCount());
         assertEquals(3000L, config.getPrefetchValidityMillis());
+    }
+
+    @Test
+    public void testCredentialsFactory() {
+        ClientSecurityConfig securityConfig = credentialsFactory.getClientConfig().getSecurityConfig();
+        CredentialsFactoryConfig credentialsFactoryConfig = securityConfig.getCredentialsFactoryConfig();
+        assertEquals("com.hazelcast.examples.MyCredentialsFactory", credentialsFactoryConfig.getClassName());
+        assertEquals("value", credentialsFactoryConfig.getProperties().getProperty("property"));
+        assertNotNull(credentialsFactoryConfig.getImplementation());
     }
 
     @Test

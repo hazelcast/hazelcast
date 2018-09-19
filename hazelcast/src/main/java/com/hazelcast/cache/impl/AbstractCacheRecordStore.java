@@ -41,11 +41,11 @@ import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
+import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
@@ -97,6 +97,7 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntr
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
 import static java.util.Collections.emptySet;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
@@ -351,6 +352,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean evictOneEntry() {
+        assertRunningOnPartitionThread();
         return evictionStrategy.evict(records, evictionPolicyEvaluator, EvictionChecker.EVICT_ALWAYS, this);
     }
 
@@ -1487,7 +1489,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source) {
+    public boolean setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source) {
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
             throw new UnsupportedOperationException("Modifying expiry policy is available when cluster version is at least 3.11");
         }
@@ -1495,13 +1497,17 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (expiryPolicy instanceof Data) {
             expiryPolicyInstance = (ExpiryPolicy) toValue(expiryPolicy);
         }
+        boolean atLeastOneKey = false;
+        long now = System.currentTimeMillis();
         for (Data key : keys) {
             R record = records.get(key);
-            if (record != null) {
+            if (record != null && !processExpiredEntry(key, record, now)) {
                 updateExpiryPolicyOfRecord(key, record, expiryPolicy);
                 updateRecordWithExpiry(key, record, expiryPolicyInstance, System.currentTimeMillis(), source);
+                atLeastOneKey = true;
             }
         }
+        return atLeastOneKey;
     }
 
     @Override

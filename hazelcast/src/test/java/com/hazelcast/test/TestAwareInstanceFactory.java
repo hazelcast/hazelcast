@@ -22,6 +22,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.jmx.ManagementService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,8 @@ import static com.hazelcast.test.HazelcastTestSupport.getAddress;
  * configuration of other members. The instances are kept per test method which allows to terminate them in
  * {@link org.junit.After} methods (see {@link #terminateAll()}). The factory methods also sets custom group name which prevents
  * accidental joins (e.g. dangling members).
+ * <p>
+ * <b>Tests using this factory should not be annotated with {@code ParallelTest} category to avoid runs in multiple JVMs.</b>
  * <p>
  * Usage of {@link com.hazelcast.test.annotation.ParallelTest} is allowed with this instance factory.<br/>
  * Example:
@@ -115,7 +118,8 @@ public class TestAwareInstanceFactory {
     protected void shutdownInstances(List<HazelcastInstance> listToRemove) {
         if (listToRemove != null) {
             for (HazelcastInstance hz : listToRemove) {
-                hz.shutdown();
+                ManagementService.shutdown(hz.getName());
+                hz.getLifecycleService().terminate();
             }
         }
     }

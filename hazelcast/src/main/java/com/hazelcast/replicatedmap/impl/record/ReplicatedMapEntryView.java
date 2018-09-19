@@ -131,7 +131,7 @@ public class ReplicatedMapEntryView<K, V>
     }
 
     @Override
-    public long getMaxIdle() {
+    public Long getMaxIdle() {
         return maxIdle;
     }
 

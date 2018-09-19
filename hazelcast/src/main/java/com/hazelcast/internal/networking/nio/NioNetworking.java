@@ -46,7 +46,6 @@ import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.Collections.newSetFromMap;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
@@ -118,6 +117,11 @@ public final class NioNetworking implements Networking, ProbeRegistry.ProbeSourc
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
     public NioThread[] getOutputThreads() {
         return outputThreads;
+    }
+
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
+    public Set<NioChannel> getChannels() {
+        return channels;
     }
 
     public IOBalancer getIOBalancer() {

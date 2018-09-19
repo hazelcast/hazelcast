@@ -97,10 +97,18 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         return selectionKey == null ? -1 : selectionKey.readyOps();
     }
 
-    @Override
-    public NioThread owner() {
-        return owner;
-    }
+        /**
+         * Returns the {@link NioThread} owning this pipeline.
+         * It can be null when the pipeline is being migrated between threads.
+         *
+         * Owner is the thread executing the pipeline.
+         *
+         * @return thread owning the pipeline or <code>null</code> when the pipeline is being migrated
+         */
+        @Override
+        public NioThread owner() {
+            return owner;
+        }
 
     void start() {
         addTaskAndWakeup(new NioPipelineTask(this) {
@@ -303,10 +311,14 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         @Override
         public void run0() {
             try {
+                boolean hasHandlers = false;
                 for (ChannelHandler handler : handlers()) {
+                    hasHandlers = true;
                     handler.requestClose();
                 }
-                NioPipeline.this.run();
+                if (hasHandlers) {
+                    NioPipeline.this.run();
+                }
             } catch (Exception e) {
                 logger.finest("Error while closing outbound", e);
             }

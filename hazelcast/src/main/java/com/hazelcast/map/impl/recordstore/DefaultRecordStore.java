@@ -144,9 +144,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @param backup             <code>true</code> if backup, false otherwise.
      */
     private void flush(Collection<Record> recordsToBeFlushed, boolean backup) {
-        Iterator<Record> iterator = recordsToBeFlushed.iterator();
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
+        for (Record record : recordsToBeFlushed) {
             mapDataStore.flush(record.getKey(), record.getValue(), backup);
         }
     }
@@ -654,16 +652,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void setTTL(Data key, long ttl) {
+    public boolean setTtl(Data key, long ttl) {
         if (mapServiceContext.getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
             throw new UnsupportedOperationException("Modifying TTL is available when cluster version is 3.11 or higher");
         }
         long now = getNow();
-        markRecordStoreExpirable(ttl, DEFAULT_MAX_IDLE);
         Record record = getRecordOrNull(key, now, false);
-        if (record != null) {
-            setExpirationTimes(ttl, DEFAULT_MAX_IDLE, record, mapContainer.getMapConfig(), true);
+        if (record == null) {
+            return false;
         }
+        markRecordStoreExpirable(ttl, DEFAULT_MAX_IDLE);
+        setExpirationTimes(ttl, DEFAULT_MAX_IDLE, record, mapContainer.getMapConfig(), true);
+        return true;
     }
 
     public Object set(Data dataKey, Object value, long ttl, long maxIdle) {
@@ -840,6 +840,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         saveIndex(record, oldValue);
         return oldValue;
     }
+
     @Override
     public boolean replace(Data key, Object expect, Object update) {
         checkIfLoaded();
@@ -948,6 +949,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     private boolean canPublishLoadEvent() {
+        // RU_COMPAT_3_10
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         ClusterService clusterService = nodeEngine.getClusterService();
         boolean version311OrLater = clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_11);
@@ -1200,28 +1202,64 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void destroy() {
         clearPartition(false, true);
-        storage.destroy(false);
-        mutationObserver.onDestroy(false);
     }
 
     @Override
-    public void destroyInternals() {
-        clearMapStore();
-        clearStorage(false);
-        storage.destroy(false);
-        mutationObserver.onDestroy(true);
-    }
-
-    @Override
-    public void clearPartition(boolean onShutdown, boolean onRecordStoreDestroy) {
-        clearOtherResourcesThanStorage(onRecordStoreDestroy);
-        clearStorage(onShutdown || onRecordStoreDestroy);
-    }
-
-    public void clearOtherResourcesThanStorage(boolean onRecordStoreDestroy) {
-        clearMapStore();
+    public void clearPartition(boolean onShutdown, boolean onStorageDestroy) {
         clearLockStore();
-        clearIndexedData(onRecordStoreDestroy);
+        clearOtherDataThanStorage(onStorageDestroy);
+
+        if (onShutdown) {
+            if (hasPooledMemoryAllocator()) {
+                destroyStorageImmediate(true, true);
+            } else {
+                destroyStorageAfterClear(true, true);
+            }
+        } else {
+            if (onStorageDestroy) {
+                destroyStorageAfterClear(false, false);
+            } else {
+                clearStorage(false);
+            }
+        }
+    }
+
+    private boolean hasPooledMemoryAllocator() {
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        NativeMemoryConfig nativeMemoryConfig = nodeEngine.getConfig().getNativeMemoryConfig();
+        return nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() == POOLED;
+    }
+
+    /**
+     * Only cleans the data other than storage-data that is held on this record
+     * store. Other services data like lock-service-data is not cleared here.
+     */
+    public void clearOtherDataThanStorage(boolean onStorageDestroy) {
+        clearMapStore();
+        clearIndexedData(onStorageDestroy);
+    }
+
+    private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
+        storage.destroy(isDuringShutdown);
+        mutationObserver.onDestroy(internal);
+    }
+
+    /**
+     * Calls also {@link #clearStorage(boolean)} to release allocated HD memory
+     * of key+value pairs because {@link #destroyStorageImmediate(boolean, boolean)}
+     * only releases internal resources of backing data structure.
+     *
+     * @param isDuringShutdown {@link Storage#clear(boolean)}
+     * @param internal         see {@link RecordStoreMutationObserver#onDestroy(boolean)}}
+     */
+    public void destroyStorageAfterClear(boolean isDuringShutdown, boolean internal) {
+        clearStorage(isDuringShutdown);
+        destroyStorageImmediate(isDuringShutdown, internal);
+    }
+
+    private void clearStorage(boolean isDuringShutdown) {
+        storage.clear(isDuringShutdown);
+        mutationObserver.onClear();
     }
 
     private void clearLockStore() {
@@ -1233,23 +1271,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
     }
 
-    public void clearStorage(boolean onShutdown) {
-        if (onShutdown) {
-            NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-            NativeMemoryConfig nativeMemoryConfig = nodeEngine.getConfig().getNativeMemoryConfig();
-            boolean shouldClear = (nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() != POOLED);
-            if (shouldClear) {
-                storage.clear(true);
-                mutationObserver.onClear();
-            }
-            storage.destroy(true);
-            mutationObserver.onDestroy(true);
-        } else {
-            storage.clear(false);
-            mutationObserver.onClear();
-        }
-    }
-
     private void clearMapStore() {
         mapDataStore.reset();
     }
@@ -1257,9 +1278,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     /**
      * Only indexed data will be removed, index info will stay.
      */
-    public void clearIndexedData(boolean onRecordStoreDestroy) {
+    private void clearIndexedData(boolean onStorageDestroy) {
         clearGlobalIndexes();
-        clearPartitionedIndexes(onRecordStoreDestroy);
+        clearPartitionedIndexes(onStorageDestroy);
     }
 
     private void clearGlobalIndexes() {
@@ -1273,13 +1294,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
     }
 
-    private void clearPartitionedIndexes(boolean onRecordStoreDestroy) {
+    private void clearPartitionedIndexes(boolean onStorageDestroy) {
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.isGlobal()) {
             return;
         }
 
-        if (onRecordStoreDestroy) {
+        if (onStorageDestroy) {
             indexes.destroyIndexes();
         } else {
             indexes.clearAll();

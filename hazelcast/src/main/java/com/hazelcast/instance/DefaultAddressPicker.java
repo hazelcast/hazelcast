@@ -20,7 +20,6 @@ import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -31,9 +30,7 @@ import com.hazelcast.util.CollectionUtil;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
-import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
@@ -44,30 +41,24 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.AddressUtil.fixScopeIdAndGetInetAddress;
 import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 
-class DefaultAddressPicker implements AddressPicker {
+class DefaultAddressPicker extends AbstractAddressPicker {
 
     static final String PREFER_IPV4_STACK = "java.net.preferIPv4Stack";
 
-    private static final int SOCKET_BACKLOG_LENGTH = 100;
-    private static final int SOCKET_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(1);
-
-    private final ILogger logger;
     private final HazelcastProperties hazelcastProperties;
     private final Config config;
 
-    private ServerSocketChannel serverSocketChannel;
     private Address publicAddress;
     private Address bindAddress;
 
     DefaultAddressPicker(Config config, HazelcastProperties hazelcastProperties, ILogger logger) {
+        super(config.getNetworkConfig(), logger);
         this.config = config;
         this.hazelcastProperties = hazelcastProperties;
-        this.logger = logger;
     }
 
     @Override
@@ -85,6 +76,7 @@ class DefaultAddressPicker implements AddressPicker {
                 logger.finest("Using public address the same as the bind address: " + publicAddress);
             }
         } catch (Exception e) {
+            ServerSocketChannel serverSocketChannel = getServerSocketChannel();
             if (serverSocketChannel != null) {
                 serverSocketChannel.close();
             }
@@ -94,72 +86,14 @@ class DefaultAddressPicker implements AddressPicker {
     }
 
     private AddressDefinition getPublicAddressByPortSearch() throws IOException {
-        NetworkConfig networkConfig = config.getNetworkConfig();
         boolean bindAny = hazelcastProperties.getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
-
-        Throwable error = null;
-        ServerSocket serverSocket = null;
-        InetSocketAddress inetSocketAddress;
-
-        boolean reuseAddress = networkConfig.isReuseAddress();
-        logger.finest("inet reuseAddress:" + reuseAddress);
-
-        int port = networkConfig.getPort();
-        // port = 0 means system will pick up an ephemeral port.
-        int portTrialCount = port > 0 && networkConfig.isPortAutoIncrement() ? networkConfig.getPortCount() : 1;
         AddressDefinition bindAddressDef = pickAddressDef();
 
-        if (port == 0) {
-            logger.info("No explicit port is given, system will pick up an ephemeral port.");
-        }
-
-        for (int i = 0; i < portTrialCount; i++) {
-            /*
-             * Instead of reusing the ServerSocket/ServerSocketChannel, we are going to close and replace them on
-             * every attempt to find a free port. The reason to do this is because in some cases, when concurrent
-             * threads/processes try to acquire the same port, the ServerSocket gets corrupted and isn't able to
-             * find any free port at all (no matter if there are more than enough free ports available). We have
-             * seen this happening on Linux and Windows environments.
-             */
-            serverSocketChannel = ServerSocketChannel.open();
-            serverSocket = serverSocketChannel.socket();
-            serverSocket.setReuseAddress(reuseAddress);
-            serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
-            try {
-                if (bindAny) {
-                    inetSocketAddress = new InetSocketAddress(port + i);
-                } else {
-                    inetSocketAddress = new InetSocketAddress(bindAddressDef.inetAddress, port + i);
-                }
-                logger.fine("Trying to bind inet socket address: " + inetSocketAddress);
-                serverSocket.bind(inetSocketAddress, SOCKET_BACKLOG_LENGTH);
-                logger.fine("Bind successful to inet socket address: " + serverSocket.getLocalSocketAddress());
-                break;
-            } catch (Exception e) {
-                serverSocket.close();
-                serverSocketChannel.close();
-                error = e;
-            }
-        }
-
-        if (serverSocket == null || !serverSocket.isBound()) {
-            String message;
-            if (networkConfig.isPortAutoIncrement()) {
-                message = "ServerSocket bind has failed. Hazelcast cannot start. config-port: " + networkConfig.getPort()
-                                + ", latest-port: " + (port + portTrialCount - 1);
-            } else {
-                message = "Port [" + port + "] is already in use and auto-increment is disabled."
-                        + " Hazelcast cannot start.";
-            }
-            throw new HazelcastException(message, error);
-        }
-
-        // get the actual port that's bound by server socket
-        port = serverSocket.getLocalPort();
-        serverSocketChannel.configureBlocking(false);
+        int port = createServerSocketChannel(bindAddressDef.inetAddress, bindAddressDef.port, bindAny);
         bindAddress = createAddress(bindAddressDef, port);
 
-        logger.info("Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is " + bindAny);
+        logger.info("Picked " + bindAddress + ", using socket " + getServerSocketChannel().socket()
+                + ", bind any local is " + bindAny);
         return getPublicAddress(port);
     }
 
@@ -395,11 +329,6 @@ class DefaultAddressPicker implements AddressPicker {
     @Override
     public Address getPublicAddress() {
         return publicAddress;
-    }
-
-    @Override
-    public ServerSocketChannel getServerSocketChannel() {
-        return serverSocketChannel;
     }
 
     static class InterfaceDefinition {

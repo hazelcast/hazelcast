@@ -187,7 +187,7 @@ public class MapMergingEntryImpl
         return maxIdle;
     }
 
-    public MapMergingEntryImpl setMaxIdle(long maxIdle) {
+    public MapMergingEntryImpl setMaxIdle(Long maxIdle) {
         this.maxIdle = maxIdle;
         return this;
     }
@@ -210,9 +210,15 @@ public class MapMergingEntryImpl
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
         out.writeLong(ttl);
-        //RU_COMPAT_3_10
+        // RU_COMPAT_3_10
+        // WAN events received from source cluster also carry null maxIdle
+        // even when cluster version is 3.11
         if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            out.writeLong(maxIdle);
+            boolean hasMaxIdle = maxIdle != null;
+            out.writeBoolean(hasMaxIdle);
+            if (hasMaxIdle) {
+                out.writeLong(maxIdle);
+            }
         }
     }
 
@@ -230,8 +236,13 @@ public class MapMergingEntryImpl
         version = in.readLong();
         ttl = in.readLong();
         //RU_COMPAT_3_10
+        // WAN events received from source cluster also carry null maxIdle
+        // even when cluster version is 3.11
         if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            maxIdle = in.readLong();
+            boolean hasMaxIdle = in.readBoolean();
+            if (hasMaxIdle) {
+                maxIdle = in.readLong();
+            }
         }
     }
 

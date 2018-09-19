@@ -38,11 +38,11 @@ public class IndexImpl implements InternalIndex {
     public static final NullObject NULL = new NullObject();
 
     protected final InternalSerializationService ss;
+    protected final Extractors extractors;
     protected final IndexStore indexStore;
 
     private final String attributeName;
     private final boolean ordered;
-    private final Extractors extractors;
     private final IndexCopyBehavior copyBehavior;
     private final PerIndexStats stats;
 
@@ -53,9 +53,9 @@ public class IndexImpl implements InternalIndex {
         this.attributeName = attributeName;
         this.ordered = ordered;
         this.ss = ss;
+        this.extractors = extractors;
         this.copyBehavior = copyBehavior;
         this.indexStore = createIndexStore(ordered, stats);
-        this.extractors = extractors;
         this.stats = stats;
     }
 

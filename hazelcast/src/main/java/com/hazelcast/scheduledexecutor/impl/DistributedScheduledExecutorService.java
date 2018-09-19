@@ -45,6 +45,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -57,6 +58,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
+import static com.hazelcast.nio.ClassLoaderUtil.isClassAvailable;
+import static com.hazelcast.nio.ClassLoaderUtil.loadClass;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.peel;
@@ -171,6 +174,18 @@ public class DistributedScheduledExecutorService
         ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
         checkScheduledExecutorConfig(executorConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
+        if (isClassAvailable(nodeEngine.getConfigClassLoader(), "org.springframework.scheduling.TaskScheduler")
+            && isClassAvailable(nodeEngine.getConfigClassLoader(), "com.hazelcast.spring.scheduler.SpringTaskSchedulerProxy")) {
+            try {
+                Class<?> clazz = loadClass(nodeEngine.getConfigClassLoader(),
+                        "com.hazelcast.spring.scheduler.SpringTaskSchedulerProxy");
+                Constructor<?> constructor =
+                        clazz.getConstructor(String.class, NodeEngine.class, DistributedScheduledExecutorService.class);
+                return (DistributedObject) constructor.newInstance(name, nodeEngine, this);
+            } catch (Exception e) {
+                nodeEngine.getLogger(getClass()).warning(e);
+            }
+        }
         return new ScheduledExecutorServiceProxy(name, nodeEngine, this);
     }
 

@@ -442,7 +442,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         AtomicLong lastCorrelationId = ConcurrencyUtil.getOrPutIfAbsent(lastAuthenticationCorrelationIds,
                 clientUuid,
                 LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC);
-        return ConcurrencyUtil.setIfGreaterThan(lastCorrelationId, newCorrelationId);
+        return ConcurrencyUtil.setIfEqualOrGreaterThan(lastCorrelationId, newCorrelationId);
     }
 
     public String addOwnershipMapping(String clientUuid, String ownerUuid) {
@@ -494,13 +494,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             }
 
             String localMemberUuid = node.getThisUuid();
-            String ownerUuid = ownershipMappings.get(endpoint.getUuid());
+            final String clientUuid = endpoint.getUuid();
+            String ownerUuid = ownershipMappings.get(clientUuid);
             if (localMemberUuid.equals(ownerUuid)) {
+                final long authenticationCorrelationId = endpoint.getAuthenticationCorrelationId();
                 try {
                     nodeEngine.getExecutionService().schedule(new Runnable() {
                         @Override
                         public void run() {
-                            callDisconnectionOperation(endpoint);
+                            callDisconnectionOperation(clientUuid, authenticationCorrelationId);
                         }
                     }, endpointRemoveDelaySeconds, TimeUnit.SECONDS);
                 } catch (RejectedExecutionException e) {
@@ -511,11 +513,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             }
         }
 
-        private void callDisconnectionOperation(ClientEndpointImpl endpoint) {
+        private void callDisconnectionOperation(String clientUuid, long authenticationCorrelationId) {
             Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             OperationService operationService = nodeEngine.getOperationService();
             String memberUuid = getLocalMember().getUuid();
-            String clientUuid = endpoint.getUuid();
 
             String ownerMember = ownershipMappings.get(clientUuid);
             if (!memberUuid.equals(ownerMember)) {
@@ -523,7 +524,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                 return;
             }
 
-            if (lastAuthenticationCorrelationIds.get(clientUuid).get() > endpoint.getAuthenticationCorrelationId()) {
+            if (lastAuthenticationCorrelationIds.get(clientUuid).get() > authenticationCorrelationId) {
                 //a new authentication already made for that client. This check is needed to detect
                 // "a disconnected client is reconnected back to same node"
                 return;

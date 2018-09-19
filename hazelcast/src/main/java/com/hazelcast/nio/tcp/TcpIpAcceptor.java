@@ -267,7 +267,9 @@ public class TcpIpAcceptor {
 
             if (channel != null) {
                 final Channel theChannel = channel;
-                logger.info("Accepting socket connection from " + theChannel.socket().getRemoteSocketAddress());
+                if (logger.isFineEnabled()) {
+                    logger.fine("Accepting socket connection from " + theChannel.socket().getRemoteSocketAddress());
+                }
                 if (ioService.isSocketInterceptorEnabled()) {
                     ioService.executeAsync(new Runnable() {
                         @Override

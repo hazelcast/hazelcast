@@ -25,8 +25,16 @@ import com.hazelcast.util.Clock;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Local WAN replication statistics for a single WAN replication scheme.
+ * A single WAN replication scheme can contain multiple WAN replication
+ * publishers, identified by name.
+ */
 public class LocalWanStatsImpl implements LocalWanStats {
-
+    /**
+     * Local WAN replication statistics for a single scheme, grouped by WAN
+     * publisher name.
+     */
     private volatile Map<String, LocalWanPublisherStats> localPublisherStatsMap = new HashMap<String, LocalWanPublisherStats>();
     private volatile long creationTime;
 

@@ -25,13 +25,15 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 
-public class SetTTLOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
+public class SetTtlOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
 
-    public SetTTLOperation() {
+    private transient boolean response;
+
+    public SetTtlOperation() {
 
     }
 
-    public SetTTLOperation(String name, Data dataKey, long ttl) {
+    public SetTtlOperation(String name, Data dataKey, long ttl) {
         super(name, dataKey, ttl, DEFAULT_MAX_IDLE);
     }
 
@@ -42,7 +44,7 @@ public class SetTTLOperation extends LockAwareOperation implements BackupAwareOp
 
     @Override
     public void run() throws Exception {
-        recordStore.setTTL(dataKey, ttl);
+        response = recordStore.setTtl(dataKey, ttl);
     }
 
     @Override
@@ -57,6 +59,11 @@ public class SetTTLOperation extends LockAwareOperation implements BackupAwareOp
     @Override
     public int getId() {
         return MapDataSerializerHook.SET_TTL;
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 
     @Override
@@ -76,6 +83,6 @@ public class SetTTLOperation extends LockAwareOperation implements BackupAwareOp
 
     @Override
     public Operation getBackupOperation() {
-        return new SetTTLBackupOperation(name, dataKey, ttl);
+        return new SetTtlBackupOperation(name, dataKey, ttl);
     }
 }

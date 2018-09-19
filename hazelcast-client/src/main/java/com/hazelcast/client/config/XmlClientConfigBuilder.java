@@ -21,6 +21,7 @@ import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -740,9 +741,26 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             if ("credentials".equals(nodeName)) {
                 String className = getTextContent(child);
                 clientSecurityConfig.setCredentialsClassname(className);
+            } else if ("credentials-factory".equals(nodeName)) {
+                handleCredentialsFactory(child, clientSecurityConfig);
             }
         }
         clientConfig.setSecurityConfig(clientSecurityConfig);
+    }
+
+    private void handleCredentialsFactory(Node node, ClientSecurityConfig clientSecurityConfig) {
+        NamedNodeMap attrs = node.getAttributes();
+        Node classNameNode = attrs.getNamedItem("class-name");
+        String className = getTextContent(classNameNode);
+        CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig(className);
+        clientSecurityConfig.setCredentialsFactoryConfig(credentialsFactoryConfig);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("properties".equals(nodeName)) {
+                fillProperties(child, credentialsFactoryConfig.getProperties());
+                break;
+            }
+        }
     }
 
     private void handleOutboundPorts(Node child, ClientNetworkConfig clientNetworkConfig) {

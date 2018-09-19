@@ -41,6 +41,10 @@ public abstract class AbstractClientMapTest extends HazelcastTestSupport {
         MapConfig mapConfig = new MapConfig("mapWithTTL");
         mapConfig.setTimeToLiveSeconds(1);
         config.addMapConfig(mapConfig);
+
+        MapConfig mapConfig1 = new MapConfig("mapWithMaxIdle");
+        mapConfig1.setMaxIdleSeconds(11);
+        config.addMapConfig(mapConfig1);
         ClientConfig clientConfig = getClientConfig();
 
         member1 = hazelcastFactory.newHazelcastInstance(config);

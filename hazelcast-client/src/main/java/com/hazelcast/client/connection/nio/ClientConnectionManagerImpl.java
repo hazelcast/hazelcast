@@ -52,6 +52,7 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -105,7 +106,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             new ConcurrentHashMap<Address, AuthenticationFuture>();
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
     private final boolean allowInvokeWhenDisconnected;
-    private final Credentials credentials;
+    private final ICredentialsFactory credentialsFactory;
     private final NioNetworking networking;
     private final HeartbeatManager heartbeat;
     private final ClusterConnector clusterConnector;
@@ -115,6 +116,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
     private final int outboundPortCount;
+    private volatile Credentials lastCredentials;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                        Collection<AddressProvider> addressProviders) {
@@ -136,7 +138,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
 
-        this.credentials = client.getCredentials();
+        this.credentialsFactory = client.getCredentialsFactory();
         this.connectionStrategy = initializeStrategy(client);
 
         this.outboundPorts.addAll(getOutboundPorts(networkConfig));
@@ -261,6 +263,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         heartbeat.shutdown();
 
         connectionStrategy.shutdown();
+        credentialsFactory.destroy();
     }
 
     @Override
@@ -536,6 +539,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             ownerUuid = principal.getOwnerUuid();
         }
         ClientMessage clientMessage;
+        Credentials credentials = credentialsFactory.newCredentials();
+        lastCredentials = credentials;
         if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
             UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
             clientMessage = ClientAuthenticationCodec
@@ -589,6 +594,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         connection.close(null, cause);
         connectionsInProgress.remove(target);
+    }
+
+    public Credentials getLastCredentials() {
+        return lastCredentials;
     }
 
     Collection<Address> getPossibleMemberAddresses() {

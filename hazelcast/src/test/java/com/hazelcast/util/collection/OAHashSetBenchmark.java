@@ -37,7 +37,11 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Benchmark for OAHashSet using Java HashSet implementation as a baseline
@@ -58,8 +62,8 @@ import java.util.concurrent.TimeUnit;
  */
 @BenchmarkMode({Mode.AverageTime})
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 10, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 5, time = 100, timeUnit = MILLISECONDS)
+@Measurement(iterations = 10, time = 100, timeUnit = MILLISECONDS)
 @Fork(value = 5, jvmArgsAppend = {"-Xms8G", "-Xmx8G"})
 @State(Scope.Benchmark)
 public class OAHashSetBenchmark {
@@ -71,8 +75,13 @@ public class OAHashSetBenchmark {
     private static final int HASHCODE_COST_FACTOR = 10;
 
     private static final int HUGE_PRIME = 982455757;
+    private static final int OPS_10K = 10 * 1000;
+    private static final int OPS_100K = 100 * 1000;
+    private static final int OPS_1M = 1000 * 1000;
+    private static final int OPS_10M = 10 * 1000 * 1000;
 
     private int anInt = HUGE_PRIME;
+    private List<OAHashSet<?>> setsToKeep = new LinkedList<OAHashSet<?>>();
 
     @Benchmark
     public boolean add_java_HashSet(JavaHashSetContext context) {
@@ -124,6 +133,54 @@ public class OAHashSetBenchmark {
     public boolean remove_hz_OAHashSet_withHash(PreFilledOAHashSetContext context) {
         ObjectWithExpensiveHashCodeAndEquals anEntry = getAnEntry(context.size);
         return context.set.remove(anEntry, anEntry.getHash());
+    }
+
+    @Benchmark
+    public void clear(PreFilledOAHashSetContext context) {
+        context.set.clear();
+    }
+
+    @Benchmark
+    @Measurement(iterations = 1, batchSize = OPS_10K)
+    @BenchmarkMode({Mode.SingleShotTime})
+    @OutputTimeUnit(MILLISECONDS)
+    @Fork(jvmArgsAppend = {"-Xms1G", "-Xmx1G"})
+    public OAHashSet<Integer> instanceCreation_case1_10K() {
+        return createOaHashSet();
+    }
+
+    @Benchmark
+    @Measurement(iterations = 1, batchSize = OPS_100K)
+    @BenchmarkMode({Mode.SingleShotTime})
+    @Fork(jvmArgsAppend = {"-Xms1G", "-Xmx1G"})
+    @OutputTimeUnit(MILLISECONDS)
+    public OAHashSet<Integer> instanceCreation_case2_100K() {
+        return createOaHashSet();
+    }
+
+    @Benchmark
+    @Measurement(iterations = 1, batchSize = OPS_1M)
+    @BenchmarkMode({Mode.SingleShotTime})
+    @Fork(jvmArgsAppend = {"-Xms1G", "-Xmx1G"})
+    @OutputTimeUnit(MILLISECONDS)
+    public OAHashSet<Integer> instanceCreation_case3_1M() {
+        return createOaHashSet();
+    }
+
+    @Benchmark
+    @Measurement(iterations = 1, batchSize = OPS_10M)
+    @BenchmarkMode({Mode.SingleShotTime})
+    @Fork(jvmArgsAppend = {"-Xms2G", "-Xmx2G"})
+    @OutputTimeUnit(MILLISECONDS)
+    public OAHashSet<Integer> instanceCreation_case4_10M() {
+        return createOaHashSet();
+    }
+
+    private OAHashSet<Integer> createOaHashSet() {
+        // keeping a live set of objects so that GC has some realistic work to do
+        OAHashSet<Integer> oaHashSet = new OAHashSet<Integer>(3);
+        setsToKeep.add(oaHashSet);
+        return oaHashSet;
     }
 
     private int getAnInt() {
@@ -286,7 +343,7 @@ public class OAHashSetBenchmark {
         Options opt = new OptionsBuilder()
                 .include(OAHashSetBenchmark.class.getSimpleName())
                 .resultFormat(ResultFormatType.JSON)
-                .addProfiler(GCProfiler.class)
+                //                .addProfiler(GCProfiler.class)
                 //                .addProfiler(LinuxPerfProfiler.class)
                 //                .addProfiler(HotspotMemoryProfiler.class)
                 //                .shouldDoGC(true)

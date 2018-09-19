@@ -55,6 +55,7 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
         for (int i = 0; i < diff; i++) {
             recordStore.evictOneEntry();
         }
+        assert recordStore.size() == ownerPartitionEntryCount;
     }
 
     @Override

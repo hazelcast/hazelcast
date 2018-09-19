@@ -86,7 +86,8 @@ public class ScheduledExecutorServiceProxy
     private final String name;
     private final ILogger logger;
 
-    ScheduledExecutorServiceProxy(String name, NodeEngine nodeEngine, DistributedScheduledExecutorService service) {
+    protected ScheduledExecutorServiceProxy(String name, NodeEngine nodeEngine,
+            DistributedScheduledExecutorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(ScheduledExecutorServiceProxy.class);

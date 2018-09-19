@@ -322,6 +322,17 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
+    protected boolean setExpiryPolicyInternal(K key, ExpiryPolicy expiryPolicy) {
+        boolean result = super.setExpiryPolicyInternal(key, expiryPolicy);
+        if (serializeKeys) {
+            invalidateNearCache(toData(key));
+        } else {
+            invalidateNearCache(key);
+        }
+        return result;
+    }
+
+    @Override
     protected void putAllInternal(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy, Map<Object, Data> keyMap,
                                   List<Map.Entry<Data, Data>>[] entriesPerPartition, long startNanos) {
         try {

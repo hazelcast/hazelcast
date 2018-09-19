@@ -2801,6 +2801,19 @@
                     </xs:sequence>
                     <xs:attributeGroup ref="class-or-bean-name"/>
                     <xs:attribute name="group-name" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Sets the WAN publisher name used for identifying the publisher in
+                                a WanReplicationConfig.
+                                This name will also be used as an endpoint group name for authentication
+                                on the target endpoint.
+                                The group name can also be defined in the publisher properties which
+                                takes precedence over this value. In such cases, this value will only
+                                be used as part of a WAN publisher identifier and the value defined in
+                                the properties will be used for authentication.
+                                This value must be unique for a single WAN replication scheme.
+                            </xs:documentation>
+                        </xs:annotation>
                         <xs:simpleType>
                             <xs:restriction base="xs:string"/>
                         </xs:simpleType>
@@ -3256,7 +3269,15 @@
     </xs:complexType>
     <xs:complexType name="client-security">
         <xs:sequence>
-            <xs:element name="credentials" type="credentials" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="credentials" type="credentials" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="credentials-factory" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                    </xs:sequence>
+                    <xs:attributeGroup ref="class-or-bean-name"/>
+                </xs:complexType>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="credentials">

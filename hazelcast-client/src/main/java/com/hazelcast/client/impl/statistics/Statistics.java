@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.statistics;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
@@ -34,7 +35,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -217,8 +217,9 @@ public class Statistics implements ProbeRegistry.ProbeSource {
         stats.append(ownerConnection.getLocalSocketAddress().getAddress().getHostAddress()).append(":")
         .append(ownerConnection.getLocalSocketAddress().getPort()).append('\n');
         stats.append(BuildInfoProvider.getBuildInfo().getVersion()).append('\n');
-        Credentials credentials = client.getCredentials();
-        String principal = !(credentials instanceof UsernamePasswordCredentials) ? credentials.getPrincipal() : "?";
+        ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
+        Credentials credentials = connectionManager.getLastCredentials();
+        String principal = credentials != null ? credentials.getPrincipal() : "?";
         stats.append(principal).append('\n');
     }
 
@@ -228,7 +229,6 @@ public class Statistics implements ProbeRegistry.ProbeSource {
         appendHeader(stats);
         // body: render metrics
         probeRenderContext.renderAt(probeLevel, new ProbeRenderer() {
-
             @Override
             public void render(CharSequence key, long value) {
                 appendEscapingLineFeed(stats, key);
