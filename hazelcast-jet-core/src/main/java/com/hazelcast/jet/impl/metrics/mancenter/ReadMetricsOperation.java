@@ -35,7 +35,7 @@ public class ReadMetricsOperation extends Operation implements BlockingOperation
 
     public ReadMetricsOperation(long offset, int collectionIntervalSeconds) {
         this.offset = offset;
-        int timeoutSeconds = Math.min(MIN_TIMEOUT_SECONDS, collectionIntervalSeconds * 2);
+        int timeoutSeconds = Math.max(MIN_TIMEOUT_SECONDS, collectionIntervalSeconds * 2);
         setWaitTimeout(TimeUnit.SECONDS.toMillis(timeoutSeconds));
     }
 
