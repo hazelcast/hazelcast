@@ -25,7 +25,10 @@ public enum JavaVersion {
     JAVA_1_6,
     JAVA_1_7,
     JAVA_1_8,
-    JAVA_1_9;
+    JAVA_9,
+    JAVA_10,
+    JAVA_11,
+    JAVA_12;
 
     private static final JavaVersion CURRENT_VERSION = detectCurrentVersion();
 
@@ -50,21 +53,27 @@ public enum JavaVersion {
             // this should not happen but it's better to stay on the safe side
             return UNKNOWN;
         }
+        JavaVersion result = UNKNOWN;
         if (version.startsWith("1.")) {
             String withoutMajor = version.substring(2, version.length());
             if (withoutMajor.startsWith("6")) {
-                return JAVA_1_6;
+                result = JAVA_1_6;
             } else if (withoutMajor.startsWith("7")) {
-                return JAVA_1_7;
+                result = JAVA_1_7;
             } else if (withoutMajor.startsWith("8")) {
-                return JAVA_1_8;
+                result = JAVA_1_8;
             }
-            return UNKNOWN;
         } else if (version.startsWith("9")) {
             // from version 9 the string does not start with "1."
-            return JAVA_1_9;
+            result = JAVA_9;
+        } else if (version.startsWith("10")) {
+            result = JAVA_10;
+        } else if (version.startsWith("11")) {
+            result = JAVA_11;
+        } else if (version.startsWith("12")) {
+            result = JAVA_12;
         }
-        return UNKNOWN;
+        return result;
     }
 
     static boolean isAtLeast(JavaVersion currentVersion, JavaVersion minVersion) {
