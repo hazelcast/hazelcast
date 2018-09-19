@@ -1,6 +1,7 @@
 package com.hazelcast.internal.probing;
 
 import static com.hazelcast.internal.probing.Probing.probeAllInstances;
+import static org.junit.Assert.assertArrayEquals;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -129,4 +130,12 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
         assertProbed("updates", 2);
     }
 
+    @Test
+    public void sort() {
+        String[] names = { "a", "c", "b" };
+        Integer[] values = { 1, 3, 2 };
+        ProbeRegistryImpl.sort(names, values);
+        assertArrayEquals(new String[] { "a", "b", "c" }, names);
+        assertArrayEquals(new Integer[] { 1, 2, 3 }, values);
+    }
 }

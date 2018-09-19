@@ -31,17 +31,17 @@ final class GcProbeSource implements ProbeSource {
     }
 
     @Probe(level = MANDATORY)
-    volatile long minorCount;
+    private volatile long minorCount;
     @Probe(level = MANDATORY)
-    volatile long minorTime;
+    private volatile long minorTime;
     @Probe(level = MANDATORY)
-    volatile long majorCount;
+    private volatile long majorCount;
     @Probe(level = MANDATORY)
-    volatile long majorTime;
+    private volatile long majorTime;
     @Probe(level = MANDATORY)
-    volatile long unknownCount;
+    private volatile long unknownCount;
     @Probe(level = MANDATORY)
-    volatile long unknownTime;
+    private volatile long unknownTime;
 
     @Override
     public void probeIn(ProbingCycle cycle) {
@@ -63,7 +63,6 @@ final class GcProbeSource implements ProbeSource {
             if (count == -1) {
                 continue;
             }
-
             if (YOUNG_GC.contains(gc.getName())) {
                 minorCount += count;
                 minorTime += gc.getCollectionTime();
@@ -75,7 +74,6 @@ final class GcProbeSource implements ProbeSource {
                 unknownTime += gc.getCollectionTime();
             }
         }
-
         this.minorCount = minorCount;
         this.minorTime = minorTime;
         this.majorCount = majorCount;

@@ -5,7 +5,6 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
-import com.hazelcast.util.function.Predicate;
 
 /**
  * A service made accessible to core services so they have a chance to register

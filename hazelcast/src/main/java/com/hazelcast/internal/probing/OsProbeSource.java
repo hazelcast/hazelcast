@@ -26,24 +26,24 @@ final class OsProbeSource implements ProbeSource {
 
     @Override
     public void probeIn(ProbingCycle cycle) {
+        cycle.openContext().prefix("classloading");
+        probeProperties(cycle, classLoadingMXBean);
+        cycle.openContext().prefix("os");
+        probeProperties(cycle, operatingSystemMXBean);
         cycle.openContext().prefix("runtime");
         probeProperties(cycle, runtime);
         probeProperties(cycle, runtimeMXBean);
         cycle.openContext().prefix("thread");
         probeProperties(cycle, threadMXBean);
-        cycle.openContext().prefix("classloading");
-        probeProperties(cycle, classLoadingMXBean);
-        cycle.openContext().prefix("os");
-        probeProperties(cycle, operatingSystemMXBean);
         cycle.openContext().tag(TAG_TYPE, "file.partition").tag(TAG_INSTANCE, "user.home");
         probeProperties(cycle, userHome);
     }
 
     public static void probeProperties(ProbingCycle cycle, File f) {
+        cycle.probe("creationTime", f.lastModified());
         cycle.probe("freeSpace", f.getFreeSpace());
         cycle.probe("totalSpace", f.getTotalSpace());
         cycle.probe("usableSpace", f.getUsableSpace());
-        cycle.probe("creationTime", f.lastModified());
     }
 
     public static void probeProperties(ProbingCycle cycle, ClassLoadingMXBean bean) {
@@ -55,11 +55,11 @@ final class OsProbeSource implements ProbeSource {
     public static void probeProperties(ProbingCycle cycle, Runtime runtime) {
         long free = runtime.freeMemory();
         long total = runtime.totalMemory();
+        cycle.probe("availableProcessors", runtime.availableProcessors());
         cycle.probe("freeMemory", free);
+        cycle.probe("maxMemory", runtime.maxMemory());
         cycle.probe("totalMemory", total);
         cycle.probe("usedMemory", total - free);
-        cycle.probe("maxMemory", runtime.maxMemory());
-        cycle.probe("availableProcessors", runtime.availableProcessors());
     }
 
     public static void probeProperties(ProbingCycle cycle, RuntimeMXBean bean) {
@@ -67,9 +67,9 @@ final class OsProbeSource implements ProbeSource {
     }
 
     public static void probeProperties(ProbingCycle cycle, ThreadMXBean bean) {
-        cycle.probe("threadCount", bean.getThreadCount());
-        cycle.probe("peakThreadCount", bean.getPeakThreadCount());
         cycle.probe("daemonThreadCount", bean.getDaemonThreadCount());
+        cycle.probe("peakThreadCount", bean.getPeakThreadCount());
+        cycle.probe("threadCount", bean.getThreadCount());
         cycle.probe("totalStartedThreadCount", bean.getTotalStartedThreadCount());
     }
 

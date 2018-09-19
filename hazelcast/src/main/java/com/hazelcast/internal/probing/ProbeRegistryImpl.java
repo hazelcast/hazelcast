@@ -3,18 +3,20 @@ package com.hazelcast.internal.probing;
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendEscaped;
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendUnescaped;
 import static com.hazelcast.util.StringUtil.getterIntoProperty;
-import static java.util.Arrays.asList;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
@@ -24,7 +26,6 @@ import com.hazelcast.internal.probing.ProbingCycle.Tagging;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.function.Predicate;
 
 public final class ProbeRegistryImpl implements ProbeRegistry {
 
@@ -35,7 +36,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     private static final Map<Class<?>, ProbeAnnotatedType> PROBE_METADATA = 
             new ConcurrentHashMap<Class<?>, ProbeAnnotatedType>();
 
-    private final Set<ProbeSourceEntry> sources = ConcurrentHashMap.newKeySet();
+    private final Deque<ProbeSourceEntry> sources = new ConcurrentLinkedDeque<ProbeSourceEntry>();
 
     @Override
     public void register(ProbeSource source) {
@@ -130,7 +131,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     implements ProbingCycle, ProbingCycle.Tags, ProbeRenderContext {
 
         private final StringBuilder tags = new StringBuilder(128);
-        private final Set<ProbeSourceEntry> sources;
+        private final Collection<ProbeSourceEntry> sources;
         private CharSequence lastTagName;
         private int lastTagValuePosition;
 
@@ -138,7 +139,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         private ProbeRenderer renderer;
         private ProbeLevel level;
 
-        ProbingCycleImpl(Set<ProbeSourceEntry> sources) {
+        ProbingCycleImpl(Collection<ProbeSourceEntry> sources) {
             this.sources = sources;
         }
 
@@ -373,6 +374,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                     methodNames[i++] = name;
                 }
             }
+            sort(methodNames, methods);
         }
 
         private void initFieldProbes(ProbeLevel level, List<Field> probes) {
@@ -405,6 +407,10 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                     }
                 }
             }
+            sort(longFieldNames, longFields);
+            sort(doubleFieldNames, doubleFields);
+            sort(booleanFieldNames, booleanFields);
+            sort(otherFieldNames, otherFields);
         }
 
         private static int countMethodProbesWith(ProbeLevel level, List<Method> probes) {
@@ -653,4 +659,23 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
     }
 
+    static <T> void sort(String[] names, T[] values) {
+        if (names == null) {
+            return;
+        }
+        String[] unsortedNames = names.clone();
+        T[] unsortedValues = values.clone();
+        Arrays.sort(names);
+        for (int i = 0; i < names.length; i++) {
+            values[i] = unsortedValues[indexOf(unsortedNames, names[i])];
+        }
+    }
+
+    private static int indexOf(String[] arr, String e) {
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] == e)
+                return i;
+        }
+        return -1;
+    }
 }
