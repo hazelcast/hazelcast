@@ -6,7 +6,6 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "	-s, --state 	    : Updates state of the cluster to new state. New state can be 'active', 'frozen', 'passive'"
     echo "	-a, --address  	    : Defines which ip address hazelcast is running. Default value is '127.0.0.1'."
    	echo "	-p, --port  	    : Defines which port hazelcast is running. Default value is '5701'."
-   	echo "	-g, --groupname     : Defines groupname of the cluster. Default value is 'dev'."
    	echo "	-v, --version       : Defines the cluster version to change to. To be used in conjunction with '-o change-cluster-version'."
    	exit 0
 fi
@@ -25,10 +24,6 @@ case "$key" in
     ;;
     -p|--port)
     PORT="$2"
-    shift # past argument
-    ;;
-    -g|--groupname)
-    GROUPNAME="$2"
     shift # past argument
     ;;
      -a|--address)
@@ -54,11 +49,6 @@ if [ -z "$PORT" ]; then
     PORT="5701"
 fi
 
-if [ -z "$GROUPNAME" ]; then
-    echo "No groupname is defined, running script with default groupname: 'dev'."
-    GROUPNAME="dev"
-fi
-
 if [ -z "$ADDRESS" ]; then
     echo "No specific ip address is defined, running script with default ip: '127.0.0.1'."
     ADDRESS="127.0.0.1"
@@ -74,7 +64,7 @@ fi
 if [ "$OPERATION" = "get-state" ]; then
     echo "Getting cluster state on ip ${ADDRESS} on port ${PORT}"
 	request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/state"
- 	response=$(curl --data "${GROUPNAME}" --silent "${request}");
+ 	response=$(curl --silent "${request}");
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
  	if [ "$STATUS" = "fail" ];then
         echo "An error occurred while listing!";
@@ -107,7 +97,7 @@ if [ "$OPERATION" = "change-state" ]; then
 
     echo "Changing cluster state to ${STATE} on ip ${ADDRESS} on port ${PORT}"
     request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/changeState"
-    response=$(curl --data "${GROUPNAME}&${STATE}" --silent "${request}");
+    response=$(curl --data "${STATE}" --silent "${request}");
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
 
     if [ "$STATUS" = "fail" ];then
@@ -140,7 +130,7 @@ if [ "$OPERATION" = "force-start" ]; then
     echo "Starting cluster from member on ip ${ADDRESS} on port ${PORT}"
 
     request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/forceStart"
-    response=$(curl --data "${GROUPNAME}" --silent "${request}");
+    response=$(curl --silent "${request}");
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
 
     if [ "$STATUS" = "fail" ];then
@@ -167,7 +157,7 @@ if [ "$OPERATION" = "partial-start" ]; then
     echo "Starting cluster from member on ip ${ADDRESS} on port ${PORT}"
 
     request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/partialStart"
-    response=$(curl --data "${GROUPNAME}" --silent "${request}");
+    response=$(curl --silent "${request}");
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
 
     if [ "$STATUS" = "fail" ];then
@@ -195,7 +185,7 @@ if [ "$OPERATION" = "shutdown" ]; then
     echo "Shutting down from member on ip ${ADDRESS} on port ${PORT}"
 
     request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/clusterShutdown"
-    response=$(curl --data "${GROUPNAME}" --silent "${request}");
+    response=$(curl --silent "${request}");
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
 
     if [ "$STATUS" = "fail" ];then
@@ -248,7 +238,7 @@ if [ "$OPERATION" = "change-cluster-version" ]; then
 
     echo "Changing cluster version to ${CLUSTER_VERSION} on ip ${ADDRESS} on port ${PORT}"
     request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/version"
-    response=$(curl --data "${GROUPNAME}&${CLUSTER_VERSION}" --silent "${request}");
+    response=$(curl --data "${CLUSTER_VERSION}" --silent "${request}");
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
 
     if [ "$STATUS" = "fail" ];then

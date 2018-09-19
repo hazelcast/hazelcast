@@ -168,24 +168,24 @@ public class HTTPCommunicator {
         return doDelete(url);
     }
 
-    public int shutdownCluster(String groupName) throws IOException {
+    public int shutdownCluster() throws IOException {
         String url = address + "management/cluster/clusterShutdown";
-        return doPost(url, groupName).responseCode;
+        return doGet(url).responseCode;
     }
 
-    public String shutdownMember(String groupName) throws IOException {
+    public String shutdownMember() throws IOException {
         String url = address + "management/cluster/memberShutdown";
-        return doPost(url, groupName).response;
+        return doGet(url).response;
     }
 
-    public String getClusterState(String groupName) throws IOException {
+    public String getClusterState() throws IOException {
         String url = address + "management/cluster/state";
-        return doPost(url, groupName).response;
+        return doGet(url).response;
     }
 
-    public ConnectionResponse changeClusterState(String groupName, String newState) throws IOException {
+    public ConnectionResponse changeClusterState(String newState) throws IOException {
         String url = address + "management/cluster/changeState";
-        return doPost(url, groupName, newState);
+        return doPost(url, newState);
     }
 
     public String getClusterVersion() throws IOException {
@@ -193,39 +193,39 @@ public class HTTPCommunicator {
         return doGet(url).response;
     }
 
-    public ConnectionResponse changeClusterVersion(String groupName, String version) throws IOException {
+    public ConnectionResponse changeClusterVersion(String version) throws IOException {
         String url = address + "management/cluster/version";
-        return doPost(url, groupName, version);
+        return doPost(url, version);
     }
 
-    public ConnectionResponse hotBackup(String groupName) throws IOException {
+    public ConnectionResponse hotBackup() throws IOException {
         String url = address + "management/cluster/hotBackup";
-        return doPost(url, groupName);
+        return doGet(url);
     }
 
-    public ConnectionResponse hotBackupInterrupt(String groupName) throws IOException {
+    public ConnectionResponse hotBackupInterrupt() throws IOException {
         String url = address + "management/cluster/hotBackupInterrupt";
-        return doPost(url, groupName);
+        return doGet(url);
     }
 
-    public ConnectionResponse forceStart(String groupName) throws IOException {
+    public ConnectionResponse forceStart() throws IOException {
         String url = address + "management/cluster/forceStart";
-        return doPost(url, groupName);
+        return doGet(url);
     }
 
-    public ConnectionResponse changeManagementCenterUrl(String groupName, String newUrl) throws IOException {
+    public ConnectionResponse changeManagementCenterUrl(String newUrl) throws IOException {
         String url = address + "mancenter/changeurl";
-        return doPost(url, groupName, newUrl);
+        return doPost(url, newUrl);
     }
 
-    public ConnectionResponse partialStart(String groupName) throws IOException {
+    public ConnectionResponse partialStart() throws IOException {
         String url = address + "management/cluster/partialStart";
-        return doPost(url, groupName);
+        return doGet(url);
     }
 
-    public String listClusterNodes(String groupName) throws IOException {
+    public String listClusterNodes() throws IOException {
         String url = address + "management/cluster/nodes";
-        return doPost(url, groupName).response;
+        return doGet(url).response;
     }
 
     public String syncMapOverWAN(String wanRepName, String publisherId, String mapName) throws IOException {
@@ -268,9 +268,9 @@ public class HTTPCommunicator {
         return doPost(url, wanRepConfigJson).response;
     }
 
-    public String updatePermissions(String groupName, String permConfJson) throws IOException {
+    public String updatePermissions(String permConfJson) throws IOException {
         String url = address + "mancenter/security/permissions";
-        return doPost(url, groupName, permConfJson).response;
+        return doPost(url, permConfJson).response;
     }
 
     static class ConnectionResponse {

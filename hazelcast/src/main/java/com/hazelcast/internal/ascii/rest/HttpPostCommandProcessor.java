@@ -17,7 +17,6 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
@@ -28,6 +27,10 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
+<<<<<<< HEAD
+=======
+import com.hazelcast.internal.util.rest.RestUtil;
+>>>>>>> removed group-name & convert POST methods have not param into GET
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -43,8 +46,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.internal.util.rest.RestUtil.decodeParams;
+import static com.hazelcast.internal.util.rest.RestUtil.exceptionResponse;
+import static com.hazelcast.internal.util.rest.RestUtil.response;
+import static com.hazelcast.internal.util.rest.RestUtil.sendResponse;
 import static com.hazelcast.util.StringUtil.bytesToString;
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
@@ -69,12 +75,28 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleManagementCenterUrlChange(command);
             } else if (uri.startsWith(URI_QUEUES)) {
                 handleQueue(command, uri);
-            } else if (uri.startsWith(URI_CLUSTER_STATE_URL)) {
-                handleGetClusterState(command);
             } else if (uri.startsWith(URI_CHANGE_CLUSTER_STATE_URL)) {
                 handleChangeClusterState(command);
             } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
                 handleChangeClusterVersion(command);
+            } else if (uri.startsWith(URI_WAN_SYNC_MAP) || uri.startsWith(LEGACY_URI_WAN_SYNC_MAP)) {
+                handleWanSyncMap(command);
+            } else if (uri.startsWith(URI_WAN_SYNC_ALL_MAPS) || uri.startsWith(LEGACY_URI_WAN_SYNC_ALL_MAPS)) {
+                handleWanSyncAllMaps(command);
+            } else if (uri.startsWith(URI_MANCENTER_WAN_CLEAR_QUEUES) || uri.startsWith(LEGACY_URI_MANCENTER_WAN_CLEAR_QUEUES)) {
+                handleWanClearQueues(command);
+            } else if (uri.startsWith(URI_ADD_WAN_CONFIG) || uri.startsWith(LEGACY_URI_ADD_WAN_CONFIG)) {
+                handleAddWanConfig(command);
+            } else if (uri.startsWith(URI_UPDATE_PERMISSIONS)) {
+                handleUpdatePermissions(command);
+                /**
+                 * The below handle methods are moved to HttpCommandProcessor to use them at {@link #HttpGetCommandProcessor}
+                 * so these else-if blocks are @Deprecated.
+                 * We are keeping them for backward-compatible by linking functionality(allowing both GET & POST)
+                 * These blocks will be removed with future releases.
+                 */
+            } else if (uri.startsWith(URI_CLUSTER_STATE_URL)) {
+                handleGetClusterState(command);
             } else if (uri.startsWith(URI_SHUTDOWN_CLUSTER_URL)) {
                 handleClusterShutdown(command);
                 return;
@@ -120,23 +142,17 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleChangeClusterState(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
-        String groupName = URLDecoder.decode(strList[0], "UTF-8");
-        String stateParam = URLDecoder.decode(strList[1], "UTF-8");
+        String stateParam = URLDecoder.decode(strList[0], "UTF-8");
         String res;
         try {
             Node node = textCommandService.getNode();
             ClusterService clusterService = node.getClusterService();
-            GroupConfig groupConfig = node.getConfig().getGroupConfig();
-            if (!(groupConfig.getName().equals(groupName))) {
-                res = response(ResponseType.FORBIDDEN);
+            ClusterState state = ClusterState.valueOf(upperCaseInternal(stateParam));
+            if (!state.equals(clusterService.getClusterState())) {
+                clusterService.changeClusterState(state);
+                res = response(RestUtil.ResponseType.SUCCESS, "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
             } else {
-                ClusterState state = ClusterState.valueOf(upperCaseInternal(stateParam));
-                if (!state.equals(clusterService.getClusterState())) {
-                    clusterService.changeClusterState(state);
-                    res = response(ResponseType.SUCCESS, "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
-                } else {
-                    res = response(ResponseType.FAIL, "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
-                }
+                res = response(RestUtil.ResponseType.FAIL, "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
             }
         } catch (Throwable throwable) {
             logger.warning("Error occurred while changing cluster state", throwable);
@@ -145,173 +161,22 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
-    private void handleGetClusterState(HttpPostCommand command) throws UnsupportedEncodingException {
-        String res;
-        try {
-            Node node = textCommandService.getNode();
-            ClusterService clusterService = node.getClusterService();
-            if (!checkCredentials(command)) {
-                res = response(ResponseType.FORBIDDEN);
-            } else {
-                ClusterState clusterState = clusterService.getClusterState();
-                res = response(ResponseType.SUCCESS, "state", lowerCaseInternal(clusterState.toString()));
-            }
-        } catch (Throwable throwable) {
-            logger.warning("Error occurred while getting cluster state", throwable);
-            res = exceptionResponse(throwable);
-        }
-        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
-    }
-
     private void handleChangeClusterVersion(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
-        String groupName = URLDecoder.decode(strList[0], "UTF-8");
-        String versionParam = URLDecoder.decode(strList[1], "UTF-8");
+        String versionParam = URLDecoder.decode(strList[0], "UTF-8");
         String res;
         try {
             Node node = textCommandService.getNode();
             ClusterService clusterService = node.getClusterService();
-            GroupConfig groupConfig = node.getConfig().getGroupConfig();
-            if (!(groupConfig.getName().equals(groupName))) {
-                res = response(ResponseType.FORBIDDEN);
-            } else {
-                Version version = Version.of(versionParam);
-                clusterService.changeClusterVersion(version);
-                res = response(ResponseType.SUCCESS, "version", clusterService.getClusterVersion().toString());
-            }
+            Version version = Version.of(versionParam);
+            clusterService.changeClusterVersion(version);
+            res = response(RestUtil.ResponseType.SUCCESS, "version", clusterService.getClusterVersion().toString());
         } catch (Throwable throwable) {
             logger.warning("Error occurred while changing cluster version", throwable);
             res = exceptionResponse(throwable);
         }
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
-    }
-
-    private void handleForceStart(HttpPostCommand command) throws UnsupportedEncodingException {
-        String res;
-        try {
-            Node node = textCommandService.getNode();
-            if (!checkCredentials(command)) {
-                res = response(ResponseType.FORBIDDEN);
-            } else {
-                boolean success = node.getNodeExtension().getInternalHotRestartService().triggerForceStart();
-                res = response(success ? ResponseType.SUCCESS : ResponseType.FAIL);
-            }
-        } catch (Throwable throwable) {
-            logger.warning("Error occurred while handling force start", throwable);
-            res = exceptionResponse(throwable);
-        }
-        sendResponse(command, res);
-    }
-
-    private void handlePartialStart(HttpPostCommand command) throws UnsupportedEncodingException {
-        String res;
-        try {
-            Node node = textCommandService.getNode();
-            if (!checkCredentials(command)) {
-                res = response(ResponseType.FORBIDDEN);
-            } else {
-                boolean success = node.getNodeExtension().getInternalHotRestartService().triggerPartialStart();
-                res = response(success ? ResponseType.SUCCESS : ResponseType.FAIL);
-            }
-        } catch (Throwable throwable) {
-            logger.warning("Error occurred while handling partial start", throwable);
-            res = exceptionResponse(throwable);
-        }
-        sendResponse(command, res);
-    }
-
-    private void handleHotRestartBackup(HttpPostCommand command) throws UnsupportedEncodingException {
-        String res;
-        try {
-            if (checkCredentials(command)) {
-                textCommandService.getNode().getNodeExtension().getHotRestartService().backup();
-                res = response(ResponseType.SUCCESS);
-            } else {
-                res = response(ResponseType.FORBIDDEN);
-            }
-        } catch (Throwable throwable) {
-            logger.warning("Error occurred while invoking hot backup", throwable);
-            res = exceptionResponse(throwable);
-        }
-        sendResponse(command, res);
-    }
-
-    private void handleHotRestartBackupInterrupt(HttpPostCommand command) throws UnsupportedEncodingException {
-        String res;
-        try {
-            if (checkCredentials(command)) {
-                textCommandService.getNode().getNodeExtension().getHotRestartService().interruptBackupTask();
-                res = response(ResponseType.SUCCESS);
-            } else {
-                res = response(ResponseType.FORBIDDEN);
-            }
-        } catch (Throwable throwable) {
-            logger.warning("Error occurred while interrupting hot backup", throwable);
-            res = exceptionResponse(throwable);
-        }
-        sendResponse(command, res);
-    }
-
-    private void handleClusterShutdown(HttpPostCommand command) throws UnsupportedEncodingException {
-        String res;
-        try {
-            Node node = textCommandService.getNode();
-            ClusterService clusterService = node.getClusterService();
-            if (!checkCredentials(command)) {
-                res = response(ResponseType.FORBIDDEN);
-            } else {
-                res = response(ResponseType.SUCCESS);
-                sendResponse(command, res);
-                clusterService.shutdown();
-                return;
-            }
-        } catch (Throwable throwable) {
-            logger.warning("Error occurred while shutting down cluster", throwable);
-            res = exceptionResponse(throwable);
-        }
-        sendResponse(command, res);
-    }
-
-    private void handleListNodes(HttpPostCommand command) throws UnsupportedEncodingException {
-        String res;
-        try {
-            Node node = textCommandService.getNode();
-            ClusterService clusterService = node.getClusterService();
-            if (!checkCredentials(command)) {
-                res = response(ResponseType.FORBIDDEN);
-            } else {
-                final String responseTxt = clusterService.getMembers().toString() + "\n"
-                        + node.getBuildInfo().getVersion() + "\n"
-                        + System.getProperty("java.version");
-                res = response(ResponseType.SUCCESS, "response", responseTxt);
-                sendResponse(command, res);
-                return;
-            }
-        } catch (Throwable throwable) {
-            logger.warning("Error occurred while listing nodes", throwable);
-            res = exceptionResponse(throwable);
-        }
-        sendResponse(command, res);
-    }
-
-    private void handleShutdownNode(HttpPostCommand command) throws UnsupportedEncodingException {
-        String res;
-        try {
-            Node node = textCommandService.getNode();
-            if (!checkCredentials(command)) {
-                res = response(ResponseType.FORBIDDEN);
-            } else {
-                res = response(ResponseType.SUCCESS);
-                sendResponse(command, res);
-                node.hazelcastInstance.shutdown();
-                return;
-            }
-        } catch (Throwable throwable) {
-            logger.warning("Error occurred while shutting down", throwable);
-            res = exceptionResponse(throwable);
-        }
-        sendResponse(command, res);
     }
 
     private void handleQueue(HttpPostCommand command, String uri) {
@@ -353,12 +218,11 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             byte[] res = HttpCommand.RES_204;
             byte[] data = command.getData();
             String[] strList = bytesToString(data).split("&");
-            String cluster = URLDecoder.decode(strList[0], "UTF-8");
-            String url = URLDecoder.decode(strList[1], "UTF-8");
+            String url = URLDecoder.decode(strList[0], "UTF-8");
 
             ManagementCenterService managementCenterService = textCommandService.getNode().getManagementCenterService();
             if (managementCenterService != null) {
-                res = managementCenterService.clusterWideUpdateManagementCenterUrl(cluster, url);
+                res = managementCenterService.clusterWideUpdateManagementCenterUrl(url);
             }
             command.setResponse(res);
         } else {
@@ -390,13 +254,18 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final String publisherId = params[1];
         final String mapName = params[2];
         try {
+<<<<<<< HEAD
             textCommandService.getNode().getNodeEngine().getWanReplicationService().syncMap(wanRepName, publisherId, mapName);
             res = response(ResponseType.SUCCESS, "message", "Sync initiated");
+=======
+            textCommandService.getNode().getNodeEngine().getWanReplicationService().syncMap(wanRepName, targetGroup, mapName);
+            res = response(RestUtil.ResponseType.SUCCESS, "message", "Sync initiated");
+>>>>>>> removed group-name & convert POST methods have not param into GET
         } catch (Exception ex) {
             logger.warning("Error occurred while syncing map", ex);
             res = exceptionResponse(ex);
         }
-        sendResponse(command, res);
+        sendResponse(textCommandService, command, res);
     }
 
     /**
@@ -414,13 +283,18 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final String wanRepName = params[0];
         final String publisherId = params[1];
         try {
+<<<<<<< HEAD
             textCommandService.getNode().getNodeEngine().getWanReplicationService().syncAllMaps(wanRepName, publisherId);
             res = response(ResponseType.SUCCESS, "message", "Sync initiated");
+=======
+            textCommandService.getNode().getNodeEngine().getWanReplicationService().syncAllMaps(wanRepName, targetGroup);
+            res = response(RestUtil.ResponseType.SUCCESS, "message", "Sync initiated");
+>>>>>>> removed group-name & convert POST methods have not param into GET
         } catch (Exception ex) {
             logger.warning("Error occurred while syncing maps", ex);
             res = exceptionResponse(ex);
         }
-        sendResponse(command, res);
+        sendResponse(textCommandService, command, res);
     }
 
     /**
@@ -463,13 +337,18 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final String wanRepName = params[0];
         final String publisherId = params[1];
         try {
+<<<<<<< HEAD
             textCommandService.getNode().getNodeEngine().getWanReplicationService().clearQueues(wanRepName, publisherId);
             res = response(ResponseType.SUCCESS, "message", "WAN replication queues are cleared.");
+=======
+            textCommandService.getNode().getNodeEngine().getWanReplicationService().clearQueues(wanRepName, targetGroup);
+            res = response(RestUtil.ResponseType.SUCCESS, "message", "WAN replication queues are cleared.");
+>>>>>>> removed group-name & convert POST methods have not param into GET
         } catch (Exception ex) {
             logger.warning("Error occurred while clearing queues", ex);
             res = exceptionResponse(ex);
         }
-        sendResponse(command, res);
+        sendResponse(textCommandService, command, res);
     }
 
     /**
@@ -499,7 +378,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             for (InternalCompletableFuture future : futureList) {
                 future.get();
             }
-            res = response(ResponseType.SUCCESS, "message", "WAN configuration added.");
+            res = response(RestUtil.ResponseType.SUCCESS, "message", "WAN configuration added.");
         } catch (Exception ex) {
             logger.warning("Error occurred while adding WAN config", ex);
             res = exceptionResponse(ex);
@@ -589,23 +468,17 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleUpdatePermissions(HttpPostCommand command) {
-        String res = response(ResponseType.FORBIDDEN);
+        String res = response(RestUtil.ResponseType.FORBIDDEN);
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
         return;
     }
 
     // This is intentionally not used. Instead handleUpdatePermissions() returns FORBIDDEN always.
     private void doHandleUpdatePermissions(HttpPostCommand command) throws UnsupportedEncodingException {
-
-        if (!checkCredentials(command)) {
-            String res = response(ResponseType.FORBIDDEN);
-            command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
-            return;
-        }
-
         SecurityService securityService = textCommandService.getNode().getSecurityService();
         if (securityService == null) {
-            String res = response(ResponseType.FAIL, "message", "Security features are only available on Hazelcast Enterprise!");
+            String res = response(RestUtil.ResponseType.FAIL,
+                    "message", "Security features are only available on Hazelcast Enterprise!");
             command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
             return;
         }
@@ -620,77 +493,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest();
             request.fromJson(Json.parse(permConfigsJSON).asObject());
             securityService.refreshClientPermissions(request.getPermissionConfigs());
-            res = response(ResponseType.SUCCESS, "message", "Permissions updated.");
+            res = response(RestUtil.ResponseType.SUCCESS, "message", "Permissions updated.");
         } catch (Exception ex) {
             logger.warning("Error occurred while updating permission config", ex);
             res = exceptionResponse(ex);
         }
 
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
-    }
-
-    private static String exceptionResponse(Throwable throwable) {
-        return response(ResponseType.FAIL, "message", throwable.getMessage());
-    }
-
-    private static String response(ResponseType type, String... attributes) {
-        final StringBuilder builder = new StringBuilder("{");
-        builder.append("\"status\":\"").append(type).append("\"");
-        if (attributes.length > 0) {
-            for (int i = 0; i < attributes.length; ) {
-                final String key = attributes[i++];
-                final String value = attributes[i++];
-                if (value != null) {
-                    builder.append(String.format(",\"%s\":\"%s\"", key, value));
-                }
-            }
-        }
-        return builder.append("}").toString();
-    }
-
-    private enum ResponseType {
-        SUCCESS, FAIL, FORBIDDEN;
-
-        @Override
-        public String toString() {
-            return super.toString().toLowerCase(StringUtil.LOCALE_INTERNAL);
-        }
-    }
-
-    /**
-     * Decodes HTTP post params contained in {@link HttpPostCommand#getData()}. The data
-     * should be encoded in UTF-8 and joined together with an ampersand (&).
-     *
-     * @param command    the HTTP post command
-     * @param paramCount the number of parameters expected in the command
-     * @return the decoded params
-     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
-     *                                      named character encoding is not supported
-     */
-    private static String[] decodeParams(HttpPostCommand command, int paramCount) throws UnsupportedEncodingException {
-        final byte[] data = command.getData();
-        final String[] encoded = bytesToString(data).split("&");
-        final String[] decoded = new String[encoded.length];
-        for (int i = 0; i < paramCount; i++) {
-            decoded[i] = URLDecoder.decode(encoded[i], "UTF-8");
-        }
-        return decoded;
-    }
-
-    private boolean checkCredentials(HttpPostCommand command) throws UnsupportedEncodingException {
-        byte[] data = command.getData();
-        final String[] strList = bytesToString(data).split("&");
-        if (strList.length == 0) {
-            return false;
-        }
-        final String groupName = URLDecoder.decode(strList[0], "UTF-8");
-        final GroupConfig groupConfig = textCommandService.getNode().getConfig().getGroupConfig();
-        return groupConfig.getName().equals(groupName);
-    }
-
-    private void sendResponse(HttpPostCommand command, String value) {
-        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(value));
-        textCommandService.sendResponse(command);
     }
 
     @Override

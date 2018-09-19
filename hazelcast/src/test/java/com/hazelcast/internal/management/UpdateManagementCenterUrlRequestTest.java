@@ -46,7 +46,7 @@ public class UpdateManagementCenterUrlRequestTest extends HazelcastTestSupport {
 
     @Test
     public void testExecuteScriptRequest() {
-        byte[] result = managementCenterService.clusterWideUpdateManagementCenterUrl("dev", "invalid");
+        byte[] result = managementCenterService.clusterWideUpdateManagementCenterUrl("invalid");
         assertEquals(HttpCommand.RES_204, result);
     }
 }

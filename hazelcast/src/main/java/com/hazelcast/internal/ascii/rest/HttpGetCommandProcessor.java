@@ -23,12 +23,16 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.rest.RestUtil;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.util.StringUtil;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.MIME_TEXT_PLAIN;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
+import static com.hazelcast.internal.util.rest.RestUtil.exceptionResponse;
+import static com.hazelcast.internal.util.rest.RestUtil.response;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
@@ -41,11 +45,15 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private static final String HEALTH_PATH_PARAM_MIGRATION_QUEUE_SIZE = "/migration-queue-size";
     private static final String HEALTH_PATH_PARAM_CLUSTER_SIZE = "/cluster-size";
 
+    private final ILogger logger;
+
     public HttpGetCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
+        this.logger = textCommandService.getNode().getLogger(HttpGetCommandProcessor.class);
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
     public void handle(HttpGetCommand command) {
         String uri = command.getURI();
         if (uri.startsWith(URI_MAPS)) {
@@ -58,6 +66,23 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             handleHealthcheck(command, uri);
         } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
             handleGetClusterVersion(command);
+        } else if (uri.startsWith(URI_CLUSTER_STATE_URL)) {
+            handleGetClusterState(command);
+        } else if (uri.startsWith(URI_FORCESTART_CLUSTER_URL)) {
+            handleForceStart(command);
+        } else if (uri.startsWith(URI_PARTIALSTART_CLUSTER_URL)) {
+            handlePartialStart(command);
+        } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_CLUSTER_URL)) {
+            handleHotRestartBackup(command);
+        } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL)) {
+            handleHotRestartBackupInterrupt(command);
+        } else if (uri.startsWith(URI_SHUTDOWN_NODE_CLUSTER_URL)) {
+            handleShutdownNode(command);
+        } else if (uri.startsWith(URI_SHUTDOWN_CLUSTER_URL)) {
+            handleClusterShutdown(command);
+            return;
+        } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
+            handleListNodes(command);
         } else {
             command.send400();
         }
@@ -114,11 +139,16 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleGetClusterVersion(HttpGetCommand command) {
-        String res = "{\"status\":\"${STATUS}\",\"version\":\"${VERSION}\"}";
-        Node node = textCommandService.getNode();
-        ClusterService clusterService = node.getClusterService();
-        res = res.replace("${STATUS}", "success");
-        res = res.replace("${VERSION}", clusterService.getClusterVersion().toString());
+        String res;
+        try {
+            Node node = textCommandService.getNode();
+            ClusterService clusterService = node.getClusterService();
+            String clusterVersion = clusterService.getClusterVersion().toString();
+            res = response(RestUtil.ResponseType.SUCCESS, "version", clusterVersion);
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while getting cluster version", throwable);
+            res = exceptionResponse(throwable);
+        }
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
