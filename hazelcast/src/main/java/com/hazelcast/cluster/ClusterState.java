@@ -18,6 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.core.Cluster;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.probing.CodedEnum;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
@@ -65,13 +66,13 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * @see NodeState
  * @since 3.6
  */
-public enum ClusterState {
+public enum ClusterState implements CodedEnum {
 
     /**
      * In {@code ACTIVE} state, cluster will continue to operate without any restriction.
      * All operations are allowed. This is default state of a cluster.
      */
-    ACTIVE(true, true),
+    ACTIVE(1, true, true),
 
     /**
      * In {@code NO_MIGRATION} state of the cluster, migrations (partition rebalancing) and backup replications
@@ -90,7 +91,7 @@ public enum ClusterState {
      *
      * @since 3.9
      */
-    NO_MIGRATION(true, false),
+    NO_MIGRATION(2, true, false),
 
     /**
      * In {@code FROZEN} state of the cluster:
@@ -119,7 +120,7 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    FROZEN(false, false),
+    FROZEN(3, false, false),
 
     /**
      * In {@code PASSIVE} state of the cluster:
@@ -144,7 +145,7 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    PASSIVE(false, false),
+    PASSIVE(4, false, false),
 
     /**
      * Shows that ClusterState is in transition. When a state change transaction is started,
@@ -165,12 +166,14 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    IN_TRANSITION(false, false);
+    IN_TRANSITION(5, false, false);
 
+    private final int code;
     private final boolean joinAllowed;
     private final boolean migrationAllowed;
 
-    ClusterState(boolean joinAllowed, boolean migrationAllowed) {
+    ClusterState(int code, boolean joinAllowed, boolean migrationAllowed) {
+        this.code = code;
         this.joinAllowed = joinAllowed;
         this.migrationAllowed = migrationAllowed;
     }
@@ -189,5 +192,10 @@ public enum ClusterState {
      */
     public boolean isMigrationAllowed() {
         return migrationAllowed;
+    }
+
+    @Override
+    public int getCode() {
+        return code;
     }
 }

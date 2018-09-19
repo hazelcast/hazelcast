@@ -66,13 +66,13 @@ public class ClusterHotRestartStatusDTO implements JsonSerializable {
         }
     }
 
-    @Probe
+    @Probe(name = "recoveryPolicy")
     private HotRestartClusterDataRecoveryPolicy dataRecoveryPolicy;
     @Probe(name = "status")
     private ClusterHotRestartStatus hotRestartStatus;
-    @Probe
+    @Probe(name = "remainingValidationTime")
     private long remainingValidationTimeMillis;
-    @Probe
+    @Probe(name = "remainingDataLoadTime")
     private long remainingDataLoadTimeMillis;
     private Map<String, MemberHotRestartStatus> memberHotRestartStatusMap;
 

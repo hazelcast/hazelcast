@@ -10,7 +10,11 @@ import org.junit.runner.RunWith;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hotrestart.BackupTaskState;
+import com.hazelcast.hotrestart.BackupTaskStatus;
+import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
+import com.hazelcast.hotrestart.NoOpHotRestartService;
 import com.hazelcast.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.instance.DefaultNodeContext;
 import com.hazelcast.instance.DefaultNodeExtension;
@@ -54,6 +58,11 @@ public class HotRestartMetricsTest extends AbstractMetricsTest {
         assertHasStatsEventually(1, "instance=foo hotRestart.");
     }
 
+    @Test
+    public void hotBackupStatus() {
+        assertHasStatsEventually(4, "hotBackup.");
+    }
+
     private static class HotRestartMockingNodeContext extends DefaultNodeContext {
 
         @Override
@@ -71,6 +80,23 @@ public class HotRestartMetricsTest extends AbstractMetricsTest {
         @Override
         public InternalHotRestartService getInternalHotRestartService() {
             return new FakeInternalHotRestartService();
+        }
+
+        @Override
+        public HotRestartService getHotRestartService() {
+            return new FakeHotRestartService();
+        }
+    }
+
+    private static class FakeHotRestartService extends NoOpHotRestartService {
+        @Override
+        public BackupTaskStatus getBackupTaskStatus() {
+            return new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 50, 100);
+        }
+
+        @Override
+        public boolean isHotBackupEnabled() {
+            return true;
         }
     }
 

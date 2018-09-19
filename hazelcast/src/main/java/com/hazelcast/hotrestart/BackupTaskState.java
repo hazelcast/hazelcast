@@ -16,20 +16,28 @@
 
 package com.hazelcast.hotrestart;
 
+import com.hazelcast.internal.probing.CodedEnum;
+
 /**
  * The state of the hot restart backup task
  */
-public enum BackupTaskState {
+public enum BackupTaskState implements CodedEnum {
     /** No backup task has yet been run */
-    NO_TASK,
+    NO_TASK(0),
     /** The backup task has been submitted but not yet started. */
-    NOT_STARTED,
+    NOT_STARTED(1),
     /** The backup task is currently in progress */
-    IN_PROGRESS,
+    IN_PROGRESS(2),
     /** The backup task has failed */
-    FAILURE,
+    FAILURE(3),
     /** The backup task completed successfully */
-    SUCCESS;
+    SUCCESS(4);
+
+    private final int code;
+
+    BackupTaskState(int code) {
+        this.code = code;
+    }
 
     /** Returns true if the backup task completed (successfully or with failure) */
     public boolean isDone() {
@@ -39,5 +47,10 @@ public enum BackupTaskState {
     /** Returns if the backup task is in progress. The task could also not be started yet but will be. */
     public boolean inProgress() {
         return this == NOT_STARTED || this == IN_PROGRESS;
+    }
+
+    @Override
+    public int getCode() {
+        return code;
     }
 }

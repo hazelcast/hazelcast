@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
+import com.hazelcast.internal.probing.CodedEnum;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
@@ -35,14 +36,14 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * @since 3.6
  */
 @PrivateApi
-public enum NodeState {
+public enum NodeState implements CodedEnum {
 
     /**
      * Initial state of the Node. An {@code ACTIVE} node is allowed to execute/process
      * all kinds of operations. A node is in {@code ACTIVE} state while cluster state is one of
      * {@link ClusterState#ACTIVE}, {@link ClusterState#NO_MIGRATION} or {@link ClusterState#FROZEN}.
      */
-    ACTIVE,
+    ACTIVE(1),
 
     /**
      * Node can go into the {@code PASSIVE} when one of the following things happen:
@@ -63,12 +64,23 @@ public enum NodeState {
      * Operations those are to be allowed during {@code PASSIVE} state should be marked as
      * {@link AllowedDuringPassiveState}.
      */
-    PASSIVE,
+    PASSIVE(2),
 
     /**
      * After {@link Node#shutdown(boolean)} call completes, node's state will be {@code SHUT_DOWN}.
      * In {@code SHUT_DOWN} state node will be completely inactive. All operations/invocations
      * will be rejected. Once a node is shutdown, it cannot be restarted.
      */
-    SHUT_DOWN
+    SHUT_DOWN(3);
+
+    private final int code;
+
+    NodeState(int code) {
+        this.code = code;
+    }
+
+    @Override
+    public int getCode() {
+        return code;
+    }
 }

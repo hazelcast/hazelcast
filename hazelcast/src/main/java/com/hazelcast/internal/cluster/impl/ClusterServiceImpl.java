@@ -32,6 +32,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
@@ -863,8 +864,14 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Probe(name = "state")
     public ClusterState getClusterState() {
         return clusterStateManager.getState();
+    }
+
+    @Probe(name = "memberState")
+    private NodeState getNodeState() {
+        return node.getState();
     }
 
     @Override

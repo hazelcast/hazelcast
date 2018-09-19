@@ -15,7 +15,7 @@ public class NodeMetricsTest extends DefaultMetricsTest {
 
     @Test
     public void clusterServiceStats() {
-        assertHasStatsEventually(8, "cluster.");
+        assertHasStatsEventually(16, "cluster.");
         assertHasStatsEventually(6, "cluster.clock");
     }
 

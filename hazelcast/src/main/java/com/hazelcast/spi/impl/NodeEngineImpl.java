@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hotrestart.BackupTaskStatus;
+import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -234,12 +236,30 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         cycle.probe("partitions", partitionService.getMigrationManager());
         cycle.probe("partitions", partitionService.getReplicaManager());
         cycle.probe("transactions", transactionManagerService);
+        probeHotRestartStateIn(cycle);
+        probeHotBackupStateIn(cycle);
+    }
+
+    private void probeHotBackupStateIn(ProbingCycle cycle) {
+        HotRestartService hotRestartService = node.getNodeExtension().getHotRestartService();
+        boolean enabled = hotRestartService.isHotBackupEnabled();
+        cycle.openContext().prefix("hotBackup");
+        cycle.probe(ProbeLevel.INFO, "enabled", enabled);
+        if (enabled) {
+            BackupTaskStatus status = hotRestartService.getBackupTaskStatus();
+            if (status != null) {
+                cycle.probe(status);
+            }
+        }
+    }
+
+    private void probeHotRestartStateIn(ProbingCycle cycle) {
         InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
-        ClusterHotRestartStatusDTO hotRestart = hotRestartService.getCurrentClusterHotRestartStatus();
-        if (hotRestart != null && hotRestart.getHotRestartStatus() != ClusterHotRestartStatus.UNKNOWN) {
-            cycle.probe("hotRestart", hotRestart);
+        ClusterHotRestartStatusDTO status = hotRestartService.getCurrentClusterHotRestartStatus();
+        if (status != null && status.getHotRestartStatus() != ClusterHotRestartStatus.UNKNOWN) {
+            cycle.probe("hotRestart", status);
             for (Entry<String, MemberHotRestartStatus> memberStatus : 
-                hotRestart.getMemberHotRestartStatusMap().entrySet()) {
+                status.getMemberHotRestartStatusMap().entrySet()) {
                 cycle.openContext().tag(TAG_INSTANCE, memberStatus.getKey()).prefix("hotRestart");
                 cycle.probe(ProbeLevel.INFO, "memberStatus", memberStatus.getValue().getCode());
             }
