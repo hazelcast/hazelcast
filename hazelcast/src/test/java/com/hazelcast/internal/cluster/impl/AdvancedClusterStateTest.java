@@ -175,10 +175,13 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
     private void lockClusterState(HazelcastInstance hz) {
         final Node node = getNode(hz);
+        ClusterServiceImpl clusterService = node.getClusterService();
+        int memberListVersion = clusterService.getMemberListVersion();
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         long timeoutInMillis = TimeUnit.SECONDS.toMillis(60);
-        ClusterStateManager clusterStateManager = node.clusterService.getClusterStateManager();
-        clusterStateManager.lockClusterState(ClusterStateChange.from(ClusterState.FROZEN), node.getThisAddress(), "fakeTxn", timeoutInMillis, partitionStateVersion);
+        ClusterStateManager clusterStateManager = clusterService.getClusterStateManager();
+        clusterStateManager.lockClusterState(ClusterStateChange.from(ClusterState.FROZEN), node.getThisAddress(), "fakeTxn",
+                timeoutInMillis, memberListVersion, partitionStateVersion);
     }
 
     @Test

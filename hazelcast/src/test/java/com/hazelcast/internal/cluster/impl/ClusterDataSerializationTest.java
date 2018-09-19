@@ -65,7 +65,8 @@ public class ClusterDataSerializationTest {
     @Test
     public void testSerializationOf_clusterStateChangeTxnLogRecord_whenVersionChange() throws UnknownHostException {
         ClusterStateTransactionLogRecord txnLogRecord = new ClusterStateTransactionLogRecord(VERSION_CLUSTER_STATE_CHANGE,
-                new Address("127.0.0.1", 5071), new Address("127.0.0.1", 5702), UUID.randomUUID().toString(), 120, 130, false);
+                new Address("127.0.0.1", 5071), new Address("127.0.0.1", 5702), UUID.randomUUID().toString(), 120,
+                111, 130, false);
 
         Data serialized = SERIALIZATION_SERVICE.toData(txnLogRecord);
 
@@ -76,13 +77,15 @@ public class ClusterDataSerializationTest {
         assertEquals(txnLogRecord.txnId, deserialized.txnId);
         assertEquals(txnLogRecord.leaseTime, deserialized.leaseTime);
         assertEquals(txnLogRecord.isTransient, deserialized.isTransient);
+        assertEquals(txnLogRecord.memberListVersion, deserialized.memberListVersion);
         assertEquals(txnLogRecord.partitionStateVersion, deserialized.partitionStateVersion);
     }
 
     @Test
     public void testSerializationOf_clusterStateChangeTxnLogRecord_whenStateChange() throws UnknownHostException {
         ClusterStateTransactionLogRecord txnLogRecord = new ClusterStateTransactionLogRecord(CLUSTER_STATE_CHANGE,
-                new Address("127.0.0.1", 5071), new Address("127.0.0.1", 5702), UUID.randomUUID().toString(), 120, 130, false);
+                new Address("127.0.0.1", 5071), new Address("127.0.0.1", 5702), UUID.randomUUID().toString(), 120,
+                111, 130, false);
 
         Data serialized = SERIALIZATION_SERVICE.toData(txnLogRecord);
 
@@ -93,6 +96,7 @@ public class ClusterDataSerializationTest {
         assertEquals(txnLogRecord.txnId, deserialized.txnId);
         assertEquals(txnLogRecord.leaseTime, deserialized.leaseTime);
         assertEquals(txnLogRecord.isTransient, deserialized.isTransient);
+        assertEquals(txnLogRecord.memberListVersion, deserialized.memberListVersion);
         assertEquals(txnLogRecord.partitionStateVersion, deserialized.partitionStateVersion);
     }
 
