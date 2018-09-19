@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
-import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class MemberInfo implements IdentifiedDataSerializable, Versioned {
@@ -116,10 +115,7 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
             attributes.put(key, value);
         }
         version = in.readObject();
-        // RU_COMPAT_3_9
-        if (in.getVersion().isGreaterOrEqual(V3_10)) {
-            memberListJoinVersion = in.readInt();
-        }
+        memberListJoinVersion = in.readInt();
     }
 
     @Override
@@ -139,10 +135,7 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
             }
         }
         out.writeObject(version);
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(V3_10)) {
-            out.writeInt(memberListJoinVersion);
-        }
+        out.writeInt(memberListJoinVersion);
     }
 
     @Override
