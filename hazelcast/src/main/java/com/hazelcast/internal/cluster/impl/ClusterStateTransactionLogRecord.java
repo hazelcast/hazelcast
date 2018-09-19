@@ -17,12 +17,14 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.CommitClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.TargetAwareTransactionLogRecord;
 import com.hazelcast.util.Preconditions;
@@ -35,13 +37,14 @@ import java.io.IOException;
  * @see ClusterState
  * @see com.hazelcast.core.Cluster#changeClusterState(ClusterState, com.hazelcast.transaction.TransactionOptions)
  */
-public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord {
+public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord, Versioned {
 
     ClusterStateChange stateChange;
     Address initiator;
     Address target;
     String txnId;
     long leaseTime;
+    int memberListVersion;
     int partitionStateVersion;
     boolean isTransient;
 
@@ -49,7 +52,8 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
     }
 
     public ClusterStateTransactionLogRecord(ClusterStateChange stateChange, Address initiator, Address target,
-            String txnId, long leaseTime, int partitionStateVersion, boolean isTransient) {
+            String txnId, long leaseTime, int memberListVersion, int partitionStateVersion, boolean isTransient) {
+        this.memberListVersion = memberListVersion;
         Preconditions.checkNotNull(stateChange);
         Preconditions.checkNotNull(initiator);
         Preconditions.checkNotNull(target);
@@ -72,7 +76,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
 
     @Override
     public Operation newPrepareOperation() {
-        return new LockClusterStateOp(stateChange, initiator, txnId, leaseTime, partitionStateVersion);
+        return new LockClusterStateOp(stateChange, initiator, txnId, leaseTime, memberListVersion, partitionStateVersion);
     }
 
     @Override
@@ -99,6 +103,10 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         out.writeLong(leaseTime);
         out.writeInt(partitionStateVersion);
         out.writeBoolean(isTransient);
+        // RU_COMPAT_V3_10
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
+            out.writeInt(memberListVersion);
+        }
     }
 
     @Override
@@ -110,6 +118,10 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         leaseTime = in.readLong();
         partitionStateVersion = in.readInt();
         isTransient = in.readBoolean();
+        // RU_COMPAT_V3_10
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
+            memberListVersion = in.readInt();
+        }
     }
 
     @Override
