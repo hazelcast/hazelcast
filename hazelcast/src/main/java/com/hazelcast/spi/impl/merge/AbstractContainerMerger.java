@@ -18,8 +18,6 @@ package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -62,7 +60,6 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
     };
 
     private final ILogger logger;
-    private final ClusterService clusterService;
     private final OperationService operationService;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
 
@@ -71,19 +68,12 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
     protected AbstractContainerMerger(AbstractContainerCollector<C> collector, NodeEngine nodeEngine) {
         this.collector = collector;
         this.logger = nodeEngine.getLogger(AbstractContainerMerger.class);
-        this.clusterService = nodeEngine.getClusterService();
         this.operationService = nodeEngine.getOperationService();
         this.splitBrainMergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
     }
 
     @Override
     public final void run() {
-        // we cannot merge into a 3.9 cluster, since not all members may understand the new merge operation
-        // RU_COMPAT_3_9
-        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
-            logger.info("Cluster needs to run version " + Versions.V3_10 + " to merge " + getLabel() + " instances");
-            return;
-        }
         int valueCount = collector.getMergingValueCount();
         if (valueCount == 0) {
             return;

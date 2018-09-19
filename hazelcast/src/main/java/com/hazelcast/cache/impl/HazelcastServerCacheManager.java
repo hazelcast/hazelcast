@@ -184,7 +184,7 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
 
         Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
         checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
-                nodeEngine.getClusterService().getClusterVersion(), true, nodeEngine.getLogger(HazelcastCacheManager.class));
+                true, nodeEngine.getLogger(HazelcastCacheManager.class));
     }
 
     @Override
