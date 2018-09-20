@@ -223,27 +223,4 @@ public interface ProbingCycle {
          */
         Tags prefix(CharSequence prefix);
     }
-
-    /**
-     * Can be implemented by instances passed to {@link ProbingCycle#probe(Object)}
-     * (and its sibling methods) to provided the {@link Tags} context by the object
-     * itself instead of before calling {@code probe}.
-     */
-    interface Tagging {
-
-        /**
-         * The implementing object (with probed fields or methods) is asked to provide
-         * the {@link Tags} context for the object.
-         *
-         * The performed tagging is relative to potential parent context {@link Tags}
-         * that were added before probing the implementing instance.
-         *
-         * This is an alternative to building the context in the
-         * {@link ProbeSource#probeIn(ProbingCycle)} implementation.
-         *
-         * @param context to use to build the objects context using the {@link Tags}
-         *        methods.
-         */
-        void tagIn(Tags context);
-    }
 }

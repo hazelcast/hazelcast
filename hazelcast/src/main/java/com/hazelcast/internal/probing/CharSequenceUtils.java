@@ -136,7 +136,7 @@ public final class CharSequenceUtils {
      * {@link #value()} can be used to read the value after the current position
      * without changing the sequence this represents.
      */
-    static final class Lines implements CharSequence {
+    public static final class Lines implements CharSequence {
 
         private final CharSequence str;
         private final int len;

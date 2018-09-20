@@ -43,7 +43,7 @@ import com.hazelcast.internal.probing.ProbeRenderer;
 import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbeUtils;
 import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.ProbingCycle.Tagging;
+import com.hazelcast.internal.probing.Tagging;
 import com.hazelcast.internal.probing.BeforeProbeCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
