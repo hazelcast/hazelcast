@@ -719,7 +719,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
     }
 
-    @SuppressFBWarnings(value = "ES_COMPARING_PARAMETER_STRING_WITH_EQ", 
+    @SuppressFBWarnings(value = "ES_COMPARING_PARAMETER_STRING_WITH_EQ",
             justification = "== is intentionally used to find identical instance")
     private static int indexOf(String[] arr, String e) {
         for (int i = 0; i < arr.length; i++) {
