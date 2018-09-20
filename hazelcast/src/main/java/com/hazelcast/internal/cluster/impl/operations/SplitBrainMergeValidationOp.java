@@ -124,10 +124,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
             }
             return true;
         } else {
-            // ping master to check if it's still valid
-            service.getClusterHeartbeatManager().sendMasterConfirmation();
-            logger.info("Ignoring join check from " + getCallerAddress()
-                    + ", because this node is not master...");
+            logger.info("Ignoring join check from " + getCallerAddress() + ", because this node is not master...");
             return false;
         }
     }
