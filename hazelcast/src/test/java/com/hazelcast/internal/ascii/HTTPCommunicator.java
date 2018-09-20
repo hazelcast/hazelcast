@@ -229,14 +229,34 @@ public class HTTPCommunicator {
         return doPost(url, groupName, groupPassword).response;
     }
 
-    public String syncMapOverWAN(String wanRepName, String targetGroupName, String mapName) throws IOException {
+    public String syncMapOverWAN(String wanRepName, String publisherId, String mapName) throws IOException {
         String url = address + "mancenter/wan/sync/map";
-        return doPost(url, wanRepName, targetGroupName, mapName).response;
+        return doPost(url, wanRepName, publisherId, mapName).response;
     }
 
-    public String syncMapsOverWAN(String wanRepName, String targetGroupName) throws IOException {
+    public String syncMapsOverWAN(String wanRepName, String publisherId) throws IOException {
         String url = address + "mancenter/wan/sync/allmaps";
-        return doPost(url, wanRepName, targetGroupName).response;
+        return doPost(url, wanRepName, publisherId).response;
+    }
+
+    public String wanMapConsistencyCheck(String wanRepName, String publisherId, String mapName) throws IOException {
+        String url = address + "mancenter/wan/consistencyCheck/map";
+        return doPost(url, wanRepName, publisherId, mapName).response;
+    }
+
+    public String wanPausePublisher(String wanRepName, String publisherId) throws IOException {
+        String url = address + "mancenter/wan/pausePublisher";
+        return doPost(url, wanRepName, publisherId).response;
+    }
+
+    public String wanStopPublisher(String wanRepName, String publisherId) throws IOException {
+        String url = address + "mancenter/wan/stopPublisher";
+        return doPost(url, wanRepName, publisherId).response;
+    }
+
+    public String wanResumePublisher(String wanRepName, String publisherId) throws IOException {
+        String url = address + "mancenter/wan/resumePublisher";
+        return doPost(url, wanRepName, publisherId).response;
     }
 
     public String wanClearQueues(String wanRepName, String targetGroupName) throws IOException {
