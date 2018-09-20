@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.internal.probing.AbstractProbeTest;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbeUtils;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.test.HazelcastSerialClassRunner;

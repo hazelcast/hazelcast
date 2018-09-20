@@ -16,8 +16,8 @@
 
 package com.hazelcast.monitor.impl;
 
-import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_INSTANCE;
-import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_TYPE;
+import static com.hazelcast.internal.probing.ProbeSource.TAG_INSTANCE;
+import static com.hazelcast.internal.probing.ProbeSource.TAG_TYPE;
 
 import java.util.Map;
 import java.util.Map.Entry;

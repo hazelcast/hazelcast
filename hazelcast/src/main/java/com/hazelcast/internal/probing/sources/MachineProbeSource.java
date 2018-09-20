@@ -25,7 +25,7 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 
 /**

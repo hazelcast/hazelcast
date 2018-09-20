@@ -28,8 +28,9 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeRenderContext;
 import com.hazelcast.internal.probing.ProbeRenderer;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -48,7 +49,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * statistics to the cluster. If the client statistics feature is enabled,
  * it will be scheduled for periodic statistics collection and sent.
  */
-public class Statistics implements ProbeRegistry.ProbeSource {
+public class Statistics implements ProbeSource {
     /**
      * Use to enable the client statistics collection.
      * <p>
@@ -66,7 +67,7 @@ public class Statistics implements ProbeRegistry.ProbeSource {
     private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.11";
     private static final int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
 
-    private final ProbeRegistry.ProbeRenderContext probeRenderContext;
+    private final ProbeRenderContext probeRenderContext;
     private final boolean enabled;
     private final HazelcastProperties properties;
     private final ILogger logger = Logger.getLogger(this.getClass());

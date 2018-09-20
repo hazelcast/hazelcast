@@ -26,7 +26,7 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
@@ -87,7 +87,7 @@ import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService, RemoteService,
         EventPublishingService<QueueEvent, ItemListener>,  QuorumAwareService,
-        SplitBrainHandlerService, ProbeRegistry.ProbeSource {
+        SplitBrainHandlerService, ProbeSource {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
 

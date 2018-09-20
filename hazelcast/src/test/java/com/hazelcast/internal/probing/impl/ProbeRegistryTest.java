@@ -31,11 +31,11 @@ import org.junit.runner.RunWith;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.AbstractProbeTest;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ProbingCycle.Tagging;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.probing.BeforeProbeCycle;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 

@@ -23,9 +23,10 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeRenderContext;
 import com.hazelcast.internal.probing.ProbeRenderer;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbeUtils;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
 import com.hazelcast.internal.probing.sources.GcProbeSource;
 import com.hazelcast.internal.probing.sources.MachineProbeSource;
 import com.hazelcast.logging.ILogger;
@@ -215,8 +216,8 @@ public class HealthMonitor {
         }
 
         /**
-         * The {@link ProbeRegistry.ProbeRenderContext} has to be created after all
-         * {@link ProbeRegistry.ProbeSource}s are registered.
+         * The {@link ProbeRenderContext} has to be created after all
+         * {@link ProbeSource}s are registered.
          */
         @SuppressWarnings("unchecked")
         private void init() {

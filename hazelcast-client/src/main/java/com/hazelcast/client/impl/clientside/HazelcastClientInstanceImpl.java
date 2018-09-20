@@ -123,6 +123,7 @@ import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
 import com.hazelcast.internal.probing.sources.GcProbeSource;
@@ -179,7 +180,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport,
-    ProbeRegistry.ProbeSource {
+    ProbeSource {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final short PROTOCOL_VERSION = ClientMessage.VERSION;

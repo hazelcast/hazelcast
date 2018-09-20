@@ -17,9 +17,9 @@
 package com.hazelcast.internal.probing;
 
 import static com.hazelcast.internal.probing.CharSequenceUtils.startsWith;
-import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_INSTANCE;
-import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_TARGET;
-import static com.hazelcast.internal.probing.ProbeRegistry.ProbeSource.TAG_TYPE;
+import static com.hazelcast.internal.probing.ProbeSource.TAG_INSTANCE;
+import static com.hazelcast.internal.probing.ProbeSource.TAG_TARGET;
+import static com.hazelcast.internal.probing.ProbeSource.TAG_TYPE;
 import static java.lang.Math.round;
 
 import java.util.Collection;

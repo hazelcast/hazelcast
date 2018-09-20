@@ -42,7 +42,7 @@ import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -92,7 +92,7 @@ import static java.lang.String.format;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
         EventPublishingService<MembershipEvent, MembershipListener>, TransactionalService,
-        ProbeRegistry.ProbeSource {
+        ProbeSource {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 

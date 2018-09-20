@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -63,7 +64,7 @@ import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.newSetFromMap;
 
 public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet>,
-    ProbeRegistry.ProbeSource {
+    ProbeSource {
 
     private static final int RETRY_NUMBER = 5;
     private static final long DELAY_FACTOR = 100L;

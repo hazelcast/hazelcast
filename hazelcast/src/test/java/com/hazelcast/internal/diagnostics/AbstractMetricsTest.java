@@ -29,8 +29,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
+import com.hazelcast.internal.probing.ProbeRenderContext;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -51,8 +51,8 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
     protected final void assertHasStatsEventually(int minimumProbes, String type, String name,
             String additionalPrefix) {
         assertHasStatsEventually(minimumProbes,
-                ProbeRegistry.ProbeSource.TAG_TYPE + "=" + type + " "
-                        + ProbeRegistry.ProbeSource.TAG_INSTANCE + "=" + name + " "
+                ProbeSource.TAG_TYPE + "=" + type + " "
+                        + ProbeSource.TAG_INSTANCE + "=" + name + " "
                         + additionalPrefix);
     }
 
@@ -75,7 +75,7 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
     }
 
     private static void assertHasCreationTime(String prefix, StringProbeRenderer renderer) {
-        boolean expectCreationTime = prefix.contains(ProbeRegistry.ProbeSource.TAG_INSTANCE + "=")
+        boolean expectCreationTime = prefix.contains(ProbeSource.TAG_INSTANCE + "=")
                 && !prefix.contains("type=internal-");
         if (expectCreationTime) {
             for (String key : renderer.probes.keySet()) {

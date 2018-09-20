@@ -37,7 +37,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
 import com.hazelcast.internal.probing.sources.GcProbeSource;
 import com.hazelcast.internal.probing.sources.MachineProbeSource;
@@ -99,7 +99,7 @@ import static java.lang.System.currentTimeMillis;
  * we don't leak {@link com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl} to the outside.
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
+public class NodeEngineImpl implements NodeEngine, ProbeSource {
 
     private static final String JET_SERVICE_NAME = "hz:impl:jetService";
 

@@ -34,7 +34,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.eviction.ExpirationManager;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.logging.ILogger;
@@ -89,7 +89,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
-        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ProbeRegistry.ProbeSource {
+        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ProbeSource {
 
     private static final String SETUP_REF = "setupRef";
 

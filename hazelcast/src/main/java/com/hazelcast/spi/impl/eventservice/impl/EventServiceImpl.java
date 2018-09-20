@@ -20,7 +20,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -95,7 +95,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * event can be retransmitted causing it to be received by the target node at a later time.
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class EventServiceImpl implements InternalEventService, ProbeRegistry.ProbeSource {
+public class EventServiceImpl implements InternalEventService, ProbeSource {
 
     public static final String SERVICE_NAME = "hz:core:eventService";
 

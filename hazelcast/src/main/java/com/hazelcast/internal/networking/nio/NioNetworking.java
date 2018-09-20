@@ -24,9 +24,9 @@ import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
-import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.BeforeProbeCycle;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -74,7 +74,7 @@ import static java.util.logging.Level.INFO;
  * feature and will cause the io threads to run hot. For this reason, when this feature
  * is enabled, the number of io threads should be reduced (preferably 1).
  */
-public final class NioNetworking implements Networking, ProbeRegistry.ProbeSource {
+public final class NioNetworking implements Networking, ProbeSource {
 
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();

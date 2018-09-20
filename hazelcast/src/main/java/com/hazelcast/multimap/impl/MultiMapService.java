@@ -24,9 +24,9 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.BeforeProbeCycle;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
@@ -89,7 +89,7 @@ import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
-        EventPublishingService<EventData, EntryListener>, TransactionalService, ProbeRegistry.ProbeSource,
+        EventPublishingService<EventData, EntryListener>, TransactionalService, ProbeSource,
         QuorumAwareService, SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";

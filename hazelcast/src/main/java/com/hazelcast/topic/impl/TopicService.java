@@ -22,7 +22,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
@@ -48,7 +48,7 @@ import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatis
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
-        ProbeRegistry.ProbeSource {
+        ProbeSource {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
 

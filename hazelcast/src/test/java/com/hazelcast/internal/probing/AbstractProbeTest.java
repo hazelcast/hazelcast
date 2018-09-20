@@ -29,7 +29,6 @@ import java.util.Map;
 import org.junit.Before;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
 import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 

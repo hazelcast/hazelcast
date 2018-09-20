@@ -16,10 +16,7 @@
 
 package com.hazelcast.internal.probing;
 
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 
 /**
  * A service made accessible to core services so they have a chance to register
@@ -69,61 +66,4 @@ public interface ProbeRegistry {
      *         will no extend when further sources are registered.
      */
     ProbeRenderContext newRenderContext(Class<? extends ProbeSource>... filter);
-
-    /**
-     * From a usability point of view the {@link ProbeRenderContext} is a bit
-     * cumbersome and smells like over-abstraction. It is purely introduced to
-     * achieve the goal of rendering without creating garbage objects. That means
-     * state needs to be reused. This object is the place where state can be kept in
-     * a way that allows reuse between rendering cycles.
-     *
-     * The {@link ProbeRenderer} itself usually changes for each cycle as it tends
-     * to be dependent on output stream objects handed to it.
-     */
-    interface ProbeRenderContext {
-
-        /**
-         * Causes a {@link ProbingCycle} that is directed at the given
-         * {@link ProbeRenderer}.
-         *
-         * This method does not support multi-threading. If potentially concurrent calls
-         * to this method should be made each should originate from its own
-         * {@link ProbeRenderContext}.
-         *
-         * @param renderer not null; is called for each active prove with a key and
-         *        value to convert them to the renderer specific format.
-         */
-        void render(ProbeLevel level, ProbeRenderer renderer);
-    }
-
-    /**
-     * Implemented by "root objects" (like core services) that know about a
-     * particular set of instances they want to probe.
-     *
-     * Probes can have the form of objects with {@link Probe} annotated fields or
-     * methods or are directly provide a value for a given name using
-     * {@link ProbingCycle#probe(CharSequence, long)} (and its sibling methods).
-     *
-     * Implementations of {@link ProbeSource}s that are registered services at the
-     * {@link ServiceManager} do not need explicit registration in the
-     * {@link ProbeRegistry} as all services implementing the interface are
-     * registered automatically at the end of the node startup.
-     */
-    interface ProbeSource {
-
-        String TAG_INSTANCE = "instance";
-        String TAG_TYPE = "type";
-        String TAG_TARGET = "target";
-
-        /**
-         * Called for each {@link ProbingCycle} asking this source to probe all its
-         * metrics using the provided cycle instance.
-         *
-         * Implementations can expect a clean context and do not have to start with
-         * {@link ProbingCycle#openContext()}.
-         *
-         * @param cycle accumulating probing data
-         */
-        void probeIn(ProbingCycle cycle);
-    }
 }

@@ -25,9 +25,9 @@ import java.util.Collections;
 import java.util.Set;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.BeforeProbeCycle;
+import com.hazelcast.internal.probing.ProbeSource;
 
 public final class GcProbeSource implements ProbeSource {
 

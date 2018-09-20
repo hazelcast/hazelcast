@@ -38,7 +38,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -103,7 +103,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAwareService,
         ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener>,
-        ProbeRegistry.ProbeSource {
+        ProbeSource {
 
     /**
      * Service name to be used in requests.

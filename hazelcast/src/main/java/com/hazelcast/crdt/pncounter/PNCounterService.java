@@ -22,7 +22,7 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.crdt.CRDTReplicationAwareService;
 import com.hazelcast.crdt.CRDTReplicationContainer;
 import com.hazelcast.crdt.MutationDisallowedException;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.util.Memoizer;
 import com.hazelcast.monitor.LocalPNCounterStats;
@@ -52,7 +52,7 @@ public class PNCounterService implements
         RemoteService,
         CRDTReplicationAwareService<PNCounterImpl>,
         QuorumAwareService,
-        ProbeRegistry.ProbeSource {
+        ProbeSource {
     /** The name under which this service is registered */
     public static final String SERVICE_NAME = "hz:impl:PNCounterService";
 

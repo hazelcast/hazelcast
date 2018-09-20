@@ -21,7 +21,7 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
@@ -58,7 +58,7 @@ import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public final class ExecutionServiceImpl implements InternalExecutionService, ProbeRegistry.ProbeSource {
+public final class ExecutionServiceImpl implements InternalExecutionService, ProbeSource {
 
     private static final int CORE_POOL_SIZE = 3;
     private static final long KEEP_ALIVE_TIME = 60L;

@@ -18,7 +18,6 @@ package com.hazelcast.internal.probing;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**

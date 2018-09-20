@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -79,7 +79,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class OperationExecutorImpl implements OperationExecutor, ProbeRegistry.ProbeSource {
+public final class OperationExecutorImpl implements OperationExecutor, ProbeSource {
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
 

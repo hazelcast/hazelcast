@@ -18,7 +18,7 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
@@ -49,7 +49,7 @@ import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatis
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class DistributedExecutorService implements ManagedService, RemoteService,
-    QuorumAwareService, ProbeRegistry.ProbeSource {
+    QuorumAwareService, ProbeSource {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 

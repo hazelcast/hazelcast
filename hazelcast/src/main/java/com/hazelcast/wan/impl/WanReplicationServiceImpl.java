@@ -20,7 +20,7 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.monitor.LocalWanPublisherStats;
@@ -42,7 +42,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 /**
  * Open source implementation of the {@link com.hazelcast.wan.WanReplicationService}
  */
-public class WanReplicationServiceImpl implements WanReplicationService, ProbeRegistry.ProbeSource {
+public class WanReplicationServiceImpl implements WanReplicationService, ProbeSource {
 
     private final Node node;
 

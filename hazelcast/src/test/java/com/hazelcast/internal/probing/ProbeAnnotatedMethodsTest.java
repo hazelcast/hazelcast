@@ -32,7 +32,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

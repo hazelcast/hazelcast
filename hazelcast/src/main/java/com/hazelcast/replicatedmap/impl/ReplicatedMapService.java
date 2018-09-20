@@ -30,9 +30,9 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.BeforeProbeCycle;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -88,7 +88,7 @@ import static java.lang.Math.max;
  */
 @SuppressWarnings({ "checkstyle:methodcount", "checkstyle:classfanoutcomplexity" })
 public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
-        MigrationAwareService, SplitBrainHandlerService, ProbeRegistry.ProbeSource, QuorumAwareService {
+        MigrationAwareService, SplitBrainHandlerService, ProbeSource, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
     public static final int INVOCATION_TRY_COUNT = 3;

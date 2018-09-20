@@ -38,7 +38,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ProbeAnnotatedFields2Test extends AbstractProbeTest implements ProbeRegistry.ProbeSource {
+public class ProbeAnnotatedFields2Test extends AbstractProbeTest implements ProbeSource {
 
     @Before
     public void setUp() {

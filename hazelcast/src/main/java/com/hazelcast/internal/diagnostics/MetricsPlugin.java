@@ -18,6 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbeRenderContext;
 import com.hazelcast.internal.probing.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -47,7 +48,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty PERIOD_SECONDS
             = new HazelcastProperty(PREFIX + ".metrics.period.seconds", 60, SECONDS);
 
-    private final ProbeRegistry.ProbeRenderContext probeRenderContext;
+    private final ProbeRenderContext probeRenderContext;
     private final long periodMillis;
     private final ProbeRendererImpl probeRenderer = new ProbeRendererImpl();
     private final ProbeLevel probeLevel;

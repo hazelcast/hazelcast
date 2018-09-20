@@ -20,9 +20,9 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
-import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.BeforeProbeCycle;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.ClientAwareService;
@@ -80,7 +80,7 @@ import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatis
 @SuppressWarnings("checkstyle:methodcount")
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
-        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, ProbeRegistry.ProbeSource,
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, ProbeSource,
         PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener,
         ClusterVersionListener {
 

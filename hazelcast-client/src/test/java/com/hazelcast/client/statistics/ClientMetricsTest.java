@@ -51,7 +51,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.internal.diagnostics.AbstractMetricsTest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
+import com.hazelcast.internal.probing.ProbeRenderContext;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.OverridePropertyRule;

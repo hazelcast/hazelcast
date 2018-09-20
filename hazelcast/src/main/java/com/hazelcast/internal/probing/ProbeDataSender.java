@@ -26,7 +26,6 @@ import java.net.HttpURLConnection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;

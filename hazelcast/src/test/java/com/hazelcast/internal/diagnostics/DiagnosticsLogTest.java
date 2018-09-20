@@ -19,7 +19,7 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
+import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;

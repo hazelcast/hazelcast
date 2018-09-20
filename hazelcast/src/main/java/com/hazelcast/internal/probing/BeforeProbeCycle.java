@@ -24,7 +24,6 @@ import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 
 /**
  * Marks the method of a {@link ProbeSource} that should be called when it is
