@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.metrics.mancenter;
+package com.hazelcast.jet.impl.metrics.management;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.impl.metrics.mancenter.ManCenterPublisher.decompressingIterator;
+import static com.hazelcast.jet.impl.metrics.management.ManagementCenterPublisher.decompressingIterator;
 
 public class MetricsResultSet  {
 

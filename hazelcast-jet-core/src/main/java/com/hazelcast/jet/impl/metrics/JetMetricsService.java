@@ -22,8 +22,8 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.jet.impl.metrics.jmx.JmxPublisher;
-import com.hazelcast.jet.impl.metrics.mancenter.ConcurrentArrayRingbuffer;
-import com.hazelcast.jet.impl.metrics.mancenter.ManCenterPublisher;
+import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer;
+import com.hazelcast.jet.impl.metrics.management.ManagementCenterPublisher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
@@ -165,7 +165,7 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
                     1, (int) Math.ceil((double) config.getRetentionSeconds() / config.getCollectionIntervalSeconds())
             );
             metricsJournal = new ConcurrentArrayRingbuffer<>(journalSize);
-            ManCenterPublisher publisher = new ManCenterPublisher(this.nodeEngine.getLoggingService(),
+            ManagementCenterPublisher publisher = new ManagementCenterPublisher(this.nodeEngine.getLoggingService(),
                     (blob, ts) -> {
                         metricsJournal.add(entry(ts, blob));
                         OperationParker parker = nodeEngine.getService(OperationParker.SERVICE_NAME);

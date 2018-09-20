@@ -33,7 +33,7 @@ public class JobRecord implements IdentifiedDataSerializable {
     private long jobId;
     private long creationTime;
     private Data dag;
-    // JSON representation of DAG, used by mancenter
+    // JSON representation of DAG, used by management center
     private String dagJson;
     private JobConfig config;
     private int quorumSize;

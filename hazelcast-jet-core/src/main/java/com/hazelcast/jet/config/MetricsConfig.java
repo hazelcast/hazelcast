@@ -113,7 +113,7 @@ public class MetricsConfig {
      * instance. By default metrics are retained for 5 seconds (that is for one
      * snapshot of metrics values). More retention means more heap memory but
      * allows for longer client hiccups without losing a value (for example to
-     * restart ManCenter).
+     * restart Management Center).
      */
     @Nonnull
     public MetricsConfig setRetentionSeconds(int retentionSeconds) {
@@ -132,7 +132,7 @@ public class MetricsConfig {
 
     /**
      * Sets the metrics collection interval in seconds. The same interval is
-     * used for collection for ManCenter and for JMX publisher. By default,
+     * used for collection for Management Center and for JMX publisher. By default,
      * metrics are collected every 5 seconds.
      */
     @Nonnull

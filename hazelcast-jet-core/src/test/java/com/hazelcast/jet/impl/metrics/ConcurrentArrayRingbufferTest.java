@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.metrics;
 
-import com.hazelcast.jet.impl.metrics.mancenter.ConcurrentArrayRingbuffer;
-import com.hazelcast.jet.impl.metrics.mancenter.ConcurrentArrayRingbuffer.RingbufferSlice;
+import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer;
+import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Rule;
 import org.junit.Test;

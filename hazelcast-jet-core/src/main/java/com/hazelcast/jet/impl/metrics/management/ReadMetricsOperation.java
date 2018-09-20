@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.metrics.mancenter;
+package com.hazelcast.jet.impl.metrics.management;
 
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.jet.impl.metrics.JetMetricsService;
-import com.hazelcast.jet.impl.metrics.mancenter.ConcurrentArrayRingbuffer.RingbufferSlice;
+import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;

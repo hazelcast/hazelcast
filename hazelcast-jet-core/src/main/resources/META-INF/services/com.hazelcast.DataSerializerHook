@@ -16,4 +16,4 @@
 
 com.hazelcast.jet.core.JetDataSerializerHook
 com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook
-com.hazelcast.jet.impl.metrics.mancenter.MetricsSerializerHook
+com.hazelcast.jet.impl.metrics.management.MetricsSerializerHook

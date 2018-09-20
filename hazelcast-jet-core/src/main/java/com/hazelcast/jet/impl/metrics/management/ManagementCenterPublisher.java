@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.metrics.mancenter;
+package com.hazelcast.jet.impl.metrics.management;
 
 import com.hazelcast.jet.impl.metrics.MetricsPublisher;
 import com.hazelcast.logging.ILogger;
@@ -39,10 +39,10 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static java.lang.Math.multiplyExact;
 
 /**
- * Renderer to serialize metrics to byte[] to be read by ManCenter.
+ * Renderer to serialize metrics to byte[] to be read by Management Center.
  * Additionally, it converts legacy metric names to {@code [metric=<oldName>]}.
  */
-public class ManCenterPublisher implements MetricsPublisher {
+public class ManagementCenterPublisher implements MetricsPublisher {
 
     private static final int INITIAL_BUFFER_SIZE = 2 << 11; // 2kB
     private static final int SIZE_FACTOR_NUMERATOR = 11;
@@ -67,7 +67,7 @@ public class ManCenterPublisher implements MetricsPublisher {
     private String lastName;
     private int count;
 
-    public ManCenterPublisher(
+    public ManagementCenterPublisher(
             @Nonnull LoggingService loggingService,
             @Nonnull ObjLongConsumer<byte[]> writeFn
     ) {
@@ -78,7 +78,7 @@ public class ManCenterPublisher implements MetricsPublisher {
 
     @Override
     public String name() {
-        return "ManCenter Collector";
+        return "Management Center Publisher";
     }
 
     private void reset(int estimatedBytes) {
