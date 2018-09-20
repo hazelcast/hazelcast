@@ -145,7 +145,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
 
-        final CountingConnectionRemoveListener listener = new CountingConnectionRemoveListener();
+        final CountingConnectionListener listener = new CountingConnectionListener();
 
         connectionManager.addConnectionListener(listener);
 
@@ -172,20 +172,22 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         });
 
         connectionToServer.close(null, null);
-        assertEquals("connection removed should be called only once", 1, listener.count.get());
+        assertEquals("connection removed should be called only once", 1, listener.connectionRemovedCount.get());
     }
 
-    private class CountingConnectionRemoveListener implements ConnectionListener {
+    private class CountingConnectionListener implements ConnectionListener {
 
-        final AtomicInteger count = new AtomicInteger();
+        final AtomicInteger connectionRemovedCount = new AtomicInteger();
+        final AtomicInteger connectionAddedCount = new AtomicInteger();
 
         @Override
         public void connectionAdded(Connection connection) {
+            connectionAddedCount.incrementAndGet();
         }
 
         @Override
         public void connectionRemoved(Connection connection) {
-            count.incrementAndGet();
+            connectionRemovedCount.incrementAndGet();
         }
     }
 
@@ -261,4 +263,28 @@ public class ClientConnectionTest extends HazelcastTestSupport {
             return super.getPassword();
         }
     }
+
+    @Test
+    public void testAddingConnectionListenerTwice_shouldCauseEventDeliveredTwice() {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
+        ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
+
+        final CountingConnectionListener listener = new CountingConnectionListener();
+
+        connectionManager.addConnectionListener(listener);
+        connectionManager.addConnectionListener(listener);
+
+        hazelcastFactory.newHazelcastInstance();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(listener.connectionAddedCount.get(), 2);
+            }
+        });
+    }
+
 }
