@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.probing;
 
 import static org.hamcrest.Matchers.allOf;
@@ -24,7 +40,8 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        setLevel(ProbeLevel.DEBUG); // reset level to debug as default for all tests
+        // reset level to debug as default for all tests
+        setLevel(ProbeLevel.DEBUG);
     }
 
     public void setLevel(ProbeLevel level) {
@@ -37,9 +54,8 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
         assertNotEquals(-1L, renderer.value);
     }
 
-    final void assertProbed(final String expectedKey, long expectedValue, 
-            double deltaFactor) {
-        assertProbed(expectedKey, expectedValue, (long)(expectedValue * deltaFactor));
+    final void assertProbed(final String expectedKey, long expectedValue, double deltaFactor) {
+        assertProbed(expectedKey, expectedValue, (long) (expectedValue * deltaFactor));
     }
 
     final void assertProbed(final String expectedKey, final long expectedValue) {

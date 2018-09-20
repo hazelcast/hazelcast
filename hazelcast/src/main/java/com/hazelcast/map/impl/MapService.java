@@ -77,6 +77,7 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
  * @see MapClientAwareService
  * @see MapServiceContext
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, ProbeRegistry.ProbeSource,

@@ -84,7 +84,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
@@ -245,8 +244,8 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
         ClusterHotRestartStatusDTO status = hotRestartService.getCurrentClusterHotRestartStatus();
         if (status != null && status.getHotRestartStatus() != ClusterHotRestartStatus.UNKNOWN) {
             cycle.probe("hotRestart", status);
-            for (Entry<String, MemberHotRestartStatus> memberStatus : 
-                status.getMemberHotRestartStatusMap().entrySet()) {
+            for (Entry<String, MemberHotRestartStatus> memberStatus : status
+                    .getMemberHotRestartStatusMap().entrySet()) {
                 cycle.openContext().tag(TAG_INSTANCE, memberStatus.getKey()).prefix("hotRestart");
                 cycle.probe(ProbeLevel.INFO, "memberStatus", memberStatus.getValue().getCode());
             }

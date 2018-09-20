@@ -86,6 +86,7 @@ import static java.lang.Math.max;
  * This is the main service implementation to handle proxy creation, event publishing, migration, anti-entropy and
  * manages the backing {@link PartitionContainer}s that actually hold the data
  */
+@SuppressWarnings({ "checkstyle:methodcount", "checkstyle:classfanoutcomplexity" })
 public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
         MigrationAwareService, SplitBrainHandlerService, ProbeRegistry.ProbeSource, QuorumAwareService {
 
@@ -386,7 +387,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private void updateStatsIfNeeded() {
         long now = Clock.currentTimeMillis();
         long lastUpdate = lastUpdated.get();
-        if (lastUpdate + UPDATE_STATS_INTERVAL_MILLIS < now 
+        if (lastUpdate + UPDATE_STATS_INTERVAL_MILLIS < now
                 && lastUpdated.compareAndSet(lastUpdate, now)) {
             updateStats();
         }

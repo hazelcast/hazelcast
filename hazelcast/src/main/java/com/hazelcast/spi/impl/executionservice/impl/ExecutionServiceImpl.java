@@ -57,7 +57,7 @@ import static com.hazelcast.internal.probing.Probing.probeAllInstances;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class ExecutionServiceImpl implements InternalExecutionService, ProbeRegistry.ProbeSource {
 
     private static final int CORE_POOL_SIZE = 3;

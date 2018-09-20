@@ -62,7 +62,8 @@ public class Statistics implements ProbeRegistry.ProbeSource {
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
             SECONDS);
 
-    private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.11"; //TODO later set to 3.12
+    //TODO later set to 3.12
+    private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.11";
     private static final int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
 
     private final ProbeRegistry.ProbeRenderContext probeRenderContext;
@@ -113,13 +114,13 @@ public class Statistics implements ProbeRegistry.ProbeSource {
     /**
      * Updates the owner connection to the server for the client only if the server
      * supports the client statistics feature.
-     * 
+     *
      * @return true, if an owner connection is set, else false
      */
     private boolean updateOwnerConnection() {
         ownerConnection = client.getConnectionManager().getOwnerConnection();
         if (null == ownerConnection) {
-            return false; 
+            return false;
         }
         int serverVersion = ownerConnection.getConnectedServerVersion();
         if (serverVersion < FEATURE_SUPPORTED_SINCE_VERSION) {
@@ -191,7 +192,7 @@ public class Statistics implements ProbeRegistry.ProbeSource {
         cycle.probe("clusterConnectionTimestamp", ownerConnection.getStartTime());
         Collection<NearCache> caches = client.getNearCacheManager().listAllNearCaches();
         if (caches.isEmpty()) {
-            return; // done
+            return;
         }
         for (NearCache<?, ?> nearCache : caches) {
             String name = nearCache.getName();
@@ -210,7 +211,8 @@ public class Statistics implements ProbeRegistry.ProbeSource {
      * is not ideal but can only be changed by changing the message format.
      */
     private void appendHeader(final StringBuilder stats) {
-        stats.append("1\n"); // start with a protocol version: 1 (to identify the new metrics format)
+        // start with a protocol version: 1 (to identify the new metrics format)
+        stats.append("1\n");
         stats.append(ClientType.JAVA.toString()).append('\n');
         appendEscapingLineFeed(stats, client.getName());
         stats.append('\n');
@@ -224,7 +226,7 @@ public class Statistics implements ProbeRegistry.ProbeSource {
     }
 
     void renderStats() {
-        stats.setLength(0); // reset buffer
+        stats.setLength(0);
         // writing header: type, name, address, version, principal (each on a line)
         appendHeader(stats);
         // body: render metrics

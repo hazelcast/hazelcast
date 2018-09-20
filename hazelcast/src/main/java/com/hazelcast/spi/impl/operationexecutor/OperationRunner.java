@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
-import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;

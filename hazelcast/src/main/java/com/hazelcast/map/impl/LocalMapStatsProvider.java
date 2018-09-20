@@ -120,7 +120,7 @@ public class LocalMapStatsProvider {
     private void updateStatsIfNeeded() {
         long now = Clock.currentTimeMillis();
         long lastUpdate = lastUpdated.get();
-        if (lastUpdate + UPDATE_INTERVAL_MILLIS < now 
+        if (lastUpdate + UPDATE_INTERVAL_MILLIS < now
                 && lastUpdated.compareAndSet(lastUpdate, now)) {
             updateStats();
         }

@@ -177,7 +177,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
 
-public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport, 
+public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport,
     ProbeRegistry.ProbeSource {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
@@ -283,7 +283,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         probeRegistry.register(this);
         probeRegistry.register(statistics);
         NioNetworking networking = connectionManager.getNetworking();
-        if (networking != null) { // null when testing with mock
+        if (networking != null) {
+            // null when testing with mock
             probeRegistry.register(networking);
         }
         probeRegistry.registerIfSource(clientExtension);

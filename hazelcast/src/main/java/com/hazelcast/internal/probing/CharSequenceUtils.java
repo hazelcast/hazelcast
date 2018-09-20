@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.probing;
 
 /**
@@ -13,7 +29,7 @@ public final class CharSequenceUtils {
 
     /**
      * Escapes a user-supplied name.
-     * 
+     *
      * Effectively adds a backslash before comma ({@code ","}), space ({@code " "}),
      * equals sign ({@code "="}) and backslash ({@code "\"}).
      */
@@ -37,7 +53,7 @@ public final class CharSequenceUtils {
         int len = name.length();
         for (int i = 0; i < len; i++) {
             char c = name.charAt(i);
-            if (c != '\\' || i+1 >= len || name.charAt(i+1) != '\n') {
+            if (c != '\\' || i + 1 >= len || name.charAt(i + 1) != '\n') {
                 buf.append(c);
             }
         }
@@ -45,10 +61,10 @@ public final class CharSequenceUtils {
 
     /**
      * Check if a {@link CharSequence} starts with a given prefix.
-     * 
+     *
      * This helps to avoid allocation of intermediate {@link String} objects to
      * perform {@link String#startsWith(String)} that would be required otherwise.
-     * 
+     *
      * @param prefix not null
      * @param s search string, not null
      * @return true, if s starts with prefix, else false
@@ -69,18 +85,19 @@ public final class CharSequenceUtils {
     /**
      * Parses a long value from the complete sequence of a given
      * {@link CharSequence}.
-     * 
+     *
      * This helps to avoid allocation when parsing longs as {@link Long}s utility
      * methods unnecessarily require a {@link String} to be passed what would cause
      * intermediate garbage objects.
-     * 
+     *
      * Implementation is inspired by {@link Long#parseLong(String)}.
-     * 
+     *
      * @param s a sequence giving a long number
      * @return the number as {@code long}
      * @throws NumberFormatException in case the sequence contain non digit
      *         characters
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     public static long parseLong(CharSequence s) throws NumberFormatException {
         int len = s.length();
         if (len == 0) {
@@ -109,10 +126,10 @@ public final class CharSequenceUtils {
     /**
      * Allows to split a wrapped {@link CharSequence} in lines without creating
      * intermediate objects.
-     * 
+     *
      * The {@link Lines} instance therefore becomes a {@link CharSequence}
      * representing one line at a time.
-     * 
+     *
      * The {@link #next()} method is used to forward to the next line.
      * {@link #key()} can be used to go backwards to end of previous key (expected
      * to be called at a line end representing a key value pair separated by space)
@@ -145,7 +162,8 @@ public final class CharSequenceUtils {
             while (i < len && c != '\n') {
                 c = str.charAt(i++);
                 if (c == '\\') {
-                    i++; // skip escaped char
+                    // skip escaped char
+                    i++;
                 }
             }
             return i - 1;
@@ -155,7 +173,7 @@ public final class CharSequenceUtils {
          * @return Backs {@link #end} to previous space and returns this
          */
         CharSequence key() {
-            int i = end-1;
+            int i = end - 1;
             while (i >= 0 && str.charAt(i) != ' ') {
                 i--;
             }

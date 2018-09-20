@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.probing;
 
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendEscaped;
@@ -10,15 +26,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -33,10 +48,15 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
     private static final Object[] EMPTY_ARGS = new Object[0];
 
-    private static final Map<Class<?>, ProbeAnnotatedType> PROBE_METADATA = 
+    private static final ConcurrentMap<Class<?>, ProbeAnnotatedType> PROBE_METADATA =
             new ConcurrentHashMap<Class<?>, ProbeAnnotatedType>();
 
-    private final Deque<ProbeSourceEntry> sources = new ConcurrentLinkedDeque<ProbeSourceEntry>();
+    private final Queue<ProbeSourceEntry> sources = new ConcurrentLinkedQueue<ProbeSourceEntry>();
+
+    private static ProbeAnnotatedType register(Class<?> type, ProbeAnnotatedType metadata) {
+        ProbeAnnotatedType existing = PROBE_METADATA.putIfAbsent(type, metadata);
+        return existing == null ? metadata : existing;
+    }
 
     @Override
     public void register(ProbeSource source) {
@@ -44,7 +64,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (e.source.equals(source)) {
                 LOGGER.info("Probe source tried to register more then once: "
                         + source.getClass().getSimpleName());
-                return; // avoid adding the very same instance more then once
+                // avoid adding the very same instance more then once
+                return;
             }
         }
         sources.add(new ProbeSourceEntry(source));
@@ -128,7 +149,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     }
 
     private static final class ProbingCycleImpl
-    implements ProbingCycle, ProbingCycle.Tags, ProbeRenderContext {
+        implements ProbingCycle, ProbingCycle.Tags, ProbeRenderContext {
 
         private final StringBuilder tags = new StringBuilder(128);
         private final Collection<ProbeSourceEntry> sources;
@@ -147,13 +168,12 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         public void renderAt(ProbeLevel level, ProbeRenderer renderer) {
             this.level = level;
             this.renderer = renderer;
-            openContext(); // reset
             for (ProbeSourceEntry entry : sources) {
                 if (isProbed(entry.updateLevel)) {
                     entry.updateIfNeeded();
                 }
                 try {
-                    openContext(); // just to be sure it is done even if ommitted in the source
+                    openContext();
                     entry.source.probeIn(this);
                 } catch (Exception e) {
                     LOGGER.warning("Exception while probing source "
@@ -163,17 +183,17 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         @Override
-        public void probe(final ProbeLevel level, Object instance, final String... methods) {
+        public void probe(ProbeLevel level, Object instance, String[] methods) {
             if (instance == null || !isProbed(level)) {
                 return;
             }
-            PROBE_METADATA.computeIfAbsent(instance.getClass(), new Function<Class<?>, ProbeAnnotatedType>() {
-
-                @Override
-                public ProbeAnnotatedType apply(Class<?> type) {
-                    return new ProbeAnnotatedType(type, level, methods);
-                }
-            }).probeIn(this, this.level, null, instance);
+            Class<?> type = instance.getClass();
+            ProbeAnnotatedType metadata = PROBE_METADATA.get(type);
+            if (metadata == null) {
+                // main goal was to avoid creating expensive metadata but at this point we have to
+                metadata = register(type, new ProbeAnnotatedType(type, level, methods));
+            }
+            metadata.probeIn(this, this.level, null, instance);
         }
 
         @Override
@@ -186,22 +206,20 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (instance == null) {
                 return;
             }
-            PROBE_METADATA.computeIfAbsent(instance.getClass(), 
-                    new Function<Class<?>, ProbeAnnotatedType>() {
-
-                @Override
-                public ProbeAnnotatedType apply(Class<?> type) {
-                    //TODO use EMPTY constant or null for types that do not have probes at all
-                    return new ProbeAnnotatedType(type);
-                }
-            }).probeIn(this, level, prefix, instance);
+            Class<?> type = instance.getClass();
+            ProbeAnnotatedType metadata = PROBE_METADATA.get(type);
+            if (metadata == null) {
+                // main goal was to avoid creating expensive metadata but at this point we have to
+                metadata = register(type, new ProbeAnnotatedType(type));
+            }
+            metadata.probeIn(this, level, prefix, instance);
         }
 
         @Override
         public void probe(Object[] instances) {
             if (instances != null) {
                 for (int i = 0; i < instances.length; i++) {
-                    probe(instances[i]); 
+                    probe(instances[i]);
                 }
             }
         }
@@ -271,7 +289,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         @Override
         public Tags append(CharSequence s) {
-            appendEscaped(tags, s); // this might contain user supplied values
+            // s might contain user supplied values
+            appendEscaped(tags, s);
             return this;
         }
 
@@ -304,7 +323,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     /**
      * Holds the state for a specific {@link ProbeLevel} for a specific
      * {@link Class} type.
-     * 
+     *
      * The unconventional usage of array pairs to model "maps" that requires
      * cumbersome initialization code (runs once) has two main goals: consume as
      * little memory as possible while providing the possibility to iterate the
@@ -325,24 +344,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         final Field[] booleanFields;
         final Field[] otherFields;
 
-        static ProbeAnnotatedTypeLevel createIfNeeded(ProbeLevel level, List<Method> probedMethods,
-                List<Field> probedFields) {
-            int methodCount = countMethodProbesWith(level, probedMethods);
-            int longFieldCount = countFieldProbesWith(level, probedFields, long.class, int.class,
-                    short.class, char.class, byte.class);
-            int doubleFieldCount = countFieldProbesWith(level, probedFields, double.class,
-                    float.class);
-            int booleanFieldCount = countFieldProbesWith(level, probedFields, boolean.class);
-            int otherFieldCount = countFieldProbesWith(level, probedFields) - longFieldCount
-                    - doubleFieldCount - booleanFieldCount;
-            if (methodCount + longFieldCount + doubleFieldCount + booleanFieldCount
-                    + otherFieldCount == 0) {
-                return null;
-            }
-            return new ProbeAnnotatedTypeLevel(level, probedMethods, probedFields, methodCount,
-                    longFieldCount, doubleFieldCount, booleanFieldCount, otherFieldCount);
-        }
-
+        @SuppressWarnings("checkstyle:npathcomplexity")
         ProbeAnnotatedTypeLevel(ProbeLevel level, List<Method> probedMethods,
                 List<Field> probedFields, int methodCount, int longFieldCount, int doubleFieldCount,
                 int booleanFieldCount, int otherFieldCount) {
@@ -359,6 +361,24 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             this.otherFields = otherFieldCount == 0 ? null : new Field[otherFieldCount];
             this.otherFieldNames = otherFieldCount == 0 ? null : new String[otherFieldCount];
             initFieldProbes(level, probedFields);
+        }
+
+        static ProbeAnnotatedTypeLevel createIfNeeded(ProbeLevel level, List<Method> probedMethods,
+                List<Field> probedFields) {
+            int methodCount = countMethodProbesWith(level, probedMethods);
+            int longFieldCount = countFieldProbesWith(level, probedFields, long.class, int.class,
+                    short.class, char.class, byte.class);
+            int doubleFieldCount = countFieldProbesWith(level, probedFields, double.class,
+                    float.class);
+            int booleanFieldCount = countFieldProbesWith(level, probedFields, boolean.class);
+            int otherFieldCount = countFieldProbesWith(level, probedFields) - longFieldCount
+                    - doubleFieldCount - booleanFieldCount;
+            if (methodCount + longFieldCount + doubleFieldCount + booleanFieldCount
+                    + otherFieldCount == 0) {
+                return null;
+            }
+            return new ProbeAnnotatedTypeLevel(level, probedMethods, probedFields, methodCount,
+                    longFieldCount, doubleFieldCount, booleanFieldCount, otherFieldCount);
         }
 
         private void initMethodProbes(ProbeLevel level, List<Method> probes) {
@@ -424,7 +444,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             return c;
         }
 
-        private static int countFieldProbesWith(ProbeLevel level, List<Field> probes, 
+        private static int countFieldProbesWith(ProbeLevel level, List<Field> probes,
                 Class<?>... filtered) {
             int c = 0;
             for (Field f : probes) {
@@ -507,7 +527,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (methods != null) {
                 for (int i = 0; i < methods.length; i++) {
                     try {
-                        cycle.probe(level, methodNames[i], 
+                        cycle.probe(level, methodNames[i],
                                 Probing.toLong(methods[i].invoke(instance, EMPTY_ARGS)));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read method probe: " + methods[i].getName(), e);
@@ -521,7 +541,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         private final boolean tagging;
         private final String fixedPrefix;
-        private final ProbeAnnotatedTypeLevel[] levels = 
+        private final ProbeAnnotatedTypeLevel[] levels =
                 new ProbeAnnotatedTypeLevel[ProbeLevel.values().length];
 
         ProbeAnnotatedType(Class<?> type) {
@@ -608,7 +628,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                     l.probeIn(cycle, instance);
                 }
             }
-            cycle.tags.setLength(len0); // as a good measure in case a prefix was used
+            cycle.tags.setLength(len0);
         }
 
         private static void collectProbeMethods(Class<?> type, List<Method> probes) {
@@ -631,7 +651,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 LOGGER.warning("Probe method must return something: " + m.toGenericString());
                 return false;
             }
-            if (m.getParameterCount() > 0) {
+            if (m.getParameterTypes().length > 0) {
                 LOGGER.warning("Probe method must not have parameters: " + m.toGenericString());
                 return false;
             }
@@ -640,8 +660,9 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         private static boolean hasMethod(Method probe, List<Method> probes) {
             for (Method p : probes) {
-                if (p.getName().equals(probe.getName()))
+                if (p.getName().equals(probe.getName())) {
                     return true;
+                }
             }
             return false;
         }
@@ -673,8 +694,9 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
     private static int indexOf(String[] arr, String e) {
         for (int i = 0; i < arr.length; i++) {
-            if (arr[i] == e)
+            if (arr[i] == e) {
                 return i;
+            }
         }
         return -1;
     }

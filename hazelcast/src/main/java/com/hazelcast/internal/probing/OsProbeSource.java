@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.probing;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
@@ -17,12 +33,17 @@ import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
  */
 final class OsProbeSource implements ProbeSource {
 
-    final Runtime runtime = Runtime.getRuntime();
-    final RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
-    final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-    final File userHome = new File(System.getProperty("user.home"));
-    final ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
-    final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
+    private static final String[] PROBED_OS_METHODS = { "getCommittedVirtualMemorySize",
+            "getFreePhysicalMemorySize", "getFreeSwapSpaceSize", "getProcessCpuTime",
+            "getTotalPhysicalMemorySize", "getTotalSwapSpaceSize", "getMaxFileDescriptorCount",
+            "getOpenFileDescriptorCount", "getProcessCpuLoad", "getSystemCpuLoad" };
+
+    private final Runtime runtime = Runtime.getRuntime();
+    private final RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+    private final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+    private final File userHome = new File(System.getProperty("user.home"));
+    private final ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
+    private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
 
     @Override
     public void probeIn(ProbingCycle cycle) {
@@ -72,11 +93,6 @@ final class OsProbeSource implements ProbeSource {
         cycle.probe("threadCount", bean.getThreadCount());
         cycle.probe("totalStartedThreadCount", bean.getTotalStartedThreadCount());
     }
-
-    private static final String[] PROBED_OS_METHODS = { "getCommittedVirtualMemorySize",
-            "getFreePhysicalMemorySize", "getFreeSwapSpaceSize", "getProcessCpuTime",
-            "getTotalPhysicalMemorySize", "getTotalSwapSpaceSize", "getMaxFileDescriptorCount",
-            "getOpenFileDescriptorCount", "getProcessCpuLoad", "getSystemCpuLoad" };
 
     public static void probeProperties(ProbingCycle cycle, OperatingSystemMXBean bean) {
         cycle.probe(MANDATORY, bean, PROBED_OS_METHODS);

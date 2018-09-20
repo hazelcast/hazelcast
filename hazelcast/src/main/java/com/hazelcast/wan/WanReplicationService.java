@@ -176,7 +176,7 @@ public interface WanReplicationService extends CoreService {
      * This method is exposed solely so that code depending on statistics data has a
      * way of accessing it while the actual providing implementation is in EE
      * codebase.
-     * 
+     *
      * @return statistics per replication configuration for read-only purposes.
      */
     Map<String, LocalWanStats> getStats();

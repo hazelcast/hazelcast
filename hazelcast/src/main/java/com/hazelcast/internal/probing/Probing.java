@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.probing;
 
 import static com.hazelcast.internal.probing.CharSequenceUtils.startsWith;
@@ -24,7 +40,7 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 
 /**
  * Provides utilities around probing.
- * 
+ *
  * This includes general conversion functionality like {@link #toLong(boolean)}
  * as well as common metrics on core types of objects that cannot be annotated.
  */
@@ -41,6 +57,11 @@ public final class Probing {
      */
     public static final ProbeSource GC = new GcProbeSource();
 
+    /**
+     * To get 4 fractional digits precision for doubles these are multiplied by 10k.
+     */
+    private static final double DOUBLE_TO_LONG_FACTOR = 10000d;
+
     private Probing() {
         // utility
     }
@@ -51,18 +72,18 @@ public final class Probing {
      *         {@link ProbeRenderer} that only works in longs
      */
     public static long toLong(double value) {
-        return round(value * 10000d);
+        return round(value * DOUBLE_TO_LONG_FACTOR);
     }
 
     /**
      * Undoes the scaling done by {@link #toLong(double)}.
-     * 
+     *
      * @param value a value originally given as {@code double} that has been
      *        converted to {@code long} using {@link #toLong(double)}
      * @return the original double value
      */
     public static double doubleValue(long value) {
-        return value / 10000d;
+        return value / DOUBLE_TO_LONG_FACTOR;
     }
 
     /**
@@ -76,15 +97,16 @@ public final class Probing {
 
     /**
      * Converts instances to their long representation.
-     * 
+     *
      * Supported are: Primitive wrapper types for {@link Number}s, atomic
      * {@link Number}s, {@link Counter}s, {@link Boolean} and {@link AtomicBoolean}
      * as well as {@link CodedEnum}s. In case of {@link Collection} and {@link Map}
      * their size is returned.
-     * 
+     *
      * @param value a value of a set of supported types
      * @return the long representing the passed object value
      */
+    @SuppressWarnings({ "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount" })
     static long toLong(Object value) {
         if (value == null) {
             return -1L;
@@ -128,7 +150,8 @@ public final class Probing {
 
     public static void probeAllThreads(ProbingCycle cycle, String type, Thread[] threads) {
         if (threads.length == 0) {
-            return; // avoid unnecessary context manipulation
+            // avoid unnecessary context manipulation
+            return;
         }
         Tags tags = cycle.openContext().tag(TAG_TYPE, type);
         for (int i = 0; i < threads.length; i++) {
@@ -139,7 +162,8 @@ public final class Probing {
 
     public static <T> void probeAllInstances(ProbingCycle cycle, String type, Map<String, T> entries) {
         if (entries.isEmpty()) {
-            return; // avoid unnecessary context manipulation
+            // avoid unnecessary context manipulation
+            return;
         }
         Tags tags = cycle.openContext().tag(TAG_TYPE, type);
         for (Entry<String, T> e : entries.entrySet()) {
@@ -151,7 +175,8 @@ public final class Probing {
     public static <T extends LocalDistributedObjectStats> void probeIn(ProbingCycle cycle,
             String type, Map<String, T> stats) {
         if (stats.isEmpty()) {
-            return; // avoid unnecessary context manipulation
+            // avoid unnecessary context manipulation
+            return;
         }
         ProbingCycle.Tags tags = cycle.openContext().tag(TAG_TYPE, type);
         for (Entry<String, T> e : stats.entrySet()) {
@@ -172,7 +197,7 @@ public final class Probing {
                             cycle.probe(index.getValue());
                         }
                         // restore context after adding 2nd tag
-                        tags = cycle.openContext().tag(TAG_TYPE, type); 
+                        tags = cycle.openContext().tag(TAG_TYPE, type);
                     }
                 }
             }
@@ -183,9 +208,10 @@ public final class Probing {
         if (stats == null) {
             return;
         }
-        if (startsWith("1\n", stats)) { // protocol version 1 (since 3.12)
+        // protocol version 1 (since 3.12)
+        if (startsWith("1\n", stats)) {
             Lines lines = new Lines(stats);
-            lines.next(); // gobble protocol
+            lines.next();
             cycle.openContext().tag("origin", uuid)
             .tag(TAG_TYPE, lines.next())
             .tag(TAG_INSTANCE, lines.next())
@@ -197,7 +223,8 @@ public final class Probing {
             lines.next();
             while (lines.length() > 0) {
                 cycle.probeForwarded(lines.key(), lines.value());
-                lines.next().next(); // first to end of current line as key goes back
+                // first to end of current line as key goes back
+                lines.next().next();
             }
         }
     }

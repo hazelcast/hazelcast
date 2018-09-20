@@ -166,7 +166,7 @@ public class EventServiceImpl implements InternalEventService, ProbeRegistry.Pro
     private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
 
-    private final ConstructorFunction<String, EventServiceSegment> segmentConstructor = 
+    private final ConstructorFunction<String, EventServiceSegment> segmentConstructor =
             new ConstructorFunction<String, EventServiceSegment>() {
 
         @Override
@@ -541,7 +541,7 @@ public class EventServiceImpl implements InternalEventService, ProbeRegistry.Pro
      * @return the segment for the service or null if there is no segment and {@code forceCreate} is {@code false}
      */
     public EventServiceSegment getSegment(String service, boolean forceCreate) {
-        return forceCreate 
+        return forceCreate
                 ? getOrPutIfAbsent(segments, service, segmentConstructor)
                 : segments.get(service);
     }

@@ -485,7 +485,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     private void updateStatsIfNeeded() {
         long now = Clock.currentTimeMillis();
         long lastUpdate = lastUpdated.get();
-        if (lastUpdate + UPDATE_STATS_INTERVAL_MILLIS < now 
+        if (lastUpdate + UPDATE_STATS_INTERVAL_MILLIS < now
                 && lastUpdated.compareAndSet(lastUpdate, now)) {
             updateStats();
         }

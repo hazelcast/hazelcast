@@ -62,7 +62,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.newSetFromMap;
 
-public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet>, 
+public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet>,
     ProbeRegistry.ProbeSource {
 
     private static final int RETRY_NUMBER = 5;

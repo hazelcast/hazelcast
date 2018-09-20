@@ -196,6 +196,12 @@ public class HealthMonitor {
 
     class HealthMetrics implements ProbeRenderer {
 
+        /**
+         * Values originally being a double are multiplied by 10k. The original value
+         * was in range 0-1. To get this as percent we divided by "just" 100.
+         */
+        private static final int DOUBLE_TO_PERCENT = 100;
+
         private final ProbeRegistry registry;
         private final StringBuilder sb = new StringBuilder();
         private final Map<String, Long> metrics = new HashMap<String, Long>();
@@ -240,7 +246,8 @@ public class HealthMonitor {
         }
 
         boolean checkThreshold() {
-            if (metrics.isEmpty()) { // to allow tests to setup data there is this check
+            // to allow tests to setup data there is this check
+            if (metrics.isEmpty()) {
                 updateThreshHoldMetrics();
             }
             boolean exceeds = exceedsThreshold();
@@ -257,8 +264,8 @@ public class HealthMonitor {
             double memoryUsedOfMaxPercentage = (PERCENTAGE_MULTIPLIER * read("runtime.usedMemory"))
                     / read("runtime.maxMemory");
             return memoryUsedOfMaxPercentage > thresholdMemoryPercentage
-                    || (read("os.processCpuLoad") / 100) > thresholdCPUPercentage
-                    || (read("os.systemCpuLoad") / 100) > thresholdCPUPercentage
+                    || (read("os.processCpuLoad") / DOUBLE_TO_PERCENT) > thresholdCPUPercentage
+                    || (read("os.systemCpuLoad") / DOUBLE_TO_PERCENT) > thresholdCPUPercentage
                     || read("operation.invocations.usedPercentage") > THRESHOLD_PERCENTAGE_INVOCATIONS
                     || read("operation.invocations.pending") > THRESHOLD_INVOCATIONS;
         }

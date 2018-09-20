@@ -724,12 +724,14 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Probe(name = "version")
+    @SuppressWarnings("checkstyle:magicnumber")
     private int getClusterVersionAsInt() {
         Version v = node.clusterService.getClusterVersion();
         return (v.getMajor() & 0xFF) << 8 | v.getMinor() & 0xFF;
     }
 
     @Probe(name = "member.version")
+    @SuppressWarnings({ "checkstyle:magicnumber", "checkstyle:booleanexpressioncomplexity" })
     private int getMemberVersionAsInt() {
         MemberVersion v = node.getVersion();
         return (v.getMajor() & 0xFF) << 16 | (v.getMinor() & 0xFF) << 8 | v.getPatch() & 0xFF;
