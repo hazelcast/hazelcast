@@ -39,7 +39,7 @@ public abstract class DefaultMetricsTest extends AbstractMetricsTest {
     public void setup() {
         hz = createHazelcastInstance(configure());
         registry = getNode(hz).nodeEngine.getProbeRegistry();
-        renderContext = registry.newRenderingContext();
+        renderContext = registry.newRenderContext();
         warmUpPartitions(hz);
     }
 

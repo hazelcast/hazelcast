@@ -36,7 +36,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 public abstract class AbstractProbeTest extends HazelcastTestSupport {
 
     protected final ProbeRegistry registry = new ProbeRegistryImpl();
-    protected final ProbeRenderContext rendering = registry.newRenderingContext();
+    protected final ProbeRenderContext rendering = registry.newRenderContext();
     private ProbeLevel level = ProbeLevel.DEBUG;
 
     @Before

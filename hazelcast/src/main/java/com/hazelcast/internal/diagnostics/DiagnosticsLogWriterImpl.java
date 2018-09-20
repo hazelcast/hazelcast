@@ -77,7 +77,7 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
     }
 
     @Override
-    public void writeSectionKeyValue(String sectionName, long timeMillis, String key, long value) {
+    public void writeSectionKeyValue(String sectionName, long timeMillis, CharSequence key, long value) {
         startSection(sectionName, timeMillis);
         write(key);
         write('=');
@@ -254,6 +254,17 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
 
     protected DiagnosticsLogWriter write(String s) {
         printWriter.write(s == null ? "null" : s);
+        return this;
+    }
+
+    protected DiagnosticsLogWriter write(CharSequence s) {
+        if (s != null) {
+            // PrintWriter has an append(CharSequence) but that causes litter!
+            int len = s.length();
+            for (int i = 0; i < len; i++) {
+                printWriter.append(s.charAt(i));
+            }
+        }
         return this;
     }
 

@@ -55,7 +55,7 @@ public class HotRestartMetricsTest extends AbstractMetricsTest {
         Config config = new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
         hz = HazelcastInstanceFactory.newHazelcastInstance(config, randomName(),
                 new HotRestartMockingNodeContext());
-        renderContext = getNode(hz).nodeEngine.getProbeRegistry().newRenderingContext();
+        renderContext = getNode(hz).nodeEngine.getProbeRegistry().newRenderContext();
     }
 
     @After

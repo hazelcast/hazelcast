@@ -58,9 +58,17 @@ public interface ProbeRegistry {
      *         will not support multi-threading as each thread should create its own
      *         context instance.
      */
-    ProbeRenderContext newRenderingContext();
+    ProbeRenderContext newRenderContext();
 
-    ProbeRenderContext newRenderingContext(Class<? extends ProbeSource>... filter);
+    /**
+     * Same as {@link #newRenderContext()} but filters registered sources for a
+     * reduced rendering scope.
+     *
+     * @param filter the set of sources that is accepted (kept) if it was registered
+     * @return a new private filtered "context". A filtered context is fixed and
+     *         will no extend when further sources are registered.
+     */
+    ProbeRenderContext newRenderContext(Class<? extends ProbeSource>... filter);
 
     /**
      * From a usability point of view the {@link ProbeRenderContext} is a bit

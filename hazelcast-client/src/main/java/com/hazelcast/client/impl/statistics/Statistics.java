@@ -85,7 +85,7 @@ public class Statistics implements ProbeRegistry.ProbeSource {
         this.enabled = properties.getBoolean(ENABLED);
         this.client = clientInstance;
         this.enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
-        this.probeRenderContext = clientInstance.getProbeRegistry().newRenderingContext();
+        this.probeRenderContext = clientInstance.getProbeRegistry().newRenderContext();
         this.probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
     }
 

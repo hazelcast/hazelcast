@@ -221,11 +221,11 @@ public class HealthMonitor {
         @SuppressWarnings("unchecked")
         private void init() {
             if (thresholdRenderContext == null) {
-                thresholdRenderContext = registry.newRenderingContext(NodeEngineImpl.class,
+                thresholdRenderContext = registry.newRenderContext(NodeEngineImpl.class,
                         MachineProbeSource.class);
             }
             if (printoutRenderContext == null) {
-                printoutRenderContext = registry.newRenderingContext(NodeEngineImpl.class,
+                printoutRenderContext = registry.newRenderContext(NodeEngineImpl.class,
                         ClientEngineImpl.class, ClusterServiceImpl.class,
                         ExecutionServiceImpl.class, EventServiceImpl.class,
                         OperationExecutorImpl.class, TcpIpConnectionManager.class,

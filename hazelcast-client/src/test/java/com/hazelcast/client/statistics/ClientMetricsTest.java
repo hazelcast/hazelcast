@@ -84,7 +84,7 @@ public class ClientMetricsTest extends AbstractMetricsTest {
 
     private void newMember() {
         hz = hazelcastFactory.newHazelcastInstance();
-        renderContext = getNode(hz).nodeEngine.getProbeRegistry().newRenderingContext();
+        renderContext = getNode(hz).nodeEngine.getProbeRegistry().newRenderContext();
     }
 
     @After

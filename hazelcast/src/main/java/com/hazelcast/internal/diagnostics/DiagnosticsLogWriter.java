@@ -18,7 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 public interface DiagnosticsLogWriter {
 
-    void writeSectionKeyValue(String sectionName, long timeMillis, String key, long value);
+    void writeSectionKeyValue(String sectionName, long timeMillis, CharSequence key, long value);
 
     void writeSectionKeyValue(String sectionName, long timeMillis, String key, double value);
 

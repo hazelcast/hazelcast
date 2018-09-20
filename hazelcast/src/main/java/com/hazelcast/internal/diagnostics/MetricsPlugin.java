@@ -50,6 +50,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
     private final ProbeRegistry.ProbeRenderContext probeRenderContext;
     private final long periodMillis;
     private final ProbeRendererImpl probeRenderer = new ProbeRendererImpl();
+    private final ProbeLevel probeLevel;
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getProbeRegistry(), nodeEngine.getProperties());
@@ -57,8 +58,9 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
     public MetricsPlugin(ILogger logger, ProbeRegistry probeRegistry, HazelcastProperties properties) {
         super(logger);
-        this.probeRenderContext = probeRegistry.newRenderingContext();
+        this.probeRenderContext = probeRegistry.newRenderContext();
         this.periodMillis = properties.getMillis(PERIOD_SECONDS);
+        this.probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
     }
 
     @Override
@@ -77,7 +79,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
         // the same timestamp
         probeRenderer.timeMillis = System.currentTimeMillis();
-        probeRenderContext.renderAt(ProbeLevel.DEBUG, probeRenderer);
+        probeRenderContext.renderAt(probeLevel, probeRenderer);
         probeRenderer.writer = null;
     }
 
@@ -89,7 +91,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
         @Override
         public void render(CharSequence key, long value) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, key.toString(), value);
+            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, key, value);
         }
     }
 }

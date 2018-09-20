@@ -84,12 +84,12 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     }
 
     @Override
-    public ProbeRenderContext newRenderingContext() {
+    public ProbeRenderContext newRenderContext() {
         return new ProbingCycleImpl(sources);
     }
 
     @Override
-    public ProbeRenderContext newRenderingContext(Class<? extends ProbeSource>... filter) {
+    public ProbeRenderContext newRenderContext(Class<? extends ProbeSource>... filter) {
         Set<ProbeSourceEntry> filtered = new HashSet<ProbeSourceEntry>();
         for (ProbeSourceEntry e : sources) {
             for (Class<?> accepted : filter) {
