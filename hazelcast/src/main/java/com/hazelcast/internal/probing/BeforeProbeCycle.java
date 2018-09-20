@@ -37,7 +37,7 @@ import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface ReprobeCycle {
+public @interface BeforeProbeCycle {
 
     int value() default 1;
 

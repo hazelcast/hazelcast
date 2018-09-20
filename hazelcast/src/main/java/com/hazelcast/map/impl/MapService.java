@@ -22,7 +22,7 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.ReprobeCycle;
+import com.hazelcast.internal.probing.BeforeProbeCycle;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.ClientAwareService;
@@ -210,7 +210,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
         return mapServiceContext.getLocalMapStatsProvider().getStats();
     }
 
-    @ReprobeCycle
+    @BeforeProbeCycle
     private void updateStats() {
         mapServiceContext.getLocalMapStatsProvider().updateStats();
     }

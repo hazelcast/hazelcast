@@ -27,7 +27,7 @@ import java.util.Set;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.ReprobeCycle;
+import com.hazelcast.internal.probing.BeforeProbeCycle;
 
 public final class GcProbeSource implements ProbeSource {
 
@@ -73,7 +73,7 @@ public final class GcProbeSource implements ProbeSource {
         cycle.probe("gc", this);
     }
 
-    @ReprobeCycle(4)
+    @BeforeProbeCycle(4)
     public void update() {
         long minorCount = 0;
         long minorTime = 0;

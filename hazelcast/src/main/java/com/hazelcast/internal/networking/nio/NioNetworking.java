@@ -26,7 +26,7 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.ReprobeCycle;
+import com.hazelcast.internal.probing.BeforeProbeCycle;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -286,7 +286,7 @@ public final class NioNetworking implements Networking, ProbeRegistry.ProbeSourc
         }
     }
 
-    @ReprobeCycle(level = DEBUG)
+    @BeforeProbeCycle(level = DEBUG)
     public void updateChannels() {
         for (NioChannel channel : channels) {
             final NioInboundPipeline inboundPipeline = channel.inboundPipeline;

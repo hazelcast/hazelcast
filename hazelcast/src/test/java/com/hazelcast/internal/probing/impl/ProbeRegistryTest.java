@@ -35,7 +35,7 @@ import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ProbingCycle.Tagging;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
-import com.hazelcast.internal.probing.ReprobeCycle;
+import com.hazelcast.internal.probing.BeforeProbeCycle;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -135,7 +135,7 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
     @Probe
     private int updates = 0;
 
-    @ReprobeCycle(value = 500, unit = TimeUnit.MILLISECONDS)
+    @BeforeProbeCycle(value = 500, unit = TimeUnit.MILLISECONDS)
     private void update() {
         updates++;
     }

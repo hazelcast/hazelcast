@@ -42,7 +42,7 @@ import com.hazelcast.internal.probing.ProbeRenderer;
 import com.hazelcast.internal.probing.ProbeUtils;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ProbingCycle.Tagging;
-import com.hazelcast.internal.probing.ReprobeCycle;
+import com.hazelcast.internal.probing.BeforeProbeCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
@@ -117,7 +117,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             this.source = source;
             this.update = reprobeFor(source.getClass());
             if (update != null) {
-                ReprobeCycle reprobe = update.getAnnotation(ReprobeCycle.class);
+                BeforeProbeCycle reprobe = update.getAnnotation(BeforeProbeCycle.class);
                 updateIntervalMs = ProbeUtils.updateInterval(reprobe.value(), reprobe.unit());
                 updateLevel = reprobe.level();
             } else {
@@ -144,7 +144,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         static Method reprobeFor(Class<?> type) {
             for (Method m : type.getDeclaredMethods()) {
-                if (m.isAnnotationPresent(ReprobeCycle.class)) {
+                if (m.isAnnotationPresent(BeforeProbeCycle.class)) {
                     m.setAccessible(true);
                     return m;
                 }

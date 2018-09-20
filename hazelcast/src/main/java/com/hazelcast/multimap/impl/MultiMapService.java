@@ -26,7 +26,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.ReprobeCycle;
+import com.hazelcast.internal.probing.BeforeProbeCycle;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
@@ -465,7 +465,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         probeStatistics(cycle, "multiMap", statsMap);
     }
 
-    @ReprobeCycle
+    @BeforeProbeCycle
     private void updateStats() {
         for (String name : nodeEngine.getProxyService().getDistributedObjectNames(SERVICE_NAME)) {
             LocalMultiMapStatsImpl stats = getLocalMultiMapStatsInternal(name);

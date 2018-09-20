@@ -32,7 +32,7 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.ReprobeCycle;
+import com.hazelcast.internal.probing.BeforeProbeCycle;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -393,7 +393,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         }
     }
 
-    @ReprobeCycle
+    @BeforeProbeCycle
     void updateStats() {
         for (String map : getNodeEngine().getProxyService().getDistributedObjectNames(SERVICE_NAME)) {
             LocalReplicatedMapStatsImpl stats = getLocalMapStatsInternal(map);
