@@ -26,6 +26,8 @@ import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeRenderer;
 import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
+import com.hazelcast.internal.probing.sources.GcProbeSource;
+import com.hazelcast.internal.probing.sources.OsProbeSource;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -220,14 +222,14 @@ public class HealthMonitor {
         private void init() {
             if (thresholdRenderContext == null) {
                 thresholdRenderContext = registry.newRenderingContext(NodeEngineImpl.class,
-                        Probing.OS.getClass());
+                        OsProbeSource.class);
             }
             if (printoutRenderContext == null) {
                 printoutRenderContext = registry.newRenderingContext(NodeEngineImpl.class,
                         ClientEngineImpl.class, ClusterServiceImpl.class,
                         ExecutionServiceImpl.class, EventServiceImpl.class,
                         OperationExecutorImpl.class, TcpIpConnectionManager.class,
-                        Probing.OS.getClass(), Probing.GC.getClass());
+                        OsProbeSource.class, GcProbeSource.class);
             }
         }
 

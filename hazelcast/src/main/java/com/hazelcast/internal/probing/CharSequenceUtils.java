@@ -33,7 +33,7 @@ public final class CharSequenceUtils {
      * Effectively adds a backslash before comma ({@code ","}), space ({@code " "}),
      * equals sign ({@code "="}) and backslash ({@code "\"}).
      */
-    static void appendEscaped(StringBuilder buf, CharSequence name) {
+    public static void appendEscaped(StringBuilder buf, CharSequence name) {
         int len = name.length();
         for (int i = 0; i < len; i++) {
             char c = name.charAt(i);
@@ -49,7 +49,7 @@ public final class CharSequenceUtils {
      * received from client where line-feeds need extra level of escaping when all
      * metrics are transported as a {@link String}).
      */
-    static void appendUnescaped(StringBuilder buf, CharSequence name) {
+    public static void appendUnescaped(StringBuilder buf, CharSequence name) {
         int len = name.length();
         for (int i = 0; i < len; i++) {
             char c = name.charAt(i);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.probing;
+package com.hazelcast.internal.probing.impl;
 
 import static com.hazelcast.internal.probing.Probing.probeAllInstances;
 import static org.junit.Assert.assertArrayEquals;
@@ -30,9 +30,14 @@ import org.junit.runner.RunWith;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.probing.AbstractProbeTest;
+import com.hazelcast.internal.probing.ProbeRegistry;
+import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.ReprobeCycle;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle.Tagging;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
+import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 

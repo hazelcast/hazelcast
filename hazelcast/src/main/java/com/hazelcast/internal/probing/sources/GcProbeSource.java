@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.probing;
+package com.hazelcast.internal.probing.sources;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.SetUtil.createHashSet;
@@ -25,9 +25,11 @@ import java.util.Collections;
 import java.util.Set;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.ReprobeCycle;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 
-final class GcProbeSource implements ProbeSource {
+public final class GcProbeSource implements ProbeSource {
 
     private static final Set<String> YOUNG_GC;
     private static final Set<String> OLD_GC;
@@ -96,5 +98,10 @@ final class GcProbeSource implements ProbeSource {
         this.majorTime = majorTime;
         this.unknownCount = unknownCount;
         this.unknownTime = unknownTime;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof GcProbeSource;
     }
 }

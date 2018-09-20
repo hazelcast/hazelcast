@@ -123,9 +123,11 @@ import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.ProbeRegistryImpl;
 import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
+import com.hazelcast.internal.probing.sources.GcProbeSource;
+import com.hazelcast.internal.probing.sources.OsProbeSource;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -278,8 +280,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private void initProbeSources() {
-        probeRegistry.register(Probing.GC);
-        probeRegistry.register(Probing.OS);
+        probeRegistry.register(new GcProbeSource());
+        probeRegistry.register(new OsProbeSource());
         probeRegistry.register(this);
         probeRegistry.register(statistics);
         NioNetworking networking = connectionManager.getNetworking();

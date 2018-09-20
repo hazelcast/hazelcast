@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.probing;
+package com.hazelcast.internal.probing.sources;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
@@ -25,13 +25,14 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 
 /**
  * A {@link ProbeSource} providing information on runtime, threads,
  * class-loading and OS properties
  */
-final class OsProbeSource implements ProbeSource {
+public final class OsProbeSource implements ProbeSource {
 
     private static final String[] PROBED_OS_METHODS = { "getCommittedVirtualMemorySize",
             "getFreePhysicalMemorySize", "getFreeSwapSpaceSize", "getProcessCpuTime",
@@ -58,6 +59,11 @@ final class OsProbeSource implements ProbeSource {
         probeProperties(cycle, threadMXBean);
         cycle.openContext().tag(TAG_TYPE, "file.partition").tag(TAG_INSTANCE, "user.home");
         probeProperties(cycle, userHome);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof OsProbeSource;
     }
 
     public static void probeProperties(ProbingCycle cycle, File f) {

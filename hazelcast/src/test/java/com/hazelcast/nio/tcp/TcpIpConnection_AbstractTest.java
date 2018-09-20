@@ -19,7 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.nio.Select_NioNetworkingFactory;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.ProbeRegistryImpl;
+import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;

@@ -14,59 +14,70 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.probing;
+package com.hazelcast.internal.probing.sources;
 
-import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.internal.probing.AbstractProbeTest;
+import com.hazelcast.internal.probing.sources.OsProbeSource;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeClassLoadingTest extends AbstractProbeTest {
+public class ProbeThreadTest extends AbstractProbeTest {
 
-    private static final ClassLoadingMXBean BEAN = ManagementFactory.getClassLoadingMXBean();
+    private static final ThreadMXBean MX_BEAN = ManagementFactory.getThreadMXBean();
 
     @Before
     public void setup() {
-        registry.register(Probing.OS);
+        registry.register(new OsProbeSource());
     }
 
     @Test
-    public void loadedClassesCount() {
+    public void threadCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("classloading.loadedClassesCount", BEAN.getLoadedClassCount(), 100);
+                assertProbed("thread.threadCount", MX_BEAN.getThreadCount(), 10);
             }
         });
     }
 
     @Test
-    public void totalLoadedClassesCount() {
+    public void peakThreadCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("classloading.totalLoadedClassesCount", BEAN.getTotalLoadedClassCount(), 100);
+                assertProbed("thread.peakThreadCount", MX_BEAN.getPeakThreadCount(), 10);
             }
         });
     }
 
     @Test
-    public void unloadedClassCount() {
+    public void daemonThreadCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("classloading.unloadedClassCount", BEAN.getUnloadedClassCount(), 100);
+                assertProbed("thread.daemonThreadCount", MX_BEAN.getDaemonThreadCount(), 10);
             }
         });
     }
 
+    @Test
+    public void totalStartedThreadCount() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertProbed("thread.totalStartedThreadCount", MX_BEAN.getTotalStartedThreadCount(), 10);
+            }
+        });
+    }
 }

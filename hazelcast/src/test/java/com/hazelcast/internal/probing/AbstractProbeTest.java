@@ -30,12 +30,13 @@ import org.junit.Before;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
+import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 
 public abstract class AbstractProbeTest extends HazelcastTestSupport {
 
-    final ProbeRegistry registry = new ProbeRegistryImpl();
-    final ProbeRenderContext rendering = registry.newRenderingContext();
+    protected final ProbeRegistry registry = new ProbeRegistryImpl();
+    protected final ProbeRenderContext rendering = registry.newRenderingContext();
     private ProbeLevel level = ProbeLevel.DEBUG;
 
     @Before
@@ -48,41 +49,41 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
         this.level = level;
     }
 
-    final void assertProbed(final String expectedKey) {
+    protected final void assertProbed(final String expectedKey) {
         CountingProbeRenderer renderer = probe(expectedKey);
         assertProbedTimes(1, renderer);
         assertNotEquals(-1L, renderer.value);
     }
 
-    final void assertProbed(final String expectedKey, long expectedValue, double deltaFactor) {
+    protected final void assertProbed(final String expectedKey, long expectedValue, double deltaFactor) {
         assertProbed(expectedKey, expectedValue, (long) (expectedValue * deltaFactor));
     }
 
-    final void assertProbed(final String expectedKey, final long expectedValue) {
+    protected final void assertProbed(final String expectedKey, final long expectedValue) {
         assertProbed(expectedKey, expectedValue, 0L);
     }
 
-    final void assertProbed(final String expectedKey, final long expectedValue,
+    protected final void assertProbed(final String expectedKey, final long expectedValue,
             final long absoluteDelta) {
         CountingProbeRenderer renderer = probe(expectedKey);
         assertProbedTimes(1, renderer);
         assertProbeValue(expectedValue, renderer.value, absoluteDelta);
     }
 
-    final void assertNotProbed(String notExpectedKey) {
+    protected final void assertNotProbed(String notExpectedKey) {
         assertProbedTimes(0, probe(notExpectedKey));
     }
 
-    final void assertProbeCount(int expectedCount) {
+    protected final void assertProbeCount(int expectedCount) {
         CountingProbeRenderer renderer = probe("");
         assertEquals(expectedCount, renderer.count);
     }
 
-    static void assertProbedTimes(int expectedTimes, CountingProbeRenderer actual) {
+    protected static void assertProbedTimes(int expectedTimes, CountingProbeRenderer actual) {
         assertEquals("probe `" + actual.expectedKey + "` occurence ", expectedTimes, actual.matches);
     }
 
-    static void assertProbeValue(final long expected, long actual, final long absoluteDelta) {
+    protected static void assertProbeValue(final long expected, long actual, final long absoluteDelta) {
         if (absoluteDelta == 0L) {
             assertEquals(expected, actual);
         } else {
@@ -117,7 +118,7 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
         }
     }
 
-    static Map<String, Integer> createMap(int size) {
+    protected static Map<String, Integer> createMap(int size) {
         Map<String, Integer> map = new HashMap<String, Integer>();
         for (int k = 0; k < size; k++) {
             map.put(String.valueOf(k), k);

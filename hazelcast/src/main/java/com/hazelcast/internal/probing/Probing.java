@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.hazelcast.internal.probing.CharSequenceUtils.Lines;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.monitor.LocalIndexStats;
@@ -45,17 +44,6 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
  * as well as common metrics on core types of objects that cannot be annotated.
  */
 public final class Probing {
-
-    /**
-     * A {@link ProbeSource} providing information on runtime, threads,
-     * class-loading and OS properties
-     */
-    public static final ProbeSource OS = new OsProbeSource();
-
-    /**
-     * A {@link ProbeSource} providing information about GC activity
-     */
-    public static final ProbeSource GC = new GcProbeSource();
 
     /**
      * To get 4 fractional digits precision for doubles these are multiplied by 10k.
@@ -107,7 +95,7 @@ public final class Probing {
      * @return the long representing the passed object value
      */
     @SuppressWarnings({ "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount" })
-    static long toLong(Object value) {
+    public static long toLong(Object value) {
         if (value == null) {
             return -1L;
         }
@@ -144,7 +132,7 @@ public final class Probing {
                         + value.getClass().getSimpleName() + " to primitive long.");
     }
 
-    static long updateInterval(int value, TimeUnit unit) {
+    public static long updateInterval(int value, TimeUnit unit) {
         return unit.toMillis(value);
     }
 

@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.probing;
+package com.hazelcast.internal.probing.sources;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.internal.probing.AbstractProbeTest;
+import com.hazelcast.internal.probing.sources.GcProbeSource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -30,7 +32,7 @@ public class ProbeGarbageCollectionTest extends AbstractProbeTest {
 
     @Before
     public void setup() {
-        registry.register(Probing.GC);
+        registry.register(new GcProbeSource());
     }
 
     @Test

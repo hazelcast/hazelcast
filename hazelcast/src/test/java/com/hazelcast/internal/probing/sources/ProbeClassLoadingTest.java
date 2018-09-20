@@ -14,88 +14,61 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.probing;
+package com.hazelcast.internal.probing.sources;
 
+import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.internal.probing.AbstractProbeTest;
+import com.hazelcast.internal.probing.sources.OsProbeSource;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeRuntimeTest extends AbstractProbeTest {
+public class ProbeClassLoadingTest extends AbstractProbeTest {
 
-    private static final int TEN_MB = 10 * 1024 * 1024;
-
-    private Runtime runtime;
+    private static final ClassLoadingMXBean BEAN = ManagementFactory.getClassLoadingMXBean();
 
     @Before
     public void setup() {
-        registry.register(Probing.OS);
-        runtime = Runtime.getRuntime();
+        registry.register(new OsProbeSource());
     }
 
     @Test
-    public void freeMemory() {
+    public void loadedClassesCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("runtime.freeMemory", runtime.freeMemory(), TEN_MB);
+                assertProbed("classloading.loadedClassesCount", BEAN.getLoadedClassCount(), 100);
             }
         });
     }
 
     @Test
-    public void totalMemory() {
+    public void totalLoadedClassesCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("runtime.totalMemory", runtime.totalMemory(), TEN_MB);
+                assertProbed("classloading.totalLoadedClassesCount", BEAN.getTotalLoadedClassCount(), 100);
             }
         });
     }
 
     @Test
-    public void maxMemory() {
+    public void unloadedClassCount() {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("runtime.maxMemory", runtime.maxMemory(), TEN_MB);
+                assertProbed("classloading.unloadedClassCount", BEAN.getUnloadedClassCount(), 100);
             }
         });
     }
 
-    @Test
-    public void usedMemory() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                long expected = runtime.totalMemory() - runtime.freeMemory();
-                assertProbed("runtime.usedMemory", expected, TEN_MB);
-            }
-        });
-    }
-
-    @Test
-    public void availableProcessors() {
-        assertProbed("runtime.availableProcessors", runtime.availableProcessors());
-    }
-
-    @Test
-    public void uptime() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                long expected = ManagementFactory.getRuntimeMXBean().getUptime();
-                assertProbed("runtime.uptime", expected, TimeUnit.MINUTES.toMillis(1));
-            }
-        });
-    }
 }
