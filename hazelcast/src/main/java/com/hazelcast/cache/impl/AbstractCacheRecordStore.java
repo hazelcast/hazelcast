@@ -36,6 +36,7 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.eviction.EvictionChecker;
@@ -538,7 +539,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         // newer members still benefit from periodic removal of expired entries.
         //
         // RU_COMPAT_3_10
-        return nodeEngine.getClusterService().getMember(replicaAddress).getVersion().asVersion().isGreaterOrEqual(Versions.V3_11);
+        Member member = nodeEngine.getClusterService().getMember(replicaAddress);
+        if (member == null) {
+             return false;
+        }
+        return member.getVersion().asVersion().isGreaterOrEqual(Versions.V3_11);
     }
 
     public R accessRecord(Data key, R record, ExpiryPolicy expiryPolicy, long now) {
