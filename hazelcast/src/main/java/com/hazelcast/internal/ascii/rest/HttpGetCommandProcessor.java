@@ -68,19 +68,6 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             handleGetClusterVersion(command);
         } else if (uri.startsWith(URI_CLUSTER_STATE_URL)) {
             handleGetClusterState(command);
-        } else if (uri.startsWith(URI_FORCESTART_CLUSTER_URL)) {
-            handleForceStart(command);
-        } else if (uri.startsWith(URI_PARTIALSTART_CLUSTER_URL)) {
-            handlePartialStart(command);
-        } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_CLUSTER_URL)) {
-            handleHotRestartBackup(command);
-        } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL)) {
-            handleHotRestartBackupInterrupt(command);
-        } else if (uri.startsWith(URI_SHUTDOWN_NODE_CLUSTER_URL)) {
-            handleShutdownNode(command);
-        } else if (uri.startsWith(URI_SHUTDOWN_CLUSTER_URL)) {
-            handleClusterShutdown(command);
-            return;
         } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
             handleListNodes(command);
         } else {

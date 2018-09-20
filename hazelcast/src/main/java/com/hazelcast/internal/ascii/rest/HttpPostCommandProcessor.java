@@ -27,10 +27,7 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
-<<<<<<< HEAD
-=======
 import com.hazelcast.internal.util.rest.RestUtil;
->>>>>>> removed group-name & convert POST methods have not param into GET
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -87,16 +84,16 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleWanClearQueues(command);
             } else if (uri.startsWith(URI_ADD_WAN_CONFIG) || uri.startsWith(LEGACY_URI_ADD_WAN_CONFIG)) {
                 handleAddWanConfig(command);
+            } else if (uri.startsWith(URI_WAN_PAUSE_PUBLISHER)) {
+                handleWanPausePublisher(command);
+            } else if (uri.startsWith(URI_WAN_STOP_PUBLISHER)) {
+                handleWanStopPublisher(command);
+            } else if (uri.startsWith(URI_WAN_RESUME_PUBLISHER)) {
+                handleWanResumePublisher(command);
+            } else if (uri.startsWith(URI_WAN_CONSISTENCY_CHECK_MAP)) {
+                handleWanConsistencyCheck(command);
             } else if (uri.startsWith(URI_UPDATE_PERMISSIONS)) {
                 handleUpdatePermissions(command);
-                /**
-                 * The below handle methods are moved to HttpCommandProcessor to use them at {@link #HttpGetCommandProcessor}
-                 * so these else-if blocks are @Deprecated.
-                 * We are keeping them for backward-compatible by linking functionality(allowing both GET & POST)
-                 * These blocks will be removed with future releases.
-                 */
-            } else if (uri.startsWith(URI_CLUSTER_STATE_URL)) {
-                handleGetClusterState(command);
             } else if (uri.startsWith(URI_SHUTDOWN_CLUSTER_URL)) {
                 handleClusterShutdown(command);
                 return;
@@ -108,28 +105,18 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleHotRestartBackup(command);
             } else if (uri.startsWith(URI_PARTIALSTART_CLUSTER_URL)) {
                 handlePartialStart(command);
-            } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
-                handleListNodes(command);
             } else if (uri.startsWith(URI_SHUTDOWN_NODE_CLUSTER_URL)) {
                 handleShutdownNode(command);
-            } else if (uri.startsWith(URI_WAN_SYNC_MAP) || uri.startsWith(LEGACY_URI_WAN_SYNC_MAP)) {
-                handleWanSyncMap(command);
-            } else if (uri.startsWith(URI_WAN_SYNC_ALL_MAPS) || uri.startsWith(LEGACY_URI_WAN_SYNC_ALL_MAPS)) {
-                handleWanSyncAllMaps(command);
-            } else if (uri.startsWith(URI_MANCENTER_WAN_CLEAR_QUEUES) || uri.startsWith(LEGACY_URI_MANCENTER_WAN_CLEAR_QUEUES)) {
-                handleWanClearQueues(command);
-            } else if (uri.startsWith(URI_ADD_WAN_CONFIG) || uri.startsWith(LEGACY_URI_ADD_WAN_CONFIG)) {
-                handleAddWanConfig(command);
-            } else if (uri.startsWith(URI_WAN_PAUSE_PUBLISHER)) {
-                handleWanPausePublisher(command);
-            } else if (uri.startsWith(URI_WAN_STOP_PUBLISHER)) {
-                handleWanStopPublisher(command);
-            } else if (uri.startsWith(URI_WAN_RESUME_PUBLISHER)) {
-                handleWanResumePublisher(command);
-            } else if (uri.startsWith(URI_WAN_CONSISTENCY_CHECK_MAP)) {
-                handleWanConsistencyCheck(command);
-            } else if (uri.startsWith(URI_UPDATE_PERMISSIONS)) {
-                handleUpdatePermissions(command);
+                /**
+                 * The below handle methods are moved to HttpCommandProcessor to use them at {@link #HttpGetCommandProcessor}
+                 * so these else-if blocks are @Deprecated.
+                 * We are keeping them for backward-compatible by linking functionality(allowing both GET & POST)
+                 * These blocks will be removed with future releases.
+                 */
+            } else if (uri.startsWith(URI_CLUSTER_STATE_URL)) {
+                handleGetClusterState(command);
+            } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
+                handleListNodes(command);
             } else {
                 command.setResponse(HttpCommand.RES_400);
             }
@@ -177,6 +164,87 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             res = exceptionResponse(throwable);
         }
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+    }
+
+    public void handleClusterShutdown(HttpPostCommand command) {
+        String res;
+        try {
+            Node node = textCommandService.getNode();
+            ClusterService clusterService = node.getClusterService();
+            res = response(RestUtil.ResponseType.SUCCESS);
+            sendResponse(textCommandService, command, res);
+            clusterService.shutdown();
+            return;
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while shutting down cluster", throwable);
+            res = exceptionResponse(throwable);
+        }
+        sendResponse(textCommandService, command, res);
+    }
+
+    public void handleShutdownNode(HttpPostCommand command) {
+        String res;
+        try {
+            Node node = textCommandService.getNode();
+            res = response(RestUtil.ResponseType.SUCCESS);
+            sendResponse(textCommandService, command, res);
+            node.hazelcastInstance.shutdown();
+            return;
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while shutting down", throwable);
+            res = exceptionResponse(throwable);
+        }
+        sendResponse(textCommandService, command, res);
+    }
+
+    public void handleForceStart(HttpPostCommand command) {
+        String res;
+        try {
+            Node node = textCommandService.getNode();
+            boolean success = node.getNodeExtension().getInternalHotRestartService().triggerForceStart();
+            res = response(success ? RestUtil.ResponseType.SUCCESS : RestUtil.ResponseType.FAIL);
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while handling force start", throwable);
+            res = exceptionResponse(throwable);
+        }
+        sendResponse(textCommandService, command, res);
+    }
+
+    public void handlePartialStart(HttpPostCommand command) {
+        String res;
+        try {
+            Node node = textCommandService.getNode();
+            boolean success = node.getNodeExtension().getInternalHotRestartService().triggerPartialStart();
+            res = response(success ? RestUtil.ResponseType.SUCCESS : RestUtil.ResponseType.FAIL);
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while handling partial start", throwable);
+            res = exceptionResponse(throwable);
+        }
+        sendResponse(textCommandService, command, res);
+    }
+
+    public void handleHotRestartBackup(HttpPostCommand command) {
+        String res;
+        try {
+            textCommandService.getNode().getNodeExtension().getHotRestartService().backup();
+            res = response(RestUtil.ResponseType.SUCCESS);
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while invoking hot backup", throwable);
+            res = exceptionResponse(throwable);
+        }
+        sendResponse(textCommandService, command, res);
+    }
+
+    public void handleHotRestartBackupInterrupt(HttpPostCommand command) {
+        String res;
+        try {
+            textCommandService.getNode().getNodeExtension().getHotRestartService().interruptBackupTask();
+            res = response(RestUtil.ResponseType.SUCCESS);
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while interrupting hot backup", throwable);
+            res = exceptionResponse(throwable);
+        }
+        sendResponse(textCommandService, command, res);
     }
 
     private void handleQueue(HttpPostCommand command, String uri) {
@@ -254,13 +322,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final String publisherId = params[1];
         final String mapName = params[2];
         try {
-<<<<<<< HEAD
             textCommandService.getNode().getNodeEngine().getWanReplicationService().syncMap(wanRepName, publisherId, mapName);
-            res = response(ResponseType.SUCCESS, "message", "Sync initiated");
-=======
-            textCommandService.getNode().getNodeEngine().getWanReplicationService().syncMap(wanRepName, targetGroup, mapName);
             res = response(RestUtil.ResponseType.SUCCESS, "message", "Sync initiated");
->>>>>>> removed group-name & convert POST methods have not param into GET
         } catch (Exception ex) {
             logger.warning("Error occurred while syncing map", ex);
             res = exceptionResponse(ex);
@@ -283,13 +346,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final String wanRepName = params[0];
         final String publisherId = params[1];
         try {
-<<<<<<< HEAD
             textCommandService.getNode().getNodeEngine().getWanReplicationService().syncAllMaps(wanRepName, publisherId);
-            res = response(ResponseType.SUCCESS, "message", "Sync initiated");
-=======
-            textCommandService.getNode().getNodeEngine().getWanReplicationService().syncAllMaps(wanRepName, targetGroup);
             res = response(RestUtil.ResponseType.SUCCESS, "message", "Sync initiated");
->>>>>>> removed group-name & convert POST methods have not param into GET
         } catch (Exception ex) {
             logger.warning("Error occurred while syncing maps", ex);
             res = exceptionResponse(ex);
@@ -315,12 +373,12 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
         try {
             service.consistencyCheck(wanReplicationName, publisherId, mapName);
-            res = response(ResponseType.SUCCESS, "message", "Consistency check initiated");
+            res = response(RestUtil.ResponseType.SUCCESS, "message", "Consistency check initiated");
         } catch (Exception ex) {
             logger.warning("Error occurred while initiating consistency check", ex);
             res = exceptionResponse(ex);
         }
-        sendResponse(command, res);
+        sendResponse(textCommandService, command, res);
     }
 
     /**
@@ -337,13 +395,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final String wanRepName = params[0];
         final String publisherId = params[1];
         try {
-<<<<<<< HEAD
             textCommandService.getNode().getNodeEngine().getWanReplicationService().clearQueues(wanRepName, publisherId);
-            res = response(ResponseType.SUCCESS, "message", "WAN replication queues are cleared.");
-=======
-            textCommandService.getNode().getNodeEngine().getWanReplicationService().clearQueues(wanRepName, targetGroup);
             res = response(RestUtil.ResponseType.SUCCESS, "message", "WAN replication queues are cleared.");
->>>>>>> removed group-name & convert POST methods have not param into GET
         } catch (Exception ex) {
             logger.warning("Error occurred while clearing queues", ex);
             res = exceptionResponse(ex);
@@ -405,12 +458,12 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
         try {
             service.pause(wanReplicationName, publisherId);
-            res = response(ResponseType.SUCCESS, "message", "WAN publisher paused");
+            res = response(RestUtil.ResponseType.SUCCESS, "message", "WAN publisher paused");
         } catch (Exception ex) {
             logger.warning("Error occurred while pausing WAN publisher", ex);
             res = exceptionResponse(ex);
         }
-        sendResponse(command, res);
+        sendResponse(textCommandService, command, res);
     }
 
     /**
@@ -432,12 +485,12 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
         try {
             service.stop(wanReplicationName, publisherId);
-            res = response(ResponseType.SUCCESS, "message", "WAN publisher stopped");
+            res = response(RestUtil.ResponseType.SUCCESS, "message", "WAN publisher stopped");
         } catch (Exception ex) {
             logger.warning("Error occurred while stopping WAN publisher", ex);
             res = exceptionResponse(ex);
         }
-        sendResponse(command, res);
+        sendResponse(textCommandService, command, res);
     }
 
     /**
@@ -459,12 +512,12 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
         try {
             service.resume(wanReplicationName, publisherId);
-            res = response(ResponseType.SUCCESS, "message", "WAN publisher resumed");
+            res = response(RestUtil.ResponseType.SUCCESS, "message", "WAN publisher resumed");
         } catch (Exception ex) {
             logger.warning("Error occurred while resuming WAN publisher", ex);
             res = exceptionResponse(ex);
         }
-        sendResponse(command, res);
+        sendResponse(textCommandService, command, res);
     }
 
     private void handleUpdatePermissions(HttpPostCommand command) {

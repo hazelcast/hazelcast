@@ -170,12 +170,12 @@ public class HTTPCommunicator {
 
     public int shutdownCluster() throws IOException {
         String url = address + "management/cluster/clusterShutdown";
-        return doGet(url).responseCode;
+        return doPost(url).responseCode;
     }
 
     public String shutdownMember() throws IOException {
         String url = address + "management/cluster/memberShutdown";
-        return doGet(url).response;
+        return doPost(url).response;
     }
 
     public String getClusterState() throws IOException {
@@ -200,17 +200,17 @@ public class HTTPCommunicator {
 
     public ConnectionResponse hotBackup() throws IOException {
         String url = address + "management/cluster/hotBackup";
-        return doGet(url);
+        return doPost(url);
     }
 
     public ConnectionResponse hotBackupInterrupt() throws IOException {
         String url = address + "management/cluster/hotBackupInterrupt";
-        return doGet(url);
+        return doPost(url);
     }
 
     public ConnectionResponse forceStart() throws IOException {
         String url = address + "management/cluster/forceStart";
-        return doGet(url);
+        return doPost(url);
     }
 
     public ConnectionResponse changeManagementCenterUrl(String newUrl) throws IOException {
@@ -220,7 +220,7 @@ public class HTTPCommunicator {
 
     public ConnectionResponse partialStart() throws IOException {
         String url = address + "management/cluster/partialStart";
-        return doGet(url);
+        return doPost(url);
     }
 
     public String listClusterNodes() throws IOException {
