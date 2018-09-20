@@ -36,6 +36,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -143,14 +144,15 @@ public class AsyncMapWriterTest extends JetTestSupport {
     @Test
     public void when_tooManyConcurrentOps_then_refuseFlush() {
         // Given
-        writer.put("key1", "value1");
-        writer.put("key2", "value2");
-        writer.put("key3", "value3");
-        writer.put("key4", "value4");
+        int p1 = getPartitionId(instance1.getHazelcastInstance());
+        int p2 = getPartitionId(instance2.getHazelcastInstance());
+        writer.put(generateKeyForPartition(instance1.getHazelcastInstance(), p1), "value1");
+        writer.put(generateKeyForPartition(instance2.getHazelcastInstance(), p2), "value2");
+
         CompletableFuture<Void> future = new CompletableFuture<>();
 
         JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
-        service.numConcurrentAsyncOps().set(JetService.MAX_PARALLEL_ASYNC_OPS - NODE_COUNT + 1);
+        service.numConcurrentAsyncOps().set(JetService.MAX_PARALLEL_ASYNC_OPS - 1);
         // When
         boolean flushed = writer.tryFlushAsync(future);
 
@@ -249,7 +251,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
         CompletableFuture<Void> future = new CompletableFuture<>();
 
         // When
-        RetryableMapStore.failOnNext = true;
+        RetryableMapStore.failOnNext.set(true);
         boolean flushed = writer.tryFlushAsync(future);
 
         // Then
@@ -270,12 +272,11 @@ public class AsyncMapWriterTest extends JetTestSupport {
 
     private static class RetryableMapStore extends AMapStore implements Serializable {
 
-        private static volatile boolean failOnNext;
+        private static AtomicBoolean failOnNext = new AtomicBoolean();
 
         @Override
         public void store(Object o, Object o2) {
-            if (failOnNext) {
-                failOnNext = false;
+            if (failOnNext.compareAndSet(true, false)) {
                 throw new RetryableHazelcastException("Failing once store");
             }
         }

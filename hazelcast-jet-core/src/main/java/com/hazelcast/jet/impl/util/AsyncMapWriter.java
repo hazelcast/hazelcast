@@ -89,19 +89,15 @@ public class AsyncMapWriter {
         this.numConcurrentOps = jetService.numConcurrentAsyncOps();
     }
 
-    public void put(Map.Entry<Data, Data> entry) {
-        int partitionId = partitionService.getPartitionId(entry.getKey());
+    public void put(Object key, Object value) {
+        Data keyData = serializationService.toData(key);
+        Data valueData = serializationService.toData(value);
+        int partitionId = partitionService.getPartitionId(keyData);
         MapEntries entries = outputBuffers[partitionId];
         if (entries == null) {
             entries = outputBuffers[partitionId] = new MapEntries();
         }
-        entries.add(entry.getKey(), entry.getValue());
-    }
-
-    public void put(Object key, Object value) {
-        Data keyData = serializationService.toData(key);
-        Data valueData = serializationService.toData(value);
-        put(entry(keyData, valueData));
+        entries.add(keyData, valueData);
     }
 
     /**
