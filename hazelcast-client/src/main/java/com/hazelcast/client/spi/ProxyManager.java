@@ -395,10 +395,10 @@ public final class ProxyManager {
                 initialize(clientProxy);
                 return;
             } catch (Exception e) {
-                boolean retryable = isRetryable(e);
+                boolean retryable = ClientInvocation.isRetrySafeException(e);
 
                 if (!retryable && e instanceof ExecutionException) {
-                    retryable = isRetryable(e.getCause());
+                    retryable = ClientInvocation.isRetrySafeException(e.getCause());
                 }
 
                 if (retryable) {
@@ -412,10 +412,6 @@ public final class ProxyManager {
         throw new OperationTimeoutException("Initializing  " + clientProxy.getServiceName() + ":"
                 + clientProxy.getName() + " is timed out after " + elapsedTime
                 + " ms. Configured invocation timeout is " + invocationTimeoutMillis + " ms");
-    }
-
-    private boolean isRetryable(final Throwable t) {
-        return ClientInvocation.isRetrySafeException(t);
     }
 
     private void sleepForProxyInitRetry() {
@@ -489,6 +485,12 @@ public final class ProxyManager {
         }
         ClientMessage clientMessage = ClientCreateProxiesCodec.encodeRequest(proxyEntries);
         new ClientInvocation(client, clientMessage, null, ownerConnection).invokeUrgent();
+        createCachesOnCluster();
+    }
+
+    private void createCachesOnCluster() {
+        ClientCacheProxyFactory proxyFactory = (ClientCacheProxyFactory) getClientProxyFactory(ICacheService.SERVICE_NAME);
+        proxyFactory.recreateCachesOnCluster();
     }
 
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
