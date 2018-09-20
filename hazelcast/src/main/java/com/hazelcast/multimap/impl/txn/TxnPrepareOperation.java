@@ -16,18 +16,14 @@
 
 package com.hazelcast.multimap.impl.txn;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.operations.AbstractBackupAwareMultiMapOperation;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionException;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class TxnPrepareOperation extends AbstractBackupAwareMultiMapOperation implements Versioned {
@@ -72,23 +68,5 @@ public class TxnPrepareOperation extends AbstractBackupAwareMultiMapOperation im
     @Override
     public int getId() {
         return MultiMapDataSerializerHook.TXN_PREPARE;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        // RU_COMPAT_3_9
-        if (out.getVersion().isUnknownOrLessThan(Versions.V3_10)) {
-            out.writeLong(0);
-        }
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        // RU_COMPAT_3_9
-        if (in.getVersion().isUnknownOrLessThan(Versions.V3_10)) {
-            in.readLong();
-        }
     }
 }

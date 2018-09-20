@@ -593,6 +593,21 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static String generateKeyForPartition(HazelcastInstance instance, String prefix, int partitionId) {
+        Cluster cluster = instance.getCluster();
+        checkPartitionCountGreaterOrEqualMemberCount(instance);
+
+        Member localMember = cluster.getLocalMember();
+        PartitionService partitionService = instance.getPartitionService();
+        while (true) {
+            String id = prefix + randomString();
+            Partition partition = partitionService.getPartition(id);
+            if (partition.getPartitionId() == partitionId) {
+                return id;
+            }
+        }
+    }
+
     public String[] generateKeysBelongingToSamePartitionsOwnedBy(HazelcastInstance instance, int keyCount) {
         int partitionId = getPartitionId(instance);
         String[] keys = new String[keyCount];

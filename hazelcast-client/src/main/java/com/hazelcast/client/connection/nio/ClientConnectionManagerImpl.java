@@ -66,10 +66,9 @@ import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
@@ -104,7 +103,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ConcurrentMap<Address, ClientConnection> activeConnections = new ConcurrentHashMap<Address, ClientConnection>();
     private final ConcurrentMap<Address, AuthenticationFuture> connectionsInProgress =
             new ConcurrentHashMap<Address, AuthenticationFuture>();
-    private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+    private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<ConnectionListener>();
     private final boolean allowInvokeWhenDisconnected;
     private final ICredentialsFactory credentialsFactory;
     private final NioNetworking networking;

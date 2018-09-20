@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateChange;
@@ -26,6 +27,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.UrgentSystemOperation;
@@ -36,23 +38,25 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 
 public class LockClusterStateOp  extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
-        IdentifiedDataSerializable {
+        IdentifiedDataSerializable, Versioned {
 
     private ClusterStateChange stateChange;
     private Address initiator;
     private String txnId;
     private long leaseTime;
+    private int memberListVersion;
     private int partitionStateVersion;
 
     public LockClusterStateOp() {
     }
 
-    public LockClusterStateOp(ClusterStateChange stateChange, Address initiator,
-                              String txnId, long leaseTime, int partitionStateVersion) {
+    public LockClusterStateOp(ClusterStateChange stateChange, Address initiator, String txnId, long leaseTime,
+            int memberListVersion, int partitionStateVersion) {
         this.stateChange = stateChange;
         this.initiator = initiator;
         this.txnId = txnId;
         this.leaseTime = leaseTime;
+        this.memberListVersion = memberListVersion;
         this.partitionStateVersion = partitionStateVersion;
     }
 
@@ -76,7 +80,7 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
             getLogger().info("Locking cluster state. Initiator: " + initiator
                     + ", lease-time: " + leaseTime);
         }
-        clusterStateManager.lockClusterState(stateChange, initiator, txnId, leaseTime, partitionStateVersion);
+        clusterStateManager.lockClusterState(stateChange, initiator, txnId, leaseTime, memberListVersion, partitionStateVersion);
     }
 
     @Override
@@ -109,6 +113,10 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
         out.writeUTF(txnId);
         out.writeLong(leaseTime);
         out.writeInt(partitionStateVersion);
+        // RU_COMPAT_V3_10
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
+            out.writeInt(memberListVersion);
+        }
     }
 
     @Override
@@ -120,6 +128,10 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
         txnId = in.readUTF();
         leaseTime = in.readLong();
         partitionStateVersion = in.readInt();
+        // RU_COMPAT_V3_10
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
+            memberListVersion = in.readInt();
+        }
     }
 
     @Override

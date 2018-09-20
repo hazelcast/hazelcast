@@ -476,6 +476,11 @@ public class Node {
                         throw new HazelcastException("Graceful shutdown failed for " + service);
                     }
                 }
+
+                @Override
+                public String toString() {
+                    return "Graceful shutdown task for service [" + service.toString() + "]";
+                }
             });
             futures.add(future);
         }

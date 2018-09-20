@@ -124,7 +124,9 @@ public class PNCounterService implements
         return counters.containsKey(name);
     }
 
-    /** Returns the PN counter statistics for the counter with the given {@code name} */
+    /**
+     * Returns the PN counter statistics for the counter with the given {@code name}
+     */
     public LocalPNCounterStatsImpl getLocalPNCounterStats(String name) {
         return getOrPutSynchronized(statsMap, name, statsMap, statsConstructorFunction);
     }
@@ -190,7 +192,10 @@ public class PNCounterService implements
 
     @Override
     public void merge(String name, PNCounterImpl value) {
-        getCounter(name).merge(value);
+        PNCounterImpl counter = getCounter(name);
+        counter.merge(value);
+        long counterValue = counter.get(null).getValue();
+        getLocalPNCounterStats(name).setValue(counterValue);
     }
 
     @Override
@@ -226,6 +231,7 @@ public class PNCounterService implements
             }
             if (counter.markMigrated(vectorClock)) {
                 counters.remove(counterName);
+                statsMap.remove(counterName);
             } else {
                 allCleared = false;
             }

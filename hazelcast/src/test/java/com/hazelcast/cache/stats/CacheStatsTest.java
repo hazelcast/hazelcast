@@ -621,6 +621,7 @@ public class CacheStatsTest extends CacheTestSupport {
         if (useBackups) {
             // Create the second instance to store data as backup.
             instance2 = getHazelcastInstance();
+            waitAllForSafeState(factory.getAllHazelcastInstances());
             CachingProvider cp = getCachingProvider(instance2);
             CacheManager cm = cp.getCacheManager();
             cache = createCache(cacheName);
@@ -670,6 +671,7 @@ public class CacheStatsTest extends CacheTestSupport {
             // so the second instance will be owner of some partitions
             // and the first instance will lose ownership of some instances.
             instance2 = getHazelcastInstance();
+            waitAllForSafeState(factory.getAllHazelcastInstances());
             CachingProvider cp = getCachingProvider(instance2);
             CacheManager cm = cp.getCacheManager();
             ICache<Integer, String> c = cm.getCache(cacheName).unwrap(ICache.class);

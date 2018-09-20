@@ -50,6 +50,11 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_WAN_SYNC_ALL_MAPS = URI_MANCENTER_BASE_URL + "/wan/sync/allmaps";
     public static final String URI_MANCENTER_WAN_CLEAR_QUEUES = URI_MANCENTER_BASE_URL + "/wan/clearWanQueues";
     public static final String URI_ADD_WAN_CONFIG = URI_MANCENTER_BASE_URL + "/wan/addWanConfig";
+    public static final String URI_WAN_PAUSE_PUBLISHER = URI_MANCENTER_BASE_URL + "/wan/pausePublisher";
+    public static final String URI_WAN_STOP_PUBLISHER = URI_MANCENTER_BASE_URL + "/wan/stopPublisher";
+    public static final String URI_WAN_RESUME_PUBLISHER = URI_MANCENTER_BASE_URL + "/wan/resumePublisher";
+    public static final String URI_WAN_CONSISTENCY_CHECK_MAP = URI_MANCENTER_BASE_URL + "/wan/consistencyCheck/map";
+
     public static final String LEGACY_URI_WAN_SYNC_MAP = "/hazelcast/rest/wan/sync/map";
     public static final String LEGACY_URI_WAN_SYNC_ALL_MAPS = "/hazelcast/rest/wan/sync/allmaps";
     public static final String LEGACY_URI_MANCENTER_WAN_CLEAR_QUEUES = "/hazelcast/rest/mancenter/clearWanQueues";
