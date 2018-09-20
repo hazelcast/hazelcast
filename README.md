@@ -10,6 +10,8 @@ To use Hazelcast embedded in your application, you need to add the plugin depend
 
 ***NOTE:*** If you also have the direct dependency to `hazelcast` specified, then please note that hazelcast-kubernetes 1.3+ is compatible with hazelcast 3.11+ and for older hazelcast verions you need to use hazelcast-kubernetes 1.2.
 
+***NOTE:*** Your Java Runtime Environment must support TLS 1.2 (which is the case for most modern JREs).
+
 #### Maven
 
 ```xml
