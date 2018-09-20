@@ -22,7 +22,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.internal.probing.AbstractProbeTest;
-import com.hazelcast.internal.probing.sources.GcProbeSource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -32,7 +31,7 @@ public class ProbeGarbageCollectionTest extends AbstractProbeTest {
 
     @Before
     public void setup() {
-        registry.register(new GcProbeSource());
+        registry.register(GcProbeSource.INSTANCE);
     }
 
     @Test

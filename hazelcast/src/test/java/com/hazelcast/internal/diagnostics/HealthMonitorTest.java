@@ -18,7 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbeUtils;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -68,21 +68,21 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Test
     public void exceedsThreshold_when_osProcessCpuLoad_tooHigh() {
         metrics.updateThreshHoldMetrics();
-        metrics.render("os.processCpuLoad", Probing.toLong(90d));
+        metrics.render("os.processCpuLoad", ProbeUtils.toLong(90d));
         assertTrue(metrics.exceedsThreshold());
     }
 
     @Test
     public void exceedsThreshold_when_osSystemCpuLoad_TooHigh() {
         metrics.updateThreshHoldMetrics();
-        metrics.render("os.systemCpuLoad", Probing.toLong(90d));
+        metrics.render("os.systemCpuLoad", ProbeUtils.toLong(90d));
         assertTrue(metrics.exceedsThreshold());
     }
 
     @Test
     public void exceedsThreshold_operationServicePendingInvocationsPercentage() {
         metrics.updateThreshHoldMetrics();
-        metrics.render("operation.invocations.usedPercentage", Probing.toLong(90d));
+        metrics.render("operation.invocations.usedPercentage", ProbeUtils.toLong(90d));
         assertTrue(metrics.exceedsThreshold());
     }
 

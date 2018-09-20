@@ -24,10 +24,10 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeRenderer;
-import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbeUtils;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
 import com.hazelcast.internal.probing.sources.GcProbeSource;
-import com.hazelcast.internal.probing.sources.OsProbeSource;
+import com.hazelcast.internal.probing.sources.MachineProbeSource;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -75,7 +75,7 @@ public class HealthMonitor {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final long PERCENTAGE_MULTIPLIER = 100L;
-    private static final long THRESHOLD_PERCENTAGE_INVOCATIONS = Probing.toLong(70d);
+    private static final long THRESHOLD_PERCENTAGE_INVOCATIONS = ProbeUtils.toLong(70d);
     private static final long THRESHOLD_INVOCATIONS = 1000;
 
     final HealthMetrics healthMetrics;
@@ -222,14 +222,14 @@ public class HealthMonitor {
         private void init() {
             if (thresholdRenderContext == null) {
                 thresholdRenderContext = registry.newRenderingContext(NodeEngineImpl.class,
-                        OsProbeSource.class);
+                        MachineProbeSource.class);
             }
             if (printoutRenderContext == null) {
                 printoutRenderContext = registry.newRenderingContext(NodeEngineImpl.class,
                         ClientEngineImpl.class, ClusterServiceImpl.class,
                         ExecutionServiceImpl.class, EventServiceImpl.class,
                         OperationExecutorImpl.class, TcpIpConnectionManager.class,
-                        OsProbeSource.class, GcProbeSource.class);
+                        MachineProbeSource.class, GcProbeSource.class);
             }
         }
 
@@ -315,10 +315,10 @@ public class HealthMonitor {
         }
 
         private void renderLoad() {
-            double processCpuLoad = Probing.doubleValue(read("os.processCpuLoad") * PERCENTAGE_MULTIPLIER);
+            double processCpuLoad = ProbeUtils.doubleValue(read("os.processCpuLoad") * PERCENTAGE_MULTIPLIER);
             sb.append("load.process").append('=')
             .append(format("%.2f", processCpuLoad)).append("%, ");
-            double systemCpuLoad = Probing.doubleValue(read("os.systemCpuLoad") * PERCENTAGE_MULTIPLIER);
+            double systemCpuLoad = ProbeUtils.doubleValue(read("os.systemCpuLoad") * PERCENTAGE_MULTIPLIER);
             sb.append("load.system").append('=')
             .append(format("%.2f", systemCpuLoad)).append("%, ");
 
@@ -327,7 +327,7 @@ public class HealthMonitor {
                 sb.append("load.systemAverage").append("=n/a ");
             } else {
                 sb.append("load.systemAverage").append('=')
-                .append(format("%.2f", Probing.doubleValue(systemLoadAverage))).append(", ");
+                .append(format("%.2f", ProbeUtils.doubleValue(systemLoadAverage))).append(", ");
             }
         }
 
@@ -467,7 +467,7 @@ public class HealthMonitor {
             sb.append("operations.running.count=")
             .append(read("operation.runningCount")).append(", ");
             sb.append("operations.pending.invocations.percentage=")
-            .append(format("%.2f", Probing.doubleValue(read("operation.invocations.usedPercentage")))).append("%, ");
+            .append(format("%.2f", ProbeUtils.doubleValue(read("operation.invocations.usedPercentage")))).append("%, ");
             sb.append("operations.pending.invocations.count=")
             .append(read("operation.invocations.pending")).append(", ");
         }

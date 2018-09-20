@@ -25,14 +25,16 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 
-import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
+import com.hazelcast.internal.probing.ProbingCycle;
 
 /**
  * A {@link ProbeSource} providing information on runtime, threads,
  * class-loading and OS properties
  */
-public final class OsProbeSource implements ProbeSource {
+public final class MachineProbeSource implements ProbeSource {
+
+    public static final ProbeSource INSTANCE = new MachineProbeSource();
 
     private static final String[] PROBED_OS_METHODS = { "getCommittedVirtualMemorySize",
             "getFreePhysicalMemorySize", "getFreeSwapSpaceSize", "getProcessCpuTime",
@@ -45,6 +47,10 @@ public final class OsProbeSource implements ProbeSource {
     private final File userHome = new File(System.getProperty("user.home"));
     private final ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
     private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
+
+    private MachineProbeSource() {
+        // force single instance to avoid multi-registration
+    }
 
     @Override
     public void probeIn(ProbingCycle cycle) {
@@ -59,11 +65,6 @@ public final class OsProbeSource implements ProbeSource {
         probeProperties(cycle, threadMXBean);
         cycle.openContext().tag(TAG_TYPE, "file.partition").tag(TAG_INSTANCE, "user.home");
         probeProperties(cycle, userHome);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof OsProbeSource;
     }
 
     public static void probeProperties(ProbingCycle cycle, File f) {

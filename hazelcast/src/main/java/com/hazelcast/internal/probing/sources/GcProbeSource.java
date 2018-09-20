@@ -25,11 +25,13 @@ import java.util.Collections;
 import java.util.Set;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ReprobeCycle;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 
 public final class GcProbeSource implements ProbeSource {
+
+    public static final ProbeSource INSTANCE = new GcProbeSource();
 
     private static final Set<String> YOUNG_GC;
     private static final Set<String> OLD_GC;
@@ -60,6 +62,10 @@ public final class GcProbeSource implements ProbeSource {
     private volatile long unknownCount;
     @Probe(level = MANDATORY)
     private volatile long unknownTime;
+
+    private GcProbeSource() {
+        // force single instance to avoid multi-registration
+    }
 
     @Override
     public void probeIn(ProbingCycle cycle) {
@@ -98,10 +104,5 @@ public final class GcProbeSource implements ProbeSource {
         this.majorTime = majorTime;
         this.unknownCount = unknownCount;
         this.unknownTime = unknownTime;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof GcProbeSource;
     }
 }

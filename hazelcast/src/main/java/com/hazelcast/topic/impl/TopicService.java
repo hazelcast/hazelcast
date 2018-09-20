@@ -23,7 +23,6 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
@@ -45,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
@@ -81,7 +81,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        Probing.probeIn(cycle, "topic", statsMap);
+        probeStatistics(cycle, "topic", statsMap);
     }
 
     // only for testing

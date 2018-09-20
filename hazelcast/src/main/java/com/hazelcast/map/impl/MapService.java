@@ -21,7 +21,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ReprobeCycle;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
@@ -59,6 +58,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
 
 /**
  * Defines map service behavior.
@@ -203,7 +203,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        Probing.probeIn(cycle, "map", mapServiceContext.getLocalMapStatsProvider().getStats());
+        probeStatistics(cycle, "map", mapServiceContext.getLocalMapStatsProvider().getStats());
     }
 
     public Map<String, ? extends LocalMapStats> getStats() {

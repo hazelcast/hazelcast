@@ -215,12 +215,12 @@ public class ProbeAnnotatedMethodsTest extends AbstractProbeTest implements Prob
 
     @Test
     public void primitiveFloat() {
-        assertProbed("foo.floatMethod", Probing.toLong(10d));
+        assertProbed("foo.floatMethod", ProbeUtils.toLong(10d));
     }
 
     @Test
     public void primitiveDouble() {
-        assertProbed("foo.doubleMethod", Probing.toLong(10d));
+        assertProbed("foo.doubleMethod", ProbeUtils.toLong(10d));
     }
 
     @Test

@@ -19,7 +19,6 @@ package com.hazelcast.flakeidgen.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.monitor.impl.LocalFlakeIdGeneratorStatsImpl;
@@ -32,6 +31,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class FlakeIdGeneratorService implements ManagedService, RemoteService,
@@ -81,7 +81,7 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        Probing.probeIn(cycle, "flakeIdGenerator", statsMap);
+        probeStatistics(cycle, "flakeIdGenerator", statsMap);
     }
 
     // for testing only

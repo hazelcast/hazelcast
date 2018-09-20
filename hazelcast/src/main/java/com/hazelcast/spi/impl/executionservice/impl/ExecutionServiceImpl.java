@@ -53,7 +53,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.probing.Probing.probeAllInstances;
+import static com.hazelcast.internal.probing.ProbeUtils.probeAllInstances;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 

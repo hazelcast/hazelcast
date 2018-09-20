@@ -31,7 +31,6 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ReprobeCycle;
 import com.hazelcast.internal.serialization.impl.HeapData;
@@ -77,6 +76,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.config.ConfigValidator.checkReplicatedMapConfig;
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -370,7 +370,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        Probing.probeIn(cycle, "replicatedMap", statsMap);
+        probeStatistics(cycle, "replicatedMap", statsMap);
     }
 
     // for testing only

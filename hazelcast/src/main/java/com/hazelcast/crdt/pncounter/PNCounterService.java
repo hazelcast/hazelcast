@@ -23,7 +23,6 @@ import com.hazelcast.crdt.CRDTReplicationAwareService;
 import com.hazelcast.crdt.CRDTReplicationContainer;
 import com.hazelcast.crdt.MutationDisallowedException;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.util.Memoizer;
 import com.hazelcast.monitor.LocalPNCounterStats;
@@ -42,6 +41,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
@@ -250,7 +250,7 @@ public class PNCounterService implements
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        Probing.probeIn(cycle, "pNCounter", statsMap);
+        probeStatistics(cycle, "pNCounter", statsMap);
     }
 
     // for testing only

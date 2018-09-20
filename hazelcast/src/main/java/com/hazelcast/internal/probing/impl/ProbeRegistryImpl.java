@@ -39,13 +39,10 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeRenderer;
-import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.ProbeUtils;
 import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.ReprobeCycle;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeRenderContext;
-import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle.Tagging;
-import com.hazelcast.internal.probing.ProbingCycle.Tags;
+import com.hazelcast.internal.probing.ReprobeCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
@@ -121,7 +118,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             this.update = reprobeFor(source.getClass());
             if (update != null) {
                 ReprobeCycle reprobe = update.getAnnotation(ReprobeCycle.class);
-                updateIntervalMs = Probing.updateInterval(reprobe.value(), reprobe.unit());
+                updateIntervalMs = ProbeUtils.updateInterval(reprobe.value(), reprobe.unit());
                 updateLevel = reprobe.level();
             } else {
                 updateIntervalMs = -1L;
@@ -256,7 +253,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         @Override
         public void probe(ProbeLevel level, CharSequence name, double value) {
-            probe(level, name, Probing.toLong(value));
+            probe(level, name, ProbeUtils.toLong(value));
         }
 
         @Override
@@ -487,7 +484,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (otherFields != null) {
                 for (int i = 0; i < otherFields.length; i++) {
                     try {
-                        cycle.probe(level, otherFieldNames[i], Probing.toLong(otherFields[i].get(instance)));
+                        cycle.probe(level, otherFieldNames[i], ProbeUtils.toLong(otherFields[i].get(instance)));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read field probe", e);
                     }
@@ -536,7 +533,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 for (int i = 0; i < methods.length; i++) {
                     try {
                         cycle.probe(level, methodNames[i],
-                                Probing.toLong(methods[i].invoke(instance, EMPTY_ARGS)));
+                                ProbeUtils.toLong(methods[i].invoke(instance, EMPTY_ARGS)));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read method probe: " + methods[i].getName(), e);
                     }

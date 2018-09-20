@@ -19,7 +19,6 @@ package com.hazelcast.topic.impl.reliable;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
@@ -33,6 +32,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class ReliableTopicService
@@ -78,7 +78,7 @@ public class ReliableTopicService
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        Probing.probeIn(cycle, "reliableTopic", statsMap);
+        probeStatistics(cycle, "reliableTopic", statsMap);
     }
 
     // for tests only

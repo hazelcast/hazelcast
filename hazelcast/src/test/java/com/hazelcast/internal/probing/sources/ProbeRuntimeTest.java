@@ -25,7 +25,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.internal.probing.AbstractProbeTest;
-import com.hazelcast.internal.probing.sources.OsProbeSource;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,7 +39,7 @@ public class ProbeRuntimeTest extends AbstractProbeTest {
 
     @Before
     public void setup() {
-        registry.register(new OsProbeSource());
+        registry.register(MachineProbeSource.INSTANCE);
         runtime = Runtime.getRuntime();
     }
 

@@ -32,10 +32,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.hazelcast.internal.probing.CharSequenceUtils.Lines;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.util.counters.Counter;
-import com.hazelcast.monitor.LocalIndexStats;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.LocalDistributedObjectStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 
 /**
  * Provides utilities around probing.
@@ -43,14 +39,14 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
  * This includes general conversion functionality like {@link #toLong(boolean)}
  * as well as common metrics on core types of objects that cannot be annotated.
  */
-public final class Probing {
+public final class ProbeUtils {
 
     /**
      * To get 4 fractional digits precision for doubles these are multiplied by 10k.
      */
     private static final double DOUBLE_TO_LONG_FACTOR = 10000d;
 
-    private Probing() {
+    private ProbeUtils() {
         // utility
     }
 
@@ -102,15 +98,15 @@ public final class Probing {
         Class<?> type = value.getClass();
         if (value instanceof Number) {
             if (type == Float.class || type == Double.class) {
-                return Probing.toLong(((Number) value).doubleValue());
+                return ProbeUtils.toLong(((Number) value).doubleValue());
             }
             return ((Number) value).longValue();
         }
         if (type == Boolean.class) {
-            return Probing.toLong(((Boolean) value).booleanValue());
+            return ProbeUtils.toLong(((Boolean) value).booleanValue());
         }
         if (type == AtomicBoolean.class) {
-            return Probing.toLong(((AtomicBoolean) value).get());
+            return ProbeUtils.toLong(((AtomicBoolean) value).get());
         }
         if (type.isEnum() && value instanceof CodedEnum) {
             return ((CodedEnum) value).getCode();
@@ -157,38 +153,6 @@ public final class Probing {
         for (Entry<String, T> e : entries.entrySet()) {
             tags.tag(TAG_INSTANCE, e.getKey());
             cycle.probe(e.getValue());
-        }
-    }
-
-    public static <T extends LocalDistributedObjectStats> void probeIn(ProbingCycle cycle,
-            String type, Map<String, T> stats) {
-        if (stats.isEmpty()) {
-            // avoid unnecessary context manipulation
-            return;
-        }
-        ProbingCycle.Tags tags = cycle.openContext().tag(TAG_TYPE, type);
-        for (Entry<String, T> e : stats.entrySet()) {
-            T val = e.getValue();
-            if (val.isStatisticsEnabled()) {
-                tags.tag(TAG_INSTANCE, e.getKey());
-                cycle.probe(val);
-                if (val instanceof LocalMapStatsImpl) {
-                    LocalMapStatsImpl mapStats = (LocalMapStatsImpl) val;
-                    NearCacheStats nearCacheStats = mapStats.getNearCacheStats();
-                    if (nearCacheStats != null) {
-                        cycle.probe("nearcache", nearCacheStats);
-                    }
-                    Map<String, LocalIndexStats> indexStats = mapStats.getIndexStats();
-                    if (indexStats != null && !indexStats.isEmpty()) {
-                        for (Entry<String, LocalIndexStats> index : indexStats.entrySet()) {
-                            tags.tag("index", index.getKey());
-                            cycle.probe(index.getValue());
-                        }
-                        // restore context after adding 2nd tag
-                        tags = cycle.openContext().tag(TAG_TYPE, type);
-                    }
-                }
-            }
         }
     }
 

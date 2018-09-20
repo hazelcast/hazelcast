@@ -40,8 +40,7 @@ import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
 import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
 import com.hazelcast.internal.probing.sources.GcProbeSource;
-import com.hazelcast.internal.probing.sources.OsProbeSource;
-import com.hazelcast.internal.probing.Probing;
+import com.hazelcast.internal.probing.sources.MachineProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
@@ -197,8 +196,8 @@ public class NodeEngineImpl implements NodeEngine, ProbeRegistry.ProbeSource {
      */
     private void initProbeSources() {
         probeRegistry.register(this);
-        probeRegistry.register(new GcProbeSource());
-        probeRegistry.register(new OsProbeSource());
+        probeRegistry.register(GcProbeSource.INSTANCE);
+        probeRegistry.register(MachineProbeSource.INSTANCE);
         probeRegistry.register(executionService);
         probeRegistry.registerIfSource(operationService.getOperationExecutor());
         probeRegistry.registerIfSource(node.getNodeExtension());

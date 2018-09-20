@@ -29,11 +29,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.internal.probing.AbstractProbeTest;
-import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.Probing;
-import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ProbeRegistry.ProbeSource;
-import com.hazelcast.internal.probing.sources.OsProbeSource;
+import com.hazelcast.internal.probing.ProbeUtils;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -53,7 +51,7 @@ public class ProbeOperatingSystemTest extends AbstractProbeTest {
 
     @Before
     public void setup() {
-        registry.register(new OsProbeSource());
+        registry.register(MachineProbeSource.INSTANCE);
         registry.register(OS);
     }
 
@@ -103,7 +101,7 @@ public class ProbeOperatingSystemTest extends AbstractProbeTest {
 
     @Test
     public void registerMethod_whenDouble() {
-        assertProbed("doubleMethod", Probing.toLong(10d));
+        assertProbed("doubleMethod", ProbeUtils.toLong(10d));
     }
 
     @Test

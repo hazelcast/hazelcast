@@ -89,7 +89,7 @@ public class ProbeAnnotatedFieldsTest extends AbstractProbeTest implements Probe
 
     @Test
     public void primitiveDouble() {
-        assertProbed("foo.doubleField", Probing.toLong(10d));
+        assertProbed("foo.doubleField", ProbeUtils.toLong(10d));
     }
 
     @Test

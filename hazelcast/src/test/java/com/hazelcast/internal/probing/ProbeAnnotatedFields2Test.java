@@ -106,7 +106,7 @@ public class ProbeAnnotatedFields2Test extends AbstractProbeTest implements Prob
     }
 
     private void assertDouble(String fieldName, double expected) throws Exception {
-        assertProbed(fieldName, expected == -1d ? -1L : Probing.toLong(expected));
+        assertProbed(fieldName, expected == -1d ? -1L : ProbeUtils.toLong(expected));
     }
 
     private static final class SomeSource {

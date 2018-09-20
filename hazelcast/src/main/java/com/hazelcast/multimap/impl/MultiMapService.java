@@ -25,7 +25,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.ReprobeCycle;
 import com.hazelcast.map.impl.event.EventData;
@@ -79,6 +78,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMultiMapConfig;
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
@@ -462,7 +462,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        Probing.probeIn(cycle, "multiMap", statsMap);
+        probeStatistics(cycle, "multiMap", statsMap);
     }
 
     @ReprobeCycle

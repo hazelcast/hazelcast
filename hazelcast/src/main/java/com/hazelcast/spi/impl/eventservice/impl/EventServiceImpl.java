@@ -58,7 +58,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.probing.Probing.probeAllInstances;
+import static com.hazelcast.internal.probing.ProbeUtils.probeAllInstances;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;

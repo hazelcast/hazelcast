@@ -19,7 +19,6 @@ package com.hazelcast.executor.impl;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.Probing;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
@@ -46,6 +45,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class DistributedExecutorService implements ManagedService, RemoteService,
@@ -203,7 +203,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        Probing.probeIn(cycle, "executor", statsMap);
+        probeStatistics(cycle, "executor", statsMap);
     }
 
     /**
