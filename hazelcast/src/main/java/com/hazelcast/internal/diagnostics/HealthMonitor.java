@@ -265,7 +265,7 @@ public class HealthMonitor {
 
         boolean exceedsThreshold() {
             double memoryUsedOfMaxPercentage = (PERCENTAGE_MULTIPLIER * read("runtime.usedMemory"))
-                    / read("runtime.maxMemory");
+                    / (double) read("runtime.maxMemory");
             return memoryUsedOfMaxPercentage > thresholdMemoryPercentage
                     || (read("os.processCpuLoad") / DOUBLE_TO_PERCENT) > thresholdCPUPercentage
                     || (read("os.systemCpuLoad") / DOUBLE_TO_PERCENT) > thresholdCPUPercentage
@@ -427,10 +427,11 @@ public class HealthMonitor {
                 final long usedMeta = memoryStats.getUsedMetadata();
                 sb.append("native.meta.memory.used=")
                 .append(numberToUnit(usedMeta)).append(", ");
-                sb.append("native.meta.memory.free=")
-                .append(numberToUnit(maxMeta - usedMeta)).append(", ");
-                sb.append("native.meta.memory.percentage=")
-                .append(percentageString(PERCENTAGE_MULTIPLIER * usedMeta / (usedNative + usedMeta))).append(", ");
+                sb.append("native.meta.memory.free=").append(numberToUnit(maxMeta - usedMeta))
+                        .append(", ");
+                sb.append("native.meta.memory.percentage=").append(percentageString(
+                        PERCENTAGE_MULTIPLIER * usedMeta / (double) (usedNative + usedMeta)))
+                        .append(", ");
             }
         }
 

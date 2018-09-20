@@ -49,6 +49,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public final class ProbeRegistryImpl implements ProbeRegistry {
 
     private static final ILogger LOGGER = Logger.getLogger(ProbeRegistryImpl.class);
@@ -589,9 +591,11 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                         m.setAccessible(true);
                         probedMethods.add(m);
                     }
-                } catch (Exception e) {
+                } catch (NoSuchMethodException e) {
                     LOGGER.warning("Expected probe method `" + name + "` does not exist for type: "
                             + type.getName());
+                } catch (Exception e) {
+                    LOGGER.warning("Failed to add probe method `" + name + "`: " + e.getMessage());
                 }
             }
             levels[level.ordinal()] = ProbeAnnotatedTypeLevel.createIfNeeded(level, probedMethods,
@@ -715,6 +719,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
     }
 
+    @SuppressFBWarnings(value = "ES_COMPARING_PARAMETER_STRING_WITH_EQ", 
+            justification = "== is intentionally used to find identical instance")
     private static int indexOf(String[] arr, String e) {
         for (int i = 0; i < arr.length; i++) {
             if (arr[i] == e) {
