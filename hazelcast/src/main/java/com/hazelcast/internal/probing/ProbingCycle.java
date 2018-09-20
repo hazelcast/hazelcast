@@ -161,7 +161,7 @@ public interface ProbingCycle {
      * and so forth.
      *
      * @return the {@link Tags} abstraction to use to build the context for this
-     *         cycle.
+     *         cycle. This call does not create any new/litter objects.
      */
     Tags openContext();
 
@@ -184,9 +184,20 @@ public interface ProbingCycle {
          *
          * @param name not null, only guaranteed to be stable throughout the call
          * @param value not null, only guaranteed to be stable throughout the call
-         * @return this {@link Tags} context for chaining
+         * @return this {@link Tags} context for chaining. This call does not create any
+         *         new/litter objects.
          */
         Tags tag(CharSequence name, CharSequence value);
+
+        /**
+         * Similar to {@link #tag(CharSequence, CharSequence)} just that value is a number.
+         * Sole purpose here is to avoid the need to wrap the number in a {@link CharSequence}.
+         * @param name name not null, only guaranteed to be stable throughout the call
+         * @param value the tag value
+         * @return this {@link Tags} context for chaining. This call does not create any
+         *         new/litter objects.
+         */
+        Tags tag(CharSequence name, long value);
 
         /**
          * This method is meat as a legacy support where keys are not build in terms of
@@ -196,7 +207,8 @@ public interface ProbingCycle {
          * The given {@link CharSequence} will always be escaped.
          *
          * @param s not null, only guaranteed to be stable throughout the call
-         * @return this {@link Tags} context for chaining
+         * @return this {@link Tags} context for chaining. This call does not create any
+         *         new/litter objects.
          */
         Tags append(CharSequence s);
 
@@ -207,7 +219,8 @@ public interface ProbingCycle {
          * The given {@link CharSequence} will always be escaped.
          *
          * @param prefix not null, only guaranteed to be stable throughout the call
-         * @return this {@link Tags} context for chaining
+         * @return this {@link Tags} context for chaining. This call does not create any
+         *         new/litter objects.
          */
         Tags prefix(CharSequence prefix);
     }

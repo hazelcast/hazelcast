@@ -143,9 +143,9 @@ class OperationRunnerImpl extends OperationRunner implements ProbingCycle.Taggin
     @Override
     public void tagIn(Tags context) {
         if (partitionId >= 0) {
-            context.tag(TAG_TYPE, "operation.partition").tag(TAG_INSTANCE, String.valueOf(partitionId));
+            context.tag(TAG_TYPE, "operation.partition").tag(TAG_INSTANCE, partitionId);
         } else if (partitionId == -1) {
-            context.tag(TAG_TYPE, "operation.generic").tag(TAG_INSTANCE, String.valueOf(genericId));
+            context.tag(TAG_TYPE, "operation.generic").tag(TAG_INSTANCE, genericId);
         } else {
             context.tag(TAG_TYPE, "operation.generic");
         }

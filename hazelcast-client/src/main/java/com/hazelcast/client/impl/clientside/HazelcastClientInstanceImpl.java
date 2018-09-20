@@ -204,7 +204,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ICredentialsFactory credentialsFactory;
     private final DiscoveryService discoveryService;
     private final LoggingService loggingService;
-    private final ProbeRegistry probeRegistry;
+    private final ProbeRegistry probeRegistry = new ProbeRegistryImpl();
     private final Statistics statistics;
     private final Diagnostics diagnostics;
     private final SerializationService serializationService;
@@ -216,7 +216,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
                                        AddressProvider externalAddressProvider) {
-        probeRegistry = new ProbeRegistryImpl();
         this.config = config;
         if (config.getInstanceName() != null) {
             instanceName = config.getInstanceName();

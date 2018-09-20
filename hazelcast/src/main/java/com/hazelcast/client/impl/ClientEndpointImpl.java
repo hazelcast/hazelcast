@@ -64,8 +64,10 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private String clientVersionString;
     private long authenticationCorrelationId;
     private volatile String stats;
+    private final String address;
 
-    public ClientEndpointImpl(ClientEngineImpl clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
+    public ClientEndpointImpl(ClientEngineImpl clientEngine, NodeEngineImpl nodeEngine,
+            Connection connection) {
         this.clientEngine = clientEngine;
         this.nodeEngine = nodeEngine;
         this.connection = connection;
@@ -78,6 +80,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
         this.clientVersionString = "Unknown";
         this.creationTime = System.currentTimeMillis();
+        InetSocketAddress remote = connection.getRemoteSocketAddress();
+        this.address = remote == null ? null
+                : remote.getAddress().getHostAddress() + ":" + remote.getPort();
     }
 
     @Override
@@ -140,6 +145,11 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public String getClientVersionString() {
         return clientVersionString;
+    }
+
+    @Override
+    public String getAddress() {
+        return address;
     }
 
     @Override

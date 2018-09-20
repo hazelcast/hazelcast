@@ -170,13 +170,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                 if (endpoint.isAlive()) {
                     tags.tag(TAG_INSTANCE, endpoint.getUuid());
                     cycle.probe(endpoint);
-                    String type = endpoint.getClientType().name().toLowerCase();
-                    InetSocketAddress remote = endpoint.getConnection().getRemoteSocketAddress();
-                    String address = remote == null ? "?" : remote.getAddress().getHostAddress() + ":" + remote.getPort();
                     String version = endpoint.getClientVersionString();
-                    tags.tag(TAG_TARGET, type)
+                    String address = endpoint.getAddress();
+                    tags.tag(TAG_TARGET, endpoint.getClientType().name())
                         .tag("version", version == null ? "?" : version)
-                        .tag("address", address);
+                        .tag("address", address == null ? "?" : address);
                     // this particular metric is used to convey details of the endpoint via tags
                     boolean isOwnerConnection = endpoint.isOwnerConnection();
                     cycle.probe("ownerConnection", isOwnerConnection);

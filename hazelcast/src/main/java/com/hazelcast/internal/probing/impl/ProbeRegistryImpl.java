@@ -154,7 +154,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     }
 
     private static final class ProbingCycleImpl
-        implements ProbingCycle, ProbingCycle.Tags, ProbeRenderContext {
+    implements ProbingCycle, ProbingCycle.Tags, ProbeRenderContext {
 
         private final StringBuilder tags = new StringBuilder(128);
         private final Collection<ProbeSourceEntry> sources;
@@ -288,6 +288,22 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             lastTagName = name;
             lastTagValuePosition = tags.length();
             appendEscaped(tags, value);
+            tags.append(' ');
+            return this;
+        }
+
+        @Override
+        public Tags tag(CharSequence name, long value) {
+            if (name == lastTagName) {
+                tags.setLength(lastTagValuePosition);
+                tags.append(value);
+                tags.append(' ');
+                return this;
+            }
+            tags.append(name).append('=');
+            lastTagName = name;
+            lastTagValuePosition = tags.length();
+            tags.append(value);
             tags.append(' ');
             return this;
         }
