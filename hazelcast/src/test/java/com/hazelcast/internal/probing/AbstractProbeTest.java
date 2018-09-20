@@ -95,7 +95,7 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
 
     CountingProbeRenderer probe(final String expectedKey) {
         CountingProbeRenderer renderer = new CountingProbeRenderer(expectedKey);
-        rendering.renderAt(level, renderer);
+        rendering.render(level, renderer);
         return renderer;
     }
 

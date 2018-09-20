@@ -79,7 +79,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
         // the same timestamp
         probeRenderer.timeMillis = System.currentTimeMillis();
-        probeRenderContext.renderAt(probeLevel, probeRenderer);
+        probeRenderContext.render(probeLevel, probeRenderer);
         probeRenderer.writer = null;
     }
 

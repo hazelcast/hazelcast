@@ -259,7 +259,7 @@ public class HealthMonitor {
 
         void updateThreshHoldMetrics() {
             init();
-            thresholdRenderContext.renderAt(ProbeLevel.MANDATORY, this);
+            thresholdRenderContext.render(ProbeLevel.MANDATORY, this);
         }
 
         boolean exceedsThreshold() {
@@ -274,7 +274,7 @@ public class HealthMonitor {
 
         public String render() {
             init();
-            printoutRenderContext.renderAt(ProbeLevel.MANDATORY, this);
+            printoutRenderContext.render(ProbeLevel.MANDATORY, this);
             sb.setLength(0);
             renderProcessors();
             renderPhysicalMemory();

@@ -94,7 +94,7 @@ public final class ProbeDataSender implements Runnable, Closeable {
             CompressingProbeRenderer renderer = new CompressingProbeRenderer(out);
             // start with the common group member and time
             renderer.render(timeKey, Clock.currentTimeMillis());
-            probes.renderAt(ProbeLevel.INFO, renderer);
+            probes.render(ProbeLevel.INFO, renderer);
             renderer.done();
             if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
                 LOGGER.warning("Failed to send probe data to " + conn.getURL() + ". Status code: "

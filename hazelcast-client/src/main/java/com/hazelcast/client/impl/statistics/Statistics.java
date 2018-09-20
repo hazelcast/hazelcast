@@ -230,7 +230,7 @@ public class Statistics implements ProbeRegistry.ProbeSource {
         // writing header: type, name, address, version, principal (each on a line)
         appendHeader(stats);
         // body: render metrics
-        probeRenderContext.renderAt(probeLevel, new ProbeRenderer() {
+        probeRenderContext.render(probeLevel, new ProbeRenderer() {
             @Override
             public void render(CharSequence key, long value) {
                 appendEscapingLineFeed(stats, key);

@@ -170,7 +170,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         @Override
-        public void renderAt(ProbeLevel level, ProbeRenderer renderer) {
+        public void render(ProbeLevel level, ProbeRenderer renderer) {
             this.level = level;
             this.renderer = renderer;
             for (ProbeSourceEntry entry : sources) {

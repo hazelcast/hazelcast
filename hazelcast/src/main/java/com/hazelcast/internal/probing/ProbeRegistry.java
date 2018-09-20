@@ -93,7 +93,7 @@ public interface ProbeRegistry {
          * @param renderer not null; is called for each active prove with a key and
          *        value to convert them to the renderer specific format.
          */
-        void renderAt(ProbeLevel level, ProbeRenderer renderer);
+        void render(ProbeLevel level, ProbeRenderer renderer);
     }
 
     /**
