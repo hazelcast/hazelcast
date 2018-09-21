@@ -26,6 +26,7 @@ import static com.hazelcast.util.Preconditions.checkHasText;
 @Deprecated
 public class AwsConfig
         extends AliasedDiscoveryConfig {
+    private static final int CONNECTION_TIMEOUT = 5;
 
     public String getAccessKey() {
         return getProperties().get("access-key");
@@ -44,6 +45,9 @@ public class AwsConfig
     }
 
     public int getConnectionTimeoutSeconds() {
+        if (!getProperties().containsKey("connection-timeout-seconds")) {
+            return CONNECTION_TIMEOUT;
+        }
         return Integer.parseInt(getProperties().get("connection-timeout-seconds"));
     }
 

@@ -82,16 +82,6 @@ public class InvalidConfigurationClientTest {
         buildConfig("inside-aws-enabled", "true");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void testWhenIamRoleEnabled_InsideAwsDisabled() {
-        buildConfig("inside-aws-enabled", "false");
-    }
-
-    @Test(expected = InvalidConfigurationException.class)
-    public void testWhenInvalid_InsideAwsEnabled() {
-        buildConfig("inside-aws-enabled", "tRue");
-    }
-
     @Test
     public void WhenValid_ExecutorPoolSize() {
         buildConfig("executor-pool-size", "17");
