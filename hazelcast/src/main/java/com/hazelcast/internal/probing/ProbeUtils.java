@@ -20,15 +20,22 @@ import static com.hazelcast.internal.probing.ProbeSource.TAG_INSTANCE;
 import static com.hazelcast.internal.probing.ProbeSource.TAG_TYPE;
 import static java.lang.Math.round;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 /**
  * Provides utilities around probing.
@@ -37,6 +44,8 @@ import com.hazelcast.internal.util.counters.Counter;
  * as well as common metrics on core types of objects that cannot be annotated.
  */
 public final class ProbeUtils {
+
+    private static final ILogger LOGGER = Logger.getLogger(ProbeUtils.class);
 
     /**
      * To get 4 fractional digits precision for doubles these are multiplied by 10k.
@@ -145,6 +154,75 @@ public final class ProbeUtils {
     public static long updateInterval(int value, TimeUnit unit) {
         return unit.toMillis(value);
     }
+
+    public static List<Method> findProbedMethods(Class<?> type) {
+        List<Method> probedMethods = new ArrayList<Method>();
+        collectProbeMethods(type, probedMethods);
+        return probedMethods;
+    }
+
+    public static List<Field> findProbedFields(Class<?> type) {
+        List<Field> probedFields = new ArrayList<Field>();
+        collectProbeFields(type, probedFields);
+        return probedFields;
+    }
+
+    private static void collectProbeMethods(Class<?> type, List<Method> probes) {
+        for (Method m : type.getDeclaredMethods()) {
+            if (m.isAnnotationPresent(Probe.class) && isSuitableProbeMethod(m, probes)) {
+                if (isSupportedProbeType(m.getReturnType())) {
+                    m.setAccessible(true);
+                    probes.add(m);
+                } else {
+                    LOGGER.warning("@Probe annotated method " + m.getName() + " in "
+                            + m.getDeclaringClass().getSimpleName()
+                            + " has an unsupported return type.");
+                }
+            }
+        }
+        if (type.getSuperclass() != null) {
+            collectProbeMethods(type.getSuperclass(), probes);
+        }
+        for (Class<?> t : type.getInterfaces()) {
+            collectProbeMethods(t, probes);
+        }
+    }
+
+    public static boolean isSuitableProbeMethod(Method m, List<Method> probes) {
+        if (m.getParameterTypes().length > 0) {
+            LOGGER.warning("Probe method must not have parameters: " + m.toGenericString());
+            return false;
+        }
+        return !m.getDeclaringClass().isInterface() || !hasMethod(m, probes);
+    }
+
+    private static boolean hasMethod(Method probe, List<Method> probes) {
+        for (Method p : probes) {
+            if (p.getName().equals(probe.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void collectProbeFields(Class<?> type, List<Field> probes) {
+        for (Field f : type.getDeclaredFields()) {
+            if (f.isAnnotationPresent(Probe.class)) {
+                if (isSupportedProbeType(f.getType())) {
+                    f.setAccessible(true);
+                    probes.add(f);
+                } else {
+                    LOGGER.warning("@Probe annotated field " + f.getName() + " in "
+                            + f.getDeclaringClass().getSimpleName()
+                            + " has an unsupported type!");
+                }
+            }
+        }
+        if (type.getSuperclass() != null) {
+            collectProbeFields(type.getSuperclass(), probes);
+        }
+    }
+
 
     public static void probeAllThreads(ProbingCycle cycle, String type, Thread[] threads) {
         if (threads.length == 0) {

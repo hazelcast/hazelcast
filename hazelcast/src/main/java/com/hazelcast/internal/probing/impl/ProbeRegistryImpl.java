@@ -18,6 +18,8 @@ package com.hazelcast.internal.probing.impl;
 
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendEscaped;
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendUnescaped;
+import static com.hazelcast.internal.probing.ProbeUtils.findProbedMethods;
+import static com.hazelcast.internal.probing.ProbeUtils.isSuitableProbeMethod;
 import static com.hazelcast.internal.probing.ProbeUtils.isSupportedProbeType;
 import static com.hazelcast.util.StringUtil.getterIntoProperty;
 
@@ -225,7 +227,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 // main goal was to avoid creating expensive metadata but at this point we have to
                 metadata = register(type, new ProbeAnnotatedType(type, level, methods));
             }
-            metadata.probeIn(this, this.level, null, instance);
+            metadata.probeNow(this, this.level, null, instance);
         }
 
         @Override
@@ -244,7 +246,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 // main goal was to avoid creating expensive metadata but at this point we have to
                 metadata = register(type, new ProbeAnnotatedType(type));
             }
-            metadata.probeIn(this, level, prefix, instance);
+            metadata.probeNow(this, level, prefix, instance);
         }
 
         @Override
@@ -585,6 +587,9 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
     }
 
+    /**
+     * Meta-data for a type that {@link Probe} annotated fields or methods.
+     */
     private static final class ProbeAnnotatedType {
 
         private final boolean tagging;
@@ -610,7 +615,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             for (String name : methodNames) {
                 try {
                     Method m = type.getDeclaredMethod(name);
-                    if (isSuitableProbeMethod(m, probedMethods)) {
+                    if (isSuitableProbeMethod(m, probedMethods) && isSupportedProbeType(m.getReturnType())) {
                         m.setAccessible(true);
                         probedMethods.add(m);
                     }
@@ -626,10 +631,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         private void initByAnnotations(Class<?> type) {
-            List<Method> probedMethods = new ArrayList<Method>();
-            collectProbeMethods(type, probedMethods);
-            List<Field> probedFields = new ArrayList<Field>();
-            collectProbeFields(type, probedFields);
+            List<Method> probedMethods = findProbedMethods(type);
+            List<Field> probedFields = ProbeUtils.findProbedFields(type);
             if (!probedMethods.isEmpty() || !probedFields.isEmpty()) {
                 for (ProbeLevel level : ProbeLevel.values()) {
                     levels[level.ordinal()] = ProbeAnnotatedTypeLevel.createIfNeeded(level,
@@ -638,12 +641,12 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        void probeIn(ProbingCycleImpl cycle, ProbeLevel level, CharSequence dynamicPrefix,
+        void probeNow(ProbingCycleImpl cycle, ProbeLevel level, CharSequence dynamicPrefix,
                 Object instance) {
             if (tagging) {
-                probeTagging(cycle, level, dynamicPrefix, instance);
+                probeNowTagging(cycle, level, dynamicPrefix, instance);
             } else {
-                probeNotTagging(cycle, level, dynamicPrefix, instance);
+                probeNowNonTagging(cycle, level, dynamicPrefix, instance);
             }
         }
 
@@ -651,16 +654,16 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
          * When instance itself is adding tags the tag context has to be restored as
          * well.
          */
-        private void probeTagging(ProbingCycleImpl cycle, ProbeLevel level,
+        private void probeNowTagging(ProbingCycleImpl cycle, ProbeLevel level,
                 CharSequence dynamicPrefix, Object instance) {
             CharSequence lastTagName = cycle.lastTagName;
             int lastTagValuePosition = cycle.lastTagValuePosition;
-            probeNotTagging(cycle, level, dynamicPrefix, instance);
+            probeNowNonTagging(cycle, level, dynamicPrefix, instance);
             cycle.lastTagName = lastTagName;
             cycle.lastTagValuePosition = lastTagValuePosition;
         }
 
-        private void probeNotTagging(ProbingCycleImpl cycle, ProbeLevel level,
+        private void probeNowNonTagging(ProbingCycleImpl cycle, ProbeLevel level,
                 CharSequence dynamicPrefix, Object instance) {
             int len0 = cycle.tags.length();
             if (tagging) {
@@ -681,61 +684,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             cycle.tags.setLength(len0);
         }
 
-        private static void collectProbeMethods(Class<?> type, List<Method> probes) {
-            for (Method m : type.getDeclaredMethods()) {
-                if (m.isAnnotationPresent(Probe.class) && isSuitableProbeMethod(m, probes)) {
-                    if (isSupportedProbeType(m.getReturnType())) {
-                        m.setAccessible(true);
-                        probes.add(m);
-                    } else {
-                        LOGGER.warning("@Probe annotated method " + m.getName() + " in "
-                                + m.getDeclaringClass().getSimpleName()
-                                + " has an unsupported return type.");
-                    }
-                }
-            }
-            if (type.getSuperclass() != null) {
-                collectProbeMethods(type.getSuperclass(), probes);
-            }
-            for (Class<?> t : type.getInterfaces()) {
-                collectProbeMethods(t, probes);
-            }
-        }
 
-        private static boolean isSuitableProbeMethod(Method m, List<Method> probes) {
-            if (m.getParameterTypes().length > 0) {
-                LOGGER.warning("Probe method must not have parameters: " + m.toGenericString());
-                return false;
-            }
-            return !m.getDeclaringClass().isInterface() || !hasMethod(m, probes);
-        }
-
-        private static boolean hasMethod(Method probe, List<Method> probes) {
-            for (Method p : probes) {
-                if (p.getName().equals(probe.getName())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private static void collectProbeFields(Class<?> type, List<Field> probes) {
-            for (Field f : type.getDeclaredFields()) {
-                if (f.isAnnotationPresent(Probe.class)) {
-                    if (isSupportedProbeType(f.getType())) {
-                        f.setAccessible(true);
-                        probes.add(f);
-                    } else {
-                        LOGGER.warning("@Probe annotated field " + f.getName() + " in "
-                                + f.getDeclaringClass().getSimpleName()
-                                + " has an unsupported type!");
-                    }
-                }
-            }
-            if (type.getSuperclass() != null) {
-                collectProbeFields(type.getSuperclass(), probes);
-            }
-        }
     }
 
     static <T> void sort(String[] names, T[] values) {
