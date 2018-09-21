@@ -152,29 +152,4 @@ public final class ProbeUtils {
         }
     }
 
-    public static void probeClientStats(ProbingCycle cycle, String uuid, CharSequence stats) {
-        if (stats == null) {
-            return;
-        }
-        // protocol version 1 (since 3.12)
-        if (startsWith("1\n", stats)) {
-            Lines lines = new Lines(stats);
-            lines.next();
-            cycle.openContext().tag("origin", uuid)
-            .tag(TAG_TYPE, lines.next())
-            .tag(TAG_INSTANCE, lines.next())
-            .tag(TAG_TARGET, lines.next())
-            .tag("version", lines.next());
-            // this additional metric is used to convey client details via tags
-            cycle.probe("principal", "?".contentEquals(lines.next()));
-            cycle.openContext().tag("origin", uuid);
-            lines.next();
-            while (lines.length() > 0) {
-                cycle.probeForwarded(lines.key(), lines.value());
-                // first to end of current line as key goes back
-                lines.next().next();
-            }
-        }
-    }
-
 }

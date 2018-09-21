@@ -150,7 +150,7 @@ public final class CharSequenceUtils {
             this.end = -1;
         }
 
-        Lines next() {
+        public Lines next() {
             start = end + 1;
             end = nextLineFeed();
             return this;
@@ -172,7 +172,7 @@ public final class CharSequenceUtils {
         /**
          * @return Backs {@link #end} to previous space and returns this
          */
-        CharSequence key() {
+        public CharSequence key() {
             int i = end - 1;
             while (i >= 0 && str.charAt(i) != ' ') {
                 i--;
@@ -184,7 +184,7 @@ public final class CharSequenceUtils {
         /**
          * @return returns the value expected after current {@link #end}.
          */
-        long value() {
+        public long value() {
             int s = start;
             int e = end;
             start = end + 1;

@@ -40,6 +40,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.probing.CharSequenceUtils.Lines;
 import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
@@ -93,7 +94,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.probing.ProbeUtils.probeClientStats;
+import static com.hazelcast.internal.probing.CharSequenceUtils.startsWith;
 import static com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
@@ -179,9 +180,34 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                     boolean isOwnerConnection = endpoint.isOwnerConnection();
                     cycle.probe("ownerConnection", isOwnerConnection);
                     if (isOwnerConnection) {
-                        probeClientStats(cycle, endpoint.getUuid(), endpoint.getClientStatistics());
+                        probeForwarded(cycle, endpoint.getUuid(), endpoint.getClientStatistics());
                     }
                 }
+            }
+        }
+    }
+    
+    public static void probeForwarded(ProbingCycle cycle, CharSequence origin, CharSequence stats) {
+        if (stats == null) {
+            return;
+        }
+        // protocol version 1 (since 3.12)
+        if (startsWith("1\n", stats)) {
+            Lines lines = new Lines(stats);
+            lines.next();
+            cycle.openContext().tag("origin", origin)
+            .tag(TAG_TYPE, lines.next())
+            .tag(TAG_INSTANCE, lines.next())
+            .tag(TAG_TARGET, lines.next())
+            .tag("version", lines.next());
+            // this additional metric is used to convey client details via tags
+            cycle.probe("principal", "?".contentEquals(lines.next()));
+            cycle.openContext().tag("origin", origin);
+            lines.next();
+            while (lines.length() > 0) {
+                cycle.probeForwarded(lines.key(), lines.value());
+                // first to end of current line as key goes back
+                lines.next().next();
             }
         }
     }
