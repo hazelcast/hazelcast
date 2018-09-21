@@ -25,7 +25,10 @@ import java.io.UnsupportedEncodingException;
  * @deprecated Use {@link HazelcastMemberStarter} instead.
  */
 @Deprecated
-public class StartServer {
+public final class StartServer {
+
+    private StartServer() {
+    }
 
     /**
      * Starts a Hazelcast Member.
