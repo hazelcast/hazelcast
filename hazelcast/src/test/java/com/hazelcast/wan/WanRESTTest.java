@@ -44,7 +44,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
+@Category(QuickTest.class)
 public class WanRESTTest extends HazelcastTestSupport {
     private WanReplicationService wanServiceMock;
     private HTTPCommunicator communicator;
