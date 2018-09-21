@@ -237,7 +237,6 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 if (cancelled) {
                     return;
                 }
-
                 try {
                     listener.storeSequence(sequence);
                     process(message);
@@ -247,14 +246,13 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                         return;
                     }
                 }
-
                 sequence++;
             }
 
             next();
         }
 
-        private void process(ReliableTopicMessage message) throws Throwable {
+        private void process(ReliableTopicMessage message)  {
             //  proxy.localTopicStats.incrementReceives();
             listener.onMessage(toMessage(message));
         }
@@ -276,6 +274,8 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             }
 
             t = peel(t);
+            String baseMessage = "Terminating MessageListener:" + listener + " on topic: " + name + ". "
+                    + "Reason: ";
             if (t instanceof StaleSequenceException) {
                 // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
                 long remoteHeadSeq = ringbuffer.headSequence();
@@ -289,27 +289,23 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                     next();
                     return;
                 }
-                logger.warning("Terminating MessageListener:" + listener + " on topic: " + name + ". "
-                        + "Reason: The listener was too slow or the retention period of the message has been violated. "
+                logger.warning(baseMessage + "The listener was too slow or the retention period of the "
+                        + "message has been violated. "
                         + "head: " + remoteHeadSeq + " sequence:" + sequence);
             } else if (t instanceof HazelcastInstanceNotActiveException) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Terminating MessageListener " + listener + " on topic: " + name + ". "
-                            + " Reason: HazelcastInstance is shutting down");
+                    logger.finest(baseMessage + "HazelcastInstance is shutting down");
                 }
             } else if (t instanceof DistributedObjectDestroyedException) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Terminating MessageListener " + listener + " on topic: " + name + ". "
-                            + "Reason: Topic is destroyed");
+                    logger.finest(baseMessage + "Topic is destroyed");
                 }
             } else if (t instanceof HazelcastClientNotActiveException || t instanceof RejectedExecutionException) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Terminating MessageListener " + listener + " on topic: " + name + ". "
-                            + "Reason: HazelcastClient is shutting down");
+                    logger.finest(baseMessage + "HazelcastClient is shutting down");
                 }
             } else {
-                logger.warning("Terminating MessageListener " + listener + " on topic: " + name + ". "
-                        + "Reason: Unhandled exception, message: " + t.getMessage(), t);
+                logger.warning(baseMessage + "Unhandled exception, message: " + t.getMessage(), t);
             }
             cancel();
         }
@@ -323,12 +319,13 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             if (cancelled) {
                 return true;
             }
-
+            String baseMessage = "Terminating MessageListener:" + listener + " on topic: " + name + ". "
+                    + "Reason: ";
             try {
                 boolean terminate = listener.isTerminal(failure);
                 if (terminate) {
-                    logger.warning("Terminating MessageListener " + listener + " on topic: " + name + ". "
-                            + "Reason: Unhandled exception, message: " + failure.getMessage(), failure);
+                    logger.warning(baseMessage
+                            +  "Unhandled exception, message: " + failure.getMessage(), failure);
                 } else {
                     if (logger.isFinestEnabled()) {
                         logger.finest("MessageListener " + listener + " on topic: " + name + " ran into an exception:"
@@ -337,8 +334,8 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 }
                 return terminate;
             } catch (Throwable t) {
-                logger.warning("Terminating messageListener:" + listener + " on topic: " + name + ". "
-                        + "Reason: Unhandled exception while calling ReliableMessageListener.isTerminal() method", t);
+                logger.warning(baseMessage
+                        + "Unhandled exception while calling ReliableMessageListener.isTerminal() method", t);
                 return true;
             }
         }
