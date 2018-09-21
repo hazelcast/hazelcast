@@ -16,12 +16,10 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.internal.probing.CodedEnum;
-
 /**
  * {@code WanSyncStatus} shows the current status of WAN sync.
  */
-public enum WanSyncStatus implements CodedEnum {
+public enum WanSyncStatus {
 
     /**
      * Indicates existing sync operation, if exists, is completed
@@ -50,11 +48,6 @@ public enum WanSyncStatus implements CodedEnum {
      * @return unique ID of the event type
      */
     public int getStatus() {
-        return status;
-    }
-
-    @Override
-    public int getCode() {
         return status;
     }
 

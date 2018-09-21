@@ -235,17 +235,17 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         @Override
         public void probe(CharSequence name, long value) {
-            probe(ProbeLevel.MANDATORY, name, value);
+            probe(ProbeLevel.INFO, name, value);
         }
 
         @Override
         public void probe(CharSequence name, double value) {
-            probe(ProbeLevel.MANDATORY, name, value);
+            probe(ProbeLevel.INFO, name, value);
         }
 
         @Override
         public void probe(CharSequence name, boolean value) {
-            probe(ProbeLevel.MANDATORY, name, value);
+            probe(ProbeLevel.INFO, name, value);
         }
 
         @Override

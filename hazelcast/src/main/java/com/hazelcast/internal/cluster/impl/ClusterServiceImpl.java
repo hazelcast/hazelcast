@@ -32,7 +32,6 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
@@ -66,6 +65,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.util.ProbeEnumUtils;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.version.MemberVersion;
@@ -82,6 +82,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -167,6 +168,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         cycle.probe("cluster.clock", clusterClock);
         cycle.probe("cluster.heartbeat", clusterHeartbeatManager);
         cycle.probe("cluster", this);
+        cycle.probe(MANDATORY, "cluster.state", ProbeEnumUtils.codeOf(getClusterState()));
+        cycle.probe(MANDATORY, "cluster.memberState", ProbeEnumUtils.codeOf(node.getState()));
     }
 
     @Override
@@ -874,14 +877,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    @Probe(name = "state")
     public ClusterState getClusterState() {
         return clusterStateManager.getState();
-    }
-
-    @Probe(name = "memberState")
-    private NodeState getNodeState() {
-        return node.getState();
     }
 
     @Override

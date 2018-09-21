@@ -41,6 +41,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Collection;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -188,9 +189,9 @@ public class Statistics implements ProbeSource {
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        cycle.probe("enterprise", enterprise);
-        cycle.probe("lastStatisticsCollectionTime", System.currentTimeMillis());
-        cycle.probe("clusterConnectionTimestamp", ownerConnection.getStartTime());
+        cycle.probe(MANDATORY, "enterprise", enterprise);
+        cycle.probe(MANDATORY, "lastStatisticsCollectionTime", System.currentTimeMillis());
+        cycle.probe(MANDATORY, "clusterConnectionTimestamp", ownerConnection.getStartTime());
         Collection<NearCache> caches = client.getNearCacheManager().listAllNearCaches();
         if (caches.isEmpty()) {
             return;

@@ -40,6 +40,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.internal.diagnostics.AbstractDiagnosticsPluginTest.cleanupDiagnosticFiles;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertFalse;
@@ -99,7 +100,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
             public void probeIn(ProbingCycle cycle) {
                 // we render 50 probes to quickly fill up the diagnostics log file
                 for (int k = 0; k < 50; k++) {
-                    cycle.probe(id + k, k);
+                    cycle.probe(MANDATORY, id + k, k);
                 }
 
             }

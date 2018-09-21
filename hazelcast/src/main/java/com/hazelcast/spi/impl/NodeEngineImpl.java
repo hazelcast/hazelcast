@@ -77,6 +77,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.util.ProbeEnumUtils;
 import com.hazelcast.util.function.Consumer;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanReplicationService;
@@ -231,11 +232,13 @@ public class NodeEngineImpl implements NodeEngine, ProbeSource {
         HotRestartService hotRestartService = node.getNodeExtension().getHotRestartService();
         boolean enabled = hotRestartService.isHotBackupEnabled();
         cycle.openContext().prefix("hotBackup");
-        cycle.probe(ProbeLevel.INFO, "enabled", enabled);
+        cycle.probe("enabled", enabled);
         if (enabled) {
             BackupTaskStatus status = hotRestartService.getBackupTaskStatus();
             if (status != null) {
-                cycle.probe(status);
+                cycle.probe("state", ProbeEnumUtils.codeOf(status.getState()));
+                cycle.probe("completed", status.getCompleted());
+                cycle.probe("total", status.getTotal());
             }
         }
     }
@@ -244,11 +247,15 @@ public class NodeEngineImpl implements NodeEngine, ProbeSource {
         InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
         ClusterHotRestartStatusDTO status = hotRestartService.getCurrentClusterHotRestartStatus();
         if (status != null && status.getHotRestartStatus() != ClusterHotRestartStatus.UNKNOWN) {
-            cycle.probe("hotRestart", status);
+            cycle.openContext().prefix("hotRestart");
+            cycle.probe("remainingDataLoadTime", status.getRemainingDataLoadTimeMillis());
+            cycle.probe("remainingValidationTime", status.getRemainingValidationTimeMillis());
+            cycle.probe("status", ProbeEnumUtils.codeOf(status.getHotRestartStatus()));
+            cycle.probe("dataRecoveryPolicy", ProbeEnumUtils.codeOf(status.getDataRecoveryPolicy()));
             for (Entry<String, MemberHotRestartStatus> memberStatus : status
                     .getMemberHotRestartStatusMap().entrySet()) {
                 cycle.openContext().tag(TAG_INSTANCE, memberStatus.getKey()).prefix("hotRestart");
-                cycle.probe(ProbeLevel.INFO, "memberStatus", memberStatus.getValue().getCode());
+                cycle.probe("memberStatus", ProbeEnumUtils.codeOf(memberStatus.getValue()));
             }
         }
     }

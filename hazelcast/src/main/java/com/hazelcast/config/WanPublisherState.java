@@ -16,13 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.probing.CodedEnum;
-
 /**
  * Defines the state in which a WAN publisher can be in if it is not shutting
  * down.
  */
-public enum WanPublisherState implements CodedEnum {
+public enum WanPublisherState {
     /**
      * State where both enqueuing new events is allowed, enqueued events are
      * replicated to the target cluster and WAN sync is enabled.
@@ -105,11 +103,6 @@ public enum WanPublisherState implements CodedEnum {
      * Returns the ID of the WAN publisher state.
      */
     public byte getId() {
-        return id;
-    }
-
-    @Override
-    public int getCode() {
         return id;
     }
 }

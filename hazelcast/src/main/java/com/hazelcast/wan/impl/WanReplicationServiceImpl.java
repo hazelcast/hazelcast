@@ -181,7 +181,7 @@ public class WanReplicationServiceImpl implements WanReplicationService, ProbeSo
                 .tag(TAG_INSTANCE, state.getActiveWanConfigName())
                 .tag(TAG_TARGET, state.getActivePublisherName());
             cycle.probe("sync.syncedPartitionCount", state.getSyncedPartitionCount());
-            cycle.probe("sync.status", state.getStatus().getCode());
+            cycle.probe("sync.status", state.getStatus().getStatus());
         }
     }
 
