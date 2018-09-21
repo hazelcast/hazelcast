@@ -104,10 +104,10 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("deprecation")
-    public void testQueryWithTTL() throws Exception {
+    public void testQueryWithTTL() {
         Config config = getConfig();
         String mapName = "default";
-        config.getMapConfig(mapName).setTimeToLiveSeconds(5);
+        config.getMapConfig(mapName).setTimeToLiveSeconds(10);
 
         HazelcastInstance instance = createHazelcastInstance(config);
 
@@ -140,7 +140,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
         // check the query result before eviction
         Collection values = map.values(new SqlPredicate("active"));
-        assertEquals(activeEmployees, values.size());
+        assertEquals(String.format("Expected %s results but got %s. Number of evicted entries: %s.",
+                activeEmployees, values.size(), allEmployees - latch.getCount()),
+                activeEmployees, values.size());
 
         // wait until eviction is completed
         assertOpenEventually(latch);
