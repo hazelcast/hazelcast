@@ -154,7 +154,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
     public void receiveLoadedEventsWhenLoad() throws Exception {
         init();
 
-        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+        final EventJournalTestContext<String, String, EJ_TYPE> context = createContext();
 
         final int count = 100;
         assertEventJournalSize(context.dataAdapter, 0);
@@ -167,8 +167,8 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         final ReadResultSet<EJ_TYPE> events = getAllEvents(context.dataAdapter, null, null);
         assertEquals(count, events.size());
 
-        final HashMap<String, Integer> received = new HashMap<String, Integer>();
-        final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
+        final HashMap<String, String> received = new HashMap<String, String>();
+        final EventJournalEventAdapter<String, String, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
         for (EJ_TYPE e : events) {
             assertEquals(LOADED, journalAdapter.getType(e));
             assertNull(journalAdapter.getOldValue(e));
@@ -192,7 +192,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         this.loadAllPublishesAdded = expectedEventType == ADDED;
         init();
 
-        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+        final EventJournalTestContext<String, String, EJ_TYPE> context = createContext();
 
         final int count = 100;
         assertEventJournalSize(context.dataAdapter, 0);
@@ -207,8 +207,8 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         final ReadResultSet<EJ_TYPE> events = getAllEvents(context.dataAdapter, null, null);
         assertEquals(count, events.size());
 
-        final HashMap<String, Integer> received = new HashMap<String, Integer>();
-        final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
+        final HashMap<String, String> received = new HashMap<String, String>();
+        final EventJournalEventAdapter<String, String, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
         for (EJ_TYPE e : events) {
             assertEquals(expectedEventType, journalAdapter.getType(e));
             assertNull(journalAdapter.getOldValue(e));
@@ -218,7 +218,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         assertEquals(context.dataAdapter.entrySet(), received.entrySet());
     }
 
-    private void assertEventJournalSizeEventually(final EventJournalTestContext<String, Integer, EJ_TYPE> context,
+    private void assertEventJournalSizeEventually(final EventJournalTestContext<?, ?, EJ_TYPE> context,
                                                   final int count) {
         assertTrueEventually(new AssertTask() {
             @Override
