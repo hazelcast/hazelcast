@@ -19,9 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hotrestart.BackupTaskStatus;
-import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -29,19 +26,13 @@ import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
-import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.ClusterHotRestartStatus;
-import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.MemberHotRestartStatus;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
 import com.hazelcast.internal.probing.sources.GcProbeSource;
 import com.hazelcast.internal.probing.sources.MachineProbeSource;
-import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.logging.ILogger;
@@ -77,15 +68,12 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-import com.hazelcast.util.ProbeEnumUtils;
 import com.hazelcast.util.function.Consumer;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Map.Entry;
-
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
@@ -100,7 +88,7 @@ import static java.lang.System.currentTimeMillis;
  * we don't leak {@link com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl} to the outside.
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class NodeEngineImpl implements NodeEngine, ProbeSource {
+public class NodeEngineImpl implements NodeEngine {
 
     private static final String JET_SERVICE_NAME = "hz:impl:jetService";
 
@@ -196,7 +184,7 @@ public class NodeEngineImpl implements NodeEngine, ProbeSource {
      * {@link ProbeSource}s.
      */
     private void initProbeSources() {
-        probeRegistry.register(this);
+        probeRegistry.register(new NodeEngineProbeSource(this, operationService, node.partitionService));
         probeRegistry.register(GcProbeSource.INSTANCE);
         probeRegistry.register(MachineProbeSource.INSTANCE);
         probeRegistry.register(executionService);
@@ -204,59 +192,6 @@ public class NodeEngineImpl implements NodeEngine, ProbeSource {
         probeRegistry.registerIfSource(node.getNodeExtension());
         for (ProbeSource s : serviceManager.getServices(ProbeSource.class)) {
             probeRegistry.register(s);
-        }
-    }
-
-    @Override
-    public void probeIn(ProbingCycle cycle) {
-        cycle.probe("proxy", proxyService);
-        cycle.probe("memory", node.getNodeExtension().getMemoryStats());
-        cycle.probe("operation", operationService);
-        cycle.probe("operation", operationService.getInvocationRegistry());
-        cycle.probe("operation", operationService.getInboundResponseHandlerSupplier());
-        cycle.probe("operation.invocations", operationService.getInvocationMonitor());
-        if (cycle.isProbed(ProbeLevel.INFO)) {
-            cycle.probe("operation.parker", operationParker);
-            InternalPartitionServiceImpl partitionService = node.partitionService;
-            cycle.probe("partitions", partitionService);
-            cycle.probe("partitions", partitionService.getPartitionStateManager());
-            cycle.probe("partitions", partitionService.getMigrationManager());
-            cycle.probe("partitions", partitionService.getReplicaManager());
-            cycle.probe("transactions", transactionManagerService);
-            probeHotRestartStateIn(cycle);
-            probeHotBackupStateIn(cycle);
-        }
-    }
-
-    private void probeHotBackupStateIn(ProbingCycle cycle) {
-        HotRestartService hotRestartService = node.getNodeExtension().getHotRestartService();
-        boolean enabled = hotRestartService.isHotBackupEnabled();
-        cycle.openContext().prefix("hotBackup");
-        cycle.probe("enabled", enabled);
-        if (enabled) {
-            BackupTaskStatus status = hotRestartService.getBackupTaskStatus();
-            if (status != null) {
-                cycle.probe("state", ProbeEnumUtils.codeOf(status.getState()));
-                cycle.probe("completed", status.getCompleted());
-                cycle.probe("total", status.getTotal());
-            }
-        }
-    }
-
-    private void probeHotRestartStateIn(ProbingCycle cycle) {
-        InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
-        ClusterHotRestartStatusDTO status = hotRestartService.getCurrentClusterHotRestartStatus();
-        if (status != null && status.getHotRestartStatus() != ClusterHotRestartStatus.UNKNOWN) {
-            cycle.openContext().prefix("hotRestart");
-            cycle.probe("remainingDataLoadTime", status.getRemainingDataLoadTimeMillis());
-            cycle.probe("remainingValidationTime", status.getRemainingValidationTimeMillis());
-            cycle.probe("status", ProbeEnumUtils.codeOf(status.getHotRestartStatus()));
-            cycle.probe("dataRecoveryPolicy", ProbeEnumUtils.codeOf(status.getDataRecoveryPolicy()));
-            for (Entry<String, MemberHotRestartStatus> memberStatus : status
-                    .getMemberHotRestartStatusMap().entrySet()) {
-                cycle.openContext().tag(TAG_INSTANCE, memberStatus.getKey()).prefix("hotRestart");
-                cycle.probe("memberStatus", ProbeEnumUtils.codeOf(memberStatus.getValue()));
-            }
         }
     }
 

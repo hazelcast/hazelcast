@@ -26,13 +26,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.hazelcast.internal.metrics.Probe;
@@ -58,9 +56,17 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     private static final Object[] EMPTY_ARGS = new Object[0];
 
     private static final ConcurrentMap<Class<?>, ProbeAnnotatedType> PROBE_METADATA =
-            new ConcurrentHashMap<Class<?>, ProbeAnnotatedType>();
+            new ConcurrentSkipListMap<Class<?>, ProbeAnnotatedType>(new Comparator<Class<?>>() {
 
-    private final Queue<ProbeSourceEntry> sources = new ConcurrentLinkedQueue<ProbeSourceEntry>();
+                @Override
+                public int compare(Class<?> one, Class<?> other) {
+                    int res = one.getSimpleName().compareTo(other.getSimpleName());
+                    return res != 0 ? res : one.getName().compareTo(other.getName());
+                }
+            });
+
+    private final ConcurrentMap<Class<?>, ProbeSourceEntry> sources =
+            new ConcurrentHashMap<Class<?>, ProbeRegistryImpl.ProbeSourceEntry>();
 
     private static ProbeAnnotatedType register(Class<?> type, ProbeAnnotatedType metadata) {
         ProbeAnnotatedType existing = PROBE_METADATA.putIfAbsent(type, metadata);
@@ -69,15 +75,13 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
     @Override
     public void register(ProbeSource source) {
-        for (ProbeSourceEntry e : sources) {
-            if (e.source.equals(source)) {
-                LOGGER.info("Probe source tried to register more then once: "
-                        + source.getClass().getSimpleName());
-                // avoid adding the very same instance more then once
-                return;
-            }
+        if (!sources.containsKey(source.getClass())) {
+            sources.putIfAbsent(source.getClass(), new ProbeSourceEntry(source));
+        } else {
+            LOGGER.info("Probe source tried to register more then once: "
+                    + source.getClass().getSimpleName());
+
         }
-        sources.add(new ProbeSourceEntry(source));
     }
 
     @Override
@@ -88,21 +92,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     }
 
     @Override
-    public ProbeRenderContext newRenderContext() {
-        return new ProbingCycleImpl(sources);
-    }
-
-    @Override
     public ProbeRenderContext newRenderContext(Class<? extends ProbeSource>... filter) {
-        Set<ProbeSourceEntry> filtered = new HashSet<ProbeSourceEntry>();
-        for (ProbeSourceEntry e : sources) {
-            for (Class<?> accepted : filter) {
-                if (accepted == e.source.getClass()) {
-                    filtered.add(e);
-                }
-            }
-        }
-        return new ProbingCycleImpl(filtered);
+        return new ProbingCycleImpl(sources.values(), filter);
     }
 
     /**
@@ -160,24 +151,55 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     private static final class ProbingCycleImpl
     implements ProbingCycle, ProbingCycle.Tags, ProbeRenderContext {
 
-        private final StringBuilder tags = new StringBuilder(128);
+        // render context state
         private final Collection<ProbeSourceEntry> sources;
+        private final Class<? extends ProbeSource>[] filter;
+        private final List<ProbeSourceEntry> effectiveSource = new ArrayList<ProbeRegistryImpl.ProbeSourceEntry>();
+        private int sourceCount;
+
+        // render cycle state
+        private final StringBuilder tags = new StringBuilder(128);
+        private ProbeRenderer renderer;
+        private ProbeLevel level;
         private CharSequence lastTagName;
         private int lastTagValuePosition;
 
-        // render cycle state
-        private ProbeRenderer renderer;
-        private ProbeLevel level;
-
-        ProbingCycleImpl(Collection<ProbeSourceEntry> sources) {
+        ProbingCycleImpl(Collection<ProbeSourceEntry> sources, Class<? extends ProbeSource>[] filter) {
             this.sources = sources;
+            this.filter = filter;
+        }
+
+        private void updateSources() {
+            int size = sources.size();
+            if (sourceCount != size) {
+                sourceCount = size;
+                effectiveSource.clear();
+                for (ProbeSourceEntry e : sources) {
+                    if (activeSource(e.source.getClass())) {
+                        effectiveSource.add(e);
+                    }
+                }
+            }
+        }
+
+        private boolean activeSource(Class<?> source) {
+            if (filter == null || filter.length == 0) {
+                return true;
+            }
+            for (Class<?> accepted : filter) {
+                if (accepted == source) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
         public void render(ProbeLevel level, ProbeRenderer renderer) {
+            updateSources();
             this.level = level;
             this.renderer = renderer;
-            for (ProbeSourceEntry entry : sources) {
+            for (ProbeSourceEntry entry : effectiveSource) {
                 if (isProbed(entry.updateLevel)) {
                     entry.updateIfNeeded();
                 }

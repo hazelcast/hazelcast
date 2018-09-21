@@ -35,7 +35,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 public abstract class AbstractProbeTest extends HazelcastTestSupport {
 
     protected final ProbeRegistry registry = new ProbeRegistryImpl();
-    protected final ProbeRenderContext rendering = registry.newRenderContext();
+    protected final ProbeRenderContext rendering = registry.newRenderContext(null);
     private ProbeLevel level = ProbeLevel.DEBUG;
 
     @Before
@@ -54,16 +54,15 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
         assertNotEquals(-1L, renderer.value);
     }
 
-    protected final void assertProbed(final String expectedKey, long expectedValue, double deltaFactor) {
+    protected final void assertProbed(String expectedKey, long expectedValue, double deltaFactor) {
         assertProbed(expectedKey, expectedValue, (long) (expectedValue * deltaFactor));
     }
 
-    protected final void assertProbed(final String expectedKey, final long expectedValue) {
+    protected final void assertProbed(String expectedKey, long expectedValue) {
         assertProbed(expectedKey, expectedValue, 0L);
     }
 
-    protected final void assertProbed(final String expectedKey, final long expectedValue,
-            final long absoluteDelta) {
+    protected final void assertProbed(String expectedKey, long expectedValue, long absoluteDelta) {
         CountingProbeRenderer renderer = probe(expectedKey);
         assertProbedTimes(1, renderer);
         assertProbeValue(expectedValue, renderer.value, absoluteDelta);
@@ -79,7 +78,8 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
     }
 
     protected static void assertProbedTimes(int expectedTimes, CountingProbeRenderer actual) {
-        assertEquals("probe `" + actual.expectedKey + "` occurence ", expectedTimes, actual.matches);
+        String msg = "probe `" + actual.expectedKey + "` occurence ";
+        assertEquals(msg, expectedTimes, actual.matches);
     }
 
     protected static void assertProbeValue(final long expected, long actual, final long absoluteDelta) {

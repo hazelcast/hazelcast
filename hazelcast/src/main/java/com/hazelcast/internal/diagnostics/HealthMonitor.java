@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.ClientEngineProbeSource;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -32,7 +32,7 @@ import com.hazelcast.internal.probing.sources.MachineProbeSource;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngineProbeSource;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
@@ -222,12 +222,12 @@ public class HealthMonitor {
         @SuppressWarnings("unchecked")
         private void init() {
             if (thresholdRenderContext == null) {
-                thresholdRenderContext = registry.newRenderContext(NodeEngineImpl.class,
+                thresholdRenderContext = registry.newRenderContext(NodeEngineProbeSource.class,
                         MachineProbeSource.class);
             }
             if (printoutRenderContext == null) {
-                printoutRenderContext = registry.newRenderContext(NodeEngineImpl.class,
-                        ClientEngineImpl.class, ClusterServiceImpl.class,
+                printoutRenderContext = registry.newRenderContext(NodeEngineProbeSource.class,
+                        ClientEngineProbeSource.class, ClusterServiceImpl.class,
                         ExecutionServiceImpl.class, EventServiceImpl.class,
                         OperationExecutorImpl.class, TcpIpConnectionManager.class,
                         MachineProbeSource.class, GcProbeSource.class);

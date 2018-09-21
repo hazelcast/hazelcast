@@ -37,11 +37,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeSource;
-import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.CharSequenceUtils.Lines;
-import com.hazelcast.internal.probing.ProbingCycle.Tags;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -94,7 +89,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.probing.CharSequenceUtils.startsWith;
 import static com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
@@ -103,8 +97,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAwareService,
-        ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener>,
-        ProbeSource {
+        ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener> {
 
     /**
      * Service name to be used in requests.
@@ -156,60 +149,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         this.clientExceptions = initClientExceptionFactory();
         this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
         this.partitionListenerService = new ClientPartitionListenerService(nodeEngine);
-    }
-
-    @Override
-    public void probeIn(ProbingCycle cycle) {
-        cycle.probe("client.endpoint", endpointManager);
-        if (!cycle.isProbed(ProbeLevel.INFO)) {
-            return;
-        }
-        Collection<ClientEndpoint> endpoints = endpointManager.getEndpoints();
-        if (!endpoints.isEmpty()) {
-            for (ClientEndpoint endpoint : endpoints) {
-                Tags tags = cycle.openContext().tag(TAG_TYPE, "client");
-                if (endpoint.isAlive()) {
-                    tags.tag(TAG_INSTANCE, endpoint.getUuid());
-                    cycle.probe(endpoint);
-                    String version = endpoint.getClientVersionString();
-                    String address = endpoint.getAddress();
-                    tags.tag(TAG_TARGET, endpoint.getClientType().name())
-                        .tag("version", version == null ? "?" : version)
-                        .tag("address", address == null ? "?" : address);
-                    // this particular metric is used to convey details of the endpoint via tags
-                    boolean isOwnerConnection = endpoint.isOwnerConnection();
-                    cycle.probe("ownerConnection", isOwnerConnection);
-                    if (isOwnerConnection) {
-                        probeForwarded(cycle, endpoint.getUuid(), endpoint.getClientStatistics());
-                    }
-                }
-            }
-        }
-    }
-    
-    public static void probeForwarded(ProbingCycle cycle, CharSequence origin, CharSequence stats) {
-        if (stats == null) {
-            return;
-        }
-        // protocol version 1 (since 3.12)
-        if (startsWith("1\n", stats)) {
-            Lines lines = new Lines(stats);
-            lines.next();
-            cycle.openContext().tag("origin", origin)
-            .tag(TAG_TYPE, lines.next())
-            .tag(TAG_INSTANCE, lines.next())
-            .tag(TAG_TARGET, lines.next())
-            .tag("version", lines.next());
-            // this additional metric is used to convey client details via tags
-            cycle.probe("principal", "?".contentEquals(lines.next()));
-            cycle.openContext().tag("origin", origin);
-            lines.next();
-            while (lines.length() > 0) {
-                cycle.probeForwarded(lines.key(), lines.value());
-                // first to end of current line as key goes back
-                lines.next().next();
-            }
-        }
     }
 
     private ClientExceptions initClientExceptionFactory() {
@@ -429,6 +368,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, getLogger(ClientHeartbeatMonitor.class), nodeEngine.getExecutionService(), node.getProperties());
         heartbeatMonitor.start();
+        node.nodeEngine.getProbeRegistry().register(new ClientEngineProbeSource(endpointManager));
     }
 
     @Override

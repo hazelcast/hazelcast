@@ -36,7 +36,13 @@ public interface ProbeRegistry {
     /**
      * Called once at startup, typically by a core service registering itself.
      *
-     * @param source a object that "knows" how to render metrics in its context
+     * @param source a object that "knows" how to render metrics in its context.
+     *        Each sources is assumed to be unique per class. That means a second
+     *        registration of a source is considered identical and therefore
+     *        unnecessary if the source has the same type as an already registered
+     *        source. Such a source registration is simply ignored. This is the most
+     *        practical behavior as we usually do not want same source more then
+     *        once.
      */
     void register(ProbeSource source);
 
@@ -47,23 +53,20 @@ public interface ProbeRegistry {
      * @param source a object possibly implementing {@link ProbeSource}, might be
      *        null as well
      */
+    @Deprecated
     void registerIfSource(Object source);
 
     /**
-     * @return Creates a new "private "context that should be kept by the caller to
-     *         render the contents of this {@link ProbeRegistry}. The implementation
-     *         will not support multi-threading as each thread should create its own
-     *         context instance.
-     */
-    ProbeRenderContext newRenderContext();
-
-    /**
-     * Same as {@link #newRenderContext()} but filters registered sources for a
-     * reduced rendering scope.
+     * Creates a new "private "context that should be kept by the caller to render
+     * the contents of this {@link ProbeRegistry}. The implementation will not
+     * support multi-threading as each thread should create its own context
+     * instance.
      *
-     * @param filter the set of sources that is accepted (kept) if it was registered
-     * @return a new private filtered "context". A filtered context is fixed and
-     *         will no extend when further sources are registered.
+     * @param filter the set of sources that is accepted (kept) if it was
+     *        registered. A empty set or {@code null} results in usage of all
+     *        registered sources.
+     * @return a new private filtered "context". A filtered context is updated when
+     *         further {@link ProbeSource} are {@link #register(ProbeSource)}ed.
      */
     ProbeRenderContext newRenderContext(Class<? extends ProbeSource>... filter);
 }
