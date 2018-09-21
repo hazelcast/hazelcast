@@ -53,7 +53,7 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         LevelBean a = new LevelBean("a");
         LevelBean b = new LevelBean("b");
         LevelBean c = new LevelBean("");

@@ -164,7 +164,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         probeAllInstances(cycle, "cache", statistics);
     }
 

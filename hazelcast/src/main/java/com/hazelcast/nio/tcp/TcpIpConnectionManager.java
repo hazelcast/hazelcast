@@ -155,7 +155,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.probe("tcp.connection", this);
         if (acceptor != null && cycle.isProbed(ProbeLevel.INFO)) {
             cycle.openContext().tag(TAG_TYPE, "acceptor").tag(TAG_INSTANCE, acceptor.getName());

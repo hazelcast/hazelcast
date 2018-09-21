@@ -367,7 +367,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         probeStatistics(cycle, "queue", statsMap);
     }
 

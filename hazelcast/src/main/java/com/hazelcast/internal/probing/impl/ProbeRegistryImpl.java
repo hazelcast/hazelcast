@@ -206,7 +206,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 }
                 try {
                     openContext();
-                    entry.source.probeIn(this);
+                    entry.source.probeNow(this);
                 } catch (Exception e) {
                     LOGGER.warning("Exception while probing source "
                             + entry.source.getClass().getSimpleName(), e);

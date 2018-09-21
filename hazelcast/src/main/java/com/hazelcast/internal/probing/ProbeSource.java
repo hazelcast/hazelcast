@@ -47,5 +47,5 @@ public interface ProbeSource {
      *
      * @param cycle accumulating probing data
      */
-    void probeIn(ProbingCycle cycle);
+    void probeNow(ProbingCycle cycle);
 }

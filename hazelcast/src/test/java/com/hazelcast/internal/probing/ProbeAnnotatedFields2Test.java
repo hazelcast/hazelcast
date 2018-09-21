@@ -46,7 +46,7 @@ public class ProbeAnnotatedFields2Test extends AbstractProbeTest implements Prob
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.probe(new UnknownFieldType());
         cycle.probe(new SomeSource());
     }

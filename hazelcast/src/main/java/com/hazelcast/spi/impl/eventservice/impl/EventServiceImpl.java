@@ -547,7 +547,7 @@ public class EventServiceImpl implements InternalEventService, ProbeSource {
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.probe("event", this);
         probeAllInstances(cycle, "event", segments);
     }

@@ -68,7 +68,7 @@ public final class GcProbeSource implements ProbeSource {
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.openContext();
         cycle.probe("gc", this);
     }

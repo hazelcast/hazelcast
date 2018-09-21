@@ -162,7 +162,7 @@ public class WanReplicationServiceImpl implements WanReplicationService, ProbeSo
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         Map<String, LocalWanStats> wanStats = getStats();
         if (wanStats != null && !wanStats.isEmpty()) {
             for (Entry<String, LocalWanStats> config : wanStats.entrySet()) {

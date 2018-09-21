@@ -219,7 +219,7 @@ public final class OperationExecutorImpl implements OperationExecutor, ProbeSour
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.probe("operation", this);
         if (cycle.isProbed(ProbeLevel.INFO)) {
             probeAllThreads(cycle, "operation.thread", genericThreads);

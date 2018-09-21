@@ -188,7 +188,7 @@ public class Statistics implements ProbeSource {
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.probe(MANDATORY, "enterprise", enterprise);
         cycle.probe(MANDATORY, "lastStatisticsCollectionTime", System.currentTimeMillis());
         cycle.probe(MANDATORY, "clusterConnectionTimestamp", ownerConnection.getStartTime());

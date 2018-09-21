@@ -160,7 +160,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService, Pro
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         probeAllInstances(cycle, "internal-executor", executors);
     }
 

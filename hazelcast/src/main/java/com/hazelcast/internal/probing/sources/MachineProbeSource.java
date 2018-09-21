@@ -53,7 +53,7 @@ public final class MachineProbeSource implements ProbeSource {
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.openContext().prefix("classloading");
         probeProperties(cycle, classLoadingMXBean);
         cycle.openContext().prefix("os");

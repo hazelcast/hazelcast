@@ -46,7 +46,7 @@ public class ProbeAnnotatedMethodsTest extends AbstractProbeTest implements Prob
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.probe("foo", new ProbeAnnotatedMethods());
         cycle.probe("foo", new SubclassWithProbes());
     }

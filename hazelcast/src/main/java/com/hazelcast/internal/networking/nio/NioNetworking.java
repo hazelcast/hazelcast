@@ -129,7 +129,7 @@ public final class NioNetworking implements Networking, ProbeSource {
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         Tags tags = cycle.openContext().tag(TAG_TYPE, "inputThread");
         for (int i = 0; i < inputThreads.length; i++) {
             NioThread thread = inputThreads[i];

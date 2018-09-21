@@ -43,7 +43,7 @@ public final class ClientEngineProbeSource implements ProbeSource {
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.probe("client.endpoint", endpointManager);
         if (!cycle.isProbed(ProbeLevel.INFO)) {
             return;

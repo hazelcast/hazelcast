@@ -80,7 +80,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         probeStatistics(cycle, "topic", statsMap);
     }
 

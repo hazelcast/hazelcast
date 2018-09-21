@@ -255,7 +255,7 @@ public class PNCounterService implements
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         probeStatistics(cycle, "pNCounter", statsMap);
     }
 

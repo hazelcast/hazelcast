@@ -363,7 +363,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         probeStatistics(cycle, "replicatedMap", getStats());
     }
 

@@ -164,7 +164,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.probe("cluster.clock", clusterClock);
         cycle.probe("cluster.heartbeat", clusterHeartbeatManager);
         cycle.probe("cluster", this);

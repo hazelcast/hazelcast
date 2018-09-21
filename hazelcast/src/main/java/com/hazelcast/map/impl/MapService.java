@@ -201,7 +201,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         probeStatistics(cycle, "map", mapServiceContext.getLocalMapStatsProvider().createAllLocalMapStats());
     }
 

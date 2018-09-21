@@ -292,7 +292,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         cycle.probe("invocations", invocationService);
         cycle.probe("executionService", executionService);
         cycle.probe("listeners", listenerService);

@@ -202,7 +202,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         probeStatistics(cycle, "executor", statsMap);
     }
 

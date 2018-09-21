@@ -33,7 +33,7 @@ public interface Tagging {
      * that were added before probing the implementing instance.
      *
      * This is an alternative to building the context in the
-     * {@link ProbeSource#probeIn(ProbingCycle)} implementation.
+     * {@link ProbeSource#probeNow(ProbingCycle)} implementation.
      *
      * @param context to use to build the objects context using the {@link Tags}
      *        methods.

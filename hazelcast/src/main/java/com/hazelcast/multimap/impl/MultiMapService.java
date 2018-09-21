@@ -454,7 +454,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     @Override
-    public void probeIn(ProbingCycle cycle) {
+    public void probeNow(ProbingCycle cycle) {
         probeStatistics(cycle, "multiMap", getStats());
     }
 
