@@ -45,8 +45,6 @@ public class MultipleEntryOperation extends MapOperation
     protected MapEntries responses;
     protected EntryProcessor entryProcessor;
 
-    protected transient EntryOperator operator;
-
     public MultipleEntryOperation() {
     }
 
@@ -69,8 +67,11 @@ public class MultipleEntryOperation extends MapOperation
     @SuppressWarnings("checkstyle:npathcomplexity")
     public void run() throws Exception {
         responses = new MapEntries(keys.size());
+        if (keys.isEmpty()) {
+            return;
+        }
 
-        operator = operator(this, entryProcessor, getPredicate());
+        EntryOperator operator = operator(this, entryProcessor, getPredicate());
         for (Data key : keys) {
             Data response = operator.operateOnKey(key).doPostOperateOps().getResult();
             if (response != null) {

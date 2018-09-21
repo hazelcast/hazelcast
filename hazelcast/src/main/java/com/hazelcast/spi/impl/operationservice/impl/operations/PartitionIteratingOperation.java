@@ -136,11 +136,8 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     }
 
     private void executePartitionAwareOperations(PartitionAwareOperationFactory givenFactory) {
-        PartitionAwareOperationFactory factory = givenFactory.createFactoryOnRunner(getNodeEngine());
-
         NodeEngine nodeEngine = getNodeEngine();
-        int[] operationFactoryPartitions = factory.getPartitions();
-        partitions = operationFactoryPartitions == null ? partitions : operationFactoryPartitions;
+        PartitionAwareOperationFactory factory = givenFactory.createFactoryOnRunner(nodeEngine, partitions);
 
         OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
         OperationService operationService = nodeEngine.getOperationService();
