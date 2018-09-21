@@ -24,9 +24,8 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.BeforeProbeCycle;
 import com.hazelcast.internal.probing.ProbeSource;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
@@ -59,7 +58,6 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
@@ -67,6 +65,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -75,7 +74,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMultiMapConfig;
 import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
@@ -99,18 +97,16 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     private static final int STATS_MAP_INITIAL_CAPACITY = 1000;
     private static final int REPLICA_ADDRESS_TRY_COUNT = 3;
     private static final int REPLICA_ADDRESS_SLEEP_WAIT_MILLIS = 1000;
-    private static final int UPDATE_STATS_INTERVAL_MILLIS = 2000;
 
     private final NodeEngine nodeEngine;
     private final MultiMapPartitionContainer[] partitionContainers;
-    private final AtomicLong lastUpdated = new AtomicLong();
     private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = createConcurrentHashMap(STATS_MAP_INITIAL_CAPACITY);
     private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction
             = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
-        public LocalMultiMapStatsImpl createNew(String key) {
+        public LocalMultiMapStatsImpl createNew(String name) {
                     return new LocalMultiMapStatsImpl(
-                            nodeEngine.getConfig().findMultiMapConfig(key).isStatisticsEnabled());
-                }
+                            nodeEngine.getConfig().getMultiMapConfig(name).isStatisticsEnabled());
+        }
     };
     private final MultiMapEventsDispatcher dispatcher;
     private final MultiMapEventsPublisher publisher;
@@ -226,7 +222,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                 keySet.addAll(multiMapContainer.keySet());
             }
         }
-        getLocalMultiMapStatsInternal(name).incrementOtherOperations();
+        getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         return keySet;
     }
 
@@ -383,7 +379,8 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         }
     }
 
-    private void update(String name, LocalMultiMapStatsImpl stats) {
+    public LocalMultiMapStatsImpl createStats(String name) {
+        LocalMultiMapStatsImpl stats = getLocalMultiMapStatsImpl(name);
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
         long hits = 0;
@@ -433,14 +430,10 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         stats.setBackupCount(backupCount);
         stats.setLastAccessTime(lastAccessTime);
         stats.setLastUpdateTime(lastUpdateTime);
+        return stats;
     }
 
     public LocalMultiMapStatsImpl getLocalMultiMapStatsImpl(String name) {
-        updateStatsIfNeeded();
-        return getLocalMultiMapStatsInternal(name);
-    }
-
-    private LocalMultiMapStatsImpl getLocalMultiMapStatsInternal(String name) {
         return getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
     }
 
@@ -462,33 +455,20 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        probeStatistics(cycle, "multiMap", statsMap);
+        probeStatistics(cycle, "multiMap", getStats());
     }
 
-    @BeforeProbeCycle
-    private void updateStats() {
-        for (String name : nodeEngine.getProxyService().getDistributedObjectNames(SERVICE_NAME)) {
-            LocalMultiMapStatsImpl stats = getLocalMultiMapStatsInternal(name);
-            if (stats.isStatisticsEnabled()) {
-                update(name, stats);
+    // visible for testing only
+    Map<String, LocalMultiMapStatsImpl> getStats() {
+        Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
+        for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
+            for (String name : partitionContainer.containerMap.keySet()) {
+                if (!multiMapStats.containsKey(name)) {
+                    multiMapStats.put(name, createStats(name));
+                }
             }
         }
-        lastUpdated.set(Clock.currentTimeMillis());
-    }
-
-    /**
-     * Updates all map statistics if the last update was more then
-     * {@link #UPDATE_STATS_INTERVAL_MILLIS} ago. This method makes sure
-     * {@link #updateStats()} only runs once even in case of concurrent threads
-     * checking in parallel.
-     */
-    private void updateStatsIfNeeded() {
-        long now = Clock.currentTimeMillis();
-        long lastUpdate = lastUpdated.get();
-        if (lastUpdate + UPDATE_STATS_INTERVAL_MILLIS < now
-                && lastUpdated.compareAndSet(lastUpdate, now)) {
-            updateStats();
-        }
+        return multiMapStats;
     }
 
     private Address getReplicaAddress(IPartition partition, int backupCount, int replicaIndex) {

@@ -62,7 +62,6 @@ public class ReplicatedMapServiceTest extends HazelcastTestSupport {
     public void testReplicatedMapGetStats() {
         hazelcastInstance.getReplicatedMap("replicatedMap");
         ReplicatedMapService service = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
-        service.updateStats();
         assertNotNull(service.getStats().get("replicatedMap"));
     }
 }

@@ -94,7 +94,7 @@ public class PNCounterStatisticsSplitBrainTest extends SplitBrainTestSupport {
             public void run() {
                 for (HazelcastInstance instance : instances) {
                     PNCounterService service = getNodeEngineImpl(instance).getService(PNCounterService.SERVICE_NAME);
-                    Map<String, LocalPNCounterStats> stats = service.getStats();
+                    Map<String, ? extends LocalPNCounterStats> stats = service.getStats();
 
                     assertEquals(contains, stats.containsKey(counterName));
                 }

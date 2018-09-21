@@ -328,7 +328,7 @@ public class ObjectMultiMapProxy<K, V>
 
     @Override
     public LocalMultiMapStats getLocalMultiMapStats() {
-        return getService().getLocalMultiMapStatsImpl(name);
+        return getService().createStats(name);
     }
 
     @Override

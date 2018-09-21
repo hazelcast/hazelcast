@@ -449,7 +449,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     public LocalReplicatedMapStats getReplicatedMapStats() {
-        return service.getLocalMapStatsImpl(name);
+        return service.createReplicatedMapStats(name);
     }
 
     private void ensureQuorumPresent(QuorumType requiredQuorumPermissionType) {

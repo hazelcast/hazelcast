@@ -21,7 +21,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.BeforeProbeCycle;
 import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
@@ -203,16 +202,11 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        probeStatistics(cycle, "map", mapServiceContext.getLocalMapStatsProvider().getStats());
+        probeStatistics(cycle, "map", mapServiceContext.getLocalMapStatsProvider().createAllLocalMapStats());
     }
 
     public Map<String, ? extends LocalMapStats> getStats() {
-        return mapServiceContext.getLocalMapStatsProvider().getStats();
-    }
-
-    @BeforeProbeCycle
-    private void updateStats() {
-        mapServiceContext.getLocalMapStatsProvider().updateStats();
+        return mapServiceContext.getLocalMapStatsProvider().createAllLocalMapStats();
     }
 
     @Override

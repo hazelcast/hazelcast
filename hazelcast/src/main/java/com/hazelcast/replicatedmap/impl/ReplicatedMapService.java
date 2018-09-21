@@ -30,9 +30,8 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.BeforeProbeCycle;
 import com.hazelcast.internal.probing.ProbeSource;
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -58,12 +57,12 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +71,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.config.ConfigValidator.checkReplicatedMapConfig;
@@ -86,7 +84,7 @@ import static java.lang.Math.max;
  * This is the main service implementation to handle proxy creation, event publishing, migration, anti-entropy and
  * manages the backing {@link PartitionContainer}s that actually hold the data
  */
-@SuppressWarnings({ "checkstyle:methodcount", "checkstyle:classfanoutcomplexity" })
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
         MigrationAwareService, SplitBrainHandlerService, ProbeSource, QuorumAwareService {
 
@@ -94,7 +92,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     public static final int INVOCATION_TRY_COUNT = 3;
 
     private static final int SYNC_INTERVAL_SECONDS = 30;
-    private static final int UPDATE_STATS_INTERVAL_MILLIS = 2000;
 
     private static final Object NULL_OBJECT = new Object();
 
@@ -110,15 +107,15 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
-    private final AtomicLong lastUpdated = new AtomicLong();
+
     private final ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap =
             new ConcurrentHashMap<String, LocalReplicatedMapStatsImpl>();
     private final ConstructorFunction<String, LocalReplicatedMapStatsImpl> statsConstructorFunction =
             new ConstructorFunction<String, LocalReplicatedMapStatsImpl>() {
                 @Override
                 public LocalReplicatedMapStatsImpl createNew(String name) {
-                    return new LocalReplicatedMapStatsImpl(nodeEngine
-                            .getConfig().findReplicatedMapConfig(name).isStatisticsEnabled());
+                    return new LocalReplicatedMapStatsImpl(nodeEngine.getConfig()
+                            .getReplicatedMapConfig(name).isStatisticsEnabled());
                 }
             };
 
@@ -180,15 +177,11 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     public LocalReplicatedMapStatsImpl getLocalMapStatsImpl(String name) {
-        updateStatsIfNeeded();
-        return getLocalMapStatsInternal(name);
-    }
-
-    private LocalReplicatedMapStatsImpl getLocalMapStatsInternal(String name) {
         return getOrPutIfAbsent(statsMap, name, statsConstructorFunction);
     }
 
-    private void update(String name, LocalReplicatedMapStatsImpl stats) {
+    public LocalReplicatedMapStatsImpl createReplicatedMapStats(String name) {
+        LocalReplicatedMapStatsImpl stats = getLocalMapStatsImpl(name);
         long hits = 0;
         long count = 0;
         long memoryUsage = 0;
@@ -213,6 +206,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         stats.setOwnedEntryCount(count);
         stats.setHits(hits);
         stats.setOwnedEntryMemoryCost(memoryUsage);
+        return stats;
     }
 
     @Override
@@ -370,38 +364,18 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public void probeIn(ProbingCycle cycle) {
-        probeStatistics(cycle, "replicatedMap", statsMap);
+        probeStatistics(cycle, "replicatedMap", getStats());
     }
 
-    // for testing only
+    // visible for testing only
     Map<String, LocalReplicatedMapStatsImpl> getStats() {
-        return statsMap;
-    }
-
-    /**
-     * Updates all map statistics if the last update was more then
-     * {@link #UPDATE_STATS_INTERVAL_MILLIS} ago. This method makes sure
-     * {@link #updateStats()} only runs once even in case of concurrent threads
-     * checking in parallel.
-     */
-    private void updateStatsIfNeeded() {
-        long now = Clock.currentTimeMillis();
-        long lastUpdate = lastUpdated.get();
-        if (lastUpdate + UPDATE_STATS_INTERVAL_MILLIS < now
-                && lastUpdated.compareAndSet(lastUpdate, now)) {
-            updateStats();
+        Collection<String> maps = getNodeEngine().getProxyService().getDistributedObjectNames(SERVICE_NAME);
+        Map<String, LocalReplicatedMapStatsImpl> mapStats = new
+                HashMap<String, LocalReplicatedMapStatsImpl>(maps.size());
+        for (String map : maps) {
+            mapStats.put(map, createReplicatedMapStats(map));
         }
-    }
-
-    @BeforeProbeCycle
-    void updateStats() {
-        for (String map : getNodeEngine().getProxyService().getDistributedObjectNames(SERVICE_NAME)) {
-            LocalReplicatedMapStatsImpl stats = getLocalMapStatsInternal(map);
-            if (stats.isStatisticsEnabled()) {
-                update(map, stats);
-            }
-        }
-        lastUpdated.set(Clock.currentTimeMillis());
+        return mapStats;
     }
 
     @Override
