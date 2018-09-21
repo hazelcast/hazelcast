@@ -29,9 +29,9 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 /**
  * Starts a Hazelcast server.
  */
-public final class StartServer {
+public final class HazelcastMemberStarter {
 
-    private StartServer() {
+    private HazelcastMemberStarter() {
     }
 
     /**
