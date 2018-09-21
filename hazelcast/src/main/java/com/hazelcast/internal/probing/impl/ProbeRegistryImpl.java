@@ -18,6 +18,7 @@ package com.hazelcast.internal.probing.impl;
 
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendEscaped;
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendUnescaped;
+import static com.hazelcast.internal.probing.ProbeUtils.isSupportedProbeType;
 import static com.hazelcast.util.StringUtil.getterIntoProperty;
 
 import java.lang.reflect.Field;
@@ -683,8 +684,14 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         private static void collectProbeMethods(Class<?> type, List<Method> probes) {
             for (Method m : type.getDeclaredMethods()) {
                 if (m.isAnnotationPresent(Probe.class) && isSuitableProbeMethod(m, probes)) {
-                    m.setAccessible(true);
-                    probes.add(m);
+                    if (isSupportedProbeType(m.getReturnType())) {
+                        m.setAccessible(true);
+                        probes.add(m);
+                    } else {
+                        LOGGER.warning("@Probe annotated method " + m.getName() + " in "
+                                + m.getDeclaringClass().getSimpleName()
+                                + " has an unsupported return type.");
+                    }
                 }
             }
             if (type.getSuperclass() != null) {
@@ -696,10 +703,6 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         private static boolean isSuitableProbeMethod(Method m, List<Method> probes) {
-            if (m.getReturnType() == void.class) {
-                LOGGER.warning("Probe method must return something: " + m.toGenericString());
-                return false;
-            }
             if (m.getParameterTypes().length > 0) {
                 LOGGER.warning("Probe method must not have parameters: " + m.toGenericString());
                 return false;
@@ -719,8 +722,14 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         private static void collectProbeFields(Class<?> type, List<Field> probes) {
             for (Field f : type.getDeclaredFields()) {
                 if (f.isAnnotationPresent(Probe.class)) {
-                    f.setAccessible(true);
-                    probes.add(f);
+                    if (isSupportedProbeType(f.getType())) {
+                        f.setAccessible(true);
+                        probes.add(f);
+                    } else {
+                        LOGGER.warning("@Probe annotated field " + f.getName() + " in "
+                                + f.getDeclaringClass().getSimpleName()
+                                + " has an unsupported type!");
+                    }
                 }
             }
             if (type.getSuperclass() != null) {

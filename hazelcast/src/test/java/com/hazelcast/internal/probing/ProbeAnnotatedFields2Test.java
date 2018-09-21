@@ -53,7 +53,7 @@ public class ProbeAnnotatedFields2Test extends AbstractProbeTest implements Prob
 
     @Test
     public void whenUnknownType() {
-        assertProbed("unknownTypeField", -1);
+        assertNotProbed("unknownTypeField");
     }
 
     private static final class UnknownFieldType {

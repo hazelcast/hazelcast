@@ -171,6 +171,7 @@ public class WanReplicationServiceImpl implements WanReplicationService, ProbeSo
                         .getLocalWanPublisherStats().entrySet()) {
                     tags.tag(TAG_TARGET, stats.getKey());
                     cycle.probe(stats.getValue());
+                    cycle.probe("state", stats.getValue().getPublisherState().getId());
                 }
             }
         }

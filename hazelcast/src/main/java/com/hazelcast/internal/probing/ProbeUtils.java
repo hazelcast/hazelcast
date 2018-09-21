@@ -121,6 +121,27 @@ public final class ProbeUtils {
                         + value.getClass().getSimpleName() + " to primitive long.");
     }
 
+    /**
+     * Check if a type can be probed.
+     *
+     * @param type any type, not null
+     * @return true, if {@link #toLong(Object)} knows how to convert it to a long,
+     *         else false
+     */
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+    public static boolean isSupportedProbeType(Class<?> type) {
+        if (type.isPrimitive()) {
+            return type != void.class;
+        }
+        return     type == Boolean.class
+                || type == AtomicBoolean.class
+                || Number.class.isAssignableFrom(type)
+                || Collection.class.isAssignableFrom(type)
+                || Map.class.isAssignableFrom(type)
+                || Counter.class.isAssignableFrom(type)
+                || Semaphore.class.isAssignableFrom(type);
+    }
+
     public static long updateInterval(int value, TimeUnit unit) {
         return unit.toMillis(value);
     }

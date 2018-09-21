@@ -45,7 +45,6 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private final long creationTime;
     @Probe
     private volatile boolean connected;
-    @Probe
     private volatile WanPublisherState state;
     @Probe
     private volatile int outboundQueueSize;
