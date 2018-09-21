@@ -14,29 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.record;
+package com.hazelcast.internal.util.comparators;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class ObjectRecordComparator implements RecordComparator {
+/**
+ * Comparator for {@link com.hazelcast.config.InMemoryFormat#OBJECT} backed
+ * data structures.
+ */
+final class ObjectValueComparator implements ValueComparator {
 
-    private final SerializationService serializationService;
+    public static final ValueComparator INSTANCE = new ObjectValueComparator();
 
-    public ObjectRecordComparator(SerializationService serializationService) {
-        this.serializationService = serializationService;
+    private ObjectValueComparator() {
     }
 
     @Override
-    public boolean isEqual(Object value1, Object value2) {
+    public boolean isEqual(Object value1, Object value2, SerializationService ss) {
         if (value1 == value2) {
             return true;
         }
         if (value1 == null || value2 == null) {
             return false;
         }
-        Object v1 = value1 instanceof Data ? serializationService.toObject(value1) : value1;
-        Object v2 = value2 instanceof Data ? serializationService.toObject(value2) : value2;
+        Object v1 = value1 instanceof Data ? ss.toObject(value1) : value1;
+        Object v2 = value2 instanceof Data ? ss.toObject(value2) : value2;
         return v1 != null ? v1.equals(v2) : v2 == null;
     }
 }
