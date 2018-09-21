@@ -62,7 +62,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
     public void handle(HttpPostCommand command) {
         try {
             String uri = command.getURI();
