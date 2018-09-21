@@ -76,6 +76,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -904,6 +905,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         try {
             if (!isJoined()) {
                 throw new IllegalStateException("Member list join version is not available when not joined");
+            } else if (getClusterVersion().isLessThan(V3_10)) {
+                // RU_COMPAT_3_9
+                String msg = "Member list join version is not available with a cluster version less than 3.10";
+                throw new UnsupportedOperationException(msg);
             }
 
             int joinVersion = localMember.getMemberListJoinVersion();

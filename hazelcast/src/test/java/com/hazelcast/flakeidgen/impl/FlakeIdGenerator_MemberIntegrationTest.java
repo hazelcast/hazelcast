@@ -36,6 +36,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -71,7 +73,16 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
     }
 
     @Test
+    public void when_310MemberJoinsWith39Mode_flakeIdGeneratorDoesNotWork() {
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, V3_9.toString());
+        HazelcastInstance instance = factory.newHazelcastInstance();
 
+        FlakeIdGenerator gen = instance.getFlakeIdGenerator("gen");
+        exception.expect(UnsupportedOperationException.class);
+        gen.newId();
+    }
+
+    @Test
     public void statistics() {
         HazelcastInstance instance = factory.newHazelcastInstance();
 
