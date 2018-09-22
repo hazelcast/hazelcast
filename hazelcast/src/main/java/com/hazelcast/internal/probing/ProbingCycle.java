@@ -124,16 +124,38 @@ public interface ProbingCycle {
      */
     void gather(ProbeLevel level, Object instance, String[] methods);
 
+    /**
+     * Equal to {@link #gather(ProbeLevel, CharSequence, long)} with {@link ProbeLevel#INFO}.
+     */
     void gather(CharSequence name, long value);
 
+    /**
+     * Equal to {@link #gather(ProbeLevel, CharSequence, double)} with {@link ProbeLevel#INFO}.
+     */
     void gather(CharSequence name, double value);
 
+    /**
+     * Equal to {@link #gather(ProbeLevel, CharSequence, boolean)} with {@link ProbeLevel#INFO}.
+     */
     void gather(CharSequence name, boolean value);
 
+    /**
+     * Collects the given key-value pair as long as {@link #isProbed(ProbeLevel)}.
+     * 
+     * @param level the level for with the pair is gathered
+     * @param name name relative to context (full key is {@code context+name})
+     * @param value current value measured ({@code -1} if unknown or unspecified)
+     */
     void gather(ProbeLevel level, CharSequence name, long value);
 
+    /**
+     * Equal to {@link #gather(ProbeLevel, CharSequence, long)} with {@link ProbeUtils#toLong(double)}.
+     */
     void gather(ProbeLevel level, CharSequence name, double value);
 
+    /**
+     * Equal to {@link #gather(ProbeLevel, CharSequence, long)} with {@link ProbeUtils#toLong(boolean)}.
+     */
     void gather(ProbeLevel level, CharSequence name, boolean value);
 
     /**
