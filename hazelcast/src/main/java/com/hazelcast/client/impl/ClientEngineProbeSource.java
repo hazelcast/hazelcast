@@ -62,16 +62,16 @@ public final class ClientEngineProbeSource implements ProbeSource {
                     .tag("address", address == null ? "?" : address);
                     // this particular metric is used to convey details of the endpoint via tags
                     boolean isOwnerConnection = endpoint.isOwnerConnection();
-                    cycle.probe("ownerConnection", isOwnerConnection);
+                    cycle.gather("ownerConnection", isOwnerConnection);
                     if (isOwnerConnection) {
-                        probeForwarded(cycle, endpoint.getUuid(), endpoint.getClientStatistics());
+                        probeClientStatistics(cycle, endpoint.getUuid(), endpoint.getClientStatistics());
                     }
                 }
             }
         }
     }
 
-    public static void probeForwarded(ProbingCycle cycle, CharSequence origin, CharSequence stats) {
+    public static void probeClientStatistics(ProbingCycle cycle, CharSequence origin, CharSequence stats) {
         if (stats == null) {
             return;
         }
@@ -85,11 +85,11 @@ public final class ClientEngineProbeSource implements ProbeSource {
             .tag(TAG_TARGET, lines.next())
             .tag("version", lines.next());
             // this additional metric is used to convey client details via tags
-            cycle.probe("principal", "?".contentEquals(lines.next()));
+            cycle.gather("principal", "?".contentEquals(lines.next()));
             cycle.openContext().tag("origin", origin);
             lines.next();
             while (lines.length() > 0) {
-                cycle.probeForwarded(lines.key(), lines.value());
+                cycle.gatherForwarded(lines.key(), lines.value());
                 // first to end of current line as key goes back
                 lines.next().next();
             }

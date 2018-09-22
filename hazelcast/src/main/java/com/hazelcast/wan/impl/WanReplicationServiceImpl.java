@@ -171,7 +171,7 @@ public class WanReplicationServiceImpl implements WanReplicationService, ProbeSo
                         .getLocalWanPublisherStats().entrySet()) {
                     tags.tag(TAG_TARGET, stats.getKey());
                     cycle.probe(stats.getValue());
-                    cycle.probe("state", stats.getValue().getPublisherState().getId());
+                    cycle.gather("state", stats.getValue().getPublisherState().getId());
                 }
             }
         }
@@ -181,8 +181,8 @@ public class WanReplicationServiceImpl implements WanReplicationService, ProbeSo
                 .tag(TAG_TYPE, "wan")
                 .tag(TAG_INSTANCE, state.getActiveWanConfigName())
                 .tag(TAG_TARGET, state.getActivePublisherName());
-            cycle.probe("sync.syncedPartitionCount", state.getSyncedPartitionCount());
-            cycle.probe("sync.status", state.getStatus().getStatus());
+            cycle.gather("sync.syncedPartitionCount", state.getSyncedPartitionCount());
+            cycle.gather("sync.status", state.getStatus().getStatus());
         }
     }
 

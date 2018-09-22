@@ -189,9 +189,9 @@ public class Statistics implements ProbeSource {
 
     @Override
     public void probeNow(ProbingCycle cycle) {
-        cycle.probe(MANDATORY, "enterprise", enterprise);
-        cycle.probe(MANDATORY, "lastStatisticsCollectionTime", System.currentTimeMillis());
-        cycle.probe(MANDATORY, "clusterConnectionTimestamp", ownerConnection.getStartTime());
+        cycle.gather(MANDATORY, "enterprise", enterprise);
+        cycle.gather(MANDATORY, "lastStatisticsCollectionTime", System.currentTimeMillis());
+        cycle.gather(MANDATORY, "clusterConnectionTimestamp", ownerConnection.getStartTime());
         Collection<NearCache> caches = client.getNearCacheManager().listAllNearCaches();
         if (caches.isEmpty()) {
             return;

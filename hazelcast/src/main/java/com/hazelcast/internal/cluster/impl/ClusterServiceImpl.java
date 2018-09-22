@@ -168,8 +168,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         cycle.probe("cluster.clock", clusterClock);
         cycle.probe("cluster.heartbeat", clusterHeartbeatManager);
         cycle.probe("cluster", this);
-        cycle.probe(MANDATORY, "cluster.state", ProbeEnumUtils.codeOf(getClusterState()));
-        cycle.probe(MANDATORY, "cluster.memberState", ProbeEnumUtils.codeOf(node.getState()));
+        cycle.gather(MANDATORY, "cluster.state", ProbeEnumUtils.codeOf(getClusterState()));
+        cycle.gather(MANDATORY, "cluster.memberState", ProbeEnumUtils.codeOf(node.getState()));
     }
 
     @Override

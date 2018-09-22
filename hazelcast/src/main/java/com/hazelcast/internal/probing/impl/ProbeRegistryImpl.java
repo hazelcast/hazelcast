@@ -18,6 +18,7 @@ package com.hazelcast.internal.probing.impl;
 
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendEscaped;
 import static com.hazelcast.internal.probing.CharSequenceUtils.appendUnescaped;
+import static com.hazelcast.internal.probing.ProbeUtils.findProbedFields;
 import static com.hazelcast.internal.probing.ProbeUtils.findProbedMethods;
 import static com.hazelcast.internal.probing.ProbeUtils.isSuitableProbeMethod;
 import static com.hazelcast.internal.probing.ProbeUtils.isSupportedProbeType;
@@ -217,7 +218,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         @Override
-        public void probe(ProbeLevel level, Object instance, String[] methods) {
+        public void gather(ProbeLevel level, Object instance, String[] methods) {
             if (instance == null || !isProbed(level)) {
                 return;
             }
@@ -259,39 +260,39 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         @Override
-        public void probe(CharSequence name, long value) {
-            probe(ProbeLevel.INFO, name, value);
+        public void gather(CharSequence name, long value) {
+            gather(ProbeLevel.INFO, name, value);
         }
 
         @Override
-        public void probe(CharSequence name, double value) {
-            probe(ProbeLevel.INFO, name, value);
+        public void gather(CharSequence name, double value) {
+            gather(ProbeLevel.INFO, name, value);
         }
 
         @Override
-        public void probe(CharSequence name, boolean value) {
-            probe(ProbeLevel.INFO, name, value);
+        public void gather(CharSequence name, boolean value) {
+            gather(ProbeLevel.INFO, name, value);
         }
 
         @Override
-        public void probe(ProbeLevel level, CharSequence name, long value) {
+        public void gather(ProbeLevel level, CharSequence name, long value) {
             if (isProbed(level)) {
                 render(name, value);
             }
         }
 
         @Override
-        public void probe(ProbeLevel level, CharSequence name, double value) {
-            probe(level, name, ProbeUtils.toLong(value));
+        public void gather(ProbeLevel level, CharSequence name, double value) {
+            gather(level, name, ProbeUtils.toLong(value));
         }
 
         @Override
-        public void probe(ProbeLevel level, CharSequence name, boolean value) {
-            probe(level, name, value ? 1 : 0);
+        public void gather(ProbeLevel level, CharSequence name, boolean value) {
+            gather(level, name, value ? 1 : 0);
         }
 
         @Override
-        public void probeForwarded(CharSequence name, long value) {
+        public void gatherForwarded(CharSequence name, long value) {
             int len0 = tags.length();
             appendUnescaped(tags, name);
             renderer.render(tags, value);
@@ -529,7 +530,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (otherFields != null) {
                 for (int i = 0; i < otherFields.length; i++) {
                     try {
-                        cycle.probe(level, otherFieldNames[i], ProbeUtils.toLong(otherFields[i].get(instance)));
+                        cycle.gather(level, otherFieldNames[i], ProbeUtils.toLong(otherFields[i].get(instance)));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read field probe", e);
                     }
@@ -541,7 +542,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (booleanFields != null) {
                 for (int i = 0; i < booleanFields.length; i++) {
                     try {
-                        cycle.probe(level, booleanFieldNames[i], booleanFields[i].getBoolean(instance));
+                        cycle.gather(level, booleanFieldNames[i], booleanFields[i].getBoolean(instance));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read boolean field probe", e);
                     }
@@ -553,7 +554,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (doubleFields != null) {
                 for (int i = 0; i < doubleFields.length; i++) {
                     try {
-                        cycle.probe(level, doubleFieldNames[i], doubleFields[i].getDouble(instance));
+                        cycle.gather(level, doubleFieldNames[i], doubleFields[i].getDouble(instance));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read double field probe", e);
                     }
@@ -565,7 +566,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (longFields != null) {
                 for (int i = 0; i < longFields.length; i++) {
                     try {
-                        cycle.probe(level, longFieldNames[i], longFields[i].getLong(instance));
+                        cycle.gather(level, longFieldNames[i], longFields[i].getLong(instance));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read long field probe", e);
                     }
@@ -577,7 +578,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (methods != null) {
                 for (int i = 0; i < methods.length; i++) {
                     try {
-                        cycle.probe(level, methodNames[i],
+                        cycle.gather(level, methodNames[i],
                                 ProbeUtils.toLong(methods[i].invoke(instance, EMPTY_ARGS)));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read method probe: " + methods[i].getName(), e);
@@ -632,7 +633,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         private void initByAnnotations(Class<?> type) {
             List<Method> probedMethods = findProbedMethods(type);
-            List<Field> probedFields = ProbeUtils.findProbedFields(type);
+            List<Field> probedFields = findProbedFields(type);
             if (!probedMethods.isEmpty() || !probedFields.isEmpty()) {
                 for (ProbeLevel level : ProbeLevel.values()) {
                     levels[level.ordinal()] = ProbeAnnotatedTypeLevel.createIfNeeded(level,
@@ -683,7 +684,6 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
             cycle.tags.setLength(len0);
         }
-
 
     }
 

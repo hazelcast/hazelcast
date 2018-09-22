@@ -100,7 +100,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
             public void probeNow(ProbingCycle cycle) {
                 // we render 50 probes to quickly fill up the diagnostics log file
                 for (int k = 0; k < 50; k++) {
-                    cycle.probe(MANDATORY, id + k, k);
+                    cycle.gather(MANDATORY, id + k, k);
                 }
 
             }

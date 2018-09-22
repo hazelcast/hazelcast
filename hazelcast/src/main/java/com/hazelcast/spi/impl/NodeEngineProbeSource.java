@@ -76,13 +76,13 @@ public final class NodeEngineProbeSource implements ProbeSource {
         HotRestartService hotRestartService = nodeEngine.getNode().getNodeExtension().getHotRestartService();
         boolean enabled = hotRestartService.isHotBackupEnabled();
         cycle.openContext().prefix("hotBackup");
-        cycle.probe("enabled", enabled);
+        cycle.gather("enabled", enabled);
         if (enabled) {
             BackupTaskStatus status = hotRestartService.getBackupTaskStatus();
             if (status != null) {
-                cycle.probe("state", ProbeEnumUtils.codeOf(status.getState()));
-                cycle.probe("completed", status.getCompleted());
-                cycle.probe("total", status.getTotal());
+                cycle.gather("state", ProbeEnumUtils.codeOf(status.getState()));
+                cycle.gather("completed", status.getCompleted());
+                cycle.gather("total", status.getTotal());
             }
         }
     }
@@ -93,14 +93,14 @@ public final class NodeEngineProbeSource implements ProbeSource {
         ClusterHotRestartStatusDTO status = hotRestartService.getCurrentClusterHotRestartStatus();
         if (status != null && status.getHotRestartStatus() != ClusterHotRestartStatus.UNKNOWN) {
             cycle.openContext().prefix("hotRestart");
-            cycle.probe("remainingDataLoadTime", status.getRemainingDataLoadTimeMillis());
-            cycle.probe("remainingValidationTime", status.getRemainingValidationTimeMillis());
-            cycle.probe("status", ProbeEnumUtils.codeOf(status.getHotRestartStatus()));
-            cycle.probe("dataRecoveryPolicy", ProbeEnumUtils.codeOf(status.getDataRecoveryPolicy()));
+            cycle.gather("remainingDataLoadTime", status.getRemainingDataLoadTimeMillis());
+            cycle.gather("remainingValidationTime", status.getRemainingValidationTimeMillis());
+            cycle.gather("status", ProbeEnumUtils.codeOf(status.getHotRestartStatus()));
+            cycle.gather("dataRecoveryPolicy", ProbeEnumUtils.codeOf(status.getDataRecoveryPolicy()));
             for (Entry<String, MemberHotRestartStatus> memberStatus : status
                     .getMemberHotRestartStatusMap().entrySet()) {
                 cycle.openContext().tag(TAG_INSTANCE, memberStatus.getKey()).prefix("hotRestart");
-                cycle.probe("memberStatus", ProbeEnumUtils.codeOf(memberStatus.getValue()));
+                cycle.gather("memberStatus", ProbeEnumUtils.codeOf(memberStatus.getValue()));
             }
         }
     }

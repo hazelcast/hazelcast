@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceManager;
  *
  * Probes can have the form of objects with {@link Probe} annotated fields or
  * methods or are directly provide a value for a given name using
- * {@link ProbingCycle#probe(CharSequence, long)} (and its sibling methods).
+ * {@link ProbingCycle#gather(CharSequence, long)} (and its sibling methods).
  *
  * Implementations of {@link ProbeSource}s that are registered services at the
  * {@link ServiceManager} do not need explicit registration in the

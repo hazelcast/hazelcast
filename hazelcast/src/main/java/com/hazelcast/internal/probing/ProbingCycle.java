@@ -31,7 +31,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * is used to describe the general context of the probes. The context described
  * before acts as a "prefix" for all subsequent measurements.</li>
  *
- * <li>{@link #probe(CharSequence, long)} and its sibling methods are used to
+ * <li>{@link #gather(CharSequence, long)} and its sibling methods are used to
  * state one measurement at a time with its name and value. Alternatively to
  * stating measurements directly an instance of a type annotated with
  * {@link Probe} can be passed to {@link #probe(Object)} to measure all
@@ -122,29 +122,29 @@ public interface ProbingCycle {
      * @param methods the names of the methods to probe. Methods that do not exist
      *        or have the wrong number of arguments (not none) are ignored.
      */
-    void probe(ProbeLevel level, Object instance, String[] methods);
+    void gather(ProbeLevel level, Object instance, String[] methods);
 
-    void probe(CharSequence name, long value);
+    void gather(CharSequence name, long value);
 
-    void probe(CharSequence name, double value);
+    void gather(CharSequence name, double value);
 
-    void probe(CharSequence name, boolean value);
+    void gather(CharSequence name, boolean value);
 
-    void probe(ProbeLevel level, CharSequence name, long value);
+    void gather(ProbeLevel level, CharSequence name, long value);
 
-    void probe(ProbeLevel level, CharSequence name, double value);
+    void gather(ProbeLevel level, CharSequence name, double value);
 
-    void probe(ProbeLevel level, CharSequence name, boolean value);
+    void gather(ProbeLevel level, CharSequence name, boolean value);
 
     /**
      * Used to forward metrics received from the client. This is only different from
-     * {@link #probe(CharSequence, long)} except that it will not escape the name
-     * but un-escaping escaped backslashes.
+     * {@link #gather(CharSequence, long)} except that it will not escape the name
+     * but un-escaping escaped line-feeds.
      *
      * @param name a properly escaped name (as written before)
-     * @param value value as written before (double already converted to long)
+     * @param value value as written before (double/boolean already converted to long)
      */
-    void probeForwarded(CharSequence name, long value);
+    void gatherForwarded(CharSequence name, long value);
 
     /*
      * Describing probing context to the cycle:

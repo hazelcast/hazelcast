@@ -44,7 +44,7 @@ public class ProbeOperatingSystemTest extends AbstractProbeTest {
 
         @Override
         public void probeNow(ProbingCycle cycle) {
-            cycle.probe(MANDATORY, new FakeOperatingSystemBean(),
+            cycle.gather(MANDATORY, new FakeOperatingSystemBean(),
                     new String[] { "longMethod", "doubleMethod", "notExist" });
         }
     };
