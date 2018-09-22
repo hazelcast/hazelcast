@@ -149,34 +149,10 @@ class DefaultAddressPicker extends AbstractAddressPicker {
 
     private Collection<InterfaceDefinition> getInterfaces() {
         NetworkConfig networkConfig = config.getNetworkConfig();
-        // address -> domain
-        Map<String, String> addressDomainMap;
         TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
-        if (tcpIpConfig.isEnabled()) {
-            Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(config);
-            // LinkedHashMap is to guarantee order
-            addressDomainMap = createLinkedHashMap(possibleAddresses.size());
-            for (String possibleAddress : possibleAddresses) {
-                String addressHolder = AddressUtil.getAddressHolder(possibleAddress).getAddress();
-                if (AddressUtil.isIpAddress(addressHolder)) {
-                    // there may be a domain registered for this address
-                    if (!addressDomainMap.containsKey(addressHolder)) {
-                        addressDomainMap.put(addressHolder, null);
-                    }
-                } else {
-                    try {
-                        Collection<String> addresses = resolveDomainNames(addressHolder);
-                        for (String address : addresses) {
-                            addressDomainMap.put(address, addressHolder);
-                        }
-                    } catch (UnknownHostException e) {
-                        logger.warning("Cannot resolve hostname: '" + addressHolder + "'");
-                    }
-                }
-            }
-        } else {
-            addressDomainMap = Collections.emptyMap();
-        }
+
+        // ip address -> domain
+        Map<String, String> addressDomainMap = createAddressDomainMap(tcpIpConfig);
         Collection<InterfaceDefinition> interfaces = new HashSet<InterfaceDefinition>();
         if (networkConfig.getInterfaces().isEnabled()) {
             Collection<String> configInterfaces = networkConfig.getInterfaces().getInterfaces();
@@ -196,6 +172,37 @@ class DefaultAddressPicker extends AbstractAddressPicker {
             logger.info("Interfaces is disabled, trying to pick one address from TCP-IP config addresses: " + interfaces);
         }
         return interfaces;
+    }
+
+    private Map<String, String> createAddressDomainMap(TcpIpConfig tcpIpConfig) {
+        Map<String, String> addressDomainMap;
+        if (!tcpIpConfig.isEnabled()) {
+            return Collections.emptyMap();
+        }
+        Collection<String> configuredMembers = TcpIpJoiner.getConfigurationMembers(config);
+        // LinkedHashMap is to guarantee order
+        addressDomainMap = createLinkedHashMap(configuredMembers.size());
+        for (String configuredMember : configuredMembers) {
+            String addressHolder = AddressUtil.getAddressHolder(configuredMember).getAddress();
+            if (AddressUtil.isIpAddress(addressHolder)) {
+                // there may be a domain registered for this address
+                if (!addressDomainMap.containsKey(addressHolder) && AddressUtil.matchAnyLocalInterface(addressHolder)) {
+                    addressDomainMap.put(addressHolder, null);
+                }
+            } else {
+                try {
+                    Collection<String> addresses = resolveDomainNames(addressHolder);
+                    for (String address : addresses) {
+                        if (AddressUtil.matchAnyLocalInterface(address)) {
+                            addressDomainMap.put(address, addressHolder);
+                        }
+                    }
+                } catch (UnknownHostException e) {
+                    logger.warning("Cannot resolve hostname: '" + addressHolder + "'");
+                }
+            }
+        }
+        return addressDomainMap;
     }
 
     private static String findHostnameMatchingInterface(Map<String, String> addressDomainMap, String configInterface) {

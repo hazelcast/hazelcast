@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,6 +31,7 @@ import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -60,6 +62,35 @@ public final class AddressUtil {
             }
         }
         return false;
+    }
+
+    public static boolean matchAnyLocalInterface(String address) {
+        try {
+            List<AddressMatcher> localInterfaceMatchers = matchersForAllLocalInterfaces();
+            for (AddressUtil.AddressMatcher matcher : localInterfaceMatchers) {
+                if (matcher.match(address)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (SocketException e) {
+            return false;
+        }
+    }
+
+    private static List<AddressMatcher> matchersForAllLocalInterfaces() throws SocketException {
+        List<AddressUtil.AddressMatcher> matchers = new ArrayList<AddressMatcher>();
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+            NetworkInterface networkInterface = interfaces.nextElement();
+            Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+            while (inetAddresses.hasMoreElements()) {
+                InetAddress inetAddress = inetAddresses.nextElement();
+                AddressUtil.AddressMatcher addressMatcher = getAddressMatcher(inetAddress.getHostAddress());
+                matchers.add(addressMatcher);
+            }
+        }
+        return matchers;
     }
 
     public static boolean matchInterface(String address, String interfaceMask) {
