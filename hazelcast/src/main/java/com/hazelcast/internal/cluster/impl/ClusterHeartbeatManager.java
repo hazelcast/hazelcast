@@ -687,25 +687,21 @@ public class ClusterHeartbeatManager {
         }
 
         public void run() {
-            try {
-                Address address = member.getAddress();
-                logger.warning(format("%s will ping %s", node.getThisAddress(), address));
-                for (int i = 0; i < MAX_PING_RETRY_COUNT; i++) {
-                    if (doPing(address, Level.INFO)) {
-                        return;
-                    }
+            Address address = member.getAddress();
+            logger.warning(format("%s will ping %s", node.getThisAddress(), address));
+            for (int i = 0; i < MAX_PING_RETRY_COUNT; i++) {
+                if (doPing(address, Level.INFO)) {
+                    return;
                 }
-                // host not reachable
-                String reason = format("%s could not ping %s", node.getThisAddress(), address);
-                logger.warning(reason);
-                clusterService.suspectMember(member, reason, true);
-            } catch (Throwable ignored) {
-                ignore(ignored);
             }
+
+            // host not reachable
+            String reason = format("%s could not ping %s", node.getThisAddress(), address);
+            logger.warning(reason);
+            clusterService.suspectMember(member, reason, true);
         }
 
-        boolean doPing(Address address, Level level)
-                throws IOException {
+        boolean doPing(Address address, Level level) {
             try {
                 if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeoutMillis)) {
                     String msg = format("%s pinged %s successfully", node.getThisAddress(), address);
@@ -715,6 +711,10 @@ public class ClusterHeartbeatManager {
             } catch (ConnectException ignored) {
                 // no route to host, means we cannot connect anymore
                 ignore(ignored);
+            } catch (IOException e) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Failed while pinging " + address, e);
+                }
             }
             return false;
         }
@@ -729,29 +729,25 @@ public class ClusterHeartbeatManager {
         }
 
         public void run() {
-            try {
-                Address address = member.getAddress();
-                logger.fine(format("%s will ping %s", node.getThisAddress(), address));
-                if (doPing(address, Level.FINE)) {
-                    boolean pingRestored = (icmpFailureDetector.heartbeat(member) > 0);
-                    if (pingRestored) {
-                        quorumService.onPingRestored(member);
-                    }
-                    return;
+            Address address = member.getAddress();
+            logger.fine(format("%s will ping %s", node.getThisAddress(), address));
+            if (doPing(address, Level.FINE)) {
+                boolean pingRestored = (icmpFailureDetector.heartbeat(member) > 0);
+                if (pingRestored) {
+                    quorumService.onPingRestored(member);
                 }
+                return;
+            }
 
-                icmpFailureDetector.logAttempt(member);
-                quorumService.onPingLost(member);
+            icmpFailureDetector.logAttempt(member);
+            quorumService.onPingLost(member);
 
-                // host not reachable
-                String reason = format("%s could not ping %s", node.getThisAddress(), address);
-                logger.warning(reason);
+            // host not reachable
+            String reason = format("%s could not ping %s", node.getThisAddress(), address);
+            logger.warning(reason);
 
-                if (!icmpFailureDetector.isAlive(member)) {
-                    clusterService.suspectMember(member, reason, true);
-                }
-            } catch (Throwable ignored) {
-                ignore(ignored);
+            if (!icmpFailureDetector.isAlive(member)) {
+                clusterService.suspectMember(member, reason, true);
             }
         }
     }
