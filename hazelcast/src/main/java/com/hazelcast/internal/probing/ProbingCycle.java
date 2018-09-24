@@ -141,7 +141,7 @@ public interface ProbingCycle {
 
     /**
      * Collects the given key-value pair as long as {@link #isProbed(ProbeLevel)}.
-     * 
+     *
      * @param level the level for with the pair is gathered
      * @param name name relative to context (full key is {@code context+name})
      * @param value current value measured ({@code -1} if unknown or unspecified)

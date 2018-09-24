@@ -31,7 +31,7 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
-import com.hazelcast.internal.probing.sources.GcProbeSource;
+import com.hazelcast.internal.probing.sources.MemoryProbeSource;
 import com.hazelcast.internal.probing.sources.MachineProbeSource;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
@@ -185,8 +185,8 @@ public class NodeEngineImpl implements NodeEngine {
      */
     private void initProbeSources() {
         probeRegistry.register(new NodeEngineProbeSource(this, operationService, node.partitionService));
-        probeRegistry.register(GcProbeSource.INSTANCE);
-        probeRegistry.register(MachineProbeSource.INSTANCE);
+        probeRegistry.register(new MachineProbeSource());
+        probeRegistry.register(new MemoryProbeSource(node.getNodeExtension().getMemoryStats()));
         probeRegistry.register(executionService);
         probeRegistry.registerIfSource(operationService.getOperationExecutor());
         probeRegistry.registerIfSource(node.getNodeExtension());

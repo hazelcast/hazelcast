@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.monitor;
+package com.hazelcast.internal.probing.sources;
 
-
+import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.internal.probing.ProbeSource;
 
-/**
- * Local memory statistics to be used by {@link MemberState} implementations.
- */
-public interface LocalMemoryStats extends MemoryStats, LocalInstanceStats {
+public final class MemoryProbeSource implements ProbeSource {
+
+    private final MemoryStats memoryStats;
+
+    public MemoryProbeSource(MemoryStats memoryStats) {
+        this.memoryStats = memoryStats;
+    }
 
     @Override
-    LocalGCStats getGCStats();
+    public void probeNow(ProbingCycle cycle) {
+        cycle.probe("memory", memoryStats);
+        cycle.probe("gc", memoryStats.getGCStats());
+    }
+
 }

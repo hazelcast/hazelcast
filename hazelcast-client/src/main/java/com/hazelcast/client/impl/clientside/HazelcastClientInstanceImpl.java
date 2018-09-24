@@ -126,7 +126,7 @@ import com.hazelcast.internal.probing.ProbeRegistry;
 import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbingCycle;
 import com.hazelcast.internal.probing.impl.ProbeRegistryImpl;
-import com.hazelcast.internal.probing.sources.GcProbeSource;
+import com.hazelcast.internal.probing.sources.MemoryProbeSource;
 import com.hazelcast.internal.probing.sources.MachineProbeSource;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -279,8 +279,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private void initProbeSources() {
-        probeRegistry.register(GcProbeSource.INSTANCE);
-        probeRegistry.register(MachineProbeSource.INSTANCE);
+        probeRegistry.register(new MachineProbeSource());
+        probeRegistry.register(new MemoryProbeSource(clientExtension.getMemoryStats()));
         probeRegistry.register(this);
         probeRegistry.register(statistics);
         NioNetworking networking = connectionManager.getNetworking();
@@ -296,7 +296,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         cycle.probe("invocations", invocationService);
         cycle.probe("executionService", executionService);
         cycle.probe("listeners", listenerService);
-        cycle.probe("memory", clientExtension.getMemoryStats());
     }
 
     private Collection<AddressProvider> createAddressProviders(AddressProvider externalAddressProvider) {

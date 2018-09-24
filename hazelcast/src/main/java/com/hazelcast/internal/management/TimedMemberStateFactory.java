@@ -21,10 +21,8 @@ import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.impl.HotRestartStateImpl;
-import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
 import com.hazelcast.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
@@ -58,10 +56,6 @@ public class TimedMemberStateFactory {
         timedMemberState.setClusterName(groupConfig.getName());
 
         return timedMemberState;
-    }
-
-    protected LocalMemoryStats getMemoryStats() {
-        return new LocalMemoryStatsImpl(instance.getMemoryStats());
     }
 
     protected LocalOperationStats getOperationStats() {

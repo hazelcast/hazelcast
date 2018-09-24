@@ -51,7 +51,7 @@ public class ProbeOperatingSystemTest extends AbstractProbeTest {
 
     @Before
     public void setup() {
-        registry.register(MachineProbeSource.INSTANCE);
+        registry.register(new MachineProbeSource());
         registry.register(OS);
     }
 

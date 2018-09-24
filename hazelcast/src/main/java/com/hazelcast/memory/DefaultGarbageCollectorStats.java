@@ -16,16 +16,26 @@
 
 package com.hazelcast.memory;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+
+import com.hazelcast.internal.metrics.Probe;
+
 /**
  * Default implementation of GarbageCollectorStats.
  */
 public class DefaultGarbageCollectorStats implements GarbageCollectorStats {
 
+    @Probe(level = MANDATORY)
     private volatile long minorCount;
+    @Probe(level = MANDATORY)
     private volatile long minorTime;
+    @Probe(level = MANDATORY)
     private volatile long majorCount;
+    @Probe(level = MANDATORY)
     private volatile long majorTime;
+    @Probe(level = MANDATORY)
     private volatile long unknownCount;
+    @Probe(level = MANDATORY)
     private volatile long unknownTime;
 
     @Override

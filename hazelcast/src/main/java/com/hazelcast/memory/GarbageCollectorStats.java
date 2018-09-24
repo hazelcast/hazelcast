@@ -16,6 +16,10 @@
 
 package com.hazelcast.memory;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+
+import com.hazelcast.internal.metrics.Probe;
+
 /**
  * Garbage collector statistics for the JVM which current HazelcastInstance
  * belongs to.
@@ -36,6 +40,7 @@ public interface GarbageCollectorStats {
      * @return major collection count.
      * @see #getUnknownCollectionCount()
      */
+    @Probe(level = MANDATORY, name = "majorCount")
     long getMajorCollectionCount();
 
     /**
@@ -48,6 +53,7 @@ public interface GarbageCollectorStats {
      * @return total major collection count in ms.
      * @see #getUnknownCollectionTime()
      */
+    @Probe(level = MANDATORY, name = "majorTime")
     long getMajorCollectionTime();
 
     /**
@@ -60,6 +66,7 @@ public interface GarbageCollectorStats {
      * @return minor collection count.
      * @see #getUnknownCollectionCount()
      */
+    @Probe(level = MANDATORY, name = "minorCount")
     long getMinorCollectionCount();
 
     /**
@@ -72,6 +79,7 @@ public interface GarbageCollectorStats {
      * @return total minor collection count in ms.
      * @see #getUnknownCollectionTime()
      */
+    @Probe(level = MANDATORY, name = "minorTime")
     long getMinorCollectionTime();
 
     /**
@@ -79,6 +87,7 @@ public interface GarbageCollectorStats {
      *
      * @return unidentified collection count.
      */
+    @Probe(level = MANDATORY, name = "unknownCount")
     long getUnknownCollectionCount();
 
     /**
@@ -86,5 +95,6 @@ public interface GarbageCollectorStats {
      *
      * @return total unidentified collection time in ms.
      */
+    @Probe(level = MANDATORY, name = "unknownTime")
     long getUnknownCollectionTime();
 }

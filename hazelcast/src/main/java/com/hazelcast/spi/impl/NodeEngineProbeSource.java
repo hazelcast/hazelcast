@@ -55,7 +55,6 @@ public final class NodeEngineProbeSource implements ProbeSource {
     @Override
     public void probeNow(ProbingCycle cycle) {
         cycle.probe("proxy", nodeEngine.getProxyService());
-        cycle.probe("memory", nodeEngine.getNode().getNodeExtension().getMemoryStats());
         cycle.probe("operation", operationService);
         cycle.probe("operation", operationService.getInvocationRegistry());
         cycle.probe("operation", operationService.getInboundResponseHandlerSupplier());

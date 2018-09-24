@@ -37,7 +37,7 @@ public class ProbeClassLoadingTest extends AbstractProbeTest {
 
     @Before
     public void setup() {
-        registry.register(MachineProbeSource.INSTANCE);
+        registry.register(new MachineProbeSource());
     }
 
     @Test
@@ -45,7 +45,7 @@ public class ProbeClassLoadingTest extends AbstractProbeTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("classloading.loadedClassesCount", BEAN.getLoadedClassCount(), 100);
+                assertProbed("classloading.loadedClassCount", BEAN.getLoadedClassCount(), 100);
             }
         });
     }
@@ -55,7 +55,7 @@ public class ProbeClassLoadingTest extends AbstractProbeTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("classloading.totalLoadedClassesCount", BEAN.getTotalLoadedClassCount(), 100);
+                assertProbed("classloading.totalLoadedClassCount", BEAN.getTotalLoadedClassCount(), 100);
             }
         });
     }

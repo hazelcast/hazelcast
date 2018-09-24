@@ -22,7 +22,7 @@ import static com.hazelcast.internal.probing.ProbeUtils.findProbedFields;
 import static com.hazelcast.internal.probing.ProbeUtils.findProbedMethods;
 import static com.hazelcast.internal.probing.ProbeUtils.isSuitableProbeMethod;
 import static com.hazelcast.internal.probing.ProbeUtils.isSupportedProbeType;
-import static com.hazelcast.util.StringUtil.getterIntoProperty;
+import static com.hazelcast.internal.probing.ProbeUtils.probeName;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -31,7 +31,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -437,12 +440,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             for (Method m : probes) {
                 Probe p = m.getAnnotation(Probe.class);
                 if (p == null || p.level() == level) {
-                    String name = p == null ? "" : p.name();
-                    if (name.isEmpty()) {
-                        name = getterIntoProperty(m.getName());
-                    }
                     methods[i] = m;
-                    methodNames[i++] = name;
+                    methodNames[i++] = probeName(p, m);
                 }
             }
             sort(methodNames, methods);
@@ -456,10 +455,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             for (Field f : probes) {
                 Probe p = f.getAnnotation(Probe.class);
                 if (p.level() == level) {
-                    String name = p.name();
-                    if (name.isEmpty()) {
-                        name = f.getName();
-                    }
+                    String name = probeName(p, f);
                     Class<?> valueType = f.getType();
                     if (valueType.isPrimitive()) {
                         if (valueType == double.class || valueType == float.class) {
@@ -632,12 +628,29 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         private void initByAnnotations(Class<?> type) {
-            List<Method> probedMethods = findProbedMethods(type);
             List<Field> probedFields = findProbedFields(type);
+            List<Method> probedMethods = findProbedMethods(type);
+            removeMethodProbesOverridenByFieldProbes(probedFields, probedMethods);
             if (!probedMethods.isEmpty() || !probedFields.isEmpty()) {
                 for (ProbeLevel level : ProbeLevel.values()) {
                     levels[level.ordinal()] = ProbeAnnotatedTypeLevel.createIfNeeded(level,
                             probedMethods, probedFields);
+                }
+            }
+        }
+
+        private void removeMethodProbesOverridenByFieldProbes(List<Field> probedFields, List<Method> probedMethods) {
+            if (!probedMethods.isEmpty() && !probedFields.isEmpty()) {
+                Set<String> fieldProbeNames = new HashSet<String>();
+                for (Field f : probedFields) {
+                    fieldProbeNames.add(probeName(f.getAnnotation(Probe.class), f));
+                }
+                Iterator<Method> iter = probedMethods.iterator();
+                while (iter.hasNext()) {
+                    Method m = iter.next();
+                    if (fieldProbeNames.contains(probeName(m.getAnnotation(Probe.class), m))) {
+                        iter.remove();
+                    }
                 }
             }
         }

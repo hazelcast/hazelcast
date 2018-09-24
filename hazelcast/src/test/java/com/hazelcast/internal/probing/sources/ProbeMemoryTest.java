@@ -16,41 +16,72 @@
 
 package com.hazelcast.internal.probing.sources;
 
-import java.io.File;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.internal.probing.AbstractProbeTest;
+import com.hazelcast.memory.DefaultMemoryStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeFileTest extends AbstractProbeTest {
-
-    final File userHome = new File(System.getProperty("user.home"));
+public class ProbeMemoryTest extends AbstractProbeTest {
 
     @Before
     public void setup() {
-        registry.register(new MachineProbeSource());
+        registry.register(new MemoryProbeSource(new DefaultMemoryStats()));
     }
 
     @Test
-    public void freeSpace() {
-        assertProbed("type=file.partition instance=user.home freeSpace", userHome.getFreeSpace(), 0.1);
+    public void totalPhysical() {
+        assertProbed("memory.totalPhysical", -1L);
     }
 
     @Test
-    public void totalSpace() {
-        assertProbed("type=file.partition instance=user.home totalSpace", userHome.getTotalSpace(),  0.1);
+    public void freePhysical() {
+        assertProbed("memory.freePhysical", -1L);
     }
 
     @Test
-    public void usableSpace() {
-        assertProbed("type=file.partition instance=user.home usableSpace", userHome.getUsableSpace(), 0.1);
+    public void maxHeap() {
+        assertProbed("memory.maxHeap");
     }
 
+    @Test
+    public void committedHeap() {
+        assertProbed("memory.committedHeap");
+    }
+
+    @Test
+    public void usedHeap() {
+        assertProbed("memory.usedHeap");
+    }
+
+    @Test
+    public void freeHeap() {
+        assertProbed("memory.freeHeap");
+    }
+
+    @Test
+    public void maxNative() {
+        assertProbed("memory.maxNative");
+    }
+
+    @Test
+    public void committedNative() {
+        assertProbed("memory.committedNative");
+    }
+
+    @Test
+    public void usedNative() {
+        assertProbed("memory.usedNative");
+    }
+
+    @Test
+    public void freeNative() {
+        assertProbed("memory.freeNative");
+    }
 }

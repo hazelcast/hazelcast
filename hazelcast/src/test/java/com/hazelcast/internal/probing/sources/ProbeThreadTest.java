@@ -37,7 +37,7 @@ public class ProbeThreadTest extends AbstractProbeTest {
 
     @Before
     public void setup() {
-        registry.register(MachineProbeSource.INSTANCE);
+        registry.register(new MachineProbeSource());
     }
 
     @Test

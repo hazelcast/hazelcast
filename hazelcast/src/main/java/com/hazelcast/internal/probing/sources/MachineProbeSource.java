@@ -34,8 +34,6 @@ import com.hazelcast.internal.probing.ProbingCycle;
  */
 public final class MachineProbeSource implements ProbeSource {
 
-    public static final ProbeSource INSTANCE = new MachineProbeSource();
-
     private static final String[] PROBED_OS_METHODS = { "getCommittedVirtualMemorySize",
             "getFreePhysicalMemorySize", "getFreeSwapSpaceSize", "getProcessCpuTime",
             "getTotalPhysicalMemorySize", "getTotalSwapSpaceSize", "getMaxFileDescriptorCount",
@@ -47,10 +45,6 @@ public final class MachineProbeSource implements ProbeSource {
     private final File userHome = new File(System.getProperty("user.home"));
     private final ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
     private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
-
-    private MachineProbeSource() {
-        // force single instance to avoid multi-registration
-    }
 
     @Override
     public void probeNow(ProbingCycle cycle) {
@@ -75,8 +69,8 @@ public final class MachineProbeSource implements ProbeSource {
     }
 
     public static void probeProperties(ProbingCycle cycle, ClassLoadingMXBean bean) {
-        cycle.gather(MANDATORY, "loadedClassesCount", bean.getLoadedClassCount());
-        cycle.gather(MANDATORY, "totalLoadedClassesCount", bean.getTotalLoadedClassCount());
+        cycle.gather(MANDATORY, "loadedClassCount", bean.getLoadedClassCount());
+        cycle.gather(MANDATORY, "totalLoadedClassCount", bean.getTotalLoadedClassCount());
         cycle.gather(MANDATORY, "unloadedClassCount", bean.getUnloadedClassCount());
     }
 
@@ -91,6 +85,7 @@ public final class MachineProbeSource implements ProbeSource {
     }
 
     public static void probeProperties(ProbingCycle cycle, RuntimeMXBean bean) {
+        cycle.gather("startTime", bean.getStartTime());
         cycle.gather(MANDATORY, "uptime", bean.getUptime());
     }
 

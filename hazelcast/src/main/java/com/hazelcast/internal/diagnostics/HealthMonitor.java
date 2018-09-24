@@ -27,7 +27,7 @@ import com.hazelcast.internal.probing.ProbeRenderContext;
 import com.hazelcast.internal.probing.ProbeRenderer;
 import com.hazelcast.internal.probing.ProbeSource;
 import com.hazelcast.internal.probing.ProbeUtils;
-import com.hazelcast.internal.probing.sources.GcProbeSource;
+import com.hazelcast.internal.probing.sources.MemoryProbeSource;
 import com.hazelcast.internal.probing.sources.MachineProbeSource;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
@@ -230,7 +230,7 @@ public class HealthMonitor {
                         ClientEngineProbeSource.class, ClusterServiceImpl.class,
                         ExecutionServiceImpl.class, EventServiceImpl.class,
                         OperationExecutorImpl.class, TcpIpConnectionManager.class,
-                        MachineProbeSource.class, GcProbeSource.class);
+                        MachineProbeSource.class, MemoryProbeSource.class);
             }
         }
 

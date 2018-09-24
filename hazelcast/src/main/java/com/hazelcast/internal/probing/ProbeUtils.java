@@ -18,6 +18,7 @@ package com.hazelcast.internal.probing;
 
 import static com.hazelcast.internal.probing.ProbeSource.TAG_INSTANCE;
 import static com.hazelcast.internal.probing.ProbeSource.TAG_TYPE;
+import static com.hazelcast.util.StringUtil.getterIntoProperty;
 import static java.lang.Math.round;
 
 import java.lang.reflect.Field;
@@ -153,6 +154,16 @@ public final class ProbeUtils {
 
     public static long updateInterval(int value, TimeUnit unit) {
         return unit.toMillis(value);
+    }
+
+    public static String probeName(Probe probe, Method probed) {
+        String name = probe == null ? "" : probe.name();
+        return name.isEmpty() ? getterIntoProperty(probed.getName()) : name;
+    }
+
+    public static String probeName(Probe probe, Field probed) {
+        String name = probe == null ? "" : probe.name();
+        return name.isEmpty() ? probed.getName() : name;
     }
 
     public static List<Method> findProbedMethods(Class<?> type) {

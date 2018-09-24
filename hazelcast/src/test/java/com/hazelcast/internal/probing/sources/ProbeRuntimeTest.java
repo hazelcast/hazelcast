@@ -39,7 +39,7 @@ public class ProbeRuntimeTest extends AbstractProbeTest {
 
     @Before
     public void setup() {
-        registry.register(MachineProbeSource.INSTANCE);
+        registry.register(new MachineProbeSource());
         runtime = Runtime.getRuntime();
     }
 
