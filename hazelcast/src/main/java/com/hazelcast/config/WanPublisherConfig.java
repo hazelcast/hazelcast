@@ -112,7 +112,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
      * If there is no publisher ID defined (it is empty), the group name will
      * be used as a publisher ID.
      *
-     * @return the WAN publisher ID
+     * @return the WAN publisher ID or {@code null} if no publisher ID is set
      * @see #getGroupName()
      */
     public String getPublisherId() {
