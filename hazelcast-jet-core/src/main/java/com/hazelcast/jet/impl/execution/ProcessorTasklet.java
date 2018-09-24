@@ -440,7 +440,8 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public String toString() {
-        return "ProcessorTasklet{" + context.vertexName() + '#' + context.globalProcessorIndex() + '}';
+        String jobPrefix = context.jobConfig().getName() == null ? "" : context.jobConfig().getName() + "/";
+        return "ProcessorTasklet{" + jobPrefix + context.vertexName() + '#' + context.globalProcessorIndex() + '}';
     }
 
     private void observeSnapshot(int ordinal, long snapshotId) {

@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -231,7 +232,13 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
                                       return entry(broadcastKey(key), new long[]{offset, watermark});
                                   }));
             snapshotTraverser = traverseStream(snapshotStream)
-                    .onFirstNull(() -> snapshotTraverser = null);
+                    .onFirstNull(() -> {
+                        snapshotTraverser = null;
+                        if (getLogger().isFineEnabled()) {
+                            getLogger().fine("Finished saving snapshot." +
+                                    " Saved offsets: " + offsets() + ", Saved watermarks: " + watermarks());
+                        }
+                    });
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
@@ -262,8 +269,27 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         }
     }
 
+    @Override
+    public boolean finishSnapshotRestore() {
+        if (getLogger().isFineEnabled()) {
+            getLogger().fine("Finished restoring snapshot. Restored offsets: " + offsets()
+                    + " and watermarks:" + watermarks());
+        }
+        return true;
+    }
+
     private boolean isEmpty(ConsumerRecords<K, V> records) {
         return records == null || records.isEmpty();
+    }
+
+    private Map<TopicPartition, Long> offsets() {
+        return currentAssignment.keySet().stream()
+                .collect(Collectors.toMap(tp -> tp, tp -> offsets.get(tp.topic())[tp.partition()]));
+    }
+
+    private Map<TopicPartition, Long> watermarks() {
+        return currentAssignment.entrySet().stream()
+                .collect(Collectors.toMap(Entry::getKey, e -> watermarkSourceUtil.getWatermark(e.getValue())));
     }
 
     @Nonnull

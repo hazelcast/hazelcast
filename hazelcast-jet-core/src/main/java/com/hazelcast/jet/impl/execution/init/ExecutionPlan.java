@@ -55,6 +55,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -157,7 +158,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             int localProcessorIdx = 0;
             for (Processor processor : processors) {
                 int globalProcessorIndex = memberIndex * vertex.localParallelism() + localProcessorIdx;
-                String loggerName = createLoggerName(processor.getClass().getName(), vertex.name(), globalProcessorIndex);
+                String loggerName = createLoggerName(
+                        processor.getClass().getName(),
+                        jobConfig.getName(),
+                        vertex.name()
+                        , globalProcessorIndex
+                );
                 ProcCtx context = new ProcCtx(
                         instance,
                         jobId,
@@ -222,8 +228,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         tasklets.addAll(allReceivers);
     }
 
-    public static String createLoggerName(String processorClassName, String vertexName, int processorIndex) {
-        return processorClassName + '.' + vertexName + '#' + processorIndex;
+    public static String createLoggerName(
+            String processorClassName, String jobName, String vertexName, int processorIndex
+    ) {
+        if (StringUtil.isNullOrEmptyAfterTrim(jobName)) {
+            return processorClassName + '.' + vertexName + '#' + processorIndex;
+        } else {
+            return processorClassName + '.' + jobName.trim() + "/" + vertexName + '#' + processorIndex;
+        }
     }
 
     public List<ProcessorSupplier> getProcessorSuppliers() {

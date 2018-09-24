@@ -80,7 +80,12 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
             ProcCtx c = (ProcCtx) context;
             NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
             ILogger newLogger = nodeEngine.getLogger(
-                    createLoggerName(getWrapped().getClass().getName(), c.vertexName(), c.globalProcessorIndex()));
+                    createLoggerName(
+                            getWrapped().getClass().getName(),
+                            c.jobConfig().getName(),
+                            c.vertexName(),
+                            c.globalProcessorIndex())
+            );
             context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                     newLogger, c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(), c.processingGuarantee(),
                     c.localParallelism(), c.memberIndex(), c.memberCount());

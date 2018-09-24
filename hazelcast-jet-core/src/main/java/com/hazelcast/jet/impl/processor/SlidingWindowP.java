@@ -194,7 +194,10 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                             .map(e2 -> entry(new SnapshotKey(e.getKey(), e2.getKey()), e2.getValue()))
                     )
                     .append(entry(broadcastKey(Keys.NEXT_WIN_TO_EMIT), nextWinToEmit))
-                    .onFirstNull(() -> snapshotTraverser = null);
+                    .onFirstNull(() -> {
+                        logFine(getLogger(), "Saved nextWinToEmit: %s", nextWinToEmit);
+                        snapshotTraverser = null;
+                    });
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
