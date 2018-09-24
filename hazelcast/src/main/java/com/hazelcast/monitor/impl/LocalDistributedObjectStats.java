@@ -16,13 +16,13 @@
 
 package com.hazelcast.monitor.impl;
 
-import static com.hazelcast.internal.probing.ProbeSource.TAG_INSTANCE;
-import static com.hazelcast.internal.probing.ProbeSource.TAG_TYPE;
+import static com.hazelcast.internal.metrics.ProbeSource.TAG_INSTANCE;
+import static com.hazelcast.internal.metrics.ProbeSource.TAG_TYPE;
 
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.metrics.ProbingCycle;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.NearCacheStats;

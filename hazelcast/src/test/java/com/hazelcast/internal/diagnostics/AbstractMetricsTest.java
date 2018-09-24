@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import static com.hazelcast.internal.probing.CharSequenceUtils.startsWith;
+import static com.hazelcast.internal.metrics.CharSequenceUtils.startsWith;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
@@ -29,8 +29,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRenderContext;
-import com.hazelcast.internal.probing.ProbeSource;
+import com.hazelcast.internal.metrics.ProbeRenderContext;
+import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -104,7 +104,7 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
         });
     }
 
-    static class StringProbeRenderer implements com.hazelcast.internal.probing.ProbeRenderer {
+    static class StringProbeRenderer implements com.hazelcast.internal.metrics.ProbeRenderer {
         final HashMap<String, Object> probes = new HashMap<String, Object>();
         private final Set<String> expectedPrefixes;
 

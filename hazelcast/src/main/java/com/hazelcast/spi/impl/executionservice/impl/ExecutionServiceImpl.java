@@ -21,8 +21,8 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.probing.ProbeSource;
-import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.ProbingCycle;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
@@ -53,7 +53,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.probing.ProbeUtils.probeAllInstances;
+import static com.hazelcast.internal.metrics.ProbeUtils.probeAllInstances;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 

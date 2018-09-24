@@ -18,8 +18,8 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.probing.ProbeSource;
-import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.ProbingCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;

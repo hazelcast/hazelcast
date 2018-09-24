@@ -32,8 +32,8 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.eviction.ExpirationManager;
-import com.hazelcast.internal.probing.ProbeSource;
-import com.hazelcast.internal.probing.ProbingCycle;
+import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.ProbingCycle;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
@@ -76,7 +76,7 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
-import static com.hazelcast.internal.probing.ProbeUtils.probeAllInstances;
+import static com.hazelcast.internal.metrics.ProbeUtils.probeAllInstances;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static java.util.Collections.singleton;
 

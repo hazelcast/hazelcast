@@ -17,9 +17,9 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.ProbeRenderContext;
-import com.hazelcast.internal.probing.ProbeRenderer;
+import com.hazelcast.internal.metrics.ProbeRegistry;
+import com.hazelcast.internal.metrics.ProbeRenderContext;
+import com.hazelcast.internal.metrics.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;

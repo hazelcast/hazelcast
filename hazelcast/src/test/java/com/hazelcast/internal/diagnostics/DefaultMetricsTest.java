@@ -21,8 +21,8 @@ import org.junit.Before;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeRegistry;
-import com.hazelcast.internal.probing.ProbeRenderContext;
+import com.hazelcast.internal.metrics.ProbeRegistry;
+import com.hazelcast.internal.metrics.ProbeRenderContext;
 
 public abstract class DefaultMetricsTest extends AbstractMetricsTest {
 

@@ -16,15 +16,15 @@
 
 package com.hazelcast.client.impl;
 
-import static com.hazelcast.internal.probing.CharSequenceUtils.startsWith;
+import static com.hazelcast.internal.metrics.CharSequenceUtils.startsWith;
 
 import java.util.Collection;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.probing.ProbeSource;
-import com.hazelcast.internal.probing.ProbingCycle;
-import com.hazelcast.internal.probing.CharSequenceUtils.Lines;
-import com.hazelcast.internal.probing.ProbingCycle.Tags;
+import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.CharSequenceUtils.Lines;
+import com.hazelcast.internal.metrics.ProbingCycle.Tags;
 
 /**
  * {@link ProbeSource} for {@link ClientEngineImpl} that got extracted into a
