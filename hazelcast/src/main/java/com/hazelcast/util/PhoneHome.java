@@ -85,15 +85,7 @@ public class PhoneHome {
 
     @SuppressWarnings("deprecation")
     public void check(final Node hazelcastNode) {
-        if (!hazelcastNode.getProperties().getBoolean(GroupProperty.VERSION_CHECK_ENABLED)) {
-            logger.warning(GroupProperty.VERSION_CHECK_ENABLED.getName() + " property is deprecated. Please use "
-                    + GroupProperty.PHONE_HOME_ENABLED.getName() + " instead to disable phone home.");
-            return;
-        }
-        if (!hazelcastNode.getProperties().getBoolean(GroupProperty.PHONE_HOME_ENABLED)) {
-            return;
-        }
-        if (FALSE.equals(getenv("HZ_PHONE_HOME_ENABLED"))) {
+        if (checkPhoneHomePropertiesAreEnabled(hazelcastNode)) {
             return;
         }
         try {
@@ -138,6 +130,21 @@ public class PhoneHome {
             letter = "I";
         }
         return letter;
+    }
+
+    public boolean checkPhoneHomePropertiesAreEnabled(final Node hazelcastNode) {
+        if (!hazelcastNode.getProperties().getBoolean(GroupProperty.VERSION_CHECK_ENABLED)) {
+            logger.warning(GroupProperty.VERSION_CHECK_ENABLED.getName() + " property is deprecated. Please use "
+                    + GroupProperty.PHONE_HOME_ENABLED.getName() + " instead to disable phone home.");
+            return true;
+        }
+        if (!hazelcastNode.getProperties().getBoolean(GroupProperty.PHONE_HOME_ENABLED)) {
+            return true;
+        }
+        if (FALSE.equals(getenv("HZ_PHONE_HOME_ENABLED"))) {
+            return true;
+        }
+        return false;
     }
 
     public Map<String, String> phoneHome(Node hazelcastNode) {
