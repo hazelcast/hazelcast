@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.record;
+package com.hazelcast.internal.util.comparators;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.spi.serialization.SerializationService;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class ObjectRecordComparatorTest extends AbstractRecordComparatorTest {
+/**
+ * Comparator contract for stored values.
+ *
+ * @see BinaryValueComparator
+ * @see ObjectValueComparator
+ */
+public interface ValueComparator {
 
-    @Override
-    void newRecordComparator() {
-        comparator = new ObjectRecordComparator(serializationService);
-    }
+    boolean isEqual(Object value1, Object value2, SerializationService ss);
 }

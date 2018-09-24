@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.record;
+package com.hazelcast.internal.util.comparators;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class DataRecordComparator implements RecordComparator {
+/**
+ * Comparator for {@link com.hazelcast.config.InMemoryFormat#BINARY} backed
+ * data structures.
+ */
+final class BinaryValueComparator implements ValueComparator {
 
-    private final SerializationService serializationService;
+    public static final ValueComparator INSTANCE = new BinaryValueComparator();
 
-    public DataRecordComparator(SerializationService serializationService) {
-        this.serializationService = serializationService;
+    private BinaryValueComparator() {
     }
 
     @Override
-    public boolean isEqual(Object value1, Object value2) {
+    public boolean isEqual(Object value1, Object value2, SerializationService ss) {
         if (value1 == value2) {
             return true;
         }
@@ -36,8 +39,8 @@ public class DataRecordComparator implements RecordComparator {
             return false;
         }
         // the PartitioningStrategy is not needed here, since `Data.equals()` only checks the payload, not the partitionHash
-        Data data1 = serializationService.toData(value1);
-        Data data2 = serializationService.toData(value2);
+        Data data1 = ss.toData(value1);
+        Data data2 = ss.toData(value2);
         return data1.equals(data2);
     }
 }
