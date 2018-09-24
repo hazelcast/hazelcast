@@ -31,9 +31,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.datamodel.Tag.tag;
+import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DO_NOT_ADAPT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEvents;
-import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -74,7 +74,7 @@ public class AggBuilder {
     ) {
         checkSerializable(mapToOutputFn, "mapToOutputFn");
 
-        AggregateOperation adaptedAggrOp = wDef != null ? adaptAggregateOperation(aggrOp) : aggrOp;
+        AggregateOperation adaptedAggrOp = wDef != null ? ADAPT_TO_JET_EVENT.adaptAggregateOperation(aggrOp) : aggrOp;
         List<Transform> upstreamTransforms = upstreamStages
                 .stream()
                 .map(s -> ((AbstractStage) s).transform)

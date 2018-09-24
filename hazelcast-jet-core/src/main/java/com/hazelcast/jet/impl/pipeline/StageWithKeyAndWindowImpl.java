@@ -33,7 +33,6 @@ import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEvents;
-import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation1;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation2;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation3;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -82,7 +81,7 @@ public class StageWithKeyAndWindowImpl<T, K>
                         singletonList(computeStage.transform),
                         wDef,
                         singletonList(fnAdapter.adaptKeyFn(keyFn())),
-                        adaptAggregateOperation1(aggrOp),
+                        fnAdapter.adaptAggregateOperation1(aggrOp),
                         fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
                 ),
                 fnAdapter);

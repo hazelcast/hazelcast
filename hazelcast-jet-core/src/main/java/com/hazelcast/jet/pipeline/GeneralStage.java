@@ -262,7 +262,9 @@ public interface GeneralStage<T> extends Stage {
      * <p>
      * <strong>NOTE 1:</strong> since the output for each item depends on all
      * the previous items, this operation cannot be parallelized. Jet will
-     * perform it on a single member, single-threaded.
+     * perform it on a single member, single-threaded. Jet also supports
+     * {@link GeneralStageWithKey#rollingAggregate keyed rolling aggregation}
+     * which it can parallelize by partitioning.
      * <p>
      * <strong>NOTE 2:</strong> if you plan to use an aggregate operation whose
      * result size grows with input size (such as {@code toList} and your data

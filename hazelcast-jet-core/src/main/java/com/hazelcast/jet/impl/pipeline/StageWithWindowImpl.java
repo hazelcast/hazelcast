@@ -19,9 +19,9 @@ package com.hazelcast.jet.impl.pipeline;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
-import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.WindowResultFunction;
+import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.transform.WindowAggregateTransform;
 import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
 import com.hazelcast.jet.pipeline.StageWithWindow;
@@ -32,7 +32,6 @@ import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEvents;
-import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation1;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation2;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation3;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -87,7 +86,7 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
         return streamStage.attach(new WindowAggregateTransform<A, R, JetEvent<OUT>>(
                         singletonList(streamStage.transform),
                         wDef,
-                        adaptAggregateOperation1(aggrOp),
+                        fnAdapter.adaptAggregateOperation1(aggrOp),
                         fnAdapter.adaptWindowResultFn(mapToOutputFn)
                 ),
                 fnAdapter);

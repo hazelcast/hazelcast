@@ -20,8 +20,8 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
-import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.pipeline.GeneralStageWithKey;
 
 import javax.annotation.Nonnull;
@@ -49,14 +49,14 @@ public final class RollingAggregateP<T, K, A, R, OUT> extends AbstractProcessor 
     public RollingAggregateP(
             @Nonnull DistributedFunction<? super T, ? extends K> keyFn,
             @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull DistributedTriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
-        this.flatMapper = flatMapper(t -> {
-            K key = keyFn.apply(t);
+        this.flatMapper = flatMapper(item -> {
+            K key = keyFn.apply(item);
             A acc = keyToAcc.computeIfAbsent(key, k -> aggrOp.createFn().get());
-            aggrOp.accumulateFn().accept(acc, t);
+            aggrOp.accumulateFn().accept(acc, item);
             R aggResult = aggrOp.exportFn().apply(acc);
-            OUT output = mapToOutputFn.apply(key, aggResult);
+            OUT output = mapToOutputFn.apply(item, key, aggResult);
             if (output != null) {
                 outputTraverser.accept(output);
             }

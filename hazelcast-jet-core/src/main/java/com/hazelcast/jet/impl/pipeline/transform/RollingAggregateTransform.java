@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
@@ -29,13 +29,13 @@ import static com.hazelcast.jet.core.processor.Processors.rollingAggregateP;
 public class RollingAggregateTransform<T, K, R, OUT> extends AbstractTransform {
     private final DistributedFunction<? super T, ? extends K> keyFn;
     @Nonnull private final AggregateOperation1<? super T, ?, ? extends R> aggrOp;
-    @Nonnull private final DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn;
+    @Nonnull private final DistributedTriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn;
 
     public RollingAggregateTransform(
             @Nonnull Transform upstream,
             @Nonnull DistributedFunction<? super T, ? extends K> keyFn,
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull DistributedTriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         super("rolling-aggregate", upstream);
         this.keyFn = keyFn;

@@ -34,6 +34,7 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.processor.GroupP;
 import com.hazelcast.jet.impl.processor.InsertWatermarksP;
@@ -296,6 +297,8 @@ public final class Processors {
      *
      * @param keyFns functions that compute the grouping key
      * @param aggrOp the aggregate operation
+     * @param mapToOutputFn function that takes the key and the aggregation result and returns
+     *                      the output item
      * @param <K> type of key
      * @param <A> type of accumulator returned from {@code aggrOp.createAccumulatorFn()}
      * @param <R> type of the result returned from {@code aggrOp.finishAccumulationFn()}
@@ -355,6 +358,8 @@ public final class Processors {
      * restart, the state will be lost.
      *
      * @param aggrOp the aggregate operation to perform
+     * @param mapToOutputFn function that takes the key and the aggregation result and returns
+     *                      the output item
      * @param <A> type of accumulator returned from {@code aggrOp.createAccumulatorFn()}
      * @param <R> type of the finished result returned from
      *            {@code aggrOp.finishAccumulationFn()}
@@ -804,34 +809,32 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors for a vertex which, for each received
-     * item, emits the result of applying the given mapping function to it. The
-     * mapping function receives another parameter, a context object which Jet
-     * will create using the supplied {@code contextFactory} for each key.
+     * Returns a supplier of processors for a vertex that performs a rolling
+     * aggregation. Every time it receives an item, it passes is to the
+     * accumulator and then calls the `export` primitive to emit the current
+     * state of aggregation.
      * <p>
-     * Unlike {@link #mapUsingContextP} (without the "{@code Keyed}" part),
-     * this method creates separate context object for each key. A context
-     * object, once created, is stored until the end of the job, so watch your
-     * number of keys.
+     * If the result after applying `mapToOutputFn` is {@code null}, the vertex
+     * emits nothing. Therefore it can be used to implement filtering semantics
+     * as well.
      * <p>
-     * If the mapping result is {@code null}, the vertex emits nothing.
-     * Therefore it can be used to implement filtering semantics as well.
-     * <p>
-     * This vertex saves the state to snapshot so the context objects will
-     * survive a job restart.
-     *  @param <T> type of the input item
+     * This vertex saves the state to snapshot so the state of the accumulators
+     * will survive a job restart.
+     *
+     * @param <T> type of the input item
      * @param <K> type of the key
      * @param <A> type of the accumulator
      * @param <R> type of the output item
      * @param keyFn function that computes the grouping key
      * @param aggrOp the aggregate operation to perform
-*@param mapToOutputFn
+     * @param mapToOutputFn function that takes the input item, the key and the aggregation result
+     *                      and returns the output item
      */
     @Nonnull
     public static <T, K, A, R, OUT> DistributedSupplier<Processor> rollingAggregateP(
             @Nonnull DistributedFunction<? super T, ? extends K> keyFn,
             @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp,
-            DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull DistributedTriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return () -> new RollingAggregateP<T, K, A, R, OUT>(keyFn, aggrOp, mapToOutputFn);
     }

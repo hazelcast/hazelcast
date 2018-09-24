@@ -22,7 +22,6 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.Inbox;
-import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.DistributedBiConsumer;
@@ -33,6 +32,7 @@ import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.function.WindowResultFunction;
+import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.JoinClause;
@@ -107,30 +107,48 @@ public class FunctionAdapter {
         return joinClause;
     }
 
+    @Nonnull
     @SuppressWarnings("unchecked")
     public <T, T1, R> DistributedBiFunction<?, ? super T1, ?> adaptHashJoinOutputFn(
-            DistributedBiFunction<? super T, ? super T1, ? extends R> mapToOutputFn
+            @Nonnull DistributedBiFunction<? super T, ? super T1, ? extends R> mapToOutputFn
     ) {
         return mapToOutputFn;
     }
 
+    @Nonnull
     @SuppressWarnings("unchecked")
     <T, T1, T2, R> DistributedTriFunction<?, ? super T1, ? super T2, ?> adaptHashJoinOutputFn(
-            DistributedTriFunction<? super T, ? super T1, ? super T2, ? extends R> mapToOutputFn
+            @Nonnull DistributedTriFunction<? super T, ? super T1, ? super T2, ? extends R> mapToOutputFn
     ) {
         return mapToOutputFn;
     }
 
-    <R, OUT> WindowResultFunction<?, ?> adaptWindowResultFn(
-            WindowResultFunction<? super R, ? extends OUT> windowResultFn
+    @Nonnull
+    <R, OUT> WindowResultFunction<? super R, ?> adaptWindowResultFn(
+            @Nonnull WindowResultFunction<? super R, ? extends OUT> windowResultFn
     ) {
         return windowResultFn;
     }
 
-    <K, R, OUT> KeyedWindowResultFunction<?, ?, ?> adaptKeyedWindowResultFn(
-            KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> keyedWindowResultFn
+    @Nonnull
+    <K, R, OUT> KeyedWindowResultFunction<? super K, ? super R, ?> adaptKeyedWindowResultFn(
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> keyedWindowResultFn
     ) {
         return keyedWindowResultFn;
+    }
+
+    @Nonnull
+    <T, A, R> AggregateOperation1<?, A, ? extends R> adaptAggregateOperation1(
+            @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp
+    ) {
+        return aggrOp;
+    }
+
+    @Nonnull
+    <T, K, R, OUT> DistributedTriFunction<?, ? super K, ? super R, ?> adaptRollingAggregateOutputFn(
+            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+    ) {
+        return (t, k, r) -> mapToOutputFn.apply(k, r);
     }
 
     @Nonnull
@@ -216,7 +234,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     }
 
     @Nonnull @Override
-    <T, R> DistributedFunction<? super JetEvent<T>, Traverser<?>> adaptFlatMapFn(
+    <T, R> DistributedFunction<? super JetEvent<T>, ? extends Traverser<?>> adaptFlatMapFn(
             @Nonnull DistributedFunction<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return e -> flatMapFn.apply(e.payload()).map(r -> jetEvent(r, e.timestamp()));
@@ -260,41 +278,49 @@ class JetEventFunctionAdapter extends FunctionAdapter {
                 .projecting(joinClause.rightProjectFn());
     }
 
-    @Override
+    @Nonnull @Override
     public <T, T1, R> DistributedBiFunction<? super JetEvent<T>, ? super T1, ?> adaptHashJoinOutputFn(
-            DistributedBiFunction<? super T, ? super T1, ? extends R> mapToOutputFn
+            @Nonnull DistributedBiFunction<? super T, ? super T1, ? extends R> mapToOutputFn
     ) {
         return (e, t1) -> jetEvent(mapToOutputFn.apply(e.payload(), t1), e.timestamp());
     }
 
-    @Override
+    @Nonnull @Override
     <T, T1, T2, R> DistributedTriFunction<? super JetEvent<T>, ? super T1, ? super T2, ?> adaptHashJoinOutputFn(
-            DistributedTriFunction<? super T, ? super T1, ? super T2, ? extends R> mapToOutputFn
+            @Nonnull DistributedTriFunction<? super T, ? super T1, ? super T2, ? extends R> mapToOutputFn
     ) {
         return (e, t1, t2) -> jetEvent(mapToOutputFn.apply(e.payload(), t1, t2), e.timestamp());
     }
 
-    @Override
+    @Nonnull @Override
     <R, OUT> WindowResultFunction<? super R, ? extends JetEvent<OUT>> adaptWindowResultFn(
-            WindowResultFunction<? super R, ? extends OUT> windowResultFn
+            @Nonnull WindowResultFunction<? super R, ? extends OUT> windowResultFn
     ) {
         // use `winEnd - 1` for jetEvent, see https://github.com/hazelcast/hazelcast-jet/issues/898
         return (winStart, winEnd, windowResult) ->
                 jetEvent(windowResultFn.apply(winStart, winEnd, windowResult), winEnd - 1);
     }
 
-    @Override
+    @Nonnull @Override
     <K, R, OUT> KeyedWindowResultFunction<? super K, ? super R, ? extends JetEvent<OUT>> adaptKeyedWindowResultFn(
-            KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> keyedWindowResultFn
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> keyedWindowResultFn
     ) {
         // use `winEnd - 1` for jetEvent, see https://github.com/hazelcast/hazelcast-jet/issues/898
         return (winStart, winEnd, key, windowResult) ->
                 jetEvent(keyedWindowResultFn.apply(winStart, winEnd, key, windowResult), winEnd - 1);
     }
 
+    @Nonnull @Override
+    <T, K, R, OUT> DistributedTriFunction<? super JetEvent<T>, ? super K, ? super R, ? extends JetEvent<OUT>>
+    adaptRollingAggregateOutputFn(
+            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+    ) {
+        return (jetEvent, key, result) -> jetEvent(mapToOutputFn.apply(key, result), jetEvent.timestamp());
+    }
+
     @Nonnull
     @SuppressWarnings("unchecked")
-    static <A, R> AggregateOperation<A, ? extends R> adaptAggregateOperation(
+    <A, R> AggregateOperation<A, ? extends R> adaptAggregateOperation(
             @Nonnull AggregateOperation<A, ? extends R> aggrOp
     ) {
         if (aggrOp instanceof AggregateOperation1) {
@@ -310,12 +336,14 @@ class JetEventFunctionAdapter extends FunctionAdapter {
         }
     }
 
-    static <T, A, R> AggregateOperation1<? super JetEvent<T>, A, ? extends R> adaptAggregateOperation1(
+    @Nonnull @Override
+    <T, A, R> AggregateOperation1<? super JetEvent<T>, A, ? extends R> adaptAggregateOperation1(
             @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp
     ) {
         return aggrOp.withAccumulateFn(adaptAccumulateFn(aggrOp.accumulateFn()));
     }
 
+    @Nonnull
     static <T0, T1, A, R> AggregateOperation2<? super JetEvent<T0>, ? super JetEvent<T1>, A, ? extends R>
     adaptAggregateOperation2(@Nonnull AggregateOperation2<? super T0, ? super T1, A, ? extends R> aggrOp) {
         return aggrOp
@@ -323,6 +351,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
                 .withAccumulateFn1(adaptAccumulateFn(aggrOp.accumulateFn1()));
     }
 
+    @Nonnull
     static <T0, T1, T2, A, R>
     AggregateOperation3<? super JetEvent<T0>, ? super JetEvent<T1>, ? super JetEvent<T2>, A, ? extends R>
     adaptAggregateOperation3(@Nonnull AggregateOperation3<? super T0, ? super T1, ? super T2, A, ? extends R> aggrOp) {
@@ -339,4 +368,3 @@ class JetEventFunctionAdapter extends FunctionAdapter {
         return (acc, t) -> accumulateFn.accept(acc, t.payload());
     }
 }
-

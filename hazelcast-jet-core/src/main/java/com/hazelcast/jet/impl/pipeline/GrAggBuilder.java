@@ -17,11 +17,11 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.aggregate.AggregateOperation;
-import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.transform.GroupTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.impl.pipeline.transform.WindowGroupTransform;
@@ -41,7 +41,6 @@ import java.util.List;
 import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEvents;
-import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.stream.Collectors.toList;
 
@@ -122,7 +121,7 @@ public class GrAggBuilder<K> {
         }
 
         Transform transform = new WindowGroupTransform<K, R, JetEvent<OUT>>(
-                upstreamTransforms, wDef, adaptedKeyFns, adaptAggregateOperation(aggrOp),
+                upstreamTransforms, wDef, adaptedKeyFns, fnAdapter.adaptAggregateOperation(aggrOp),
                 fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
         );
         pipelineImpl.connect(upstreamTransforms, transform);

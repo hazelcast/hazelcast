@@ -30,9 +30,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 class StageWithGroupingBase<T, K> {
 
-    @Nonnull
     final ComputeStageImplBase<T> computeStage;
-    @Nonnull
     private final DistributedFunction<? super T, ? extends K> keyFn;
 
     StageWithGroupingBase(

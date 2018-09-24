@@ -238,8 +238,11 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     ) {
         checkSerializable(keyFn, "keyFn");
         checkSerializable(mapToOutputFn, "mapToOutputFn");
-        return (RET) attach(
-                new RollingAggregateTransform(transform, fnAdapter.adaptKeyFn(keyFn), aggrOp, mapToOutputFn),
+        return (RET) attach(new RollingAggregateTransform(
+                        transform,
+                        fnAdapter.adaptKeyFn(keyFn),
+                        fnAdapter.adaptAggregateOperation1(aggrOp),
+                        fnAdapter.adaptRollingAggregateOutputFn(mapToOutputFn)),
                 fnAdapter);
     }
 

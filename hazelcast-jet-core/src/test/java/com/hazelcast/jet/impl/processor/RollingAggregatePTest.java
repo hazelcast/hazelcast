@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.processor.Processors;
@@ -45,7 +44,7 @@ public class RollingAggregatePTest {
                         .withCreate(() -> new long[1])
                         .<Entry<String, Long>>andAccumulate((acc, t) -> acc[0] += t.getValue())
                         .andExportFinish(acc -> acc[0]),
-                Util::entry);
+                (item, key, result) -> entry(key, result));
 
         TestSupport.verifyProcessor(supplier)
                 .input(asList(
@@ -70,7 +69,7 @@ public class RollingAggregatePTest {
                         .withCreate(() -> new long[1])
                         .<Entry<String, Long>>andAccumulate((acc, t) -> acc[0] += t.getValue())
                         .andExportFinish(acc -> acc[0] > 2 ? acc[0] : null),
-                (key, result) -> result == null ? null : entry(key, result));
+                (item, key, result) -> result == null ? null : entry(key, result));
 
         TestSupport.verifyProcessor(supplier)
                 .input(asList(

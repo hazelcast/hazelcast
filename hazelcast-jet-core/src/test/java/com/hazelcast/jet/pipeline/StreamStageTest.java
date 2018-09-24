@@ -19,9 +19,13 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
+import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -43,6 +47,7 @@ import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
+import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
@@ -322,7 +327,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
 
     @Test
-    public void rollingAggregate() {
+    public void rollingAggregate_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
@@ -359,6 +364,33 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         executeAsync();
 
         Map<Long, Integer> expected = toBag(LongStream.range(1, itemCount + 1).boxed().collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
+    }
+
+    @Test
+    public void when_rollingAggregateWithTimestamps_then_timestampsPropagated() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+        addToSrcMapJournal(closingItems);
+        AggregateOperation1<Integer, MutableReference<Integer>, Integer> identity = AggregateOperation
+                .withCreate(MutableReference<Integer>::new)
+                .andAccumulate(MutableReference<Integer>::set)
+                .andExportFinish(MutableReference::get);
+
+        // When
+        StreamStage<Integer> rolling = srcStage.addTimestamps(i -> i, 100)
+                                               .rollingAggregate(identity);
+
+        // Then
+        rolling.window(tumbling(1))
+               .aggregate(identity)
+               .drainTo(sink);
+        executeAsync();
+        Map<TimestampedItem<Integer>, Integer> expected = toBag(
+                LongStream.range(0, itemCount)
+                          .mapToObj(i -> new TimestampedItem<>(i + 1, (int) i))
+                          .collect(toList()));
         assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
