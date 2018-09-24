@@ -23,6 +23,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -251,11 +252,12 @@ public class ClientLockRetryWhenOwnerDiesTest extends ClientTestSupport {
                 String.valueOf(TimeUnit.MILLISECONDS.toSeconds(invocationTimeoutMillis)));
         final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
+        //this is needed in the test because we set the timeout too short for faster test.
         makeSureConnectedToServers(client, 2);
 
         final String key = generateKeyOwnedBy(keyOwner);
-        ILock serverLock = client.getLock(key);
-        serverLock.lock();
+        ILock lock = client.getLock(key);
+        lock.lock();
 
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread(new Runnable() {
@@ -268,11 +270,18 @@ public class ClientLockRetryWhenOwnerDiesTest extends ClientTestSupport {
         Thread.sleep(invocationTimeoutMillis * 2);
         closePolicy.accept(keyOwner);
 
-        assertTrue(serverLock.isLocked());
-        assertTrue(serverLock.isLockedByCurrentThread());
-        assertTrue(serverLock.tryLock());
-        serverLock.unlock();
-        serverLock.unlock();
+        //wait for the key owned by second member after close to avoid operation timeout during transition
+        //this is needed in the test because we set the timeout too short for faster test.
+        Member secondMember = instance.getCluster().getLocalMember();
+        while (!secondMember.equals(client.getPartitionService().getPartition(key).getOwner())) {
+            Thread.sleep(100);
+        }
+
+        assertTrue(lock.isLocked());
+        assertTrue(lock.isLockedByCurrentThread());
+        assertTrue(lock.tryLock());
+        lock.unlock();
+        lock.unlock();
         assertOpenEventually(latch);
     }
 
