@@ -114,12 +114,26 @@ public final class GroupProperty {
      * partition-specific operation thread, but there are also requests that can't be executed on a partition-specific operation
      * thread, such as {@code multimap.containsValue(value)}, because they need to access all partitions on a given
      * member.
+     *
+     * When not set it is set as core-size
      */
     public static final HazelcastProperty CLIENT_ENGINE_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.thread.count", -1);
 
+    /**
+     * The number of threads that the client engine has available for processing requests that are related to transactions
+     * When not set it is set as core-size.
+     */
     public static final HazelcastProperty CLIENT_ENGINE_QUERY_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.query.thread.count", -1);
+
+    /**
+     * The number of threads that the client engine has available for processing requests that are blocking
+     * (example: related to transactions)
+     * When not set it is set as core-size * 20.
+     */
+    public static final HazelcastProperty CLIENT_ENGINE_BLOCKING_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.clientengine.blocking.thread.count", -1);
 
     /**
      * Time after which client connection is removed or owner node of a client is removed from the cluster.

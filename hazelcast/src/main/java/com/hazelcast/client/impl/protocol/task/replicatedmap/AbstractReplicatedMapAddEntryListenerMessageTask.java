@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMapEvent;
@@ -38,7 +39,7 @@ import java.security.Permission;
 
 public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter>
         extends AbstractCallableMessageTask<Parameter>
-        implements EntryListener<Object, Object> {
+        implements EntryListener<Object, Object> , ListenerMessageTask {
 
     public AbstractReplicatedMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node,
                                                             Connection connection) {

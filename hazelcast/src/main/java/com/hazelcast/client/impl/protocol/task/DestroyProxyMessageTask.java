@@ -27,7 +27,8 @@ import java.security.Permission;
 
 import static com.hazelcast.security.permission.ActionConstants.getPermission;
 
-public class DestroyProxyMessageTask extends AbstractCallableMessageTask<ClientDestroyProxyCodec.RequestParameters> {
+public class DestroyProxyMessageTask extends AbstractCallableMessageTask<ClientDestroyProxyCodec.RequestParameters>
+        implements BlockingMessageTask {
 
     public DestroyProxyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

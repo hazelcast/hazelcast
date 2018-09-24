@@ -26,7 +26,8 @@ import com.hazelcast.nio.Connection;
  *
  * @param <P> listener registration request parameters type
  */
-public abstract class AbstractRemoveListenerMessageTask<P> extends AbstractCallableMessageTask<P> {
+public abstract class AbstractRemoveListenerMessageTask<P> extends AbstractCallableMessageTask<P>
+        implements ListenerMessageTask {
 
     protected AbstractRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

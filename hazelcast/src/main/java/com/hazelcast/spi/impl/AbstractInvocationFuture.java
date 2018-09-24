@@ -147,7 +147,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     }
 
     @Override
-    public final V get() throws InterruptedException, ExecutionException {
+    public V get() throws InterruptedException, ExecutionException {
         Object response = registerWaiter(Thread.currentThread(), null);
         if (response != VOID) {
             // no registration was done since a value is available.
@@ -171,7 +171,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     }
 
     @Override
-    public final V get(final long timeout, final TimeUnit unit)
+    public V get(final long timeout, final TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
         Object response = registerWaiter(Thread.currentThread(), null);
         if (response != VOID) {

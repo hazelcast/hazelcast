@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFlushCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -35,7 +36,7 @@ import java.security.Permission;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 public class MapFlushMessageTask
-        extends AbstractCallableMessageTask<MapFlushCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<MapFlushCodec.RequestParameters> implements BlockingMessageTask {
 
     public MapFlushMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

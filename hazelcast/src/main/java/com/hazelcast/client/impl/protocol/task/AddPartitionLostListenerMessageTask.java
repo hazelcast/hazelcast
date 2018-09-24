@@ -29,7 +29,8 @@ import java.security.Permission;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 
 public class AddPartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<ClientAddPartitionLostListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<ClientAddPartitionLostListenerCodec.RequestParameters>
+        implements ListenerMessageTask {
 
     public AddPartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
