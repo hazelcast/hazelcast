@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.metrics;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
@@ -35,14 +34,10 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.StreamSupport;
 
-import static com.hazelcast.util.ExceptionUtil.peel;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class ReadMetricsTest extends JetTestSupport {
@@ -91,33 +86,6 @@ public class ReadMetricsTest extends JetTestSupport {
         JetClientInstanceImpl client = (JetClientInstanceImpl) createJetClient();
 
         exception.expectCause(Matchers.instanceOf(IllegalArgumentException.class));
-        MetricsResultSet resultSet = client.readMetricsAsync(instance.getCluster().getLocalMember(), 0).get();
-    }
-
-    @Test
-    public void when_metricsTimeout() throws ExecutionException, InterruptedException {
-        JetConfig cfg = new JetConfig();
-        cfg.getMetricsConfig().setCollectionIntervalSeconds(1);
-        JetInstance instance = createJetMember(cfg);
-        JetClientInstanceImpl client = (JetClientInstanceImpl) createJetClient();
-
-        JetMetricsService service = getNodeEngineImpl(instance).getService(JetMetricsService.SERVICE_NAME);
-        service.pauseCollection();
-        AtomicLong seq = new AtomicLong(0);
-        Member member = instance.getCluster().getLocalMember();
-        assertTrueEventually(() -> {
-            try {
-                MetricsResultSet result = client.readMetricsAsync(member, seq.get()).get();
-                seq.set(result.nextSequence());
-                fail("readMetricsAsync call should have timed out, got "
-                        + result.collections().size() + " collections instead");
-            } catch (ExecutionException e) {
-                Exception peeled = peel(e);
-                assertInstanceOf(OperationTimeoutException.class, peeled);
-            }
-        }, 30);
-        service.resumeCollection();
-        MetricsResultSet resultSet = client.readMetricsAsync(member, seq.get()).get();
-        assertEquals(1, resultSet.collections().size());
+        client.readMetricsAsync(instance.getCluster().getLocalMember(), 0).get();
     }
 }

@@ -16,32 +16,48 @@
 
 package com.hazelcast.jet.impl.metrics.management;
 
-import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer.RingbufferSlice;
-import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.WaitNotifyKey;
 
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
 
-public class ReadMetricsOperation extends Operation implements BlockingOperation, ReadonlyOperation {
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
-    private static final int MIN_TIMEOUT_SECONDS = 5;
+public class ReadMetricsOperation extends Operation implements ReadonlyOperation {
+
     private long offset;
-    private RingbufferSlice<Entry<Long, byte[]>> resultSet;
 
-    public ReadMetricsOperation(long offset, int collectionIntervalSeconds) {
+    public ReadMetricsOperation(long offset) {
         this.offset = offset;
-        int timeoutSeconds = Math.max(MIN_TIMEOUT_SECONDS, collectionIntervalSeconds * 2);
-        setWaitTimeout(TimeUnit.SECONDS.toMillis(timeoutSeconds));
+    }
+
+    @Override
+    public void beforeRun() {
+        JetMetricsService service = getService();
+        service.getLiveOperationRegistry().register(this);
+    }
+
+    @Override
+    public void run() {
+        ILogger logger = getNodeEngine().getLogger(getClass());
+        JetMetricsService service = getService();
+        CompletableFuture<RingbufferSlice<Entry<Long, byte[]>>> future = service.readMetrics(offset);
+        future.whenComplete(withTryCatch(logger, (slice, error) -> doSendResponse(error != null ? error : slice)));
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override
     public Object getResponse() {
-        return resultSet;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -49,22 +65,12 @@ public class ReadMetricsOperation extends Operation implements BlockingOperation
         return JetMetricsService.SERVICE_NAME;
     }
 
-    @Override
-    public WaitNotifyKey getWaitKey() {
-        JetMetricsService service = getService();
-        return service.waitNotifyKey();
+    private void doSendResponse(Object value) {
+        try {
+            sendResponse(value);
+        } finally {
+            final JetService service = getService();
+            service.getLiveOperationRegistry().deregister(this);
+        }
     }
-
-    @Override
-    public boolean shouldWait() {
-        JetMetricsService service = getService();
-        this.resultSet = service.readMetrics(offset);
-        return resultSet.elements().isEmpty();
-    }
-
-    @Override
-    public void onWaitExpire() {
-        sendResponse(new OperationTimeoutException("No metrics were retrieved for " + getWaitTimeout() + "ms"));
-    }
-
 }

@@ -60,7 +60,7 @@ public abstract class AsyncJobOperation extends AbstractJobOperation {
         throw new UnsupportedOperationException();
     }
 
-    public final void doSendResponse(Object value) {
+    final void doSendResponse(Object value) {
         try {
             sendResponse(value);
         } finally {

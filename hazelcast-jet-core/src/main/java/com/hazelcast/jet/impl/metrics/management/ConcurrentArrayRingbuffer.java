@@ -143,6 +143,10 @@ public class ConcurrentArrayRingbuffer<E> {
             return (Stream<E>) Arrays.stream(elements);
         }
 
+        public boolean isEmpty() {
+            return elements.length == 0;
+        }
+
         /**
          * The tail, this is the sequence where next call to {@link
          * ConcurrentArrayRingbuffer#copyFrom}

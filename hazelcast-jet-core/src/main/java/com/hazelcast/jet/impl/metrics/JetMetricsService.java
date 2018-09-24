@@ -21,42 +21,47 @@ import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.jet.config.MetricsConfig;
+import com.hazelcast.jet.impl.LiveOperationRegistry;
 import com.hazelcast.jet.impl.metrics.jmx.JmxPublisher;
 import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer;
+import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.jet.impl.metrics.management.ManagementCenterPublisher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ConfigurableService;
+import com.hazelcast.spi.LiveOperations;
+import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationparker.OperationParker;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static java.util.stream.Collectors.joining;
 
 /**
  * A service to render metrics at regular intervals and store them in a
  * ringbuffer from which the clients can read.
  */
-public class JetMetricsService implements ManagedService, ConfigurableService<MetricsConfig> {
+public class JetMetricsService implements ManagedService, ConfigurableService<MetricsConfig>, LiveOperationsTracker {
 
     public static final String SERVICE_NAME = "hz:impl:jetMetricsService";
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-
-    // keys used for synchronization of read operation
-    private final MetricsNotifyKey notifyKey = new MetricsNotifyKey();
-    private final Notifier notifier = new MetricsNotifier();
+    private final LiveOperationRegistry liveOperationRegistry;
+    // Holds futures for pending read metrics operations
+    private final ConcurrentMap<CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>>, Long>
+            pendingReads = new ConcurrentHashMap<>();
 
     /**
      * Ringbuffer which stores a bounded history of metrics. For each round of collection,
@@ -75,6 +80,7 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
     public JetMetricsService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
+        this.liveOperationRegistry = new LiveOperationRegistry();
     }
 
     @Override
@@ -111,21 +117,41 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
         }, 1, config.getCollectionIntervalSeconds(), TimeUnit.SECONDS);
     }
 
-    /**
-     * Read metrics from the journal from the given sequence
-     */
-    public ConcurrentArrayRingbuffer.RingbufferSlice<Map.Entry<Long, byte[]>> readMetrics(long startSequence) {
-        if (!config.isEnabled()) {
-            throw new IllegalArgumentException("Metrics collection is not enabled");
-        }
-        return metricsJournal.copyFrom(startSequence);
+    public LiveOperationRegistry getLiveOperationRegistry() {
+        return liveOperationRegistry;
+    }
+
+    @Override
+    public void populate(LiveOperations liveOperations) {
+        liveOperationRegistry.populate(liveOperations);
     }
 
     /**
-     * key used for signalling pending read operations
+     * Read metrics from the journal from the given sequence
      */
-    public WaitNotifyKey waitNotifyKey() {
-        return notifyKey;
+    public CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> readMetrics(long startSequence) {
+        if (!config.isEnabled()) {
+            throw new IllegalArgumentException("Metrics collection is not enabled");
+        }
+        CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> future = new CompletableFuture<>();
+        future.whenComplete(withTryCatch(logger, (s, e) -> pendingReads.remove(future)));
+        pendingReads.put(future, startSequence);
+
+        tryCompleteRead(future, startSequence);
+
+        return future;
+    }
+
+    private void tryCompleteRead(CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> future, long sequence) {
+        try {
+            RingbufferSlice<Map.Entry<Long, byte[]>> slice = metricsJournal.copyFrom(sequence);
+            if (!slice.isEmpty()) {
+                future.complete(slice);
+            }
+        } catch (Exception e) {
+            logger.severe("Error reading from metrics journal, sequence: " + sequence, e);
+            future.completeExceptionally(e);
+        }
     }
 
     @Override
@@ -168,8 +194,7 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
             ManagementCenterPublisher publisher = new ManagementCenterPublisher(this.nodeEngine.getLoggingService(),
                     (blob, ts) -> {
                         metricsJournal.add(entry(ts, blob));
-                        OperationParker parker = nodeEngine.getService(OperationParker.SERVICE_NAME);
-                        parker.unpark(notifier);
+                        pendingReads.forEach(this::tryCompleteRead);
                     }
             );
             publishers.add(publisher);
@@ -232,30 +257,6 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
 
         private void logError(String name, Object value, MetricsPublisher publisher, Exception e) {
             logger.fine("Error publishing metric to: " + publisher.name() + ", metric=" + name + ", value=" + value, e);
-        }
-    }
-
-    private class MetricsNotifier implements Notifier {
-        @Override
-        public boolean shouldNotify() {
-            return true;
-        }
-
-        @Override
-        public WaitNotifyKey getNotifiedKey() {
-            return notifyKey;
-        }
-    }
-
-    private static class MetricsNotifyKey implements WaitNotifyKey {
-        @Override
-        public String getServiceName() {
-            return JetMetricsService.SERVICE_NAME;
-        }
-
-        @Override
-        public String getObjectName() {
-            return "metricsJournal";
         }
     }
 }
