@@ -46,7 +46,6 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
-import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -60,6 +59,8 @@ import static org.junit.Assert.assertTrue;
 @Category(ParallelTest.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
+
+    private static final String DONE_ITEM_STR = "DONE_ITEM";
 
     @Parameter
     public Mode mode;
@@ -238,7 +239,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
 
     @Test
     public void when_waitingForWmOnI2ButI2BecomesDone_then_wmFromI1Forwarded() {
-        dag = createDag(mode, singletonList(wm(100)), asList(delay(500), DONE_ITEM));
+        dag = createDag(mode, singletonList(wm(100)), asList(delay(500), DONE_ITEM_STR));
 
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10_000);
         instance.newJob(dag, config);
@@ -307,7 +308,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
                     nextItemAt = System.nanoTime() + MILLISECONDS.toNanos(((Delay) item).millis);
                     pos++;
                     return false;
-                } else if (item == DONE_ITEM) {
+                } else if (item.equals(DONE_ITEM_STR)) {
                     getLogger().info("returning true");
                     return true;
                 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.Test;
@@ -26,7 +27,7 @@ public class EqualityTest {
 
     @Test
     public void testEqualsAndHashCode_whenBroadcastKeyReference() {
-        EqualsVerifier.forClass(BroadcastKeyReference.class)
+        EqualsVerifier.forClass(BroadcastKey.class)
                       .usingGetClass()
                       .verify();
     }

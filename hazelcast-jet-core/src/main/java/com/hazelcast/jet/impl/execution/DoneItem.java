@@ -16,9 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import java.io.Serializable;
-
-final class DoneItem implements BroadcastItem, Serializable {
+final class DoneItem implements BroadcastItem {
 
     static final DoneItem DONE_ITEM = new DoneItem();
 
@@ -29,7 +27,5 @@ final class DoneItem implements BroadcastItem, Serializable {
         return "DONE_ITEM";
     }
 
-    protected Object readResolve() {
-        return DONE_ITEM;
-    }
+
 }

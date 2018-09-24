@@ -25,7 +25,7 @@ import java.util.Map.Entry;
  * @param <K> type of key
  * @param <V> type of value
  */
-public class BroadcastEntry<K, V> extends SimpleImmutableEntry<K, V> implements BroadcastItem {
+public final class BroadcastEntry<K, V> extends SimpleImmutableEntry<K, V> implements BroadcastItem {
     public BroadcastEntry(K key, V value) {
         super(key, value);
     }

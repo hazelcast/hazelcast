@@ -33,7 +33,8 @@ com.hazelcast.jet.datamodel.DataModelSerializerHooks$TagHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$ItemsByTagHook
 com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$SnapshotBarrierHook
 com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastEntryHook
-com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastKeyReferenceHook
+com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastKeyHook
+com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$DoneItemHook
 com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject$Hook
 com.hazelcast.jet.impl.serialization.HashMapHook
 com.hazelcast.jet.impl.serialization.HashSetHook
