@@ -21,6 +21,7 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.version.MemberVersion;
@@ -30,7 +31,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class MemberInfo implements IdentifiedDataSerializable, Versioned {
@@ -115,7 +118,18 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
             attributes.put(key, value);
         }
         version = in.readObject();
-        memberListJoinVersion = in.readInt();
+        // RU_COMPAT_3_10
+        // MemberInfo we read may originate:
+        // - from OS/EE 3.11 member -> memberListJoinversion is available
+        // - from EE 3.10:
+        //   - FinalizeJoinOp / MembersUpdateOp: in this case, memberListJoinVersion is available because container
+        //   operations are Versioned themselves
+        //   - as a MembersView response within a NormalResponse from FetchMembersViewOp which is expected to not contain
+        //   memberListJoinVersion because the container object (MembersView) was not Versioned (-> in.getVersion
+        //   is UNKNOWN)
+        if (mustReadMemberListJoinVersion(in)) {
+            memberListJoinVersion = in.readInt();
+        }
     }
 
     @Override
@@ -135,6 +149,9 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
             }
         }
         out.writeObject(version);
+        // MemberInfo always serializes memberListJoinVersion. The output stream will include the
+        // cluster version, since all containing objects are Versioned (including MembersView)
+        // -> a 3.10 member will be able to deserialize it.
         out.writeInt(memberListJoinVersion);
     }
 
@@ -186,5 +203,13 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
     @Override
     public int getId() {
         return ClusterDataSerializerHook.MEMBER_INFO;
+    }
+
+    // memberListJoinVersion must be read when:
+    // - open source or
+    // - enterprise && stream version >= 3.10
+    private boolean mustReadMemberListJoinVersion(VersionAware versionAware) {
+        return (!getBuildInfo().isEnterprise()
+                || versionAware.getVersion().isGreaterOrEqual(V3_10));
     }
 }
