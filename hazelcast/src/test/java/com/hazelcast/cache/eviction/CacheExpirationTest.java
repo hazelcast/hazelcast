@@ -272,8 +272,8 @@ public class CacheExpirationTest extends CacheTestSupport {
 
         for (int i = 0; i < KEY_RANGE; i++) {
             cache.put(i, i);
-            assertTrue("Expected to remove entry " + i + " but entry was not present. Expired entry count: " +
-                    listener.getExpirationCount().get(), cache.remove(i));
+            assertTrue("Expected to remove entry " + i + " but entry was not present. Expired entry count: "
+                    + listener.getExpirationCount().get(), cache.remove(i));
         }
 
         sleepAtLeastSeconds(ttlSeconds);
