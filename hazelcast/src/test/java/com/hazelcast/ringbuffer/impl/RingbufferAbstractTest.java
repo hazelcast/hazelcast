@@ -48,6 +48,7 @@ import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static java.lang.Math.max;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
@@ -104,6 +105,8 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         config.addRingBufferConfig(new RingbufferConfig("readOne_staleSequence*").setCapacity(5));
         config.addRingBufferConfig(new RingbufferConfig("readOne_futureSequence*").setCapacity(5));
         config.addRingBufferConfig(new RingbufferConfig("sizeShouldNotExceedCapacity_whenPromotedFromBackup*")
+                .setCapacity(10));
+        config.addRingBufferConfig(new RingbufferConfig("readManyAsync_whenHitsStale_shouldNotBeBlocked*")
                 .setCapacity(10));
 
         instances = newInstances(config);
@@ -716,6 +719,14 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         assertEquals(0, f.get().readCount());
         assertEquals(0, resultSet.readCount());
+    }
+
+
+    @Test(expected = ExecutionException.class)
+    public void readManyAsync_whenHitsStale_shouldNotBeBlocked() throws Exception {
+        ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 1, 10, null);
+        ringbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
+        f.get();
     }
 
     @Test
