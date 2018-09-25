@@ -35,6 +35,10 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperati
  * aggregates the data from several input stages. To obtain it, call {@link
  * BatchStageWithKey#aggregateBuilder()} on one of the stages to co-group
  * and refer to that method's Javadoc for further details.
+ * <p>
+ * <strong>Note:</strong> this is not a builder of {@code
+ * AggregateOperation}. If that' s what you are looking for, go {@link
+ * AggregateOperation#withCreate here}.
  *
  * @param <K> type of the grouping key
  * @param <R0> type of the aggregation result for stream-0

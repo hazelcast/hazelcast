@@ -34,6 +34,10 @@ import javax.annotation.Nonnull;
  * This object is mainly intended to build a co-aggregation of four or more
  * contributing stages. For up to three stages, prefer the direct {@code
  * stage.aggregateN(...)} calls because they offer more static type safety.
+ * <p>
+ * <strong>Note:</strong> this is not a builder of {@code
+ * AggregateOperation}. If that' s what you are looking for, go {@link
+ * AggregateOperation#withCreate here}.
  *
  * @param <T0> the type of the stream-0 item
  * @param <K> type of the key
