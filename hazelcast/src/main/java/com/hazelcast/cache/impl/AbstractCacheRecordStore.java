@@ -95,6 +95,7 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheRemovedE
 import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedEvent;
 import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.MAX_EXPIRED_KEY_COUNT_IN_BATCH;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import static com.hazelcast.cache.impl.record.CacheRecord.TIME_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
@@ -122,11 +123,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final String name;
     protected final NodeEngine nodeEngine;
     protected final CacheConfig cacheConfig;
+    protected final SerializationService ss;
     protected final EvictionConfig evictionConfig;
+    protected final ValueComparator valueComparator;
     protected final EvictionChecker evictionChecker;
     protected final ObjectNamespace objectNamespace;
     protected final AbstractCacheService cacheService;
-    protected final ValueComparator valueComparator;
     protected final CacheRecordFactory cacheRecordFactory;
     protected final EventJournalConfig eventJournalConfig;
     protected final SamplingEvictionStrategy<Data, R, CRM> evictionStrategy;
@@ -152,6 +154,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         this.name = cacheNameWithPrefix;
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;
+        this.ss = nodeEngine.getSerializationService();
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.cacheService = cacheService;
         this.cacheConfig = cacheService.getCacheConfig(cacheNameWithPrefix);
@@ -160,12 +163,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     + nodeEngine.getLocalMember());
         }
         this.eventJournalConfig = nodeEngine.getConfig().findCacheEventJournalConfig(cacheConfig.getName());
-        evictionConfig = cacheConfig.getEvictionConfig();
+        this.evictionConfig = cacheConfig.getEvictionConfig();
         if (evictionConfig == null) {
             throw new IllegalStateException("Eviction config cannot be null!");
         }
-        wanReplicationEnabled = cacheService.isWanReplicationEnabled(cacheNameWithPrefix);
-        disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
+        this.wanReplicationEnabled = cacheService.isWanReplicationEnabled(cacheNameWithPrefix);
+        this.disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
         if (cacheConfig.isStatisticsEnabled()) {
             statistics = cacheService.createCacheStatIfAbsent(cacheNameWithPrefix);
         }
@@ -190,16 +193,15 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             throw new IllegalStateException("Expiry policy factory cannot be null!");
         }
 
-        cacheContext = cacheService.getOrCreateCacheContext(cacheNameWithPrefix);
-        records = createRecordCacheMap();
-        evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaximumSizePolicy());
-        evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
-        evictionStrategy = createEvictionStrategy(evictionConfig);
-        objectNamespace = CacheService.getObjectNamespace(cacheNameWithPrefix);
-        persistWanReplicatedData = canPersistWanReplicatedData(cacheConfig, nodeEngine);
-        cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                nodeEngine.getSerializationService());
-        valueComparator = getValueComparatorOf(cacheConfig.getInMemoryFormat());
+        this.cacheContext = cacheService.getOrCreateCacheContext(cacheNameWithPrefix);
+        this.records = createRecordCacheMap();
+        this.evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaximumSizePolicy());
+        this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
+        this.evictionStrategy = createEvictionStrategy(evictionConfig);
+        this.objectNamespace = CacheService.getObjectNamespace(cacheNameWithPrefix);
+        this.persistWanReplicatedData = canPersistWanReplicatedData(cacheConfig, nodeEngine);
+        this.cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(), ss);
+        this.valueComparator = getValueComparatorOf(cacheConfig.getInMemoryFormat());
 
         injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
         registerResourceIfItIsClosable(cacheWriter);
@@ -263,7 +265,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     private void injectDependencies(Object obj) {
-        ManagedContext managedContext = nodeEngine.getSerializationService().getManagedContext();
+        ManagedContext managedContext = ss.getManagedContext();
         managedContext.initialize(obj);
     }
 
@@ -277,7 +279,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public void init() {
         primary = isPrimary();
         records.setEntryCounting(primary);
-        markExpirable(CacheRecord.TIME_NOT_AVAILABLE);
+        markExpirable(TIME_NOT_AVAILABLE);
     }
 
     protected boolean isReadThrough() {
@@ -450,7 +452,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             onProcessExpiredEntry(key, removedRecord, removedRecord.getExpirationTime(), now, source, origin);
             if (isEventsEnabled()) {
                 publishEvent(createCacheExpiredEvent(keyEventData, recordEventData,
-                        CacheRecord.TIME_NOT_AVAILABLE, origin, IGNORE_COMPLETION));
+                        TIME_NOT_AVAILABLE, origin, IGNORE_COMPLETION));
             }
         }
         return true;
@@ -473,7 +475,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         Data recordEventData = toEventData(removedRecord);
         onProcessExpiredEntry(key, removedRecord, expiryTime, now, source, origin);
         if (isEventsEnabled()) {
-            publishEvent(createCacheExpiredEvent(keyEventData, recordEventData, CacheRecord.TIME_NOT_AVAILABLE,
+            publishEvent(createCacheExpiredEvent(keyEventData, recordEventData, TIME_NOT_AVAILABLE,
                     origin, IGNORE_COMPLETION));
         }
         return null;
@@ -554,7 +556,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         // RU_COMPAT_3_10
         Member member = nodeEngine.getClusterService().getMember(replicaAddress);
         if (member == null) {
-             return false;
+            return false;
         }
         return member.getVersion().asVersion().isGreaterOrEqual(Versions.V3_11);
     }
@@ -606,7 +608,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected long updateAccessDuration(Data key, R record, ExpiryPolicy expiryPolicy, long now) {
-        long expiryTime = CacheRecord.TIME_NOT_AVAILABLE;
+        long expiryTime = TIME_NOT_AVAILABLE;
         try {
             Duration expiryDuration = expiryPolicy.getExpiryForAccess();
             if (expiryDuration != null) {
@@ -746,7 +748,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             return createRecord(key, value, expiryTime, now, disableWriteThrough, completionId, origin);
         }
         if (isEventsEnabled()) {
-            publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.TIME_NOT_AVAILABLE,
+            publishEvent(createCacheCompleteEvent(toEventData(key), TIME_NOT_AVAILABLE,
                     origin, completionId));
         }
         return null;
@@ -803,10 +805,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         Data dataValue = null;
         Object recordValue = value;
         try {
-            if (expiryTime != CacheRecord.TIME_NOT_AVAILABLE) {
-                markExpirable(expiryTime);
-                record.setExpirationTime(expiryTime);
-            }
+            updateExpiryTime(record, expiryTime);
             if (isExpiredAt(expiryTime, now)) {
                 // No need to update record value if it is expired
                 if (!disableWriteThrough) {
@@ -863,6 +862,15 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             onUpdateRecordError(key, record, value, dataValue, dataOldValue, error);
             throw ExceptionUtil.rethrow(error);
         }
+    }
+
+    private void updateExpiryTime(R record, long expiryTime) {
+        if (expiryTime == TIME_NOT_AVAILABLE) {
+            return;
+        }
+
+        markExpirable(expiryTime);
+        record.setExpirationTime(expiryTime);
     }
 
     protected void updateExpiryPolicyOfRecord(Data key, R record, Object expiryPolicy) {
@@ -946,7 +954,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected boolean updateRecordWithExpiry(Data key, Object value, R record, ExpiryPolicy expiryPolicy, long now,
                                              boolean disableWriteThrough, int completionId, String source, String origin) {
         expiryPolicy = getExpiryPolicy(record, expiryPolicy);
-        long expiryTime = CacheRecord.TIME_NOT_AVAILABLE;
+        long expiryTime = TIME_NOT_AVAILABLE;
         try {
             Duration expiryDuration = expiryPolicy.getExpiryForUpdate();
             if (expiryDuration != null) {
@@ -961,7 +969,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void updateRecordWithExpiry(Data key, CacheRecord record, ExpiryPolicy expiryPolicy, long now, String source) {
         expiryPolicy = getExpiryPolicy(record, expiryPolicy);
-        long expiryTime = CacheRecord.TIME_NOT_AVAILABLE;
+        long expiryTime = TIME_NOT_AVAILABLE;
         try {
             Duration expiryDuration = expiryPolicy.getExpiryForUpdate();
             if (expiryDuration != null) {
@@ -993,7 +1001,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 Data eventDataValue = toEventData(removedRecord);
 
                 publishEvent(createCacheRemovedEvent(eventDataKey, eventDataValue,
-                        CacheRecord.TIME_NOT_AVAILABLE, origin, completionId));
+                        TIME_NOT_AVAILABLE, origin, completionId));
             }
         } finally {
             onDeleteRecord(key, removedRecord, removedRecord != null);
@@ -1563,7 +1571,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         try {
             if (recordNotExistOrExpired(record, now)) {
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.TIME_NOT_AVAILABLE,
+                    publishEvent(createCacheCompleteEvent(toEventData(key), TIME_NOT_AVAILABLE,
                             origin, completionId));
                 }
             } else {
@@ -1610,7 +1618,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
             if (!removed) {
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.TIME_NOT_AVAILABLE,
+                    publishEvent(createCacheCompleteEvent(toEventData(key), TIME_NOT_AVAILABLE,
                             origin, completionId));
                 }
             }
@@ -1644,7 +1652,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
      * @param expiryTime
      */
     protected void markExpirable(long expiryTime) {
-        if (expiryTime != CacheRecord.TIME_NOT_AVAILABLE) {
+        if (expiryTime != TIME_NOT_AVAILABLE) {
             hasEntryWithExpiration = true;
         }
 
@@ -1671,7 +1679,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             if (recordNotExistOrExpired(record, now)) {
                 obj = null;
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.TIME_NOT_AVAILABLE,
+                    publishEvent(createCacheCompleteEvent(toEventData(key), TIME_NOT_AVAILABLE,
                             origin, completionId));
                 }
             } else {
@@ -1796,13 +1804,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 merged = record != null;
             }
         } else {
-            SerializationService serializationService = nodeEngine.getSerializationService();
-            Data oldValue = serializationService.toData(record.getValue());
-            CacheMergeTypes existingEntry = createMergingEntry(serializationService, key, oldValue, record);
+            Data oldValue = ss.toData(record.getValue());
+            CacheMergeTypes existingEntry = createMergingEntry(ss, key, oldValue, record);
             Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
-            if (!valueComparator.isEqual(oldValue, newValue, serializationService)) {
-                merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, disableWriteThrough, IGNORE_COMPLETION);
-            }
+
+            merged = updateWithMergingValue(key, oldValue, newValue, record, expiryTime, now, disableWriteThrough);
         }
 
         if (merged && isStatisticsEnabled()) {
@@ -1843,7 +1849,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 merged = record != null;
             }
         } else {
-            Object existingValue = record.getValue();
+            Object oldValue = record.getValue();
             Object newValue = mergePolicy.merge(name,
                     createCacheEntryView(
                             key,
@@ -1856,7 +1862,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                             mergePolicy),
                     createCacheEntryView(
                             key,
-                            existingValue,
+                            oldValue,
                             cacheEntryView.getCreationTime(),
                             record.getExpirationTime(),
                             record.getLastAccessTime(),
@@ -1864,9 +1870,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                             record.getExpiryPolicy(),
                             mergePolicy));
 
-            if (!valueComparator.isEqual(existingValue, newValue, nodeEngine.getSerializationService())) {
-                merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, disableWriteThrough, IGNORE_COMPLETION);
-            }
+
+            merged = updateWithMergingValue(key, oldValue, newValue, record, expiryTime, now, disableWriteThrough);
         }
 
         if (merged && isStatisticsEnabled()) {
@@ -1875,6 +1880,19 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
 
         return merged ? record : null;
+    }
+
+    private boolean updateWithMergingValue(Data key, Object existingValue, Object mergingValue,
+                                           R record, long expiryTime, long now, boolean disableWriteThrough) {
+
+        if (valueComparator.isEqual(existingValue, mergingValue, ss)) {
+            updateExpiryTime(record, expiryTime);
+            processExpiredEntry(key, record, now);
+            return true;
+        }
+
+        return updateRecordWithExpiry(key, mergingValue, record, TIME_NOT_AVAILABLE,
+                now, disableWriteThrough, IGNORE_COMPLETION);
     }
 
     private Object getExpiryPolicyOrNull(R record) {
@@ -1889,8 +1907,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                                 CacheMergePolicy mergePolicy) {
         // null serialization service means that use as storage type without conversion,
         // non-null serialization service means that conversion is required
-        SerializationService ss
-                = mergePolicy instanceof StorageTypeAwareCacheMergePolicy ? null : nodeEngine.getSerializationService();
+        SerializationService ss = mergePolicy instanceof StorageTypeAwareCacheMergePolicy ? null : this.ss;
         return new LazyCacheEntryView(key, value, creationTime, expirationTime, lastAccessTime, accessHit, expiryPolicy, ss);
     }
 

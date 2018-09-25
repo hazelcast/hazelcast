@@ -744,13 +744,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 storage.removeRecord(record);
                 return true;
             }
-            if (newValue == mergingEntry.getValue()) {
-                mergeRecordExpiration(record, mergingEntry);
-            }
-            // same with the existing entry so no need to map-store etc operations.
+
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
+                mergeRecordExpiration(record, mergingEntry);
                 return true;
             }
+
             newValue = persistenceEnabledFor(provenance) ? mapDataStore.add(key, newValue, now) : newValue;
             onStore(record);
             mutationObserver.onUpdateRecord(key, record, newValue);
@@ -804,13 +803,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 storage.removeRecord(record);
                 return true;
             }
-            if (newValue == mergingEntry.getValue()) {
-                mergeRecordExpiration(record, mergingEntry);
-            }
             // same with the existing entry so no need to map-store etc operations.
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
+                mergeRecordExpiration(record, mergingEntry);
                 return true;
             }
+
             newValue = persistenceEnabledFor(provenance) ? mapDataStore.add(key, newValue, now) : newValue;
             onStore(record);
             mutationObserver.onUpdateRecord(key, record, newValue);
