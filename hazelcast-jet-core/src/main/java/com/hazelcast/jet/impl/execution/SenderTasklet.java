@@ -72,8 +72,7 @@ public class SenderTasklet implements Tasklet {
         bufPosPastHeader = outputBuffer.position();
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public ProgressState call() {
         progTracker.reset();
         tryFillInbox();
@@ -121,7 +120,6 @@ public class SenderTasklet implements Tasklet {
                 outputBuffer.writeObject(itemWithPId.getItem());
                 sentSeq += estimatedMemoryFootprint(outputBuffer.position() - mark);
                 outputBuffer.writeInt(itemWithPId.getPartitionId());
-
             }
             outputBuffer.writeInt(bufPosPastHeader, writtenCount);
             lazyAdd(bytesOutCounter, outputBuffer.position());

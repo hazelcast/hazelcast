@@ -18,15 +18,20 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.WatermarkEmissionPolicy;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -42,8 +47,12 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
@@ -88,7 +97,6 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
         key0 = generateKeyForPartition(instance.getHazelcastInstance(), 0);
         key1 = generateKeyForPartition(instance.getHazelcastInstance(), 1);
-
     }
 
     private WatermarkEmissionPolicy suppressAll() {
@@ -215,6 +223,28 @@ public class StreamEventJournalPTest extends JetTestSupport {
             outbox.drainQueueAndReset(0, actual, true);
             assertTrue("consumed different number of items than expected", actual.size() == 2);
         });
+    }
+
+    @Test
+    public void when_processorsWithNoPartitions_then_snapshotRestoreWorks() {
+        DAG dag = new DAG();
+        Vertex vertex = dag.newVertex("src",
+                streamMapP(map.getName(), JournalInitialPosition.START_FROM_OLDEST, noWatermarks()))
+                           .localParallelism(8);
+        int partitionCount = instance.getHazelcastInstance().getPartitionService().getPartitions().size();
+        assertTrue("partition count should be lower than local parallelism",
+                vertex.getLocalParallelism() > partitionCount);
+        Job job = instance.newJob(dag, new JobConfig()
+                .setProcessingGuarantee(EXACTLY_ONCE)
+                .setSnapshotIntervalMillis(200_000));
+        sleepMillis(1000);
+        job.restart();
+        sleepMillis(3000);
+
+        // Then
+        // The job should be running: this test checks that state restored to NoopP, which is
+        // created by the meta supplier for processor with no partitions, is ignored.
+        assertEquals(RUNNING, job.getStatus());
     }
 
     private void fillJournal(int countPerPartition) {

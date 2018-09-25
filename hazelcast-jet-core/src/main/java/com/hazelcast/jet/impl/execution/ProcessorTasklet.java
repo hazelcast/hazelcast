@@ -93,15 +93,21 @@ public class ProcessorTasklet implements Tasklet {
     private InboundEdgeStream currInstream;
     private ProcessorState state;
     private long pendingSnapshotId;
+    private SnapshotBarrier currentBarrier;
     private Watermark pendingWatermark;
     private boolean processorClosed;
+
+    // Tells whether we are operating in exactly-once or at-least-once mode.
+    // In other words, whether a barrier from all inputs must be present before
+    // draining more items from an input stream where a barrier has been reached.
+    // Once a terminal snapshot barrier is reached, this is always true.
+    private boolean waitForAllBarriers;
 
     private final AtomicLongArray receivedCounts;
     private final AtomicLongArray receivedBatches;
     private final AtomicLongArray emittedCounts;
     private final AtomicLong queuesSize = new AtomicLong();
     private final AtomicLong queuesCapacity = new AtomicLong();
-    private boolean doneAfterTerminalSnapshot;
 
     public ProcessorTasklet(@Nonnull Processor.Context context,
                             @Nonnull SerializationService serializationService,
@@ -130,7 +136,6 @@ public class ProcessorTasklet implements Tasklet {
         this.logger = getLogger(context);
 
         instreamCursor = popInstreamGroup();
-        currInstream = instreamCursor != null ? instreamCursor.value() : null;
         receivedCounts = new AtomicLongArray(instreams.size());
         receivedBatches = new AtomicLongArray(instreams.size());
         emittedCounts = new AtomicLongArray(outstreams.size() + 1);
@@ -138,6 +143,7 @@ public class ProcessorTasklet implements Tasklet {
         receivedBarriers = new BitSet(instreams.size());
         state = initialProcessingState();
         pendingSnapshotId = ssContext.lastSnapshotId() + 1;
+        waitForAllBarriers = ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE;
 
         watermarkCoalescer = WatermarkCoalescer.create(maxWatermarkRetainMillis, instreams.size());
     }
@@ -312,19 +318,19 @@ public class ProcessorTasklet implements Tasklet {
 
             case EMIT_BARRIER:
                 assert context.snapshottingEnabled() : "Snapshotting is not enabled";
-
-                progTracker.notDone();
-                if (outbox.offerToEdgesAndSnapshot(new SnapshotBarrier(pendingSnapshotId))) {
+                assert currentBarrier != null : "currentBarrier == null";
+                if (outbox.offerToEdgesAndSnapshot(currentBarrier)) {
                     progTracker.madeProgress();
-                    if (ssContext.isTerminalSnapshot()) {
-                        doneAfterTerminalSnapshot = true;
+                    if (currentBarrier.isTerminal() && instreamCursor == null) {
                         state = EMIT_DONE_ITEM;
                     } else {
+                        currentBarrier = null;
                         receivedBarriers.clear();
                         pendingSnapshotId++;
                         state = initialProcessingState();
                     }
                 }
+                progTracker.notDone();
                 return;
 
             case COMPLETE:
@@ -336,6 +342,7 @@ public class ProcessorTasklet implements Tasklet {
                             + ", current was" + pendingSnapshotId;
                     if (currSnapshotId == pendingSnapshotId) {
                         state = SAVE_SNAPSHOT;
+                        currentBarrier = new SnapshotBarrier(currSnapshotId, ssContext.isTerminalSnapshot());
                         progTracker.madeProgress();
                         return;
                     }
@@ -360,11 +367,6 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    @Override
-    public boolean doneAfterTerminalSnapshot() {
-        return doneAfterTerminalSnapshot;
-    }
-
     private void fillInbox(long now) {
         assert inbox.isEmpty() : "inbox is not empty";
         assert pendingWatermark == null : "null wm expected, but was " + pendingWatermark;
@@ -379,8 +381,7 @@ public class ProcessorTasklet implements Tasklet {
             result = NO_PROGRESS;
 
             // skip ordinals where a snapshot barrier has already been received
-            if (ssContext != null && ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE
-                    && receivedBarriers.get(currInstream.ordinal())) {
+            if (waitForAllBarriers && receivedBarriers.get(currInstream.ordinal())) {
                 instreamCursor.advance();
                 continue;
             }
@@ -397,7 +398,7 @@ public class ProcessorTasklet implements Tasklet {
                 }
             } else if (lastItem instanceof SnapshotBarrier) {
                 SnapshotBarrier barrier = (SnapshotBarrier) inbox.queue().removeLast();
-                observeSnapshot(currInstream.ordinal(), barrier.snapshotId());
+                observeBarrier(currInstream.ordinal(), barrier);
             } else if (lastItem != null && !(lastItem instanceof BroadcastItem)) {
                 watermarkCoalescer.observeEvent(currInstream.ordinal());
             }
@@ -444,10 +445,18 @@ public class ProcessorTasklet implements Tasklet {
         return "ProcessorTasklet{" + jobPrefix + context.vertexName() + '#' + context.globalProcessorIndex() + '}';
     }
 
-    private void observeSnapshot(int ordinal, long snapshotId) {
-        if (snapshotId != pendingSnapshotId) {
-            throw new JetException("Unexpected snapshot barrier " + snapshotId + " from ordinal " + ordinal +
+    private void observeBarrier(int ordinal, SnapshotBarrier barrier) {
+        if (barrier.snapshotId() != pendingSnapshotId) {
+            throw new JetException("Unexpected snapshot barrier ID " + barrier.snapshotId() + " from ordinal " + ordinal +
                     " expected " + pendingSnapshotId);
+        }
+        currentBarrier = barrier;
+        if (barrier.isTerminal()) {
+            // Switch to exactly-once mode. The reason is that there will be DONE_ITEM just after the
+            // terminal barrier and if we process it before receiving the other barriers, it could cause
+            // the watermark to advance. The exactly-once mode disallows processing of any items after
+            // the barrier before the barrier is processed.
+            waitForAllBarriers = true;
         }
         receivedBarriers.set(ordinal);
     }

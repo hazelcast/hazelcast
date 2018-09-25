@@ -92,11 +92,12 @@ class ExecutionSerializerHooks {
                 @Override
                 public void write(ObjectDataOutput out, SnapshotBarrier object) throws IOException {
                     out.writeLong(object.snapshotId());
+                    out.writeBoolean(object.isTerminal());
                 }
 
                 @Override
                 public SnapshotBarrier read(ObjectDataInput in) throws IOException {
-                    return new SnapshotBarrier(in.readLong());
+                    return new SnapshotBarrier(in.readLong(), in.readBoolean());
                 }
             };
         }

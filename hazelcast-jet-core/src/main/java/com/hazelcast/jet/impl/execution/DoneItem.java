@@ -26,6 +26,4 @@ final class DoneItem implements BroadcastItem {
     public String toString() {
         return "DONE_ITEM";
     }
-
-
 }

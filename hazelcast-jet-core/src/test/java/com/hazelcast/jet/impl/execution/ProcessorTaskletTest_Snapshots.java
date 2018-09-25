@@ -224,7 +224,7 @@ public class ProcessorTaskletTest_Snapshots {
     }
 
     private SnapshotBarrier barrier(long snapshotId) {
-        return new SnapshotBarrier(snapshotId);
+        return new SnapshotBarrier(snapshotId, false);
     }
 
     private static class SnapshottableProcessor implements Processor {

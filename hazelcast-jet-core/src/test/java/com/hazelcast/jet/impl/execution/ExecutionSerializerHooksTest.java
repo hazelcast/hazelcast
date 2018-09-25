@@ -52,7 +52,7 @@ public class ExecutionSerializerHooksTest {
     public static Collection<Object> data() {
         return Arrays.asList(
                 DONE_ITEM,
-                new SnapshotBarrier(17L),
+                new SnapshotBarrier(17L, false),
                 new BroadcastEntry<>("key", "value"),
                 broadcastKey("broadcast-key")
         );

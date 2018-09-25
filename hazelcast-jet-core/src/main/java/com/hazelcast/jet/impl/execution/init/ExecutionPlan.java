@@ -148,7 +148,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
             ConcurrentConveyor<Object> ssConveyor = ConcurrentConveyor.concurrentConveyor(null, snapshotQueues);
             StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext, jobId,
-                    new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, lastSnapshotId, true, -1,
+                    new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, true, -1,
                             "ssFrom:" + vertex.name()),
                     new AsyncSnapshotWriterImpl(nodeEngine, memberIndex, memberCount),
                     nodeEngine.getLogger(StoreSnapshotTasklet.class.getName() + "." + vertex.name()),
@@ -587,7 +587,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private ConcurrentInboundEdgeStream newEdgeStream(EdgeDef inEdge, ConcurrentConveyor<Object> conveyor,
                                                       String debugName) {
         return new ConcurrentInboundEdgeStream(conveyor, inEdge.destOrdinal(), inEdge.priority(),
-                lastSnapshotId, jobConfig.getProcessingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE,
+                jobConfig.getProcessingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE,
                 jobConfig.getMaxWatermarkRetainMillis(), debugName);
     }
 

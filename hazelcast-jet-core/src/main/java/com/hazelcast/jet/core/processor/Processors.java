@@ -840,8 +840,9 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that consumes all its input (if any) and
-     * does nothing with it.
+     * Returns a supplier of processor that swallows all its input (if any) and
+     * does nothing with it and produces no output. It swallows the restored
+     * state as well.
      */
     @Nonnull
     public static DistributedSupplier<Processor> noopP() {
@@ -852,6 +853,11 @@ public final class Processors {
     private static class NoopP implements Processor {
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
+            inbox.drain(noopConsumer());
+        }
+
+        @Override
+        public void restoreFromSnapshot(@Nonnull Inbox inbox) {
             inbox.drain(noopConsumer());
         }
     }

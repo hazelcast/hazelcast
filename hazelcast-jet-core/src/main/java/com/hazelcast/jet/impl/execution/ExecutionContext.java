@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
+import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
 import com.hazelcast.jet.impl.util.Util;
@@ -133,7 +134,17 @@ public class ExecutionContext {
                 // begin job execution
                 JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
                 ClassLoader cl = service.getJobExecutionService().getClassLoader(jobConfig, jobId);
-                executionFuture = taskletExecService.beginExecute(tasklets, cancellationFuture, cl);
+                executionFuture = taskletExecService.beginExecute(tasklets, cancellationFuture, cl)
+                        .thenApply(res -> {
+                            // There's a race here: a snapshot could be requested after the job just completed
+                            // normally, in that case we'll report that it terminated with snapshot.
+                            // We ignore this for now.
+                            if (snapshotContext.isTerminalSnapshot()) {
+                                throw new TerminatedWithSnapshotException();
+                            }
+                            return res;
+                        });
+
             }
             return executionFuture;
         }

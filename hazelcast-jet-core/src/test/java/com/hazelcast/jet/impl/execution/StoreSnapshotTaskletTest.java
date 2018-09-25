@@ -118,7 +118,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     @Test
     public void when_barrier_then_snapshotDone() {
         // When
-        init(singletonList(new SnapshotBarrier(2)));
+        init(singletonList(new SnapshotBarrier(2, false)));
         ssContext.startNewSnapshot(2, false);
         assertEquals(MADE_PROGRESS, sst.call());
         assertEquals(MADE_PROGRESS, sst.call());
@@ -131,7 +131,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     public void when_itemAndBarrier_then_snapshotDone() {
         // When
         Entry<String, String> entry = entry("k", "v");
-        init(asList(entry, new SnapshotBarrier(2)));
+        init(asList(entry, new SnapshotBarrier(2, false)));
         ssContext.startNewSnapshot(2, false);
         assertEquals(2, sst.pendingSnapshotId);
         assertEquals(MADE_PROGRESS, sst.call());
@@ -146,7 +146,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     @Test
     public void when_notAbleToFlush_then_tryAgain() {
         // When
-        init(singletonList(new SnapshotBarrier(2)));
+        init(singletonList(new SnapshotBarrier(2, false)));
         ssContext.startNewSnapshot(2, false);
         mockSsWriter.ableToFlushRemaining = false;
         assertEquals(MADE_PROGRESS, sst.call());
@@ -165,7 +165,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     public void test_waitingForFlushesToComplete() {
         // When
         Entry<String, String> entry = entry("k", "v");
-        init(asList(entry, new SnapshotBarrier(2)));
+        init(asList(entry, new SnapshotBarrier(2, false)));
         ssContext.startNewSnapshot(2, false);
         assertEquals(MADE_PROGRESS, sst.call());
         assertEquals(NO_PROGRESS, sst.call());
@@ -181,7 +181,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     @Test
     public void when_snapshotFails_then_reportedToContext() throws Exception {
         // When
-        init(singletonList(new SnapshotBarrier(2)));
+        init(singletonList(new SnapshotBarrier(2, false)));
         RuntimeException mockFailure = new RuntimeException("mock failure");
         mockSsWriter.failure = mockFailure;
         CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(2, false);

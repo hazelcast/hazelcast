@@ -16,25 +16,33 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import java.util.Objects;
+
 /**
  * Special item interleaved with other items on queue to signal a start of a
  * snapshot.
  */
 public final class SnapshotBarrier implements BroadcastItem {
     private final long snapshotId;
+    private final boolean isTerminal;
 
-    public SnapshotBarrier(long snapshotId) {
+    public SnapshotBarrier(long snapshotId, boolean isTerminal) {
         assert snapshotId >= 0; // snapshot ID starts at 0 and is only incremented
         this.snapshotId = snapshotId;
+        this.isTerminal = isTerminal;
     }
 
     public long snapshotId() {
         return snapshotId;
     }
 
+    public boolean isTerminal() {
+        return isTerminal;
+    }
+
     @Override
     public String toString() {
-        return "SnapshotBarrier{snapshotId=" + snapshotId + '}';
+        return "SnapshotBarrier{snapshotId=" + snapshotId + (isTerminal ? ", terminal" : "") + '}';
     }
 
     @Override
@@ -45,14 +53,13 @@ public final class SnapshotBarrier implements BroadcastItem {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        SnapshotBarrier barrier = (SnapshotBarrier) o;
-
-        return snapshotId == barrier.snapshotId;
+        SnapshotBarrier that = (SnapshotBarrier) o;
+        return snapshotId == that.snapshotId &&
+                isTerminal == that.isTerminal;
     }
 
     @Override
     public int hashCode() {
-        return (int) (snapshotId ^ (snapshotId >>> 32));
+        return Objects.hash(snapshotId, isTerminal);
     }
 }

@@ -653,7 +653,7 @@ public class MasterContext {
         }
 
         // If there is no user-code exception, it means at least one job participant has left the cluster.
-        // In that case, all remaining participants return a CancellationException.
+        // In that case, all remaining participants return a TopologyChangedException.
         return failures
                 .stream()
                 .peek(e -> {
@@ -992,7 +992,7 @@ public class MasterContext {
 
         @Override
         public void onFailure(Throwable t) {
-            if (!(t instanceof TerminatedWithSnapshotException)) {
+            if (!(peel(t) instanceof TerminatedWithSnapshotException)) {
                 cancelInvocations(null);
             }
         }
