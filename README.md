@@ -55,8 +55,7 @@ the former one will be deprecated.
 
 ### Zone Aware Support
 
-***NOTE:*** 
-ZONE_AWARE configuration is only valid when you use Hazelcast Discovery SPI based configuration with `<discovery-strategies>`. `<aws>` based configuration is still using old implementation and does not support ZONE_AWARE feature
+***NOTE:*** *ZONE_AWARE configuration is only valid when you use Hazelcast Discovery SPI based configuration with `<discovery-strategies>`. `<aws>` based configuration is still using old implementation and does not support ZONE_AWARE feature.*
 
 Zone Aware Support is available for Hazelcast Client 3.8.6 and newer releases.
 
@@ -64,7 +63,7 @@ As a discovery service, Hazelcast AWS plugin put the zone information into the H
 Please see the [Defining Member Attributes section](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#defining-member-attributes) 
 to learn about the member attributes.
 
-When using `ZONE_AWARE` configuration, backups are created in the other AZs. 
+When using `ZONE_AWARE` configuration, backups are created in the other Availability Zones. 
 Each zone will be accepted as one partition group.
 
 Following are declarative and programmatic configuration snippets that show how to enable `ZONE_AWARE` grouping.
@@ -79,6 +78,9 @@ PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
 partitionGroupConfig.setEnabled( true )
     .setGroupType( MemberGroupType.ZONE_AWARE );
 ```
+
+***NOTE:*** *When using the `ZONE_AWARE` partition grouping, a cluster spanning multiple Availability Zones (AZ) should have an equal number of members in each AZ. Otherwise, it may result in uneven partition distribution among the members.*
+
 
 ### Configuring Hazelcast Members with Discovery SPI
 
