@@ -17,6 +17,7 @@
 package com.hazelcast.gcp;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -26,17 +27,23 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertEquals;
 
 public class RestClientTest {
-    private static final int PORT = 8089;
-    private static final String ADDRESS = String.format("http://localhost:%s", PORT);
     private static final String API_ENDPOINT = "/some/endpoint";
     private static final String BODY_REQUEST = "some body request";
     private static final String BODY_RESPONSE = "some body response";
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(PORT);
+    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
+
+    private String address;
+
+    @Before
+    public void setUp() {
+        address = String.format("http://localhost:%s", wireMockRule.port());
+    }
 
     @Test
     public void getSuccess() {
@@ -45,7 +52,7 @@ public class RestClientTest {
                 .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
-        String result = RestClient.create(String.format("%s%s", ADDRESS, API_ENDPOINT)).get();
+        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -61,7 +68,7 @@ public class RestClientTest {
                 .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
-        String result = RestClient.create(String.format("%s%s", ADDRESS, API_ENDPOINT))
+        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
                                   .withHeader(headerKey, headerValue)
                                   .get();
 
@@ -76,7 +83,7 @@ public class RestClientTest {
                 .willReturn(aResponse().withStatus(500).withBody("Internal error")));
 
         // when
-        RestClient.create(String.format("%s%s", ADDRESS, API_ENDPOINT)).get();
+        RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get();
 
         // then
         // throw exception
@@ -90,7 +97,7 @@ public class RestClientTest {
                 .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
-        String result = RestClient.create(String.format("%s%s", ADDRESS, API_ENDPOINT))
+        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
                                   .withBody(BODY_REQUEST)
                                   .post();
 

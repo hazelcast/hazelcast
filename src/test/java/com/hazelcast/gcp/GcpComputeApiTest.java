@@ -17,6 +17,7 @@
 package com.hazelcast.gcp;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -27,11 +28,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 public class GcpComputeApiTest {
-    private static final int PORT = 8089;
     private static final String PROJECT = "project1";
     private static final String ZONE = "us-east1-b";
     private static final String LABEL_KEY = "application";
@@ -44,10 +45,15 @@ public class GcpComputeApiTest {
     private static final String INSTANCE_2_PUBLIC_IP = "35.237.227.147";
     private static final String INSTANCE_3_PRIVATE_IP = "10.240.0.3";
 
-    private final GcpComputeApi gcpComputeApi = new GcpComputeApi(String.format("http://localhost:%s", PORT));
+    private GcpComputeApi gcpComputeApi;
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(PORT);
+    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
+
+    @Before
+    public void setUp() {
+        gcpComputeApi = new GcpComputeApi(String.format("http://localhost:%s", wireMockRule.port()));
+    }
 
     @Test
     public void instances() {
