@@ -51,7 +51,6 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.internal.diagnostics.AbstractMetricsTest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRenderContext;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -69,7 +68,6 @@ public class ClientMetricsTest extends AbstractMetricsTest {
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private HazelcastInstance hz;
-    private ProbeRenderContext renderContext;
 
     /**
      * In order to get the TCP statistics we need a real {@link ConnectionManager}.
@@ -84,17 +82,12 @@ public class ClientMetricsTest extends AbstractMetricsTest {
 
     private void newMember() {
         hz = hazelcastFactory.newHazelcastInstance();
-        renderContext = getNode(hz).nodeEngine.getProbeRegistry().newRenderContext();
+        setRenderContext(getNode(hz).nodeEngine.getProbeRegistry().newRenderContext());
     }
 
     @After
     public void cleanup() {
         hazelcastFactory.terminateAll();
-    }
-
-    @Override
-    protected ProbeRenderContext getRenderContext() {
-        return renderContext;
     }
 
     /**

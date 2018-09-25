@@ -41,31 +41,24 @@ import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.ClusterHotRestartStatus;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.MemberHotRestartStatus;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRenderContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class HotRestartMetricsTest extends AbstractMetricsTest {
 
     private HazelcastInstance hz;
-    private ProbeRenderContext renderContext;
 
     @Before
     public void setUp() {
         Config config = new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
         hz = HazelcastInstanceFactory.newHazelcastInstance(config, randomName(),
                 new HotRestartMockingNodeContext());
-        renderContext = getNode(hz).nodeEngine.getProbeRegistry().newRenderContext();
+        setRenderContext(getNode(hz).nodeEngine.getProbeRegistry().newRenderContext());
     }
 
     @After
     public void cleanup() {
         HazelcastInstanceFactory.shutdownAll();
-    }
-
-    @Override
-    protected ProbeRenderContext getRenderContext() {
-        return renderContext;
     }
 
     @Test

@@ -100,6 +100,8 @@ public class ManagementCenterService {
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
     private final StateSendThread stateSendThread;
+    private final Thread probeDataSendThread;
+    private final ProbeDataSender  probeDataSender;
     private final PrepareStateThread prepareStateThread;
     private final ILogger logger;
 
@@ -125,10 +127,28 @@ public class ManagementCenterService {
         this.prepareStateThread = new PrepareStateThread();
         this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         this.connectionFactory = instance.node.getNodeExtension().getManagementCenterConnectionFactory();
-
+        Address address = instance.node.getThisAddress();
+        String member = address.getHost() + ":" + address.getPort();
+        this.probeDataSender = new ProbeDataSender(managementCenterUrl("metrics.do"), connectionFactory,
+                instance.getConfig().getGroupConfig().getName(), member,
+                instance.node.nodeEngine.getProbeRegistry().newRenderContext());
+        this.probeDataSendThread = new Thread(probeDataSender, createThreadName(instance.getName(), "MC.ProbeData.Sender"));
         if (this.managementCenterConfig.isEnabled()) {
             this.instance.getCluster().addMembershipListener(new ManagementCenterService.MemberListenerImpl());
             start();
+        }
+    }
+
+    private URL managementCenterUrl(String path) {
+        String baseUrl = managementCenterUrl;
+        if (baseUrl == null) {
+            return null;
+        }
+        try {
+            return new URL(cleanupUrl(baseUrl) + path);
+        } catch (MalformedURLException e) {
+            logger.warning(e.getMessage());
+            return null;
         }
     }
 
@@ -173,6 +193,7 @@ public class ManagementCenterService {
         taskPollThread.start();
         prepareStateThread.start();
         stateSendThread.start();
+        probeDataSendThread.start();
         logger.info("Hazelcast will connect to Hazelcast Management Center on address: \n" + managementCenterUrl);
     }
 
@@ -187,6 +208,8 @@ public class ManagementCenterService {
             interruptThread(stateSendThread);
             interruptThread(taskPollThread);
             interruptThread(prepareStateThread);
+            probeDataSender.close();
+            interruptThread(probeDataSendThread);
         } catch (Throwable ignored) {
             ignore(ignored);
         }
@@ -220,7 +243,7 @@ public class ManagementCenterService {
             return;
         }
         managementCenterUrl = newUrl;
-
+        probeDataSender.setUrl(managementCenterUrl("metrics.do"));
         if (!isRunning()) {
             start();
         }

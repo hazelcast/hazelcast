@@ -20,7 +20,7 @@
  * A client or node will create a
  * {@link com.hazelcast.internal.metrics.ProbeRegistry}. During startup the
  * central services and managers are registered as
- * {@link com.hazelcast.internal.probing.ProbeRegistry.com.hazelcast.internal.probing.ProbeRegistry.ProbeSource}.
+ * {@link com.hazelcast.internal.metrics.ProbeRegistry.ProbeSource}.
  * These are the root objects that are the starting points of running
  * {@link com.hazelcast.internal.metrics.ProbingCycle}s to render the measured
  * data using a {@link com.hazelcast.internal.metrics.ProbeRenderer}.

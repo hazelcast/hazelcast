@@ -58,15 +58,17 @@ public interface ProbeRegistry {
 
     /**
      * Creates a new "private "context that should be kept by the caller to render
-     * the contents of this {@link ProbeRegistry}. The implementation will not
-     * support multi-threading as each thread should create its own context
-     * instance.
+     * the contents of this {@link ProbeRegistry}.
      *
-     * @param filter the set of sources that is accepted (kept) if it was
-     *        registered. A empty set or {@code null} results in usage of all
+     * The implementation will not support multi-threading as each thread should
+     * create its own context instance.
+     *
+     * @param selection the set of sources that is accepted (kept) if it was or will
+     *        be registered. A empty set or {@code null} results in usage of all
      *        registered sources.
-     * @return a new private filtered "context". A filtered context is updated when
-     *         further {@link ProbeSource} are {@link #register(ProbeSource)}ed.
+     * @return a new private selective "context". The context is updated when
+     *         further {@link ProbeSource} are {@link #register(ProbeSource)}ed that
+     *         were selected.
      */
-    ProbeRenderContext newRenderContext(Class<? extends ProbeSource>... filter);
+    ProbeRenderContext newRenderContext(Class<? extends ProbeSource>... selection);
 }

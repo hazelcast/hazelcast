@@ -92,6 +92,8 @@ public final class ProbeUtils {
      * {@link Number}s, {@link Counter}s, {@link Boolean} and {@link AtomicBoolean}
      * In case of {@link Collection} and {@link Map} their size is returned.
      *
+     * @see #isSupportedProbeType(Class)
+     *
      * @param value a value of a set of supported types
      * @return the long representing the passed object value
      */

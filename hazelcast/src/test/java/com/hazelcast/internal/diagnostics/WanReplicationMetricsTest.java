@@ -33,7 +33,6 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRenderContext;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
@@ -52,24 +51,18 @@ import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 public class WanReplicationMetricsTest extends AbstractMetricsTest {
 
     private HazelcastInstance hz;
-    private ProbeRenderContext renderContext;
 
     @Before
     public void setUp() {
         Config config = new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
         hz = HazelcastInstanceFactory.newHazelcastInstance(config, randomName(),
                 new WanServiceMockingNodeContext());
-        renderContext = getNode(hz).nodeEngine.getProbeRegistry().newRenderContext();
+        setRenderContext(getNode(hz).nodeEngine.getProbeRegistry().newRenderContext());
     }
 
     @After
     public void cleanup() {
         HazelcastInstanceFactory.shutdownAll();
-    }
-
-    @Override
-    protected ProbeRenderContext getRenderContext() {
-        return renderContext;
     }
 
     @Test

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics;
+package com.hazelcast.internal.management;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
@@ -28,10 +28,11 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
+import com.hazelcast.internal.metrics.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-public final class CompressingProbeRenderer implements ProbeRenderer {
+final class CompressingProbeRenderer implements ProbeRenderer {
 
     private static final ILogger LOGGER = Logger.getLogger(CompressingProbeRenderer.class);
 

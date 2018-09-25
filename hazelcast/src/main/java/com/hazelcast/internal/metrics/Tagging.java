@@ -17,12 +17,14 @@
 package com.hazelcast.internal.metrics;
 
 import com.hazelcast.internal.metrics.ProbingCycle.Tags;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * Can be implemented by instances passed to {@link ProbingCycle#probe(Object)}
  * (and its sibling methods) to provided the {@link Tags} context by the object
  * itself instead of before calling {@code probe}.
  */
+@PrivateApi
 public interface Tagging {
 
     /**

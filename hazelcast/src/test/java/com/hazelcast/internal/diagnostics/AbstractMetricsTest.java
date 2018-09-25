@@ -36,12 +36,15 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 public abstract class AbstractMetricsTest extends HazelcastTestSupport {
 
-    protected abstract ProbeRenderContext getRenderContext();
-
     private ProbeLevel probeLevel = ProbeLevel.INFO;
+    private ProbeRenderContext renderContext;
 
     public void setProbeLevel(ProbeLevel probeLevel) {
         this.probeLevel = probeLevel;
+    }
+
+    public void setRenderContext(ProbeRenderContext renderContext) {
+        this.renderContext = renderContext;
     }
 
     protected final void assertHasStatsEventually(int minimumProbes, String type, String name) {
@@ -67,7 +70,7 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
 
     protected final void assertHasStatsWith(int minimumProbes, final String prefix) {
         final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
-        getRenderContext().render(probeLevel, renderer);
+        renderContext.render(probeLevel, renderer);
         assertThat("minimum number of probes ", renderer.probes.size(), greaterThanOrEqualTo(minimumProbes));
         if (minimumProbes > 1) {
             assertHasCreationTime(prefix, renderer);
@@ -94,7 +97,7 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 final StringProbeRenderer renderer = new StringProbeRenderer(prefixes);
-                getRenderContext().render(probeLevel, renderer);
+                renderContext.render(probeLevel, renderer);
                 if (!renderer.probes.keySet().containsAll(prefixes)) {
                     HashSet<String> missing = new HashSet<String>(prefixes);
                     missing.removeAll(renderer.probes.keySet());

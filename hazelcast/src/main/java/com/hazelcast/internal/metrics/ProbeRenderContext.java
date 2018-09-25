@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.metrics;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * From a usability point of view the {@link ProbeRenderContext} is a bit
  * cumbersome and smells like over-abstraction. It is purely introduced to
@@ -26,6 +28,7 @@ package com.hazelcast.internal.metrics;
  * The {@link ProbeRenderer} itself usually changes for each cycle as it tends
  * to be dependent on output stream objects handed to it.
  */
+@PrivateApi
 public interface ProbeRenderContext {
 
     /**

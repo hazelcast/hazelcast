@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 
 /**
@@ -31,6 +32,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceManager;
  * {@link ProbeRegistry} as all services implementing the interface are
  * registered automatically at the end of the node startup.
  */
+ @PrivateApi
 public interface ProbeSource {
 
     String TAG_INSTANCE = "instance";

@@ -99,8 +99,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     }
 
     @Override
-    public ProbeRenderContext newRenderContext(Class<? extends ProbeSource>... filter) {
-        return new ProbingCycleImpl(sources.values(), filter);
+    public ProbeRenderContext newRenderContext(Class<? extends ProbeSource>... selection) {
+        return new ProbingCycleImpl(sources.values(), selection);
     }
 
     /**
@@ -155,13 +155,18 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
     }
 
+    /**
+     * A {@link ProbeRenderContext} and the {@link ProbingCycle} it represents as
+     * well are thread specific (per thread) and therefore not thread-safe or build
+     * to be used by or from multiple threads.
+     */
     private static final class ProbingCycleImpl
     implements ProbingCycle, ProbingCycle.Tags, ProbeRenderContext {
 
         // render context state
         private final Collection<ProbeSourceEntry> sources;
-        private final Class<? extends ProbeSource>[] filter;
-        private final List<ProbeSourceEntry> effectiveSource = new ArrayList<ProbeRegistryImpl.ProbeSourceEntry>();
+        private final Class<? extends ProbeSource>[] selection;
+        private final List<ProbeSourceEntry> effectiveSource = new ArrayList<ProbeSourceEntry>();
         private int sourceCount;
 
         // render cycle state
@@ -171,9 +176,9 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         private CharSequence lastTagName;
         private int lastTagValuePosition;
 
-        ProbingCycleImpl(Collection<ProbeSourceEntry> sources, Class<? extends ProbeSource>[] filter) {
+        ProbingCycleImpl(Collection<ProbeSourceEntry> sources, Class<? extends ProbeSource>[] selection) {
             this.sources = sources;
-            this.filter = filter;
+            this.selection = selection;
         }
 
         private void updateSources() {
@@ -190,10 +195,10 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         private boolean activeSource(Class<?> source) {
-            if (filter == null || filter.length == 0) {
+            if (selection == null || selection.length == 0) {
                 return true;
             }
-            for (Class<?> accepted : filter) {
+            for (Class<?> accepted : selection) {
                 if (accepted == source) {
                     return true;
                 }

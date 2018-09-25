@@ -30,8 +30,10 @@ public final class MemoryProbeSource implements ProbeSource {
 
     @Override
     public void probeNow(ProbingCycle cycle) {
-        cycle.probe("memory", memoryStats);
-        cycle.probe("gc", memoryStats.getGCStats());
+        if (memoryStats != null) {
+            cycle.probe("memory", memoryStats);
+            cycle.probe("gc", memoryStats.getGCStats());
+        }
     }
 
 }
