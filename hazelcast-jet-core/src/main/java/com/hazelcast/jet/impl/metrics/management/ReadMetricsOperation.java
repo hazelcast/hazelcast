@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.metrics.management;
 
-import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.logging.ILogger;
@@ -69,7 +68,7 @@ public class ReadMetricsOperation extends Operation implements ReadonlyOperation
         try {
             sendResponse(value);
         } finally {
-            final JetService service = getService();
+            final JetMetricsService service = getService();
             service.getLiveOperationRegistry().deregister(this);
         }
     }
