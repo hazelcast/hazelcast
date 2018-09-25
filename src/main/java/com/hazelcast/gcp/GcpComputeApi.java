@@ -16,9 +16,9 @@
 
 package com.hazelcast.gcp;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonValue;
+import com.hazelcast.com.eclipsesource.json.Json;
+import com.hazelcast.com.eclipsesource.json.JsonArray;
+import com.hazelcast.com.eclipsesource.json.JsonValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,16 +52,18 @@ class GcpComputeApi {
 
         List<GcpAddress> result = new ArrayList<GcpAddress>();
         for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("items"))) {
-            String privateAddress = null;
-            String publicAddress = null;
-            for (JsonValue networkInterface : toJsonArray(item.asObject().get("networkInterfaces"))) {
-                privateAddress = networkInterface.asObject().getString("networkIP", null);
-                for (JsonValue accessConfig : toJsonArray(networkInterface.asObject().get("accessConfigs"))) {
-                    publicAddress = accessConfig.asObject().getString("natIP", null);
+            if ("RUNNING".equals(item.asObject().get("status").asString())) {
+                String privateAddress = null;
+                String publicAddress = null;
+                for (JsonValue networkInterface : toJsonArray(item.asObject().get("networkInterfaces"))) {
+                    privateAddress = networkInterface.asObject().getString("networkIP", null);
+                    for (JsonValue accessConfig : toJsonArray(networkInterface.asObject().get("accessConfigs"))) {
+                        publicAddress = accessConfig.asObject().getString("natIP", null);
+                    }
                 }
-            }
-            if (privateAddress != null && publicAddress != null) {
-                result.add(new GcpAddress(privateAddress, publicAddress));
+                if (privateAddress != null) {
+                    result.add(new GcpAddress(privateAddress, publicAddress));
+                }
             }
         }
 

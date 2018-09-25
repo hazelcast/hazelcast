@@ -26,14 +26,12 @@
     <url>http://www.hazelcast.com/</url>
 
     <properties>
-        <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>1.6</jdk.version>
 
         <hazelcast.version>3.10.4</hazelcast.version>
-        <minimaljson.version>0.9.4</minimaljson.version>
 
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
@@ -47,7 +45,7 @@
 
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
-        <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>
+        <maven.spotbuts.plugin.version>3.1.5</maven.spotbuts.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
     </properties>
@@ -71,11 +69,6 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${hazelcast.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.eclipsesource.minimal-json</groupId>
-            <artifactId>minimal-json</artifactId>
-            <version>${minimaljson.version}</version>
         </dependency>
 
         <dependency>
@@ -161,9 +154,9 @@
             </plugin>
 
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${maven.findbugs.plugin.version}</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${maven.spotbuts.plugin.version}</version>
                 <executions>
                     <execution>
                         <phase>compile</phase>
@@ -174,7 +167,9 @@
                 </executions>
                 <configuration>
                     <failOnError>true</failOnError>
-                    <excludeFilterFile>${main.basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
+                    <excludeFilterFile>${main.basedir}/spotbugs/spotbugs-exclude.xml</excludeFilterFile>
+                    <spotbugsXmlOutput>true</spotbugsXmlOutput>
+                    <xmlOutput>true</xmlOutput>
                 </configuration>
             </plugin>
 
