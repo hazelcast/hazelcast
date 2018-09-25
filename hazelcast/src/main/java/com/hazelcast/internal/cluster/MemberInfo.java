@@ -21,6 +21,7 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.version.MemberVersion;
@@ -30,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -116,8 +118,13 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
             attributes.put(key, value);
         }
         version = in.readObject();
-        // RU_COMPAT_3_9
-        if (in.getVersion().isGreaterOrEqual(V3_10)) {
+        // RU_COMPAT_3_10
+        // MemberInfo we read may originate:
+        // - from FinalizeJoinOp / MembersUpdateOp: in this case, 3.10 is expected to have written memberListJoinVersion because
+        // container objects are Versioned themselves
+        // - as a MembersView response within a NormalResponse from FetchMembersViewOp which is expected to not contain
+        // memberListJoinVersion because the container object (MembersView) is not Versioned (in.getVersion is UNKNOWN)
+        if (mustHandleMemberListJoinVersion(in)) {
             memberListJoinVersion = in.readInt();
         }
     }
@@ -139,8 +146,8 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
             }
         }
         out.writeObject(version);
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(V3_10)) {
+        // RU_COMPAT_3_10
+        if (mustHandleMemberListJoinVersion(out)) {
             out.writeInt(memberListJoinVersion);
         }
     }
@@ -193,5 +200,13 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
     @Override
     public int getId() {
         return ClusterDataSerializerHook.MEMBER_INFO;
+    }
+
+    // memberListJoinVersion must be read/written when:
+    // - open source or
+    // - enterprise && cluster version >= 3.11 && expectMemberListJoinVersion
+    private boolean mustHandleMemberListJoinVersion(VersionAware versionAware) {
+        return (!getBuildInfo().isEnterprise()
+                || versionAware.getVersion().isGreaterOrEqual(V3_10));
     }
 }
