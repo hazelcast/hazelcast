@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.internal.util.ToHeapDataConverter;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -276,14 +277,14 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
         Data value = null;
         switch (iterationType) {
             case KEY:
-                key = entry.getKeyData();
+                key = ToHeapDataConverter.toHeapData(entry.getKeyData());
                 break;
             case VALUE:
-                value = getValueData(entry);
+                value = ToHeapDataConverter.toHeapData(getValueData(entry));
                 break;
             case ENTRY:
-                key = entry.getKeyData();
-                value = entry.getValueData();
+                key = ToHeapDataConverter.toHeapData(entry.getKeyData());
+                value = ToHeapDataConverter.toHeapData(entry.getValueData());
                 break;
             default:
                 throw new IllegalStateException("Unknown iterationType:" + iterationType);
