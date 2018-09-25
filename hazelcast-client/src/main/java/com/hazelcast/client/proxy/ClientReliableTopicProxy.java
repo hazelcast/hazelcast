@@ -28,6 +28,7 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
@@ -163,6 +164,17 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         return id;
     }
 
+    //for testing
+    public boolean isListenerCancelled(String registrationID) {
+        checkNotNull(registrationID, "registrationId can't be null");
+
+        MessageRunner runner = runnersMap.get(registrationID);
+        if (runner == null) {
+            return true;
+        }
+        return runner.isCancelled();
+    }
+
     private ReliableMessageListener<E> toReliableMessageListener(MessageListener<E> listener) {
         if (listener instanceof ReliableMessageListener) {
             return (ReliableMessageListener) listener;
@@ -252,7 +264,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             next();
         }
 
-        private void process(ReliableTopicMessage message)  {
+        private void process(ReliableTopicMessage message) {
             //  proxy.localTopicStats.incrementReceives();
             listener.onMessage(toMessage(message));
         }
@@ -276,7 +288,14 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             t = peel(t);
             String baseMessage = "Terminating MessageListener:" + listener + " on topic: " + name + ". "
                     + "Reason: ";
-            if (t instanceof StaleSequenceException) {
+            if (t instanceof OperationTimeoutException) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("MessageListener " + listener + " on topic: " + name + " timed out. "
+                            + "Continuing from last known sequence: " + sequence);
+                }
+                next();
+                return;
+            } else if (t instanceof StaleSequenceException) {
                 // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
                 long remoteHeadSeq = ringbuffer.headSequence();
                 if (listener.isLossTolerant()) {
@@ -325,7 +344,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 boolean terminate = listener.isTerminal(failure);
                 if (terminate) {
                     logger.warning(baseMessage
-                            +  "Unhandled exception, message: " + failure.getMessage(), failure);
+                            + "Unhandled exception, message: " + failure.getMessage(), failure);
                 } else {
                     if (logger.isFinestEnabled()) {
                         logger.finest("MessageListener " + listener + " on topic: " + name + " ran into an exception:"
@@ -338,6 +357,10 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                         + "Unhandled exception while calling ReliableMessageListener.isTerminal() method", t);
                 return true;
             }
+        }
+
+        boolean isCancelled() {
+            return cancelled;
         }
     }
 
