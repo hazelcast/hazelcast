@@ -169,10 +169,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+    protected boolean setTtlInternal(Object key, long ttl, TimeUnit timeUnit) {
         key = toNearCacheKeyWithStrategy(key);
         try {
-            super.setTTLInternal(key, ttl, timeUnit);
+            return super.setTtlInternal(key, ttl, timeUnit);
         } finally {
             invalidateNearCache(key);
         }

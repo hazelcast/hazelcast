@@ -24,7 +24,6 @@ import java.util.Arrays;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
-import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * A not thread-safe, array based {@link MerkleTree} implementation, which
@@ -72,10 +71,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * elements are stored in a data structure that are referred to as data
  * blocks. This implementation stores the keys in {@link OAHashSet}s, one
  * set for each leaf. These sets are initialized in tree construction time
- * eagerly with initial capacity calculated as
- * {@code initialCapacity = expectedEntryCount / leaves} assuming an equal
- * distribution between the leaves.
- * See {@link #ArrayMerkleTree(int, int)} and {@link #DEFAULT_EXPECTED_ENTRY_COUNT}
+ * eagerly with initial capacity one.
  * <p>
  * This implementation updates the tree synchronously. It can do that,
  * since updating a leaf's hash doesn't need to access the values belong
@@ -85,8 +81,6 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * {@link MerkleTreeUtil#sumHash(int, int)}
  */
 public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTree {
-    private static final int DEFAULT_EXPECTED_ENTRY_COUNT = 1000;
-
     private final OAHashSet<Object>[] leafKeys;
     private final int leafLevel;
 
@@ -99,24 +93,17 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
      */
     private volatile long footprint;
 
-    public ArrayMerkleTree(int depth) {
-        this(depth, DEFAULT_EXPECTED_ENTRY_COUNT);
-    }
-
     @SuppressWarnings("unchecked")
-    public ArrayMerkleTree(int depth, int expectedEntryCount) {
+    public ArrayMerkleTree(int depth) {
         super(depth);
-
-        checkPositive(expectedEntryCount, "Expected entry count should be a positive integer");
 
         this.leafLevel = depth - 1;
 
         final int leaves = MerkleTreeUtil.getNodesOnLevel(leafLevel);
-        final int leafKeysSetCapacity = expectedEntryCount / leaves;
 
         leafKeys = new OAHashSet[leaves];
         for (int i = 0; i < leaves; i++) {
-            leafKeys[i] = new OAHashSet<Object>(leafKeysSetCapacity);
+            leafKeys[i] = new OAHashSet<Object>(1);
         }
 
         initializeFootprint();

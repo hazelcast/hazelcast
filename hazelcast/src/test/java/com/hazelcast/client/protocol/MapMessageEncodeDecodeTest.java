@@ -57,6 +57,32 @@ public class MapMessageEncodeDecodeTest {
     public void shouldEncodeDecodeCorrectly_PUT() {
         final int calculatedSize = MapPutCodec.RequestParameters.calculateDataSize(NAME, DATA, DATA, THE_LONG, THE_LONG, THE_LONG);
         ClientMessage cmEncode = MapPutCodec.encodeRequest(NAME, DATA, DATA, THE_LONG, THE_LONG, THE_LONG);
+        cmEncode.setVersion((short) 3).addFlag(ClientMessage.BEGIN_AND_END_FLAGS).setCorrelationId(Long.MAX_VALUE).setPartitionId(77);
+
+        assertTrue(calculatedSize > cmEncode.getFrameLength());
+        byteBuffer = cmEncode.buffer();
+
+        ClientMessage cmDecode = ClientMessage.createForDecode(byteBuffer, 0);
+        MapPutCodec.RequestParameters decodeParams = MapPutCodec.decodeRequest(cmDecode);
+
+        assertEquals(MapPutCodec.REQUEST_TYPE.id(), cmDecode.getMessageType());
+        assertEquals(3, cmDecode.getVersion());
+        assertEquals(ClientMessage.BEGIN_AND_END_FLAGS, cmDecode.getFlags());
+        assertEquals(Long.MAX_VALUE, cmDecode.getCorrelationId());
+        assertEquals(77, cmDecode.getPartitionId());
+
+        assertEquals(NAME, decodeParams.name);
+        assertEquals(DATA, decodeParams.key);
+        assertEquals(DATA, decodeParams.value);
+        assertEquals(THE_LONG, decodeParams.threadId);
+        assertEquals(THE_LONG, decodeParams.ttl);
+        assertEquals(THE_LONG, decodeParams.maxIdle);
+    }
+
+    @Test
+    public void shouldEncodeDecodeCorrectly_PUT_withoutMaxIdle() {
+        final int calculatedSize = MapPutCodec.RequestParameters.calculateDataSize(NAME, DATA, DATA, THE_LONG, THE_LONG, THE_LONG);
+        ClientMessage cmEncode = MapPutCodec.encodeRequest(NAME, DATA, DATA, THE_LONG, THE_LONG);
         cmEncode.setVersion((short) 3).addFlag(ClientMessage.BEGIN_AND_END_FLAGS)
                 .setCorrelationId(Long.MAX_VALUE).setPartitionId(77);
 
@@ -77,7 +103,7 @@ public class MapMessageEncodeDecodeTest {
         assertEquals(DATA, decodeParams.value);
         assertEquals(THE_LONG, decodeParams.threadId);
         assertEquals(THE_LONG, decodeParams.ttl);
-        assertEquals(THE_LONG, decodeParams.maxIdle);
+        assertEquals(false, decodeParams.maxIdleExist);
     }
 
 }

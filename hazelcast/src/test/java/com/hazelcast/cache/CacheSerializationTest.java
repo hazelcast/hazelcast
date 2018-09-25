@@ -41,6 +41,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import org.junit.After;
 import org.junit.Before;
@@ -160,7 +161,7 @@ public class CacheSerializationTest extends HazelcastTestSupport {
 
     private CacheRecord createRecord(InMemoryFormat format, String value) {
         CacheRecordFactory factory = new CacheRecordFactory(format, service);
-        return factory.newRecord(value);
+        return factory.newRecordWithExpiry(value, Clock.currentTimeMillis(), -1);
     }
 
 }

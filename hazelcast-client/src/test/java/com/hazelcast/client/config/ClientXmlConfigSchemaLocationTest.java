@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.record;
+package com.hazelcast.client.config;
 
-public interface RecordComparator {
+import com.hazelcast.config.XmlConfigSchemaLocationTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-    boolean isEqual(Object value1, Object value2);
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
+public class ClientXmlConfigSchemaLocationTest extends XmlConfigSchemaLocationTest {
 }

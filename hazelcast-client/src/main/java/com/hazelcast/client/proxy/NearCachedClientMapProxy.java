@@ -135,10 +135,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+    protected boolean setTtlInternal(Object key, long ttl, TimeUnit timeUnit) {
         key = toNearCacheKey(key);
         try {
-            super.setTTLInternal(key, ttl, timeUnit);
+            return super.setTtlInternal(key, ttl, timeUnit);
         } finally {
             invalidateNearCache(key);
         }
@@ -224,7 +224,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit,
+    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
                                                      Object key, Object value) {
         key = toNearCacheKey(key);
         ICompletableFuture<V> future;
@@ -237,7 +237,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit,
+    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
                                                         Object key, Object value) {
         key = toNearCacheKey(key);
         ICompletableFuture<Void> future;
@@ -274,12 +274,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected boolean tryPutInternal(long timeout, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit,
+    protected boolean tryPutInternal(long timeout, TimeUnit timeunit,
                                      Object key, Object value) {
         key = toNearCacheKey(key);
         boolean putInternal;
         try {
-            putInternal = super.tryPutInternal(timeout, timeunit, maxIdle, maxIdleUnit, key, value);
+            putInternal = super.tryPutInternal(timeout, timeunit, key, value);
         } finally {
             invalidateNearCache(key);
         }
@@ -287,7 +287,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected V putInternal(long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit, Object key, Object value) {
+    protected V putInternal(long ttl, TimeUnit ttlUnit, Long maxIdle, TimeUnit maxIdleUnit, Object key, Object value) {
         key = toNearCacheKey(key);
         V previousValue;
         try {
@@ -299,7 +299,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void putTransientInternal(long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit,
+    protected void putTransientInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
                                         Object key, Object value) {
         key = toNearCacheKey(key);
         try {
@@ -310,7 +310,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected V putIfAbsentInternal(long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit,
+    protected V putIfAbsentInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
                                     Object key, Object value) {
         key = toNearCacheKey(key);
         V previousValue;
@@ -347,7 +347,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void setInternal(long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit, Object key, Object value) {
+    protected void setInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit, Object key, Object value) {
         key = toNearCacheKey(key);
         try {
             super.setInternal(ttl, timeunit, maxIdle, maxIdleUnit, key, value);

@@ -18,112 +18,51 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.MemberAddressProvider;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.nio.channels.ServerSocketChannel;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Delegates picking the bind and public address for this instance
  * to an implementation of {@link MemberAddressProvider}.
  */
-public class DelegatingAddressPicker implements AddressPicker {
-    //todo: this should be shared with DefaultAddressPicker
-    private static final int SOCKET_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(1);
-    private static final int SOCKET_BACKLOG_LENGTH = 100;
+public class DelegatingAddressPicker extends AbstractAddressPicker {
 
-    private final ILogger logger;
     private final MemberAddressProvider memberAddressProvider;
-    private final NetworkConfig networkConfig;
 
-    private volatile InetSocketAddress bindAddress;
-    private volatile InetSocketAddress publicAddress;
+    private InetSocketAddress bindAddress;
+    private InetSocketAddress publicAddress;
 
-    private volatile ServerSocketChannel serverSocketChannel;
-
-    public DelegatingAddressPicker(MemberAddressProvider memberAddressProvider, NetworkConfig networkConfig, ILogger logger) {
+    DelegatingAddressPicker(MemberAddressProvider memberAddressProvider, NetworkConfig networkConfig, ILogger logger) {
+        super(networkConfig, logger);
         this.memberAddressProvider = memberAddressProvider;
-        this.networkConfig = networkConfig;
-        this.logger = logger;
     }
-
 
     @Override
     public void pickAddress() throws Exception {
         try {
             bindAddress = memberAddressProvider.getBindAddress();
-            logger.info("Using bind address: " + bindAddress);
-
             publicAddress = memberAddressProvider.getPublicAddress();
             validatePublicAddress(publicAddress);
-            logger.info("Using public address: " + publicAddress);
 
-            serverSocketChannel = createServerSocketChannelInternal();
+            int port = createServerSocketChannel(bindAddress.getAddress(), bindAddress.getPort(), false);
+            if (port != bindAddress.getPort()) {
+                bindAddress = new InetSocketAddress(bindAddress.getAddress(), port);
+            }
+            logger.info("Using bind address: " + bindAddress);
 
             if (publicAddress.getPort() == 0) {
-                publicAddress = new InetSocketAddress(publicAddress.getAddress(), serverSocketChannel.socket().getLocalPort());
+                publicAddress = new InetSocketAddress(publicAddress.getAddress(), port);
             }
+            logger.info("Using public address: " + publicAddress);
+
         } catch (Exception e) {
             logger.severe(e);
             throw e;
         }
-    }
-
-
-    private ServerSocketChannel createServerSocketChannelInternal() {
-        int portCount = networkConfig.getPortCount();
-        int port = bindAddress.getPort() == 0 ? networkConfig.getPort() : bindAddress.getPort();
-        boolean portAutoIncrement = networkConfig.isPortAutoIncrement();
-
-        int portTrialCount = port > 0 && portAutoIncrement ? portCount : 1;
-        if (port == 0) {
-            logger.info("No explicit port is given, system will pick up an ephemeral port.");
-        }
-
-        IOException error = null;
-        for (int i = 0; i < portTrialCount; i++) {
-            InetSocketAddress tmpBindAddress = new InetSocketAddress(bindAddress.getAddress(), port + i);
-            boolean reuseAddress = networkConfig.isReuseAddress();
-            logger.finest("inet reuseAddress:" + reuseAddress);
-
-            ServerSocket serverSocket = null;
-            ServerSocketChannel serverSocketChannel = null;
-            try {
-                serverSocketChannel = ServerSocketChannel.open();
-                serverSocket = serverSocketChannel.socket();
-                serverSocket.setReuseAddress(reuseAddress);
-                serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
-
-                logger.fine("Trying to bind inet socket address: " + tmpBindAddress);
-                serverSocket.bind(tmpBindAddress, SOCKET_BACKLOG_LENGTH);
-                logger.fine("Bind successful to inet socket address: " + serverSocket.getLocalSocketAddress());
-
-                serverSocketChannel.configureBlocking(false);
-                //todo: ugly side-effect
-                bindAddress = tmpBindAddress;
-                return serverSocketChannel;
-            } catch (IOException e) {
-                IOUtil.close(serverSocket);
-                IOUtil.closeResource(serverSocketChannel);
-                error = e;
-            }
-        }
-        String message = "Cannot bind to a given address: " + bindAddress + ". Hazelcast cannot start. ";
-        if (networkConfig.isPortAutoIncrement()) {
-            message += "Config-port: " + networkConfig.getPort()
-                    + ", latest-port: " + (port + portTrialCount);
-        } else {
-            message += "Port [" + port + "] is already in use and auto-increment is disabled.";
-        }
-        throw new HazelcastException(message, error);
     }
 
     private void validatePublicAddress(InetSocketAddress inetSocketAddress) {
@@ -148,8 +87,4 @@ public class DelegatingAddressPicker implements AddressPicker {
         return new Address(publicAddress);
     }
 
-    @Override
-    public ServerSocketChannel getServerSocketChannel() {
-        return serverSocketChannel;
-    }
 }

@@ -266,6 +266,28 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSymmetricEncryptionConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <network>\n"
+                + "      <symmetric-encryption enabled=\"true\">\n"
+                + "        <algorithm>AES</algorithm>\n"
+                + "        <salt>thesalt</salt>\n"
+                + "        <password>thepass</password>\n"
+                + "        <iteration-count>7531</iteration-count>\n"
+                + "      </symmetric-encryption>"
+                + "    </network>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        SymmetricEncryptionConfig symmetricEncryptionConfig = config.getNetworkConfig().getSymmetricEncryptionConfig();
+        assertTrue(symmetricEncryptionConfig.isEnabled());
+        assertEquals("AES", symmetricEncryptionConfig.getAlgorithm());
+        assertEquals("thesalt", symmetricEncryptionConfig.getSalt());
+        assertEquals("thepass", symmetricEncryptionConfig.getPassword());
+        assertEquals(7531, symmetricEncryptionConfig.getIterationCount());
+    }
+
+    @Test
     public void readPortCount() {
         // check when it is explicitly set
         Config config = buildConfig(HAZELCAST_START_TAG
@@ -1131,7 +1153,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String configName  = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
-                + "        <wan-publisher group-name=\"nyc\">\n"
+                + "        <wan-publisher group-name=\"nyc\" publisher-id=\"publisherId\">\n"
                 + "            <class-name>PublisherClassName</class-name>\n"
                 + "            <queue-capacity>15000</queue-capacity>\n"
                 + "            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>\n"
@@ -1169,6 +1191,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         WanPublisherConfig publisherConfig = publishers.get(0);
         assertEquals("PublisherClassName", publisherConfig.getClassName());
         assertEquals("nyc", publisherConfig.getGroupName());
+        assertEquals("publisherId", publisherConfig.getPublisherId());
         assertEquals(15000, publisherConfig.getQueueCapacity());
         assertEquals(DISCARD_AFTER_MUTATION, publisherConfig.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
@@ -1472,7 +1495,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testWanConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <wan-replication name=\"my-wan-cluster\">\n"
-                + "      <wan-publisher group-name=\"istanbul\">\n"
+                + "      <wan-publisher group-name=\"istanbul\" publisher-id=\"istanbulPublisherId\">\n"
                 + "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n"
                 + "         <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n"
                 + "         <queue-capacity>21</queue-capacity>\n"
@@ -1525,6 +1548,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, publisherConfigs.size());
         WanPublisherConfig publisherConfig1 = publisherConfigs.get(0);
         assertEquals("istanbul", publisherConfig1.getGroupName());
+        assertEquals("istanbulPublisherId", publisherConfig1.getPublisherId());
         assertEquals("com.hazelcast.wan.custom.WanPublisher", publisherConfig1.getClassName());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig1.getQueueFullBehavior());
         assertEquals(WanPublisherState.REPLICATING, publisherConfig1.getInitialPublisherState());
@@ -1539,6 +1563,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
         WanPublisherConfig publisherConfig2 = publisherConfigs.get(1);
         assertEquals("ankara", publisherConfig2.getGroupName());
+        assertNull(publisherConfig2.getPublisherId());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, publisherConfig2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, publisherConfig2.getInitialPublisherState());
 

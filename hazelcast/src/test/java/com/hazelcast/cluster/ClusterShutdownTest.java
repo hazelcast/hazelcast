@@ -16,9 +16,18 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.AbstractWaitNotifyKey;
+import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -29,9 +38,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -67,6 +81,40 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
         HazelcastInstance instance = testClusterShutdownWithSingleMember(ClusterState.ACTIVE);
 
         instance.getLifecycleService().shutdown();
+    }
+
+    @Test
+    public void clusterShutdown_shouldNotBeRejected_byBackpressure() throws Exception {
+        Config config = new Config();
+        config.setProperty(GroupProperty.PARTITION_COUNT.toString(), "1");
+        config.setProperty(GroupProperty.BACKPRESSURE_ENABLED.toString(), "true");
+        config.setProperty(GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.toString(), "100");
+        config.setProperty(GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION.toString(), "3");
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+        final InternalOperationService operationService = getOperationService(hz);
+        final Address address = getAddress(hz);
+
+        for (int i = 0; i < 10; i++) {
+            Future<Object> future = spawn(new Callable<Object>() {
+                @Override
+                public Object call() {
+                    operationService.invokeOnTarget(null, new AlwaysBlockingOperation(), address);
+                    return null;
+                }
+            });
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                assertInstanceOf(HazelcastOverloadException.class, e.getCause());
+            }
+        }
+
+        Node node = getNode(hz);
+        hz.getCluster().shutdown();
+
+        assertFalse(hz.getLifecycleService().isRunning());
+        assertEquals(NodeState.SHUT_DOWN, node.getState());
     }
 
     private HazelcastInstance testClusterShutdownWithSingleMember(ClusterState clusterState) {
@@ -122,11 +170,38 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
         for (final Node node : nodes) {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
+                public void run() {
                     assertEquals(NodeState.SHUT_DOWN, node.getState());
                 }
             });
+        }
+    }
+
+    private static class AlwaysBlockingOperation extends Operation implements BlockingOperation {
+
+        @Override
+        public void run() throws Exception {
+        }
+
+        @Override
+        public WaitNotifyKey getWaitKey() {
+            return new AbstractWaitNotifyKey(getServiceName(), "test") {
+            };
+        }
+
+        @Override
+        public boolean shouldWait() {
+            return true;
+        }
+
+        @Override
+        public void onWaitExpire() {
+            sendResponse(new TimeoutException());
+        }
+
+        @Override
+        public String getServiceName() {
+            return "AlwaysBlockingOperationService";
         }
     }
 }

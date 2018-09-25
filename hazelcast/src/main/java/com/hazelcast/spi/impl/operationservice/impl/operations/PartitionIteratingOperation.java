@@ -179,7 +179,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
 
         private void executeOperations(PartitionAwareOperationFactory givenFactory) {
             final NodeEngine nodeEngine = getNodeEngine();
-            final PartitionAwareOperationFactory factory = givenFactory.createFactoryOnRunner(nodeEngine);
+            final PartitionAwareOperationFactory factory = givenFactory.createFactoryOnRunner(nodeEngine, partitions);
             final OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
             final Object service = getServiceName() == null ? null : getService();
 

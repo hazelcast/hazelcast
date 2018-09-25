@@ -53,6 +53,12 @@ public class ClientCacheProxyFactory extends ClientProxyFactoryWithContext {
         return new ClientCacheProxy(cacheConfig, context);
     }
 
+    public void recreateCachesOnCluster() {
+        for (CacheConfig cacheConfig : configs.values()) {
+            ClientCacheHelper.createCacheConfig(client, cacheConfig);
+        }
+    }
+
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     void addCacheConfig(String cacheName, CacheConfig cacheConfig) {
         configs.putIfAbsent(cacheName, cacheConfig);

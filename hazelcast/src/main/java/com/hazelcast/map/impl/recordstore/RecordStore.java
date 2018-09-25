@@ -21,6 +21,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
@@ -115,7 +116,7 @@ public interface RecordStore<R extends Record> {
 
     boolean remove(Data dataKey, Object testValue);
 
-    void setTTL(Data key, long ttl);
+    boolean setTtl(Data key, long ttl);
 
     /**
      * Similar to {@link RecordStore##remove(Data, CallerProvenance)}
@@ -161,7 +162,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Sets the value to the given updated value
-     * if {@link com.hazelcast.map.impl.record.RecordComparator#isEqual} comparison
+     * if {@link ValueComparator#isEqual} comparison
      * of current value and expected value is {@code true}.
      *
      * @param dataKey key which's value is requested to be replaced.
@@ -530,10 +531,4 @@ public interface RecordStore<R extends Record> {
      * Destroys data in this record store.
      */
     void destroy();
-
-    /**
-     * Like {@link #destroy()} but does not touch state on other services
-     * like lock service or event journal service.
-     */
-    void destroyInternals();
 }

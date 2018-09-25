@@ -25,7 +25,7 @@ package com.hazelcast.spi.impl.operationservice;
  * <li>Runnable</li>
  * </ol>
  *
- * See {@link InternalOperationService#execute(PartitionTaskFactory, int[])} for more detail.
+ * See {@link InternalOperationService#executeOnPartitions} for more details.
  */
 public interface PartitionTaskFactory<T> {
 

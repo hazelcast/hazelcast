@@ -20,7 +20,6 @@ import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.multimap.impl.operations.CountOperation;
 import com.hazelcast.multimap.impl.operations.DeleteOperation;
 import com.hazelcast.multimap.impl.operations.GetAllOperation;
@@ -101,16 +100,11 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     }
 
     protected void deleteInternal(Data dataKey) {
-        if (getNodeEngine().getClusterService().getClusterVersion().isGreaterThan(Versions.V3_9)) {
-            try {
-                DeleteOperation operation = new DeleteOperation(name, dataKey, getThreadId());
-                invoke(operation, dataKey);
-            } catch (Throwable throwable) {
-                  throw ExceptionUtil.rethrow(throwable);
-            }
-        } else {
-            // RU_COMPAT_3_9
-            throw new UnsupportedOperationException("Delete not supported when cluster version less than 3.10");
+        try {
+            DeleteOperation operation = new DeleteOperation(name, dataKey, getThreadId());
+            invoke(operation, dataKey);
+        } catch (Throwable throwable) {
+              throw ExceptionUtil.rethrow(throwable);
         }
     }
 

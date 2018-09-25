@@ -2166,7 +2166,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="iteration-count" type="xs:unsignedByte" default="19">
+            <xs:element name="iteration-count" type="xs:int" default="19">
                 <xs:annotation>
                     <xs:documentation>
                         Iteration count to use when generating the secret key.
@@ -2468,7 +2468,21 @@
         <xs:attribute name="group-name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    The group name of target WAN cluster
+                    Sets the group name used as an endpoint group name for authentication
+                    on the target endpoint.
+                    If there is no separate publisher ID property defined, this group name
+                    will also be used as a WAN publisher ID. This ID is then used for
+                    identifying the publisher in a WanReplicationConfig.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="publisher-id" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the publisher ID used for identifying the publisher in a
+                    WanReplicationConfig.
+                    If there is no publisher ID defined (it is empty), the group name will
+                    be used as a publisher ID.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

@@ -28,6 +28,7 @@ import java.util.Map;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
  * Configuration object for a WAN publisher. A single publisher defines how
@@ -46,6 +47,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
     private static final WANQueueFullBehavior DEFAULT_QUEUE_FULL_BEHAVIOR = WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
 
     private String groupName = "dev";
+    private String publisherId;
     private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
     private WANQueueFullBehavior queueFullBehavior = DEFAULT_QUEUE_FULL_BEHAVIOR;
     private WanPublisherState initialPublisherState = WanPublisherState.REPLICATING;
@@ -75,26 +77,60 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
     }
 
     /**
-     * Returns the group name of this publisher. The group name is used for
-     * identifying the publisher in a {@link WanReplicationConfig} and for
-     * authentication on the target endpoint.
+     * Returns the group name used as an endpoint group name for authentication
+     * on the target endpoint.
+     * If there is no separate publisher ID property defined, this group name
+     * will also be used as a WAN publisher ID. This ID is then used for
+     * identifying the publisher in a {@link WanReplicationConfig}.
      *
-     * @return the publisher group name
+     * @return the WAN endpoint group name
+     * @see #getPublisherId()
      */
     public String getGroupName() {
         return groupName;
     }
 
     /**
-     * Set the group name of this publisher. The group name is used for
-     * identifying the publisher in a {@link WanReplicationConfig} and for
-     * authentication on the target endpoint.
+     * Sets the group name used as an endpoint group name for authentication
+     * on the target endpoint.
+     * If there is no separate publisher ID property defined, this group name
+     * will also be used as a WAN publisher ID. This ID is then used for
+     * identifying the publisher in a {@link WanReplicationConfig}.
      *
-     * @param groupName the publisher group name
+     * @param groupName the WAN endpoint group name
      * @return this config
+     * @see #getPublisherId()
      */
     public WanPublisherConfig setGroupName(String groupName) {
         this.groupName = groupName;
+        return this;
+    }
+
+    /**
+     * Returns the publisher ID used for identifying the publisher in a
+     * {@link WanReplicationConfig}.
+     * If there is no publisher ID defined (it is empty), the group name will
+     * be used as a publisher ID.
+     *
+     * @return the WAN publisher ID or {@code null} if no publisher ID is set
+     * @see #getGroupName()
+     */
+    public String getPublisherId() {
+        return publisherId;
+    }
+
+    /**
+     * Sets the publisher ID used for identifying the publisher in a
+     * {@link WanReplicationConfig}.
+     * If there is no publisher ID defined (it is empty), the group name will
+     * be used as a publisher ID.
+     *
+     * @param publisherId the WAN publisher ID
+     * @return this config
+     * @see #getGroupName()
+     */
+    public WanPublisherConfig setPublisherId(String publisherId) {
+        this.publisherId = !isNullOrEmptyAfterTrim(publisherId) ? publisherId : null;
         return this;
     }
 
@@ -287,6 +323,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
     public String toString() {
         return "WanPublisherConfig{"
                 + "groupName='" + groupName + '\''
+                + ", publisherId='" + publisherId + '\''
                 + ", queueCapacity=" + queueCapacity
                 + ", queueFullBehavior=" + queueFullBehavior
                 + ", initialPublisherState=" + initialPublisherState
@@ -327,6 +364,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             out.writeByte(initialPublisherState.getId());
             out.writeObject(wanSyncConfig);
+            out.writeUTF(publisherId);
         }
     }
 
@@ -346,6 +384,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             initialPublisherState = WanPublisherState.getByType(in.readByte());
             wanSyncConfig = in.readObject();
+            publisherId = in.readUTF();
         }
     }
 }

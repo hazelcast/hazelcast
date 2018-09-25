@@ -31,7 +31,7 @@
 <hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/config/hazelcast-client-config-3.11.xsd">
+                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd">
 
     <config-replacers fail-if-value-missing="false">
         <replacer class-name="com.hazelcast.config.replacer.EncryptionReplacer">
@@ -131,6 +131,11 @@
 
     <security>
         <credentials>com.hazelcast.security.UsernamePasswordCredentials</credentials>
+        <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
+            <properties>
+                <property name="property">value</property>
+            </properties>
+        </credentials-factory>
     </security>
 
     <listeners>

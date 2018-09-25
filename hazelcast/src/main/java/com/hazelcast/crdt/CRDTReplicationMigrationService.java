@@ -255,4 +255,9 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
         nodeEngine.getExecutionService().schedule(CRDT_REPLICATION_MIGRATION_EXECUTOR,
                 new CRDTMigrationTask(nodeEngine, this), delaySeconds, TimeUnit.SECONDS);
     }
+
+    @Override
+    public String toString() {
+        return "CRDTReplicationMigrationService{}";
+    }
 }

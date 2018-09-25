@@ -48,10 +48,10 @@ public final class ConcurrencyUtil {
         }
     }
 
-    public static boolean setIfGreaterThan(AtomicLong oldValue, long newValue) {
+    public static boolean setIfEqualOrGreaterThan(AtomicLong oldValue, long newValue) {
         while (true) {
             long local = oldValue.get();
-            if (newValue <= local) {
+            if (newValue < local) {
                 return false;
             }
             if (oldValue.compareAndSet(local, newValue)) {

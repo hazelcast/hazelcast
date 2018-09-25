@@ -45,7 +45,7 @@ public class CacheSetExpiryPolicyMessageTask extends AbstractCacheMessageTask<Ca
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheSetExpiryPolicyCodec.encodeResponse();
+        return CacheSetExpiryPolicyCodec.encodeResponse((Boolean) response);
     }
 
     @Override

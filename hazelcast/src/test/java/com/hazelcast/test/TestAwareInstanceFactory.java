@@ -22,6 +22,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.jmx.ManagementService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,7 +118,8 @@ public class TestAwareInstanceFactory {
     protected void shutdownInstances(List<HazelcastInstance> listToRemove) {
         if (listToRemove != null) {
             for (HazelcastInstance hz : listToRemove) {
-                hz.shutdown();
+                ManagementService.shutdown(hz.getName());
+                hz.getLifecycleService().terminate();
             }
         }
     }

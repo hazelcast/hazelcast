@@ -413,6 +413,7 @@
     <xs:complexType name="security">
         <xs:sequence>
             <xs:element name="credentials" type="credentials" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="credentials-factory" type="security-object" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="credentials">
@@ -423,6 +424,13 @@
         <xs:simpleContent>
             <xs:extension base="non-space-string"/>
         </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="security-object">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="class-name" type="non-space-string" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="near-cache">

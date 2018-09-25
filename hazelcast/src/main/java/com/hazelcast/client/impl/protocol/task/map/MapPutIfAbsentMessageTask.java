@@ -45,6 +45,12 @@ public class MapPutIfAbsentMessageTask
         return MapPutIfAbsentCodec.encodeResponse(serializationService.toData(response));
     }
 
+    @Override
+    protected void beforeProcess() {
+        super.beforeProcess();
+        checkCompatibility(parameters.maxIdleExist);
+    }
+
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         MapOperation op = operationProvider.createPutIfAbsentOperation(parameters.name, parameters.key,

@@ -109,7 +109,9 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
             throw new IllegalArgumentException(RESPONSE_THREAD_COUNT.getName() + " can't be smaller than 0");
         }
 
-        logger.info("Running with " + responseThreadCount + " response threads");
+        if (logger.isFineEnabled()) {
+            logger.fine("Running with " + responseThreadCount + " response threads");
+        }
 
         this.responseThreads = new ResponseThread[responseThreadCount];
         if (responseThreadCount == 0) {

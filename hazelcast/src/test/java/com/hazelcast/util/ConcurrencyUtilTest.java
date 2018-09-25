@@ -27,9 +27,12 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -91,6 +94,13 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
     public void testGetOrPutSynchronized_whenMutexFactoryIsNull_thenThrowException() {
         ContextMutexFactory factory = null;
         ConcurrencyUtil.getOrPutSynchronized(map, 5, factory, constructorFunction);
+    }
+
+    @Test
+    public void testSetIfEqualOrGreaterThan() {
+        assertTrue(ConcurrencyUtil.setIfEqualOrGreaterThan(new AtomicLong(1), 1));
+        assertTrue(ConcurrencyUtil.setIfEqualOrGreaterThan(new AtomicLong(1), 2));
+        assertFalse(ConcurrencyUtil.setIfEqualOrGreaterThan(new AtomicLong(2), 1));
     }
 
     @Test

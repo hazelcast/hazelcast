@@ -26,12 +26,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
-public class RollbackClusterStateOp extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
+public class RollbackClusterStateOp extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
+        IdentifiedDataSerializable {
 
     private Address initiator;
     private String txnId;

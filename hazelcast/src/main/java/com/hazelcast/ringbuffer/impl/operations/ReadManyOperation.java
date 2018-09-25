@@ -28,7 +28,6 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_MANY_OPERATION;
 
 public class ReadManyOperation<O> extends AbstractRingBufferOperation
@@ -122,10 +121,6 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
         out.writeInt(minSize);
         out.writeInt(maxSize);
         out.writeObject(filter);
-        // RU_COMPAT_3_9
-        if (out.getVersion().isUnknownOrLessThan(V3_10)) {
-            out.writeBoolean(false);
-        }
     }
 
     @Override
@@ -135,10 +130,5 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
         minSize = in.readInt();
         maxSize = in.readInt();
         filter = in.readObject();
-        // RU_COMPAT_3_9
-        if (in.getVersion().isUnknownOrLessThan(V3_10)) {
-            // consume an unused boolean
-            in.readBoolean();
-        }
     }
 }

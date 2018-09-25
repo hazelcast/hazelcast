@@ -43,6 +43,7 @@ public class WanPublisherConfigTest {
         properties.put("key", "value");
 
         config.setGroupName("groupName");
+        config.setPublisherId("publisherId");
         config.setQueueCapacity(500);
         config.setQueueFullBehavior(WANQueueFullBehavior.THROW_EXCEPTION);
         config.setProperties(properties);
@@ -58,6 +59,7 @@ public class WanPublisherConfigTest {
 
     static void assertWanPublisherConfig(WanPublisherConfig expected, WanPublisherConfig actual) {
         assertEquals(expected.getGroupName(), actual.getGroupName());
+        assertEquals(expected.getPublisherId(), actual.getPublisherId());
         assertEquals(expected.getQueueCapacity(), actual.getQueueCapacity());
         assertEquals(expected.getQueueFullBehavior(), actual.getQueueFullBehavior());
         assertEquals(expected.getProperties(), actual.getProperties());

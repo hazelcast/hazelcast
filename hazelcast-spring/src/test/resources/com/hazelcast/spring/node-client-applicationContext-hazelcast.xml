@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -327,12 +327,27 @@
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
-
         <!--<hz:reliable-topic name="rel-topic" topic-overload-policy="DISCARD_NEWEST" read-batch-size="100"/>-->
         <hz:reliable-topic name="rel-topic">
             <hz:topic-overload-policy>DISCARD_NEWEST</hz:topic-overload-policy>
             <hz:read-batch-size>100</hz:read-batch-size>
         </hz:reliable-topic>
+    </hz:client>
+
+    <hz:client id="client15-credentials-factory">
+        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+        <hz:security>
+            <hz:credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory"
+                                    implementation="dummyCredentialsFactory">
+                <hz:properties>
+                    <hz:property name="property">value</hz:property>
+                </hz:properties>
+            </hz:credentials-factory>
+        </hz:security>
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
@@ -357,5 +372,5 @@
     <hz:reliableTopic id="reliableTopic" instance-ref="client" name="reliableTopic"/>
 
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
-
+    <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory"/>
 </beans>

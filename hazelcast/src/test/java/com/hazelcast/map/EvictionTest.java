@@ -68,6 +68,9 @@ import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryIn
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static java.lang.Math.max;
 import static java.lang.String.format;
+import static java.lang.System.currentTimeMillis;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -83,7 +86,7 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testTTL_entryShouldNotBeReachableAfterTTL() {
         IMap<Integer, String> map = createSimpleMap();
 
-        map.put(1, "value0", 1, TimeUnit.SECONDS);
+        map.put(1, "value0", 1, SECONDS);
         sleepAtLeastSeconds(1);
 
         assertFalse(map.containsKey(1));
@@ -93,7 +96,7 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testMaxIdle_entryShouldNotBeReachableAfterMaxIdle() {
         IMap<Integer, String> map = createSimpleMap();
 
-        map.put(1, "value0", 0, TimeUnit.SECONDS, 1, TimeUnit.SECONDS);
+        map.put(1, "value0", 0, SECONDS, 1, SECONDS);
         sleepAtLeastSeconds(1);
 
         assertFalse(map.containsKey(1));
@@ -109,7 +112,7 @@ public class EvictionTest extends HazelcastTestSupport {
         String keyOwnedByInstanceA = generateKeyOwnedBy(instance);
 
         IMap<String, String> map = instance.getMap("Test");
-        map.put(keyOwnedByInstanceA, "value0", 0, TimeUnit.SECONDS, 3, TimeUnit.SECONDS);
+        map.put(keyOwnedByInstanceA, "value0", 0, SECONDS, 3, SECONDS);
         // Wait enough time for the ClearExpiredOperation to kick-in (default 5 seconds)
         sleepAtLeastSeconds(10);
 
@@ -132,7 +135,7 @@ public class EvictionTest extends HazelcastTestSupport {
         String keyOwnedByInstanceA = generateKeyOwnedBy(instance);
 
         IMap<String, String> map = instance.getMap("Test");
-        map.put(keyOwnedByInstanceA, "value0", 0, TimeUnit.SECONDS, 30, TimeUnit.SECONDS);
+        map.put(keyOwnedByInstanceA, "value0", 0, SECONDS, 30, SECONDS);
         sleepAtLeastSeconds(2);
 
         Partition partition = instanceB.getPartitionService().getPartition(keyOwnedByInstanceA);
@@ -149,8 +152,8 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testTTL_zeroIsInfinity() {
         IMap<Integer, String> map = createSimpleMap();
 
-        map.put(1, "value0", 2, TimeUnit.SECONDS);
-        map.put(1, "value1", 0, TimeUnit.SECONDS);
+        map.put(1, "value0", 2, SECONDS);
+        map.put(1, "value1", 0, SECONDS);
         sleepAtLeastSeconds(3);
 
         assertTrue(map.containsKey(1));
@@ -160,8 +163,8 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testMaxIdle_zeroIsInfinity() {
         IMap<Integer, String> map = createSimpleMap();
 
-        map.put(1, "value0", 0, TimeUnit.SECONDS, 1, TimeUnit.SECONDS);
-        map.put(1, "value1", 0, TimeUnit.SECONDS, 0, TimeUnit.SECONDS);
+        map.put(1, "value0", 0, SECONDS, 1, SECONDS);
+        map.put(1, "value1", 0, SECONDS, 0, SECONDS);
         sleepAtLeastSeconds(3);
 
         assertTrue(map.containsKey(1));
@@ -174,10 +177,10 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testTTL_appliedFromLastUpdate() {
         IMap<Integer, String> map = createSimpleMap();
 
-        map.put(1, "value0", 1, TimeUnit.SECONDS);
-        map.put(1, "value1", 2, TimeUnit.SECONDS);
-        long sleepRef = System.currentTimeMillis();
-        map.put(1, "value2", 300, TimeUnit.SECONDS);
+        map.put(1, "value0", 1, SECONDS);
+        map.put(1, "value1", 2, SECONDS);
+        long sleepRef = currentTimeMillis();
+        map.put(1, "value2", 300, SECONDS);
         sleepAtMostSeconds(sleepRef, 2);
 
         assertTrue(map.containsKey(1));
@@ -185,54 +188,80 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     @Category(SlowTest.class)
-    public void testTTL_prolongationAfterNonTTLUpdate() throws ExecutionException, InterruptedException {
+    public void testTTL_prolongationAfterNonTTLUpdate()
+            throws ExecutionException, InterruptedException {
         final IMap<Integer, String> map = createSimpleMap();
 
-        long sleepRef = System.currentTimeMillis();
-        map.put(1, "value0", 3, TimeUnit.SECONDS);
-        // 1 second safety margin before eviction
-        sleepAtMostSeconds(sleepRef, 2);
-        assertTrue(map.containsKey(1));
+        long startRef = currentTimeMillis();
+        map.put(1, "value0", 10, SECONDS);
+        long endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 
-        sleepRef = System.currentTimeMillis();
-        // this should prolong the life of the entry for another 3 seconds
+        // Prolong 1st round
+        startRef = currentTimeMillis();
         map.put(1, "value1");
-        // 4 seconds of wait time in total, 1 second safety margin after a potential eviction
-        sleepAtMostSeconds(sleepRef, 2);
-        assertTrue(map.containsKey(1));
+        endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 
-        sleepRef = System.currentTimeMillis();
+        // Prolong 2nd round
+        startRef = currentTimeMillis();
         map.set(1, "value2");
-        sleepAtMostSeconds(sleepRef, 2);
-        assertTrue(map.containsKey(1));
+        endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 
+        // Prolong 3rd round
         final HashMap<Integer, String> items = new HashMap<Integer, String>();
         items.put(1, "value3");
         items.put(2, "value1");
         items.put(3, "value1");
-        sleepRef = System.currentTimeMillis();
+
+        startRef = currentTimeMillis();
         map.putAll(items);
-        sleepAtMostSeconds(sleepRef, 2);
-        assertTrue(map.containsKey(1));
+        endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 
+        // Prolong 4th round
+        startRef = currentTimeMillis();
         map.putAsync(1, "value4").get();
-        sleepAtLeastSeconds(2);
-        assertTrue(map.containsKey(1));
+        endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 
+        // Prolong 5th round
+        startRef = currentTimeMillis();
         map.setAsync(1, "value5").get();
-        sleepAtLeastSeconds(2);
-        assertTrue(map.containsKey(1));
+        endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 
-        assertTrue(map.tryPut(1, "value6", 333, TimeUnit.MILLISECONDS));
-        sleepAtLeastSeconds(2);
-        assertTrue(map.containsKey(1));
+        // Prolong 6th round
+        startRef = currentTimeMillis();
+        map.tryPut(1, "value6", 5, TimeUnit.SECONDS);
+        endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 
+        // Prolong 7th round
+        startRef = currentTimeMillis();
         map.replace(1, "value7");
-        sleepAtLeastSeconds(2);
-        assertTrue(map.containsKey(1));
+        endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 
+        // Prolong 8th round
+        startRef = currentTimeMillis();
         map.replace(1, "value7", "value8");
-        sleepAtLeastSeconds(2);
+        endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+
+        // Confirm expiration
+        sleepAtLeastSeconds(10);
+        assertFalse(map.containsKey(1));
+    }
+
+    private void sleepAndAssertTtlExpirationCorrectness(IMap<Integer, String> map, long expected, long startRef, long endRef) {
+        sleepAtLeastSeconds(3);
+
+        EntryView view = map.getEntryView(1);
+        long actual = MILLISECONDS.toSeconds(view.getExpirationTime() - startRef);
+        long delta = (1 + MILLISECONDS.toSeconds(endRef - startRef));
+        assertEquals(expected, actual, delta);
         assertTrue(map.containsKey(1));
     }
 
@@ -240,7 +269,7 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testGetEntryView_withTTL() {
         IMap<Integer, String> map = createSimpleMap();
 
-        map.put(1, "value", 1, TimeUnit.SECONDS);
+        map.put(1, "value", 1, SECONDS);
         sleepAtLeastSeconds(2);
 
         EntryView<Integer, String> entryView = map.getEntryView(1);
@@ -261,8 +290,8 @@ public class EvictionTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance h = factory.newHazelcastInstance(config);
         IMap<String, String> map = h.getMap("testIssue455ZeroTTLShouldPreventEviction");
-        map.put("key", "value", 1, TimeUnit.SECONDS);
-        map.put("key", "value2", 0, TimeUnit.SECONDS);
+        map.put("key", "value", 1, SECONDS);
+        map.put("key", "value2", 0, SECONDS);
         sleepAtLeastSeconds(2);
         assertEquals("value2", map.get("key"));
     }
@@ -280,8 +309,8 @@ public class EvictionTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance h = factory.newHazelcastInstance(config);
         IMap<String, String> map = h.getMap("testIssue585ZeroTTLShouldPreventEvictionWithSet");
-        map.set("key", "value", 1, TimeUnit.SECONDS);
-        map.set("key", "value2", 0, TimeUnit.SECONDS);
+        map.set("key", "value", 1, SECONDS);
+        map.set("key", "value2", 0, SECONDS);
         sleepAtLeastSeconds(2);
         assertEquals("value2", map.get("key"));
     }
@@ -291,7 +320,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final IMap<String, String> map = createSimpleMap();
         final String key = "key";
 
-        map.set(key, "value", 5, TimeUnit.SECONDS);
+        map.set(key, "value", 5, SECONDS);
         // this `set` operation should not affect existing TTL, so "key" should be expired after 1 second
         map.set(key, "value2");
 
@@ -325,7 +354,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         String key = "key";
         for (int i = 0; i < 5; i++) {
-            map.put(key, System.currentTimeMillis());
+            map.put(key, currentTimeMillis());
             sleepAtLeastMillis(500);
         }
         assertEquals(evictCount.get(), 0);
@@ -659,9 +688,9 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, 1);
         map.put(2, 2);
-        map.put(1, 2, 0, TimeUnit.SECONDS);
+        map.put(1, 2, 0, SECONDS);
 
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(10, SECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -830,7 +859,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }, true);
 
         // TTL is 2 seconds
-        map.put(1, 1, 2, TimeUnit.SECONDS);
+        map.put(1, 1, 2, SECONDS);
 
         final int expected = (map.remove(1) == null ? 1 : 0);
         assertTrueEventually(new AssertTask() {
@@ -955,7 +984,7 @@ public class EvictionTest extends HazelcastTestSupport {
     public void test_get_expiration_from_EntryView() {
         long now = Clock.currentTimeMillis();
         IMap<Integer, Integer> map = createSimpleMap();
-        map.put(1, 1, 100, TimeUnit.SECONDS);
+        map.put(1, 1, 100, SECONDS);
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
         long expirationTime = entryView.getExpirationTime();
 
@@ -1077,7 +1106,7 @@ public class EvictionTest extends HazelcastTestSupport {
         String key = getClass().getCanonicalName();
 
         // 1. put a key to expire
-        map.put(key, 1, 3, TimeUnit.SECONDS);
+        map.put(key, 1, 3, SECONDS);
 
         // 2. wait for expiration on owner node
         assertOpenEventually(evictedEntryCounterLatch, 240);
@@ -1102,7 +1131,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         // 1. put keys with TTL
         for (int i = 0; i < 60; i++) {
-            map.put(i, i, 5, TimeUnit.SECONDS);
+            map.put(i, i, 5, SECONDS);
         }
 
         // 2. shutdown one node (since we want to see previous backup partitions as owners)

@@ -214,7 +214,7 @@ public class SimpleEntryView<K, V>
     }
 
     @Override
-    public long getMaxIdle() {
+    public Long getMaxIdle() {
         return maxIdle;
     }
 
@@ -257,7 +257,7 @@ public class SimpleEntryView<K, V>
         // writes the deprecated evictionCriteriaNumber to the data output (client protocol compatibility)
         out.writeLong(0);
         out.writeLong(ttl);
-        //RU_COMPAT_3_10
+        // RU_COMPAT_3_10
         if (out.getVersion().isGreaterOrEqual(V3_11)) {
             out.writeLong(maxIdle);
         }
@@ -278,7 +278,10 @@ public class SimpleEntryView<K, V>
         // reads the deprecated evictionCriteriaNumber from the data input (client protocol compatibility)
         in.readLong();
         ttl = in.readLong();
-        //RU_COMPAT_3_10
+        // RU_COMPAT_3_10
+        // DO NOT REMOVE UNTIL WAN PROTOCOL HAS BEEN IMPLEMENTED
+        // THE SOURCE CLUSTER SERIALIZES THE com.hazelcast.map.impl.wan.WanMapEntryView
+        // THE TARGET CLUSTER SHOULD DESERIALIZE THIS CLASS
         if (in.getVersion().isGreaterOrEqual(V3_11)) {
             maxIdle = in.readLong();
         }
@@ -295,6 +298,7 @@ public class SimpleEntryView<K, V>
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public boolean equals(Object o) {
         if (this == o) {
             return true;

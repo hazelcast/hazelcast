@@ -60,6 +60,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     @Override
     public boolean containsKey(Object key) {
+        return containsKey(key, false);
+    }
+
+    public boolean containsKey(Object key, boolean skipNearCacheLookup) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
@@ -68,7 +72,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         if (valueWrapper != null) {
             return (valueWrapper.type != Type.REMOVED);
         }
-        return containsKeyInternal(keyData, key);
+        return containsKeyInternal(keyData, key, skipNearCacheLookup);
     }
 
     @Override
@@ -97,17 +101,20 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     @Override
     public Object get(Object key) {
+        return get(key, false);
+    }
+
+    public Object get(Object key, boolean skipNearCacheLookup) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
         Object nearCacheKey = toNearCacheKeyWithStrategy(key);
         Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
-
         TxnValueWrapper currentValue = txMap.get(keyData);
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
-        return toObjectIfNeeded(getInternal(nearCacheKey, keyData));
+        return toObjectIfNeeded(getInternal(nearCacheKey, keyData, skipNearCacheLookup));
     }
 
     @Override

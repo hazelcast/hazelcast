@@ -43,6 +43,7 @@ public class WanPublisherConfigDTOTest {
 
         WanPublisherConfig expected = new WanPublisherConfig()
                 .setGroupName("myGroupName")
+                .setPublisherId("myPublisherId")
                 .setQueueCapacity(23)
                 .setClassName("myClassName")
                 .setQueueFullBehavior(WANQueueFullBehavior.THROW_EXCEPTION)
@@ -56,6 +57,7 @@ public class WanPublisherConfigDTOTest {
 
         WanPublisherConfig actual = deserialized.getConfig();
         assertEquals(expected.getGroupName(), actual.getGroupName());
+        assertEquals(expected.getPublisherId(), actual.getPublisherId());
         assertEquals(expected.getQueueCapacity(), actual.getQueueCapacity());
         assertEquals(expected.getClassName(), actual.getClassName());
         assertEquals(expected.getQueueFullBehavior(), actual.getQueueFullBehavior());

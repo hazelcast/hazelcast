@@ -119,6 +119,11 @@ public final class NioNetworking implements Networking {
         return outputThreads;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
+    public Set<NioChannel> getChannels() {
+        return channels;
+    }
+
     public IOBalancer getIOBalancer() {
         return ioBalancer;
     }
@@ -201,7 +206,7 @@ public final class NioNetworking implements Networking {
 
     @Override
     public Channel register(SocketChannel socketChannel, boolean clientMode) throws IOException {
-        NioChannel channel = new NioChannel(socketChannel, clientMode, channelInitializer);
+        NioChannel channel = new NioChannel(socketChannel, clientMode, channelInitializer, metricsRegistry);
 
         socketChannel.configureBlocking(false);
 
@@ -211,10 +216,6 @@ public final class NioNetworking implements Networking {
         channels.add(channel);
 
         channel.init(inboundPipeline, outboundPipeline);
-
-        String metricsId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
-        metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
-        metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
 
         ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
 

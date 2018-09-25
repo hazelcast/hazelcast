@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.statistics;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
@@ -32,7 +33,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -371,8 +371,9 @@ public class Statistics {
 
             addStat(stats, "clientName", client.getName());
 
-            Credentials credentials = client.getCredentials();
-            if (!(credentials instanceof UsernamePasswordCredentials)) {
+            ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
+            Credentials credentials = connectionManager.getLastCredentials();
+            if (credentials != null) {
                 addStat(stats, "credentials.principal", credentials.getPrincipal());
             }
 

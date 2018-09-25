@@ -36,6 +36,12 @@ public class MapPutTransientMessageTask
     }
 
     @Override
+    protected void beforeProcess() {
+        super.beforeProcess();
+        checkCompatibility(parameters.maxIdleExist);
+    }
+
+    @Override
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         MapOperation op = operationProvider.createPutTransientOperation(parameters.name, parameters.key,

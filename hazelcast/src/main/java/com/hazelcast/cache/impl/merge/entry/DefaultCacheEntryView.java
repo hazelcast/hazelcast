@@ -104,6 +104,7 @@ public class DefaultCacheEntryView
         out.writeLong(accessHit);
         out.writeData(key);
         out.writeData(value);
+        // RU_COMPAT_3_10
         if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             out.writeData(expiryPolicy);
         }
@@ -117,6 +118,10 @@ public class DefaultCacheEntryView
         accessHit = in.readLong();
         key = in.readData();
         value = in.readData();
+        // RU_COMPAT_3_10
+        // DO NOT REMOVE UNTIL WAN PROTOCOL HAS BEEN IMPLEMENTED
+        // THE SOURCE CLUSTER SERIALIZES THE com.hazelcast.map.impl.wan.WanMapEntryView
+        // THE TARGET CLUSTER SHOULD DESERIALIZE THIS CLASS
         if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             expiryPolicy = in.readData();
         }

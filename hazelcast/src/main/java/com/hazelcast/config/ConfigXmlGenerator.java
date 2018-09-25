@@ -51,6 +51,7 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.Arrays.asList;
 
 /**
@@ -683,7 +684,9 @@ public class ConfigXmlGenerator {
     }
 
     private static void wanReplicationPublisherXmlGenerator(XmlGenerator gen, WanPublisherConfig p) {
-        gen.open("wan-publisher", "group-name", p.getGroupName())
+        String publisherId = !isNullOrEmptyAfterTrim(p.getPublisherId())
+                ? p.getPublisherId() : "";
+        gen.open("wan-publisher", "group-name", p.getGroupName(), "publisher-id", publisherId)
            .node("class-name", p.getClassName())
            .node("queue-full-behavior", p.getQueueFullBehavior())
            .node("initial-publisher-state", p.getInitialPublisherState())

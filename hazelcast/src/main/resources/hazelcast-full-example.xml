@@ -273,7 +273,7 @@
             </discovery-strategies>
     -->
     <wan-replication name="my-wan-cluster-batch">
-        <wan-publisher group-name="nyc">
+        <wan-publisher group-name="nyc" publisher-id="nycPublisherId">
             <class-name>com.hazelcast.enterprise.wan.replication.WanBatchReplication</class-name>
             <queue-capacity>15000</queue-capacity>
             <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>

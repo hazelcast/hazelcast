@@ -18,12 +18,16 @@ package com.hazelcast.map.impl.record;
 
 import java.io.Serializable;
 
-class Person implements Serializable {
+public class Person implements Serializable {
 
-    final String name;
+    private final String name;
 
-    Person(String name) {
+    public Person(String name) {
         this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 
     @Override

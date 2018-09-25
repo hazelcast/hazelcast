@@ -31,6 +31,7 @@ import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.connection.nio.DefaultCredentialsFactory;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
@@ -78,6 +79,7 @@ import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
@@ -142,8 +144,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.security.Credentials;
-import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
@@ -201,7 +202,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
     private final ClientExtension clientExtension;
-    private final Credentials credentials;
+    private final ICredentialsFactory credentialsFactory;
     private final DiscoveryService discoveryService;
     private final LoggingService loggingService;
     private final MetricsRegistryImpl metricsRegistry;
@@ -231,7 +232,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExtension = createClientInitializer(classLoader);
         clientExtension.beforeStart(this);
 
-        credentials = initCredentials(config);
+        credentialsFactory = initCredentialsFactory(config);
         lifecycleService = new LifecycleServiceImpl(this);
         properties = new HazelcastProperties(config.getProperties());
 
@@ -256,6 +257,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         invocationService = initInvocationService();
         listenerService = initListenerService();
         userContext = new ConcurrentHashMap<String, Object>();
+        userContext.putAll(config.getUserContext());
         diagnostics = initDiagnostics();
 
         hazelcastCacheManager = new ClientICacheManager(this);
@@ -450,24 +452,47 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return lb;
     }
 
-    private Credentials initCredentials(ClientConfig config) {
-        final GroupConfig groupConfig = config.getGroupConfig();
-        final ClientSecurityConfig securityConfig = config.getSecurityConfig();
-        Credentials c = securityConfig.getCredentials();
+    private ICredentialsFactory initCredentialsFactory(ClientConfig config) {
+        ClientSecurityConfig securityConfig = config.getSecurityConfig();
+        validateSecurityConfig(securityConfig);
+        ICredentialsFactory c = getCredentialsFromFactory(config);
         if (c == null) {
-            final String credentialsClassname = securityConfig.getCredentialsClassname();
-            if (credentialsClassname != null) {
+            return new DefaultCredentialsFactory(securityConfig, config.getGroupConfig(), config.getClassLoader());
+        }
+        return c;
+    }
+
+    private void validateSecurityConfig(ClientSecurityConfig securityConfig) {
+        boolean configuredViaCredentials = securityConfig.getCredentials() != null
+                || securityConfig.getCredentialsClassname() != null;
+
+        CredentialsFactoryConfig factoryConfig = securityConfig.getCredentialsFactoryConfig();
+        boolean configuredViaCredentialsFactory = factoryConfig.getClassName() != null
+                || factoryConfig.getImplementation() != null;
+
+        if (configuredViaCredentials && configuredViaCredentialsFactory) {
+            throw new IllegalStateException("Ambiguous Credentials config. Set only one of Credentials or ICredentialsFactory");
+        }
+    }
+
+    private ICredentialsFactory getCredentialsFromFactory(ClientConfig config) {
+        CredentialsFactoryConfig credentialsFactoryConfig = config.getSecurityConfig().getCredentialsFactoryConfig();
+        ICredentialsFactory factory = credentialsFactoryConfig.getImplementation();
+        if (factory == null) {
+            String factoryClassName = credentialsFactoryConfig.getClassName();
+            if (factoryClassName != null) {
                 try {
-                    c = ClassLoaderUtil.newInstance(config.getClassLoader(), credentialsClassname);
+                    factory = ClassLoaderUtil.newInstance(config.getClassLoader(), factoryClassName);
                 } catch (Exception e) {
                     throw rethrow(e);
                 }
             }
         }
-        if (c == null) {
-            c = new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
+        if (factory == null) {
+            return null;
         }
-        return c;
+        factory.configure(config.getGroupConfig(), credentialsFactoryConfig.getProperties());
+        return factory;
     }
 
     @SuppressWarnings("checkstyle:illegaltype")
@@ -891,8 +916,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clientExtension;
     }
 
-    public Credentials getCredentials() {
-        return credentials;
+    public ICredentialsFactory getCredentialsFactory() {
+        return credentialsFactory;
     }
 
     public short getProtocolVersion() {
