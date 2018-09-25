@@ -455,7 +455,7 @@ public final class SourceProcessors {
     public static <S, T> ProcessorMetaSupplier convenientSourceP(
             @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn,
             @Nonnull DistributedBiConsumer<? super S, ? super SourceBuffer<T>> fillBufferFn,
-            @Nullable DistributedConsumer<? super S> destroyFn,
+            @Nonnull DistributedConsumer<? super S> destroyFn,
             int preferredLocalParallelism
     ) {
         checkSerializable(createFn, "createFn");
@@ -466,7 +466,7 @@ public final class SourceProcessors {
                 () -> new ConvenientSourceP<S, T>(
                         createFn,
                         (BiConsumer<? super S, ? super SourceBufferConsumerSide<? extends T>>) fillBufferFn,
-                        destroyFn != null ? destroyFn : DistributedConsumer.noop(),
+                        destroyFn,
                         new SourceBufferImpl.Plain<>(),
                         null));
         return preferredLocalParallelism != 0
@@ -495,7 +495,7 @@ public final class SourceProcessors {
             @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn,
             @Nonnull DistributedBiConsumer<? super S, ? super TimestampedSourceBuffer<T>> fillBufferFn,
             @Nonnull WatermarkGenerationParams<? super JetEvent<T>> wmParams,
-            @Nullable DistributedConsumer<? super S> destroyFn,
+            @Nonnull DistributedConsumer<? super S> destroyFn,
             int preferredLocalParallelism
     ) {
         checkSerializable(createFn, "createFn");
@@ -506,7 +506,7 @@ public final class SourceProcessors {
                 () -> new ConvenientSourceP<>(
                         createFn,
                         (BiConsumer<? super S, ? super SourceBufferConsumerSide<? extends JetEvent<T>>>) fillBufferFn,
-                        destroyFn != null ? destroyFn : DistributedConsumer.noop(),
+                        destroyFn,
                         new SourceBufferImpl.Timestamped<>(),
                         wmParams
                 ));

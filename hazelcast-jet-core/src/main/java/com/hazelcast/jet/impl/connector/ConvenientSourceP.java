@@ -23,7 +23,6 @@ import com.hazelcast.jet.core.WatermarkSourceUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -56,6 +55,7 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
     private final SourceBufferConsumerSide<? extends T> buffer;
     private final WatermarkSourceUtil<T> wsu;
 
+    private boolean initialized;
     private S src;
     private Traverser<?> traverser;
 
@@ -85,7 +85,9 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
-        src = Objects.requireNonNull(createFn.apply(context), "result of createFn");
+        src = createFn.apply(context);
+        // createFn is allowed to return null, that's why we need this flag:
+        initialized = true;
     }
 
     @Override
@@ -106,7 +108,7 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
 
     @Override
     public void close() {
-        if (src != null) {
+        if (initialized) {
             destroyFn.accept(src);
         }
     }

@@ -52,7 +52,7 @@ public final class SourceBuilder<S> {
     // are public API.
     private final String mName;
     private final DistributedFunction<? super Processor.Context, ? extends S> mCreateFn;
-    private DistributedConsumer<? super S> mDestroyFn;
+    private DistributedConsumer<? super S> mDestroyFn = DistributedConsumer.noop();
     private int mPreferredLocalParallelism;
 
     /**
