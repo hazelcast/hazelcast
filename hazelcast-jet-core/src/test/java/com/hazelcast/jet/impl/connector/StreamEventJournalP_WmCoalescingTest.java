@@ -22,6 +22,8 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -33,6 +35,7 @@ import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
@@ -48,6 +51,8 @@ import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
@@ -131,25 +136,30 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
     @Test
     public void when_allPartitionsIdleAndThenRecover_then_wmOutput() throws Exception {
         // Insert to map in parallel to verifyProcessor.
+        CountDownLatch latch = new CountDownLatch(1);
         Thread updatingThread = new Thread(() -> uncheckRun(() -> {
             // We will start after a delay so that the source will first become idle and then recover.
-            Thread.sleep(4000);
-            for (int i = 0; i < 32; i++) {
+            latch.await();
+            for (;;) {
                 map.put(partitionKeys[0], 12);
-                Thread.sleep(250);
+                Thread.sleep(100);
             }
         }));
         updatingThread.start();
 
-        TestSupport.verifyProcessor(createSupplier(asList(0, 1), 1000))
-                   .disableProgressAssertion()
-                   .disableRunUntilCompleted(8000)
-                   .disableSnapshots()
-                   .outputChecker((e, a) -> {
-                       a.removeAll(singletonList(12));
-                       return a.equals(e);
-                   })
-                   .expectOutput(asList(IDLE_MESSAGE, wm(12)));
+        Processor processor = createSupplier(asList(0, 1), 2000).get();
+        TestOutbox outbox = new TestOutbox(1024);
+        Queue<Object> outbox0 = outbox.queue(0);
+        processor.init(outbox, new TestProcessorContext());
+
+        assertTrueEventually(() -> {
+            processor.complete();
+            // after we have the IDLE_MESSAGE, release the latch to let the other thread produce events
+            if (IDLE_MESSAGE.equals(outbox0.peek())) {
+                latch.countDown();
+            }
+            assertEquals(asList(IDLE_MESSAGE, wm(12), 12), outbox0.stream().distinct().collect(toList()));
+        });
 
         updatingThread.interrupt();
         updatingThread.join();
