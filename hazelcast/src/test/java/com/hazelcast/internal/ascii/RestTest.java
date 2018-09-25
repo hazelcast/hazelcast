@@ -237,6 +237,17 @@ public class RestTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void updatePermissionsWithClusterParameters() throws Exception {
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "mancenter/security/permissions";
+        Set<PermissionConfig> permissionConfigs = new HashSet<PermissionConfig>();
+        permissionConfigs.add(new PermissionConfig(PermissionConfig.PermissionType.MAP, "test", "*"));
+        UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest(permissionConfigs);
+        String result = communicator.doPost(url, "dev", "dev-pass", request.toJson().toString()).response;
+        assertEquals("{\"status\":\"forbidden\"}", result);
+    }
+
+    @Test
     public void testMap_PutGet_withLargeValue() throws IOException {
         testMap_PutGet_withLargeValue0();
     }

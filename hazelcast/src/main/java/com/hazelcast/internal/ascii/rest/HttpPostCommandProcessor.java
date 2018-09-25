@@ -129,7 +129,14 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleChangeClusterState(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
-        String stateParam = URLDecoder.decode(strList[0], "UTF-8");
+        String stateParam;
+        if (strList.length == 1) {
+            // curl --data "frozen" ...
+            stateParam = URLDecoder.decode(strList[0], "UTF-8");
+        } else {
+            // curl --data "dev&dev-pass&frozen" ...
+            stateParam = URLDecoder.decode(strList[2], "UTF-8");
+        }
         String res;
         try {
             Node node = textCommandService.getNode();
@@ -151,7 +158,14 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleChangeClusterVersion(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
-        String versionParam = URLDecoder.decode(strList[0], "UTF-8");
+        String versionParam;
+        if (strList.length == 1) {
+            // curl --data "3.11" ...
+            versionParam = URLDecoder.decode(strList[0], "UTF-8");
+        } else {
+            // curl --data "dev&dev-pass&3.11" ...
+            versionParam = URLDecoder.decode(strList[2], "UTF-8");
+        }
         String res;
         try {
             Node node = textCommandService.getNode();
@@ -286,8 +300,14 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             byte[] res = HttpCommand.RES_204;
             byte[] data = command.getData();
             String[] strList = bytesToString(data).split("&");
-            String url = URLDecoder.decode(strList[0], "UTF-8");
-
+            String url;
+            if (strList.length == 1) {
+                // curl --data "http://bla" ...
+                url = URLDecoder.decode(strList[0], "UTF-8");
+            } else {
+                // curl --data "dev&dev-pass&http://bla" ...
+                url = URLDecoder.decode(strList[2], "UTF-8");
+            }
             ManagementCenterService managementCenterService = textCommandService.getNode().getManagementCenterService();
             if (managementCenterService != null) {
                 res = managementCenterService.clusterWideUpdateManagementCenterUrl(url);

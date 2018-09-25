@@ -320,7 +320,7 @@ public class HTTPCommunicator {
         }
     }
 
-    private ConnectionResponse doGet(String url) throws IOException {
+    protected ConnectionResponse doGet(String url) throws IOException {
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {
@@ -337,7 +337,7 @@ public class HTTPCommunicator {
         }
     }
 
-    private ConnectionResponse doPost(String url, String... params) throws IOException {
+    protected ConnectionResponse doPost(String url, String... params) throws IOException {
         CloseableHttpClient client = newClient();
 
         List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(params.length);

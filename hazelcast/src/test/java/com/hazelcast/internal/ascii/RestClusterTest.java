@@ -102,6 +102,24 @@ public class RestClusterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testClusterShutdownWithClusterParameters() throws Exception {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "management/cluster/clusterShutdown";
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+
+        assertEquals(HttpURLConnection.HTTP_OK,
+                communicator.doPost(url, "dev", "dev-pass").responseCode);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertFalse(instance.getLifecycleService().isRunning());
+            }
+        });
+    }
+
+    @Test
     public void testGetClusterState() throws Exception {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
@@ -119,6 +137,17 @@ public class RestClusterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetClusterStateWithClusterParameters() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "management/cluster/state";
+
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals("{\"status\":\"success\",\"state\":\"active\"}",
+                communicator.doPost(url, "dev", "dev-pass").response);
+    }
+
+    @Test
     public void testChangeClusterState() throws Exception {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
@@ -127,6 +156,18 @@ public class RestClusterTest extends HazelcastTestSupport {
         assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterState("frozen").responseCode);
         assertClusterStateEventually(ClusterState.FROZEN, instance1);
         assertClusterStateEventually(ClusterState.FROZEN, instance2);
+    }
+
+    @Test
+    public void testChangeClusterStateWithClusterParameters() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "management/cluster/changeState";
+
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals("{\"status\":\"success\",\"state\":\"frozen\"}",
+                communicator.doPost(url, "dev", "dev-pass", "frozen").response);
+        assertClusterStateEventually(ClusterState.FROZEN, instance);
     }
 
     @Test
@@ -142,11 +183,29 @@ public class RestClusterTest extends HazelcastTestSupport {
     public void testChangeClusterVersion() throws IOException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterVersion(
-                instance.getCluster().getClusterVersion().toString()).responseCode);
 
         JsonObject jsonObject = Json.parse(communicator.changeClusterVersion("1.2.3").response).asObject();
         assertEquals("fail", getString(jsonObject, "status"));
+
+        String version = instance.getCluster().getClusterVersion().toString();
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterVersion(version).responseCode);
+        jsonObject = Json.parse(communicator.changeClusterVersion(version).response).asObject();
+        assertEquals("success", getString(jsonObject, "status"));
+    }
+
+    @Test
+    public void testChangeClusterVersionWithClusterParameters() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "management/cluster/version";
+
+        String version = instance.getCluster().getClusterVersion().toString();
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_OK,
+                communicator.doPost(url, "dev", "dev-pass", version).responseCode);
+        JsonObject jsonObject =
+                Json.parse(communicator.doPost(url, "dev", "dev-pass", version).response).asObject();
+        assertEquals("success", getString(jsonObject, "status"));
     }
 
     @Test
@@ -155,6 +214,32 @@ public class RestClusterTest extends HazelcastTestSupport {
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
         assertEquals(HttpURLConnection.HTTP_OK, communicator.hotBackup().responseCode);
         assertEquals(HttpURLConnection.HTTP_OK, communicator.hotBackupInterrupt().responseCode);
+    }
+
+    @Test
+    public void testHotBackupWithClusterParameters() throws Exception {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        String url = address + "management/cluster/hotBackup";
+
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.doPost(url, "dev", "dev-pass").responseCode);
+        assertEquals("{\"status\":\"success\"}",
+                communicator.doPost(url, "dev", "dev-pass").response);
+
+        url = address + "management/cluster/hotBackupInterrupt";
+    }
+
+    @Test
+    public void testHotBackupInterruptWithClusterParameters() throws Exception {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "management/cluster/hotBackupInterrupt";
+
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.doPost(url, "dev", "dev-pass").responseCode);
+        assertEquals("{\"status\":\"success\"}",
+                communicator.doPost(url, "dev", "dev-pass").response);
     }
 
     @Test
@@ -167,11 +252,43 @@ public class RestClusterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testForceStartWithClusterParameters() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "management/cluster/forceStart";
+
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.doPost(url, "dev", "dev-pass").responseCode);
+    }
+
+
+    @Test
+    public void testPartialStartWithClusterParameters() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "management/cluster/partialStart";
+
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.doPost(url, "dev", "dev-pass").responseCode);
+    }
+
+
+    @Test
     public void testManagementCenterUrlChange() throws IOException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
         assertEquals(HttpURLConnection.HTTP_NO_CONTENT,
                 communicator.changeManagementCenterUrl("http://bla").responseCode);
+    }
+
+    @Test
+    public void testManagementCenterUrlChangeWithClusterParameters() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "mancenter/changeurl";
+        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_NO_CONTENT,
+                communicator.doPost(url, "dev", "dev-pass", "http://bla").responseCode);
     }
 
     @Test
@@ -185,6 +302,21 @@ public class RestClusterTest extends HazelcastTestSupport {
                 System.getProperty("java.version"));
         assertEquals(result, communicator.listClusterNodes());
     }
+
+    @Test
+    public void testListNodesWitClusterParameters() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "management/cluster/nodes";
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        HazelcastTestSupport.waitInstanceForSafeState(instance);
+        String result = String.format("{\"status\":\"success\",\"response\":\"[%s]\n%s\n%s\"}",
+                instance.getCluster().getLocalMember().toString(),
+                BuildInfoProvider.getBuildInfo().getVersion(),
+                System.getProperty("java.version"));
+        assertEquals(result, communicator.doPost(url, "dev", "dev-pass").response);
+    }
+
 
     @Test
     public void testShutdownNode() throws Exception {
@@ -210,6 +342,36 @@ public class RestClusterTest extends HazelcastTestSupport {
             // to send a response back to a client.
         }
 
+
+        assertOpenEventually(shutdownLatch);
+        assertFalse(instance.getLifecycleService().isRunning());
+    }
+
+    @Test
+    public void testShutdownNodeWithClusterParameters() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final String address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        final String url = address + "management/cluster/memberShutdown";
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
+        instance.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN) {
+                    shutdownLatch.countDown();
+                }
+            }
+        });
+
+        try {
+            assertEquals("{\"status\":\"success\"}", communicator.doPost(url, "dev", "dev-pass").response);
+        } catch (ConnectException ignored) {
+            // if node shuts down before response is received, `java.net.ConnectException: Connection refused` is expected
+        } catch (NoHttpResponseException ignored) {
+            // `NoHttpResponseException` is also a possible outcome when a node shut down before it has a chance
+            // to send a response back to a client.
+        }
 
         assertOpenEventually(shutdownLatch);
         assertFalse(instance.getLifecycleService().isRunning());
