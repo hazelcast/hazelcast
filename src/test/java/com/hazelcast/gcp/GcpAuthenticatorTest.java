@@ -17,6 +17,7 @@
 package com.hazelcast.gcp;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -24,21 +25,25 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertEquals;
 
 public class GcpAuthenticatorTest {
-    private static final int PORT = 8089;
-
     private static final String PRIVATE_KEY_PATH = "src/test/resources/test-private-key.json";
     private static final long CURRENT_TIME_MS = 1328550785000L;
     // START_OF_REQUEST_BODY taken the Google's example: https://developers.google.com/identity/protocols/OAuth2ServiceAccount
     private static final String START_OF_REQUEST_BODY = "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI3NjEzMjY3OTgwNjktcjVtbGpsbG4xcmQ0bHJiaGc3NWVmZ2lncDM2bTc4ajVAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzY29wZSI6Imh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL2F1dGgv";
     private static final String ACCESS_TOKEN = "ya29.c.EloCBmCSNRWOaprh2z8TPVd9V51_YwQ-CzqafGDi7TNUwfNNOoDx7T6Pv1pOnO2SaNz-d61KKE2FLA-sxb4alMuucHTdfFHRhRqto9O_MKbQrnqOuJSrpnGf_EE";
 
-    private GcpAuthenticator gcpAuthenticator = new GcpAuthenticator(String.format("http://localhost:%s", PORT));
+    private GcpAuthenticator gcpAuthenticator;
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(PORT);
+    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
+
+    @Before
+    public void setUp() {
+        gcpAuthenticator = new GcpAuthenticator(String.format("http://localhost:%s", wireMockRule.port()));
+    }
 
     @Test
     public void refreshAccessToken() {
