@@ -304,6 +304,16 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 sequence = remoteHeadSeq;
                 next();
                 return;
+            } else if (t instanceof IllegalArgumentException && listener.isLossTolerant()) {
+                long remoteHeadSeq = ringbuffer.headSequence();
+                if (logger.isFinestEnabled()) {
+                    logger.finest(String.format("MessageListener %s on topic %s requested a too large sequence: %s. "
+                                    + ". Jumping from old sequence: %s to sequence: %s",
+                            listener, name, t.getMessage(), sequence, remoteHeadSeq));
+                }
+                this.sequence = remoteHeadSeq;
+                next();
+                return;
             }
             logTerminateReason(t);
             cancel();

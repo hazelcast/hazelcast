@@ -46,7 +46,6 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-
 public class ClientReliableTopicOnClusterRestartTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -92,7 +91,7 @@ public class ClientReliableTopicOnClusterRestartTest {
     }
 
     @Test
-    public void shouldReestablishListenerOnClusterRestart_afterInvocationTimeout() throws InterruptedException {
+    public void shouldContinue_OnClusterRestart_afterInvocationTimeout() throws InterruptedException {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
@@ -129,7 +128,7 @@ public class ClientReliableTopicOnClusterRestartTest {
 
 
     @Test
-    public void shouldFailOnClusterRestart_whenMessagesCannotbeRecovered_afterInvocationTimeout() throws InterruptedException {
+    public void shouldContinue_OnClusterRestart_whenDataLoss_LossTolerant_afterInvocationTimeout() throws InterruptedException {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
@@ -138,6 +137,7 @@ public class ClientReliableTopicOnClusterRestartTest {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final AtomicLong messageCount = new AtomicLong();
+        final CountDownLatch messageArrived = new CountDownLatch(1);
         String topicName = "topic";
 
         member.getReliableTopic(topicName).publish("message");
@@ -148,6 +148,7 @@ public class ClientReliableTopicOnClusterRestartTest {
             @Override
             public void onMessage(Message<String> message) {
                 messageCount.incrementAndGet();
+                messageArrived.countDown();
             }
 
             @Override
@@ -160,19 +161,18 @@ public class ClientReliableTopicOnClusterRestartTest {
         // wait for the topic operation to timeout
         Thread.sleep(TimeUnit.SECONDS.toMillis(invocationTimeoutSeconds));
 
-        hazelcastFactory.newHazelcastInstance();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                ClientReliableTopicProxy proxy = (ClientReliableTopicProxy) topic;
-                assertTrue(proxy.isListenerCancelled(registrationId));
-            }
-        });
-        assertEquals(0, messageCount.get());
+        member = hazelcastFactory.newHazelcastInstance();
+        member.getReliableTopic(topicName).publish("message");
+
+        assertOpenEventually(messageArrived);
+
+        ClientReliableTopicProxy proxy = (ClientReliableTopicProxy) topic;
+        assertFalse(proxy.isListenerCancelled(registrationId));
+        assertEquals(1, messageCount.get());
     }
 
     @Test
-    public void shouldFailOnClusterRestart_whenMessagesCannotbeRecovered() throws InterruptedException {
+    public void shouldFail_OnClusterRestart_whenDataLoss_notLossTolerant() {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
@@ -193,7 +193,7 @@ public class ClientReliableTopicOnClusterRestartTest {
 
             @Override
             public boolean isLossTolerant() {
-                return true;
+                return false;
             }
         });
 
