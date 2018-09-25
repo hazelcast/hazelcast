@@ -286,8 +286,6 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             }
 
             t = peel(t);
-            String baseMessage = "Terminating MessageListener:" + listener + " on topic: " + name + ". "
-                    + "Reason: ";
             if (t instanceof OperationTimeoutException) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("MessageListener " + listener + " on topic: " + name + " timed out. "
@@ -295,19 +293,26 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 }
                 next();
                 return;
-            } else if (t instanceof StaleSequenceException) {
+            } else if (t instanceof StaleSequenceException && listener.isLossTolerant()) {
                 // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
                 long remoteHeadSeq = ringbuffer.headSequence();
-                if (listener.isLossTolerant()) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("MessageListener " + listener + " on topic: " + name + " ran into a stale sequence. "
-                                + "Jumping from oldSequence: " + sequence
-                                + " to sequence: " + remoteHeadSeq);
-                    }
-                    sequence = remoteHeadSeq;
-                    next();
-                    return;
+                if (logger.isFinestEnabled()) {
+                    logger.finest("MessageListener " + listener + " on topic: " + name + " ran into a stale sequence. "
+                            + "Jumping from oldSequence: " + sequence
+                            + " to sequence: " + remoteHeadSeq);
                 }
+                sequence = remoteHeadSeq;
+                next();
+                return;
+            }
+            logTerminateReason(t);
+            cancel();
+        }
+
+        private void logTerminateReason(Throwable t) {
+            String baseMessage = "Terminating MessageListener:" + listener + " on topic: " + name + ". " + "Reason: ";
+            if (t instanceof StaleSequenceException && !listener.isLossTolerant()) {
+                long remoteHeadSeq = ringbuffer.headSequence();
                 logger.warning(baseMessage + "The listener was too slow or the retention period of the "
                         + "message has been violated. "
                         + "head: " + remoteHeadSeq + " sequence:" + sequence);
@@ -326,7 +331,6 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             } else {
                 logger.warning(baseMessage + "Unhandled exception, message: " + t.getMessage(), t);
             }
-            cancel();
         }
 
         void cancel() {
