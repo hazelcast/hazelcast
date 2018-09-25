@@ -27,6 +27,7 @@ public class UtilsTest {
     @Test
     public void splitByCommaTest() {
         assertEquals(asList("project1", "project2"), splitByComma("project1,project2"));
+        assertEquals(asList("project1", "project2"), splitByComma("    project1 ,  project2 "));
         assertEquals(asList("project1"), splitByComma("project1"));
         assertEquals(emptyList(), splitByComma(null));
     }

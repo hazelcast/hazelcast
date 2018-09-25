@@ -32,6 +32,6 @@ final class Utils {
         if (string == null) {
             return Collections.emptyList();
         }
-        return asList(string.split(","));
+        return asList(string.trim().split("\\s*,\\s*"));
     }
 }
