@@ -20,12 +20,12 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationFactory;
@@ -66,7 +66,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
 
     private final boolean serializeKeys;
     private final boolean nearCacheEnabled;
-    private final RecordComparator recordComparator;
+    private final ValueComparator valueComparator;
 
     TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(nodeEngine, mapService, transaction);
@@ -82,7 +82,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         this.ss = ((InternalSerializationService) nodeEngine.getSerializationService());
         this.nearCacheEnabled = mapConfig.isNearCacheEnabled();
         this.serializeKeys = nearCacheEnabled && mapConfig.getNearCacheConfig().isSerializeKeys();
-        this.recordComparator = mapServiceContext.getRecordComparator(mapConfig.getInMemoryFormat());
+        this.valueComparator = mapServiceContext.getValueComparatorOf(mapConfig.getInMemoryFormat());
     }
 
     @Override
@@ -96,7 +96,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     }
 
     boolean isEquals(Object value1, Object value2) {
-        return recordComparator.isEqual(value1, value2);
+        return valueComparator.isEqual(value1, value2, ss);
     }
 
     void checkTransactionState() {

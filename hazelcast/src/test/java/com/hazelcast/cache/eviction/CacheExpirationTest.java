@@ -53,6 +53,7 @@ import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.PRO
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupSizeEventually;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -263,15 +264,19 @@ public class CacheExpirationTest extends CacheTestSupport {
     @Test
     public void test_whenEntryIsRemovedBackupIsCleaned() {
         SimpleExpiryListener listener = new SimpleExpiryListener();
-        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(FIVE_SECONDS, FIVE_SECONDS, FIVE_SECONDS), listener);
+        int ttlSeconds = 10;
+        Duration duration = new Duration(TimeUnit.SECONDS, ttlSeconds);
+        HazelcastExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(duration, duration, duration);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(expiryPolicy, listener);
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
         for (int i = 0; i < KEY_RANGE; i++) {
             cache.put(i, i);
-            cache.remove(i);
+            assertTrue("Expected to remove entry " + i + " but entry was not present. Expired entry count: "
+                    + listener.getExpirationCount().get(), cache.remove(i));
         }
 
-        sleepAtLeastSeconds(5);
+        sleepAtLeastSeconds(ttlSeconds);
         assertEquals(0, listener.getExpirationCount().get());
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);

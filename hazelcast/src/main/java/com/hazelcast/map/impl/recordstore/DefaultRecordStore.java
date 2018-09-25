@@ -29,7 +29,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
@@ -253,7 +252,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (getOrNullIfExpired(record, now, false) == null) {
                 continue;
             }
-            if (recordComparator.isEqual(value, record.getValue())) {
+            if (valueComparator.isEqual(value, record.getValue(), serializationService)) {
                 return true;
             }
         }
@@ -491,7 +490,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
         }
-        if (recordComparator.isEqual(testValue, oldValue)) {
+        if (valueComparator.isEqual(testValue, oldValue, serializationService)) {
             mapServiceContext.interceptRemove(name, oldValue);
             removeIndex(record);
             mapDataStore.remove(key, now);
@@ -745,13 +744,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 storage.removeRecord(record);
                 return true;
             }
-            if (newValue == mergingEntry.getValue()) {
+
+            if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
                 mergeRecordExpiration(record, mergingEntry);
-            }
-            // same with the existing entry so no need to map-store etc operations.
-            if (recordComparator.isEqual(newValue, oldValue)) {
                 return true;
             }
+
             newValue = persistenceEnabledFor(provenance) ? mapDataStore.add(key, newValue, now) : newValue;
             onStore(record);
             mutationObserver.onUpdateRecord(key, record, newValue);
@@ -805,13 +803,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 storage.removeRecord(record);
                 return true;
             }
-            if (newValue == mergingEntry.getValue()) {
-                mergeRecordExpiration(record, mergingEntry);
-            }
             // same with the existing entry so no need to map-store etc operations.
-            if (recordComparator.isEqual(newValue, oldValue)) {
+            if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
+                mergeRecordExpiration(record, mergingEntry);
                 return true;
             }
+
             newValue = persistenceEnabledFor(provenance) ? mapDataStore.add(key, newValue, now) : newValue;
             onStore(record);
             mutationObserver.onUpdateRecord(key, record, newValue);
@@ -850,9 +847,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             return false;
         }
-        MapServiceContext mapServiceContext = this.mapServiceContext;
         Object current = record.getValue();
-        if (!recordComparator.isEqual(expect, current)) {
+        if (!valueComparator.isEqual(expect, current, serializationService)) {
             return false;
         }
         update = mapServiceContext.interceptPut(name, current, update);

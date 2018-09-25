@@ -927,6 +927,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         WanPublisherConfig publisherConfig = wcfg.getWanPublisherConfigs().get(0);
         assertEquals("tokyo", publisherConfig.getGroupName());
+        assertEquals("tokyoPublisherId", publisherConfig.getPublisherId());
         assertEquals("com.hazelcast.enterprise.wan.replication.WanBatchReplication", publisherConfig.getClassName());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
@@ -941,6 +942,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         WanPublisherConfig customPublisher = wcfg.getWanPublisherConfigs().get(1);
         assertEquals("istanbul", customPublisher.getGroupName());
+        assertEquals("istanbulPublisherId", customPublisher.getPublisherId());
         assertEquals("com.hazelcast.wan.custom.CustomPublisher", customPublisher.getClassName());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, customPublisher.getQueueFullBehavior());
         Map<String, Comparable> customPublisherProps = customPublisher.getProperties();

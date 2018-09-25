@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.record;
+package com.hazelcast.internal.util.comparators;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.map.impl.record.Person;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -31,12 +32,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("WeakerAccess")
-public abstract class AbstractRecordComparatorTest extends HazelcastTestSupport {
+public abstract class AbstractValueComparatorTest extends HazelcastTestSupport {
 
     SerializationService serializationService;
     PartitioningStrategy partitioningStrategy;
 
-    RecordComparator comparator;
+    ValueComparator comparator;
 
     Person object1;
     Person object2;
@@ -62,27 +63,27 @@ public abstract class AbstractRecordComparatorTest extends HazelcastTestSupport 
     public void testIsEqual() {
         newRecordComparator();
 
-        assertTrue(comparator.isEqual(null, null));
-        assertTrue(comparator.isEqual(object1, object1));
-        assertTrue(comparator.isEqual(object1, data1));
-        assertTrue(comparator.isEqual(data1, data1));
-        assertTrue(comparator.isEqual(data1, object1));
-        assertTrue(comparator.isEqual(nullData, nullData));
+        assertTrue(comparator.isEqual(null, null, serializationService));
+        assertTrue(comparator.isEqual(object1, object1, serializationService));
+        assertTrue(comparator.isEqual(object1, data1, serializationService));
+        assertTrue(comparator.isEqual(data1, data1, serializationService));
+        assertTrue(comparator.isEqual(data1, object1, serializationService));
+        assertTrue(comparator.isEqual(nullData, nullData, serializationService));
 
-        assertFalse(comparator.isEqual(null, object1));
-        assertFalse(comparator.isEqual(null, data1));
-        assertFalse(comparator.isEqual(null, nullData));
-        assertFalse(comparator.isEqual(object1, null));
-        assertFalse(comparator.isEqual(object1, nullData));
-        assertFalse(comparator.isEqual(object1, object2));
-        assertFalse(comparator.isEqual(object1, data2));
-        assertFalse(comparator.isEqual(data1, null));
-        assertFalse(comparator.isEqual(data1, nullData));
-        assertFalse(comparator.isEqual(data1, object2));
-        assertFalse(comparator.isEqual(data1, data2));
-        assertFalse(comparator.isEqual(nullData, null));
-        assertFalse(comparator.isEqual(nullData, object1));
-        assertFalse(comparator.isEqual(nullData, data1));
+        assertFalse(comparator.isEqual(null, object1, serializationService));
+        assertFalse(comparator.isEqual(null, data1, serializationService));
+        assertFalse(comparator.isEqual(null, nullData, serializationService));
+        assertFalse(comparator.isEqual(object1, null, serializationService));
+        assertFalse(comparator.isEqual(object1, nullData, serializationService));
+        assertFalse(comparator.isEqual(object1, object2, serializationService));
+        assertFalse(comparator.isEqual(object1, data2, serializationService));
+        assertFalse(comparator.isEqual(data1, null, serializationService));
+        assertFalse(comparator.isEqual(data1, nullData, serializationService));
+        assertFalse(comparator.isEqual(data1, object2, serializationService));
+        assertFalse(comparator.isEqual(data1, data2, serializationService));
+        assertFalse(comparator.isEqual(nullData, null, serializationService));
+        assertFalse(comparator.isEqual(nullData, object1, serializationService));
+        assertFalse(comparator.isEqual(nullData, data1, serializationService));
     }
 
     @Test
@@ -105,7 +106,7 @@ public abstract class AbstractRecordComparatorTest extends HazelcastTestSupport 
 
         @Override
         public Object getPartitionKey(Person key) {
-            return key.name;
+            return key.getName();
         }
     }
 }

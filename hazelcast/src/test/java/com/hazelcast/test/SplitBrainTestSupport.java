@@ -158,6 +158,10 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
                 .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
     }
 
+    protected final Config getConfig() {
+        return super.getConfig();
+    }
+
     /**
      * Override this method to create the split-brain situation multiple-times.
      * <p>

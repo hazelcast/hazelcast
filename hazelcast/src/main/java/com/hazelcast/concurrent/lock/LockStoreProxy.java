@@ -22,7 +22,16 @@ import com.hazelcast.spi.ObjectNamespace;
 import java.util.Collections;
 import java.util.Set;
 
+/**
+ * Proxy to a {@link LockStoreImpl}. Since a {@link LockStoreImpl} may be destroyed
+ * upon service reset (eg. after a split-brain is healed), some of this proxy's methods
+ * employ get-or-create to locate the {@link LockStoreImpl} or get-or-null when
+ * creation of the {@link LockStoreImpl} is not required and its absence is
+ * interpreted as "no lock exists".
+ */
 public final class LockStoreProxy implements LockStore {
+
+    static final String NOT_LOCKED = "<not-locked>";
 
     private final LockStoreContainer container;
     private final ObjectNamespace namespace;
@@ -34,19 +43,19 @@ public final class LockStoreProxy implements LockStore {
 
     @Override
     public boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
-        LockStore lockStore = getLockStoreOrNull();
+        LockStore lockStore = getOrCreateLockStore();
         return lockStore != null && lockStore.lock(key, caller, threadId, referenceId, leaseTime);
     }
 
     @Override
     public boolean localLock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
-        LockStore lockStore = getLockStoreOrNull();
+        LockStore lockStore = getOrCreateLockStore();
         return lockStore != null && lockStore.localLock(key, caller, threadId, referenceId, leaseTime);
     }
 
     @Override
     public boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime, boolean blockReads) {
-        LockStore lockStore = getLockStoreOrNull();
+        LockStore lockStore = getOrCreateLockStore();
         return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, leaseTime, blockReads);
     }
 
@@ -104,7 +113,7 @@ public final class LockStoreProxy implements LockStore {
     @Override
     public boolean canAcquireLock(Data key, String caller, long threadId) {
         LockStore lockStore = getLockStoreOrNull();
-        return lockStore != null && lockStore.canAcquireLock(key, caller, threadId);
+        return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
     @Override
@@ -132,9 +141,13 @@ public final class LockStoreProxy implements LockStore {
     public String getOwnerInfo(Data dataKey) {
         LockStore lockStore = getLockStoreOrNull();
         if (lockStore == null) {
-            return "<not-locked>";
+            return NOT_LOCKED;
         }
         return lockStore.getOwnerInfo(dataKey);
+    }
+
+    private LockStore getOrCreateLockStore() {
+        return container.getOrCreateLockStore(namespace);
     }
 
     private LockStore getLockStoreOrNull() {
