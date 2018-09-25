@@ -341,6 +341,7 @@ public class ClusterStateManager {
                 Version newVersion = (Version) stateChange.getNewState();
                 logger.info("Cluster version set to " + newVersion);
                 doSetClusterVersion(newVersion);
+                node.getClusterService().getMembershipManager().scheduleMemberListVersionIncrement();
             } else {
                 throw new IllegalArgumentException("Illegal ClusterStateChange of type " + stateChange.getType() + ".");
             }

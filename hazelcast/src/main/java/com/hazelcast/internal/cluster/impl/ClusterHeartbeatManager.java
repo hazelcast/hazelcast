@@ -21,6 +21,7 @@ import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetector;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.cluster.fd.DeadlineClusterFailureDetector;
@@ -29,6 +30,7 @@ import com.hazelcast.internal.cluster.fd.PingFailureDetector;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
+import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOp;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -50,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
@@ -215,6 +218,7 @@ public class ClusterHeartbeatManager {
      */
     void init() {
         ExecutionService executionService = nodeEngine.getExecutionService();
+        HazelcastProperties hazelcastProperties = node.getProperties();
 
         executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
@@ -225,6 +229,14 @@ public class ClusterHeartbeatManager {
         if (icmpParallelMode) {
             startPeriodicPinger();
         }
+
+        long masterConfirmationInterval = hazelcastProperties.getSeconds(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS);
+        masterConfirmationInterval = (masterConfirmationInterval > 0 ? masterConfirmationInterval : 1);
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
+            public void run() {
+                sendMasterConfirmation();
+            }
+        }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
     }
 
     public void handleHeartbeat(MembersViewMetadata senderMembersViewMetadata, String receiverUuid, long timestamp) {
@@ -643,6 +655,48 @@ public class ClusterHeartbeatManager {
                 logger.warning("This node does not have a connection to " + member);
             }
         }
+    }
+
+    /**
+     * Sends a {@link MasterConfirmationOp} to the master if this node is joined, it is not in the
+     * {@link NodeState#SHUT_DOWN} state and is not the master node.
+     * This method is here only for 3.9 compatibility
+     * @deprecated since 3.10
+     */
+    @Deprecated
+    public void sendMasterConfirmation() {
+        // RU_COMPAT_3_9
+        if (!clusterService.isJoined() || node.getState() == NodeState.SHUT_DOWN || clusterService.isMaster()
+                || clusterService.getClusterVersion().isGreaterThan(V3_9)) {
+            return;
+        }
+        Address masterAddress = clusterService.getMasterAddress();
+        if (masterAddress == null) {
+            logger.fine("Could not send MasterConfirmation, master address is null!");
+            return;
+        }
+
+        MembershipManager membershipManager = clusterService.getMembershipManager();
+
+        MemberMap memberMap = membershipManager.getMemberMap();
+        MemberImpl masterMember = memberMap.getMember(masterAddress);
+        if (masterMember == null) {
+            logger.fine("Could not send MasterConfirmation, master member is null! master address: " + masterAddress);
+            return;
+        }
+
+        if (membershipManager.isMemberSuspected(masterAddress)) {
+            logger.fine("Not sending MasterConfirmation to " + masterMember + ", since it's suspected.");
+            return;
+        }
+
+        if (logger.isFineEnabled()) {
+            logger.fine("Sending MasterConfirmation to " + masterMember);
+        }
+
+        MembersViewMetadata membersViewMetadata = membershipManager.createLocalMembersViewMetadata();
+        Operation op = new MasterConfirmationOp(membersViewMetadata, clusterClock.getClusterTime());
+        nodeEngine.getOperationService().send(op, masterAddress);
     }
 
     /**

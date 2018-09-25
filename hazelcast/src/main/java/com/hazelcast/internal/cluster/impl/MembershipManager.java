@@ -23,6 +23,7 @@ import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.logging.ILogger;
@@ -61,6 +62,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.MEMBERSHIP_EVENT_EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
@@ -653,7 +655,7 @@ public class MembershipManager {
         }
     }
 
-    private void handleMemberRemove(MemberMap newMembers, MemberImpl removedMember) {
+    void handleMemberRemove(MemberMap newMembers, MemberImpl removedMember) {
         ClusterState clusterState = clusterService.getClusterState();
         if (!clusterState.isJoinAllowed()) {
             if (logger.isFineEnabled()) {
@@ -836,11 +838,14 @@ public class MembershipManager {
                         // we don't suspect from 'address' and we need to learn its response
                         done = false;
 
-                        // Mastership claim is idempotent.
-                        // We will retry our claim to member until it explicitly rejects or accepts our claim.
-                        // We can't just rely on invocation retries, because if connection is dropped while
-                        // our claim is on the wire, invocation won't get any response and will eventually timeout.
-                        futures.put(address, invokeFetchMembersViewOp(address, memberInfo.getUuid()));
+                        // RU_COMPAT_39
+                        if (clusterService.getClusterVersion().isGreaterThan(Versions.V3_9)) {
+                            // Mastership claim is idempotent.
+                            // We will retry our claim to member until it explicitly rejects or accepts our claim.
+                            // We can't just rely on invocation retries, because if connection is dropped while
+                            // our claim is on the wire, invocation won't get any response and will eventually timeout.
+                            futures.put(address, invokeFetchMembersViewOp(address, memberInfo.getUuid()));
+                        }
                     }
                 }
 
@@ -883,6 +888,39 @@ public class MembershipManager {
                 .createInvocationBuilder(SERVICE_NAME, op, target)
                 .setTryCount(mastershipClaimTimeoutSeconds)
                 .setCallTimeout(TimeUnit.SECONDS.toMillis(mastershipClaimTimeoutSeconds)).invoke();
+    }
+
+    private MembersView generateMissingMemberListJoinVersions(MembersView membersView) {
+        // RU_COMPAT_3_9
+        if (clusterService.getClusterVersion().isGreaterOrEqual(V3_10)) {
+            return membersView;
+        }
+
+        int missingCount = 0;
+        for (MemberInfo memberInfo : membersView.getMembers()) {
+            if (memberInfo.getMemberListJoinVersion() == NA_MEMBER_LIST_JOIN_VERSION) {
+                missingCount++;
+            }
+        }
+
+        assert missingCount == membersView.size() : ("All member list join versions should be missing in: " + membersView);
+
+        int memberListJoinVersion = (membersView.getVersion() - membersView.size()) + 1;
+        List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
+        for (MemberInfo member : membersView.getMembers()) {
+            MemberInfo m = new MemberInfo(member.getAddress(), member.getUuid(), member.getAttributes(),
+                    member.isLiteMember(), member.getVersion(), memberListJoinVersion);
+            memberInfos.add(m);
+            memberListJoinVersion++;
+        }
+
+        membersView = new MembersView(membersView.getVersion(), memberInfos);
+
+        if (logger.isFineEnabled()) {
+            logger.fine("Member list join versions are generated: " + membersView);
+        }
+
+        return membersView;
     }
 
     boolean isMemberRemovedInNotJoinableState(Address target) {
@@ -1029,6 +1067,76 @@ public class MembershipManager {
         }
     }
 
+    /*
+     * For 3.9 compatibility
+     * When the cluster is upgraded from 3.9 to 3.10, all nodes have the same member list but only the master node has
+     * the member list join versions. Therefore, we increment the member list version and publish the member list to make
+     * each node discover member list join versions
+     */
+    void scheduleMemberListVersionIncrement() {
+        clusterServiceLock.lock();
+        try {
+            if (!checkMemberListVersionIncrementIsAllowed()) {
+                return;
+            }
+
+            int memberListVersion = getMemberListVersion();
+            ExecutorService executor = nodeEngine.getExecutionService().getExecutor(SYSTEM_EXECUTOR);
+            executor.submit(new IncrementMemberListVersion(memberListVersion));
+        } finally {
+            clusterServiceLock.unlock();
+        }
+    }
+
+    private void incrementMemberListVersion(int expectedMemberListVersion) {
+        clusterServiceLock.lock();
+        try {
+            if (!checkMemberListVersionIncrementIsAllowed()) {
+                return;
+            }
+
+            MemberMap memberMap = getMemberMap();
+            if (memberMap.getVersion() != expectedMemberListVersion) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("Ignoring member list version increment since current member list version: "
+                            + memberMap.getVersion() + " is different than expected version: " + expectedMemberListVersion);
+                }
+
+                return;
+            }
+
+            MemberImpl[] members = memberMap.getMembers().toArray(new MemberImpl[0]);
+            int newVersion = memberMap.getVersion() + 1;
+            if (logger.isFineEnabled()) {
+                logger.fine("Incrementing member list version to " + newVersion);
+            }
+
+            MemberMap newMemberMap = MemberMap.createNew(newVersion, members);
+            setMembers(newMemberMap);
+            sendMemberListToOthers();
+            clusterService.printMemberList();
+        } finally {
+            clusterServiceLock.unlock();
+        }
+    }
+
+    private boolean checkMemberListVersionIncrementIsAllowed() {
+        if (!clusterService.isJoined()) {
+            return false;
+        }
+
+        if (!clusterService.isMaster()) {
+            return false;
+        }
+
+        if (clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
+            throw new IllegalStateException("Cannot increment member list version since mastership claim is in progress!");
+        }
+
+        // RU_COMPAT_3_9
+        return clusterService.getClusterVersion().isEqualTo(V3_10);
+    }
+
     public boolean verifySplitBrainMergeMemberListVersion(SplitBrainJoinMessage joinMessage) {
         Address caller = joinMessage.getAddress();
         int callerMemberListVersion = joinMessage.getMemberListVersion();
@@ -1112,6 +1220,7 @@ public class MembershipManager {
                     return;
                 }
 
+                newMembersView = generateMissingMemberListJoinVersions(newMembersView);
                 updateMembers(newMembersView);
                 clusterService.getClusterJoinManager().reset();
                 sendMemberListToOthers();
@@ -1119,6 +1228,19 @@ public class MembershipManager {
             } finally {
                 clusterServiceLock.unlock();
             }
+        }
+    }
+
+    private class IncrementMemberListVersion implements Runnable {
+        private int expectedMemberListVersion;
+
+        public IncrementMemberListVersion(int expectedMemberListVersion) {
+            this.expectedMemberListVersion = expectedMemberListVersion;
+        }
+
+        @Override
+        public void run() {
+            incrementMemberListVersion(expectedMemberListVersion);
         }
     }
 }
