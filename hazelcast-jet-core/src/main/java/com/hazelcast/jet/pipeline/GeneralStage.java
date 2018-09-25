@@ -31,7 +31,7 @@ import com.hazelcast.jet.function.DistributedTriFunction;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
+import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
 
 /**
  * The common aspect of {@link BatchStage batch} and {@link StreamStage
@@ -441,7 +441,7 @@ public interface GeneralStage<T> extends Stage {
      * on a local machine.
      *
      * @param shouldLogFn a function to filter the logged items. You can use {@link
-     *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
+     *                    DistributedPredicate#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
      *                    filtering.
      * @param toStringFn  a function that returns a string representation of the item

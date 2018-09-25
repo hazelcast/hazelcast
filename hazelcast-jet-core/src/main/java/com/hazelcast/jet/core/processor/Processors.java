@@ -30,6 +30,7 @@ import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
+import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -52,7 +53,6 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.core.TimestampKind.EVENT;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.function.DistributedFunctions.constantKey;
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -853,12 +853,12 @@ public final class Processors {
     private static class NoopP implements Processor {
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
-            inbox.drain(noopConsumer());
+            inbox.drain(DistributedConsumer.noop());
         }
 
         @Override
         public void restoreFromSnapshot(@Nonnull Inbox inbox) {
-            inbox.drain(noopConsumer());
+            inbox.drain(DistributedConsumer.noop());
         }
     }
 }

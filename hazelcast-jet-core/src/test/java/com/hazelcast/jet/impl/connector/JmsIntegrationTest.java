@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sink;
@@ -41,7 +42,6 @@ import javax.jms.TextMessage;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.Collections.synchronizedList;
@@ -149,7 +149,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
                 .connectionFn(ConnectionFactory::createConnection)
                 .sessionFn(connection -> connection.createSession(false, AUTO_ACKNOWLEDGE))
                 .consumerFn(session -> session.createConsumer(session.createQueue(queueName)))
-                .flushFn(noopConsumer())
+                .flushFn(DistributedConsumer.noop())
                 .build(TEXT_MESSAGE_FN);
 
         p.drawFrom(source).drainTo(sink);
@@ -229,7 +229,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
                 .sessionFn(connection -> connection.createSession(false, AUTO_ACKNOWLEDGE))
                 .messageFn(Session::createTextMessage)
                 .sendFn(MessageProducer::send)
-                .flushFn(noopConsumer())
+                .flushFn(DistributedConsumer.noop())
                 .destinationName(destinationName)
                 .build();
 

@@ -71,29 +71,4 @@ public final class DistributedFunctions {
     public static <T> DistributedFunction<T, String> constantKey() {
         return t -> CONSTANT_KEY;
     }
-
-    /**
-     * Returns a consumer that does nothing with the argument.
-     */
-    @Nonnull
-    public static <T> DistributedConsumer<T> noopConsumer() {
-        return t -> {
-        };
-    }
-
-    /**
-     * Returns a predicate that always evaluates to {@code true}.
-     */
-    @Nonnull
-    public static <T> DistributedPredicate<T> alwaysTrue() {
-        return t -> true;
-    }
-
-    /**
-     * Return sa predicate that always evaluates to {@code false}.
-     */
-    @Nonnull
-    public static <T> DistributedPredicate<T> alwaysFalse() {
-        return t -> false;
-    }
 }

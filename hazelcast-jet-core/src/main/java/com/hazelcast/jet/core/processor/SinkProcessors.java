@@ -46,7 +46,6 @@ import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
@@ -255,7 +254,7 @@ public final class SinkProcessors {
             @Nonnull DistributedBiConsumer<? super W, ? super T> onReceiveFn,
             @Nonnull DistributedConsumer<? super W> flushFn
     ) {
-        return writeBufferedP(createFn, onReceiveFn, flushFn, noopConsumer());
+        return writeBufferedP(createFn, onReceiveFn, flushFn, DistributedConsumer.noop());
     }
 
     /**

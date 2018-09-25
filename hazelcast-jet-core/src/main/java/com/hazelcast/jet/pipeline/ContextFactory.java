@@ -24,8 +24,6 @@ import com.hazelcast.jet.function.DistributedFunction;
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
-
 /**
  * A holder of functions needed to create and destroy a context object.
  * <p>
@@ -75,7 +73,8 @@ public final class ContextFactory<C> implements Serializable {
     public static <C> ContextFactory<C> withCreateFn(
             @Nonnull DistributedFunction<JetInstance, ? extends C> createContextFn
     ) {
-        return new ContextFactory<>(createContextFn, noopConsumer(), COOPERATIVE_DEFAULT, SHARE_LOCALLY_DEFAULT);
+        return new ContextFactory<>(
+                createContextFn, DistributedConsumer.noop(), COOPERATIVE_DEFAULT, SHARE_LOCALLY_DEFAULT);
     }
 
     /**

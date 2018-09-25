@@ -18,6 +18,7 @@ package com.hazelcast.jet.function;
 
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -46,17 +47,35 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
     }
 
     /**
+     * Returns a predicate that always evaluates to {@code true}.
+     */
+    @Nonnull
+    static <T> DistributedPredicate<T> alwaysTrue() {
+        return t -> true;
+    }
+
+    /**
+     * Returns a predicate that always evaluates to {@code false}.
+     */
+    @Nonnull
+    static <T> DistributedPredicate<T> alwaysFalse() {
+        return t -> false;
+    }
+
+    /**
      * {@code Serializable} variant of
      * {@link Predicate#isEqual(Object) java.util.function.Predicate#isEqual(Object)}.
      */
+    @Nonnull
     static <T> DistributedPredicate<T> isEqual(Object other) {
-        return null == other ? Objects::isNull : other::equals;
+        return other == null ? Objects::isNull : other::equals;
     }
 
     /**
      * {@code Serializable} variant of
      * {@link Predicate#and(Predicate) java.util.function.Predicate#and(Predicate)}.
      */
+    @Nonnull
     default DistributedPredicate<T> and(DistributedPredicate<? super T> other) {
         checkNotNull(other, "other");
         return t -> test(t) && other.test(t);
@@ -66,7 +85,7 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * {@code Serializable} variant of
      * {@link Predicate#negate()}.
      */
-    @Override
+    @Nonnull @Override
     default DistributedPredicate<T> negate() {
         return t -> !test(t);
     }
@@ -75,6 +94,7 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * {@code Serializable} variant of
      * {@link Predicate#or(Predicate) java.util.function.Predicate#or(Predicate)}.
      */
+    @Nonnull
     default DistributedPredicate<T> or(DistributedPredicate<? super T> other) {
         checkNotNull(other, "other");
         return t -> test(t) || other.test(t);

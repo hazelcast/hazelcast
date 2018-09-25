@@ -30,7 +30,6 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -184,7 +183,7 @@ public final class JmsSourceBuilder {
                     : session.createQueue(nameLocal));
         }
         if (flushFn == null) {
-            flushFn = noopConsumer();
+            flushFn = DistributedConsumer.noop();
         }
 
         DistributedFunction<? super ConnectionFactory, ? extends Connection> connectionFnLocal = connectionFn;

@@ -29,7 +29,6 @@ import com.hazelcast.util.Preconditions;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
@@ -43,8 +42,8 @@ public final class SinkBuilder<W, T> {
     private final DistributedFunction<? super Processor.Context, ? extends W> createFn;
     private final String name;
     private DistributedBiConsumer<? super W, ? super T> receiveFn;
-    private DistributedConsumer<? super W> flushFn = noopConsumer();
-    private DistributedConsumer<? super W> destroyFn = noopConsumer();
+    private DistributedConsumer<? super W> flushFn = DistributedConsumer.noop();
+    private DistributedConsumer<? super W> destroyFn = DistributedConsumer.noop();
     private int preferredLocalParallelism = 1;
 
     private SinkBuilder(

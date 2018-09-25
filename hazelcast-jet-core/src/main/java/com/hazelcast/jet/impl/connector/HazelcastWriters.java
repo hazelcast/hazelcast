@@ -60,7 +60,6 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.callbackOf;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -115,7 +114,7 @@ public final class HazelcastWriters {
                 procContext -> new UpdateMapContext<>(mapName, toKeyFn, updateFn, isLocal),
                 UpdateMapContext::add,
                 instance -> context -> context.flush(instance),
-                noopConsumer()
+                DistributedConsumer.noop()
         ));
     }
 
@@ -212,7 +211,7 @@ public final class HazelcastWriters {
                         buffer.clear();
                     };
                 },
-                noopConsumer()
+                DistributedConsumer.noop()
         ));
     }
 
@@ -224,7 +223,7 @@ public final class HazelcastWriters {
                 index -> new ArrayMap(),
                 ArrayMap::add,
                 CacheFlush.flushToCache(name, isLocal),
-                noopConsumer()
+                DistributedConsumer.noop()
         ));
     }
 
@@ -246,7 +245,7 @@ public final class HazelcastWriters {
                         buffer.clear();
                     };
                 },
-                noopConsumer()
+                DistributedConsumer.noop()
         ));
     }
 

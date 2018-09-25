@@ -32,7 +32,7 @@ import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
-import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
+import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
@@ -101,7 +101,7 @@ public final class DiagnosticProcessors {
      * @param toStringFn  a function that returns the string representation of the item.
      *                    You can use {@code Object::toString}.
      * @param shouldLogFn a function to filter the logged items. You can use {@link
-     *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
+     *                    DistributedPredicate#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
      *                    filtering.
      * @param wrapped The wrapped meta-supplier.
@@ -220,7 +220,7 @@ public final class DiagnosticProcessors {
      * @param toStringFn  a function that returns the string representation of the item.
      *                    You can use {@code Object::toString}.
      * @param shouldLogFn a function to filter the logged items. You can use {@link
-     *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
+     *                    DistributedPredicate#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
      *                    filtering.
      * @param wrapped The wrapped meta-supplier.
@@ -320,7 +320,7 @@ public final class DiagnosticProcessors {
      * @param toStringFn  a function that returns the string representation of the item.
      *                    You can use {@code Object::toString}
      * @param shouldLogFn a function to filter the logged items. You can use {@link
-     *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
+     *                    DistributedPredicate#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
      *                    filtering.
      * @param wrapped The wrapped meta-supplier.

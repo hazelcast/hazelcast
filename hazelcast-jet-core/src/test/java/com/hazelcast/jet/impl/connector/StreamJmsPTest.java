@@ -20,6 +20,7 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,7 +42,6 @@ import javax.jms.TextMessage;
 import java.util.Enumeration;
 import java.util.Queue;
 
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -112,7 +112,8 @@ public class StreamJmsPTest extends JetTestSupport {
         DistributedFunction<Session, MessageConsumer> consumerFn = s ->
                 s.createConsumer(isQueue ? s.createQueue(destinationName) : s.createTopic(destinationName));
         DistributedFunction<Message, String> textMessageFn = m -> ((TextMessage) m).getText();
-        processor = new StreamJmsP<>(processorConnection, sessionFn, consumerFn, noopConsumer(), textMessageFn);
+        processor = new StreamJmsP<>(
+                processorConnection, sessionFn, consumerFn, DistributedConsumer.noop(), textMessageFn);
         outbox = new TestOutbox(1);
         Context ctx = new TestProcessorContext().setLogger(Logger.getLogger(StreamJmsP.class));
         processor.init(outbox, ctx);
