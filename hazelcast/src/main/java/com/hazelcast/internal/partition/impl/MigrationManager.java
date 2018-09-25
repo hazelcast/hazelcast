@@ -319,9 +319,7 @@ public class MigrationManager {
     void scheduleActiveMigrationFinalization(final MigrationInfo migrationInfo) {
         partitionServiceLock.lock();
         try {
-            // we use activeMigrationInfo because it contains migrated replica fragment namespaces
-            final MigrationInfo activeMigrationInfo = this.activeMigrationInfo;
-            if (activeMigrationInfo != null && migrationInfo.equals(activeMigrationInfo)) {
+            if (migrationInfo.equals(activeMigrationInfo)) {
                 if (activeMigrationInfo.startProcessing()) {
                     activeMigrationInfo.setStatus(migrationInfo.getStatus());
                     finalizeMigration(activeMigrationInfo);
@@ -331,9 +329,9 @@ public class MigrationManager {
                     nodeEngine.getExecutionService().schedule(new Runnable() {
                         @Override
                         public void run() {
-                            scheduleActiveMigrationFinalization(activeMigrationInfo);
+                            scheduleActiveMigrationFinalization(migrationInfo);
                         }
-                    }, 3, TimeUnit.SECONDS);
+                    }, 1, TimeUnit.SECONDS);
                 }
                 return;
             }
