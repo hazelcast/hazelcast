@@ -57,7 +57,7 @@ public class GcpComputeApiTest {
                         LABEL_VALUE)))
                 .withHeader("Authorization", equalTo(String.format("OAuth %s", ACCESS_TOKEN)))
                 .willReturn(aResponse().withStatus(200).withBody(instancesResponse())));
-        String label = String.format("%s=%s", LABEL_KEY, LABEL_VALUE);
+        Label label = new Label(String.format("%s=%s", LABEL_KEY, LABEL_VALUE));
 
         // when
         List<GcpAddress> result = gcpComputeApi.instances(PROJECT, ZONE, label, ACCESS_TOKEN);

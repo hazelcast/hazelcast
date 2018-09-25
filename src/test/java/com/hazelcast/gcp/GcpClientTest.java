@@ -63,7 +63,7 @@ public class GcpClientTest {
     @Test
     public void getAddressesCurrentProjectCurrentZoneNoLabel() {
         // given
-        String label = null;
+        Label label = null;
         given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
         GcpConfig gcpConfig = GcpConfig.builder().build();
@@ -79,7 +79,7 @@ public class GcpClientTest {
     @Test
     public void getAddressesCurrentProjectCurrentZoneWithLabel() {
         // given
-        String label = "application=hazelcast";
+        Label label = new Label("application=hazelcast");
         given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
         GcpConfig gcpConfig = GcpConfig.builder().setLabel(label).build();
@@ -95,7 +95,7 @@ public class GcpClientTest {
     @Test
     public void getAddressesMultipleProjectsMultipleZones() {
         // given
-        String label = "application=hazelcast";
+        Label label = new Label("application=hazelcast");
         given(gcpComputeApi.instances(PROJECT_1, ZONE_1, label, ACCESS_TOKEN)).willReturn(asList(ADDRESS_1));
         given(gcpComputeApi.instances(PROJECT_1, ZONE_2, label, ACCESS_TOKEN)).willReturn(asList(ADDRESS_2));
         given(gcpComputeApi.instances(PROJECT_2, ZONE_1, label, ACCESS_TOKEN)).willReturn(asList(ADDRESS_3));

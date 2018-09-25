@@ -27,10 +27,10 @@ final class GcpConfig {
     private final String privateKeyPath;
     private final List<String> projects;
     private final List<String> zones;
-    private final String label;
+    private final Label label;
     private final PortRange hzPort;
 
-    private GcpConfig(String privateKeyPath, List<String> projects, List<String> zones, String label, PortRange hzPort) {
+    private GcpConfig(String privateKeyPath, List<String> projects, List<String> zones, Label label, PortRange hzPort) {
         this.privateKeyPath = privateKeyPath;
         this.projects = projects;
         this.zones = zones;
@@ -50,7 +50,7 @@ final class GcpConfig {
         return zones;
     }
 
-    String getLabel() {
+    Label getLabel() {
         return label;
     }
 
@@ -66,7 +66,7 @@ final class GcpConfig {
         private String privateKeyPath;
         private List<String> projects = new ArrayList<String>();
         private List<String> zones = new ArrayList<String>();
-        private String label;
+        private Label label;
         private PortRange hzPort;
 
         Builder setPrivateKeyPath(String privateKeyPath) {
@@ -84,7 +84,7 @@ final class GcpConfig {
             return this;
         }
 
-        Builder setLabel(String label) {
+        Builder setLabel(Label label) {
             this.label = label;
             return this;
         }

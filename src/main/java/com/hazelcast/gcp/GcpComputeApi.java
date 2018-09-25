@@ -44,7 +44,7 @@ class GcpComputeApi {
         this.endpoint = endpoint;
     }
 
-    List<GcpAddress> instances(String project, String zone, String label, String accessToken) {
+    List<GcpAddress> instances(String project, String zone, Label label, String accessToken) {
         String response = RestClient
                 .create(urlFor(project, zone, label))
                 .withHeader("Authorization", String.format("OAuth %s", accessToken))
@@ -70,13 +70,10 @@ class GcpComputeApi {
         return result;
     }
 
-    private String urlFor(String project, String zone, String label) {
+    private String urlFor(String project, String zone, Label label) {
         String url = String.format("%s/compute/v1/projects/%s/zones/%s/instances", endpoint, project, zone);
         if (label != null) {
-            String[] labelParts = label.split("=");
-            String labelKey = labelParts[0];
-            String labelValue = labelParts[1];
-            url = String.format("%s?filter=labels.%s+eq+%s", url, labelKey, labelValue);
+            url = String.format("%s?filter=labels.%s+eq+%s", url, label.getKey(), label.getValue());
         }
         return url;
     }

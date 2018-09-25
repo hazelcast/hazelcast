@@ -96,6 +96,19 @@ public class GcpDiscoveryStrategyTest {
         // throw exception
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void newInvalidLabelProperty() {
+        // given
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("label", "invalid");
+
+        // when
+        new GcpDiscoveryStrategy(properties);
+
+        // then
+        // throw exception
+    }
+
     @Test
     public void discoverNodes() {
         // given

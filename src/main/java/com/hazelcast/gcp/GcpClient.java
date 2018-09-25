@@ -40,7 +40,7 @@ class GcpClient {
     private final String privateKeyPath;
     private final List<String> projects;
     private final List<String> zones;
-    private final String label;
+    private final Label label;
 
     GcpClient(GcpMetadataApi gcpMetadataApi, GcpComputeApi gcpComputeApi, GcpAuthenticator gcpAuthenticator,
               GcpConfig gcpConfig) {
