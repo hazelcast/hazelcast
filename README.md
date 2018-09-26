@@ -18,32 +18,31 @@ Make sure you have the `hazelcast-gcp.jar` dependency in your classpath. Then, y
 #### XML Configuration
 
 ```xml
- <hazelcast>
+<hazelcast>
    ...
   <properties>
-     <property name="hazelcast.discovery.enabled">true</property>
+    <property name="hazelcast.discovery.enabled">true</property>
   </properties>
   <network>
     ...
     <join>
-        <tcp-ip enabled="false" />
-        <multicast enabled="false"/>
-        <aws enabled="false" />
-        <discovery-strategies>
-            <!-- class equals to the DiscoveryStrategy not the factory! -->
-            <discovery-strategy enabled="true" class="com.hazelcast.gcp.GcpDiscoveryStrategy">
-                <properties>
-                   <property name="private-key-path">/home/name/service/account/key.json</property>
-                   <property name="projects">project-1,project-2</property>
-                   <property name="zones">us-east1-a,us-east1-b</property>
-                   <property name="label">application=hazelcast</property>
-                   <property name="hz-port">5701-5708</property>
-                </properties>
-            </discovery-strategy>
-        </discovery-strategies>
+      <tcp-ip enabled="false" />
+      <multicast enabled="false"/>
+      <aws enabled="false" />
+      <discovery-strategies>
+        <discovery-strategy enabled="true" class="com.hazelcast.gcp.GcpDiscoveryStrategy">
+          <properties>
+            <property name="private-key-path">/home/name/service/account/key.json</property>
+            <property name="projects">project-1,project-2</property>
+            <property name="zones">us-east1-a,us-east1-b</property>
+            <property name="label">application=hazelcast</property>
+            <property name="hz-port">5701-5708</property>
+          </properties>
+        </discovery-strategy>
+      </discovery-strategies>
     </join>
   </network>
- </hazelcast>
+</hazelcast>
 ```
 
 #### Java-based Configuration
@@ -55,6 +54,7 @@ JoinConfig joinConfig = config.getNetworkConfig().getJoin();
 joinConfig.getTcpIpConfig().setEnabled(false);
 joinConfig.getMulticastConfig().setEnabled(false);
 joinConfig.getAwsConfig().setEnabled(false);
+
 GcpDiscoveryStrategyFactory gcpDiscoveryStrategyFactory = new GcpDiscoveryStrategyFactory();
 Map<String, Comparable> properties = new HashMap<String, Comparable>();
 properties.put("private-key-path","/home/name/service/account/key.json");
