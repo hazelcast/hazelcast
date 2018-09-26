@@ -85,7 +85,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         final int partitionId = getPartitionId();
         journal.cleanup(namespace, partitionId);
 
-        startSequence = setWithinBounds(journal, partitionId, startSequence);
+        startSequence = clampToBounds(journal, partitionId, startSequence);
 
         journal.isAvailableOrNextSequence(namespace, partitionId, startSequence);
         // we'll store the wait notify key because ICache destroys the record store
@@ -114,7 +114,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         final EventJournal<J> journal = getJournal();
         final int partitionId = getPartitionId();
         journal.cleanup(namespace, partitionId);
-        sequence = setWithinBounds(journal, partitionId, sequence);
+        sequence = clampToBounds(journal, partitionId, sequence);
 
         if (minSize == 0) {
             if (!journal.isNextAvailableSequence(namespace, partitionId, sequence)) {
@@ -194,7 +194,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
      * @param requestedSequence the requested sequence to read
      * @return the bounded journal sequence
      */
-    private long setWithinBounds(EventJournal<J> journal, int partitionId, long requestedSequence) {
+    private long clampToBounds(EventJournal<J> journal, int partitionId, long requestedSequence) {
         final long oldestSequence = journal.oldestSequence(namespace, partitionId);
         final long newestSequence = journal.newestSequence(namespace, partitionId);
 
