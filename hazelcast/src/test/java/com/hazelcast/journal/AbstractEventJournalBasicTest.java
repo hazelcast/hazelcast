@@ -47,6 +47,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.ADDED;
@@ -67,6 +68,7 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTestSupport {
     private static final Random RANDOM = new Random();
+    private static final String LIMITED_DS = "limited";
 
     protected HazelcastInstance[] instances;
 
@@ -120,6 +122,44 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         context.dataAdapter.put(key, value);
         assertOpenEventually(latch, 30);
         assertEventJournalSize(context.dataAdapter, 1);
+    }
+
+    @Test
+    public void readManyFromEventJournalShouldNotBlock_whenHitsStale() throws ExecutionException, InterruptedException {
+        init();
+        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+        assertEventJournalSize(context.dataAdapter, 0);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        final ExecutionCallback<ReadResultSet<EJ_TYPE>> ec = new ExecutionCallback<ReadResultSet<EJ_TYPE>>() {
+            @Override
+            public void onResponse(ReadResultSet<EJ_TYPE> response) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+        };
+
+        Thread consumer = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                readFromEventJournal(context.dataAdapter, 0, 10, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
+            }
+        });
+
+        consumer.start();
+
+        Map<String, Integer> addMap = new HashMap<String, Integer>();
+        for (int i = 0; i < 501; i++) {
+            addMap.put(randomPartitionKey(), RANDOM.nextInt());
+        }
+
+        context.dataAdapter.putAll(addMap);
+        assertOpenEventually(latch, 30);
     }
 
     @Test
