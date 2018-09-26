@@ -32,6 +32,8 @@ public interface EventJournalDataStructureAdapter<K, V, EJ_TYPE> extends EventJo
 
     V put(K key, V value, long ttl, TimeUnit timeunit);
 
+    void putAll(Map<K, V> map);
+
     void load(K key);
 
     void loadAll(Set<K> keys);
