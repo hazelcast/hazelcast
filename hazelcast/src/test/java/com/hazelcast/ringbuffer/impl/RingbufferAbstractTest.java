@@ -29,9 +29,12 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.RootCauseMatcher;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -64,6 +67,9 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     private Config config;
     private HazelcastInstance local;
     private String name;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -722,10 +728,11 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     }
 
 
-    @Test(expected = ExecutionException.class)
+    @Test
     public void readManyAsync_whenHitsStale_shouldNotBeBlocked() throws Exception {
         ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 1, 10, null);
         ringbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
+        expectedException.expect(new RootCauseMatcher(StaleSequenceException.class));
         f.get();
     }
 
