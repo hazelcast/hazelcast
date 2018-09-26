@@ -38,6 +38,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
@@ -86,6 +87,26 @@ public class RingbufferTest extends HazelcastTestSupport {
         serverRingbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
         expectedException.expect(new RootCauseMatcher(StaleSequenceException.class));
         f.get();
+    }
+
+    @Test
+    public void readOne_whenHitsStale_shouldNotBeBlocked() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread consumer = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    clientRingbuffer.readOne(0);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (StaleSequenceException e) {
+                    latch.countDown();
+                }
+            }
+        });
+        consumer.start();
+        serverRingbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
+        assertOpenEventually(latch);
     }
 
     @Test
