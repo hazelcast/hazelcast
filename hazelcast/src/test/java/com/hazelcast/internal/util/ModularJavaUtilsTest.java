@@ -31,8 +31,6 @@ import static org.mockito.Mockito.verify;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.script.ScriptEngine;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -61,7 +59,7 @@ public class ModularJavaUtilsTest {
     }
 
     /**
-     * Tests that {@link ModularJavaUtils#checkPackageRequirements(ILogger, ScriptEngine, Map)} logs a warning with the missing
+     * Tests that {@link ModularJavaUtils#checkPackageRequirements(ILogger, Map)} logs a warning with the missing
      * Java argument if a Java internal package access not provided to Hazelcast and the test is running on Java 9 or newer.
      */
     @Test
