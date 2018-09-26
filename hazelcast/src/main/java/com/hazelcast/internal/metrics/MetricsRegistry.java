@@ -16,9 +16,6 @@
 
 package com.hazelcast.internal.metrics;
 
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
-
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -58,12 +55,7 @@ import java.util.concurrent.TimeUnit;
  */
 public interface MetricsRegistry {
 
-    /**
-     * Returns the minimum ProbeLevel this MetricsRegistry is recording.
-     */
-    ProbeLevel minimumLevel();
-
-    /**
+   /**
      * Creates a {@link LongGauge} for a given metric name.
      *
      * If no gauge exists for the name, it will be created but no probe is set.
@@ -95,16 +87,6 @@ public interface MetricsRegistry {
     DoubleGauge newDoubleGauge(String name);
 
     /**
-     * Gets a set of all current probe names.
-     *
-     * The returned set is immutable and is a snapshot of the names. So the
-     * reader gets a stable view on the names.
-     *
-     * @return set of all current names.
-     */
-    Set<String> getNames();
-
-    /**
      * Scans the source object for any fields/methods that have been annotated
      * with {@link Probe} annotation, and registers these fields/methods as
      * probe instances.
@@ -117,12 +99,13 @@ public interface MetricsRegistry {
      * If an object has no @Probe annotations, the call is ignored.
      *
      * @param source     the object to scan.
-     * @param namePrefix the name prefix.
      * @throws NullPointerException     if namePrefix or source is null.
      * @throws IllegalArgumentException if the source contains a Probe
-     *      annotation on a field/method of unsupported type.
+     *                                  annotation on a field/method of unsupported type.
      */
-    <S> void scanAndRegister(S source, String namePrefix);
+    <S> void register(S source);
+
+    void registerAll(Object... sources);
 
     /**
      * Registers a probe.
@@ -174,28 +157,13 @@ public interface MetricsRegistry {
     void scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit);
 
     /**
-     * Renders the content of the MetricsRegistry.
+     * Collects all metrics.
      *
-     * @param renderer the ProbeRenderer
-     * @throws NullPointerException if renderer is null.
+     * @param collector the MetricsCollector
+     * @throws NullPointerException if collector is null.
      */
-    void render(ProbeRenderer renderer);
+    void collect(MetricsCollector collector, ProbeLevel probeLevel);
 
-    /**
-     * For each object that implements {@link MetricsProvider} the
-     * {@link MetricsProvider#provideMetrics(MetricsRegistry)} is called.
-     *
-     * @param objects the array of objects to initialize.
-     */
-    void collectMetrics(Object... objects);
-
-    /**
-     * For each object that implements {@link DiscardableMetricsProvider} the
-     * {@link DiscardableMetricsProvider#discardMetrics(MetricsRegistry)} is called.
-     *
-     * @param objects the array of objects to check.
-     */
-    void discardMetrics(Object... objects);
 
     /**
      * Creates a new {@link ProbeBuilder}.

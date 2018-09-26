@@ -21,7 +21,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeBuilder;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -34,7 +33,6 @@ import java.util.HashSet;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -51,17 +49,17 @@ public class ProbeBuilderImplTest {
 
     @Test
     public void test_scanAndRegister() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
+        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
         registry.newProbeBuilder()
           .withTag("tag1", "value1")
-          .scanAndRegister(this);
+          .register(this);
 
         assertProbes(registry);
     }
 
     @Test
     public void test_register() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
+        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
         ProbeBuilder builder = registry.newProbeBuilder()
                                        .withTag("tag1", "value1");
         builder.register(this, "probe1", ProbeLevel.INFO, ProbeUnit.COUNT,
@@ -87,32 +85,32 @@ public class ProbeBuilderImplTest {
         final String p2Name = "[tag1=value1,unit=bytes,metric=secondProbe]";
         assertEquals(new HashSet<String>(asList(p1Name, p2Name)), registry.getNames());
 
-        registry.render(new ProbeRenderer() {
-            @Override
-            public void renderLong(String name, long value) {
-                if (p1Name.equals(name)) {
-                    assertEquals(probe1, value);
-                } else if (p2Name.equals(name)) {
-                    assertEquals(probe2, value);
-                } else {
-                    fail("Unknown metric: " + name);
-                }
-            }
-
-            @Override
-            public void renderDouble(String name, double value) {
-                fail("Unknown metric: " + name);
-            }
-
-            @Override
-            public void renderException(String name, Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            @Override
-            public void renderNoValue(String name) {
-                fail("Unknown metric: " + name);
-            }
-        });
+//        registry.collect(new MetricsCollector() {
+//            @Override
+//            public void collectLong(String name, long value) {
+//                if (p1Name.equals(name)) {
+//                    assertEquals(probe1, value);
+//                } else if (p2Name.equals(name)) {
+//                    assertEquals(probe2, value);
+//                } else {
+//                    fail("Unknown metric: " + name);
+//                }
+//            }
+//
+//            @Override
+//            public void collectDouble(String name, double value) {
+//                fail("Unknown metric: " + name);
+//            }
+//
+//            @Override
+//            public void collectException(String name, Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//
+//            @Override
+//            public void collectNoValue(String name) {
+//                fail("Unknown metric: " + name);
+//            }
+//        });
     }
 }

@@ -28,7 +28,7 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -64,8 +64,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config()
-                .setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name())
-                .setProperty(Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES.getName(), "true");
+                .setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
         config.addMapConfig(new MapConfig(NEAR_CACHE_MAP_NAME).setNearCacheConfig(new NearCacheConfig("nearCache")));
 
         hz = createHazelcastInstance(config);
@@ -162,8 +161,8 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
-                registry.render(renderer);
+                final StringMetricsCollector renderer = new StringMetricsCollector(prefix);
+                registry.collect(renderer, ProbeLevel.INFO);
                 assertTrue(!renderer.probes.isEmpty());
             }
         });
@@ -176,39 +175,27 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
     }
 
-    static class StringProbeRenderer implements ProbeRenderer {
+    static class StringMetricsCollector implements MetricsCollector {
         final HashMap<String, Object> probes = new HashMap<String, Object>();
         private final String prefix;
 
-        StringProbeRenderer(String prefix) {
+        StringMetricsCollector(String prefix) {
             this.prefix = prefix;
         }
 
         @Override
-        public void renderLong(String name, long value) {
-            if (name.startsWith(prefix)) {
-                probes.put(name, value);
+        public void collectLong(CharSequence name, long value) {
+            String n = name.toString();
+            if (n.startsWith(prefix)) {
+                probes.put(n, value);
             }
         }
 
         @Override
-        public void renderDouble(String name, double value) {
-            if (name.startsWith(prefix)) {
-                probes.put(name, value);
-            }
-        }
-
-        @Override
-        public void renderException(String name, Exception e) {
-            if (name.startsWith(prefix)) {
-                probes.put(name, e);
-            }
-        }
-
-        @Override
-        public void renderNoValue(String name) {
-            if (name.startsWith(prefix)) {
-                probes.put(name, null);
+        public void collectDouble(CharSequence name, double value) {
+            String n = name.toString();
+            if (n.startsWith(prefix)) {
+                probes.put(n, value);
             }
         }
 

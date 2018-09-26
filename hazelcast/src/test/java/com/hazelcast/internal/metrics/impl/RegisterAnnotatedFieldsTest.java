@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -32,7 +33,6 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
 
@@ -44,19 +44,20 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
     }
 
     @Test
     public void register_customName() {
         ObjectLongGaugeFieldWithName object = new ObjectLongGaugeFieldWithName();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.register(object);
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.myfield");
         object.field = 10;
         assertEquals(object.field, gauge.read());
     }
 
+    @Namespace(name = "foo")
     public class ObjectLongGaugeFieldWithName {
         @Probe(name = "myfield")
         private long field;
@@ -65,13 +66,14 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     @Test
     public void register_primitiveInteger() {
         PrimitiveIntegerField object = new PrimitiveIntegerField();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.register(object);
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
         object.field = 10;
         assertEquals(object.field, gauge.read());
     }
 
+    @Namespace(name = "foo")
     public class PrimitiveIntegerField {
         @Probe
         private int field;
@@ -80,13 +82,14 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     @Test
     public void register_primitiveLong() {
         PrimitiveLongField object = new PrimitiveLongField();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.register(object);
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
         object.field = 10;
         assertEquals(object.field, gauge.read());
     }
 
+    @Namespace(name = "foo")
     public class PrimitiveLongField {
         @Probe
         private long field;
@@ -95,13 +98,14 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     @Test
     public void register_primitiveDouble() {
         PrimitiveDoubleField object = new PrimitiveDoubleField();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.register(object);
 
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.field");
         object.field = 10;
         assertEquals(object.field, gauge.read(), 0.1);
     }
 
+    @Namespace(name = "foo")
     public class PrimitiveDoubleField {
         @Probe
         private double field;
@@ -112,7 +116,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         ConcurrentMapField object = new ConcurrentMapField();
         object.field.put("foo", "foo");
         object.field.put("bar", "bar");
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.register(object);
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
         assertEquals(object.field.size(), gauge.read());
@@ -121,6 +125,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         assertEquals(0, gauge.read());
     }
 
+    @Namespace(name = "foo")
     public class ConcurrentMapField {
         @Probe
         private ConcurrentHashMap field = new ConcurrentHashMap();
@@ -130,7 +135,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     public void register_counterFields() {
         CounterField object = new CounterField();
         object.field.inc(10);
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.register(object);
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
         assertEquals(10, gauge.read());
@@ -139,6 +144,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         assertEquals(0, gauge.read());
     }
 
+    @Namespace(name = "foo")
     public class CounterField {
         @Probe
         private Counter field = newSwCounter();
@@ -148,7 +154,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     public void register_staticField() {
         StaticField object = new StaticField();
         StaticField.field.set(10);
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.register(object);
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
         assertEquals(10, gauge.read());
@@ -157,6 +163,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         assertEquals(0, gauge.read());
     }
 
+    @Namespace(name = "foo")
     public static class StaticField {
         @Probe
         static AtomicInteger field = new AtomicInteger();
@@ -165,7 +172,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     @Test
     public void register_superclassRegistration() {
         Subclass object = new Subclass();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.register(object);
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
         assertEquals(0, gauge.read());
@@ -174,6 +181,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         assertEquals(10, gauge.read());
     }
 
+    @Namespace(name = "foo")
     public static class SuperClass {
         @Probe
         int field;

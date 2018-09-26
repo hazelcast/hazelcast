@@ -17,6 +17,7 @@
 package com.hazelcast.memory;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
@@ -28,6 +29,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
  *
  * @see com.hazelcast.memory.GarbageCollectorStats
  */
+@Namespace(name = "memory")
 public interface MemoryStats {
 
     /**

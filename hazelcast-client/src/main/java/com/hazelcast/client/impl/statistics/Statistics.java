@@ -382,7 +382,7 @@ public class Statistics {
             }
 
             for (Gauge gauge : allGauges) {
-                stats.append(STAT_SEPARATOR).append(gauge.getName()).append(KEY_VALUE_SEPARATOR);
+                stats.append(STAT_SEPARATOR).append(gauge.name()).append(KEY_VALUE_SEPARATOR);
                 gauge.render(stats);
             }
         }

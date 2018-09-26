@@ -31,7 +31,6 @@ import org.junit.runner.RunWith;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -44,7 +43,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
         ThreadMetricSet.register(metricsRegistry);
     }
 

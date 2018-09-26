@@ -26,6 +26,7 @@ import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.Counter;
@@ -93,6 +94,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @see TargetInvocation
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
+@Namespace(name = "operation")
 public final class OperationServiceImpl implements InternalOperationService, MetricsProvider, LiveOperationsTracker {
 
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
@@ -451,8 +453,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
-        registry.collectMetrics(invocationRegistry, invocationMonitor, inboundResponseHandlerSupplier, operationExecutor);
+        registry.registerAll(invocationRegistry, invocationMonitor, inboundResponseHandlerSupplier, operationExecutor);
     }
 
     public void start() {

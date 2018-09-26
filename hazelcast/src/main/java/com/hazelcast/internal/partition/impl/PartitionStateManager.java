@@ -27,6 +27,7 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
@@ -46,6 +47,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 /**
  * Maintains the partition table state.
  */
+@Namespace(name =  "partitions")
 public class PartitionStateManager {
 
     private final Node node;

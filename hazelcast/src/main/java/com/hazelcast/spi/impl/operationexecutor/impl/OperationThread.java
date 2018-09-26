@@ -17,8 +17,6 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.metrics.MetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -43,7 +41,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * <p/>
  * The actual processing of an operation is forwarded to the {@link OperationRunner}.
  */
-public abstract class OperationThread extends HazelcastManagedThread implements MetricsProvider {
+public abstract class OperationThread extends HazelcastManagedThread  {
 
     final int threadId;
     final OperationQueue queue;
@@ -185,10 +183,13 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         }
     }
 
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation.thread[" + getName() + "]");
-    }
+//    @Override
+//    public void provideMetrics(MetricsRegistry registry) {
+//        registry.newProbeBuilder()
+//                .withTag("name", "operation.thread")
+//                .withTag("id", getName())
+//                .scanAndRegister(this);
+//    }
 
     public final void shutdown() {
         shutdown = true;

@@ -221,7 +221,7 @@ public class Node {
             config.setConfigurationService(nodeEngine.getConfigurationService());
             config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
-            metricsRegistry.collectMetrics(nodeExtension);
+            metricsRegistry.register(nodeExtension);
             healthMonitor = new HealthMonitor(this);
 
             clientEngine = new ClientEngineImpl(this);

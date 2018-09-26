@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -39,7 +38,7 @@ public class FileMetricSetTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
         FileMetricSet.register(metricsRegistry);
     }
 

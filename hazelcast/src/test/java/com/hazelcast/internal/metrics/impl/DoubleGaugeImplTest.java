@@ -20,6 +20,7 @@ import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +29,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static org.junit.Assert.assertEquals;
 
@@ -39,9 +39,10 @@ public class DoubleGaugeImplTest {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
     }
 
+    @Namespace(name = "someObject")
     class SomeObject {
         @Probe
         long longField = 10;
@@ -112,18 +113,18 @@ public class DoubleGaugeImplTest {
     @Test
     public void whenLongGaugeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.register(someObject);
 
-        DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.longField");
+        DoubleGauge gauge = metricsRegistry.newDoubleGauge("someObject.longField");
         assertEquals(someObject.longField, gauge.read(), 0.1);
     }
 
     @Test
     public void whenDoubleGaugeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.register(someObject);
 
-        DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.doubleField");
+        DoubleGauge gauge = metricsRegistry.newDoubleGauge("someObject.doubleField");
         assertEquals(someObject.doubleField, gauge.read(), 0.1);
     }
 }

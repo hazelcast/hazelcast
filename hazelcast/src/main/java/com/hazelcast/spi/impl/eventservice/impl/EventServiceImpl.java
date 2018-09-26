@@ -19,9 +19,9 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -92,7 +92,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * event can be retransmitted causing it to be received by the target node at a later time.
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class EventServiceImpl implements InternalEventService, MetricsProvider {
+@Namespace(name = "event")
+public class EventServiceImpl implements InternalEventService {
 
     public static final String SERVICE_NAME = "hz:core:eventService";
 
@@ -193,11 +194,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         } catch (Exception e) {
             return EVENT_SYNC_FREQUENCY;
         }
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "event");
     }
 
     @Override
@@ -541,7 +537,8 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
             EventServiceSegment existingSegment = segments.putIfAbsent(service, newSegment);
             if (existingSegment == null) {
                 segment = newSegment;
-                nodeEngine.getMetricsRegistry().scanAndRegister(newSegment, "event.[" + service + "]");
+                //todo
+                //nodeEngine.getMetricsRegistry().scanAndRegister(newSegment, "event.[" + service + "]");
             } else {
                 segment = existingSegment;
             }

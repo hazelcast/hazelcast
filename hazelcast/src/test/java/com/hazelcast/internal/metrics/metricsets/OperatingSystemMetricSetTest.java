@@ -34,7 +34,6 @@ import org.junit.runner.RunWith;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet.registerMethod;
 import static com.hazelcast.logging.Logger.getLogger;
 import static org.junit.Assert.assertEquals;
@@ -51,7 +50,7 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(getLogger(MetricsRegistryImpl.class));
         OperatingSystemMetricSet.register(metricsRegistry);
     }
 
@@ -123,7 +122,7 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void registerMethod_whenLong() {
-        metricsRegistry = new MetricsRegistryImpl(getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(getLogger(MetricsRegistryImpl.class));
 
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
         registerMethod(metricsRegistry, fakeOperatingSystemBean, "longMethod", "longMethod");
@@ -134,7 +133,7 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void registerMethod_whenNotExist() {
-        metricsRegistry = new MetricsRegistryImpl(getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(getLogger(MetricsRegistryImpl.class));
 
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
         registerMethod(metricsRegistry, fakeOperatingSystemBean, "notExist", "notExist");

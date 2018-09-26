@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.internal.metrics.MetricSource;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
@@ -36,14 +38,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.Collections.newSetFromMap;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
@@ -72,7 +72,7 @@ import static java.util.logging.Level.INFO;
  * feature and will cause the io threads to run hot. For this reason, when this feature
  * is enabled, the number of io threads should be reduced (preferably 1).
  */
-public final class NioNetworking implements Networking {
+public final class NioNetworking implements Networking, MetricSource {
 
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
@@ -149,7 +149,7 @@ public final class NioNetworking implements Networking {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inputThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp.inputThread[" + thread.getName() + "]");
+            //metricsRegistry.scanAndRegister(thread, "tcp.inputThread[" + thread.getName() + "]");
             thread.start();
         }
 
@@ -164,21 +164,29 @@ public final class NioNetworking implements Networking {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             outputThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp.outputThread[" + thread.getName() + "]");
+            //metricsRegistry.scanAndRegister(thread, "tcp.outputThread[" + thread.getName() + "]");
             thread.start();
         }
 
         startIOBalancer();
 
-        if (metricsRegistry.minimumLevel().isEnabled(DEBUG)) {
-            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS);
+//        if (metricsRegistry.minimumLevel().isEnabled(DEBUG)) {
+//            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS);
+//        }
+    }
+
+    @Override
+    public void collectMetrics(CollectionCycle cycle) {
+        for (Channel channel : channels) {
+            cycle.collect(channel.toString() + ".in", channel.inboundPipeline());
+            cycle.collect(channel.toString() + ".out", channel.outboundPipeline());
         }
     }
 
     private void startIOBalancer() {
         ioBalancer = new IOBalancer(inputThreads, outputThreads, threadNamePrefix, balancerIntervalSeconds, loggingService);
         ioBalancer.start();
-        metricsRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
+        metricsRegistry.register(ioBalancer);
     }
 
     @Override

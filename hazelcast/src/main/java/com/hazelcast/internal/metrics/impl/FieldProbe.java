@@ -42,51 +42,49 @@ import static java.lang.String.format;
 /**
  * A FieldProbe is a {@link ProbeFunction} that reads out a field that is annotated with {@link Probe}.
  */
-abstract class FieldProbe implements ProbeFunction {
+abstract class FieldProbe<S> extends AbstractProbe<S> implements ProbeFunction {
 
-    final Probe probe;
     final Field field;
     final int type;
 
-    FieldProbe(Field field, Probe probe, int type) {
+    FieldProbe(String name, Field field, Probe probe, int type) {
+        super(probe, name);
         this.field = field;
-        this.probe = probe;
         this.type = type;
         field.setAccessible(true);
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = namePrefix + '.' + getProbeOrFieldName();
-        metricsRegistry.registerInternal(source, name, probe.level(), this);
-    }
-
-    void register(ProbeBuilderImpl builder, Object source) {
-        builder
-                .withTag("unit", probe.unit().name().toLowerCase())
-                .register(source, getProbeOrFieldName(), probe.level(), this);
-    }
-
-    private String getProbeOrFieldName() {
-        return probe.name().length() != 0 ? probe.name() : field.getName();
-    }
-
-    static <S> FieldProbe createFieldProbe(Field field, Probe probe) {
+    static <S> FieldProbe createFieldProbe(String prefix, Field field, Probe probe) {
         int type = getType(field.getType());
         if (type == -1) {
             throw new IllegalArgumentException(format("@Probe field '%s' is of an unhandled type", field));
         }
 
+        String n = probe.name().length() != 0 ? probe.name() : field.getName();
+        String name = prefix == null || prefix.length() == 0 ? n : prefix + '.' + n;
+
         if (isDouble(type)) {
-            return new DoubleFieldProbe<S>(field, probe, type);
+            return new DoubleFieldProbe<S>(name, field, probe, type);
         } else {
-            return new LongFieldProbe<S>(field, probe, type);
+            return new LongFieldProbe<S>(name, field, probe, type);
         }
     }
 
-    static class LongFieldProbe<S> extends FieldProbe implements LongProbeFunction<S> {
+    static class LongFieldProbe<S> extends FieldProbe<S> implements LongProbeFunction<S> {
 
-        public LongFieldProbe(Field field, Probe probe, int type) {
-            super(field, probe, type);
+        LongFieldProbe(String prefix, Field field, Probe probe, int type) {
+            super(prefix, field, probe, type);
+        }
+
+        @Override
+        void collect(CollectionCycleImpl cycle, S source) {
+            cycle.newTags().metric(name);
+            try {
+                cycle.collectLong(get(source));
+            } catch (Exception e) {
+                //cycle.collectException(e);
+                //todo
+            }
         }
 
         @Override
@@ -115,10 +113,21 @@ abstract class FieldProbe implements ProbeFunction {
         }
     }
 
-    static class DoubleFieldProbe<S> extends FieldProbe implements DoubleProbeFunction<S> {
+    static class DoubleFieldProbe<S> extends FieldProbe<S> implements DoubleProbeFunction<S> {
 
-        public DoubleFieldProbe(Field field, Probe probe, int type) {
-            super(field, probe, type);
+        DoubleFieldProbe(String prefix, Field field, Probe probe, int type) {
+            super(prefix, field, probe, type);
+        }
+
+        @Override
+        void collect(CollectionCycleImpl cycle, S source) {
+            cycle.newTags().metric(name);
+            try {
+                cycle.collectDouble(get(source));
+            } catch (Exception e) {
+                //cycle.collectException(e);
+                //todo
+            }
         }
 
         @Override

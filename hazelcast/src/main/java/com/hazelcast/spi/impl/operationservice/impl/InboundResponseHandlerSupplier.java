@@ -16,9 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.metrics.MetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
@@ -70,7 +69,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * dealing with the response and especially notifying the invocation future can be
  * very expensive.
  */
-public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier<Consumer<Packet>> {
+@Namespace(name =  "operation")
+public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>> {
 
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
@@ -189,11 +189,6 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
             result += handler.responsesMissing.get();
         }
         return result;
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.networking.nio.iobalancer;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
@@ -59,6 +60,7 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_THREAD_COUNT;
  * <code>ConnectionListener</code> is notified only after a successful (Hazelcast)
  * binding process.
  */
+@Namespace(name = "tcp.balancer")
 public class IOBalancer {
     private static final String PROP_MONKEY_BALANCER = "hazelcast.io.balancer.monkey";
     private final ILogger logger;

@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -111,7 +110,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     }
 
     protected MetricsRegistryImpl newMetricsRegistry() {
-        return new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class), INFO);
+        return new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class));
     }
 
     protected TcpIpConnectionManager newConnectionManager(MetricsRegistry metricsRegistry) throws Exception {

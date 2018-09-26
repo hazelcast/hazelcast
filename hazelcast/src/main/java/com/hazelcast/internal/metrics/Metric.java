@@ -20,7 +20,7 @@ package com.hazelcast.internal.metrics;
  * A Metric is a 'quantitative measure' of something for example the number of
  * operations pending, number of operations per second being executed etc.
  *
- * Each metric is uniquely identified using a name. See {@link #getName()}.
+ * Each metric is uniquely identified using a name. See {@link #name()}.
  *
  * A metric gets its content from a probe. An probe can be one of the following:
  * <ol>
@@ -43,5 +43,5 @@ public interface Metric {
      *
      * @return the name of the metric.
      */
-    String getName();
+    String name();
 }

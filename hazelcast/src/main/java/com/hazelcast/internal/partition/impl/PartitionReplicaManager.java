@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
@@ -59,6 +60,7 @@ import static java.util.Collections.newSetFromMap;
  * Maintains the version values for the partition replicas and manages the replica-related operations for partitions
  *
  */
+@Namespace(name =  "partitions")
 public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
     private final Node node;

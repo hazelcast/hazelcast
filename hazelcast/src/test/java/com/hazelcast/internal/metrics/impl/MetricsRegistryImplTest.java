@@ -30,7 +30,6 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -43,23 +42,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-    }
-
-    @Test
-    public void modCount() {
-        long modCount = metricsRegistry.modCount();
-        metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY,
-                new LongProbeFunction() {
-                    @Override
-                    public long get(Object obj) throws Exception {
-                        return 1;
-                    }
-                });
-        assertEquals(modCount + 1, metricsRegistry.modCount());
-
-        metricsRegistry.deregister(this);
-        assertEquals(modCount + 2, metricsRegistry.modCount());
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
     }
 
     // ================ newLongGauge ======================
@@ -74,7 +57,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
         LongGaugeImpl gauge = metricsRegistry.newLongGauge("foo");
 
         assertNotNull(gauge);
-        assertEquals("foo", gauge.getName());
+        assertEquals("foo", gauge.name());
         assertEquals(0, gauge.read());
     }
 

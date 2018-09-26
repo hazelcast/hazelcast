@@ -30,6 +30,7 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -106,6 +107,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * The {@link InternalPartitionService} implementation.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
+@Namespace(name = "partitions")
 public class InternalPartitionServiceImpl implements InternalPartitionService, ManagedService,
         EventPublishingService<PartitionEvent, PartitionEventListener<PartitionEvent>>,
         PartitionAwareService, ClusterStateListener, ClusterVersionListener {
@@ -137,7 +139,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     private final ExceptionHandler partitionStateSyncTimeoutHandler;
 
-    /** Determines if a {@link AssignPartitions} is being sent to the master, used to limit partition assignment requests. */
+    /**
+     * Determines if a {@link AssignPartitions} is being sent to the master, used to limit partition assignment requests.
+     */
     private final AtomicBoolean masterTriggered = new AtomicBoolean(false);
     private final CoalescingDelayedTrigger masterTrigger;
 
@@ -145,7 +149,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     private volatile Address lastMaster;
 
-    /** Whether the master should fetch the partition tables from other nodes, can happen when node becomes new master. */
+    /**
+     * Whether the master should fetch the partition tables from other nodes, can happen when node becomes new master.
+     */
     private volatile boolean shouldFetchPartitionTables;
 
     public InternalPartitionServiceImpl(Node node) {
@@ -180,10 +186,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         proxy = new PartitionServiceProxy(nodeEngine, this);
 
         MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(this, "partitions");
-        metricsRegistry.scanAndRegister(partitionStateManager, "partitions");
-        metricsRegistry.scanAndRegister(migrationManager, "partitions");
-        metricsRegistry.scanAndRegister(replicaManager, "partitions");
+        metricsRegistry.registerAll(this, partitionStateManager, migrationManager, replicaManager);
+
     }
 
     @Override
@@ -263,7 +267,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
-    /** Sends a {@link AssignPartitions} to the master to assign partitions. */
+    /**
+     * Sends a {@link AssignPartitions} to the master to assign partitions.
+     */
     private void triggerMasterToAssignPartitions() {
         if (!shouldTriggerMasterToAssignPartitions()) {
             return;
@@ -285,25 +291,25 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         if (masterTriggered.compareAndSet(false, true)) {
             InternalOperationService operationService = nodeEngine.getOperationService();
             operationService.createInvocationBuilder(SERVICE_NAME, new AssignPartitions(), masterAddress)
-                            .invoke()
-                            .andThen(new ExecutionCallback<Object>() {
-                                @Override
-                                public void onResponse(Object response) {
-                                    resetMasterTriggeredFlag();
-                                    // RU_COMPAT_310
-                                    if (response instanceof PartitionRuntimeState) {
-                                        PartitionRuntimeState partitionState = (PartitionRuntimeState) response;
-                                        partitionState.setEndpoint(masterAddress);
-                                        processPartitionRuntimeState(partitionState);
-                                    }
-                                }
+                    .invoke()
+                    .andThen(new ExecutionCallback<Object>() {
+                        @Override
+                        public void onResponse(Object response) {
+                            resetMasterTriggeredFlag();
+                            // RU_COMPAT_310
+                            if (response instanceof PartitionRuntimeState) {
+                                PartitionRuntimeState partitionState = (PartitionRuntimeState) response;
+                                partitionState.setEndpoint(masterAddress);
+                                processPartitionRuntimeState(partitionState);
+                            }
+                        }
 
-                                @Override
-                                public void onFailure(Throwable t) {
-                                    resetMasterTriggeredFlag();
-                                    logger.severe(t);
-                                }
-                            });
+                        @Override
+                        public void onFailure(Throwable t) {
+                            resetMasterTriggeredFlag();
+                            logger.severe(t);
+                        }
+                    });
 
             masterTrigger.executeWithDelay();
         }
@@ -642,10 +648,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return true;
     }
 
-    /** Sends a {@link PartitionStateOperation} to cluster members and returns the futures. */
+    /**
+     * Sends a {@link PartitionStateOperation} to cluster members and returns the futures.
+     */
     private List<Future<Boolean>> firePartitionStateOperation(Collection<MemberImpl> members,
-                                                     PartitionRuntimeState partitionState,
-                                                     OperationService operationService) {
+                                                              PartitionRuntimeState partitionState,
+                                                              OperationService operationService) {
         final ClusterServiceImpl clusterService = node.clusterService;
         List<Future<Boolean>> calls = new ArrayList<Future<Boolean>>(members.size());
         for (MemberImpl member : members) {
@@ -774,7 +782,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         migrationManager.retainCompletedMigrations(completedMigrations);
     }
 
-    /** Sets the replica addresses for all partitions. */
+    /**
+     * Sets the replica addresses for all partitions.
+     */
     private void updateAllPartitions(Address[][] partitionTable) {
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             Address[] replicas = partitionTable[partitionId];
@@ -1169,17 +1179,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     boolean scheduleFetchMostRecentPartitionTableTaskIfRequired() {
-       lock.lock();
-       try {
-           if (shouldFetchPartitionTables) {
-               migrationManager.schedule(new FetchMostRecentPartitionTableTask());
-               return true;
-           }
+        lock.lock();
+        try {
+            if (shouldFetchPartitionTables) {
+                migrationManager.schedule(new FetchMostRecentPartitionTableTask());
+                return true;
+            }
 
-           return false;
-       } finally {
-           lock.unlock();
-       }
+            return false;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void replaceAddress(Address oldAddress, Address newAddress) {
@@ -1249,9 +1259,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     .invokeOnTarget(SERVICE_NAME, new FetchPartitionStateOperation(), m.getAddress());
         }
 
-        /** Collects all completed and active migrations and sets the partition state to the latest version. */
+        /**
+         * Collects all completed and active migrations and sets the partition state to the latest version.
+         */
         private void collectAndProcessResults(Collection<MigrationInfo> allCompletedMigrations,
-                Collection<MigrationInfo> allActiveMigrations) {
+                                              Collection<MigrationInfo> allActiveMigrations) {
 
             Collection<Member> members = node.clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR);
             Map<Member, Future<PartitionRuntimeState>> futures = new HashMap<Member, Future<PartitionRuntimeState>>();
@@ -1334,7 +1346,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
          * @param allActiveMigrations    received active migrations from other nodes
          */
         private void processNewState(Collection<MigrationInfo> allCompletedMigrations,
-                Collection<MigrationInfo> allActiveMigrations) {
+                                     Collection<MigrationInfo> allActiveMigrations) {
 
             lock.lock();
             try {
@@ -1366,7 +1378,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
 
-        /** Moves all migrations to completed (including local) and marks active migrations as {@link MigrationStatus#FAILED}. */
+        /**
+         * Moves all migrations to completed (including local) and marks active migrations as {@link MigrationStatus#FAILED}.
+         */
         private void processMigrations(Collection<MigrationInfo> allCompletedMigrations,
                                        Collection<MigrationInfo> allActiveMigrations) {
             allCompletedMigrations.addAll(migrationManager.getCompletedMigrationsCopy());

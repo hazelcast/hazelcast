@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -32,7 +33,6 @@ import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.Set;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -44,27 +44,23 @@ public class RegisterMetricTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void whenNamePrefixNull() {
-        metricsRegistry.scanAndRegister(new SomeField(), null);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
     }
 
     @Test(expected = NullPointerException.class)
     public void whenObjectNull() {
-        metricsRegistry.scanAndRegister(null, "bar");
+        metricsRegistry.register(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void whenUnrecognizedField() {
-        metricsRegistry.scanAndRegister(new SomeUnrecognizedField(), "bar");
+        metricsRegistry.register(new SomeUnrecognizedField());
     }
 
+    // todo: this test isn't valid. The object might have no probes, but it might by DynamicProbe
     @Test
     public void whenNoGauges_thenIgnore() {
-        metricsRegistry.scanAndRegister(new LinkedList(), "bar");
+        metricsRegistry.register(new LinkedList());
 
         for (String name : metricsRegistry.getNames()) {
             assertFalse(name.startsWith("bar"));
@@ -96,6 +92,7 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         assertFalse(names.contains("foo.method2"));
     }
 
+    @Namespace(name = "foo")
     public class MultiFieldAndMethod {
         @Probe
         long field1;
@@ -118,7 +115,7 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         MultiFieldAndMethod multiFieldAndMethod = new MultiFieldAndMethod();
         multiFieldAndMethod.field1 = 1;
         multiFieldAndMethod.field2 = 2;
-        metricsRegistry.scanAndRegister(multiFieldAndMethod, "foo");
+        metricsRegistry.register(multiFieldAndMethod);
 
         LongGauge field1 = metricsRegistry.newLongGauge("foo.field1");
         LongGauge field2 = metricsRegistry.newLongGauge("foo.field2");
@@ -146,7 +143,7 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         MultiFieldAndMethod multiFieldAndMethod = new MultiFieldAndMethod();
         multiFieldAndMethod.field1 = 1;
         multiFieldAndMethod.field2 = 2;
-        metricsRegistry.scanAndRegister(multiFieldAndMethod, "foo");
+        metricsRegistry.register(multiFieldAndMethod);
         metricsRegistry.deregister(multiFieldAndMethod);
         metricsRegistry.deregister(multiFieldAndMethod);
 

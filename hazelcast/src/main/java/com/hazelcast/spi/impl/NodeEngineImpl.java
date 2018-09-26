@@ -27,7 +27,6 @@ import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
@@ -80,8 +79,6 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
-import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
@@ -168,8 +165,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
-        ProbeLevel probeLevel = node.getProperties().getEnum(METRICS_LEVEL, ProbeLevel.class);
-        return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class), probeLevel);
+        return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class));
     }
 
     private Diagnostics newDiagnostics() {
@@ -199,11 +195,13 @@ public class NodeEngineImpl implements NodeEngine {
         ThreadMetricSet.register(metricsRegistry);
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
-        if (node.getProperties().getBoolean(METRICS_DISTRIBUTED_DATASTRUCTURES)) {
-            new StatisticsAwareMetricsSet(serviceManager, this).register(metricsRegistry);
-        }
-        metricsRegistry.scanAndRegister(node.getNodeExtension().getMemoryStats(), "memory");
-        metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
+        StatisticsAwareMetricsSet.register(metricsRegistry, serviceManager);
+        metricsRegistry.registerAll(
+                operationService,
+                operationParker,
+                eventService,
+                proxyService,
+                node.getNodeExtension().getMemoryStats());
 
         serviceManager.start();
         proxyService.init();

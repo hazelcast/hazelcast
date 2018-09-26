@@ -16,16 +16,20 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.DoubleProbeFunction;
+import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.internal.metrics.ProbeFunction;
+import com.hazelcast.internal.metrics.ProbeLevel;
 
 /**
  * A Probe Instance is an actual instance of a probe.
- *
+ * <p>
  * A probe instance contains:
  * <ol>
- *     <li>A source object, e.g. an OperationService instance</li>
- *     <li>A ProbeFunction: e.g. an {@link com.hazelcast.internal.metrics.LongProbeFunction} that retrieves the number of
- *     executed operations.</li>
+ * <li>A source object, e.g. an OperationService instance</li>
+ * <li>A ProbeFunction: e.g. an {@link com.hazelcast.internal.metrics.LongProbeFunction} that retrieves the number of
+ * executed operations.</li>
  * </ol>
  *
  * @param <S>
@@ -34,11 +38,32 @@ class ProbeInstance<S> {
 
     final String name;
     volatile ProbeFunction function;
+    volatile ProbeLevel probeLevel;
     volatile S source;
 
-    ProbeInstance(String name, S source, ProbeFunction function) {
+    ProbeInstance(String name, S source, ProbeFunction function, ProbeLevel probeLevel) {
         this.name = name;
         this.function = function;
         this.source = source;
+        this.probeLevel = probeLevel;
+    }
+
+    void collect(MetricsCollector collector) {
+        if (function == null || source == null) {
+            return;
+        }
+
+        try {
+            if (function instanceof LongProbeFunction) {
+                LongProbeFunction longFunction = (LongProbeFunction) function;
+                collector.collectLong(name, longFunction.get(source));
+            } else {
+                DoubleProbeFunction doubleFunction = (DoubleProbeFunction) function;
+                collector.collectDouble(name, doubleFunction.get(source));
+            }
+        } catch (Exception e) {
+            //collector.collectException(name, e);
+            //TODO
+        }
     }
 }

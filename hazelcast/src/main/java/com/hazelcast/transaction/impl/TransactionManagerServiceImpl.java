@@ -22,6 +22,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -66,6 +67,7 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.shuffle;
 
+@Namespace(name = "transactions")
 public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
         MembershipAwareService, ClientAwareService {
 
@@ -94,7 +96,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         this.logger = nodeEngine.getLogger(TransactionManagerService.class);
         this.finalizeExceptionHandler = logAllExceptions(logger, "Error while rolling-back tx!", Level.WARNING);
 
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "transactions");
+        nodeEngine.getMetricsRegistry().register(this);
     }
 
     public String getGroupName() {

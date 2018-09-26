@@ -17,7 +17,6 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.LongGauge;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
@@ -45,7 +44,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
         RuntimeMetricSet.register(metricsRegistry);
         runtime = Runtime.getRuntime();
     }

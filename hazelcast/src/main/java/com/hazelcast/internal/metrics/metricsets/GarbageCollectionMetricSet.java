@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.lang.management.GarbageCollectorMXBean;
@@ -67,11 +68,11 @@ public final class GarbageCollectionMetricSet {
 
         GcStats stats = new GcStats();
         metricsRegistry.scheduleAtFixedRate(stats, PUBLISH_FREQUENCY_SECONDS, SECONDS);
-        metricsRegistry.scanAndRegister(stats, "gc");
+        metricsRegistry.register(stats);
     }
 
-
     @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used by instrumentation tools")
+    @Namespace(name = "gc")
     static class GcStats implements Runnable {
         @Probe(level = MANDATORY)
         volatile long minorCount;

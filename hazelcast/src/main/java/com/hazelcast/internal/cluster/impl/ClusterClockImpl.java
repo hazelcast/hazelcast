@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
@@ -25,6 +26,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.lang.Math.abs;
 
 
+@Namespace(name =  "cluster.clock")
 public class ClusterClockImpl implements ClusterClock {
 
     private final ILogger logger;

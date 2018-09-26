@@ -28,7 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
@@ -41,7 +40,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
         GarbageCollectionMetricSet.register(metricsRegistry);
         gcStats = new GarbageCollectionMetricSet.GcStats();
     }

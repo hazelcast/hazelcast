@@ -94,14 +94,13 @@ public class ProbeBuilderImpl implements ProbeBuilder {
     }
 
     @Override
-    public <S> void scanAndRegister(S source) {
+    public <S> void register(S source) {
         SourceMetadata metadata = metricsRegistry.loadSourceMetadata(source.getClass());
-        for (FieldProbe field : metadata.fields()) {
-            field.register(this, source);
-        }
 
-        for (MethodProbe method : metadata.methods()) {
-            method.register(this, source);
+        // todo: this part has now become problematic because you will get a probe instance per field.
+        // only the root needs to be registered.
+        for (AbstractProbe probe : metadata.probes) {
+            probe.register(this, source);
         }
     }
 }

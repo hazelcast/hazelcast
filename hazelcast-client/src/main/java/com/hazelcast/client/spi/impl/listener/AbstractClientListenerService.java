@@ -28,9 +28,8 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.metrics.MetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -58,7 +57,8 @@ import java.util.concurrent.ThreadFactory;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
-public abstract class AbstractClientListenerService implements ClientListenerService, MetricsProvider, ConnectionListener {
+@Namespace(name = "listeners")
+public abstract class AbstractClientListenerService implements ClientListenerService, ConnectionListener {
 
     protected final HazelcastClientInstanceImpl client;
     protected final SerializationService serializationService;
@@ -153,11 +153,6 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
             return true;
         }
 
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "listeners");
     }
 
     @Probe(level = MANDATORY)

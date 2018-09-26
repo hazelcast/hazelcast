@@ -81,9 +81,9 @@ public final class NioChannel extends AbstractChannel {
 
     @Override
     protected void onConnect() {
-        String metricsId = localSocketAddress() + "->" + remoteSocketAddress();
-        metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
-        metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
+//        String metricsId = localSocketAddress() + "->" + remoteSocketAddress();
+//        metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
+//        metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
     }
 
     @Override

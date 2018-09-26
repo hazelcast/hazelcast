@@ -18,6 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
@@ -41,6 +42,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 /**
  * Manages and stores {@link com.hazelcast.client.impl.ClientEndpointImpl}s.
  */
+@Namespace(name = "client.endpoint")
 public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     private final ILogger logger;
@@ -57,7 +59,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
         this.eventService = nodeEngine.getEventService();
         MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
-        metricsRegistry.scanAndRegister(this, "client.endpoint");
+        metricsRegistry.register(this);
     }
 
     @Override

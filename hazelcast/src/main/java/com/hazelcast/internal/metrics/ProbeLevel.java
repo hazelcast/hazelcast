@@ -54,4 +54,12 @@ public enum ProbeLevel {
     public boolean isEnabled(ProbeLevel minimumLevel) {
         return precedence >= minimumLevel.precedence;
     }
+
+    public boolean isInfoEnabled() {
+        return isEnabled(INFO);
+    }
+
+    public boolean isDebugEnabled() {
+        return isEnabled(DEBUG);
+    }
 }

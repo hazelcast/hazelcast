@@ -14,7 +14,31 @@
  * limitations under the License.
  */
 
-/**
- * Contains the {@link com.hazelcast.internal.metrics.renderers.ProbeRenderer} API.
- */
-package com.hazelcast.internal.metrics.renderers;
+package com.hazelcast.internal.metrics;
+
+public interface CollectionCycle {
+
+    ProbeLevel probeLevel();
+
+    void collect(String prefix, Object source);
+
+    void collect(Object source);
+
+    Tags newTags();
+
+    void collectLong(long v);
+
+    void collectDouble(double v);
+
+    interface Tags {
+        Tags metricPrefix(String prefix);
+
+        Tags metricSuffix(String suffix);
+
+        Tags metric(String name);
+
+        Tags add(String tag, String value);
+
+        Tags add(String tag, int value);
+    }
+}

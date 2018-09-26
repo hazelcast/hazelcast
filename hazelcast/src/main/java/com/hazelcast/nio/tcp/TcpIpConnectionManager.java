@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
@@ -60,6 +61,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.newSetFromMap;
 
+@Namespace(name = "tcp.connection")
 public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet> {
 
     private static final int RETRY_NUMBER = 5;
@@ -148,7 +150,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpConnectionManager")));
         this.spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
-        metricsRegistry.scanAndRegister(this, "tcp.connection");
+        metricsRegistry.register(this);
     }
 
     public IOService getIoService() {
@@ -487,7 +489,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         }
 
         acceptor = new TcpIpAcceptor(serverSocketChannel, this).start();
-        metricsRegistry.collectMetrics(acceptor);
+        metricsRegistry.register(acceptor);
     }
 
     @Override

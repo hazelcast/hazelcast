@@ -119,7 +119,6 @@ import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
@@ -241,11 +240,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         metricsRegistry = initMetricsRegistry();
         serializationService = clientExtension.createSerializationService((byte) -1);
-        metricsRegistry.collectMetrics(clientExtension);
+        metricsRegistry.register(clientExtension);
 
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();
-        metricsRegistry.collectMetrics(executionService);
+        metricsRegistry.register(executionService);
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
@@ -285,16 +284,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
-        ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(getName(), logger, probeLevel);
+        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(getName(), logger);
         RuntimeMetricSet.register(metricsRegistry);
         GarbageCollectionMetricSet.register(metricsRegistry);
         OperatingSystemMetricSet.register(metricsRegistry);
         ThreadMetricSet.register(metricsRegistry);
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
-        metricsRegistry.scanAndRegister(clientExtension.getMemoryStats(), "memory");
+        metricsRegistry.register(clientExtension.getMemoryStats());
         return metricsRegistry;
     }
 
@@ -600,7 +598,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
                         properties));
 
-        metricsRegistry.collectMetrics(listenerService);
+        metricsRegistry.registerAll(listenerService);
 
         proxyManager.init(config, clientContext);
         listenerService.start();

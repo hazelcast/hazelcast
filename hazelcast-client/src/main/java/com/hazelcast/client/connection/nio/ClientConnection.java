@@ -181,7 +181,7 @@ public class ClientConnection implements Connection {
 
         connectionManager.onClose(this);
 
-        client.getMetricsRegistry().discardMetrics(this);
+        //client.getMetricsRegistry().discardMetrics(this);
     }
 
     private void logClose() {

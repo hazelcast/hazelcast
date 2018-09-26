@@ -19,9 +19,8 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.metrics.MetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
@@ -54,7 +53,8 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.</li>
  * </ul>
  */
-public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider {
+@Namespace(name = "operation")
+public class InvocationRegistry implements Iterable<Invocation> {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -80,11 +80,6 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
     }
 
     @Probe(name = "invocations.usedPercentage")

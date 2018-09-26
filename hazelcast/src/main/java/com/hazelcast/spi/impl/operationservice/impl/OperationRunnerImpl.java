@@ -24,8 +24,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
@@ -86,7 +84,7 @@ import static java.util.logging.Level.WARNING;
  * Responsible for processing an Operation.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
+class OperationRunnerImpl extends OperationRunner {
 
     static final int AD_HOC_PARTITION_ID = -2;
 
@@ -136,17 +134,6 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     @Override
     public long executedOperationsCount() {
         return executedOperationsCounter.get();
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        if (partitionId >= 0) {
-            registry.scanAndRegister(this, "operation.partition[" + partitionId + "]");
-        } else if (partitionId == -1) {
-            registry.scanAndRegister(this, "operation.generic[" + genericId + "]");
-        } else {
-            registry.scanAndRegister(this, "operation.adhoc");
-        }
     }
 
     @Override

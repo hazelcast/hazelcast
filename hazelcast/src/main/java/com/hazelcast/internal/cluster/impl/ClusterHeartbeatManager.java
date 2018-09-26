@@ -30,6 +30,7 @@ import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -68,6 +69,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p/>
  * If it detects a member is not live anymore, that member is kicked out of cluster.
  */
+@Namespace(name = "cluster.heartbeat")
 public class ClusterHeartbeatManager {
 
     private static final long CLOCK_JUMP_THRESHOLD = MINUTES.toMillis(2);

@@ -16,13 +16,15 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -48,7 +50,8 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
     private final MetricsRegistry metricsRegistry;
     private final long periodMillis;
-    private final ProbeRendererImpl probeRenderer = new ProbeRendererImpl();
+    private final MetricsRenderer probeRenderer = new MetricsRenderer();
+    private final ProbeLevel probeLevel;
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getProperties());
@@ -56,6 +59,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
     public MetricsPlugin(ILogger logger, MetricsRegistry metricsRegistry, HazelcastProperties properties) {
         super(logger);
+        this.probeLevel = properties.getEnum(METRICS_LEVEL, ProbeLevel.class);
         this.metricsRegistry = metricsRegistry;
         this.periodMillis = properties.getMillis(PERIOD_SECONDS);
     }
@@ -76,34 +80,26 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
         // the same timestamp
         probeRenderer.timeMillis = System.currentTimeMillis();
-        metricsRegistry.render(probeRenderer);
+        metricsRegistry.collect(probeRenderer, probeLevel);
         probeRenderer.writer = null;
     }
 
-    private static class ProbeRendererImpl implements ProbeRenderer {
+    private static class MetricsRenderer implements MetricsCollector {
         private static final String SECTION_NAME = "Metric";
 
         private DiagnosticsLogWriter writer;
         private long timeMillis;
 
         @Override
-        public void renderLong(String name, long value) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
+        public void collectLong(CharSequence name, long value) {
+            //todo: name litter
+            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name.toString(), value);
         }
 
         @Override
-        public void renderDouble(String name, double value) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
-        }
-
-        @Override
-        public void renderException(String name, Exception e) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, e.getClass().getName() + ':' + e.getMessage());
-        }
-
-        @Override
-        public void renderNoValue(String name) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, "NA");
+        public void collectDouble(CharSequence name, double value) {
+            //todo: name litter
+            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name.toString(), value);
         }
     }
 }

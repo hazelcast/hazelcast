@@ -17,9 +17,12 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.metrics.CollectionCycle;
+import com.hazelcast.internal.metrics.MetricSource;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
@@ -77,7 +80,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class OperationExecutorImpl implements OperationExecutor, MetricsProvider {
+
+@Namespace(name = "operation")
+public final class OperationExecutorImpl implements OperationExecutor, MetricsProvider, MetricSource {
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
 
@@ -218,13 +223,30 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
+        registry.registerAll((Object[]) genericThreads);
+        registry.registerAll((Object[]) partitionThreads);
+        registry.registerAll(adHocOperationRunner);
+        registry.registerAll((Object[]) genericOperationRunners);
+        registry.registerAll((Object[]) partitionOperationRunners);
+    }
 
-        registry.collectMetrics((Object[]) genericThreads);
-        registry.collectMetrics((Object[]) partitionThreads);
-        registry.collectMetrics(adHocOperationRunner);
-        registry.collectMetrics((Object[]) genericOperationRunners);
-        registry.collectMetrics((Object[]) partitionOperationRunners);
+    @Override
+    public void collectMetrics(CollectionCycle cycle) {
+        if (!cycle.probeLevel().isDebugEnabled()) {
+            return;
+        }
+
+        for (int k = 0; k < partitionOperationRunners.length; k++) {
+            cycle.newTags().metricPrefix("operation.partition").add("id", k);
+            cycle.collect(partitionOperationRunners[k]);
+        }
+
+        for (int k = 0; k < genericOperationRunners.length; k++) {
+            cycle.newTags().metricPrefix("operation.generic").add("id", k);
+            cycle.collect(genericOperationRunners[k]);
+        }
+
+        cycle.collect("adhoc", adHocOperationRunner);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")

@@ -38,6 +38,7 @@ import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -83,6 +84,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.String.format;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
+@Namespace(name = "cluster")
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
         EventPublishingService<MembershipEvent, MembershipListener>, TransactionalService {
 
@@ -148,9 +150,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void registerMetrics() {
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(clusterClock, "cluster.clock");
-        metricsRegistry.scanAndRegister(clusterHeartbeatManager, "cluster.heartbeat");
-        metricsRegistry.scanAndRegister(this, "cluster");
+        metricsRegistry.registerAll(clusterClock, clusterHeartbeatManager, this);
     }
 
     @Override

@@ -20,6 +20,7 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +29,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.lang.Math.round;
 import static org.junit.Assert.assertEquals;
@@ -41,9 +41,10 @@ public class LongGaugeImplTest {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
     }
 
+    @Namespace(name = "someObject")
     class SomeObject {
         @Probe
         long longField = 10;
@@ -55,7 +56,7 @@ public class LongGaugeImplTest {
     public void getName() {
         LongGauge gauge = metricsRegistry.newLongGauge("foo");
 
-        String actual = gauge.getName();
+        String actual = gauge.name();
 
         assertEquals("foo", actual);
     }
@@ -122,18 +123,18 @@ public class LongGaugeImplTest {
     @Test
     public void whenLongProbeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.register(someObject);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.longField");
+        LongGauge gauge = metricsRegistry.newLongGauge("someObject.longField");
         assertEquals(10, gauge.read());
     }
 
     @Test
     public void whenDoubleProbeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.register(someObject);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.doubleField");
+        LongGauge gauge = metricsRegistry.newLongGauge("someObject.doubleField");
         assertEquals(round(someObject.doubleField), gauge.read());
     }
 

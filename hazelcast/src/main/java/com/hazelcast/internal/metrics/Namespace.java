@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.metrics;
 
-/**
- * A {@link MetricsProvider} that has the ability to discard to provided metrics.
- * This is useful for dynamic metrics; so metrics that get added and removed during
- * the lifecycle of the MetricsRegistry like a connection.
- */
-public interface DiscardableMetricsProvider extends MetricsProvider {
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-    void discardMetrics(MetricsRegistry registry);
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+@Retention(value = RUNTIME)
+@Target(TYPE)
+public @interface Namespace {
+    String name();
 }

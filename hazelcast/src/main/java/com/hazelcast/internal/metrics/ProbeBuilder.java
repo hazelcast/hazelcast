@@ -80,7 +80,7 @@ public interface ProbeBuilder {
      * @throws IllegalArgumentException if the source contains Probe annotation
      * on a field/method of unsupported type.
      */
-    <S> void scanAndRegister(S source);
+    <S> void register(S source);
 
     /**
      * Returns the name for the metric.

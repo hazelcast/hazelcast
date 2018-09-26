@@ -27,6 +27,7 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.sequence.CallIdFactory;
@@ -47,6 +48,7 @@ import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+@Namespace(name = "invocations")
 public abstract class AbstractClientInvocationService implements ClientInvocationService {
 
     private static final HazelcastProperty CLEAN_RESOURCES_MILLIS
@@ -83,7 +85,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         callIdSequence = CallIdFactory
                 .newCallIdSequence(isBackPressureEnabled, maxAllowedConcurrentInvocations, backofftimeoutMs);
 
-        client.getMetricsRegistry().scanAndRegister(this, "invocations");
+        client.getMetricsRegistry().register(this);
     }
 
     private long initInvocationRetryPauseMillis() {
