@@ -4,13 +4,15 @@ This repository contains a plugin which provides the automatic Hazelcast member 
 
 You can use it in your project deployed on Kubernetes in order to make the embedded Hazelcast members discover each other automatically. This plugin is also included in Hazelcast Docker images, Hazelcast Helm Charts, and Hazelcast OpenShift Docker image.
 
+## Requirements and Recommendations
+
+* Your Java Runtime Environment must support TLS 1.2 (which is the case for most modern JREs).
+* Versions compatibility: hazelcast-kubernetes 1.3+ is compatible with hazelcast 3.11+; for older hazelcast versions you need to use hazelcast-kubernetes 1.2.x.
+* The recommendation is to use StatefulSet for managing Hazelcast PODs; in case of using Deployment (or ReplicationController), the Hazelcast cluster may start with Split Brain (which will anyway re-form to one consistent cluster in a few minutes).
+
 ## Embedded mode
 
 To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml` as presented below or an equivalent Java-based configuration, your Hazelcast instances discover themselves automatically.
-
-***NOTE:*** If you also have the direct dependency to `hazelcast` specified, then please note that hazelcast-kubernetes 1.3+ is compatible with hazelcast 3.11+ and for older hazelcast verions you need to use hazelcast-kubernetes 1.2.
-
-***NOTE:*** Your Java Runtime Environment must support TLS 1.2 (which is the case for most modern JREs).
 
 #### Maven
 
