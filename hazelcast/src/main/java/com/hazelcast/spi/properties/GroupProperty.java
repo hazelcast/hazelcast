@@ -118,8 +118,19 @@ public final class GroupProperty {
     public static final HazelcastProperty CLIENT_ENGINE_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.thread.count", -1);
 
+    /**
+     * The number of threads that the client engine has available for processing {@code IMap} query requests.
+     * @see #CLIENT_ENGINE_THREAD_COUNT
+     */
     public static final HazelcastProperty CLIENT_ENGINE_QUERY_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.query.thread.count", -1);
+
+    /**
+     * The number of threads that the client engine has available for processing transactional requests.
+     * @see #CLIENT_ENGINE_THREAD_COUNT
+     */
+    public static final HazelcastProperty CLIENT_ENGINE_TX_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.clientengine.transaction.thread.count", -1);
 
     /**
      * Time after which client connection is removed or owner node of a client is removed from the cluster.

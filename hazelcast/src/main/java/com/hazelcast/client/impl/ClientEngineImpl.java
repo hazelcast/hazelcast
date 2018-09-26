@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.operations.OnJoinClientOperation;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
+import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMessageTask;
 import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetPartitionsMessageTask;
@@ -64,6 +65,7 @@ import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -88,7 +90,12 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.spi.ExecutionService.CLIENT_EXECUTOR;
 import static com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
+import static com.hazelcast.spi.ExecutionService.CLIENT_QUERY_EXECUTOR;
+import static com.hazelcast.spi.properties.GroupProperty.CLIENT_ENGINE_QUERY_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.CLIENT_ENGINE_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.CLIENT_ENGINE_TX_THREAD_COUNT;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
@@ -104,8 +111,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     public static final String SERVICE_NAME = "hz:core:clientEngine";
 
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
-    private static final int THREADS_PER_CORE = 20;
+    private static final int THREADS_PER_CORE = 2;
+    private static final int TX_THREADS_PER_CORE = 20;
     private static final int QUERY_THREADS_PER_CORE = 1;
+    private static final String CLIENT_TX_EXECUTOR = "hz:client-tx";
     private static final ConstructorFunction<String, AtomicLong> LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC =
             new ConstructorFunction<String, AtomicLong>() {
                 @Override
@@ -118,6 +127,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     private final Executor executor;
     private final ExecutorService clientManagementExecutor;
     private final Executor queryExecutor;
+    private final Executor txExecutor;
 
     private final SerializationService serializationService;
     // client UUID -> member UUID
@@ -141,8 +151,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         this.serializationService = node.getSerializationService();
         this.nodeEngine = node.nodeEngine;
         this.endpointManager = new ClientEndpointManagerImpl(nodeEngine);
-        this.executor = newClientExecutor();
-        this.queryExecutor = newClientQueryExecutor();
+        this.executor = newClientExecutor(CLIENT_EXECUTOR, CLIENT_ENGINE_THREAD_COUNT, THREADS_PER_CORE);
+        this.queryExecutor = newClientExecutor(CLIENT_QUERY_EXECUTOR, CLIENT_ENGINE_QUERY_THREAD_COUNT, QUERY_THREADS_PER_CORE);
+        this.txExecutor = newClientExecutor(CLIENT_TX_EXECUTOR, CLIENT_ENGINE_TX_THREAD_COUNT, TX_THREADS_PER_CORE);
         this.clientManagementExecutor = newClientsManagementExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(nodeEngine);
         this.clientExceptions = initClientExceptionFactory();
@@ -165,32 +176,17 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         return clientManagementExecutor;
     }
 
-    private Executor newClientExecutor() {
+    private Executor newClientExecutor(String executorName, HazelcastProperty clientThreadCountProp, int threadsPerCore) {
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = RuntimeAvailableProcessors.get();
 
-        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_THREAD_COUNT);
+        int threadCount = node.getProperties().getInteger(clientThreadCountProp);
         if (threadCount <= 0) {
-            threadCount = coreSize * THREADS_PER_CORE;
+            threadCount = coreSize * threadsPerCore;
         }
-        logger.finest("Creating new client executor with threadCount=" + threadCount);
+        logger.finest("Creating " + executorName + " executor with threadCount=" + threadCount);
 
-        return executionService.register(ExecutionService.CLIENT_EXECUTOR,
-                threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
-                ExecutorType.CONCRETE);
-    }
-
-    private Executor newClientQueryExecutor() {
-        final ExecutionService executionService = nodeEngine.getExecutionService();
-        int coreSize = RuntimeAvailableProcessors.get();
-
-        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_QUERY_THREAD_COUNT);
-        if (threadCount <= 0) {
-            threadCount = coreSize * QUERY_THREADS_PER_CORE;
-        }
-        logger.finest("Creating new client query executor with threadCount=" + threadCount);
-
-        return executionService.register(ExecutionService.CLIENT_QUERY_EXECUTOR,
+        return executionService.register(executorName,
                 threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
                 ExecutorType.CONCRETE);
     }
@@ -221,12 +217,18 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                 operationService.execute(new PriorityPartitionSpecificRunnable(messageTask));
             } else if (isQuery(messageTask)) {
                 queryExecutor.execute(messageTask);
+            } else if (isTransaction(messageTask)) {
+                txExecutor.execute(messageTask);
             } else {
                 executor.execute(messageTask);
             }
         } else {
             operationService.execute(messageTask);
         }
+    }
+
+    private boolean isTransaction(MessageTask messageTask) {
+        return messageTask instanceof AbstractTransactionalMessageTask;
     }
 
     private boolean isUrgent(MessageTask messageTask) {
