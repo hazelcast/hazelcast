@@ -321,7 +321,7 @@ public class ProcessorTasklet implements Tasklet {
                 assert currentBarrier != null : "currentBarrier == null";
                 if (outbox.offerToEdgesAndSnapshot(currentBarrier)) {
                     progTracker.madeProgress();
-                    if (currentBarrier.isTerminal() && instreamCursor == null) {
+                    if (currentBarrier.isTerminal()) {
                         state = EMIT_DONE_ITEM;
                     } else {
                         currentBarrier = null;
