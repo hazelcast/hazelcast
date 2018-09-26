@@ -20,9 +20,12 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastMillis;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
@@ -99,24 +102,66 @@ public class JitterRule implements TestRule {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                long startTime = System.currentTimeMillis();
-                try {
-                    base.evaluate();
-                } catch (Throwable t) {
-                    printJitters(startTime);
-                    throw t;
+                int retries = 0;
+                long maxHiccupThresholdNanos = 0;
+                long coolDownPeriodMs = 0;
+
+                RetryableUponHiccups retryable = description.getAnnotation(RetryableUponHiccups.class);
+                if (retryable != null) {
+                    retries = retryable.retries();
+                    maxHiccupThresholdNanos = MILLISECONDS.toNanos(retryable.thresholdMs());
+                    coolDownPeriodMs = retryable.coolDownPeriodMs();
+
                 }
+
+                boolean shouldRetry = false;
+                int run = 1;
+                do {
+                    long startTime = System.currentTimeMillis();
+                    try {
+                        base.evaluate();
+                    } catch (Throwable t) {
+                        long endTime = System.currentTimeMillis();
+                        Iterable<Slot> slots = JitterMonitor.getSlotsBetween(startTime, endTime);
+                        printJitters(slots, run);
+                        shouldRetry = retries > 0 && hiccupsDetected(slots, maxHiccupThresholdNanos);
+
+                        if (!shouldRetry || run >= retries) {
+                            throw t;
+                        } else {
+                            run++;
+                            printException(t);
+                            sleepAtLeastMillis(coolDownPeriodMs);
+                            System.out.println("Started Running Test: " + description.getMethodName() + ". Attempt: " + run);
+                        }
+                    }
+                } while (shouldRetry);
             }
 
-            private void printJitters(long startTime) {
-                long endTime = System.currentTimeMillis();
-                Iterable<Slot> slotsBetween = JitterMonitor.getSlotsBetween(startTime, endTime);
+            private boolean hiccupsDetected(Iterable<Slot> slots, long maxHiccupThreshold) {
+                for (Slot slot : slots) {
+                    if (slot.getAccumulatedHiccupsNanos() >= maxHiccupThreshold) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            private void printException(Throwable t) {
+                StringWriter out = new StringWriter();
+                t.printStackTrace(new PrintWriter(out));
+                System.err.println(out);
+            }
+
+            private void printJitters(Iterable<Slot> slots, int currentTry) {
                 StringBuilder sb = new StringBuilder("Hiccups measured while running test '")
                         .append(description.getDisplayName())
-                        .append(":'")
+                        .append("' attempt: ")
+                        .append(currentTry)
                         .append(LINE_SEPARATOR);
                 DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-                for (Slot slot : slotsBetween) {
+                for (Slot slot : slots) {
                     sb.append(slot.toHumanFriendly(dateFormat)).append(LINE_SEPARATOR);
                 }
                 System.out.println(sb);

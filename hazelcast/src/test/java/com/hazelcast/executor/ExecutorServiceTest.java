@@ -41,6 +41,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.jitter.RetryableUponHiccups;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -671,10 +672,12 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     /* ############ cancellation ############ */
 
     @Test
+    @RetryableUponHiccups
     public void testCancellationAwareTask() throws Exception {
         SleepingTask task = new SleepingTask(5);
         ExecutorService executor = createSingleNodeExecutorService("testCancellationAwareTask");
         Future future = executor.submit(task);
+
         try {
             future.get(2, TimeUnit.SECONDS);
             fail("Should throw TimeoutException!");
