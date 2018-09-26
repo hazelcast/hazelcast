@@ -42,6 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -113,6 +114,8 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         config.addRingBufferConfig(new RingbufferConfig("sizeShouldNotExceedCapacity_whenPromotedFromBackup*")
                 .setCapacity(10));
         config.addRingBufferConfig(new RingbufferConfig("readManyAsync_whenHitsStale_shouldNotBeBlocked*")
+                .setCapacity(10));
+        config.addRingBufferConfig(new RingbufferConfig("readOne_whenHitsStale_shouldNotBeBlocked*")
                 .setCapacity(10));
 
         instances = newInstances(config);
@@ -734,6 +737,26 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ringbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
         expectedException.expect(new RootCauseMatcher(StaleSequenceException.class));
         f.get();
+    }
+
+    @Test
+    public void readOne_whenHitsStale_shouldNotBeBlocked() {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread consumer = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ringbuffer.readOne(0);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (StaleSequenceException e) {
+                    latch.countDown();
+                }
+            }
+        });
+        consumer.start();
+        ringbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"), OVERWRITE);
+        assertOpenEventually(latch);
     }
 
     @Test
