@@ -87,7 +87,7 @@ public final class ModularJavaUtils {
                     + " but without proper access to required Java packages."
                     + " Use additional Java arguments to provide Hazelcast access to Java internal API."
                     + " The internal API access is used to get the best performance results. Arguments to be used:\n"
-                    + createOpenPackageJavaArguments(hazelcastModule, requirements));
+                    + " --add-modules java.se"  + createOpenPackageJavaArguments(hazelcastModule, requirements));
         }
     }
 
