@@ -31,7 +31,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.InterruptException;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -171,34 +170,32 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             return false;
         }
 
-        ConsumerRecords<K, V> records = null;
         try {
+            ConsumerRecords<K, V> records = null;
             assignPartitions(true);
             if (!currentAssignment.isEmpty()) {
                 records = consumer.poll(POLL_TIMEOUT_MS);
             }
-        } catch (InterruptException e) {
-            // note this is Kafka's exception, not Java's
-            Thread.currentThread().interrupt();
+
+            traverser = isEmpty(records)
+                    ? watermarkSourceUtil.handleNoEvent()
+                    : traverseIterable(records).flatMap(record -> {
+                        offsets.get(record.topic())[record.partition()] = record.offset();
+                        T projectedRecord = projectionFn.apply(record);
+                        if (projectedRecord == null) {
+                            return Traversers.empty();
+                        }
+                        TopicPartition topicPartition = new TopicPartition(record.topic(), record.partition());
+                        return watermarkSourceUtil.handleEvent(projectedRecord, currentAssignment.get(topicPartition));
+                    });
+
+            emitFromTraverser(traverser);
+
+            if (!snapshottingEnabled) {
+                consumer.commitSync();
+            }
+        } catch (org.apache.kafka.common.errors.InterruptException e) {
             return false;
-        }
-
-        traverser = isEmpty(records)
-                ? watermarkSourceUtil.handleNoEvent()
-                : traverseIterable(records).flatMap(record -> {
-                    offsets.get(record.topic())[record.partition()] = record.offset();
-                    T projectedRecord = projectionFn.apply(record);
-                    if (projectedRecord == null) {
-                        return Traversers.empty();
-                    }
-                    TopicPartition topicPartition = new TopicPartition(record.topic(), record.partition());
-                    return watermarkSourceUtil.handleEvent(projectedRecord, currentAssignment.get(topicPartition));
-                });
-
-        emitFromTraverser(traverser);
-
-        if (!snapshottingEnabled) {
-            consumer.commitSync();
         }
 
         return false;
@@ -209,7 +206,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         if (consumer != null) {
             try {
                 consumer.close();
-            } catch (InterruptException ignored) {
+            } catch (org.apache.kafka.common.errors.InterruptException ignored) {
             }
         }
     }
