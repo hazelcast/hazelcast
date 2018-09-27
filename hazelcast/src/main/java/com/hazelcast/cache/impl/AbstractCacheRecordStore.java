@@ -486,7 +486,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void accumulateOrSendExpiredKeysToBackup(Data key, R record) {
-        if (cacheConfig.getBackupCount() == 0) {
+        if (cacheConfig.getTotalBackupCount() == 0) {
             return;
         }
         if (key != null && record != null) {
