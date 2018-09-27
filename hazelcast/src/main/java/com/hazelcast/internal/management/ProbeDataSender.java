@@ -39,6 +39,7 @@ import com.hazelcast.util.Clock;
  */
 final class ProbeDataSender implements Runnable, Closeable {
 
+    private static final int RECONNECT_SLOWDOWN_FACTOR = 5;
     private static final int CONNECTION_TIMEOUT_MILLIS = 3000;
     private static final int STANDED_INTERVAL_MILLIS = 1000;
 
@@ -51,6 +52,7 @@ final class ProbeDataSender implements Runnable, Closeable {
     private final long intervalMs;
     private final String timeKey;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final String member;
 
     public ProbeDataSender(URL url, ManagementCenterConnectionFactory connectionFactory,
             String group, String member, ProbeRenderContext renderContext) {
@@ -61,6 +63,7 @@ final class ProbeDataSender implements Runnable, Closeable {
             String group, String member, ProbeRenderContext renderContext, long intervalMs) {
         this.url = url;
         this.connectionFactory = connectionFactory;
+        this.member = member;
         this.renderContext = renderContext;
         this.intervalMs = intervalMs;
         this.timeKey = "group=" + group + " member=" + member + " time";
@@ -83,25 +86,21 @@ final class ProbeDataSender implements Runnable, Closeable {
     public void run() {
         running.set(true);
         try {
-            boolean warnSlow = true;
-            boolean warnFailure = true;
+            boolean assumeFast = true;
+            boolean assumeConnected = true;
             long currentIntervalMs = intervalMs;
             while (isRunning()) {
                 long startMs = Clock.currentTimeMillis();
                 URL currentURL = url;
-                boolean isFailure = !sendProbeData(currentURL);
+                boolean isFailure = !sendProbeData(currentURL, assumeConnected);
                 long endMs = Clock.currentTimeMillis();
                 long durationMs = endMs - startMs;
                 boolean isSlow = durationMs > intervalMs / 2;
-                if (isFailure && warnFailure) {
-                    LOGGER.warning("Failed to send probe data to " + currentURL);
-                }
-                if (!isFailure && isSlow && warnSlow) {
-                    LOGGER.warning("Sending probe data took " + durationMs + " ms");
-                }
-                warnFailure = !isFailure;
-                warnSlow = !isSlow;
-                currentIntervalMs = isFailure ? 5 * intervalMs : intervalMs;
+                logConnectionProblems(currentURL, durationMs, assumeFast, isSlow, assumeConnected,
+                        isFailure);
+                assumeConnected = !isFailure;
+                assumeFast = !isSlow;
+                currentIntervalMs = isFailure ? RECONNECT_SLOWDOWN_FACTOR * intervalMs : intervalMs;
                 long sleepMs = currentIntervalMs - durationMs;
                 if (sleepMs > 0) {
                     Thread.sleep(sleepMs);
@@ -110,12 +109,25 @@ final class ProbeDataSender implements Runnable, Closeable {
         } catch (Throwable t) {
             inspectOutOfMemoryError(t);
             if (!(t instanceof InterruptedException)) {
-                LOGGER.warning("Exception occurred while sending probe data", t);
+                LOGGER.warning("Unexpected exception in MC probe data sender: ", t);
             }
         }
     }
 
-    private boolean sendProbeData(URL url) throws IOException {
+    private void logConnectionProblems(URL url, long durationMs,
+            boolean assumeFast, boolean isSlow, boolean assumeConnected, boolean isFailure) {
+        if (isFailure && assumeConnected) {
+            LOGGER.info("MC connection to `" + url + "` lost by " + member);
+        }
+        if (!assumeConnected && !isFailure) {
+            LOGGER.info("MC connection to `" + url + "` reestablished by " + member);
+        }
+        if (!isFailure && isSlow && assumeFast) {
+            LOGGER.info("MC probe data transfer is slow for " + member + ": " + durationMs + " ms");
+        }
+    }
+
+    private boolean sendProbeData(URL url, boolean connected) throws IOException {
         if (url == null) {
             return false;
         }
@@ -126,9 +138,13 @@ final class ProbeDataSender implements Runnable, Closeable {
             CompressingProbeRenderer renderer = new CompressingProbeRenderer(out);
             // start with the common group member and time
             renderer.render(timeKey, Clock.currentTimeMillis());
-            renderContext.render(ProbeLevel.INFO, renderer);
+            if (connected) {
+                renderContext.render(ProbeLevel.INFO, renderer);
+            }
             renderer.done();
-            return conn.getResponseCode() != HTTP_OK;
+            return conn.getResponseCode() == HTTP_OK;
+        } catch (Exception e) {
+            return false;
         } finally {
             closeResource(out);
         }

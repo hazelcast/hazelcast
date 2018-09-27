@@ -87,4 +87,8 @@ public class TimedMemberStateFactory {
         final HotRestartService hotRestartService = instance.node.getNodeExtension().getHotRestartService();
         memberState.setHotRestartState(new HotRestartStateImpl(hotRestartService.getBackupDirectory()));
     }
+
+    protected void createNodeState(MemberStateImpl memberState) {
+        // to allow override by EE
+    }
 }

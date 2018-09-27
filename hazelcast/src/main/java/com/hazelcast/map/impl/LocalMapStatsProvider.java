@@ -128,6 +128,12 @@ public class LocalMapStatsProvider {
             }
         }
 
+        for (String name : statsMap.keySet()) {
+            if (!statsPerMap.containsKey(name)) {
+                statsPerMap.put(name, new LocalMapOnDemandCalculatedStats());
+            }
+        }
+
         // reuse same HashMap to return calculated LocalMapStats.
         for (Object object : statsPerMap.entrySet()) {
             Map.Entry entry = (Map.Entry) object;

@@ -25,7 +25,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * itself instead of before calling {@code probe}.
  */
 @PrivateApi
-public interface Tagging {
+public interface ProbingContext {
 
     /**
      * The implementing object (with probed fields or methods) is asked to provide
@@ -40,5 +40,5 @@ public interface Tagging {
      * @param context to use to build the objects context using the {@link Tags}
      *        methods.
      */
-    void tagIn(Tags context);
+    void tagNow(Tags context);
 }

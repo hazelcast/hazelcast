@@ -21,6 +21,8 @@ import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
+import com.hazelcast.monitor.NodeState;
+
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -30,6 +32,7 @@ public class MemberStateImpl implements MemberState {
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
     private HotRestartState hotRestartState = new HotRestartStateImpl();
+    private NodeState nodeState = new NodeStateImpl();
 
     public MemberStateImpl() {
     }
@@ -64,6 +67,15 @@ public class MemberStateImpl implements MemberState {
 
     public void setHotRestartState(HotRestartState hotRestartState) {
         this.hotRestartState = hotRestartState;
+    }
+
+    @Override
+    public NodeState getNodeState() {
+        return nodeState;
+    }
+
+    public void setNodeState(NodeState nodeState) {
+        this.nodeState = nodeState;
     }
 
     @Override
@@ -104,4 +116,5 @@ public class MemberStateImpl implements MemberState {
                 + ", hotRestartState=" + hotRestartState
                 + '}';
     }
+
 }

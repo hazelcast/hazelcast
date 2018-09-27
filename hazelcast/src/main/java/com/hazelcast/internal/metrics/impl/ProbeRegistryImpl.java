@@ -49,7 +49,7 @@ import com.hazelcast.internal.metrics.ProbeRenderer;
 import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.metrics.ProbeUtils;
 import com.hazelcast.internal.metrics.ProbingCycle;
-import com.hazelcast.internal.metrics.Tagging;
+import com.hazelcast.internal.metrics.ProbingContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
@@ -402,6 +402,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         final Field[] doubleFields;
         final Field[] booleanFields;
         final Field[] otherFields;
+        final boolean[] otherFieldNested;
 
         @SuppressWarnings("checkstyle:npathcomplexity")
         ProbeAnnotatedTypeLevel(ProbeLevel level, List<Method> probedMethods,
@@ -419,6 +420,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             this.booleanFieldNames = booleanFieldCount == 0 ? null : new String[booleanFieldCount];
             this.otherFields = otherFieldCount == 0 ? null : new Field[otherFieldCount];
             this.otherFieldNames = otherFieldCount == 0 ? null : new String[otherFieldCount];
+            this.otherFieldNested = otherFieldCount == 0 ? null : new boolean[otherFieldCount];
             initFieldProbes(level, probedFields);
         }
 
@@ -474,6 +476,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                             longFieldNames[longIndex++] = name;
                         }
                     } else {
+                        boolean nested = valueType.isAnnotationPresent(Probe.class);
+                        otherFieldNested[otherIndex] = nested;
                         otherFields[otherIndex] = f;
                         otherFieldNames[otherIndex++] = name;
                     }
@@ -531,7 +535,13 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (otherFields != null) {
                 for (int i = 0; i < otherFields.length; i++) {
                     try {
-                        cycle.gather(level, otherFieldNames[i], ProbeUtils.toLong(otherFields[i].get(instance)));
+                        Object value = otherFields[i].get(instance);
+                        String name = otherFieldNames[i];
+                        if (otherFieldNested[i]) {
+                            cycle.probe(name, value);
+                        } else {
+                            cycle.gather(level, name, ProbeUtils.toLong(value));
+                        }
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read field probe", e);
                     }
@@ -600,14 +610,14 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 new ProbeAnnotatedTypeLevel[ProbeLevel.values().length];
 
         ProbeAnnotatedType(Class<?> type) {
-            tagging = Tagging.class.isAssignableFrom(type);
+            tagging = ProbingContext.class.isAssignableFrom(type);
             fixedPrefix = type.isAnnotationPresent(Probe.class) ? type.getAnnotation(Probe.class).name()
                     : null;
             initByAnnotations(type);
         }
 
         ProbeAnnotatedType(Class<?> type, ProbeLevel level, String... methodNames) {
-            tagging = Tagging.class.isAssignableFrom(type);
+            tagging = ProbingContext.class.isAssignableFrom(type);
             fixedPrefix = null;
             initByNameList(type, level, methodNames);
         }
@@ -686,7 +696,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 CharSequence dynamicPrefix, Object instance) {
             int len0 = cycle.tags.length();
             if (tagging) {
-                ((Tagging) instance).tagIn(cycle);
+                ((ProbingContext) instance).tagNow(cycle);
             }
             if (dynamicPrefix != null) {
                 cycle.prefix(dynamicPrefix);

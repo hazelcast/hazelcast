@@ -150,7 +150,8 @@ public final class ProbeUtils {
                 || Collection.class.isAssignableFrom(type)
                 || Map.class.isAssignableFrom(type)
                 || Counter.class.isAssignableFrom(type)
-                || Semaphore.class.isAssignableFrom(type);
+                || Semaphore.class.isAssignableFrom(type)
+                || type.isAnnotationPresent(Probe.class);
     }
 
     public static long updateInterval(int value, TimeUnit unit) {
@@ -164,7 +165,7 @@ public final class ProbeUtils {
 
     public static String probeName(Probe probe, Field probed) {
         String name = probe == null ? "" : probe.name();
-        return name.isEmpty() ? probed.getName() : name;
+        return name.isEmpty() ? probed.getName() : name.equals(Probe.BLANK_NAME) ? "" : name;
     }
 
     public static List<Method> findProbedMethods(Class<?> type) {

@@ -35,7 +35,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.metrics.ProbingCycle;
 import com.hazelcast.internal.metrics.ProbingCycle.Tags;
-import com.hazelcast.internal.metrics.Tagging;
+import com.hazelcast.internal.metrics.ProbingContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -76,7 +76,7 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
         cycle.probe(this);
     }
 
-    private static final class LevelBean implements Tagging {
+    private static final class LevelBean implements ProbingContext {
 
         private final String name;
 
@@ -94,12 +94,46 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
         long debug = 3;
 
         @Override
-        public void tagIn(Tags context) {
+        public void tagNow(Tags context) {
             if (name.equals("special")) {
                 context.tag(TAG_TARGET, name);
             } else if (!name.isEmpty()) {
                 context.tag(TAG_INSTANCE, name);
             }
+        }
+    }
+
+    /**
+     * Illustrates a nested bean with a prefix in the type level annotation
+     */
+    @Probe(name = "path")
+    private static final class NestedA {
+
+        @Probe
+        long val;
+
+        @Probe
+        NestedA sub;
+
+        public NestedA(long val, NestedA sub) {
+            this.val = val;
+            this.sub = sub;
+        }
+    }
+
+    /**
+     * Illustrates a nested bean with no prefix in the type level annotation
+     */
+    @Probe
+    private static final class NestedB {
+        @Probe
+        long x;
+        @Probe
+        NestedB sub;
+
+        public NestedB(long x, NestedB sub) {
+            this.x = x;
+            this.sub = sub;
         }
     }
 
@@ -109,11 +143,11 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
         assertProbeCount(8);
         assertProbes("mandatory", 1);
         setLevel(ProbeLevel.INFO);
-        assertProbeCount(17); // 2x8 + 1
+        assertProbeCount(21); // 2x8 + 1 + 4
         assertProbes("mandatory", 1);
         assertProbes("info", 2);
         setLevel(ProbeLevel.DEBUG);
-        assertProbeCount(25); // 3x8 + 1
+        assertProbeCount(29); // 3x8 + 1 + 4
         assertProbes("mandatory", 1);
         assertProbes("info", 2);
         assertProbes("debug", 3);
@@ -135,6 +169,12 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
     @Probe
     private int updates = 0;
 
+    @Probe(name = "a")
+    private NestedA nestedA = new NestedA(1, new NestedA(2, null));
+
+    @Probe(name = "b")
+    private NestedB nestedB = new NestedB(1, new NestedB(2, null));
+
     @BeforeProbeCycle(value = 500, unit = TimeUnit.MILLISECONDS)
     private void update() {
         updates++;
@@ -147,6 +187,14 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
         sleepAtLeastMillis(501L);
         assertProbed("updates", 2);
         assertProbed("updates", 2);
+    }
+
+    @Test
+    public void nestedProbing() {
+        assertProbed("a.path.val", 1L);
+        assertProbed("a.path.sub.path.val", 2L);
+        assertProbed("b.x", 1L);
+        assertProbed("b.sub.x", 2L);
     }
 
     @Test

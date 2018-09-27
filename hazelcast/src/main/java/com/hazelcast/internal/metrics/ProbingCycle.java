@@ -85,7 +85,7 @@ public interface ProbingCycle {
 
     /**
      * Default method to call {@link #probe(Object)} for an array of instances. This
-     * is mostly useful for types that implement {@link Tagging} and thereby provide
+     * is mostly useful for types that implement {@link ProbingContext} and thereby provide
      * their own context.
      *
      * The method exits with the same {@link Tags} context it is called with.

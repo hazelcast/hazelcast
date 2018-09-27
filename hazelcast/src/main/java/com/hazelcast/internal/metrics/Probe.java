@@ -71,6 +71,15 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface Probe {
 
     /**
+     * A constant that can be used for {@link #name()} to blank out the name.
+     *
+     * This mean neither the field name nor the annotated name becomes the name but
+     * the empty string {@code ""}. This is useful to probe nested fields as if they
+     * were not nested.
+     */
+    String BLANK_NAME = " ";
+
+    /**
      * The name of the Probe. By default the name of the field or method is used.
      *
      * @return the name of the Probe.

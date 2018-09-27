@@ -19,23 +19,8 @@ package com.hazelcast.monitor;
 import com.hazelcast.internal.management.JsonSerializable;
 
 /**
- * Local statistics for a Hazelcast member.
+ * Local node statistics to be used by {@link MemberState} implementations.
  */
-public interface MemberState extends JsonSerializable {
-
-    String getAddress();
-
-    /**
-     * Returns the local operation statistics.
-     *
-     * @return LocalOperationStats statistics
-     */
-    LocalOperationStats getOperationStats();
-
-    MemberPartitionState getMemberPartitionState();
-
-    HotRestartState getHotRestartState();
-
-    NodeState getNodeState();
+public interface NodeState extends JsonSerializable {
 
 }

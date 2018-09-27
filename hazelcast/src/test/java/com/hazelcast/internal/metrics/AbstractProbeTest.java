@@ -48,9 +48,9 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
     }
 
     protected final void assertProbed(final String expectedKey) {
-        CountingProbeRenderer renderer = probe(expectedKey);
+        CountingProbeRenderer renderer = runCycle(expectedKey);
         assertProbedTimes(1, renderer);
-        assertNotEquals(-1L, renderer.value);
+        assertNotEquals(-1L, renderer.matchValue);
     }
 
     protected final void assertProbed(String expectedKey, long expectedValue, double deltaFactor) {
@@ -62,23 +62,23 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
     }
 
     protected final void assertProbed(String expectedKey, long expectedValue, long absoluteDelta) {
-        CountingProbeRenderer renderer = probe(expectedKey);
+        CountingProbeRenderer renderer = runCycle(expectedKey);
         assertProbedTimes(1, renderer);
-        assertProbeValue(expectedValue, renderer.value, absoluteDelta);
+        assertProbeValue(expectedValue, renderer.matchValue, absoluteDelta);
     }
 
     protected final void assertNotProbed(String notExpectedKey) {
-        assertProbedTimes(0, probe(notExpectedKey));
+        assertProbedTimes(0, runCycle(notExpectedKey));
     }
 
     protected final void assertProbeCount(int expectedCount) {
-        CountingProbeRenderer renderer = probe("");
-        assertEquals(expectedCount, renderer.count);
+        CountingProbeRenderer renderer = runCycle("");
+        assertEquals(expectedCount, renderer.totalCount);
     }
 
     protected static void assertProbedTimes(int expectedTimes, CountingProbeRenderer actual) {
         String msg = "probe `" + actual.expectedKey + "` occurence ";
-        assertEquals(msg, expectedTimes, actual.matches);
+        assertEquals(msg, expectedTimes, actual.matchCount);
     }
 
     protected static void assertProbeValue(final long expected, long actual, final long absoluteDelta) {
@@ -91,28 +91,44 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
         }
     }
 
-    CountingProbeRenderer probe(final String expectedKey) {
+    CountingProbeRenderer runCycle(final String expectedKey) {
+        return runCycle(expectedKey, rendering, level);
+    }
+
+    public static CountingProbeRenderer runCycle(final String expectedKey, ProbeRenderContext renderContext, ProbeLevel level) {
         CountingProbeRenderer renderer = new CountingProbeRenderer(expectedKey);
-        rendering.render(level, renderer);
+        renderContext.render(level, renderer);
         return renderer;
     }
 
-    static final class CountingProbeRenderer implements ProbeRenderer {
+    public static final class CountingProbeRenderer implements ProbeRenderer {
         final String expectedKey;
-        long value = -1;
-        int matches = 0;
-        int count = 0;
+        long matchValue = -1;
+        int matchCount = 0;
+        int totalCount = 0;
         private CountingProbeRenderer(String expectedKey) {
             this.expectedKey = expectedKey;
         }
 
         @Override
         public void render(CharSequence key, long value) {
-            count++;
+            totalCount++;
             if (expectedKey.contentEquals(key)) {
-                matches++;
-                this.value = value;
+                matchCount++;
+                this.matchValue = value;
             }
+        }
+
+        public long getMatchValue() {
+            return matchValue;
+        }
+
+        public int getMatchCount() {
+            return matchCount;
+        }
+
+        public int getTotalCount() {
+            return totalCount;
         }
     }
 
