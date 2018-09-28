@@ -18,7 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.jet.Util;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
@@ -268,20 +268,27 @@ public class BatchStageTest extends PipelineTestSupport {
 
     @Test
     public void mapUsingReplicatedMap() {
+        // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
-
-        ReplicatedMap<Integer, String> map = member.getReplicatedMap(randomMapName());
+        String replicatedMapName = randomMapName();
+        ReplicatedMap<Integer, String> replicatedMap = member.getReplicatedMap(replicatedMapName);
         for (int i : input) {
-            map.put(i, String.valueOf(i));
+            replicatedMap.put(i, String.valueOf(i));
+        }
+        for (JetInstance jet : allJetInstances()) {
+            assertSizeEventually(itemCount, jet.getReplicatedMap(replicatedMapName));
         }
 
-        srcStage.mapUsingReplicatedMap(map, (m, r) -> entry(r, m.get(r)))
-                .drainTo(sink);
+        // When
+        BatchStage<Entry<Integer, String>> stage =
+                srcStage.mapUsingReplicatedMap(replicatedMap, (m, r) -> entry(r, m.get(r)));
 
+        // Then
+        stage.drainTo(sink);
         execute();
-
-        List<Entry<Integer, String>> expected = input.stream()
+        List<Entry<Integer, String>> expected = input
+                .stream()
                 .map(i -> entry(i, String.valueOf(i)))
                 .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
