@@ -53,6 +53,9 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.SHUTDOWN_REQUEST;
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
@@ -197,10 +200,21 @@ public class TopologyChangeTest extends JetTestSupport {
     }
 
     @Test
-    public void when_nonCoordinatorLeavesDuringExecutionAndNoRestartConfigured_then_jobSuspended() throws Throwable {
+    public void when_nonCoordinatorLeaves_AutoScalingOff_SnapshottingOn_then_jobSuspends() throws Throwable {
+        when_nonCoordinatorLeaves_AutoScalingOff_then_jobFailsOrSuspends(true);
+    }
+
+    @Test
+    public void when_nonCoordinatorLeaves_AutoScalingOff_SnapshottingOff_then_jobFails() throws Throwable {
+        when_nonCoordinatorLeaves_AutoScalingOff_then_jobFailsOrSuspends(false);
+    }
+
+    private void when_nonCoordinatorLeaves_AutoScalingOff_then_jobFailsOrSuspends(boolean snapshotted) throws Throwable {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
-        JobConfig config = new JobConfig().setAutoScaling(false);
+        JobConfig config = new JobConfig();
+        config.setAutoScaling(false);
+        config.setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE);
 
         // When
         Job job = instances[0].newJob(dag, config);
@@ -209,7 +223,7 @@ public class TopologyChangeTest extends JetTestSupport {
         instances[2].getHazelcastInstance().getLifecycleService().terminate();
         StuckProcessor.proceedLatch.countDown();
 
-        assertTrueEventually(() -> assertEquals(SUSPENDED, job.getStatus()), 10);
+        assertTrueEventually(() -> assertEquals(snapshotted ? SUSPENDED : FAILED, job.getStatus()), 10);
     }
 
     @Test
@@ -277,11 +291,22 @@ public class TopologyChangeTest extends JetTestSupport {
     }
 
     @Test
-    public void when_coordinatorLeavesDuringExecutionAndNoRestartConfigured_then_jobSuspends() throws Throwable {
+    public void when_coordinatorLeaves_AutoScalingOff_SnapshottingOn_then_jobSuspends() throws Throwable {
+        when_coordinatorLeaves_AutoScalingOff_then_jobFailsOrSuspends(true);
+    }
+
+    @Test
+    public void when_coordinatorLeaves_AutoScalingOff_SnapshottingOff_then_jobFails() throws Throwable {
+        when_coordinatorLeaves_AutoScalingOff_then_jobFailsOrSuspends(false);
+    }
+
+    private void when_coordinatorLeaves_AutoScalingOff_then_jobFailsOrSuspends(boolean snapshotted) throws Throwable {
         // Given
         JetInstance client = createJetClient();
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
-        JobConfig config = new JobConfig().setAutoScaling(false);
+        JobConfig config = new JobConfig();
+        config.setAutoScaling(false);
+        config.setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE);
 
         // When
         Job job = client.newJob(dag, config);
@@ -297,7 +322,7 @@ public class TopologyChangeTest extends JetTestSupport {
                     status = job.getStatus();
                 } catch (TargetNotMemberException ignored) { }
             }
-            assertEquals(SUSPENDED, status);
+            assertEquals(snapshotted ? SUSPENDED : FAILED, status);
         }, 10);
     }
 

@@ -354,7 +354,7 @@ public class JobCoordinationService {
         }
 
         if (!masterContext.jobConfig().isAutoScaling() && jobRepository.getExecutionIdCount(jobId) > 0) {
-            logger.info("Suspending job " + masterContext.jobIdString()
+            logger.info("Suspending or failing " + masterContext.jobIdString()
                     + " since auto-restart is disabled and the job has been executed before");
             masterContext.finalizeJob(new TopologyChangedException());
         }

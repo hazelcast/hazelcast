@@ -237,14 +237,14 @@ public class StreamEventJournalPTest extends JetTestSupport {
         Job job = instance.newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(200_000));
-        sleepMillis(1000);
+        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()), 25);
         job.restart();
-        sleepMillis(3000);
 
         // Then
         // The job should be running: this test checks that state restored to NoopP, which is
         // created by the meta supplier for processor with no partitions, is ignored.
-        assertEquals(RUNNING, job.getStatus());
+        sleepMillis(3000);
+        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()), 10);
     }
 
     private void fillJournal(int countPerPartition) {
