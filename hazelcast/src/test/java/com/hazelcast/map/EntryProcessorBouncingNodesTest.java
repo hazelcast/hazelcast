@@ -41,13 +41,13 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Creates a map that is used to test data consistency while nodes are joining and leaving the cluster.
@@ -119,7 +119,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         assertEquals(ENTRIES, map.size());
 
         // spin up the thread that stops/starts the instance2 and instance3, always keeping one instance running
-        Runnable runnable = new TwoNodesRestartingRunnable(startLatch, isRunning, withPredicate, instance2, instance3);
+        Runnable runnable = new TwoNodesRestartingRunnable(startLatch, isRunning, withIndex, instance2, instance3);
         Thread bounceThread = new Thread(runnable);
         bounceThread.start();
 
@@ -151,30 +151,19 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         // wait for the instance bounces to complete
         assertJoinable(bounceThread);
 
-        final CountDownLatch latch = new CountDownLatch(ENTRIES);
-        for (int i = 0; i < ENTRIES; ++i) {
-            final int id = i;
-            new Thread(new Runnable() {
+        for (int i = 0; i < ENTRIES; i++) {
+            final int index = i;
+            assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() {
-                    assertTrueEventually(new AssertTask() {
-                        @Override
-                        public void run() throws Exception {
-                            assertTrue(expected.size() <= map.get(id).size());
-                        }
-                    });
-                    latch.countDown();
+                    ListHolder holder = map.get(index);
+                    String errorText = String.format("Each ListHolder should contain %d entries.\nInvalid list holder content:\n%s\n", ITERATIONS, holder.toString());
+                    assertEquals(errorText, ITERATIONS, holder.size());
+                    for (int i = 0; i < ITERATIONS; i++) {
+                        assertEquals(i, holder.get(i));
+                    }
                 }
-            }).start();
-        }
-        assertOpenEventually(latch);
-
-        for (int index = 0; index < ENTRIES; ++index) {
-            ListHolder holder = map.get(index);
-            assertEquals("The ListHolder should contain ITERATIONS entries", ITERATIONS, holder.size());
-            for (int i = 0; i < ITERATIONS; i++) {
-                assertEquals(i, holder.get(i));
-            }
+            });
         }
     }
 
@@ -194,16 +183,16 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
         private final CountDownLatch start;
         private final AtomicBoolean isRunning;
-        private final boolean withPredicate;
+        private final boolean withIndex;
 
         private HazelcastInstance instance1;
         private HazelcastInstance instance2;
 
-        private TwoNodesRestartingRunnable(CountDownLatch startLatch, AtomicBoolean isRunning, boolean withPredicate,
+        private TwoNodesRestartingRunnable(CountDownLatch startLatch, AtomicBoolean isRunning, boolean withIndex,
                                            HazelcastInstance h1, HazelcastInstance h2) {
             this.start = startLatch;
             this.isRunning = isRunning;
-            this.withPredicate = withPredicate;
+            this.withIndex = withIndex;
             this.instance1 = h1;
             this.instance2 = h2;
         }
@@ -216,8 +205,8 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
                     instance1.shutdown();
                     instance2.shutdown();
                     sleepMillis(10);
-                    instance1 = newInstance(withPredicate);
-                    instance2 = newInstance(withPredicate);
+                    instance1 = newInstance(withIndex);
+                    instance2 = newInstance(withIndex);
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -245,10 +234,6 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         @Override
         public Object process(Map.Entry<Integer, ListHolder> entry) {
             ListHolder holder = entry.getValue();
-            if (holder == null) {
-                holder = new ListHolder();
-            }
-
             holder.add(nextVal);
             entry.setValue(holder);
             return null;
@@ -294,6 +279,11 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
         public int size() {
             return size;
+        }
+
+        @Override
+        public String toString() {
+            return Arrays.toString(list.toArray());
         }
     }
 }
