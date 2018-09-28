@@ -334,7 +334,7 @@ public class TaskletExecutionService {
         }
 
         private void stealWork() {
-            while (true) {
+            do {
                 // start with own tasklet list, try to find a longer one
                 List<TaskletTracker> toStealFrom = trackers;
                 for (CooperativeWorker w : colleagues) {
@@ -352,7 +352,7 @@ public class TaskletExecutionService {
                         return;
                     }
                 }
-            }
+            } while (gracefulShutdown.get() == null);
         }
     }
 
