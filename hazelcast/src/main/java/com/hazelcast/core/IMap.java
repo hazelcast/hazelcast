@@ -2602,9 +2602,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      *         });
      * }</pre>
      *
+     * @param keys The keys to execute the entry processor on. Can be empty, in
+     *             that case it's a local no-op
      * @return results of {@link EntryProcessor#process(Entry)}
-     * @throws NullPointerException     if the specified key is {@code null}
-     * @throws IllegalArgumentException if the specified {@code keys} set is empty
+     * @throws NullPointerException if there's null element in {@code keys}
      */
     Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
 

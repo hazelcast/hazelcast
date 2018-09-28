@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -403,6 +404,27 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         }
         InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invoke();
+    }
+
+    @Override
+    public <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
+            String serviceName, OperationFactory operationFactory, Collection<Integer> partitions,
+            ExecutionCallback<Map<Integer, T>> callback) {
+
+        Map<Address, List<Integer>> memberPartitions = createHashMap(3);
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        for (int partition : partitions) {
+            Address owner = partitionService.getPartitionOwnerOrWait(partition);
+
+            if (!memberPartitions.containsKey(owner)) {
+                memberPartitions.put(owner, new ArrayList<Integer>());
+            }
+
+            memberPartitions.get(owner).add(partition);
+        }
+        InvokeOnPartitionsAsync invokeOnPartitions =
+                new InvokeOnPartitionsAsync(this, serviceName, operationFactory, memberPartitions);
+        return invokeOnPartitions.invokeAsync(callback);
     }
 
     @Override

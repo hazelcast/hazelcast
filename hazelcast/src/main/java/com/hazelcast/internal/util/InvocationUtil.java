@@ -198,8 +198,8 @@ public final class InvocationUtil {
         }
 
         @Override
-        public void setResult(Object result) {
-            super.setResult(result);
+        public boolean setResult(Object result) {
+            return super.setResult(result);
         }
     }
 

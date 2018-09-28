@@ -232,12 +232,19 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         }
     }
 
-    protected void setResult(Object result) {
+    /**
+     * Sets the result. If {@code result} is an instance of Throwable, this
+     * future will be completed exceptionally. That is, {@link #get} will throw
+     * the exception rather than return it.
+     *
+     * @return true, if this call made this future to complete
+     */
+    protected boolean setResult(Object result) {
         for (; ; ) {
             Object currentState = this.state;
 
             if (isDoneState(currentState)) {
-                return;
+                return false;
             }
 
             if (STATE.compareAndSet(this, currentState, result)) {
@@ -247,6 +254,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
                 break;
             }
         }
+        return true;
     }
 
     /**

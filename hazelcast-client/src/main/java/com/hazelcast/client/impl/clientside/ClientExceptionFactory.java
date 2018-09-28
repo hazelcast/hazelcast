@@ -735,8 +735,9 @@ public class ClientExceptionFactory {
         return throwable;
     }
 
-    private void register(int errorCode, Class clazz, ExceptionFactory exceptionFactory) {
-
+    // method is used by Jet
+    @SuppressWarnings("WeakerAccess")
+    public void register(int errorCode, Class clazz, ExceptionFactory exceptionFactory) {
         if (intToFactory.containsKey(errorCode)) {
             throw new HazelcastException("Code " + errorCode + " already used");
         }
@@ -747,8 +748,6 @@ public class ClientExceptionFactory {
 
         intToFactory.put(errorCode, exceptionFactory);
     }
-
-
 
     public interface ExceptionFactory {
         Throwable createException(String message, Throwable cause);
