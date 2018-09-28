@@ -296,21 +296,22 @@ public class BatchStageTest extends PipelineTestSupport {
 
     @Test
     public void mapUsingIMap() {
+        // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
-
         IMap<Integer, String> map = member.getMap(randomMapName());
         for (int i : input) {
             map.put(i, String.valueOf(i));
         }
 
+        // When
+        BatchStage<Entry<Integer, String>> stage = srcStage.mapUsingIMap(map, (m, r) -> entry(r, m.get(r)));
 
-        srcStage.mapUsingIMap(map, (m, r) -> entry(r, m.get(r)))
-                .drainTo(sink);
-
+        // Then
+        stage.drainTo(sink);
         execute();
-
-        List<Entry<Integer, String>> expected = input.stream()
+        List<Entry<Integer, String>> expected = input
+                .stream()
                 .map(i -> entry(i, String.valueOf(i)))
                 .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
@@ -318,20 +319,21 @@ public class BatchStageTest extends PipelineTestSupport {
 
     @Test
     public void mapUsingIMap_keyed() {
+        // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
-
         IMap<Integer, String> map = member.getMap(randomMapName());
         for (int integer : input) {
             map.put(integer, String.valueOf(integer));
         }
 
-        srcStage.groupingKey(r -> r)
-                .mapUsingIMap(map, (k, v) -> Util.entry(k, v))
-                .drainTo(sink);
+        // When
+        BatchStage<Entry<Integer, String>> stage = srcStage.groupingKey(r -> r)
+                                                           .mapUsingIMap(map, (k, v) -> entry(k, v));
 
+        // Then
+        stage.drainTo(sink);
         execute();
-
         List<Entry<Integer, String>> expected = input.stream()
                 .map(i -> entry(i, String.valueOf(i)))
                 .collect(toList());
