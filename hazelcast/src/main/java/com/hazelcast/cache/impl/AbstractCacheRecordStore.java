@@ -40,6 +40,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
@@ -367,9 +368,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public boolean evictOneEntry() {
+    public void sampleAndHardRemoveEntries(int entryCountToRemove) {
         assertRunningOnPartitionThread();
-        return evictionStrategy.evict(records, evictionPolicyEvaluator, EvictionChecker.EVICT_ALWAYS, this);
+
+        Iterable<EvictionCandidate<Data, R>> entries = records.sample(entryCountToRemove);
+        for (EvictionCandidate<Data, R> entry : entries) {
+            removeRecord(entry.getAccessor());
+        }
     }
 
     protected Data toData(Object obj) {
