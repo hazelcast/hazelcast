@@ -34,28 +34,41 @@ import java.util.LinkedList;
 public class CacheExpireBatchBackupOperation extends CacheOperation {
 
     private Collection<ExpiredKey> expiredKeys;
-    private int ownerPartitionEntryCount;
+    private int primaryEntryCount;
 
     public CacheExpireBatchBackupOperation() {
     }
 
-    public CacheExpireBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int ownerPartitionEntryCount) {
+    public CacheExpireBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int primaryEntryCount) {
         super(name, true);
         this.expiredKeys = expiredKeys;
-        this.ownerPartitionEntryCount = ownerPartitionEntryCount;
+        this.primaryEntryCount = primaryEntryCount;
     }
 
     @Override
     public void run() {
+        if (recordStore == null) {
+            return;
+        }
+
         for (ExpiredKey expiredKey : expiredKeys) {
             evictIfSame(expiredKey);
         }
 
-        int diff = recordStore.size() - ownerPartitionEntryCount;
-        for (int i = 0; i < diff; i++) {
-            recordStore.evictOneEntry();
+        equalizeEntryCountWithPrimary();
+    }
+
+    /**
+     * Equalizes backup entry count with primary in order to have identical
+     * memory occupancy.
+     */
+    private void equalizeEntryCountWithPrimary() {
+        int diff = recordStore.size() - primaryEntryCount;
+        if (diff > 0) {
+            recordStore.sampleAndHardRemoveEntries(diff);
         }
-        assert recordStore.size() == ownerPartitionEntryCount;
+
+        assert recordStore.size() == primaryEntryCount;
     }
 
     @Override
@@ -93,7 +106,7 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
             out.writeData(expiredKey.getKey());
             out.writeLong(expiredKey.getCreationTime());
         }
-        out.writeInt(ownerPartitionEntryCount);
+        out.writeInt(primaryEntryCount);
     }
 
     @Override
@@ -104,6 +117,6 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
         for (int i = 0; i < size; i++) {
             expiredKeys.add(new ExpiredKey(in.readData(), in.readLong()));
         }
-        ownerPartitionEntryCount = in.readInt();
+        primaryEntryCount = in.readInt();
     }
 }

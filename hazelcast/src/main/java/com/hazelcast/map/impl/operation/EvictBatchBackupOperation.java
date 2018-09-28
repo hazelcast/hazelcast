@@ -18,9 +18,12 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.LazyEntryViewFromRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.WrongTargetException;
@@ -39,12 +42,12 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
 
     private String name;
     private Collection<ExpiredKey> expiredKeys;
-    private int ownerPartitionEntryCount;
+    private int primaryEntryCount;
 
     public EvictBatchBackupOperation() {
     }
 
-    public EvictBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int ownerPartitionEntryCount) {
+    public EvictBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int primaryEntryCount) {
         super(name);
 
         assert isNotEmpty(expiredKeys);
@@ -52,11 +55,16 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
 
         this.name = name;
         this.expiredKeys = expiredKeys;
-        this.ownerPartitionEntryCount = ownerPartitionEntryCount;
+        this.primaryEntryCount = primaryEntryCount;
+        this.createRecordStoreOnDemand = false;
     }
 
     @Override
     public void run() {
+        if (recordStore == null) {
+            return;
+        }
+
         for (ExpiredKey expiredKey : expiredKeys) {
             Record existingRecord = recordStore.getRecord(expiredKey.getKey());
             if (canEvictRecord(existingRecord, expiredKey)) {
@@ -64,10 +72,31 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
             }
         }
 
-        // equalize backup entry count to owner entry count to have identical memory occupancy
-        int diff = recordStore.size() - ownerPartitionEntryCount;
-        for (int i = 0; i < diff; i++) {
-            mapContainer.getEvictor().evict(recordStore, null);
+        equalizeEntryCountWithPrimary();
+    }
+
+    /**
+     * Equalizes backup entry count with primary in order to have identical
+     * memory occupancy.
+     *
+     * If eviction configured for this map, equalize entry count by using
+     * evictor, otherwise, sample entries and evict them from this backup
+     * replica.
+     */
+    private void equalizeEntryCountWithPrimary() {
+        int diff = recordStore.size() - primaryEntryCount;
+
+        Evictor evictor = mapContainer.getEvictor();
+        if (evictor != Evictor.NULL_EVICTOR) {
+            for (int i = 0; i < diff; i++) {
+                evictor.evict(recordStore, null);
+            }
+        } else {
+            Iterable<LazyEntryViewFromRecord> sample = recordStore.getStorage().getRandomSamples(diff);
+            for (LazyEntryViewFromRecord entryViewFromRecord : sample) {
+                Data dataKey = entryViewFromRecord.getRecord().getKey();
+                recordStore.evict(dataKey, true);
+            }
         }
     }
 
@@ -113,7 +142,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
             out.writeData(expiredKey.getKey());
             out.writeLong(expiredKey.getCreationTime());
         }
-        out.writeInt(ownerPartitionEntryCount);
+        out.writeInt(primaryEntryCount);
     }
 
     @Override
@@ -126,6 +155,6 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         for (int i = 0; i < size; i++) {
             expiredKeys.add(new ExpiredKey(in.readData(), in.readLong()));
         }
-        ownerPartitionEntryCount = in.readInt();
+        primaryEntryCount = in.readInt();
     }
 }
