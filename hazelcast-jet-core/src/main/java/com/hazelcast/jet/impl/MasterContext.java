@@ -629,11 +629,6 @@ public class MasterContext {
             logger.fine(opName + " of " + jobIdString() + " has failures: " + failures);
         }
 
-        TerminationMode mode = requestedTerminationMode;
-        if (mode == CANCEL) {
-            logger.fine(jobIdString() + " to be cancelled after " + opName);
-            return new JobTerminateRequestedException(mode);
-        }
 
         if (successfulMembers.size() == executionPlanMap.size()) {
             logger.fine(opName + " of " + jobIdString() + " was successful");
@@ -647,7 +642,7 @@ public class MasterContext {
         if (failures.stream().allMatch(e -> e.getValue() instanceof TerminatedWithSnapshotException)) {
             assert opName.equals("Execution") : "opName=" + opName;
             logger.fine(opName + " of " + jobIdString() + " terminated after a terminal snapshot");
-
+            TerminationMode mode = requestedTerminationMode;
             assert mode != null && mode.isWithTerminalSnapshot() : "mode=" + mode;
             return new JobTerminateRequestedException(mode);
         }
