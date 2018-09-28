@@ -139,10 +139,29 @@
 
     <profiles>
         <profile>
-            <id>hibernate-4</id>
+            <id>hibernate-5</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+            <dependencies>
+                <!--TEST DEPENDENCIES-->
+                <dependency>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast-hibernate5</artifactId>
+                    <version>1.2.3</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.hibernate</groupId>
+                    <artifactId>hibernate-core</artifactId>
+                    <version>5.0.9.Final</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>hibernate-4</id>
             <dependencies>
                 <!--TEST DEPENDENCIES-->
                 <dependency>
