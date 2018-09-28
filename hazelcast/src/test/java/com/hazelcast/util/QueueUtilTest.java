@@ -19,6 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Predicate;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -58,8 +59,42 @@ public class QueueUtilTest {
             queue.offer(i);
         }
 
-        int drained = QueueUtil.drainQueue(queue, 50);
+        int drained = QueueUtil.drainQueue(queue, 50, null);
         assertEquals(50, drained);
+        assertEquals(50, queue.size());
+    }
+
+    @Test
+    public void drainQueueToZeroWithPredicate() {
+        Queue<Integer> queue = new LinkedList<Integer>();
+        for (int i = 0; i < 100; i++) {
+            queue.offer(i);
+        }
+
+        int drained = QueueUtil.drainQueue(queue, new Predicate<Integer>() {
+            @Override
+            public boolean test(Integer integer) {
+                return integer % 2 == 0;
+            }
+        });
+        assertEquals(50, drained);
+        assertTrue(queue.isEmpty());
+    }
+
+    @Test
+    public void drainQueueToNonZeroWithPredicate() {
+        Queue<Integer> queue = new LinkedList<Integer>();
+        for (int i = 0; i < 100; i++) {
+            queue.offer(i);
+        }
+
+        int drained = QueueUtil.drainQueue(queue, 50, new Predicate<Integer>() {
+            @Override
+            public boolean test(Integer integer) {
+                return integer % 2 == 0;
+            }
+        });
+        assertEquals(25, drained);
         assertEquals(50, queue.size());
     }
 }
