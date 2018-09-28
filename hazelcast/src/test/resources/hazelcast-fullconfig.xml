@@ -92,6 +92,27 @@
                 <tag-key>sample-tag-key</tag-key>
                 <tag-value>sample-tag-value</tag-value>
             </aws>
+            <gcp enabled="false">
+                <zones>us-east1-b,us-east1-c</zones>
+            </gcp>
+            <azure enabled="false">
+                <client-id>CLIENT_ID</client-id>
+                <client-secret>CLIENT_SECRET</client-secret>
+                <tenant-id>TENANT_ID</tenant-id>
+                <subscription-id>SUB_ID</subscription-id>
+                <cluster-id>HZLCAST001</cluster-id>
+                <group-name>GROUP-NAME</group-name>
+            </azure>
+            <kubernetes enabled="false">
+                <namespace>MY-KUBERNETES-NAMESPACE</namespace>
+                <service-name>MY-SERVICE-NAME</service-name>
+                <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
+                <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
+            </kubernetes>
+            <eureka enabled="false">
+                <self-registration>true</self-registration>
+                <namespace>hazelcast</namespace>
+            </eureka>
             <discovery-strategies>
                 <node-filter class="DummyFilterClass" />
                 <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
@@ -161,6 +182,27 @@
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
             </aws>
+            <gcp enabled="false">
+                <zones>us-east1-b,us-east1-c</zones>
+            </gcp>
+            <azure enabled="false">
+                <client-id>CLIENT_ID</client-id>
+                <client-secret>CLIENT_SECRET</client-secret>
+                <tenant-id>TENANT_ID</tenant-id>
+                <subscription-id>SUB_ID</subscription-id>
+                <cluster-id>HZLCAST001</cluster-id>
+                <group-name>GROUP-NAME</group-name>
+            </azure>
+            <kubernetes enabled="false">
+                <namespace>MY-KUBERNETES-NAMESPACE</namespace>
+                <service-name>MY-SERVICE-NAME</service-name>
+                <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
+                <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
+            </kubernetes>
+            <eureka enabled="false">
+                <self-registration>true</self-registration>
+                <namespace>hazelcast</namespace>
+            </eureka>
 <!--            <discovery-strategies>
                 <node-filter class="DummyFilterClass"/>
                 <discovery-strategy class="DummyClass" enabled="true">

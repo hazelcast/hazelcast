@@ -2378,18 +2378,9 @@
         <xs:attribute name="loopback-mode-enabled" type="parameterized-boolean" use="optional" default="false"/>
     </xs:complexType>
 
-    <xs:complexType name="aws">
+    <xs:complexType name="aliased-discovery-strategy">
         <xs:sequence/>
-        <xs:attribute name="enabled" type="xs:string" use="optional" default="true"/>
-        <xs:attribute name="access-key" type="xs:string" use="optional"/>
-        <xs:attribute name="secret-key" type="xs:string" use="optional"/>
-        <xs:attribute name="iam-role" type="xs:string" use="optional"/>
-        <xs:attribute name="region" type="xs:string" use="optional" default="us-east-1"/>
-        <xs:attribute name="host-header" type="xs:string" use="optional" default="ec2.amazonaws.com"/>
-        <xs:attribute name="security-group-name" type="xs:string" use="optional" default=""/>
-        <xs:attribute name="tag-key" type="xs:string" use="optional" default=""/>
-        <xs:attribute name="tag-value" type="xs:string" use="optional" default=""/>
-        <xs:attribute name="connection-timeout-seconds" type="xs:string" use="optional" default="5"/>
+        <xs:anyAttribute processContents="skip" />
     </xs:complexType>
 
     <xs:complexType name="discovery-strategies">
@@ -2488,7 +2479,11 @@
         <xs:sequence>
             <xs:element name="multicast" type="multicast" minOccurs="0"/>
             <xs:element name="tcp-ip" type="tcp-ip" minOccurs="0"/>
-            <xs:element name="aws" type="aws" minOccurs="0"/>
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
@@ -2788,7 +2783,11 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:element>
-                        <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="wan-sync" type="wan-sync" minOccurs="0">
                             <xs:annotation>
@@ -3148,7 +3147,11 @@
             <xs:element name="socket-options" type="socket-options" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="aws" type="aws-client" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
             <xs:element name="icmp-ping" type="icmp-ping-client" minOccurs="0" maxOccurs="1"/>
@@ -3326,14 +3329,6 @@
                     </xs:simpleType>
                 </xs:attribute>
                 <xs:attribute name="local-update-policy" type="local-update-policy-enum" use="optional" default="INVALIDATE"/>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-
-    <xs:complexType name="aws-client">
-        <xs:complexContent>
-            <xs:extension base="aws">
-                <xs:attribute name="inside-aws" use="optional" type="parameterized-boolean" default="false"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

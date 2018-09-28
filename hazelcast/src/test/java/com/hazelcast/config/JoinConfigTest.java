@@ -35,16 +35,29 @@ public class JoinConfigTest {
         assertOk(false, false, true);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void joinConfigTestWhenTwoJoinMethodEnabled() {
-        assertOk(true, true, false);
-    }
-
-    public static void assertOk(boolean tcp, boolean multicast, boolean aws) {
+    private static void assertOk(boolean tcp, boolean multicast, boolean aws) {
         JoinConfig config = new JoinConfig();
         config.getMulticastConfig().setEnabled(multicast);
         config.getTcpIpConfig().setEnabled(tcp);
         config.getAwsConfig().setEnabled(aws);
+
+        config.verify();
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void joinConfigTestWhenTwoJoinMethodEnabled() {
+        JoinConfig config = new JoinConfig();
+        config.getMulticastConfig().setEnabled(true);
+        config.getTcpIpConfig().setEnabled(true);
+
+        config.verify();
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void joinConfigTestWhenGcpAndAwsEnabled() {
+        JoinConfig config = new JoinConfig();
+        config.getAwsConfig().setEnabled(true);
+        config.getGcpConfig().setEnabled(true);
 
         config.verify();
     }

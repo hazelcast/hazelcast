@@ -60,6 +60,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.config.JobTrackerConfig.DEFAULT_COMMUNICATE_STATS;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.ATOMIC_LONG;
@@ -671,7 +672,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             publisherConfig.setQueueCapacity(queueCapacity);
         } else if ("properties".equals(targetChildName)) {
             fillProperties(targetChild, publisherConfig.getProperties());
-        } else if (AliasedDiscoveryConfigMapper.supports(targetChildName)) {
+        } else if (AliasedDiscoveryConfigUtils.supports(targetChildName)) {
             handleAliasedDiscoveryStrategy(publisherConfig, targetChild, targetChildName);
         } else if ("discovery-strategies".equals(targetChildName)) {
             handleDiscoveryStrategies(publisherConfig.getDiscoveryConfig(), targetChild);
@@ -952,7 +953,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleMulticast(child);
             } else if ("tcp-ip".equals(name)) {
                 handleTcpIp(child);
-            } else if (AliasedDiscoveryConfigMapper.supports(name)) {
+            } else if (AliasedDiscoveryConfigUtils.supports(name)) {
                 handleAliasedDiscoveryStrategy(config.getNetworkConfig().getJoin(), child, name);
             } else if ("discovery-strategies".equals(name)) {
                 handleDiscoveryStrategies(config.getNetworkConfig().getJoin().getDiscoveryConfig(), child);
@@ -1013,16 +1014,16 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     }
 
     private void handleAliasedDiscoveryStrategy(JoinConfig joinConfig, Node node, String tag) {
-        joinConfig.addDiscoveryAliasConfig(createDiscoveryAliasConfig(node, tag));
+        AliasedDiscoveryConfig aliasedDiscoveryConfig = AliasedDiscoveryConfigUtils.getConfigByTag(joinConfig, tag);
+        updateConfig(aliasedDiscoveryConfig, node);
     }
 
     private void handleAliasedDiscoveryStrategy(WanPublisherConfig publisherConfig, Node node, String tag) {
-        publisherConfig.addDiscoveryAliasConfig(createDiscoveryAliasConfig(node, tag));
+        AliasedDiscoveryConfig aliasedDiscoveryConfig = getConfigByTag(publisherConfig, tag);
+        updateConfig(aliasedDiscoveryConfig, node);
     }
 
-    private AliasedDiscoveryConfig createDiscoveryAliasConfig(Node node, String tag) {
-        AliasedDiscoveryConfig config = new AliasedDiscoveryConfig();
-        config.setEnvironment(tag);
+    private void updateConfig(AliasedDiscoveryConfig config, Node node) {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
@@ -1030,15 +1031,14 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 config.setEnabled(getBooleanValue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                config.addProperty("connection-timeout-seconds", value);
+                config.setProperty("connection-timeout-seconds", value);
             }
         }
         for (Node n : childElements(node)) {
             String key = cleanNodeName(n);
             String value = getTextContent(n).trim();
-            config.addProperty(key, value);
+            config.setProperty(key, value);
         }
-        return config;
     }
 
     private void handleMulticast(Node node) {

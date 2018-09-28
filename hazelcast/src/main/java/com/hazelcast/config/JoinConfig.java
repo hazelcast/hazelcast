@@ -16,9 +16,7 @@
 
 package com.hazelcast.config;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -33,7 +31,13 @@ public class JoinConfig {
 
     private AwsConfig awsConfig = new AwsConfig();
 
-    private final List<AliasedDiscoveryConfig> aliasedDiscoveryConfigs = new ArrayList<AliasedDiscoveryConfig>();
+    private GcpConfig gcpConfig = new GcpConfig();
+
+    private AzureConfig azureConfig = new AzureConfig();
+
+    private KubernetesConfig kubernetesConfig = new KubernetesConfig();
+
+    private EurekaConfig eurekaConfig = new EurekaConfig();
 
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
 
@@ -85,12 +89,39 @@ public class JoinConfig {
         return this;
     }
 
-    public List<AliasedDiscoveryConfig> getAliasedDiscoveryConfigs() {
-        return aliasedDiscoveryConfigs;
+    public GcpConfig getGcpConfig() {
+        return gcpConfig;
     }
 
-    public JoinConfig addDiscoveryAliasConfig(AliasedDiscoveryConfig aliasedDiscoveryConfig) {
-        this.aliasedDiscoveryConfigs.add(isNotNull(aliasedDiscoveryConfig, "aliasedDiscoveryConfig"));
+    public JoinConfig setGcpConfig(final GcpConfig gcpConfig) {
+        this.gcpConfig = isNotNull(gcpConfig, "gcpConfig");
+        return this;
+    }
+
+    public AzureConfig getAzureConfig() {
+        return azureConfig;
+    }
+
+    public JoinConfig setAzureConfig(final AzureConfig azureConfig) {
+        this.azureConfig = isNotNull(azureConfig, "azureConfig");
+        return this;
+    }
+
+    public KubernetesConfig getKubernetesConfig() {
+        return kubernetesConfig;
+    }
+
+    public JoinConfig setKubernetesConfig(final KubernetesConfig kubernetesConfig) {
+        this.kubernetesConfig = isNotNull(kubernetesConfig, "kubernetesConfig");
+        return this;
+    }
+
+    public EurekaConfig getEurekaConfig() {
+        return eurekaConfig;
+    }
+
+    public JoinConfig setEurekaConfig(final EurekaConfig eurekaConfig) {
+        this.eurekaConfig = isNotNull(eurekaConfig, "eurekaConfig");
         return this;
     }
 
@@ -119,18 +150,36 @@ public class JoinConfig {
      *
      * @throws IllegalStateException when the join config is not valid
      */
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public void verify() {
-        if (getTcpIpConfig().isEnabled() && getMulticastConfig().isEnabled()) {
-            throw new InvalidConfigurationException("TCP/IP and Multicast join can't be enabled at the same time");
+        int countEnabled = 0;
+        if (getTcpIpConfig().isEnabled()) {
+            countEnabled++;
+        }
+        if (getMulticastConfig().isEnabled()) {
+            countEnabled++;
+        }
+        if (getAwsConfig().isEnabled()) {
+            countEnabled++;
+        }
+        if (getGcpConfig().isEnabled()) {
+            countEnabled++;
+        }
+        if (getAzureConfig().isEnabled()) {
+            countEnabled++;
+        }
+        if (getKubernetesConfig().isEnabled()) {
+            countEnabled++;
+        }
+        if (getEurekaConfig().isEnabled()) {
+            countEnabled++;
         }
 
-        if (getTcpIpConfig().isEnabled() && getAwsConfig().isEnabled()) {
-            throw new InvalidConfigurationException("TCP/IP and AWS join can't be enabled at the same time");
+        if (countEnabled > 1) {
+            throw new InvalidConfigurationException("Multiple join configuration cannot be enabled at the same time. Enable only "
+                    + "one of: TCP/IP, Multicast, AWS, GCP, Azure, Kubernetes, or Eureka");
         }
 
-        if (getMulticastConfig().isEnabled() && getAwsConfig().isEnabled()) {
-            throw new InvalidConfigurationException("Multicast and AWS join can't be enabled at the same time");
-        }
         verifyDiscoveryProviderConfig();
     }
 
@@ -147,11 +196,6 @@ public class JoinConfig {
                 throw new InvalidConfigurationException(
                         "Multicast and DiscoveryProviders join can't be enabled at the same time");
             }
-
-            if (getAwsConfig().isEnabled()) {
-                throw new InvalidConfigurationException(
-                        "AWS and DiscoveryProviders join can't be enabled at the same time");
-            }
         }
     }
 
@@ -161,8 +205,11 @@ public class JoinConfig {
                 + "multicastConfig=" + multicastConfig
                 + ", tcpIpConfig=" + tcpIpConfig
                 + ", awsConfig=" + awsConfig
-                + ", aliasedDiscoveryConfigs=" + aliasedDiscoveryConfigs
-                + ", discoveryProvidersConfig=" + discoveryConfig
+                + ", gcpConfig=" + gcpConfig
+                + ", azureConfig=" + azureConfig
+                + ", kubernetesConfig=" + kubernetesConfig
+                + ", eurekaConfig=" + eurekaConfig
+                + ", discoveryConfig=" + discoveryConfig
                 + '}';
     }
 }

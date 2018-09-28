@@ -16,8 +16,11 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.EurekaConfig;
+import com.hazelcast.config.GcpConfig;
+import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 
@@ -46,8 +49,11 @@ public class ClientNetworkConfig {
     private SocketInterceptorConfig socketInterceptorConfig;
     private SocketOptions socketOptions = new SocketOptions();
     private SSLConfig sslConfig;
-    private ClientAwsConfig clientAwsConfig;
-    private final List<AliasedDiscoveryConfig> aliasedDiscoveryConfigs = new ArrayList<AliasedDiscoveryConfig>();
+    private ClientAwsConfig awsConfig = new ClientAwsConfig();
+    private GcpConfig gcpConfig = new GcpConfig();
+    private AzureConfig azureConfig = new AzureConfig();
+    private KubernetesConfig kubernetesConfig = new KubernetesConfig();
+    private EurekaConfig eurekaConfig = new EurekaConfig();
     private ClientCloudConfig cloudConfig = new ClientCloudConfig();
     private DiscoveryConfig discoveryConfig;
     private Collection<String> outboundPortDefinitions;
@@ -307,7 +313,7 @@ public class ClientNetworkConfig {
      * @see #getAwsConfig()
      */
     public ClientNetworkConfig setAwsConfig(ClientAwsConfig clientAwsConfig) {
-        this.clientAwsConfig = clientAwsConfig;
+        this.awsConfig = clientAwsConfig;
         return this;
     }
 
@@ -318,16 +324,43 @@ public class ClientNetworkConfig {
      * @see #setAwsConfig(ClientAwsConfig)
      */
     public ClientAwsConfig getAwsConfig() {
-        return clientAwsConfig;
+        return awsConfig;
     }
 
-    public List<AliasedDiscoveryConfig> getAliasedDiscoveryConfigs() {
-        return aliasedDiscoveryConfigs;
-    }
-
-    public ClientNetworkConfig addAliasedDiscoveryConfig(AliasedDiscoveryConfig aliasedDiscoveryConfig) {
-        this.aliasedDiscoveryConfigs.add(isNotNull(aliasedDiscoveryConfig, "aliasedDiscoveryConfig"));
+    public ClientNetworkConfig setGcpConfig(GcpConfig gcpConfig) {
+        this.gcpConfig = gcpConfig;
         return this;
+    }
+
+    public GcpConfig getGcpConfig() {
+        return gcpConfig;
+    }
+
+    public ClientNetworkConfig setAzureConfig(AzureConfig azureConfig) {
+        this.azureConfig = azureConfig;
+        return this;
+    }
+
+    public AzureConfig getAzureConfig() {
+        return azureConfig;
+    }
+
+    public ClientNetworkConfig setKubernetesConfig(KubernetesConfig kubernetesConfig) {
+        this.kubernetesConfig = kubernetesConfig;
+        return this;
+    }
+
+    public KubernetesConfig getKubernetesConfig() {
+        return kubernetesConfig;
+    }
+
+    public ClientNetworkConfig setEurekaConfig(EurekaConfig eurekaConfig) {
+        this.eurekaConfig = eurekaConfig;
+        return this;
+    }
+
+    public EurekaConfig getEurekaConfig() {
+        return eurekaConfig;
     }
 
     public ClientCloudConfig getCloudConfig() {

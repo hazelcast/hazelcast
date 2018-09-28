@@ -1775,7 +1775,7 @@
         </xs:attribute>
         <xs:attribute name="loopbackModeEnabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
-    <xs:complexType name="discovery-strategy-alias">
+    <xs:complexType name="aliased-discovery-strategy">
         <xs:sequence>
             <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
         </xs:sequence>
@@ -1806,12 +1806,11 @@
         <xs:all>
             <xs:element name="multicast" type="multicast" minOccurs="0"/>
             <xs:element name="tcp-ip" type="tcp-ip" minOccurs="0"/>
-            <xs:element name="aws" type="discovery-strategy-alias" minOccurs="0"/>
-            <xs:element name="gcp" type="discovery-strategy-alias" minOccurs="0"/>
-            <xs:element name="azure" type="discovery-strategy-alias" minOccurs="0"/>
-            <xs:element name="kubernetes" type="discovery-strategy-alias" minOccurs="0"/>
-            <xs:element name="eureka" type="discovery-strategy-alias" minOccurs="0"/>
-            <xs:element name="zookeeper" type="discovery-strategy-alias" minOccurs="0"/>
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
@@ -2401,12 +2400,11 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="aws" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="gcp" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="azure" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="kubernetes" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="eureka" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="zookeeper" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wan-sync" type="wan-sync" minOccurs="0"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>

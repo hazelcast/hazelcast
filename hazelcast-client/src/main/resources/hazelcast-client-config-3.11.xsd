@@ -82,7 +82,7 @@
         <xs:attribute name="class-name" use="required"/>
     </xs:complexType>
 
-    <xs:complexType name="discovery-strategy-alias">
+    <xs:complexType name="aliased-discovery-strategy">
         <xs:sequence>
             <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
         </xs:sequence>
@@ -114,12 +114,11 @@
             <xs:element ref="socket-options" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="aws" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
-            <xs:element name="gcp" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
-            <xs:element name="azure" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
-            <xs:element name="kubernetes" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
-            <xs:element name="eureka" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
-            <xs:element name="zookeeper" type="discovery-strategy-alias" minOccurs="0" maxOccurs="1" />
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
             <xs:element name="icmp-ping" type="icmp-ping" minOccurs="0" maxOccurs="1"/>

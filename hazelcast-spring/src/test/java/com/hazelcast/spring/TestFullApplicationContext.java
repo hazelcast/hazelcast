@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -31,11 +32,13 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -43,6 +46,7 @@ import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.JavaSerializationFilterConfig;
+import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LockConfig;
@@ -803,6 +807,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("127.0.0.1:5701", members.get(1));
         assertEquals("127.0.0.1:5700", tcp.getRequiredMember());
         assertAwsConfig(networkConfig.getJoin().getAwsConfig());
+        assertGcpConfig(networkConfig.getJoin().getGcpConfig());
+        assertAzureConfig(networkConfig.getJoin().getAzureConfig());
+        assertKubernetesConfig(networkConfig.getJoin().getKubernetesConfig());
+        assertEurekaConfig(networkConfig.getJoin().getEurekaConfig());
 
         assertTrue("reuse-address", networkConfig.isReuseAddress());
 
@@ -835,6 +843,35 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("sample-tag-key", aws.getTagKey());
         assertEquals("sample-tag-value", aws.getTagValue());
         assertEquals("sample-role", aws.getIamRole());
+    }
+
+    private void assertGcpConfig(GcpConfig gcp) {
+        assertFalse(gcp.isEnabled());
+        assertEquals("us-east1-b,us-east1-c", gcp.getProperty("zones"));
+    }
+
+    private void assertAzureConfig(AzureConfig azure) {
+        assertFalse(azure.isEnabled());
+        assertEquals("CLIENT_ID", azure.getProperty("client-id"));
+        assertEquals("CLIENT_SECRET", azure.getProperty("client-secret"));
+        assertEquals("TENANT_ID", azure.getProperty("tenant-id"));
+        assertEquals("SUB_ID", azure.getProperty("subscription-id"));
+        assertEquals("HZLCAST001", azure.getProperty("cluster-id"));
+        assertEquals("GROUP-NAME", azure.getProperty("group-name"));
+    }
+
+    private void assertKubernetesConfig(KubernetesConfig kubernetes) {
+        assertFalse(kubernetes.isEnabled());
+        assertEquals("MY-KUBERNETES-NAMESPACE", kubernetes.getProperty("namespace"));
+        assertEquals("MY-SERVICE-NAME", kubernetes.getProperty("service-name"));
+        assertEquals("MY-SERVICE-LABEL-NAME", kubernetes.getProperty("service-label-name"));
+        assertEquals("MY-SERVICE-LABEL-VALUE", kubernetes.getProperty("service-label-value"));
+    }
+
+    private void assertEurekaConfig(EurekaConfig eureka) {
+        assertFalse(eureka.isEnabled());
+        assertEquals("true", eureka.getProperty("self-registration"));
+        assertEquals("hazelcast", eureka.getProperty("namespace"));
     }
 
     private void assertDiscoveryConfig(DiscoveryConfig discoveryConfig) {
@@ -948,6 +985,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("5", customPublisherProps.get("discovery.period"));
         assertEquals("2", customPublisherProps.get("maxEndpoints"));
         assertAwsConfig(customPublisher.getAwsConfig());
+        assertGcpConfig(customPublisher.getGcpConfig());
+        assertAzureConfig(customPublisher.getAzureConfig());
+        assertKubernetesConfig(customPublisher.getKubernetesConfig());
+        assertEurekaConfig(customPublisher.getEurekaConfig());
         assertDiscoveryConfig(customPublisher.getDiscoveryConfig());
 
         WanPublisherConfig publisherPlaceHolderConfig = wcfg.getWanPublisherConfigs().get(2);

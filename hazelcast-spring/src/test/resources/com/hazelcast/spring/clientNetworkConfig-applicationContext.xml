@@ -91,23 +91,33 @@
                     <hz:property name="javax.net.ssl.protocol">TLS</hz:property>
                 </hz:properties>
             </hz:ssl>
-            <hz:discovery-strategies>
-                <hz:node-filter implementation="dummyNodeFilter"/>
-                <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
-                    <hz:properties>
-                        <hz:property name="key-string">foo</hz:property>
-                        <hz:property name="key-int">123</hz:property>
-                        <hz:property name="key-boolean">true</hz:property>
-                    </hz:properties>
-                </hz:discovery-strategy>
-                <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy">
-                    <hz:properties>
-                        <hz:property name="key-string">foo2</hz:property>
-                    </hz:properties>
-                </hz:discovery-strategy>
-                <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy"/>
-                <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory"/>
-            </hz:discovery-strategies>
+            <hz:aws enabled="false"
+                    access-key="sample-access-key"
+                    secret-key="sample-secret-key"
+                    region="sample-region"
+                    host-header="sample-header"
+                    security-group-name="sample-group"
+                    tag-key="sample-tag-key"
+                    tag-value="sample-tag-value"
+                    iam-role="sample-role"/>
+            <hz:gcp enabled="false"
+                    zones="us-east1-b,us-east1-c"/>
+            <hz:azure enabled="false"
+                      client-id="CLIENT_ID"
+                      client-secret="CLIENT_SECRET"
+                      tenant-id="TENANT_ID"
+                      subscription-id="SUB_ID"
+                      cluster-id="HZLCAST001"
+                      group-name="GROUP-NAME"/>
+            <hz:kubernetes enabled="false"
+                           namespace="MY-KUBERNETES-NAMESPACE"
+                           service-name="MY-SERVICE-NAME"
+                           service-label-name="MY-SERVICE-LABEL-NAME"
+                           service-label-value="MY-SERVICE-LABEL-VALUE"/>
+            <hz:eureka enabled="false"
+                       self-registration="true"
+                       namespace="hazelcast"/>
+            <hz:discovery-strategies/>
             <hz:outbound-ports>
                 <hz:ports>34600</hz:ports>
                 <hz:ports>34700-34710</hz:ports>

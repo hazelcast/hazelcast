@@ -20,10 +20,10 @@ import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractConfigBuilder;
+import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.AliasedDiscoveryConfig;
-import com.hazelcast.config.AliasedDiscoveryConfigMapper;
+import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -490,7 +490,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 handleSocketInterceptorConfig(child, clientNetworkConfig);
             } else if ("ssl".equals(nodeName)) {
                 handleSSLConfig(child, clientNetworkConfig);
-            } else if (AliasedDiscoveryConfigMapper.supports(nodeName)) {
+            } else if (AliasedDiscoveryConfigUtils.supports(nodeName)) {
                 handleAliasedDiscoveryStrategy(child, clientNetworkConfig, nodeName);
             } else if ("discovery-strategies".equals(nodeName)) {
                 handleDiscoveryStrategies(child, clientNetworkConfig);
@@ -598,8 +598,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleAliasedDiscoveryStrategy(Node node, ClientNetworkConfig clientNetworkConfig, String tag) {
-        AliasedDiscoveryConfig config = new AliasedDiscoveryConfig();
-        config.setEnvironment(tag);
+        AliasedDiscoveryConfig config = ClientAliasedDiscoveryConfigUtils.getConfigByTag(clientNetworkConfig, tag);
         NamedNodeMap atts = node.getAttributes();
         for (int i = 0; i < atts.getLength(); i++) {
             Node att = atts.item(i);
@@ -607,15 +606,14 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 config.setEnabled(getBooleanValue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                config.addProperty("connection-timeout-seconds", value);
+                config.setProperty("connection-timeout-seconds", value);
             }
         }
         for (Node n : childElements(node)) {
             String key = cleanNodeName(n);
             String value = getTextContent(n).trim();
-            config.addProperty(key, value);
+            config.setProperty(key, value);
         }
-        clientNetworkConfig.addAliasedDiscoveryConfig(config);
     }
 
     private void handleSSLConfig(Node node, ClientNetworkConfig clientNetworkConfig) {

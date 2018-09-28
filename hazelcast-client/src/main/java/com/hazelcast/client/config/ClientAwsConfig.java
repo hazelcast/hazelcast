@@ -16,17 +16,16 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AwsConfig;
 
 /**
  * The AWSConfig contains the configuration for client to connect to nodes in aws environment.
  *
- * @deprecated Use {@link AliasedDiscoveryConfig} instead.
+ * @deprecated Use {@link AwsConfig} instead.
  */
 @Deprecated
 public class ClientAwsConfig extends AwsConfig {
-    private boolean insideAws;
+    private static final String INSIDE_AWS_PROPERTY = "inside-aws";
 
     /**
      * If client is inside aws, it will use private ip addresses directly,
@@ -35,8 +34,9 @@ public class ClientAwsConfig extends AwsConfig {
      *
      * @return boolean true if client is inside aws environment.
      */
+    @Deprecated
     public boolean isInsideAws() {
-        return insideAws;
+        return !isUsePublicIp();
     }
 
     /**
@@ -45,8 +45,19 @@ public class ClientAwsConfig extends AwsConfig {
      *
      * @param insideAws isInsideAws
      */
+    @Deprecated
     public ClientAwsConfig setInsideAws(boolean insideAws) {
-        this.insideAws = insideAws;
+        setUsePublicIp(!insideAws);
+        return this;
+    }
+
+    @Override
+    public ClientAwsConfig setProperty(String key, String value) {
+        if (INSIDE_AWS_PROPERTY.equals(key)) {
+            setInsideAws(Boolean.parseBoolean(value));
+        } else {
+            super.setProperty(key, value);
+        }
         return this;
     }
 }

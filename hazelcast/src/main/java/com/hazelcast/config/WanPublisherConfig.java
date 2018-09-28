@@ -23,9 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -42,6 +40,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * @see DiscoveryConfig
  * @see AwsConfig
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned {
 
     private static final int DEFAULT_QUEUE_CAPACITY = 10000;
@@ -55,7 +54,10 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
     private String className;
     private Object implementation;
     private AwsConfig awsConfig = new AwsConfig();
-    private final List<AliasedDiscoveryConfig> aliasedDiscoveryConfigs = new ArrayList<AliasedDiscoveryConfig>();
+    private GcpConfig gcpConfig = new GcpConfig();
+    private AzureConfig azureConfig = new AzureConfig();
+    private KubernetesConfig kubernetesConfig = new KubernetesConfig();
+    private EurekaConfig eurekaConfig = new EurekaConfig();
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
     private WanSyncConfig wanSyncConfig = new WanSyncConfig();
 
@@ -279,12 +281,39 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         return this;
     }
 
-    public List<AliasedDiscoveryConfig> getAliasedDiscoveryConfigs() {
-        return aliasedDiscoveryConfigs;
+    public GcpConfig getGcpConfig() {
+        return gcpConfig;
     }
 
-    public WanPublisherConfig addDiscoveryAliasConfig(AliasedDiscoveryConfig aliasedDiscoveryConfig) {
-        this.aliasedDiscoveryConfigs.add(isNotNull(aliasedDiscoveryConfig, "aliasedDiscoveryConfig"));
+    public WanPublisherConfig setGcpConfig(final GcpConfig gcpConfig) {
+        this.gcpConfig = isNotNull(gcpConfig, "gcpConfig");
+        return this;
+    }
+
+    public AzureConfig getAzureConfig() {
+        return azureConfig;
+    }
+
+    public WanPublisherConfig setAzureConfig(final AzureConfig azureConfig) {
+        this.azureConfig = isNotNull(azureConfig, "azureConfig");
+        return this;
+    }
+
+    public KubernetesConfig getKubernetesConfig() {
+        return kubernetesConfig;
+    }
+
+    public WanPublisherConfig setKubernetesConfig(final KubernetesConfig kubernetesConfig) {
+        this.kubernetesConfig = isNotNull(kubernetesConfig, "kubernetesConfig");
+        return this;
+    }
+
+    public EurekaConfig getEurekaConfig() {
+        return eurekaConfig;
+    }
+
+    public WanPublisherConfig setEurekaConfig(final EurekaConfig eurekaConfig) {
+        this.eurekaConfig = isNotNull(eurekaConfig, "eurekaConfig");
         return this;
     }
 
@@ -323,7 +352,10 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
                 + ", className='" + className + '\''
                 + ", implementation=" + implementation
                 + ", awsConfig=" + awsConfig
-                + ", aliasedDiscoveryConfigs=" + aliasedDiscoveryConfigs
+                + ", gcpConfig=" + gcpConfig
+                + ", azureConfig=" + azureConfig
+                + ", kubernetesConfig=" + kubernetesConfig
+                + ", eurekaConfig=" + eurekaConfig
                 + ", discoveryConfig=" + discoveryConfig
                 + '}';
     }

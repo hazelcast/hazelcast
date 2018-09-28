@@ -84,6 +84,23 @@
                             tag-key="sample-tag-key"
                             tag-value="sample-tag-value"
                             iam-role="sample-role"/>
+                    <hz:gcp enabled="false"
+                            zones="us-east1-b,us-east1-c"/>
+                    <hz:azure enabled="false"
+                              client-id="CLIENT_ID"
+                              client-secret="CLIENT_SECRET"
+                              tenant-id="TENANT_ID"
+                              subscription-id="SUB_ID"
+                              cluster-id="HZLCAST001"
+                              group-name="GROUP-NAME"/>
+                    <hz:kubernetes enabled="false"
+                                   namespace="MY-KUBERNETES-NAMESPACE"
+                                   service-name="MY-SERVICE-NAME"
+                                   service-label-name="MY-SERVICE-LABEL-NAME"
+                                   service-label-value="MY-SERVICE-LABEL-VALUE"/>
+                    <hz:eureka enabled="false"
+                               self-registration="true"
+                               namespace="hazelcast"/>
                     <hz:discovery-strategies>
                         <hz:node-filter implementation="dummyNodeFilter"/>
                         <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
@@ -154,6 +171,23 @@
                             tag-key="sample-tag-key"
                             tag-value="sample-tag-value"
                             iam-role="sample-role"/>
+                    <hz:gcp enabled="false"
+                            zones="us-east1-b,us-east1-c"/>
+                    <hz:azure enabled="false"
+                              client-id="CLIENT_ID"
+                              client-secret="CLIENT_SECRET"
+                              tenant-id="TENANT_ID"
+                              subscription-id="SUB_ID"
+                              cluster-id="HZLCAST001"
+                              group-name="GROUP-NAME"/>
+                    <hz:kubernetes enabled="false"
+                                   namespace="MY-KUBERNETES-NAMESPACE"
+                                   service-name="MY-SERVICE-NAME"
+                                   service-label-name="MY-SERVICE-LABEL-NAME"
+                                   service-label-value="MY-SERVICE-LABEL-VALUE"/>
+                    <hz:eureka enabled="false"
+                               self-registration="true"
+                               namespace="hazelcast"/>
                     <hz:discovery-strategies>
                         <hz:node-filter implementation="dummyNodeFilter"/>
                         <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
