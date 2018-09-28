@@ -23,15 +23,18 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -39,9 +42,15 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 
+import static com.hazelcast.instance.DefaultAddressPicker.PREFER_IPV4_STACK;
+import static com.hazelcast.instance.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
+import static com.hazelcast.test.OverridePropertyRule.clear;
+import static com.hazelcast.test.OverridePropertyRule.set;
+import static com.hazelcast.util.AddressUtil.getAddressHolder;
 import static java.net.InetAddress.getByName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeNotNull;
 
@@ -52,18 +61,20 @@ public class DefaultAddressPickerTest {
     private static final String PUBLIC_HOST = "www.hazelcast.org";
     private static final String HAZELCAST_LOCAL_ADDRESS_PROP = "hazelcast.local.localAddress";
 
+    @Rule
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear(HAZELCAST_LOCAL_ADDRESS_PROP);
+    @Rule
+    public final OverridePropertyRule ruleSysPropPreferIpv4Stack = set(PREFER_IPV4_STACK, "false");
+    @Rule
+    public final OverridePropertyRule ruleSysPropPreferIpv6Addresses = clear(PREFER_IPV6_ADDRESSES);
+
     private ILogger logger = Logger.getLogger(AddressPicker.class);
     private Config config = new Config();
-    private HazelcastProperties properties;
     private AddressPicker addressPicker;
-
     private InetAddress loopback;
-    private String localAddressValue;
 
     @Before
     public void setup() {
-        properties = new HazelcastProperties(config);
-
         InetAddress publicAddress = null;
         try {
             loopback = getByName("127.0.0.1");
@@ -72,18 +83,12 @@ public class DefaultAddressPickerTest {
             e.printStackTrace();
         }
         assumeNotNull(loopback, publicAddress);
-
-        localAddressValue = System.getProperty(HAZELCAST_LOCAL_ADDRESS_PROP);
-        System.clearProperty(HAZELCAST_LOCAL_ADDRESS_PROP);
     }
 
     @After
     public void tearDown() {
         if (addressPicker != null) {
             IOUtil.closeResource(addressPicker.getServerSocketChannel());
-        }
-        if (localAddressValue != null) {
-            System.setProperty(HAZELCAST_LOCAL_ADDRESS_PROP, localAddressValue);
         }
     }
 
@@ -102,7 +107,7 @@ public class DefaultAddressPickerTest {
     }
 
     @Test
-    public void testBindAddress_withNonLoopbackAddressViaInterfaces() throws Exception {
+    public void testBindAddress_withIPv4NonLoopbackAddressViaInterfaces() throws Exception {
         InetAddress address = findIPv4NonLoopbackInterface();
         assumeNotNull(address);
 
@@ -113,7 +118,19 @@ public class DefaultAddressPickerTest {
     }
 
     @Test
-    public void testBindAddress_withNonLoopbackAddressViaTCPMembers() throws Exception {
+    public void testBindAddress_withIPv6NonLoopbackAddressViaInterfaces() throws Exception {
+        InetAddress address = findIPv6NonLoopbackInterface();
+        assumeNotNull(address);
+
+        config.setProperty(GroupProperty.PREFER_IPv4_STACK.getName(), "false");
+        config.getNetworkConfig().getInterfaces().setEnabled(true)
+                .clear().addInterface(address.getHostAddress());
+
+        testBindAddress(address);
+    }
+
+    @Test
+    public void testBindAddress_withIpv4NonLoopbackAddressViaTCPMembers() throws Exception {
         InetAddress address = findIPv4NonLoopbackInterface();
         assumeNotNull(address);
 
@@ -124,17 +141,29 @@ public class DefaultAddressPickerTest {
     }
 
     @Test
-    public void testBindAddress_withNonLoopbackAddressViaSystemProperty() throws Exception {
-        InetAddress address = findIPv4NonLoopbackInterface();
+    public void testBindAddress_withIPv6NonLoopbackAddressViaTCPMembers() throws Exception {
+        InetAddress address = findIPv6NonLoopbackInterface();
         assumeNotNull(address);
 
-        config.setProperty(HAZELCAST_LOCAL_ADDRESS_PROP, address.getHostAddress());
+        config.setProperty(GroupProperty.PREFER_IPv4_STACK.getName(), "false");
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true)
+                .clear().addMember(getHostAddress(address));
+
+        testBindAddress(address);
+    }
+
+    @Test
+    public void testBindAddress_withNonLoopbackAddressViaSystemProperty() throws Exception {
+        InetAddress address = findAnyNonLoopbackInterface();
+        assumeNotNull(address);
+
+        config.setProperty(HAZELCAST_LOCAL_ADDRESS_PROP, getHostAddress(address));
 
         testBindAddress(address);
     }
 
     private void testBindAddress(InetAddress address) throws Exception {
-        addressPicker = new DefaultAddressPicker(config, properties, logger);
+        addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
         int port = config.getNetworkConfig().getPort();
@@ -147,7 +176,7 @@ public class DefaultAddressPickerTest {
         config.setProperty(HAZELCAST_LOCAL_ADDRESS_PROP, loopback.getHostAddress());
         config.getNetworkConfig().setPort(0);
 
-        addressPicker = new DefaultAddressPicker(config, properties, logger);
+        addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
         int port = addressPicker.getServerSocketChannel().socket().getLocalPort();
@@ -162,11 +191,11 @@ public class DefaultAddressPickerTest {
         config.getNetworkConfig().setPort(port);
         config.getNetworkConfig().setPortAutoIncrement(false);
 
-        addressPicker = new DefaultAddressPicker(config, properties, logger);
+        addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
         try {
-            new DefaultAddressPicker(config, properties, logger).pickAddress();
+            new DefaultAddressPicker(config, logger).pickAddress();
             fail("Should fail with 'java.net.BindException: Address already in use'");
         } catch (Exception expected) {
             // expected exception
@@ -179,10 +208,10 @@ public class DefaultAddressPickerTest {
         config.getNetworkConfig().setPort(port);
         config.getNetworkConfig().setPortAutoIncrement(true);
 
-        addressPicker = new DefaultAddressPicker(config, properties, logger);
+        addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
-        new DefaultAddressPicker(config, properties, logger).pickAddress();
+        new DefaultAddressPicker(config, logger).pickAddress();
     }
 
     @Test
@@ -207,7 +236,7 @@ public class DefaultAddressPickerTest {
 
     private void testPublicAddress(String host, int port) throws Exception {
         config.getNetworkConfig().setPublicAddress(port < 0 ? host : (host + ":" + port));
-        addressPicker = new DefaultAddressPicker(config, properties, logger);
+        addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
         if (port < 0) {
@@ -223,7 +252,7 @@ public class DefaultAddressPickerTest {
         int port = 6789;
         config.setProperty("hazelcast.local.publicAddress", host + ":" + port);
 
-        addressPicker = new DefaultAddressPicker(config, properties, logger);
+        addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
         assertEquals(new Address(host, port), addressPicker.getPublicAddress());
@@ -233,8 +262,23 @@ public class DefaultAddressPickerTest {
     public void testPublicAddress_withInvalidAddress() throws Exception {
         config.getNetworkConfig().setPublicAddress("invalid");
 
-        addressPicker = new DefaultAddressPicker(config, properties, logger);
+        addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
+    }
+
+    @Test
+    public void testBindAddress_withIPv6Address() throws Exception {
+        assumeNotNull(findIPv6NonLoopbackInterface());
+
+        System.setProperty(DefaultAddressPicker.PREFER_IPV4_STACK, "false");
+        System.setProperty(DefaultAddressPicker.PREFER_IPV6_ADDRESSES, "true");
+        config.setProperty(GroupProperty.PREFER_IPv4_STACK.getName(), "false");
+
+        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker.pickAddress();
+
+        Address bindAddress = addressPicker.getBindAddress();
+        assertTrue("Bind address: " + bindAddress, bindAddress.isIPv6());
     }
 
     @Test
@@ -288,7 +332,20 @@ public class DefaultAddressPickerTest {
         assertNotEquals(addressDefinition.hashCode(), addressDefinitionOtherInetAddress.hashCode());
     }
 
-    private static InetAddress findIPv4NonLoopbackInterface() {
+    private static InetAddress findAnyNonLoopbackInterface() {
+        return findNonLoopbackInterface(false, false);
+    }
+
+    static InetAddress findIPv4NonLoopbackInterface() {
+        return findNonLoopbackInterface(true, false);
+    }
+
+    static InetAddress findIPv6NonLoopbackInterface() {
+        System.setProperty(DefaultAddressPicker.PREFER_IPV6_ADDRESSES, "true");
+        return findNonLoopbackInterface(false, true);
+    }
+
+    private static InetAddress findNonLoopbackInterface(boolean enforceIPv4, boolean enforceIPv6) {
         try {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
             while (interfaces.hasMoreElements()) {
@@ -299,7 +356,10 @@ public class DefaultAddressPickerTest {
                     if (address.isLoopbackAddress()) {
                         continue;
                     }
-                    if (address instanceof Inet6Address) {
+                    if (enforceIPv4 && address instanceof Inet6Address) {
+                        continue;
+                    }
+                    if (enforceIPv6 && address instanceof Inet4Address) {
                         continue;
                     }
                     return address;
@@ -310,5 +370,9 @@ public class DefaultAddressPickerTest {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private static String getHostAddress(InetAddress address) {
+        return getAddressHolder(address.getHostAddress()).getAddress();
     }
 }

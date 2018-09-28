@@ -24,16 +24,21 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RootCauseMatcher;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
@@ -52,10 +57,16 @@ public class RingbufferTest extends HazelcastTestSupport {
     private Ringbuffer<String> clientRingbuffer;
     private Ringbuffer<String> serverRingbuffer;
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Before
     public void init() {
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("rb*").setCapacity(CAPACITY));
+        // Set operation timeout to larger than test timeout. So the tests do not pass accidentally because of retries.
+        // The tests should depend on notifier system, not retrying.
+        config.setProperty("hazelcast.operation.call.timeout.millis", "305000");
 
         server = hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
@@ -68,6 +79,34 @@ public class RingbufferTest extends HazelcastTestSupport {
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
+    }
+
+    @Test
+    public void readManyAsync_whenHitsStale_shouldNotBeBlocked() throws Exception {
+        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 1, 10, null);
+        serverRingbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
+        expectedException.expect(new RootCauseMatcher(StaleSequenceException.class));
+        f.get();
+    }
+
+    @Test
+    public void readOne_whenHitsStale_shouldNotBeBlocked() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread consumer = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    clientRingbuffer.readOne(0);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (StaleSequenceException e) {
+                    latch.countDown();
+                }
+            }
+        });
+        consumer.start();
+        serverRingbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
+        assertOpenEventually(latch);
     }
 
     @Test

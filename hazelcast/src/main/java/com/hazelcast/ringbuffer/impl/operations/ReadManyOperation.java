@@ -79,11 +79,14 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
             return false;
         }
 
-        if (ringbuffer.shouldWait(sequence)) {
+        if (ringbuffer.isTooLargeSequence(sequence) || ringbuffer.isStaleSequence(sequence)) {
+            //no need to wait, let the operation continue and fail in beforeRun
+            return false;
+        }
+        if (sequence == ringbuffer.tailSequence() + 1) {
             // the sequence is not readable
             return true;
         }
-
         sequence = ringbuffer.readMany(sequence, resultSet);
         return !resultSet.isMinSizeReached();
     }
