@@ -672,9 +672,10 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testCancellationAwareTask() throws Exception {
-        SleepingTask task = new SleepingTask(5);
+        SleepingTask task = new SleepingTask(10);
         ExecutorService executor = createSingleNodeExecutorService("testCancellationAwareTask");
         Future future = executor.submit(task);
+
         try {
             future.get(2, TimeUnit.SECONDS);
             fail("Should throw TimeoutException!");
