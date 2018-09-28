@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.OperationFactory;
@@ -26,26 +27,34 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import java.util.Collection;
 import java.util.Map;
 
-public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractCallableMessageTask<P> {
+public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractMessageTask<P>
+        implements ExecutionCallback<Map<Integer, Object>> {
 
     protected AbstractMultiPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected void processMessage() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-
-        final InternalOperationService operationService = nodeEngine.getOperationService();
-        Map<Integer, Object> map = operationService.invokeOnPartitions(getServiceName(), operationFactory, getPartitions());
-        return reduce(map);
+        InternalOperationService operationService = nodeEngine.getOperationService();
+        operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, getPartitions(), this);
     }
 
+    public abstract Collection<Integer> getPartitions();
 
     protected abstract OperationFactory createOperationFactory();
 
     protected abstract Object reduce(Map<Integer, Object> map);
 
-    public abstract Collection<Integer> getPartitions();
+    @Override
+    public final void onFailure(Throwable throwable) {
+        handleProcessingFailure(throwable);
+    }
+
+    @Override
+    public final void onResponse(Map<Integer, Object> map) {
+        sendResponse(reduce(map));
+    }
 
 }

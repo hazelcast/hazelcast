@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.OperationFactory;
@@ -25,21 +26,31 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.util.Map;
 
-public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessageTask<P> {
+public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessageTask<P>
+        implements ExecutionCallback<Map<Integer, Object>> {
 
     public AbstractAllPartitionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() throws Exception {
+    protected void processMessage() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-        final InternalOperationService operationService = nodeEngine.getOperationService();
-        Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
-        sendResponse(reduce(map));
+        InternalOperationService operationService = nodeEngine.getOperationService();
+        operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory, this);
     }
 
     protected abstract OperationFactory createOperationFactory();
 
     protected abstract Object reduce(Map<Integer, Object> map);
+
+    @Override
+    public final void onFailure(Throwable throwable) {
+        handleProcessingFailure(throwable);
+    }
+
+    @Override
+    public final void onResponse(Map<Integer, Object> map) {
+        sendResponse(reduce(map));
+    }
 }

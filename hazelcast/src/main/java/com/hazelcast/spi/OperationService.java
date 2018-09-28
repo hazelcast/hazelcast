@@ -81,6 +81,19 @@ public interface OperationService {
             throws Exception;
 
     /**
+     * Invokes a set of operations on selected set of all partitions in an async way.
+     *
+     * @param serviceName      the name of the service
+     * @param operationFactory the factory responsible for creating operations
+     * @param callback         optional callback
+     * @param <T>              type of result of operations returned by {@code operationFactory}
+     * @return a future returning a Map with partitionId as a key and the
+     * outcome of the operation as a value.
+     */
+    <T> ICompletableFuture<Map<Integer, T>> invokeOnAllPartitionsAsync(
+            String serviceName, OperationFactory operationFactory, ExecutionCallback<Map<Integer, T>> callback);
+
+    /**
      * Invokes a set of operations on selected set of partitions.
      * <p>
      * This method blocks until all operations complete.
