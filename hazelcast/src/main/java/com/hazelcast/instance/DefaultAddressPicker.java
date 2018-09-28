@@ -25,9 +25,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.AddressUtil;
-import com.hazelcast.util.CollectionUtil;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -43,11 +43,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.util.AddressUtil.fixScopeIdAndGetInetAddress;
+import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 
 class DefaultAddressPicker extends AbstractAddressPicker {
 
+    /**
+     * See https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html
+     */
     static final String PREFER_IPV4_STACK = "java.net.preferIPv4Stack";
+
+    /**
+     * See https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html
+     */
+    static final String PREFER_IPV6_ADDRESSES = "java.net.preferIPv6Addresses";
 
     private final HazelcastProperties hazelcastProperties;
     private final Config config;
@@ -55,10 +65,10 @@ class DefaultAddressPicker extends AbstractAddressPicker {
     private Address publicAddress;
     private Address bindAddress;
 
-    DefaultAddressPicker(Config config, HazelcastProperties hazelcastProperties, ILogger logger) {
+    DefaultAddressPicker(Config config, ILogger logger) {
         super(config.getNetworkConfig(), logger);
         this.config = config;
-        this.hazelcastProperties = hazelcastProperties;
+        this.hazelcastProperties = new HazelcastProperties(config);
     }
 
     @Override
@@ -125,9 +135,7 @@ class DefaultAddressPicker extends AbstractAddressPicker {
                 || interfaces.contains(new InterfaceDefinition("localhost"))) {
             return pickLoopbackAddress();
         }
-        if (preferIPv4Stack()) {
-            logger.info("Prefer IPv4 stack is true.");
-        }
+        logger.info("Prefer IPv4 stack is " + preferIPv4Stack() + ", prefer IPv6 addresses is " + preferIPv6Addresses());
         if (interfaces.size() > 0) {
             AddressDefinition addressDef = pickMatchingAddress(interfaces);
             if (addressDef != null) {
@@ -269,27 +277,54 @@ class DefaultAddressPicker extends AbstractAddressPicker {
     AddressDefinition pickMatchingAddress(Collection<InterfaceDefinition> interfaces) throws SocketException {
         Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
         boolean preferIPv4Stack = preferIPv4Stack();
-        boolean matchInterfaceDefinition = CollectionUtil.isNotEmpty(interfaces);
+        boolean preferIPv6Addresses = preferIPv6Addresses();
+        AddressDefinition matchingAddress = null;
+
+        // There are 3 possible value pairs for preferIPv4Stack & preferIPv6Addresses:
+        // - preferIPv4Stack=true, preferIPv6Addresses=false: Only an IPv4 address will be picked.
+        // - preferIPv4Stack=false, preferIPv6Addresses=false: Either an IPv4 or IPv6 address may be picked, no preference.
+        // - preferIPv4Stack=false, preferIPv6Addresses=true: Either an IPv4 or IPv6 address may be picked
+        // but IPv6 address will be preferred over IPv4.
+
         while (networkInterfaces.hasMoreElements()) {
             NetworkInterface ni = networkInterfaces.nextElement();
-            if (!matchInterfaceDefinition && skipInterface(ni)) {
+            if (isEmpty(interfaces) && skipInterface(ni)) {
                 continue;
             }
             Enumeration<InetAddress> e = ni.getInetAddresses();
             while (e.hasMoreElements()) {
                 InetAddress inetAddress = e.nextElement();
                 if (preferIPv4Stack && inetAddress instanceof Inet6Address) {
+                    // IPv4 stack is preferred, so only IPv4 address can be picked.
                     continue;
                 }
-                if (matchInterfaceDefinition) {
-                    AddressDefinition address = match(inetAddress, interfaces);
-                    if (address != null) {
-                        return address;
+
+                AddressDefinition address = getMatchingAddress(interfaces, inetAddress);
+                if (address == null) {
+                    continue;
+                }
+                matchingAddress = address;
+
+                if (preferIPv6Addresses) {
+                    // IPv6 address is preferred, return if address is IPv6.
+                    if (inetAddress instanceof Inet6Address) {
+                        return matchingAddress;
                     }
-                } else if (!inetAddress.isLoopbackAddress()) {
-                    return new AddressDefinition(inetAddress);
+                } else if (inetAddress instanceof Inet4Address) {
+                    // No IPv6 address preference, return if address is IPv4.
+                    return matchingAddress;
                 }
             }
+        }
+        // nothing matched to IP version preference, return what we have.
+        return matchingAddress;
+    }
+
+    private AddressDefinition getMatchingAddress(Collection<InterfaceDefinition> interfaces, InetAddress inetAddress) {
+        if (isNotEmpty(interfaces)) {
+            return match(inetAddress, interfaces);
+        } else if (!inetAddress.isLoopbackAddress()) {
+            return new AddressDefinition(inetAddress);
         }
         return null;
     }
@@ -319,6 +354,10 @@ class DefaultAddressPicker extends AbstractAddressPicker {
     private boolean preferIPv4Stack() {
         return Boolean.getBoolean(PREFER_IPV4_STACK)
                 || hazelcastProperties.getBoolean(GroupProperty.PREFER_IPv4_STACK);
+    }
+
+    private boolean preferIPv6Addresses() {
+        return !preferIPv4Stack() && Boolean.getBoolean(PREFER_IPV6_ADDRESSES);
     }
 
     @Override
