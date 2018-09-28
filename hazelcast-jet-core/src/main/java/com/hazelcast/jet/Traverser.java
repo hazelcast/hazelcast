@@ -221,14 +221,4 @@ public interface Traverser<T> {
         };
     }
 
-    /**
-     * Returns a traverser over the supplied arguments (or item array).
-     *
-     * @param items the items to traverse over
-     * @param <T> type of the items
-     */
-    @SafeVarargs
-    static <T> Traverser<T> over(T... items) {
-        return Traversers.traverseArray(items);
-    }
 }

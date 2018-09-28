@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
@@ -32,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.processor.Processors.aggregateByKeyP;
@@ -142,7 +142,7 @@ public class ProcessorsTest {
                 .verifyProcessor(flatMapUsingContextP(
                         ContextFactory.withCreateFn(procContext -> context)
                                       .withDestroyFn(c -> c[0] = 0),
-                        (int[] c, Integer item) -> Traverser.over(item, c[0] += item)))
+                        (int[] c, Integer item) -> traverseItems(item, c[0] += item)))
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 1, 2, 3, 3, 6));

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor.FlatMapper;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.test.TestInbox;
@@ -262,7 +263,7 @@ public class AbstractProcessorTest {
     @Test
     public void when_emitFromTraverserToAll_then_emittedToAll() {
         // Given
-        Traverser<Object> trav = Traverser.over(MOCK_ITEM);
+        Traverser<Object> trav = Traversers.traverseItems(MOCK_ITEM);
 
         // When
         boolean done = p.emitFromTraverser(trav);
@@ -275,7 +276,7 @@ public class AbstractProcessorTest {
     @Test
     public void when_emitFromTraverserTo1_then_emittedTo1() {
         // Given
-        Traverser<Object> trav = Traverser.over(MOCK_ITEM, MOCK_ITEM);
+        Traverser<Object> trav = Traversers.traverseItems(MOCK_ITEM, MOCK_ITEM);
 
         boolean done;
         do {
@@ -289,7 +290,7 @@ public class AbstractProcessorTest {
     @Test
     public void when_emitFromTraverserTo1And2_then_emittedTo1And2() {
         // Given
-        Traverser<Object> trav = Traverser.over(MOCK_ITEM, MOCK_ITEM);
+        Traverser<Object> trav = Traversers.traverseItems(MOCK_ITEM, MOCK_ITEM);
 
         boolean done;
         do {
@@ -305,7 +306,7 @@ public class AbstractProcessorTest {
         final Object item1 = 1;
         final Object item2 = 2;
         final int[] ordinals = {1, 2};
-        final FlatMapper<String, Object> flatMapper = p.flatMapper(ordinals, x -> Traverser.over(item1, item2));
+        final FlatMapper<String, Object> flatMapper = p.flatMapper(ordinals, x -> Traversers.traverseItems(item1, item2));
 
         // When
         boolean done = flatMapper.tryProcess(MOCK_ITEM);
@@ -326,7 +327,7 @@ public class AbstractProcessorTest {
     public void when_flatMapperTo1_then_emittedTo1() {
         // Given
         Object output = 42;
-        FlatMapper<Object, Object> m = p.flatMapper(ORDINAL_1, x -> Traverser.over(output));
+        FlatMapper<Object, Object> m = p.flatMapper(ORDINAL_1, x -> Traversers.traverseItems(output));
 
         // When
         boolean done = m.tryProcess(MOCK_ITEM);
@@ -340,7 +341,7 @@ public class AbstractProcessorTest {
     public void when_flatMapperToAll_then_emittedToAll() {
         // Given
         Object output = 42;
-        FlatMapper<Object, Object> m = p.flatMapper(x -> Traverser.over(output));
+        FlatMapper<Object, Object> m = p.flatMapper(x -> Traversers.traverseItems(output));
 
         // When
         boolean done = m.tryProcess(MOCK_ITEM);

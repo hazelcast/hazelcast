@@ -21,6 +21,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.Traversers.traverseItems;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
 import static org.junit.Assert.assertEquals;
@@ -201,11 +202,12 @@ public class TraverserTest {
         assertTrue(actionCalled[0]);
     }
 
-    private Traverser<Integer> traverser() {
-        return Traverser.over(0, 1, 2);
+    private static Traverser<Integer> traverser() {
+        return traverseItems(0, 1, 2);
     }
 
-    private <T> void check(Traverser<T> t, T ... expected) {
+    @SafeVarargs
+    private static <T> void check(Traverser<T> t, T... expected) {
         List<T> list = new ArrayList<>();
         for (T item; (item = t.next()) != null; ) {
             list.add(item);

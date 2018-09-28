@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.Util.entry;
 import static java.util.Collections.singletonMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -174,7 +175,7 @@ public class KafkaSinkTest extends KafkaTestSupport {
         static volatile boolean isDone;
         static volatile boolean allowSnapshot;
 
-        private Traverser<Entry<String, String>> t = Traverser.over(entry("k", "v"));
+        private Traverser<Entry<String, String>> t = traverseItems(entry("k", "v"));
 
         private ProcessorWithEntryAndLatch() {
             // reset so that values from previous run don't remain

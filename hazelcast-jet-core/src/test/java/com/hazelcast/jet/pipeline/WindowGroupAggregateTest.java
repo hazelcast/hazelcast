@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperations;
@@ -28,8 +27,8 @@ import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedTriFunction;
-import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.QuadFunction;
+import com.hazelcast.jet.function.TriFunction;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -42,6 +41,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
@@ -98,7 +98,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
         private StreamStage<Entry<String, Integer>> addKeys(StreamStage<Integer> stage) {
             return stage.addTimestamps(i -> i, maxLag)
-                        .flatMap(i -> Traverser.over(entry("a", i), entry("b", i)));
+                        .flatMap(i -> traverseItems(entry("a", i), entry("b", i)));
         }
     }
 
@@ -200,7 +200,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         // When
         srcStage
                 .addTimestamps(i -> i, 0)
-                .flatMap(i -> Traverser.over(entry("a", "a" + i), entry("b", "b" + i)))
+                .flatMap(i -> traverseItems(entry("a", "a" + i), entry("b", "b" + i)))
                 .groupingKey(Entry::getKey)
                 .window(sliding(2, 1))
                 .aggregate(AggregateOperations.mapping(Entry::getValue, AggregateOperations.toList()))
@@ -544,7 +544,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
         private StreamStage<Entry<String, Integer>> addKeys(StreamStage<Integer> stage) {
             return stage.addTimestamps(i -> i, maxLag)
-                        .flatMap(i -> Traverser.over(entry("a", i), entry("b", i)));
+                        .flatMap(i -> traverseItems(entry("a", i), entry("b", i)));
         }
     }
 

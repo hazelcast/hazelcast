@@ -133,6 +133,17 @@ public final class Traversers {
     }
 
     /**
+     * Returns a traverser over the supplied arguments (or item array).
+     *
+     * @param items the items to traverse over
+     * @param <T> type of the items
+     */
+    @SafeVarargs
+    public static <T> Traverser<T> traverseItems(T... items) {
+        return traverseArray(items);
+    }
+
+    /**
      * Flattens a supplier of traverser into a lazy-initialized traverser. It
      * obtains the traverser from this method's argument just once, upon the
      * first invocation of {@code get()}.

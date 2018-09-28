@@ -65,7 +65,8 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
 
         // number of partitions must match number of source processors for coalescing
         // to work correctly
-        config.getHazelcastConfig().setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
+        config.getHazelcastConfig().setProperty(
+                GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
         config.getHazelcastConfig().addEventJournalConfig(journalConfig);
         instance = createJetMember(config);
         sourceMap = instance.getMap("test");

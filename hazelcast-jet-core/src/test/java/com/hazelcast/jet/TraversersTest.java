@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.jet.Traversers.traverseEnumeration;
+import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseIterator;
 import static com.hazelcast.jet.Traversers.traverseSpliterator;
@@ -45,7 +46,7 @@ public class TraversersTest {
 
     @Test
     public void when_traverserOverArgs_then_seeAllItems() {
-        validateTraversal(Traverser.over(1, 2));
+        validateTraversal(traverseItems(1, 2));
     }
 
     @Test
@@ -80,7 +81,7 @@ public class TraversersTest {
 
     @Test(expected = AssertionError.class)
     public void when_traverserOverArgsWithNull_then_failure() {
-        Traverser<Integer> trav = Traverser.over(1, null);
+        Traverser<Integer> trav = traverseItems(1, null);
         trav.next();
         trav.next();
     }
@@ -171,8 +172,7 @@ public class TraversersTest {
     @Test
     public void peek() {
         List<Integer> list = new ArrayList<>();
-        Traverser<Integer> t = Traverser.over(1, 2, 3)
-                                        .peek(list::add);
+        Traverser<Integer> t = traverseItems(1, 2, 3).peek(list::add);
 
         assertEquals(Integer.valueOf(1), t.next());
         assertEquals(Integer.valueOf(2), t.next());

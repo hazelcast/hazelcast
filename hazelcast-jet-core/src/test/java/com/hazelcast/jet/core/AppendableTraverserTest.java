@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -48,8 +49,8 @@ public class AppendableTraverserTest {
     public void test_flatMapperUsage() {
         // an instance of AppendableTraverser is repeatedly returned
         // from a flatMap function
-        Traverser tt = Traverser.over(10, 20)
-                .flatMap(item -> {
+        Traverser tt = Traversers.traverseItems(10, 20)
+                                 .flatMap(item -> {
                     assertTrue(t.isEmpty());
                     t.append(item);
                     t.append(item + 1);
