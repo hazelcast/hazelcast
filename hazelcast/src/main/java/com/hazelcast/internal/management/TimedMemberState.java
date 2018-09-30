@@ -20,6 +20,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 
+import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
@@ -32,7 +33,9 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     long time;
     MemberStateImpl memberState;
+    boolean master;
     String clusterName;
+    boolean socketInterceptorEnabled;
 
     public String getClusterName() {
         return clusterName;
@@ -58,12 +61,21 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         this.memberState = memberState;
     }
 
+    public boolean isSocketInterceptorEnabled() {
+        return socketInterceptorEnabled;
+    }
+
+    public void setSocketInterceptorEnabled(boolean socketInterceptorEnabled) {
+        this.socketInterceptorEnabled = socketInterceptorEnabled;
+    }
+
     @Override
     public TimedMemberState clone() throws CloneNotSupportedException {
         TimedMemberState state = (TimedMemberState) super.clone();
         state.setTime(time);
         state.setMemberState(memberState);
         state.setClusterName(clusterName);
+        state.setSocketInterceptorEnabled(socketInterceptorEnabled);
         return state;
     }
 
@@ -73,6 +85,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         root.add("time", time);
         root.add("clusterName", clusterName);
         root.add("memberState", memberState.toJson());
+        root.add("socketInterceptorEnabled", socketInterceptorEnabled);
         return root;
     }
 
@@ -83,6 +96,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         JsonObject jsonMemberState = getObject(json, "memberState");
         memberState = new MemberStateImpl();
         memberState.fromJson(jsonMemberState);
+        socketInterceptorEnabled = getBoolean(json, "socketInterceptorEnabled");
     }
 
     @Override

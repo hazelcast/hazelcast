@@ -87,6 +87,9 @@ public final class NodeEngineProbeSource implements ProbeSource {
     }
 
     private void probeHotRestartStateIn(ProbingCycle cycle) {
+        if (!nodeEngine.getNode().isMaster()) {
+            return;
+        }
         InternalHotRestartService hotRestartService = nodeEngine.getNode().getNodeExtension()
                 .getInternalHotRestartService();
         ClusterHotRestartStatusDTO status = hotRestartService.getCurrentClusterHotRestartStatus();
