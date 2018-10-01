@@ -33,8 +33,8 @@ import java.util.LinkedList;
  */
 public class CacheExpireBatchBackupOperation extends CacheOperation {
 
-    private Collection<ExpiredKey> expiredKeys;
     private int primaryEntryCount;
+    private Collection<ExpiredKey> expiredKeys;
 
     public CacheExpireBatchBackupOperation() {
     }

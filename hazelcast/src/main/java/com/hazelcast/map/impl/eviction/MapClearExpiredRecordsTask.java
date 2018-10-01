@@ -17,16 +17,18 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
+import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.ClearExpiredOperation;
-import com.hazelcast.map.impl.recordstore.AbstractEvictableRecordStore;
+import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
@@ -75,29 +77,27 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  *    </pre>
  * </p>
  */
-public class MapClearExpiredRecordsTask extends ClearExpiredRecordsTask<PartitionContainer>
-        implements OperationResponseHandler {
+public class MapClearExpiredRecordsTask
+        extends ClearExpiredRecordsTask<PartitionContainer, RecordStore> implements OperationResponseHandler {
 
     public static final String PROP_PRIMARY_DRIVES_BACKUP = "hazelcast.internal.map.expiration.primary.drives_backup";
     public static final String PROP_CLEANUP_PERCENTAGE = "hazelcast.internal.map.expiration.cleanup.percentage";
     public static final String PROP_CLEANUP_OPERATION_COUNT = "hazelcast.internal.map.expiration.cleanup.operation.count";
     public static final String PROP_TASK_PERIOD_SECONDS = "hazelcast.internal.map.expiration.task.period.seconds";
 
-    public static final int DEFAULT_TASK_PERIOD_SECONDS = 5;
-    public static final HazelcastProperty TASK_PERIOD_SECONDS
-            = new HazelcastProperty(PROP_TASK_PERIOD_SECONDS, DEFAULT_TASK_PERIOD_SECONDS, SECONDS);
-    public static final boolean DEFAULT_PRIMARY_DRIVES_BACKUP = true;
-    public static final int DEFAULT_CLEANUP_PERCENTAGE = 10;
-    public static final int MAX_EXPIRED_KEY_COUNT_IN_BATCH = 100;
-
-    public static final HazelcastProperty PRIMARY_DRIVES_BACKUP
+    private static final boolean DEFAULT_PRIMARY_DRIVES_BACKUP = true;
+    private static final int DEFAULT_TASK_PERIOD_SECONDS = 5;
+    private static final int DEFAULT_CLEANUP_PERCENTAGE = 10;
+    private static final HazelcastProperty PRIMARY_DRIVES_BACKUP
             = new HazelcastProperty(PROP_PRIMARY_DRIVES_BACKUP, DEFAULT_PRIMARY_DRIVES_BACKUP);
-    public static final HazelcastProperty CLEANUP_PERCENTAGE
+    private static final HazelcastProperty TASK_PERIOD_SECONDS
+            = new HazelcastProperty(PROP_TASK_PERIOD_SECONDS, DEFAULT_TASK_PERIOD_SECONDS, SECONDS);
+    private static final HazelcastProperty CLEANUP_PERCENTAGE
             = new HazelcastProperty(PROP_CLEANUP_PERCENTAGE, DEFAULT_CLEANUP_PERCENTAGE);
-    public static final HazelcastProperty CLEANUP_OPERATION_COUNT
+    private static final HazelcastProperty CLEANUP_OPERATION_COUNT
             = new HazelcastProperty(PROP_CLEANUP_OPERATION_COUNT);
 
-    protected final boolean primaryDrivesEviction;
+    private final boolean primaryDrivesEviction;
 
     private final Comparator<PartitionContainer> partitionContainerComparator = new Comparator<PartitionContainer>() {
         @Override
@@ -108,37 +108,37 @@ public class MapClearExpiredRecordsTask extends ClearExpiredRecordsTask<Partitio
         }
     };
 
-    public MapClearExpiredRecordsTask(NodeEngine nodeEngine, PartitionContainer[] containers) {
-        super(nodeEngine, containers, CLEANUP_OPERATION_COUNT, CLEANUP_PERCENTAGE, TASK_PERIOD_SECONDS);
+    public MapClearExpiredRecordsTask(PartitionContainer[] containers, NodeEngine nodeEngine) {
+        super(SERVICE_NAME, containers, CLEANUP_OPERATION_COUNT, CLEANUP_PERCENTAGE, TASK_PERIOD_SECONDS, nodeEngine);
         this.primaryDrivesEviction = nodeEngine.getProperties().getBoolean(PRIMARY_DRIVES_BACKUP);
-    }
-
-    @Override
-    protected void sortPartitionContainers(List<PartitionContainer> partitionContainers) {
-        updateLastCleanupTimesBeforeSorting(partitionContainers);
-        sort(partitionContainers, partitionContainerComparator);
-    }
-
-    @Override
-    public void sendResponse(Operation op, Object response) {
-        if (canPrimaryDriveExpiration()) {
-            PartitionContainer partitionContainer = containers[op.getPartitionId()];
-            doBackupExpiration(partitionContainer);
-        }
     }
 
     public boolean canPrimaryDriveExpiration() {
         return primaryDrivesEviction;
     }
 
-    private void doBackupExpiration(PartitionContainer container) {
-        ConcurrentMap<String, RecordStore> maps = container.getMaps();
-        for (RecordStore recordStore : maps.values()) {
-            ((AbstractEvictableRecordStore) recordStore).sendExpiredKeysToBackups(false);
+    @Override
+    public void sendResponse(Operation op, Object response) {
+        if (!canPrimaryDriveExpiration()) {
+            return;
+        }
+
+        for (RecordStore recordStore : containers[op.getPartitionId()].getMaps().values()) {
+            tryToSendBackupExpiryOp(recordStore, false);
         }
     }
 
-    protected Operation createExpirationOperation(int expirationPercentage, PartitionContainer container) {
+    @Override
+    public void tryToSendBackupExpiryOp(RecordStore store, boolean checkIfReachedBatch) {
+        InvalidationQueue expiredKeys = store.getExpiredKeys();
+        int totalBackupCount = store.getMapContainer().getTotalBackupCount();
+        int partitionId = store.getPartitionId();
+
+        toBackupSender.trySendExpiryOp(store, expiredKeys, totalBackupCount, partitionId, checkIfReachedBatch);
+    }
+
+    @Override
+    protected Operation newPrimaryExpiryOp(int expirationPercentage, PartitionContainer container) {
         int partitionId = container.getPartitionId();
         return new ClearExpiredOperation(expirationPercentage)
                 .setNodeEngine(nodeEngine)
@@ -147,6 +147,26 @@ public class MapClearExpiredRecordsTask extends ClearExpiredRecordsTask<Partitio
                 .setValidateTarget(false)
                 .setServiceName(SERVICE_NAME)
                 .setOperationResponseHandler(this);
+    }
+
+    @Override
+    protected Operation newBackupExpiryOp(RecordStore store, Collection<ExpiredKey> expiredKeys) {
+        return new EvictBatchBackupOperation(store.getName(), expiredKeys, store.size());
+    }
+
+    @Override
+    protected void sortPartitionContainers(List<PartitionContainer> partitionContainers) {
+        // Set last clean-up time before sorting.
+        for (PartitionContainer partitionContainer : partitionContainers) {
+            partitionContainer.setLastCleanupTimeCopy(partitionContainer.getLastCleanupTime());
+        }
+
+        sort(partitionContainers, partitionContainerComparator);
+    }
+
+    @Override
+    protected ProcessablePartitionType getProcessablePartitionType() {
+        return ProcessablePartitionType.PRIMARY_OR_BACKUP_PARTITION;
     }
 
     @Override
@@ -224,17 +244,6 @@ public class MapClearExpiredRecordsTask extends ClearExpiredRecordsTask<Partitio
     @Override
     protected long getLastCleanupTime(PartitionContainer container) {
         return container.getLastCleanupTime();
-    }
-
-    /**
-     * Sets last clean-up time before sorting.
-     *
-     * @param partitionContainers partition containers.
-     */
-    private void updateLastCleanupTimesBeforeSorting(List<PartitionContainer> partitionContainers) {
-        for (PartitionContainer partitionContainer : partitionContainers) {
-            partitionContainer.setLastCleanupTimeCopy(partitionContainer.getLastCleanupTime());
-        }
     }
 
     @Override

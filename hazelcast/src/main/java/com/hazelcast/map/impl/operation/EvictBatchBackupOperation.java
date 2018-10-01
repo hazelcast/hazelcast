@@ -40,9 +40,9 @@ import static com.hazelcast.util.TimeUtil.zeroOutMs;
  */
 public class EvictBatchBackupOperation extends MapOperation implements BackupOperation {
 
+    private int primaryEntryCount;
     private String name;
     private Collection<ExpiredKey> expiredKeys;
-    private int primaryEntryCount;
 
     public EvictBatchBackupOperation() {
     }

@@ -23,7 +23,6 @@ import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
 import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker;
 import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
-import com.hazelcast.cache.impl.operation.CacheExpireBatchBackupOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
@@ -37,7 +36,6 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.eviction.EvictionCandidate;
@@ -56,8 +54,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -78,7 +74,6 @@ import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.processor.EntryProcessor;
 import java.io.Closeable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -94,7 +89,6 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheCreatedE
 import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheExpiredEvent;
 import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheRemovedEvent;
 import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedEvent;
-import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.MAX_EXPIRED_KEY_COUNT_IN_BATCH;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.cache.impl.record.CacheRecord.TIME_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
@@ -498,72 +492,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             this.expiredKeys.offer(new ExpiredKey(toHeapData(key), record.getCreationTime()));
         }
 
-        sendBackupExpirations(true);
+        cacheService.getExpirationManager().getTask().tryToSendBackupExpiryOp(this, true);
     }
 
     @Override
     public boolean isExpirable() {
         return hasEntryWithExpiration || getConfig().getExpiryPolicyFactory() != null;
-    }
-
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
-    public void sendBackupExpirations(boolean checkIfReachedBatch) {
-        InvalidationQueue<ExpiredKey> invalidationQueue = this.expiredKeys;
-
-        int size = invalidationQueue.size();
-        if (size == 0 || checkIfReachedBatch && size < MAX_EXPIRED_KEY_COUNT_IN_BATCH) {
-            return;
-        }
-
-        if (!invalidationQueue.tryAcquire()) {
-            return;
-        }
-
-        Collection<ExpiredKey> expiredKeys = collectExpiredKeys(invalidationQueue);
-        if (expiredKeys.size() == 0) {
-            return;
-        }
-
-        // send expired keys to all backups
-        OperationService operationService = nodeEngine.getOperationService();
-        int backupReplicaCount = cacheConfig.getTotalBackupCount();
-        for (int replicaIndex = 1; replicaIndex < backupReplicaCount + 1; replicaIndex++) {
-            Address replicaAddress = nodeEngine.getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex);
-            if (replicaAddress != null && canSendBackupExpiration(replicaAddress)) {
-                Operation operation = new CacheExpireBatchBackupOperation(getName(), expiredKeys, size());
-                operation.setReplicaIndex(replicaIndex);
-                operation.setPartitionId(getPartitionId());
-                operationService.invokeOnTarget(CacheService.SERVICE_NAME, operation, replicaAddress);
-            }
-        }
-    }
-
-    private Collection<ExpiredKey> collectExpiredKeys(InvalidationQueue<ExpiredKey> invalidationQueue) {
-        Collection<ExpiredKey> expiredKeys = new ArrayList<ExpiredKey>();
-        try {
-            ExpiredKey key;
-            do {
-                key = invalidationQueue.poll();
-                if (key != null) {
-                    expiredKeys.add(key);
-                }
-            } while (key != null);
-        } finally {
-            invalidationQueue.release();
-        }
-        return expiredKeys;
-    }
-
-    protected boolean canSendBackupExpiration(Address replicaAddress) {
-        // Previous versions did not remove expired entries until they are touched. Old members behave the same whereas
-        // newer members still benefit from periodic removal of expired entries.
-        //
-        // RU_COMPAT_3_10
-        Member member = nodeEngine.getClusterService().getMember(replicaAddress);
-        if (member == null) {
-            return false;
-        }
-        return member.getVersion().asVersion().isGreaterOrEqual(Versions.V3_11);
     }
 
     public R accessRecord(Data key, R record, ExpiryPolicy expiryPolicy, long now) {
