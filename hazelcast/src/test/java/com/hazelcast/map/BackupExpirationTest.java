@@ -36,6 +36,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -149,6 +150,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
     // This EP mimics TTL expiration process by creating a record
     // which expires after 100 millis. TTL expired key should not be added to the expiration queue
     // after `recordStore.get`.
+    @SuppressFBWarnings("SE_NO_SERIALVERSIONID")
     public static final class BackupExpirationQueueLengthFinder
             extends AbstractEntryProcessor implements HazelcastInstanceAware {
 
@@ -167,7 +169,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
             sleepSeconds(1);
             recordStore.get(dataKey, false, null);
 
-            InvalidationQueue expiredKeys = recordStore.getExpiredKeys();
+            InvalidationQueue expiredKeys = recordStore.getExpiredKeysQueue();
             return expiredKeys.size();
         }
 

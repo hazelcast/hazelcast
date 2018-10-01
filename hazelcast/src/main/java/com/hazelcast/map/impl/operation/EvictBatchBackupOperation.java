@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.util.TimeUtil.zeroOutMs;
 
 /**
@@ -50,7 +49,6 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     public EvictBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int primaryEntryCount) {
         super(name);
 
-        assert isNotEmpty(expiredKeys);
         assert name != null;
 
         this.name = name;
@@ -112,7 +110,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         return super.onInvocationException(throwable);
     }
 
-    protected boolean canEvictRecord(Record existingRecord, ExpiredKey expiredKey) {
+    private boolean canEvictRecord(Record existingRecord, ExpiredKey expiredKey) {
         if (existingRecord == null) {
             return false;
         }

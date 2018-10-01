@@ -122,7 +122,8 @@ import static java.lang.Thread.currentThread;
  * The ProxyManager handles client proxy instantiation and retrieval at start and runtime by registering
  * corresponding service manager names and their {@link com.hazelcast.client.spi.ClientProxyFactory}s.
  */
-@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
+@SuppressWarnings({"checkstyle:classfanoutcomplexity",
+        "checkstyle:classdataabstractioncoupling", "checkstyle:methodcount"})
 public final class ProxyManager {
 
     private static final long DISTRIBUTED_OBJECT_SYNC_PERIOD_MILLIS = 10000;

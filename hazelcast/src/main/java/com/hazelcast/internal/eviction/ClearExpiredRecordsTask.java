@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.eviction.ToBackupSender.newToBackupSender;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
@@ -59,16 +60,19 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     private final Address thisAddress;
     private final InternalOperationService operationService;
     private final AtomicBoolean singleRunPermit = new AtomicBoolean(false);
+    private final AtomicInteger partitionLostCounter = new AtomicInteger();
+
+    private volatile int lastSeenPartitionLostCount;
 
     private int runningCleanupOperationsCount;
 
     @SuppressFBWarnings({"EI_EXPOSE_REP2"})
-    public ClearExpiredRecordsTask(String serviceName,
-                                   T[] containers,
-                                   HazelcastProperty cleanupOpProperty,
-                                   HazelcastProperty cleanupPercentageProperty,
-                                   HazelcastProperty taskPeriodProperty,
-                                   NodeEngine nodeEngine) {
+    protected ClearExpiredRecordsTask(String serviceName,
+                                      T[] containers,
+                                      HazelcastProperty cleanupOpProperty,
+                                      HazelcastProperty cleanupPercentageProperty,
+                                      HazelcastProperty taskPeriodProperty,
+                                      NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.containers = containers;
         this.operationService = (InternalOperationService) nodeEngine.getOperationService();
@@ -116,13 +120,19 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         runningCleanupOperationsCount = 0;
 
         long nowInMillis = nowInMillis();
+        boolean shouldEqualizeBackupSizeWithPrimary = shouldEqualizeBackupSizeWithPrimary();
 
         List<T> containersToProcess = null;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             IPartition partition = partitionService.getPartition(partitionId, false);
             T container = this.containers[partitionId];
+            boolean localPartition = partition.isLocal();
 
-            if (!partition.isLocal()) {
+            if (localPartition) {
+                if (shouldEqualizeBackupSizeWithPrimary) {
+                    equalizeBackupSizeWithPrimary(container);
+                }
+            } else {
                 clearLeftoverExpiredKeyQueues(container);
             }
 
@@ -156,8 +166,39 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
                 && !notHaveAnyExpirableRecord(container);
     }
 
+    /**
+     * This method increments a counter to count partition lost events.
+     *
+     * After an ungraceful shutdown, backups can have expired entries.
+     * And these entries can remain forever on them. Reason for this is,
+     * the lost invalidations on a primary partition. During ungraceful
+     * shutdown, these invalidations can be lost before sending them to
+     * backups.
+     *
+     * Here, the counter in this method, is used to detect the lost
+     * invalidations case. If it is detected, we send expiry operations to
+     * remove leftover backup entries. Otherwise leftover entries can remain on
+     * backups forever.
+     */
+    final void onPartitionLost() {
+        partitionLostCounter.incrementAndGet();
+    }
+
     private static long nowInMillis() {
         return Clock.currentTimeMillis();
+    }
+
+    /**
+     * see {@link #onPartitionLost}
+     */
+    private boolean shouldEqualizeBackupSizeWithPrimary() {
+        boolean equalizeBackupSizeWithPrimary = false;
+        int currentPartitionLostCount = partitionLostCounter.get();
+        if (currentPartitionLostCount != lastSeenPartitionLostCount) {
+            lastSeenPartitionLostCount = currentPartitionLostCount;
+            equalizeBackupSizeWithPrimary = true;
+        }
+        return equalizeBackupSizeWithPrimary;
     }
 
     private static int calculateCleanupOperationCount(HazelcastProperties properties,
@@ -206,7 +247,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         List<T> partitionIds = partitionContainers.subList(start, end);
         for (T container : partitionIds) {
             // mark partition container as has on going expiration operation.
-            setHasRunningCleanup(container, true);
+            setHasRunningCleanup(container);
             Operation operation = newPrimaryExpiryOp(cleanupPercentage, container);
             operationService.execute(operation);
         }
@@ -240,6 +281,8 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     protected abstract long getLastCleanupTime(T container);
 
+    protected abstract void equalizeBackupSizeWithPrimary(T container);
+
     protected abstract boolean hasExpiredKeyToSendBackup(T container);
 
     protected abstract boolean notHaveAnyExpirableRecord(T container);
@@ -248,7 +291,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     protected abstract void sortPartitionContainers(List<T> containers);
 
-    protected abstract void setHasRunningCleanup(T container, boolean status);
+    protected abstract void setHasRunningCleanup(T container);
 
     protected abstract ProcessablePartitionType getProcessablePartitionType();
 
@@ -279,5 +322,6 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         };
 
         abstract boolean isProcessable(IPartition partition, Address address);
+
     }
 }

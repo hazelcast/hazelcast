@@ -311,7 +311,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public InvalidationQueue<ExpiredKey> getExpiredKeys() {
+    public InvalidationQueue<ExpiredKey> getExpiredKeysQueue() {
         return expiredKeys;
     }
 

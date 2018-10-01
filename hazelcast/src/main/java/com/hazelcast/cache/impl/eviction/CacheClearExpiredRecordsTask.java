@@ -34,6 +34,7 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -117,7 +118,7 @@ public class CacheClearExpiredRecordsTask
 
     @Override
     public void tryToSendBackupExpiryOp(ICacheRecordStore store, boolean checkIfReachedBatch) {
-        InvalidationQueue<ExpiredKey> expiredKeys = store.getExpiredKeys();
+        InvalidationQueue<ExpiredKey> expiredKeys = store.getExpiredKeysQueue();
         int totalBackupCount = store.getConfig().getTotalBackupCount();
         int partitionId = store.getPartitionId();
 
@@ -167,11 +168,23 @@ public class CacheClearExpiredRecordsTask
     }
 
     @Override
+    protected void equalizeBackupSizeWithPrimary(CachePartitionSegment container) {
+        Iterator<ICacheRecordStore> iterator = container.recordStoreIterator();
+        while (iterator.hasNext()) {
+            ICacheRecordStore recordStore = iterator.next();
+            int totalBackupCount = recordStore.getConfig().getTotalBackupCount();
+            int partitionId = recordStore.getPartitionId();
+            toBackupSender.invokeBackupExpiryOperation(Collections.<ExpiredKey>emptyList(),
+                    totalBackupCount, partitionId, recordStore);
+        }
+    }
+
+    @Override
     protected boolean hasExpiredKeyToSendBackup(CachePartitionSegment container) {
         Iterator<ICacheRecordStore> iterator = container.recordStoreIterator();
         while (iterator.hasNext()) {
             ICacheRecordStore store = iterator.next();
-            if (store.getExpiredKeys().size() > 0) {
+            if (store.getExpiredKeysQueue().size() > 0) {
                 return true;
             }
         }
@@ -184,8 +197,8 @@ public class CacheClearExpiredRecordsTask
     }
 
     @Override
-    protected void setHasRunningCleanup(CachePartitionSegment container, boolean status) {
-        container.setRunningCleanupOperation(status);
+    protected void setHasRunningCleanup(CachePartitionSegment container) {
+        container.setRunningCleanupOperation(true);
     }
 
     @Override
@@ -222,7 +235,7 @@ public class CacheClearExpiredRecordsTask
         Iterator<ICacheRecordStore> iterator = container.recordStoreIterator();
         while (iterator.hasNext()) {
             ICacheRecordStore store = iterator.next();
-            InvalidationQueue expiredKeys = store.getExpiredKeys();
+            InvalidationQueue expiredKeys = store.getExpiredKeysQueue();
             expiredKeys.clear();
         }
     }
