@@ -412,7 +412,11 @@ public final class ProxyManager {
                 }
 
                 if (retryable) {
-                    sleepForProxyInitRetry();
+                    try {
+                        Thread.sleep(invocationRetryPauseMillis);
+                    } catch (InterruptedException ignored) {
+                        currentThread().interrupt();
+                    }
                 } else {
                     throw e;
                 }
@@ -422,14 +426,6 @@ public final class ProxyManager {
         throw new OperationTimeoutException("Initializing  " + clientProxy.getServiceName() + ":"
                 + clientProxy.getName() + " is timed out after " + elapsedTime
                 + " ms. Configured invocation timeout is " + invocationTimeoutMillis + " ms");
-    }
-
-    private void sleepForProxyInitRetry() {
-        try {
-            Thread.sleep(invocationRetryPauseMillis);
-        } catch (InterruptedException ignored) {
-            currentThread().interrupt();
-        }
     }
 
     private void initialize(ClientProxy clientProxy) throws Exception {
