@@ -39,25 +39,25 @@ public class ArrayMerkleTreeTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testDepthBelowMinDepthThrows() {
-        new ArrayMerkleTree(1);
+        createMerkleTree(1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testDepthAboveMaxDepthThrows() {
-        new ArrayMerkleTree(28);
+        createMerkleTree(28);
     }
 
     @Test
     public void testDepth() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
+        MerkleTree merkleTree = createMerkleTree(3);
 
         assertEquals(3, merkleTree.depth());
     }
 
     @Test
     public void testFootprint() {
-        MerkleTree merkleTree1 = new ArrayMerkleTree(3);
-        MerkleTree merkleTree2 = new ArrayMerkleTree(3);
+        MerkleTree merkleTree1 = createMerkleTree(3);
+        MerkleTree merkleTree2 = createMerkleTree(3);
 
         for (int i = 0; i < 10; i++) {
             merkleTree1.updateAdd(i, i);
@@ -72,7 +72,7 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void testFootprintChanges() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
+        MerkleTree merkleTree = createMerkleTree(3);
 
         long footprintBeforeAdd = merkleTree.footprint();
         for (int i = 0; i < 100; i++) {
@@ -85,7 +85,7 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void testUpdateAdd() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
+        MerkleTree merkleTree = createMerkleTree(3);
 
         merkleTree.updateAdd(1, 1);
         merkleTree.updateAdd(2, 2);
@@ -103,7 +103,7 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void testUpdateAddUpdateBranch() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
+        MerkleTree merkleTree = createMerkleTree(3);
 
         merkleTree.updateAdd(-3, 4);
         merkleTree.updateAdd(-2, 2);
@@ -138,7 +138,7 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void testUpdateReplaceUpdateBranch() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
+        MerkleTree merkleTree = createMerkleTree(3);
 
         merkleTree.updateAdd(-3, 4);
         merkleTree.updateAdd(-2, 2);
@@ -175,7 +175,7 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void testUpdateRemoveUpdateBranch() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
+        MerkleTree merkleTree = createMerkleTree(3);
 
         merkleTree.updateAdd(-3, 4);
         merkleTree.updateAdd(-2, 2);
@@ -211,7 +211,7 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void testUpdateReplace() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
+        MerkleTree merkleTree = createMerkleTree(3);
 
         merkleTree.updateAdd(1, 1);
         merkleTree.updateAdd(2, 2);
@@ -230,7 +230,7 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void testUpdateRemove() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
+        MerkleTree merkleTree = createMerkleTree(3);
 
         merkleTree.updateAdd(1, 1);
         merkleTree.updateAdd(2, 2);
@@ -248,7 +248,7 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void forEachKeyOfLeaf() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
+        MerkleTree merkleTree = createMerkleTree(3);
 
         merkleTree.updateAdd(0x80000000, 1); // leaf 3
         merkleTree.updateAdd(0xC0000000, 2); // leaf 4
@@ -271,8 +271,8 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void testTreeDepthsDontImpactNodeHashes() {
-        MerkleTree merkleTreeShallow = new ArrayMerkleTree(2);
-        MerkleTree merkleTreeDeep = new ArrayMerkleTree(4);
+        MerkleTree merkleTreeShallow = createMerkleTree(2);
+        MerkleTree merkleTreeDeep = createMerkleTree(4);
 
         merkleTreeShallow.updateAdd(0x80000000, 1); // leaf 1
         merkleTreeShallow.updateAdd(0xA0000000, 2); // leaf 1
@@ -307,7 +307,7 @@ public class ArrayMerkleTreeTest {
 
     @Test
     public void testClear() {
-        MerkleTree merkleTree = new ArrayMerkleTree(4);
+        MerkleTree merkleTree = createMerkleTree(4);
 
         merkleTree.updateAdd(0x80000000, 1); // leaf 7
         merkleTree.updateAdd(0xA0000000, 2); // leaf 8
@@ -345,6 +345,10 @@ public class ArrayMerkleTreeTest {
         merkleTree.forEachKeyOfNode(nodeOrder, consumerNode);
         assertEquals(expectedKeys.length, consumerNode.keys.size());
         assertTrue(consumerNode.keys.containsAll(asList(expectedKeys)));
+    }
+
+    private ArrayMerkleTree createMerkleTree(int depth) {
+        return new ArrayMerkleTree(depth, new LeafOAHashSetFactory());
     }
 
     private static class KeyCatcherConsumer implements Consumer<Object> {

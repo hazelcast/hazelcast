@@ -157,7 +157,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void putRecord(Data key, Record record) {
         markRecordStoreExpirable(record.getTtl(), record.getMaxIdle());
         storage.put(key, record);
-        mutationObserver.onReplicationPutRecord(key, record);
+        mutationObserver.onReplicationPutRecord(record);
         updateStatsOnPut(record.getHits());
     }
 
@@ -175,7 +175,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             record = createRecord(value, ttl, maxIdle, now);
             storage.put(key, record);
-            mutationObserver.onPutRecord(key, record);
+            mutationObserver.onPutRecord(record);
         } else {
             updateRecord(key, record, value, now, true);
         }
@@ -326,7 +326,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (value != null) {
             record = createRecord(value, DEFAULT_TTL, DEFAULT_MAX_IDLE, getNow());
             storage.put(key, record);
-            mutationObserver.onLoadRecord(key, record);
+            mutationObserver.onLoadRecord(record);
             if (!backup) {
                 saveIndex(record, null);
                 mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED,
@@ -367,9 +367,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         while (iterator.hasNext()) {
             Record record = iterator.next();
             if (eviction) {
-                mutationObserver.onEvictRecord(record.getKey(), record);
+                mutationObserver.onEvictRecord(record);
             } else {
-                mutationObserver.onRemoveRecord(record.getKey(), record);
+                mutationObserver.onRemoveRecord(record);
             }
             storage.removeRecord(record);
             iterator.remove();
@@ -406,7 +406,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = record.getValue();
             mapDataStore.flush(key, value, backup);
             removeIndex(record);
-            mutationObserver.onEvictRecord(key, record);
+            mutationObserver.onEvictRecord(record);
             storage.removeRecord(record);
             if (!backup) {
                 mapServiceContext.interceptRemove(name, value);
@@ -433,7 +433,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             return;
         }
-        mutationObserver.onRemoveRecord(key, record);
+        mutationObserver.onRemoveRecord(record);
         storage.removeRecord(record);
         if (persistenceEnabledFor(provenance)) {
             mapDataStore.removeBackup(key, now);
@@ -495,7 +495,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             removeIndex(record);
             mapDataStore.remove(key, now);
             onStore(record);
-            mutationObserver.onRemoveRecord(record.getKey(), record);
+            mutationObserver.onRemoveRecord(record);
             storage.removeRecord(record);
             removed = true;
         }
@@ -689,7 +689,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             record = createRecord(value, ttl, maxIdle, now);
             storage.put(key, record);
-            mutationObserver.onPutRecord(key, record);
+            mutationObserver.onPutRecord(record);
         } else {
             updateRecord(key, record, value, now, countAsAccess);
             setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), false);
@@ -728,7 +728,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             record = createRecord(newValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
             mergeRecordExpiration(record, mergingEntry);
             storage.put(key, record);
-            mutationObserver.onPutRecord(key, record);
+            mutationObserver.onPutRecord(record);
         } else {
             oldValue = record.getValue();
             MapMergeTypes existingEntry = createMergingEntry(serializationService, record);
@@ -740,7 +740,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     mapDataStore.remove(key, now);
                 }
                 onStore(record);
-                mutationObserver.onRemoveRecord(key, record);
+                mutationObserver.onRemoveRecord(record);
                 storage.removeRecord(record);
                 return true;
             }
@@ -752,7 +752,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
             newValue = persistenceEnabledFor(provenance) ? mapDataStore.add(key, newValue, now) : newValue;
             onStore(record);
-            mutationObserver.onUpdateRecord(key, record, newValue);
+            mutationObserver.onUpdateRecord(record, newValue);
             storage.updateRecordValue(key, record, newValue);
         }
         saveIndex(record, oldValue);
@@ -786,7 +786,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             record = createRecord(newValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
             mergeRecordExpiration(record, mergingEntry);
             storage.put(key, record);
-            mutationObserver.onPutRecord(key, record);
+            mutationObserver.onPutRecord(record);
         } else {
             oldValue = record.getValue();
             EntryView existingEntry = EntryViews.createLazyEntryView(record.getKey(), record.getValue(),
@@ -799,7 +799,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     mapDataStore.remove(key, now);
                 }
                 onStore(record);
-                mutationObserver.onRemoveRecord(key, record);
+                mutationObserver.onRemoveRecord(record);
                 storage.removeRecord(record);
                 return true;
             }
@@ -811,7 +811,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
             newValue = persistenceEnabledFor(provenance) ? mapDataStore.add(key, newValue, now) : newValue;
             onStore(record);
-            mutationObserver.onUpdateRecord(key, record, newValue);
+            mutationObserver.onUpdateRecord(record, newValue);
             storage.updateRecordValue(key, record, newValue);
         }
         saveIndex(record, oldValue);
@@ -872,7 +872,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = mapServiceContext.interceptPut(name, null, value);
             record = createRecord(value, ttl, maxIdle, now);
             storage.put(key, record);
-            mutationObserver.onPutRecord(key, record);
+            mutationObserver.onPutRecord(record);
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
@@ -915,9 +915,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             record = createRecord(value, ttl, maxIdle, now);
             storage.put(key, record);
             if (canPublishLoadEvent()) {
-                mutationObserver.onLoadRecord(key, record);
+                mutationObserver.onLoadRecord(record);
             } else {
-                mutationObserver.onPutRecord(key, record);
+                mutationObserver.onPutRecord(record);
             }
         } else {
             oldValue = record.getValue();
@@ -991,7 +991,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 record = createRecord(oldValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
                 storage.put(key, record);
 
-                mutationObserver.onPutRecord(key, record);
+                mutationObserver.onPutRecord(record);
                 mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED, key, null, oldValue);
             }
         } else {
@@ -1004,7 +1004,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             onStore(record);
             record = createRecord(value, ttl, maxIdle, now);
             storage.put(key, record);
-            mutationObserver.onPutRecord(key, record);
+            mutationObserver.onPutRecord(record);
 
             setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), false);
         }
@@ -1023,7 +1023,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             onStore(record);
         }
-        mutationObserver.onRemoveRecord(key, record);
+        mutationObserver.onRemoveRecord(record);
         storage.removeRecord(record);
         return oldValue;
     }

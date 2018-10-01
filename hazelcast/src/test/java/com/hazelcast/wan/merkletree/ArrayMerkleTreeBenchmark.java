@@ -124,7 +124,8 @@ public class ArrayMerkleTreeBenchmark {
     }
 
     private ArrayMerkleTree createMerkleTree(CreateInstanceBenchmarkContext context) {
-        ArrayMerkleTree merkleTree = new ArrayMerkleTree(context.depth);
+        LeafOAHashSetFactory factory = new LeafOAHashSetFactory();
+        ArrayMerkleTree merkleTree = new ArrayMerkleTree(context.depth, factory);
         context.merkleTrees.add(merkleTree);
         return merkleTree;
     }
@@ -145,7 +146,8 @@ public class ArrayMerkleTreeBenchmark {
 
         @Setup(Level.Trial)
         public void setUp() {
-            merkleTree = new ArrayMerkleTree(depth);
+            LeafOAHashSetFactory factory = new LeafOAHashSetFactory();
+            merkleTree = new ArrayMerkleTree(depth, factory);
         }
 
         @TearDown(Level.Trial)
@@ -193,5 +195,4 @@ public class ArrayMerkleTreeBenchmark {
 
         new Runner(opt).run();
     }
-
 }

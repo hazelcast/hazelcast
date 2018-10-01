@@ -52,8 +52,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * elements are removed.
  *
  * @param <E> The type of the elements stored in the set
+ *
+ * @see HashAcceptorSet
  */
-public class OAHashSet<E> extends AbstractSet<E> {
+public class OAHashSet<E> extends AbstractSet<E> implements HashAcceptorSet<E> {
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
     private static final float DEFAULT_LOAD_FACTOR = 0.6F;
 
@@ -126,19 +128,7 @@ public class OAHashSet<E> extends AbstractSet<E> {
         return add(element, element.hashCode());
     }
 
-    /**
-     * Adds the specified element to this set if it is not already present.
-     * <p>
-     * This variant of {@link #add(Object)} acts as an optimisation to
-     * enable avoiding {@link #hashCode()} calls if the hash is already
-     * known on the caller side.
-     *
-     * @param elementToAdd element to be added to this set
-     * @param hash         the hash of the element to be added
-     * @return <tt>true</tt> if this set did not already contain the specified
-     * element
-     * @see #add(Object)
-     */
+    @Override
     public boolean add(E elementToAdd, int hash) {
         checkNotNull(elementToAdd);
 
@@ -170,19 +160,7 @@ public class OAHashSet<E> extends AbstractSet<E> {
         return contains(objectToCheck, objectToCheck.hashCode());
     }
 
-    /**
-     * Returns <tt>true</tt> if this set contains the specified element
-     * with the hash provided in parameter.
-     * <p>
-     * This variant of {@link #contains(Object)} acts as an optimisation to
-     * enable avoiding {@link #hashCode()} calls if the hash is already
-     * known on the caller side.
-     *
-     * @param objectToCheck element whose presence in this set is to be tested
-     * @param hash          the hash of the element to be tested
-     * @return <tt>true</tt> if this set contains the specified element
-     * @see #contains(Object)
-     */
+    @Override
     public boolean contains(Object objectToCheck, int hash) {
         checkNotNull(objectToCheck);
 
@@ -204,19 +182,7 @@ public class OAHashSet<E> extends AbstractSet<E> {
         return remove(objectToRemove, objectToRemove.hashCode());
     }
 
-    /**
-     * Removes the specified element from this set if it is present with
-     * the hash provided in parameter.
-     * <p>
-     * This variant of {@link #remove(Object)} acts as an optimisation to
-     * enable avoiding {@link #hashCode()} calls if the hash is already
-     * known on the caller side.
-     *
-     * @param objectToRemove object to be removed from this set, if present
-     * @param hash           the hash of the element to be removed
-     * @return <tt>true</tt> if this set contained the specified element
-     * @see #remove(Object)
-     */
+    @Override
     public boolean remove(Object objectToRemove, int hash) {
         checkNotNull(objectToRemove);
 
@@ -239,7 +205,7 @@ public class OAHashSet<E> extends AbstractSet<E> {
     public boolean removeAll(Collection<?> elementsToRemove) {
         boolean setChanged = false;
         for (Object objectToRemove : elementsToRemove) {
-            setChanged |= remove(objectToRemove.hashCode());
+            setChanged |= remove(objectToRemove);
         }
 
         return setChanged;
@@ -313,15 +279,11 @@ public class OAHashSet<E> extends AbstractSet<E> {
         return capacity;
     }
 
-    /**
-     * Returns the current memory consumption (in bytes)
-     *
-     * @return the current memory consumption
-     */
     @SuppressWarnings("checkstyle:trailingcomment")
+    @Override
     public long footprint() {
         return
-                INT_SIZE_IN_BYTES * hashes.length // size of hashes array
+                ((long) INT_SIZE_IN_BYTES) * hashes.length // size of hashes array
                 + REFERENCE_COST_IN_BYTES * table.length // size of table array
                 + REFERENCE_COST_IN_BYTES // reference to hashes array
                 + REFERENCE_COST_IN_BYTES // reference to table array

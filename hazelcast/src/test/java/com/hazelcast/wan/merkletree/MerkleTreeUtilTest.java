@@ -433,7 +433,7 @@ public class MerkleTreeUtilTest {
 
     @Test
     public void testSerialization() throws IOException {
-        MerkleTree merkleTree = new ArrayMerkleTree(4);
+        MerkleTree merkleTree = new ArrayMerkleTree(4, new LeafOAHashSetFactory());
         merkleTree.updateAdd(0x80000000, 1); // leaf 7
         merkleTree.updateAdd(0xA0000000, 2); // leaf 8
         merkleTree.updateAdd(0xC0000000, 3); // leaf 9

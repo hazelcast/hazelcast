@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan.merkletree;
 
-import com.hazelcast.util.collection.OAHashSet;
+import com.hazelcast.util.collection.HashAcceptorSet;
 import com.hazelcast.util.function.Consumer;
 
 import java.util.Arrays;
@@ -69,9 +69,9 @@ import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
  * Every leaf of the tree may cover multiple elements in the underlying
  * data structure. These elements are key-value pairs and the keys of the
  * elements are stored in a data structure that are referred to as data
- * blocks. This implementation stores the keys in {@link OAHashSet}s, one
- * set for each leaf. These sets are initialized in tree construction time
- * eagerly with initial capacity one.
+ * blocks. This implementation stores the keys in {@link HashAcceptorSet}
+ * instances, one set for each leaf. These sets are initialized in
+ * tree construction time eagerly with initial capacity one.
  * <p>
  * This implementation updates the tree synchronously. It can do that,
  * since updating a leaf's hash doesn't need to access the values belong
@@ -81,7 +81,7 @@ import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
  * {@link MerkleTreeUtil#sumHash(int, int)}
  */
 public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTree {
-    private final OAHashSet<Object>[] leafKeys;
+    private final HashAcceptorSet<Object>[] leafKeys;
     private final int leafLevel;
 
     /**
@@ -94,16 +94,16 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
     private volatile long footprint;
 
     @SuppressWarnings("unchecked")
-    public ArrayMerkleTree(int depth) {
+    public ArrayMerkleTree(int depth, LeafSetFactory leafSetFactory) {
         super(depth);
 
         this.leafLevel = depth - 1;
 
         final int leaves = MerkleTreeUtil.getNodesOnLevel(leafLevel);
 
-        leafKeys = new OAHashSet[leaves];
+        leafKeys = new HashAcceptorSet[leaves];
         for (int i = 0; i < leaves; i++) {
-            leafKeys[i] = new OAHashSet<Object>(1);
+            leafKeys[i] = leafSetFactory.createLeafSet(5);
         }
 
         initializeFootprint();
@@ -118,8 +118,8 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
         int leafCurrentHash = getNodeHash(leafOrder);
         int leafNewHash = MerkleTreeUtil.addHash(leafCurrentHash, valueHash);
 
-        setNodeHash(leafOrder, leafNewHash);
         addKeyToLeaf(leafOrder, keyHash, key);
+        setNodeHash(leafOrder, leafNewHash);
         updateBranch(leafOrder);
     }
 
@@ -147,8 +147,8 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
         int leafCurrentHash = getNodeHash(leafOrder);
         int leafNewHash = MerkleTreeUtil.removeHash(leafCurrentHash, removedValueHash);
 
-        setNodeHash(leafOrder, leafNewHash);
         removeKeyFromLeaf(leafOrder, keyHash, key);
+        setNodeHash(leafOrder, leafNewHash);
         updateBranch(leafOrder);
     }
 
@@ -193,7 +193,7 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
     @Override
     public void clear() {
         Arrays.fill(tree, 0);
-        for (OAHashSet<Object> leafKeysSet : this.leafKeys) {
+        for (HashAcceptorSet<Object> leafKeysSet : this.leafKeys) {
             leafKeysSet.clear();
         }
     }
@@ -223,7 +223,7 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
 
     private void addKeyToLeaf(int leafOrder, int keyHash, Object key) {
         int relativeLeafOrder = leafOrder - leafLevelOrder;
-        OAHashSet<Object> leafKeySet = leafKeys[relativeLeafOrder];
+        HashAcceptorSet<Object> leafKeySet = leafKeys[relativeLeafOrder];
         long leafKeysFootprintBefore = leafKeySet.footprint();
         leafKeySet.add(key, keyHash);
 
@@ -232,7 +232,7 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
 
     private void removeKeyFromLeaf(int leafOrder, int keyHash, Object key) {
         int relativeLeafOrder = leafOrder - leafLevelOrder;
-        OAHashSet<Object> leafKeySet = leafKeys[relativeLeafOrder];
+        HashAcceptorSet<Object> leafKeySet = leafKeys[relativeLeafOrder];
         long leafKeysFootprintBefore = leafKeySet.footprint();
         leafKeySet.remove(key, keyHash);
 
@@ -251,7 +251,7 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
     @SuppressWarnings("checkstyle:trailingcomment")
     private void initializeFootprint() {
         long leafKeysSetsFootprint = 0;
-        for (OAHashSet leafKeysSet : leafKeys) {
+        for (HashAcceptorSet leafKeysSet : leafKeys) {
             leafKeysSetsFootprint += leafKeysSet.footprint();
         }
 

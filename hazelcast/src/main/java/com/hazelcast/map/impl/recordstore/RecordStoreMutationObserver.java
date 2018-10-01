@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.serialization.Data;
 
 /**
  * Interface for observing {@link RecordStore} mutations
@@ -34,52 +33,46 @@ public interface RecordStoreMutationObserver<R extends Record> {
     /**
      * Called when a new record is added to the {@link RecordStore}
      *
-     * @param key    The key of the record
      * @param record The record
      */
-    void onPutRecord(Data key, R record);
+    void onPutRecord(R record);
 
     /**
      * Called when a new record is added to the {@link RecordStore} due
      * to replication
      *
-     * @param key    The key of the record
      * @param record The record
      */
-    void onReplicationPutRecord(Data key, R record);
+    void onReplicationPutRecord(R record);
 
     /**
      * Called when a new record is updated in the observed {@link RecordStore}
      *
-     * @param key      The key of the record
      * @param record   The record
      * @param newValue The new value of the record
      */
-    void onUpdateRecord(Data key, R record, Object newValue);
+    void onUpdateRecord(R record, Object newValue);
 
     /**
      * Called when a record is removed from the observed {@link RecordStore}
      *
-     * @param key    The key of the record
      * @param record The record
      */
-    void onRemoveRecord(Data key, R record);
+    void onRemoveRecord(R record);
 
     /**
      * Called when a record is evicted from the observed {@link RecordStore}
      *
-     * @param key    The key of the record
      * @param record The record
      */
-    void onEvictRecord(Data key, R record);
+    void onEvictRecord(R record);
 
     /**
      * Called when a record is loaded into the observed {@link RecordStore}
      *
-     * @param key      The key of the record
      * @param record   The record
      */
-    void onLoadRecord(Data key, R record);
+    void onLoadRecord(R record);
 
     /**
      * Called when the observed {@link RecordStore} is being destroyed.

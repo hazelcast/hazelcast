@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -39,44 +38,44 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
     }
 
     @Override
-    public void onPutRecord(Data key, R record) {
+    public void onPutRecord(R record) {
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onPutRecord(key, record);
+            mutationObserver.onPutRecord(record);
         }
     }
 
     @Override
-    public void onReplicationPutRecord(Data key, R record) {
+    public void onReplicationPutRecord(R record) {
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onReplicationPutRecord(key, record);
+            mutationObserver.onReplicationPutRecord(record);
         }
     }
 
     @Override
-    public void onUpdateRecord(Data key, R record, Object newValue) {
+    public void onUpdateRecord(R record, Object newValue) {
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onUpdateRecord(key, record, newValue);
+            mutationObserver.onUpdateRecord(record, newValue);
         }
     }
 
     @Override
-    public void onRemoveRecord(Data key, R record) {
+    public void onRemoveRecord(R record) {
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onRemoveRecord(key, record);
+            mutationObserver.onRemoveRecord(record);
         }
     }
 
     @Override
-    public void onEvictRecord(Data key, R record) {
+    public void onEvictRecord(R record) {
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onEvictRecord(key, record);
+            mutationObserver.onEvictRecord(record);
         }
     }
 
     @Override
-    public void onLoadRecord(Data key, R record) {
+    public void onLoadRecord(R record) {
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onLoadRecord(key, record);
+            mutationObserver.onLoadRecord(record);
         }
     }
 

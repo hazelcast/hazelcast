@@ -20,7 +20,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 
 public class EventJournalWriterRecordStoreMutationObserver implements RecordStoreMutationObserver {
@@ -43,33 +42,33 @@ public class EventJournalWriterRecordStoreMutationObserver implements RecordStor
     }
 
     @Override
-    public void onPutRecord(Data key, Record record) {
+    public void onPutRecord(Record record) {
         eventJournal.writeAddEvent(eventJournalConfig, objectNamespace, partitionId, record.getKey(), record.getValue());
     }
 
     @Override
-    public void onReplicationPutRecord(Data key, Record record) {
+    public void onReplicationPutRecord(Record record) {
         // NOP
     }
 
     @Override
-    public void onUpdateRecord(Data key, Record record, Object newValue) {
+    public void onUpdateRecord(Record record, Object newValue) {
         eventJournal.writeUpdateEvent(eventJournalConfig, objectNamespace, partitionId,
                 record.getKey(), record.getValue(), newValue);
     }
 
     @Override
-    public void onRemoveRecord(Data key, Record record) {
+    public void onRemoveRecord(Record record) {
         eventJournal.writeRemoveEvent(eventJournalConfig, objectNamespace, partitionId, record.getKey(), record.getValue());
     }
 
     @Override
-    public void onEvictRecord(Data key, Record record) {
+    public void onEvictRecord(Record record) {
         eventJournal.writeEvictEvent(eventJournalConfig, objectNamespace, partitionId, record.getKey(), record.getValue());
     }
 
     @Override
-    public void onLoadRecord(Data key, Record record) {
+    public void onLoadRecord(Record record) {
         eventJournal.writeLoadEvent(eventJournalConfig, objectNamespace, partitionId, record.getKey(), record.getValue());
     }
 

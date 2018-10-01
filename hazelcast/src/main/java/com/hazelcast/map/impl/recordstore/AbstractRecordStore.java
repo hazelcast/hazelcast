@@ -147,7 +147,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
             record.onAccess(now);
         }
         record.onUpdate(now);
-        mutationObserver.onUpdateRecord(key, record, value);
+        mutationObserver.onUpdateRecord(record, value);
         storage.updateRecordValue(key, record, value);
     }
 
