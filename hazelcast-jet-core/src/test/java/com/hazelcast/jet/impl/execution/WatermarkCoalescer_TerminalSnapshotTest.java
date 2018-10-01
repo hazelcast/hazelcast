@@ -25,6 +25,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -43,8 +44,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static org.junit.Assert.assertEquals;
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
@@ -75,7 +78,7 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
     @Test
     public void test() throws Exception {
         /*
-        This tests the issue that after a terminal barrier is processed, no other work should
+        This test tests the issue that after a terminal barrier is processed, no other work should
         be done by the ProcessorTasklet or CIES after that (except for emitting the DONE_ITEM).
         Also, if at-least-once guarantee is used, the tasklet should not continue to drain
         the queue that had the barrier.
@@ -134,7 +137,8 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
         }
 
         // check, if the job failed
-        assertEquals(RUNNING, job.getStatus());
+        JobStatus status = job.getStatus();
+        assertTrue(status != FAILED && status != COMPLETED && status != SUSPENDED);
     }
 
     private void producer(String key, int delayMs) {
