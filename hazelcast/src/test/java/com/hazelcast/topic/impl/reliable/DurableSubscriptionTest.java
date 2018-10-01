@@ -77,7 +77,7 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
     public void beginFromStart() {
     }
 
-    public class DurableMessageListener<V> implements ReliableMessageListener<V> {
+    public static class DurableMessageListener<V> implements ReliableMessageListener<V> {
 
         public final List<V> objects = new CopyOnWriteArrayList<V>();
         public final List<Long> sequences = new CopyOnWriteArrayList<Long>();

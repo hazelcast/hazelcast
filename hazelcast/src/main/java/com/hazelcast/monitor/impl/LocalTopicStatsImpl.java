@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.topic.impl.reliable.ReliableMessageRunner;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -78,7 +79,7 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
      * on one member).
      *
      * @see com.hazelcast.topic.impl.TopicService
-     * @see com.hazelcast.topic.impl.reliable.ReliableMessageListenerRunner
+     * @see ReliableMessageRunner
      */
     public void incrementReceives() {
         TOTAL_RECEIVED_MESSAGES.incrementAndGet(this);

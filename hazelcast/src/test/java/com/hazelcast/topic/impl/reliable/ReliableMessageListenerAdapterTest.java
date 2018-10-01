@@ -55,7 +55,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
         MessageListenerMock listener = new MessageListenerMock();
         String id = topic.addMessageListener(listener);
 
-        ReliableMessageListenerRunner runner = topic.runnersMap.get(id);
+        MessageRunner runner = topic.runnersMap.get(id);
         assertNotNull(runner);
         ReliableMessageListenerAdapter adapter = assertInstanceOf(ReliableMessageListenerAdapter.class, runner.listener);
         assertSame(listener, adapter.messageListener);

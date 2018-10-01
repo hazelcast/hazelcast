@@ -16,39 +16,29 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
-import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.topic.impl.reliable.MessageRunner;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.version.MemberVersion;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 
 import static com.hazelcast.client.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
@@ -71,8 +61,8 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private static final int INITIAL_BACKOFF_MS = 100;
 
     private final ILogger logger;
-    private final ConcurrentMap<String, MessageRunner> runnersMap = new ConcurrentHashMap<String, MessageRunner>();
-    private final Ringbuffer ringbuffer;
+    private final ConcurrentMap<String, MessageRunner<E>> runnersMap = new ConcurrentHashMap<String, MessageRunner<E>>();
+    private final Ringbuffer<ReliableTopicMessage> ringbuffer;
     private final SerializationService serializationService;
     private final ClientReliableTopicConfig config;
     private final Executor executor;
@@ -157,10 +147,23 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         String id = UuidUtil.newUnsecureUuidString();
         ReliableMessageListener<E> reliableMessageListener = toReliableMessageListener(listener);
 
-        MessageRunner runner = new MessageRunner(id, reliableMessageListener);
+        MessageRunner<E> runner = new ClientReliableMessageRunner<E>(id, reliableMessageListener,
+                ringbuffer, name, config.getReadBatchSize(),
+                serializationService, executor, runnersMap, logger);
         runnersMap.put(id, runner);
         runner.next();
         return id;
+    }
+
+    //for testing
+    public boolean isListenerCancelled(String registrationID) {
+        checkNotNull(registrationID, "registrationId can't be null");
+
+        MessageRunner runner = runnersMap.get(registrationID);
+        if (runner == null) {
+            return true;
+        }
+        return runner.isCancelled();
     }
 
     private ReliableMessageListener<E> toReliableMessageListener(MessageListener<E> listener) {
@@ -195,153 +198,6 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     @Override
     public String toString() {
         return "ITopic{" + "name='" + name + '\'' + '}';
-    }
-
-    class MessageRunner implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {
-
-        final ReliableMessageListener<E> listener;
-        private final String id;
-        private long sequence;
-        private volatile boolean cancelled;
-
-        public MessageRunner(String id, ReliableMessageListener<E> listener) {
-            this.id = id;
-            this.listener = listener;
-
-            // we are going to listen to next publication. We don't care about what already has been published.
-            long initialSequence = listener.retrieveInitialSequence();
-            if (initialSequence == -1) {
-                initialSequence = ringbuffer.tailSequence() + 1;
-            }
-            this.sequence = initialSequence;
-        }
-
-        void next() {
-            if (cancelled) {
-                return;
-            }
-
-            ICompletableFuture<ReadResultSet<ReliableTopicMessage>> f
-                    = ringbuffer.readManyAsync(sequence, 1, config.getReadBatchSize(), null);
-            f.andThen(this, executor);
-        }
-
-        // This method is called from the provided executor.
-        @Override
-        public void onResponse(ReadResultSet<ReliableTopicMessage> result) {
-            // we process all messages in batch. So we don't release the thread and reschedule ourselves;
-            // but we'll process whatever was received in 1 go.
-            for (Object item : result) {
-                ReliableTopicMessage message = (ReliableTopicMessage) item;
-
-                if (cancelled) {
-                    return;
-                }
-
-                try {
-                    listener.storeSequence(sequence);
-                    process(message);
-                } catch (Throwable t) {
-                    if (terminate(t)) {
-                        cancel();
-                        return;
-                    }
-                }
-
-                sequence++;
-            }
-
-            next();
-        }
-
-        private void process(ReliableTopicMessage message) throws Throwable {
-            //  proxy.localTopicStats.incrementReceives();
-            listener.onMessage(toMessage(message));
-        }
-
-        private Message<E> toMessage(ReliableTopicMessage m) {
-            Member member = null;
-            if (m.getPublisherAddress() != null) {
-                member = new com.hazelcast.client.impl.MemberImpl(m.getPublisherAddress(), MemberVersion.UNKNOWN);
-            }
-            E payload = serializationService.toObject(m.getPayload());
-            return new Message<E>(name, payload, m.getPublishTime(), member);
-        }
-
-        // This method is called from the provided executor.
-        @Override
-        public void onFailure(Throwable t) {
-            if (cancelled) {
-                return;
-            }
-
-            t = peel(t);
-            if (t instanceof StaleSequenceException) {
-                // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
-                long remoteHeadSeq = ringbuffer.headSequence();
-                if (listener.isLossTolerant()) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("MessageListener " + listener + " on topic: " + name + " ran into a stale sequence. "
-                                + "Jumping from oldSequence: " + sequence
-                                + " to sequence: " + remoteHeadSeq);
-                    }
-                    sequence = remoteHeadSeq;
-                    next();
-                    return;
-                }
-                logger.warning("Terminating MessageListener:" + listener + " on topic: " + name + ". "
-                        + "Reason: The listener was too slow or the retention period of the message has been violated. "
-                        + "head: " + remoteHeadSeq + " sequence:" + sequence);
-            } else if (t instanceof HazelcastInstanceNotActiveException) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Terminating MessageListener " + listener + " on topic: " + name + ". "
-                            + " Reason: HazelcastInstance is shutting down");
-                }
-            } else if (t instanceof DistributedObjectDestroyedException) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Terminating MessageListener " + listener + " on topic: " + name + ". "
-                            + "Reason: Topic is destroyed");
-                }
-            } else if (t instanceof HazelcastClientNotActiveException || t instanceof RejectedExecutionException) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Terminating MessageListener " + listener + " on topic: " + name + ". "
-                            + "Reason: HazelcastClient is shutting down");
-                }
-            } else {
-                logger.warning("Terminating MessageListener " + listener + " on topic: " + name + ". "
-                        + "Reason: Unhandled exception, message: " + t.getMessage(), t);
-            }
-            cancel();
-        }
-
-        void cancel() {
-            cancelled = true;
-            runnersMap.remove(id);
-        }
-
-        private boolean terminate(Throwable failure) {
-            if (cancelled) {
-                return true;
-            }
-
-            try {
-                boolean terminate = listener.isTerminal(failure);
-                if (terminate) {
-                    logger.warning("Terminating MessageListener " + listener + " on topic: " + name + ". "
-                            + "Reason: Unhandled exception, message: " + failure.getMessage(), failure);
-                } else {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("MessageListener " + listener + " on topic: " + name + " ran into an exception:"
-                                + " message:" + failure.getMessage(), failure);
-                    }
-                }
-                return terminate;
-            } catch (Throwable t) {
-                logger.warning("Terminating messageListener:" + listener + " on topic: " + name + ". "
-                        + "Reason: Unhandled exception while calling ReliableMessageListener.isTerminal() method", t);
-                return true;
-            }
-        }
     }
 
     @Override
