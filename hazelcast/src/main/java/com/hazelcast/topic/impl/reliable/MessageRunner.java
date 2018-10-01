@@ -19,17 +19,19 @@ package com.hazelcast.topic.impl.reliable;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.topic.ReliableMessageListener;
+
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 
 
 /**
@@ -40,34 +42,38 @@ import com.hazelcast.topic.ReliableMessageListener;
  * <p/>
  * The runner keeps track of the sequence.
  */
-class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {
+public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {
 
+    protected final Ringbuffer<ReliableTopicMessage> ringbuffer;
     final ReliableMessageListener<E> listener;
-    private final Ringbuffer<ReliableTopicMessage> ringbuffer;
     private final String topicName;
     private final SerializationService serializationService;
-    private final ClusterService clusterService;
-    private final ILogger logger;
+    private final ConcurrentMap<String, MessageRunner<E>> runnersMap;
     private final String id;
-    private final ReliableTopicProxy<E> proxy;
-
+    private final ILogger logger;
+    private final Executor executor;
+    private final int batchSze;
     private long sequence;
     private volatile boolean cancelled;
-    private final int batchSze;
 
-    public ReliableMessageListenerRunner(String id,
-                                         ReliableMessageListener<E> listener,
-                                         ReliableTopicProxy<E> proxy) {
+    public MessageRunner(String id,
+                         ReliableMessageListener<E> listener,
+                         Ringbuffer<ReliableTopicMessage> ringbuffer,
+                         String topicName,
+                         int batchSze,
+                         SerializationService serializationService,
+                         Executor executor,
+                         ConcurrentMap<String, MessageRunner<E>> runnersMap,
+                         ILogger logger) {
         this.id = id;
         this.listener = listener;
-        this.proxy = proxy;
-        this.ringbuffer = proxy.ringbuffer;
-        this.topicName = proxy.getName();
-        NodeEngine nodeEngine = proxy.getNodeEngine();
-        this.serializationService = nodeEngine.getSerializationService();
-        this.clusterService = nodeEngine.getClusterService();
-        this.logger = nodeEngine.getLogger(ReliableMessageListenerRunner.class);
-        this.batchSze = proxy.topicConfig.getReadBatchSize();
+        this.ringbuffer = ringbuffer;
+        this.topicName = topicName;
+        this.serializationService = serializationService;
+        this.logger = logger;
+        this.batchSze = batchSze;
+        this.executor = executor;
+        this.runnersMap = runnersMap;
 
         // we are going to listen to next publication. We don't care about what already has been published.
         long initialSequence = listener.retrieveInitialSequence();
@@ -77,14 +83,14 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
         this.sequence = initialSequence;
     }
 
-    void next() {
+    public void next() {
         if (cancelled) {
             return;
         }
 
         ICompletableFuture<ReadResultSet<ReliableTopicMessage>> f =
                 ringbuffer.readManyAsync(sequence, 1, batchSze, null);
-        f.andThen(this, proxy.executor);
+        f.andThen(this, executor);
     }
 
     // This method is called from the provided executor.
@@ -122,15 +128,19 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
      * @throws Throwable
      */
     private void process(ReliableTopicMessage message) throws Throwable {
-        proxy.localTopicStats.incrementReceives();
+        updateStatistics();
         listener.onMessage(toMessage(message));
     }
 
+    protected abstract void updateStatistics();
+
     private Message<E> toMessage(ReliableTopicMessage m) {
-        MemberImpl member = clusterService.getMember(m.getPublisherAddress());
+        Member member = getMember(m);
         E payload = serializationService.toObject(m.getPayload());
         return new Message<E>(topicName, payload, m.getPublishTime(), member);
     }
+
+    protected abstract Member getMember(ReliableTopicMessage m);
 
     // This method is called from the provided executor.
     @Override
@@ -139,7 +149,11 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
             return;
         }
 
-        if (t instanceof IllegalArgumentException && listener.isLossTolerant()) {
+        t = adjustThrowable(t);
+        if (t instanceof OperationTimeoutException) {
+            handleOperationTimeoutException();
+            return;
+        } else if (t instanceof IllegalArgumentException && listener.isLossTolerant()) {
             if (handleIllegalArgumentException((IllegalArgumentException) t)) {
                 return;
             }
@@ -165,6 +179,22 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
         cancel();
     }
 
+    private void handleOperationTimeoutException() {
+        if (logger.isFinestEnabled()) {
+            logger.finest("MessageListener " + listener + " on topic: " + topicName + " timed out. "
+                    + "Continuing from last known sequence: " + sequence);
+        }
+        next();
+    }
+
+    /**
+     * Needed because client / server behaviour is different on onFailure call
+     *
+     * @param t throwable
+     * @return adjusted throwable
+     */
+    protected abstract Throwable adjustThrowable(Throwable t);
+
     /**
      * Handles a {@link StaleSequenceException} associated with requesting
      * a sequence older than the {@code headSequence}.
@@ -175,22 +205,25 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
      * @return if the exception was handled and the listener may continue reading
      */
     private boolean handleStaleSequenceException(StaleSequenceException staleSequenceException) {
+        long headSeq = getHeadSequence(staleSequenceException);
         if (listener.isLossTolerant()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("MessageListener " + listener + " on topic: " + topicName + " ran into a stale sequence. "
                         + "Jumping from oldSequence: " + sequence
-                        + " to sequence: " + staleSequenceException.getHeadSeq());
+                        + " to sequence: " + headSeq);
             }
-            sequence = staleSequenceException.getHeadSeq();
+            sequence = headSeq;
             next();
             return true;
         }
 
         logger.warning("Terminating MessageListener:" + listener + " on topic: " + topicName + ". "
                 + "Reason: The listener was too slow or the retention period of the message has been violated. "
-                + "head: " + staleSequenceException.getHeadSeq() + " sequence:" + sequence);
+                + "head: " + headSeq + " sequence:" + sequence);
         return false;
     }
+
+    protected abstract long getHeadSequence(StaleSequenceException staleSequenceException);
 
     /**
      * Handles the {@link IllegalArgumentException} associated with requesting
@@ -213,9 +246,9 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
         return true;
     }
 
-    void cancel() {
+    public void cancel() {
         cancelled = true;
-        proxy.runnersMap.remove(id);
+        runnersMap.remove(id);
     }
 
     private boolean terminate(Throwable failure) {
@@ -240,5 +273,9 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
                     + "Reason: Unhandled exception while calling ReliableMessageListener.isTerminal() method", t);
             return true;
         }
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
     }
 }
