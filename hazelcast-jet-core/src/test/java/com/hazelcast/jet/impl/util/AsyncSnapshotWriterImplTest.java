@@ -205,21 +205,16 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         assertTrue(writer.offer(entry2));
 
         // Then
-        assertFalse(writer.flush());
-        assertTrueAllTheTime(() -> assertTrue(map.isEmpty()), 1);
+        assertTrueAllTheTime(() -> {
+            assertFalse(writer.flush());
+            assertTrue(map.isEmpty());
+        }, 3);
 
-        // When - release one parallel op - we should be able to flush one buffer, but not the other
+        // When - release one parallel op - we should eventually flush all buffers, one by one
         writer.numConcurrentAsyncOps.decrementAndGet();
-        // Then
-        assertFalse(writer.flush());
-        assertTrueEventually(() -> assertEquals(1, map.size()), 1);
-        assertTrueAllTheTime(() -> assertEquals(1, map.size()), 1);
 
-        // When - release another parallel op - we should be able to flush the remaining buffer
-        writer.numConcurrentAsyncOps.decrementAndGet();
         // Then
-        assertTrue(writer.flush());
-
+        assertTrueEventually(() -> assertTrue(writer.flush()));
         assertTargetMapEntry("k", 0, serializedLength(entry1));
         assertTargetMapEntry("kk", 1, serializedLength(entry2));
     }
