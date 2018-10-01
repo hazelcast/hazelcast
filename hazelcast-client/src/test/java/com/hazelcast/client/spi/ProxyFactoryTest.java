@@ -172,7 +172,7 @@ public class ProxyFactoryTest {
     private void testProxyCreation(String serviceName, ClientConfig clientConfig) {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        context = clientInstanceImpl.getProxyManager().getContext();
+        context = new ClientContext(clientInstanceImpl);
 
         ClientProxy proxy = client.getDistributedObject(serviceName, "CustomClientProxy");
 
