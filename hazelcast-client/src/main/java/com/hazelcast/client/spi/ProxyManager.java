@@ -490,7 +490,9 @@ public final class ProxyManager {
 
     private void createCachesOnCluster() {
         ClientCacheProxyFactory proxyFactory = (ClientCacheProxyFactory) getClientProxyFactory(ICacheService.SERVICE_NAME);
-        proxyFactory.recreateCachesOnCluster();
+        if (proxyFactory != null) {
+            proxyFactory.recreateCachesOnCluster();
+        }
     }
 
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
