@@ -188,7 +188,7 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
 
     @Override
     protected ExpirationManager newExpirationManager(HazelcastInstance node) {
-        return new ExpirationManager(new CacheClearExpiredRecordsTask(getNodeEngineImpl(node), getPartitionSegments(node)), getNodeEngineImpl(node));
+        return new ExpirationManager(new CacheClearExpiredRecordsTask(getPartitionSegments(node), getNodeEngineImpl(node)), getNodeEngineImpl(node));
     }
 
     @Override

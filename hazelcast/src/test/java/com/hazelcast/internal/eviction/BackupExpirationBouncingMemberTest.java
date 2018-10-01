@@ -20,14 +20,12 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
-import com.hazelcast.util.StringUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -92,21 +90,13 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
                         ClusterState clusterState = node.getCluster().getClusterState();
                         IMap map = node.getMap(mapName);
 
-                        MapService mapService = getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
-                        long lastStartMillis = getLastStartMillis(mapService.getMapServiceContext().getExpirationManager());
-                        long lastEndMillis = getLastEndMillis(mapService.getMapServiceContext().getExpirationManager());
-
                         LocalMapStats localMapStats = map.getLocalMapStats();
                         String msg = "Failed on node: %s, current cluster state is: %s, "
-                                + "ownedEntryCount: %d, backupEntryCount: %d, "
-                                + "expiredRecordsCleanerTask=[now: %s, lastStart: %s, lastEnd: %s]";
+                                + "ownedEntryCount: %d, backupEntryCount: %d";
 
                         String formattedMsg = String.format(msg, node, clusterState.toString(),
                                 localMapStats.getOwnedEntryCount(),
-                                localMapStats.getBackupEntryCount(),
-                                StringUtil.timeToStringFriendly(System.currentTimeMillis()),
-                                StringUtil.timeToStringFriendly(lastStartMillis),
-                                StringUtil.timeToStringFriendly(lastEndMillis));
+                                localMapStats.getBackupEntryCount());
 
                         assertEquals(formattedMsg, 0, getTotalEntryCount(localMapStats));
                     }
@@ -145,13 +135,5 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
                 hz.getMap(mapName).set(i, i);
             }
         }
-    }
-
-    private long getLastStartMillis(ExpirationManager expirationManager) {
-        return expirationManager.task.lastStartMillis;
-    }
-
-    private long getLastEndMillis(ExpirationManager expirationManager) {
-        return expirationManager.task.lastEndMillis;
     }
 }

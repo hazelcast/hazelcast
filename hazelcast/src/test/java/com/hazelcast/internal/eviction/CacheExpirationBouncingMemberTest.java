@@ -22,21 +22,18 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheRecordStore;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
-import com.hazelcast.util.StringUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -124,7 +121,7 @@ public class CacheExpirationBouncingMemberTest extends HazelcastTestSupport {
                     }
                 }
 
-                assertTrue(nonEmptyPartitionsInfo(addressEntriesMap) + taskStatistics(members), addressEntriesMap.isEmpty());
+                assertTrue(nonEmptyPartitionsInfo(addressEntriesMap), addressEntriesMap.isEmpty());
             }
 
 
@@ -142,8 +139,8 @@ public class CacheExpirationBouncingMemberTest extends HazelcastTestSupport {
                 InternalPartitionService partitionService = getPartitionService(steadyMember);
                 PartitionTableView partitionTableView = partitionService.createPartitionTableView();
                 StringBuilder builder = new StringBuilder();
-                for (Map.Entry<Address, Map<Integer, Integer>> addressMapEntry: addressEntriesMap.entrySet()) {
-                    for (Map.Entry<Integer, Integer> partitionIdRecordsEntry: addressMapEntry.getValue().entrySet()) {
+                for (Map.Entry<Address, Map<Integer, Integer>> addressMapEntry : addressEntriesMap.entrySet()) {
+                    for (Map.Entry<Integer, Integer> partitionIdRecordsEntry : addressMapEntry.getValue().entrySet()) {
                         Address address = addressMapEntry.getKey();
                         int partitionId = partitionIdRecordsEntry.getKey();
                         int entryCount = partitionIdRecordsEntry.getValue();
@@ -155,28 +152,6 @@ public class CacheExpirationBouncingMemberTest extends HazelcastTestSupport {
                 }
                 return builder.toString();
             }
-
-            private String taskStatistics(AtomicReferenceArray<HazelcastInstance> members) {
-                StringBuilder builder = new StringBuilder();
-                builder.append(String.format("now: %s\n", StringUtil.timeToStringFriendly(System.currentTimeMillis())));
-                for (int i = 0; i < members.length(); i++) {
-                    HazelcastInstance node = members.get(i);
-                    if (node.getLifecycleService().isRunning()
-                            && node.getCluster().getClusterState() != ClusterState.PASSIVE) {
-                        NodeEngine nodeEngine = getNodeEngineImpl(node);
-                        ICacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
-                        long lastEndMillis = cacheService.getExpirationManager().task.lastEndMillis;
-                        long lastStartMillis = cacheService.getExpirationManager().task.lastStartMillis;
-
-                        builder.append(String.format("%s last cleanup start: %s, end: %s\n",
-                                nodeEngine.getThisAddress(),
-                                StringUtil.timeToStringFriendly(lastStartMillis),
-                                StringUtil.timeToStringFriendly(lastEndMillis)));
-                    }
-                }
-                return builder.toString();
-            }
-
         }, 240);
     }
 

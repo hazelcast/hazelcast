@@ -16,17 +16,24 @@
 
 package com.hazelcast.cache.impl.eviction;
 
-import com.hazelcast.cache.impl.AbstractCacheRecordStore;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.operation.CacheClearExpiredOperation;
+import com.hazelcast.cache.impl.operation.CacheExpireBatchBackupOperation;
+import com.hazelcast.core.IBiFunction;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
+import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -71,24 +78,20 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  *    </pre>
  * </p>
  */
-public class CacheClearExpiredRecordsTask extends ClearExpiredRecordsTask<CachePartitionSegment>
-        implements OperationResponseHandler {
+public class CacheClearExpiredRecordsTask
+        extends ClearExpiredRecordsTask<CachePartitionSegment, ICacheRecordStore> implements OperationResponseHandler {
 
     public static final String PROP_CLEANUP_PERCENTAGE = "hazelcast.internal.cache.expiration.cleanup.percentage";
-    public static final String PROP_CLEANUP_OPERATION_COUNT = "hazelcast.internal.cache.expiration.cleanup.operation.count";
     public static final String PROP_TASK_PERIOD_SECONDS = "hazelcast.internal.cache.expiration.task.period.seconds";
+    public static final String PROP_CLEANUP_OPERATION_COUNT = "hazelcast.internal.cache.expiration.cleanup.operation.count";
 
-    public static final int DEFAULT_TASK_PERIOD_SECONDS = 5;
-    public static final HazelcastProperty TASK_PERIOD_SECONDS
+    private static final int DEFAULT_TASK_PERIOD_SECONDS = 5;
+    private static final int DEFAULT_CLEANUP_PERCENTAGE = 10;
+    private static final HazelcastProperty TASK_PERIOD_SECONDS
             = new HazelcastProperty(PROP_TASK_PERIOD_SECONDS, DEFAULT_TASK_PERIOD_SECONDS, SECONDS);
-    public static final int DEFAULT_CLEANUP_PERCENTAGE = 10;
-    public static final int MAX_EXPIRED_KEY_COUNT_IN_BATCH = 100;
-
-    public static final HazelcastProperty CLEANUP_PERCENTAGE
+    private static final HazelcastProperty CLEANUP_PERCENTAGE
             = new HazelcastProperty(PROP_CLEANUP_PERCENTAGE, DEFAULT_CLEANUP_PERCENTAGE);
-    public static final HazelcastProperty CLEANUP_OPERATION_COUNT
-            = new HazelcastProperty(PROP_CLEANUP_OPERATION_COUNT);
-
+    private static final HazelcastProperty CLEANUP_OPERATION_COUNT = new HazelcastProperty(PROP_CLEANUP_OPERATION_COUNT);
 
     private final Comparator<CachePartitionSegment> partitionSegmentComparator = new Comparator<CachePartitionSegment>() {
         @Override
@@ -99,8 +102,68 @@ public class CacheClearExpiredRecordsTask extends ClearExpiredRecordsTask<CacheP
         }
     };
 
-    public CacheClearExpiredRecordsTask(NodeEngine nodeEngine, CachePartitionSegment[] containers) {
-        super(nodeEngine, containers, CLEANUP_OPERATION_COUNT, CLEANUP_PERCENTAGE, TASK_PERIOD_SECONDS);
+    public CacheClearExpiredRecordsTask(CachePartitionSegment[] containers, NodeEngine nodeEngine) {
+        super(SERVICE_NAME, containers, CLEANUP_OPERATION_COUNT, CLEANUP_PERCENTAGE, TASK_PERIOD_SECONDS, nodeEngine);
+    }
+
+    @Override
+    public void sendResponse(Operation op, Object response) {
+        CachePartitionSegment container = containers[op.getPartitionId()];
+        Iterator<ICacheRecordStore> iterator = container.recordStoreIterator();
+        while (iterator.hasNext()) {
+            tryToSendBackupExpiryOp(iterator.next(), false);
+        }
+    }
+
+    @Override
+    public void tryToSendBackupExpiryOp(ICacheRecordStore store, boolean checkIfReachedBatch) {
+        InvalidationQueue<ExpiredKey> expiredKeys = store.getExpiredKeys();
+        int totalBackupCount = store.getConfig().getTotalBackupCount();
+        int partitionId = store.getPartitionId();
+
+        toBackupSender.trySendExpiryOp(store, expiredKeys, totalBackupCount, partitionId, checkIfReachedBatch);
+    }
+
+    @Override
+    protected Operation newPrimaryExpiryOp(int expirationPercentage, CachePartitionSegment container) {
+        return new CacheClearExpiredOperation(expirationPercentage)
+                .setNodeEngine(nodeEngine)
+                .setCallerUuid(nodeEngine.getLocalMember().getUuid())
+                .setPartitionId(container.getPartitionId())
+                .setValidateTarget(false)
+                .setServiceName(SERVICE_NAME)
+                .setOperationResponseHandler(this);
+    }
+
+    @Override
+    protected Operation newBackupExpiryOp(ICacheRecordStore store, Collection<ExpiredKey> expiredKeys) {
+        return new CacheExpireBatchBackupOperation(store.getName(), expiredKeys, store.size());
+    }
+
+    @Override
+    protected IBiFunction<Integer, Integer, Boolean> newBackupExpiryOpFilter() {
+        return new IBiFunction<Integer, Integer, Boolean>() {
+            @Override
+            public Boolean apply(Integer partitionId, Integer replicaIndex) {
+                IBiFunction<Integer, Integer, Boolean> filter
+                        = CacheClearExpiredRecordsTask.super.newBackupExpiryOpFilter();
+                if (!filter.apply(partitionId, replicaIndex)) {
+                    return false;
+                }
+                // Previous versions did not remove expired entries until they are
+                // touched. Old members behave the same whereas newer members still
+                // benefit from periodic removal of expired entries.
+                //
+                // RU_COMPAT_3_10
+                IPartition partition = partitionService.getPartition(partitionId);
+                Address replicaAddress = partition.getReplicaAddress(replicaIndex);
+                Member member = nodeEngine.getClusterService().getMember(replicaAddress);
+                if (member == null) {
+                    return false;
+                }
+                return member.getVersion().asVersion().isGreaterOrEqual(Versions.V3_11);
+            }
+        };
     }
 
     @Override
@@ -166,34 +229,19 @@ public class CacheClearExpiredRecordsTask extends ClearExpiredRecordsTask<CacheP
 
     @Override
     protected void sortPartitionContainers(List<CachePartitionSegment> containers) {
-        for (CachePartitionSegment segment: containers) {
+        for (CachePartitionSegment segment : containers) {
             segment.storeLastCleanupTime();
         }
         sort(containers, partitionSegmentComparator);
     }
 
     @Override
-    public void sendResponse(Operation op, Object response) {
-        CachePartitionSegment container = containers[op.getPartitionId()];
-        doBackupExpiration(container);
+    protected ProcessablePartitionType getProcessablePartitionType() {
+        return ProcessablePartitionType.PRIMARY_PARTITION;
     }
 
-    private void doBackupExpiration(CachePartitionSegment container) {
-        Iterator<ICacheRecordStore> iterator = container.recordStoreIterator();
-        while (iterator.hasNext()) {
-            AbstractCacheRecordStore store = (AbstractCacheRecordStore) iterator.next();
-            store.sendBackupExpirations(false);
-        }
-    }
-
-    protected Operation createExpirationOperation(int expirationPercentage, CachePartitionSegment container) {
-        int partitionId = container.getPartitionId();
-        return new CacheClearExpiredOperation(expirationPercentage)
-                .setNodeEngine(nodeEngine)
-                .setCallerUuid(nodeEngine.getLocalMember().getUuid())
-                .setPartitionId(partitionId)
-                .setValidateTarget(false)
-                .setServiceName(SERVICE_NAME)
-                .setOperationResponseHandler(this);
+    @Override
+    public String toString() {
+        return CacheClearExpiredRecordsTask.class.getName();
     }
 }

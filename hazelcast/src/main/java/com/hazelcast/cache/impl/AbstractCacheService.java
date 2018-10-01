@@ -149,7 +149,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         for (int i = 0; i < partitionCount; i++) {
             segments[i] = newPartitionSegment(i);
         }
-        this.clearExpiredRecordsTask = new CacheClearExpiredRecordsTask(nodeEngine, this.segments);
+        this.clearExpiredRecordsTask = new CacheClearExpiredRecordsTask(this.segments, nodeEngine);
         this.expirationManager = new ExpirationManager(this.clearExpiredRecordsTask, nodeEngine);
         this.cacheEventHandler = new CacheEventHandler(nodeEngine);
         this.splitBrainHandlerService = new CacheSplitBrainHandlerService(nodeEngine, segments);
@@ -165,9 +165,9 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     public Object getMergePolicy(String name) {
-            CacheConfig cacheConfig = configs.get(name);
-            String mergePolicyName = cacheConfig.getMergePolicy();
-            return mergePolicyProvider.getMergePolicy(mergePolicyName);
+        CacheConfig cacheConfig = configs.get(name);
+        String mergePolicyName = cacheConfig.getMergePolicy();
+        return mergePolicyProvider.getMergePolicy(mergePolicyName);
     }
 
     public ConcurrentMap<String, CacheConfig> getConfigs() {
@@ -783,7 +783,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     public <K, V> ICompletableFuture createCacheConfigOnAllMembersAsync(PreJoinCacheConfig<K, V> cacheConfig) {
         return InvocationUtil.invokeOnStableClusterSerial(getNodeEngine(),
-                    new AddCacheConfigOperationSupplier(cacheConfig),
-                    MAX_ADD_CACHE_CONFIG_RETRIES);
+                new AddCacheConfigOperationSupplier(cacheConfig),
+                MAX_ADD_CACHE_CONFIG_RETRIES);
     }
 }

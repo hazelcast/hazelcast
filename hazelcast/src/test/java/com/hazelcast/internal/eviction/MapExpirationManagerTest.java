@@ -43,7 +43,6 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_PRIMARY_DRIVES_BACKUP;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.lang.String.format;
 import static java.lang.System.getProperty;
 import static java.lang.System.setProperty;
@@ -79,7 +78,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int expirationCount = expirationCounter.get();
                 assertEquals(format("Expecting 1 expiration but found:%d", expirationCount), 1, expirationCount);
             }
@@ -109,9 +108,9 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
         String previous = getProperty(PROP_PRIMARY_DRIVES_BACKUP);
         try {
             setProperty(PROP_PRIMARY_DRIVES_BACKUP, "False");
-            MapClearExpiredRecordsTask task = (MapClearExpiredRecordsTask) newExpirationManager(createHazelcastInstance()).task;
+            MapClearExpiredRecordsTask task = (MapClearExpiredRecordsTask) newExpirationManager(createHazelcastInstance()).getTask();
             boolean primaryDrivesEviction = task.canPrimaryDriveExpiration();
-            assertEquals(false, primaryDrivesEviction);
+            assertFalse(primaryDrivesEviction);
         } finally {
             restoreProperty(PROP_PRIMARY_DRIVES_BACKUP, previous);
         }
@@ -128,7 +127,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         final HazelcastInstance liteMember = factory.newHazelcastInstance(liteMemberConfig);
-        final HazelcastInstance dataMember = factory.newHazelcastInstance(dataMemberConfig);
+        factory.newHazelcastInstance(dataMemberConfig);
 
         IMap<Integer, Integer> map = liteMember.getMap("test");
         map.put(1, 1, 3, TimeUnit.SECONDS);
@@ -189,7 +188,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
         backgroundClearTaskStops_whenLifecycleState(MERGING);
     }
 
-    protected PartitionContainer[] getPartitionContainers(HazelcastInstance instance) {
+    private PartitionContainer[] getPartitionContainers(HazelcastInstance instance) {
         return ((MapService) getNodeEngineImpl(instance)
                 .getService(SERVICE_NAME))
                 .getMapServiceContext()
@@ -257,6 +256,6 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
     }
 
     protected ExpirationManager newExpirationManager(HazelcastInstance node) {
-        return new ExpirationManager(new MapClearExpiredRecordsTask(getNodeEngineImpl(node), getPartitionContainers(node)), getNodeEngineImpl(node));
+        return new ExpirationManager(new MapClearExpiredRecordsTask(getPartitionContainers(node), getNodeEngineImpl(node)), getNodeEngineImpl(node));
     }
 }

@@ -353,9 +353,8 @@ public interface RecordStore<R extends Record> {
      * Does post eviction operations like sending events
      *
      * @param record record to process
-     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
      */
-    void doPostEvictionOperations(Record record, boolean backup);
+    void doPostEvictionOperations(Record record);
 
     MapDataStore<Data, Object> getMapDataStore();
 
