@@ -66,6 +66,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     private static final long AWAIT_TIME = 3;
     private static final int POOL_MULTIPLIER = 2;
     private static final int QUEUE_MULTIPLIER = 100000;
+    private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final int OFFLOADABLE_QUEUE_CAPACITY = 100000;
 
     private final NodeEngineImpl nodeEngine;
@@ -147,6 +148,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         // default executors
         register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
         register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPLIER, ExecutorType.CACHED);
+        register(ASYNC_EXECUTOR, coreSize, ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         register(OFFLOADABLE_EXECUTOR, coreSize, OFFLOADABLE_QUEUE_CAPACITY, ExecutorType.CACHED);
         this.globalTaskScheduler = getTaskScheduler(SCHEDULED_EXECUTOR);
 
@@ -190,9 +192,8 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         if (type == ExecutorType.CACHED) {
             executor = new CachedExecutorServiceDelegate(nodeEngine, name, cachedExecutorService, poolSize, queueCapacity);
         } else if (type == ExecutorType.CONCRETE) {
-            Node node = nodeEngine.getNode();
             ClassLoader classLoader = nodeEngine.getConfigClassLoader();
-            String hzName = node.getNodeEngine().getHazelcastInstance().getName();
+            String hzName = nodeEngine.getHazelcastInstance().getName();
             String internalName = name.startsWith("hz:") ? name.substring(BEGIN_INDEX) : name;
             String threadNamePrefix = createThreadPoolName(hzName, internalName);
             PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(threadNamePrefix, classLoader);

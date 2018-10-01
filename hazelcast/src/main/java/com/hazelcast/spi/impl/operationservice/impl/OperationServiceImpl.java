@@ -28,7 +28,6 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -50,8 +49,6 @@ import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperat
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.executor.ExecutorType;
-import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -98,7 +95,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class OperationServiceImpl implements InternalOperationService, MetricsProvider, LiveOperationsTracker {
 
-    private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 
     // contains the current executing asyncOperations. This information is needed for the operation-heartbeats.
@@ -465,12 +461,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     private void initInvocationContext() {
-        ManagedExecutorService asyncExecutor = nodeEngine.getExecutionService().register(
-                ExecutionService.ASYNC_EXECUTOR, RuntimeAvailableProcessors.get(),
-                ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
-
         this.invocationContext = new Invocation.Context(
-                asyncExecutor,
+                nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR),
                 nodeEngine.getClusterService().getClusterClock(),
                 nodeEngine.getClusterService(),
                 node.connectionManager,
