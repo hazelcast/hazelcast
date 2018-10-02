@@ -577,7 +577,7 @@ public class JobCoordinationService {
             return;
         }
 
-        if (!shouldStartJobs()) {
+        if (!isMaster() || !nodeEngine.isRunning()) {
             scheduleSnapshot(jobId, executionId);
             return;
         }
