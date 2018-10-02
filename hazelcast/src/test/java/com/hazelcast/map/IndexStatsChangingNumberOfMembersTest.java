@@ -20,9 +20,19 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -33,7 +43,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -58,7 +71,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     public void testIndexStatsQueryingChangingNumberOfMembers() {
         int queriesBulk = 100;
 
-        int entryCount = 100;
+        int entryCount = 1000;
         final int lessEqualCount = 20;
         double expectedEqual = 1.0 - 1.0 / entryCount;
         double expectedGreaterEqual = 1.0 - ((double) lessEqualCount) / entryCount;
@@ -186,7 +199,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         assertEquals(originalMap3AverageHitSelectivity, valueStats(map3).getAverageHitSelectivity(), 0.001);
 
         assertEquals(originalOverallAverageHitSelectivity,
-                calculateOverallSelectivity(map2Hits, map2TotalHitSelectivity, map1, map3), 0.001);
+                calculateOverallSelectivity(map2Hits, map2TotalHitSelectivity, map1, map3), 0.015);
 
         for (int i = 0; i < queriesBulk; i++) {
             map3.entrySet(Predicates.alwaysTrue());
@@ -379,17 +392,51 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     }
 
     protected double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount, IMap... maps) {
-        long hits = initialHits;
-        double totalSelectivityCount = initialTotalSelectivityCount;
-
+        List<Indexes> allIndexes = new ArrayList<Indexes>();
         for (IMap map : maps) {
-            double averageHitSelectivity = valueStats(map).getAverageHitSelectivity();
-            long hitCount = valueStats(map).getHitCount();
-            double totalSelectivity = averageHitSelectivity * hitCount;
-            totalSelectivityCount += totalSelectivity;
-            hits += hitCount;
+            allIndexes.addAll(getAllIndexes(map));
         }
 
-        return totalSelectivityCount / hits;
+        long totalHitCount = 0;
+        double totalNormalizedHitCardinality = 0.0;
+        for (Indexes indexes : allIndexes) {
+            PerIndexStats perIndexStats = indexes.getIndex("this").getPerIndexStats();
+            totalHitCount += perIndexStats.getHitCount();
+            totalNormalizedHitCardinality += perIndexStats.getTotalNormalizedHitCardinality();
+        }
+        double averageHitSelectivity = totalHitCount == 0 ? 0.0 : 1.0 - totalNormalizedHitCardinality / totalHitCount;
+
+        return totalHitCount + initialHits == 0 ? 0.0 :
+                (averageHitSelectivity * totalHitCount + initialTotalSelectivityCount) / (totalHitCount + initialHits);
     }
+
+    private static List<Indexes> getAllIndexes(IMap map) {
+        MapProxyImpl mapProxy = (MapProxyImpl) map;
+        String mapName = mapProxy.getName();
+        NodeEngine nodeEngine = mapProxy.getNodeEngine();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        Indexes maybeGlobalIndexes = mapContainer.getIndexes();
+        if (maybeGlobalIndexes != null) {
+            return Collections.singletonList(maybeGlobalIndexes);
+        }
+        PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
+        List<Indexes> allIndexes = new ArrayList<Indexes>();
+        for (PartitionContainer partitionContainer : partitionContainers) {
+            IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
+            if (!partition.isLocal()) {
+                continue;
+            }
+            Indexes partitionIndexes = partitionContainer.getIndexes().get(mapName);
+            if (partitionIndexes == null) {
+                continue;
+            }
+            assert !partitionIndexes.isGlobal();
+            allIndexes.add(partitionIndexes);
+        }
+        return allIndexes;
+    }
+
 }
