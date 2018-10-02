@@ -115,8 +115,10 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
     }
 
     protected ClientConfig getClientConfig() {
-        return new ClientConfig()
-                .addNearCacheConfig(nearCacheConfig);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(NearCache.PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS, "0");
+        clientConfig.setProperty(NearCache.PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
+        return clientConfig.addNearCacheConfig(nearCacheConfig);
     }
 
     @SuppressWarnings("unchecked")
