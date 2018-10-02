@@ -32,7 +32,8 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -50,8 +51,8 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category(QuickTest.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
     @Parameter
@@ -114,8 +115,10 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     }
 
     protected ClientConfig getClientConfig() {
-        return new ClientConfig()
-                .addNearCacheConfig(nearCacheConfig);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(NearCache.PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS, "0");
+        clientConfig.setProperty(NearCache.PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
+        return clientConfig.addNearCacheConfig(nearCacheConfig);
     }
 
     private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {

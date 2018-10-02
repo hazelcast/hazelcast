@@ -22,6 +22,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 /**
  * {@link NearCache} is the contract point to store keys and values in underlying
@@ -35,12 +36,26 @@ public interface NearCache<K, V> extends InitializingObject {
     /**
      * Default expiration task initial delay time as seconds
      */
-    int DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS = 5;
+    int DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS = 5;
 
     /**
      * Default expiration task delay time as seconds
      */
-    int DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS = 5;
+    int DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS = 5;
+
+    String PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS
+            = "hazelcast.internal.nearcache.expiration.task.initial.delay.seconds";
+
+    String PROP_EXPIRATION_TASK_PERIOD_SECONDS
+            = "hazelcast.internal.nearcache.expiration.task.period.seconds";
+
+    HazelcastProperty TASK_INITIAL_DELAY_SECONDS
+            = new HazelcastProperty(PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS,
+            DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS);
+
+    HazelcastProperty TASK_PERIOD_SECONDS
+            = new HazelcastProperty(PROP_EXPIRATION_TASK_PERIOD_SECONDS,
+            DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS);
 
     /**
      * NULL Object

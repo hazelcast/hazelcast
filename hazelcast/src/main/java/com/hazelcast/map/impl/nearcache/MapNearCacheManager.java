@@ -62,7 +62,8 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
 
     public MapNearCacheManager(MapServiceContext mapServiceContext) {
         super(mapServiceContext.getNodeEngine().getSerializationService(),
-                mapServiceContext.getNodeEngine().getExecutionService().getGlobalTaskScheduler(), null);
+                mapServiceContext.getNodeEngine().getExecutionService().getGlobalTaskScheduler(),
+                null, mapServiceContext.getNodeEngine().getProperties());
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.mapServiceContext = mapServiceContext;
         this.partitionService = new MemberMinimalPartitionService(nodeEngine.getPartitionService());
