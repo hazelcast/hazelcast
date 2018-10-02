@@ -123,7 +123,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
     }
 
     public static void shutdownExecutor(String name, ExecutorService executor, ILogger logger) {
-        executor.shutdown();
+        executor.shutdownNow();
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
