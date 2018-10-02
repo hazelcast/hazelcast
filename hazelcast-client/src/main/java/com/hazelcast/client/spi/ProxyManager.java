@@ -238,8 +238,8 @@ public final class ProxyManager {
         AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
         invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
         invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
-        client.getClientExecutionService().schedule(new SyncDistributedObjectsTask(),
-                DISTRIBUTED_OBJECT_SYNC_PERIOD_MILLIS, TimeUnit.MILLISECONDS);
+        client.getClientExecutionService().scheduleWithRepetition(new SyncDistributedObjectsTask(),
+                DISTRIBUTED_OBJECT_SYNC_PERIOD_MILLIS, DISTRIBUTED_OBJECT_SYNC_PERIOD_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     private void readProxyDescriptors() {
