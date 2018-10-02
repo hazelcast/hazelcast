@@ -552,5 +552,5 @@ public interface ICacheRecordStore {
      */
     void evictExpiredEntries(int percentage);
 
-    InvalidationQueue<ExpiredKey> getExpiredKeys();
+    InvalidationQueue<ExpiredKey> getExpiredKeysQueue();
 }

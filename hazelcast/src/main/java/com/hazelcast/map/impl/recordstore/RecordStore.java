@@ -358,7 +358,7 @@ public interface RecordStore<R extends Record> {
 
     MapDataStore<Data, Object> getMapDataStore();
 
-    InvalidationQueue<ExpiredKey> getExpiredKeys();
+    InvalidationQueue<ExpiredKey> getExpiredKeysQueue();
 
     /**
      * Returns the partition id this RecordStore belongs to.

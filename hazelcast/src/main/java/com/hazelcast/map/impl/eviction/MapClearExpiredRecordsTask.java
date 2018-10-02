@@ -29,6 +29,7 @@ import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
@@ -130,7 +131,7 @@ public class MapClearExpiredRecordsTask
 
     @Override
     public void tryToSendBackupExpiryOp(RecordStore store, boolean checkIfReachedBatch) {
-        InvalidationQueue expiredKeys = store.getExpiredKeys();
+        InvalidationQueue expiredKeys = store.getExpiredKeysQueue();
         int totalBackupCount = store.getMapContainer().getTotalBackupCount();
         int partitionId = store.getPartitionId();
 
@@ -169,12 +170,25 @@ public class MapClearExpiredRecordsTask
         return ProcessablePartitionType.PRIMARY_OR_BACKUP_PARTITION;
     }
 
+    protected void equalizeBackupSizeWithPrimary(PartitionContainer container) {
+        if (!canPrimaryDriveExpiration()) {
+            return;
+        }
+
+        ConcurrentMap<String, RecordStore> maps = container.getMaps();
+        for (RecordStore recordStore : maps.values()) {
+            int totalBackupCount = recordStore.getMapContainer().getTotalBackupCount();
+            toBackupSender.invokeBackupExpiryOperation(Collections.<ExpiredKey>emptyList(),
+                    totalBackupCount, recordStore.getPartitionId(), recordStore);
+        }
+    }
+
     @Override
     protected boolean hasExpiredKeyToSendBackup(PartitionContainer container) {
         long size = 0L;
         ConcurrentMap<String, RecordStore> maps = container.getMaps();
         for (RecordStore store : maps.values()) {
-            size += store.getExpiredKeys().size();
+            size += store.getExpiredKeysQueue().size();
             if (size > 0L) {
                 return true;
             }
@@ -188,8 +202,8 @@ public class MapClearExpiredRecordsTask
     }
 
     @Override
-    protected void setHasRunningCleanup(PartitionContainer container, boolean status) {
-        container.setHasRunningCleanup(status);
+    protected void setHasRunningCleanup(PartitionContainer container) {
+        container.setHasRunningCleanup(true);
     }
 
     /**
@@ -199,7 +213,7 @@ public class MapClearExpiredRecordsTask
     protected void clearLeftoverExpiredKeyQueues(PartitionContainer container) {
         ConcurrentMap<String, RecordStore> maps = container.getMaps();
         for (RecordStore store : maps.values()) {
-            InvalidationQueue expiredKeys = store.getExpiredKeys();
+            InvalidationQueue expiredKeys = store.getExpiredKeysQueue();
             for (; ; ) {
                 if (expiredKeys.poll() == null) {
                     break;

@@ -94,7 +94,9 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
                         String msg = "Failed on node: %s, current cluster state is: %s, "
                                 + "ownedEntryCount: %d, backupEntryCount: %d";
 
-                        String formattedMsg = String.format(msg, node, clusterState.toString(),
+                        String formattedMsg = String.format(msg,
+                                node,
+                                clusterState.toString(),
                                 localMapStats.getOwnedEntryCount(),
                                 localMapStats.getBackupEntryCount());
 

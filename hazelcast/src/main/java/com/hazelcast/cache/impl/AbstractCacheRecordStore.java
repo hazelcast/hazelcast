@@ -1529,7 +1529,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public InvalidationQueue<ExpiredKey> getExpiredKeys() {
+    public InvalidationQueue<ExpiredKey> getExpiredKeysQueue() {
         return this.expiredKeys;
     }
 

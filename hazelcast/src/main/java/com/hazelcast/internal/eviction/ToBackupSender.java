@@ -103,8 +103,8 @@ public final class ToBackupSender<RS> {
         invokeBackupExpiryOperation(expiredKeys, backupReplicaCount, partitionId, recordStore);
     }
 
-    private void invokeBackupExpiryOperation(Collection<ExpiredKey> expiredKeys, int backupReplicaCount,
-                                             int partitionId, RS recordStore) {
+    public void invokeBackupExpiryOperation(Collection<ExpiredKey> expiredKeys, int backupReplicaCount,
+                                            int partitionId, RS recordStore) {
         for (int replicaIndex = 1; replicaIndex < backupReplicaCount + 1; replicaIndex++) {
             if (backupOpFilter.apply(partitionId, replicaIndex)) {
                 Operation operation = backupOpSupplier.apply(recordStore, expiredKeys);
