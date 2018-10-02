@@ -406,8 +406,11 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         }
         double averageHitSelectivity = totalHitCount == 0 ? 0.0 : 1.0 - totalNormalizedHitCardinality / totalHitCount;
 
-        return totalHitCount + initialHits == 0 ? 0.0 :
-                (averageHitSelectivity * totalHitCount + initialTotalSelectivityCount) / (totalHitCount + initialHits);
+        if (totalHitCount + initialHits == 0) {
+            return 0.0;
+        } else {
+            return (averageHitSelectivity * totalHitCount + initialTotalSelectivityCount) / (totalHitCount + initialHits);
+        }
     }
 
     private static List<Indexes> getAllIndexes(IMap map) {
