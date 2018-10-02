@@ -120,9 +120,6 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
 
-        AwsConfig awsConfig = networkConfig.getAwsConfig();
-        assertNull(awsConfig);
-
         DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig();
         assertTrue(discoveryConfig.isEnabled());
 
