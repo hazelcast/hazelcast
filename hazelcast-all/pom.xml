@@ -80,11 +80,18 @@
                             <artifactSet>
                                 <includes>
                                     <include>com.hazelcast:*:*</include>
+                                    <include>com.eclipsesource.minimal-json:*:*</include>
                                 </includes>
                                 <excludes>
                                     <exclude>com.hazelcast:hazelcast-all:*</exclude>
                                 </excludes>
                             </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.eclipsesource.json</pattern>
+                                    <shadedPattern>com.hazelcast.com.eclipsesource.json</shadedPattern>
+                                </relocation>
+                            </relocations>
                             <transformers>
                                 <transformer
                                         implementation="com.hazelcast.buildutils.HazelcastManifestTransformer">
