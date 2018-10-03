@@ -25,12 +25,14 @@ import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.cache.impl.operation.AddCacheConfigOperationSupplier;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.logging.ILogger;
@@ -79,7 +81,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
-        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService {
+        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ClusterStateListener {
 
     private static final String SETUP_REF = "setupRef";
 
@@ -785,5 +787,13 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         return InvocationUtil.invokeOnStableClusterSerial(getNodeEngine(),
                 new AddCacheConfigOperationSupplier(cacheConfig),
                 MAX_ADD_CACHE_CONFIG_RETRIES);
+    }
+
+    @Override
+    public void onClusterStateChange(ClusterState newState) {
+        ExpirationManager expManager = expirationManager;
+        if (expManager != null) {
+            expManager.onClusterStateChange(newState);
+        }
     }
 }
