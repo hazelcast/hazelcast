@@ -24,8 +24,6 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-import java.util.concurrent.TimeUnit;
-
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 
 public class MapPutTransientMessageTask
@@ -36,16 +34,10 @@ public class MapPutTransientMessageTask
     }
 
     @Override
-    protected void beforeProcess() {
-        super.beforeProcess();
-        checkCompatibility(parameters.maxIdleExist);
-    }
-
-    @Override
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         MapOperation op = operationProvider.createPutTransientOperation(parameters.name, parameters.key,
-                parameters.value, parameters.ttl, parameters.maxIdleExist ? parameters.maxIdle : DEFAULT_MAX_IDLE);
+                parameters.value, parameters.ttl, DEFAULT_MAX_IDLE);
         op.setThreadId(parameters.threadId);
         return op;
     }
@@ -72,6 +64,6 @@ public class MapPutTransientMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS};
+        return new Object[]{parameters.key, parameters.value, parameters.ttl};
     }
 }

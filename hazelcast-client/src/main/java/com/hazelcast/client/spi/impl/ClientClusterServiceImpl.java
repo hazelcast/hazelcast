@@ -250,5 +250,4 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     public void shutdown() {
     }
-
 }

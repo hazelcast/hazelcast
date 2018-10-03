@@ -328,14 +328,13 @@ public class EncodeDecodeCompatibilityTest {
     ClientCreateProxiesCodec.ResponseParameters params = ClientCreateProxiesCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong ,    aLong   );
+    ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     MapPutCodec.RequestParameters params = MapPutCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(aData, params.key));
             assertTrue(isEqual(aData, params.value));
             assertTrue(isEqual(aLong, params.threadId));
             assertTrue(isEqual(aLong, params.ttl));
-            assertTrue(isEqual(aLong, params.maxIdle));
 }
 {
     ClientMessage clientMessage = MapPutCodec.encodeResponse(    aData   );
@@ -477,28 +476,26 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aBoolean, params.response));
 }
 {
-    ClientMessage clientMessage = MapPutTransientCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong ,    aLong   );
+    ClientMessage clientMessage = MapPutTransientCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     MapPutTransientCodec.RequestParameters params = MapPutTransientCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(aData, params.key));
             assertTrue(isEqual(aData, params.value));
             assertTrue(isEqual(aLong, params.threadId));
             assertTrue(isEqual(aLong, params.ttl));
-            assertTrue(isEqual(aLong, params.maxIdle));
 }
 {
     ClientMessage clientMessage = MapPutTransientCodec.encodeResponse( );
     MapPutTransientCodec.ResponseParameters params = MapPutTransientCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = MapPutIfAbsentCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong ,    aLong   );
+    ClientMessage clientMessage = MapPutIfAbsentCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     MapPutIfAbsentCodec.RequestParameters params = MapPutIfAbsentCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(aData, params.key));
             assertTrue(isEqual(aData, params.value));
             assertTrue(isEqual(aLong, params.threadId));
             assertTrue(isEqual(aLong, params.ttl));
-            assertTrue(isEqual(aLong, params.maxIdle));
 }
 {
     ClientMessage clientMessage = MapPutIfAbsentCodec.encodeResponse(    aData   );
@@ -506,14 +503,13 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aData, params.response));
 }
 {
-    ClientMessage clientMessage = MapSetCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong ,    aLong   );
+    ClientMessage clientMessage = MapSetCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     MapSetCodec.RequestParameters params = MapSetCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(aData, params.key));
             assertTrue(isEqual(aData, params.value));
             assertTrue(isEqual(aLong, params.threadId));
             assertTrue(isEqual(aLong, params.ttl));
-            assertTrue(isEqual(aLong, params.maxIdle));
 }
 {
     ClientMessage clientMessage = MapSetCodec.encodeResponse( );
@@ -1332,6 +1328,66 @@ public class EncodeDecodeCompatibilityTest {
     ClientMessage clientMessage = MapSetTtlCodec.encodeResponse(    aBoolean   );
     MapSetTtlCodec.ResponseParameters params = MapSetTtlCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aBoolean, params.response));
+}
+{
+    ClientMessage clientMessage = MapPutWithMaxIdleCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong ,    aLong   );
+    MapPutWithMaxIdleCodec.RequestParameters params = MapPutWithMaxIdleCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aLong, params.maxIdle));
+}
+{
+    ClientMessage clientMessage = MapPutWithMaxIdleCodec.encodeResponse(    aData   );
+    MapPutWithMaxIdleCodec.ResponseParameters params = MapPutWithMaxIdleCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aData, params.response));
+}
+{
+    ClientMessage clientMessage = MapPutTransientWithMaxIdleCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong ,    aLong   );
+    MapPutTransientWithMaxIdleCodec.RequestParameters params = MapPutTransientWithMaxIdleCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aLong, params.maxIdle));
+}
+{
+    ClientMessage clientMessage = MapPutTransientWithMaxIdleCodec.encodeResponse(    aData   );
+    MapPutTransientWithMaxIdleCodec.ResponseParameters params = MapPutTransientWithMaxIdleCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aData, params.response));
+}
+{
+    ClientMessage clientMessage = MapPutIfAbsentWithMaxIdleCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong ,    aLong   );
+    MapPutIfAbsentWithMaxIdleCodec.RequestParameters params = MapPutIfAbsentWithMaxIdleCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aLong, params.maxIdle));
+}
+{
+    ClientMessage clientMessage = MapPutIfAbsentWithMaxIdleCodec.encodeResponse(    aData   );
+    MapPutIfAbsentWithMaxIdleCodec.ResponseParameters params = MapPutIfAbsentWithMaxIdleCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aData, params.response));
+}
+{
+    ClientMessage clientMessage = MapSetWithMaxIdleCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong ,    aLong   );
+    MapSetWithMaxIdleCodec.RequestParameters params = MapSetWithMaxIdleCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aLong, params.maxIdle));
+}
+{
+    ClientMessage clientMessage = MapSetWithMaxIdleCodec.encodeResponse(    aData   );
+    MapSetWithMaxIdleCodec.ResponseParameters params = MapSetWithMaxIdleCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aData, params.response));
 }
 {
     ClientMessage clientMessage = MultiMapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong   );
@@ -5284,6 +5340,17 @@ public class EncodeDecodeCompatibilityTest {
 {
     ClientMessage clientMessage = DynamicConfigAddPNCounterConfigCodec.encodeResponse( );
     DynamicConfigAddPNCounterConfigCodec.ResponseParameters params = DynamicConfigAddPNCounterConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddMerkleTreeConfigCodec.encodeRequest(    aString ,    aBoolean ,    anInt   );
+    DynamicConfigAddMerkleTreeConfigCodec.RequestParameters params = DynamicConfigAddMerkleTreeConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.mapName));
+            assertTrue(isEqual(aBoolean, params.enabled));
+            assertTrue(isEqual(anInt, params.depth));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddMerkleTreeConfigCodec.encodeResponse( );
+    DynamicConfigAddMerkleTreeConfigCodec.ResponseParameters params = DynamicConfigAddMerkleTreeConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
     ClientMessage clientMessage = FlakeIdGeneratorNewIdBatchCodec.encodeRequest(    aString ,    anInt   );
