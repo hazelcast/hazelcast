@@ -46,7 +46,9 @@ import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -111,13 +113,14 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
                 }).build());
 
         Job job = instance.newJob(p, new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE));
+        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()));
 
         List<Future> futures = new ArrayList<>();
         futures.add(spawn(() -> {
             for (;;) {
-                Thread.sleep(2000);
                 System.out.println("============RESTARTING JOB=========");
                 job.restart();
+                Thread.sleep(2000);
             }
         }));
 
