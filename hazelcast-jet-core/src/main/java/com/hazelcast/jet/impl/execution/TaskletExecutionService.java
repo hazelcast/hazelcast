@@ -45,7 +45,6 @@ import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.Thread.currentThread;
@@ -71,7 +70,7 @@ public class TaskletExecutionService {
     private final Thread[] cooperativeThreadPool;
     private final String hzInstanceName;
     private final ILogger logger;
-    private final AtomicInteger cooperativeThreadIndex = new AtomicInteger();
+    private int cooperativeThreadIndex;
     @Probe
     private final AtomicInteger blockingWorkerCount = new AtomicInteger();
 
@@ -80,6 +79,7 @@ public class TaskletExecutionService {
     // - FALSE: shut down forcefully: break the execution loop, don't wait for tasklets to finish
     // - TRUE: shut down gracefully: run normally, don't accept more tasklets
     private final AtomicReference<Boolean> gracefulShutdown = new AtomicReference<>(null);
+    private final Object lock = new Object();
 
     public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount) {
         this.hzInstanceName = nodeEngine.getHazelcastInstance().getName();
@@ -91,7 +91,7 @@ public class TaskletExecutionService {
                        .withTag("module", "jet")
                        .scanAndRegister(this);
 
-        Arrays.setAll(cooperativeWorkers, i -> new CooperativeWorker(cooperativeWorkers));
+        Arrays.setAll(cooperativeWorkers, i -> new CooperativeWorker());
         Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
                 String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
         Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
@@ -169,8 +169,17 @@ public class TaskletExecutionService {
         Arrays.setAll(trackersByThread, i -> new ArrayList());
         for (Tasklet t : tasklets) {
             t.init();
-            trackersByThread[cooperativeThreadIndex.getAndUpdate(i -> (i + 1) % trackersByThread.length)]
-                    .add(new TaskletTracker(t, executionTracker, jobClassLoader));
+        }
+
+        // We synchronize so that no two jobs submit their tasklets in
+        // parallel. If two jobs submit in parallel, the tasklets of one of
+        // them could happen to not use all threads. When the other one ends,
+        // some worker might have no tasklet.
+        synchronized (lock) {
+            for (Tasklet t : tasklets) {
+                trackersByThread[cooperativeThreadIndex].add(new TaskletTracker(t, executionTracker, jobClassLoader));
+                cooperativeThreadIndex = (cooperativeThreadIndex + 1) % trackersByThread.length;
+            }
         }
         for (int i = 0; i < trackersByThread.length; i++) {
             cooperativeWorkers[i].trackers.addAll(trackersByThread[i]);
@@ -257,12 +266,10 @@ public class TaskletExecutionService {
 
         @Probe(name = "taskletCount")
         private final List<TaskletTracker> trackers;
-        private final CooperativeWorker[] colleagues;
         @Probe
         private final AtomicLong iterationCount = new AtomicLong();
 
-        CooperativeWorker(CooperativeWorker[] colleagues) {
-            this.colleagues = colleagues;
+        CooperativeWorker() {
             this.trackers = new CopyOnWriteArrayList<>();
         }
 
@@ -281,14 +288,6 @@ public class TaskletExecutionService {
                     long start = 0;
                     if (logger.isFinestEnabled()) {
                         start = System.nanoTime();
-                    }
-                    final CooperativeWorker stealingWorker = t.stealingWorker.get();
-                    if (stealingWorker != null) {
-                        t.stealingWorker.set(null);
-                        trackers.remove(t);
-                        stealingWorker.trackers.add(t);
-                        logFinest(logger, "Tasklet %s was stolen from this worker", t.tasklet);
-                        continue;
                     }
                     try {
                         thread.setContextClassLoader(t.jobClassLoader);
@@ -330,29 +329,6 @@ public class TaskletExecutionService {
         private void dismissTasklet(TaskletTracker t) {
             t.executionTracker.taskletDone();
             trackers.remove(t);
-            stealWork();
-        }
-
-        private void stealWork() {
-            do {
-                // start with own tasklet list, try to find a longer one
-                List<TaskletTracker> toStealFrom = trackers;
-                for (CooperativeWorker w : colleagues) {
-                    if (w.trackers.size() > toStealFrom.size()) {
-                        toStealFrom = w.trackers;
-                    }
-                }
-                // if we couldn't find a list longer by at least two, there's nothing to steal
-                if (toStealFrom.size() < trackers.size() + 2) {
-                    return;
-                }
-                // now we must find a task on this list which isn't already scheduled for moving
-                for (TaskletTracker t : toStealFrom) {
-                    if (t.stealingWorker.compareAndSet(null, this)) {
-                        return;
-                    }
-                }
-            } while (gracefulShutdown.get() == null);
         }
     }
 
@@ -360,7 +336,6 @@ public class TaskletExecutionService {
         final Tasklet tasklet;
         final ExecutionTracker executionTracker;
         final ClassLoader jobClassLoader;
-        final AtomicReference<CooperativeWorker> stealingWorker = new AtomicReference<>();
 
         TaskletTracker(Tasklet tasklet, ExecutionTracker executionTracker, ClassLoader jobClassLoader) {
             this.tasklet = tasklet;

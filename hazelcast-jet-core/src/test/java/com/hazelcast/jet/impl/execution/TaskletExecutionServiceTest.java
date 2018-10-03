@@ -36,16 +36,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -55,7 +52,6 @@ import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -348,70 +344,6 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
             f.join();
         } catch (CompletionException e) {
             throw peel(e);
-        }
-    }
-
-    @Test
-    public void workStealing_stressTest() throws Exception {
-        final List<SynchronizationTestTasklet> tasklets =
-                IntStream.range(0, 10000)
-                .mapToObj(SynchronizationTestTasklet::new)
-                .collect(toList());
-
-        CompletableFuture<Void> f = es.beginExecute(tasklets, cancellationFuture, classLoaderMock);
-        Collections.shuffle(tasklets);
-        long start = System.nanoTime();
-        for (int i = 0; i < tasklets.size(); i++) {
-            tasklets.get(i).terminated = true;
-            LockSupport.parkNanos(MILLISECONDS.toNanos(i) - (System.nanoTime() - start));
-        }
-        // get the future to see eventual exception in the tasklets
-        f.get();
-        // when run locally it happened between 5000-5500 times
-        assertGreaterOrEquals("tasklet on different thread count",
-                tasklets.stream().filter(t -> t.sawDifferentThread).count(), 100);
-    }
-
-    /**
-     * A tasklet that has a properly synchronized and a non-synchronized
-     * counter. If tasklet is externally synchronized properly, both counters
-     * should have same value all the time.
-     */
-    private static final class SynchronizationTestTasklet implements Tasklet {
-
-        private final AtomicInteger counter1 = new AtomicInteger();
-        private final int index;
-        private int counter2;
-        private volatile boolean terminated;
-        private boolean sawDifferentThread;
-        private long lastThreadId = -1;
-
-        SynchronizationTestTasklet(int index) {
-            this.index = index;
-        }
-
-        @Nonnull
-        @Override
-        public ProgressState call() {
-            long currentThreadId = Thread.currentThread().getId();
-            if (lastThreadId != -1) {
-                sawDifferentThread |= currentThreadId != lastThreadId;
-            }
-            lastThreadId = currentThreadId;
-            int v1 = counter1.getAndIncrement();
-            int v2 = counter2++;
-            assertEquals(v1, v2);
-            return terminated ? ProgressState.DONE : ProgressState.MADE_PROGRESS;
-        }
-
-        @Override
-        public boolean isCooperative() {
-            return true;
-        }
-
-        @Override
-        public String toString() {
-            return "SynchronizationTestTasklet-" + index;
         }
     }
 
