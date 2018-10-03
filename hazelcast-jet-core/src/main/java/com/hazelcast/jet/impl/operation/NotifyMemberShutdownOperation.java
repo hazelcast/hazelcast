@@ -33,6 +33,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 public class NotifyMemberShutdownOperation extends Operation implements IdentifiedDataSerializable {
 
     public NotifyMemberShutdownOperation() {
+        setWaitTimeout(0);
     }
 
     @Override
