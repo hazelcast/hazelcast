@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.PartitionAware;
@@ -227,16 +228,18 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         if (!Util.tryIncrement(numConcurrentAsyncOps, 1, JetService.MAX_PARALLEL_ASYNC_OPS)) {
             return false;
         }
-
-        // we put a Data instance to the map directly to avoid the serialization of the byte array
-        ICompletableFuture<Object> future = ((IMap) currentMap.get()).putAsync(
-                new SnapshotDataKey(partitionKeys[partitionId], partitionSequence), dataSupplier.get());
-        partitionSequence += memberCount;
-        future.andThen(callback);
-        numActiveFlushes.incrementAndGet();
+        try {
+            // we put a Data instance to the map directly to avoid the serialization of the byte array
+            ICompletableFuture<Object> future = ((IMap) currentMap.get()).putAsync(
+                    new SnapshotDataKey(partitionKeys[partitionId], partitionSequence), dataSupplier.get());
+            partitionSequence += memberCount;
+            future.andThen(callback);
+            numActiveFlushes.incrementAndGet();
+        } catch (HazelcastInstanceNotActiveException ignored) {
+            return false;
+        }
         return true;
     }
-
     /**
      * Flush all partitions.
      *
