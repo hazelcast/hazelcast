@@ -25,13 +25,16 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -39,35 +42,25 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
 
     private static final int ENTRY_COUNT = 100;
     private static final int SAMPLE_COUNT = 15;
+    private static final int SPARSE_MAP_CAPACITY = 128;
+    private static final int SPARSE_MAP_ENTRY_COUNT = 6;
+    private static final int SPARSE_MAP_SAMPLE_COUNT = 6;
     private static final int COUNT = 10;
 
+    private SampleableConcurrentHashMap<Integer, Integer> map;
+
     @Test
-    public void samplesSuccessfullyRetrieved() {
-        SampleableConcurrentHashMap<Integer, Integer> sampleableConcurrentHashMap =
-                new SampleableConcurrentHashMap<Integer, Integer>(ENTRY_COUNT);
-
-        for (int i = 0; i < ENTRY_COUNT; i++) {
-            sampleableConcurrentHashMap.put(i, i);
-        }
-
-        Iterable<SampleableConcurrentHashMap.SamplingEntry<Integer, Integer>> samples =
-                sampleableConcurrentHashMap.getRandomSamples(SAMPLE_COUNT);
-        assertNotNull(samples);
-
-        int sampleCount = 0;
-        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
-        for (SampleableConcurrentHashMap.SamplingEntry<Integer, Integer> sample : samples) {
-            map.put(sample.getEntryKey(), sample.getEntryValue());
-            sampleCount++;
-        }
-        // Sure that there is enough sample as we expected
-        assertEquals(SAMPLE_COUNT, sampleCount);
-        // Sure that all samples are different
-        assertEquals(SAMPLE_COUNT, map.size());
+    public void test_getRandomSamples() {
+        testSampling(ENTRY_COUNT, ENTRY_COUNT, SAMPLE_COUNT);
     }
 
     @Test
-    public void applyIfAbsentTest() throws Throwable {
+    public void test_getRandomSamples_whenMapIsSparselyPopulated() {
+        testSampling(SPARSE_MAP_CAPACITY, SPARSE_MAP_ENTRY_COUNT, SPARSE_MAP_SAMPLE_COUNT);
+    }
+
+    @Test
+    public void test_applyIfAbsent() throws Throwable {
         final SampleableConcurrentHashMap<String, String> map =
                 new SampleableConcurrentHashMap<String, String>(10);
 
@@ -117,5 +110,53 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
         });
 
         assertEquals(map.size(), 0);
+    }
+
+    @Test
+    public void test_getRandomSamples_whenSampleCountIsGreaterThenCapacity() {
+        final int entryCount = 10;
+        final int sampleCount = 100;
+
+        map = new SampleableConcurrentHashMap<Integer, Integer>(entryCount);
+
+        // put single entry
+        map.put(1, 1);
+
+        Iterable<SampleableConcurrentHashMap.SamplingEntry<Integer, Integer>> samples = map.getRandomSamples(sampleCount);
+
+        Iterator<SampleableConcurrentHashMap.SamplingEntry<Integer, Integer>> iterator = samples.iterator();
+        assertTrue(iterator.hasNext());
+        assertNotNull(iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_getRandomSamples_whenSampleCountIsNegative() {
+        map = new SampleableConcurrentHashMap<Integer, Integer>(10);
+
+        map.getRandomSamples(-1);
+    }
+
+    private void testSampling(int capacity, int entryCount, int sampleCount) {
+        map = new SampleableConcurrentHashMap<Integer, Integer>(capacity);
+
+        for (int i = 0; i < entryCount; i++) {
+            map.put(i, i);
+        }
+
+        Iterable<SampleableConcurrentHashMap.SamplingEntry<Integer, Integer>> samples =
+                map.getRandomSamples(sampleCount);
+        assertNotNull(samples);
+
+        int samplesObtained = 0;
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        for (SampleableConcurrentHashMap.SamplingEntry<Integer, Integer> sample : samples) {
+            map.put(sample.getEntryKey(), sample.getEntryValue());
+            samplesObtained++;
+        }
+        // Sure that there is enough sample as we expected
+        assertEquals(sampleCount, samplesObtained);
+        // Sure that all samples are different
+        assertEquals(sampleCount, map.size());
     }
 }
