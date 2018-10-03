@@ -61,6 +61,12 @@ import static org.mockito.Mockito.when;
 public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
+    public void testMatchAnyLocalInterface() {
+        assertFalse(AddressUtil.matchAnyLocalInterface("8.8.8.8"));
+        assertTrue(AddressUtil.matchAnyLocalInterface("127.0.0.1"));
+    }
+
+    @Test
     public void testMatchAnyInterface() {
         assertTrue(AddressUtil.matchAnyInterface("10.235.194.23", asList("10.235.194.23", "10.235.193.121")));
 
