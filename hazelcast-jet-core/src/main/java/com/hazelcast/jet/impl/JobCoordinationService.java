@@ -577,8 +577,13 @@ public class JobCoordinationService {
             return;
         }
 
-        if (!isMaster() || !nodeEngine.isRunning()) {
-            scheduleSnapshot(jobId, executionId);
+        if (!isMaster()) {
+            logger.warning("Not starting snapshot, not a master, master is "
+                    + nodeEngine.getClusterService().getMasterAddress());
+            return;
+        }
+        if (!nodeEngine.isRunning()) {
+            logger.warning("Not starting snapshot, node engine is not running");
             return;
         }
 
