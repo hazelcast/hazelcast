@@ -49,7 +49,7 @@ final class PortRange {
             this.fromPort = Integer.parseInt(portRangeMatcher.group(1));
             this.toPort = Integer.parseInt(portRangeMatcher.group(2));
         } else {
-            throw new IllegalArgumentException(String.format("Invalid port range specification: %s", spec));
+            throw new IllegalArgumentException(String.format("Invalid port range specification: '%s'", spec));
         }
 
         validatePorts();

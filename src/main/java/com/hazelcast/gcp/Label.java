@@ -16,19 +16,30 @@
 
 package com.hazelcast.gcp;
 
-import org.junit.Test;
+/**
+ * Represents a GCP Label (key and value).
+ */
+final class Label {
+    private final String key;
+    private final String value;
 
-import static com.hazelcast.gcp.Utils.splitByComma;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static org.junit.Assert.assertEquals;
+    /**
+     * Creates {@link Label} from a string "key=value".
+     */
+    Label(String spec) {
+        String[] labelParts = spec.trim().split("\\s*=\\s*");
+        if (labelParts.length != 2) {
+            throw new IllegalArgumentException(String.format("Invalid label specification: '%s'", spec));
+        }
+        this.key = labelParts[0];
+        this.value = labelParts[1];
+    }
 
-public class UtilsTest {
-    @Test
-    public void splitByCommaTest() {
-        assertEquals(asList("project1", "project2"), splitByComma("project1,project2"));
-        assertEquals(asList("project1", "project2"), splitByComma("    project1 ,  project2 "));
-        assertEquals(asList("project1"), splitByComma("project1"));
-        assertEquals(emptyList(), splitByComma(null));
+    String getKey() {
+        return key;
+    }
+
+    String getValue() {
+        return value;
     }
 }

@@ -80,9 +80,17 @@ public class GcpDiscoveryStrategy
                         .setPrivateKeyPath(getOrNull(PRIVATE_KEY_PATH))
                         .setProjects(splitByComma(getOrNull(PROJECTS)))
                         .setZones(splitByComma((getOrNull(ZONES))))
-                        .setLabel(getOrNull(LABEL))
+                        .setLabel(labelOrNull(LABEL))
                         .setHzPort(new PortRange((String) getOrDefault(PORT.getDefinition(), PORT.getDefaultValue())))
                         .build();
+    }
+
+    private Label labelOrNull(GcpProperties gcpProperties) {
+        String labelString = getOrNull(gcpProperties);
+        if (labelString != null) {
+            return new Label(labelString);
+        }
+        return null;
     }
 
     private String getOrNull(GcpProperties gcpProperties) {
