@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.Objects.requireNonNull;
 
@@ -57,7 +58,7 @@ public class SnapshotOperation extends AsyncJobOperation {
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, getClass().getSimpleName()
         );
-        ctx.beginSnapshot(snapshotId, isTerminal).whenComplete((result, exc) -> {
+        ctx.beginSnapshot(snapshotId, isTerminal).whenComplete(withTryCatch(getLogger(), (result, exc) -> {
             if (exc != null) {
                 result = new SnapshotOperationResult(0, 0, 0, exc);
             }
@@ -70,7 +71,7 @@ public class SnapshotOperation extends AsyncJobOperation {
                         snapshotId, ctx.jobNameAndExecutionId(), result.getError()));
             }
             maybeSendResponse(result);
-        });
+        }));
     }
 
     private void maybeSendResponse(SnapshotOperationResult result) {

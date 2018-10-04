@@ -31,10 +31,10 @@ public abstract class AbstractJobOperation extends Operation implements Identifi
 
     private long jobId;
 
-    AbstractJobOperation() {
+    protected AbstractJobOperation() {
     }
 
-    AbstractJobOperation(long jobId) {
+    protected AbstractJobOperation(long jobId) {
         this.jobId = jobId;
     }
 
@@ -58,5 +58,4 @@ public abstract class AbstractJobOperation extends Operation implements Identifi
         super.readInternal(in);
         jobId = in.readLong();
     }
-
 }
