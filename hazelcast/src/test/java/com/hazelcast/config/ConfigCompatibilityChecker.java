@@ -1045,8 +1045,8 @@ class ConfigCompatibilityChecker {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    // TODO
-//                    && nullSafeEqual(c1.getEnvironment(), c2.getEnvironment())
+                    && nullSafeEqual(c1.getTag(), c2.getTag())
+                    && nullSafeEqual(c1.isUsePublicIp(), c2.isUsePublicIp())
                     && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
     }
