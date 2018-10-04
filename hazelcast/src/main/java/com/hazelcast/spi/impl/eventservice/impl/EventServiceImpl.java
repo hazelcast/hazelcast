@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperati
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
@@ -133,9 +134,13 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     final ILogger logger;
     final NodeEngineImpl nodeEngine;
 
-    /** Service name to event service segment map */
+    /**
+     * Service name to event service segment map
+     */
     private final ConcurrentMap<String, EventServiceSegment> segments;
-    /** The executor responsible for processing events */
+    /**
+     * The executor responsible for processing events
+     */
     private final StripedExecutor eventExecutor;
     /**
      * The timeout in milliseconds for offering an event to the local executor for processing. If the queue is full
@@ -145,10 +150,14 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      */
     private final long eventQueueTimeoutMs;
 
-    /** The thread count for the executor processing the events. */
+    /**
+     * The thread count for the executor processing the events.
+     */
     @Probe(name = "threadCount")
     private final int eventThreadCount;
-    /** The capacity of the executor processing the events. This capacity is shared for all events. */
+    /**
+     * The capacity of the executor processing the events. This capacity is shared for all events.
+     */
     @Probe(name = "queueCapacity")
     private final int eventQueueCapacity;
     @Probe(name = "totalFailureCount")
@@ -158,7 +167,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     @Probe(name = "syncDeliveryFailureCount")
     private final MwCounter syncDeliveryFailureCount = newMwCounter();
 
-    private  final int sendEventSyncTimeoutMillis;
+    private final int sendEventSyncTimeoutMillis;
 
     private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
@@ -258,21 +267,28 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     /**
-     * Registers the listener for events matching the service name, topic and filter.
-     * If {@code localOnly} is {@code true}, it will register only for events published on this node,
-     * otherwise, the registration is sent to other nodes and the listener will listen for
-     * events on all cluster members.
+     * Registers the listener for events matching the service name,
+     * topic and filter. If {@code localOnly} is {@code true}, it will
+     * register only for events published on this node, otherwise, the
+     * registration is sent to other nodes and the listener will listen
+     * for events on all cluster members.
      *
      * @param serviceName the service name for which we are registering
      * @param topic       the event topic for which we are registering
-     * @param filter      the filter for the listened events
-     * @param listener    the event listener
-     * @param localOnly   whether to register on local events or on events on all cluster members
-     * @return the event registration
-     * @throws IllegalArgumentException if the listener or filter is null
+     * @param filter      the filter for the listened events @param
+     *                    listener    the event listener @param localOnly   whether to
+     *                    register on local events or on events on all cluster members
+     * @return the event registration @throws IllegalArgumentException
+     * if the listener or filter is null
      */
-    private EventRegistration registerListenerInternal(String serviceName, String topic, EventFilter filter, Object listener,
-                                                       boolean localOnly) {
+    private EventRegistration registerListenerInternal(String serviceName,
+                                                       String topic, EventFilter filter,
+                                                       Object listener, boolean localOnly) {
+
+        if (Thread.currentThread() instanceof PartitionOperationThread) {
+            throw new IllegalThreadStateException(Thread.currentThread() + " cannot register listener");
+        }
+
         if (listener == null) {
             throw new IllegalArgumentException("Listener required!");
         }
@@ -549,7 +565,9 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         return segment;
     }
 
-    /** Returns {@code true} if the subscriber of the registration is this node */
+    /**
+     * Returns {@code true} if the subscriber of the registration is this node
+     */
     boolean isLocal(EventRegistration reg) {
         return nodeEngine.getThisAddress().equals(reg.getSubscriber());
     }
