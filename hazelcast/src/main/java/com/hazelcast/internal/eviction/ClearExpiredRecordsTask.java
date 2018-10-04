@@ -18,6 +18,8 @@ package com.hazelcast.internal.eviction;
 
 import com.hazelcast.core.IBiFunction;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.PartitionLostEvent;
+import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -43,7 +45,7 @@ import static java.lang.Math.min;
 
 @SuppressWarnings("checkstyle:magicnumber")
 @SuppressFBWarnings({"URF_UNREAD_FIELD"})
-public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
+public abstract class ClearExpiredRecordsTask<T, S> implements Runnable, PartitionLostListener {
 
     private static final int DIFFERENCE_BETWEEN_TWO_SUBSEQUENT_PARTITION_CLEANUP_MILLIS = 1000;
 
@@ -61,6 +63,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     private final InternalOperationService operationService;
     private final AtomicBoolean singleRunPermit = new AtomicBoolean(false);
     private final AtomicInteger partitionLostCounter = new AtomicInteger();
+    private final AtomicBoolean partitionLostListenerRegistered = new AtomicBoolean(false);
 
     private volatile int lastSeenPartitionLostCount;
 
@@ -109,6 +112,10 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
                 return;
             }
 
+            if (partitionLostListenerRegistered.compareAndSet(false, true)) {
+                partitionService.addPartitionLostListener(this);
+            }
+
             runInternal();
 
         } finally {
@@ -124,11 +131,10 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
         List<T> containersToProcess = null;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            IPartition partition = partitionService.getPartition(partitionId, false);
             T container = this.containers[partitionId];
-            boolean localPartition = partition.isLocal();
 
-            if (localPartition) {
+            IPartition partition = partitionService.getPartition(partitionId, false);
+            if (partition.isLocal()) {
                 if (shouldEqualizeBackupSizeWithPrimary) {
                     equalizeBackupSizeWithPrimary(container);
                 }
@@ -180,7 +186,8 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
      * remove leftover backup entries. Otherwise leftover entries can remain on
      * backups forever.
      */
-    final void onPartitionLost() {
+    @Override
+    public final void partitionLost(PartitionLostEvent event) {
         partitionLostCounter.incrementAndGet();
     }
 
@@ -189,7 +196,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     }
 
     /**
-     * see {@link #onPartitionLost}
+     * see {@link #partitionLost}
      */
     private boolean shouldEqualizeBackupSizeWithPrimary() {
         boolean equalizeBackupSizeWithPrimary = false;
