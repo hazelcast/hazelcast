@@ -239,7 +239,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         };
 
         Consumer<JetInstance[]> afterMerge = instances -> {
-            assertEquals(secondSubClusterSize, MockPS.receivedCloseErrors.size());
+            assertTrueEventually(() -> assertEquals(secondSubClusterSize, MockPS.receivedCloseErrors.size()), 20);
             MockPS.receivedCloseErrors.forEach(t -> assertTrue(t instanceof TopologyChangedException));
 
             try {
