@@ -1013,16 +1013,16 @@ class ConfigCompatibilityChecker {
 
         @Override
         boolean check(List<AliasedDiscoveryConfig<?>> t1, List<AliasedDiscoveryConfig<?>> t2) {
-            Map<Class, AliasedDiscoveryConfig> m1 = mapByClass(t1);
-            Map<Class, AliasedDiscoveryConfig> m2 = mapByClass(t2);
+            Map<String, AliasedDiscoveryConfig> m1 = mapByTag(t1);
+            Map<String, AliasedDiscoveryConfig> m2 = mapByTag(t2);
 
             if (m1.size() != m2.size()) {
                 return false;
             }
 
-            for (Class clazz : m1.keySet()) {
-                AliasedDiscoveryConfig c1 = m1.get(clazz);
-                AliasedDiscoveryConfig c2 = m2.get(clazz);
+            for (String tag : m1.keySet()) {
+                AliasedDiscoveryConfig c1 = m1.get(tag);
+                AliasedDiscoveryConfig c2 = m2.get(tag);
                 if (!check(c1, c2)) {
                     return false;
                 }
@@ -1031,11 +1031,11 @@ class ConfigCompatibilityChecker {
             return true;
         }
 
-        private static Map<Class, AliasedDiscoveryConfig> mapByClass(List<AliasedDiscoveryConfig<?>> configs) {
-            Map<Class, AliasedDiscoveryConfig> result = new HashMap<Class, AliasedDiscoveryConfig>();
+        private static Map<String, AliasedDiscoveryConfig> mapByTag(List<AliasedDiscoveryConfig<?>> configs) {
+            Map<String, AliasedDiscoveryConfig> result = new HashMap<String, AliasedDiscoveryConfig>();
             for (AliasedDiscoveryConfig c : configs) {
                 if (c.isEnabled()) {
-                    result.put(c.getClass(), c);
+                    result.put(c.getTag(), c);
                 }
             }
             return result;

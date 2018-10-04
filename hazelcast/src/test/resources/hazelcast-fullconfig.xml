@@ -181,6 +181,7 @@
                 <security-group-name>hazelcast-sg</security-group-name>
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
+                <use-public-ip>true</use-public-ip>
             </aws>
             <gcp enabled="false">
                 <zones>us-east1-b,us-east1-c</zones>

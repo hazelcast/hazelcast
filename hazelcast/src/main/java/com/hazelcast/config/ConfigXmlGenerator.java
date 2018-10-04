@@ -1107,6 +1107,9 @@ public class ConfigXmlGenerator {
         }
         for (AliasedDiscoveryConfig<?> c : configs) {
             gen.open(AliasedDiscoveryConfigUtils.tagFor(c), "enabled", c.isEnabled());
+            if (c.isUsePublicIp()) {
+                gen.node("use-public-ip", "true");
+            }
             for (String key : c.getProperties().keySet()) {
                 gen.node(key, c.getProperties().get(key));
             }
