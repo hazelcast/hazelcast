@@ -130,7 +130,7 @@ public class RawProtocolAuthenticationTest {
         final ByteBuffer initData = ByteBuffer.wrap("CB2".getBytes());
         channel.write(initData);
 
-        String username = GroupConfig.DEFAULT_GROUP_NAME;
+        String username = "TheInvalidName";
         String pass = "TheInvalidPassword";
 
         final ClientMessage authMessage = ClientAuthenticationCodec

@@ -172,6 +172,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.client.spi.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static java.lang.System.currentTimeMillis;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
@@ -222,6 +223,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         String loggingType = config.getProperty(GroupProperty.LOGGING_TYPE.getName());
         loggingService = new ClientLoggingService(groupConfig.getName(),
                 loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
+        logGroupPasswordInfo();
         ClassLoader classLoader = config.getClassLoader();
         clientExtension = createClientInitializer(classLoader);
         clientExtension.beforeStart(this);
@@ -534,6 +536,16 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private ClientExecutionServiceImpl initExecutionService() {
         return new ClientExecutionServiceImpl(instanceName,
                 config.getClassLoader(), properties, config.getExecutorPoolSize(), loggingService);
+    }
+
+    private void logGroupPasswordInfo() {
+        if (!isNullOrEmpty(config.getGroupConfig().getPassword())) {
+            ILogger logger = loggingService.getLogger(HazelcastClient.class);
+            logger.info("A non-empty group password is configured for the Hazelcast client."
+                    + " Starting with Hazelcast version 3.11, clients with the same group name,"
+                    + " but with different group passwords (that do not use authentication) will be accepted to a cluster."
+                    + " The group password configuration will be removed completely in a future release.");
+        }
     }
 
     public void start() {
