@@ -615,9 +615,10 @@ public class MapLoaderTest extends HazelcastTestSupport {
         MapLoader failingMapLoader = new FailingMapLoader();
         MapStoreConfig mapStoreConfig = new MapStoreConfig().setImplementation(failingMapLoader);
         MapConfig mapConfig = config.getMapConfig(getClass().getName()).setMapStoreConfig(mapStoreConfig);
+        final ILogger logger = Logger.getLogger(LoggingLifecycleListener.class);
 
         HazelcastInstance[] hz = createHazelcastInstanceFactory(2).newInstances(config, 2);
-        IMap map = hz[0].getMap(mapConfig.getName());
+        final IMap map = hz[0].getMap(mapConfig.getName());
 
         Throwable exception = null;
         try {
@@ -627,8 +628,28 @@ public class MapLoaderTest extends HazelcastTestSupport {
         }
         assertNotNull("Exception wasn't propagated", exception);
 
-        map.loadAll(true);
-        assertEquals(1, map.size());
+        // In the first map load, partitions are notified asynchronously
+        // by the com.hazelcast.map.impl.MapKeyLoader.sendKeyLoadCompleted
+        // method and also some partitions are notified twice.
+        // Because of this, a subsequent map load might get completed with the
+        // results of the first map load.
+        // This is why a subsequent map load might fail with the exception from
+        // a previous load. In this case, we need to try again.
+        // An alternative would be to wait for all partitions to be notified by
+        // the result from the first load before initiating a second load but
+        // unfortunately we can't observe this as some partitions are completed
+        // twice and we might just end up observing the first completion.
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                try {
+                    map.loadAll(true);
+                    assertEquals(1, map.size());
+                } catch (IllegalStateException e) {
+                    logger.info("Map load observed result from a previous load, retrying...", e);
+                }
+            }
+        });
     }
 
     @Test

@@ -162,8 +162,8 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-hibernate3</artifactId>
-            <version>3.8.1</version>
+            <artifactId>hazelcast-hibernate5</artifactId>
+            <version>1.2.3</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>

@@ -16,7 +16,10 @@
 
 package com.hazelcast.internal.eviction;
 
+import com.hazelcast.core.IBiFunction;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.PartitionLostEvent;
+import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -28,9 +31,12 @@ import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.eviction.ToBackupSender.newToBackupSender;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.checkTrue;
@@ -39,36 +45,44 @@ import static java.lang.Math.min;
 
 @SuppressWarnings("checkstyle:magicnumber")
 @SuppressFBWarnings({"URF_UNREAD_FIELD"})
-public abstract class ClearExpiredRecordsTask<T> implements Runnable {
+public abstract class ClearExpiredRecordsTask<T, S> implements Runnable, PartitionLostListener {
 
-    public static final int DIFFERENCE_BETWEEN_TWO_SUBSEQUENT_PARTITION_CLEANUP_MILLIS = 1000;
-    protected final int cleanupOperationCount;
-    protected final int cleanupPercentage;
-    protected final int taskPeriodSeconds;
+    private static final int DIFFERENCE_BETWEEN_TWO_SUBSEQUENT_PARTITION_CLEANUP_MILLIS = 1000;
+
     protected final T[] containers;
-    protected NodeEngine nodeEngine;
-    protected InternalOperationService operationService;
+    protected final NodeEngine nodeEngine;
+    protected final ToBackupSender<S> toBackupSender;
+    protected final IPartitionService partitionService;
 
-    volatile long lastStartMillis;
-    volatile long lastEndMillis;
+    private final int partitionCount;
+    private final int taskPeriodSeconds;
+    private final int cleanupPercentage;
+    private final int cleanupOperationCount;
 
-    private AtomicBoolean singleRunPermit = new AtomicBoolean(false);
+    private final Address thisAddress;
+    private final InternalOperationService operationService;
+    private final AtomicBoolean singleRunPermit = new AtomicBoolean(false);
+    private final AtomicInteger partitionLostCounter = new AtomicInteger();
+    private final AtomicBoolean partitionLostListenerRegistered = new AtomicBoolean(false);
 
-    private Address thisAddress;
-    private int partitionCount;
-    private IPartitionService partitionService;
-    private HazelcastProperties properties;
+    private volatile int lastSeenPartitionLostCount;
+
+    private int runningCleanupOperationsCount;
 
     @SuppressFBWarnings({"EI_EXPOSE_REP2"})
-    public ClearExpiredRecordsTask(NodeEngine nodeEngine, T[] containers, HazelcastProperty cleanupOpProperty,
-                                   HazelcastProperty cleanupPercentageProperty, HazelcastProperty taskPeriodProperty) {
-        this.properties = nodeEngine.getProperties();
-        this.containers = containers;
+    protected ClearExpiredRecordsTask(String serviceName,
+                                      T[] containers,
+                                      HazelcastProperty cleanupOpProperty,
+                                      HazelcastProperty cleanupPercentageProperty,
+                                      HazelcastProperty taskPeriodProperty,
+                                      NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.containers = containers;
         this.operationService = (InternalOperationService) nodeEngine.getOperationService();
         this.partitionService = nodeEngine.getPartitionService();
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.thisAddress = nodeEngine.getThisAddress();
+        HazelcastProperties properties = nodeEngine.getProperties();
         this.cleanupOperationCount = calculateCleanupOperationCount(properties, cleanupOpProperty, partitionCount,
                 operationService.getPartitionThreadCount());
         checkPositive(cleanupOperationCount, "cleanupOperationCount should be a positive number");
@@ -76,7 +90,19 @@ public abstract class ClearExpiredRecordsTask<T> implements Runnable {
 
         checkTrue(cleanupPercentage > 0 && cleanupPercentage <= 100,
                 "cleanupPercentage should be in range (0,100]");
-        this.taskPeriodSeconds = nodeEngine.getProperties().getSeconds(taskPeriodProperty);
+        this.taskPeriodSeconds = properties.getSeconds(taskPeriodProperty);
+        this.toBackupSender = newToBackupSender(serviceName, newBackupExpiryOpSupplier(),
+                newBackupExpiryOpFilter(), nodeEngine);
+    }
+
+    protected IBiFunction<Integer, Integer, Boolean> newBackupExpiryOpFilter() {
+        return new IBiFunction<Integer, Integer, Boolean>() {
+            @Override
+            public Boolean apply(Integer partitionId, Integer replicaIndex) {
+                IPartition partition = partitionService.getPartition(partitionId);
+                return partition.getReplicaAddress(replicaIndex) != null;
+            }
+        };
     }
 
     @Override
@@ -86,11 +112,11 @@ public abstract class ClearExpiredRecordsTask<T> implements Runnable {
                 return;
             }
 
-            lastStartMillis = System.currentTimeMillis();
+            if (partitionLostListenerRegistered.compareAndSet(false, true)) {
+                partitionService.addPartitionLostListener(this);
+            }
 
             runInternal();
-
-            lastEndMillis = System.currentTimeMillis();
 
         } finally {
             singleRunPermit.set(false);
@@ -98,45 +124,88 @@ public abstract class ClearExpiredRecordsTask<T> implements Runnable {
     }
 
     private void runInternal() {
-        final long now = Clock.currentTimeMillis();
-        int inFlightCleanupOperationsCount = 0;
+        runningCleanupOperationsCount = 0;
+
+        long nowInMillis = nowInMillis();
+        boolean shouldEqualizeBackupSizeWithPrimary = shouldEqualizeBackupSizeWithPrimary();
 
         List<T> containersToProcess = null;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            IPartition partition = partitionService.getPartition(partitionId, false);
             T container = this.containers[partitionId];
 
-            if (partition.isOwnerOrBackup(thisAddress)) {
-
-                if (isContainerEmpty(container) && !hasExpiredKeyToSendBackup(container)) {
-                    continue;
+            IPartition partition = partitionService.getPartition(partitionId, false);
+            if (partition.isLocal()) {
+                if (shouldEqualizeBackupSizeWithPrimary) {
+                    equalizeBackupSizeWithPrimary(container);
                 }
+            } else {
+                clearLeftoverExpiredKeyQueues(container);
+            }
 
-                if (hasRunningCleanup(container)) {
-                    inFlightCleanupOperationsCount++;
-                    continue;
-                }
-
-                if (inFlightCleanupOperationsCount > cleanupOperationCount
-                        || notInProcessableTimeWindow(container, now)
-                        || notHaveAnyExpirableRecord(container)) {
-                    continue;
-                }
-
-                containersToProcess = addContainerTo(container, containersToProcess);
-
-                if (!partition.isLocal()) {
-                    clearLeftoverExpiredKeyQueues(container);
-                }
+            if (canProcessContainer(container, partition, nowInMillis)) {
+                containersToProcess = addContainerTo(containersToProcess, container);
             }
         }
 
-        if (isEmpty(containersToProcess)) {
-            return;
+        if (!isEmpty(containersToProcess)) {
+            sortPartitionContainers(containersToProcess);
+            sendCleanupOperations(containersToProcess);
+        }
+    }
+
+    private boolean canProcessContainer(T container, IPartition partition, long nowInMillis) {
+        if (!getProcessablePartitionType().isProcessable(partition, thisAddress)) {
+            return false;
         }
 
-        sortPartitionContainers(containersToProcess);
-        sendCleanupOperations(containersToProcess);
+        if (isContainerEmpty(container) && !hasExpiredKeyToSendBackup(container)) {
+            return false;
+        }
+
+        if (hasRunningCleanup(container)) {
+            runningCleanupOperationsCount++;
+            return false;
+        }
+
+        return runningCleanupOperationsCount <= cleanupOperationCount
+                && !notInProcessableTimeWindow(container, nowInMillis)
+                && !notHaveAnyExpirableRecord(container);
+    }
+
+    /**
+     * This method increments a counter to count partition lost events.
+     *
+     * After an ungraceful shutdown, backups can have expired entries.
+     * And these entries can remain forever on them. Reason for this is,
+     * the lost invalidations on a primary partition. During ungraceful
+     * shutdown, these invalidations can be lost before sending them to
+     * backups.
+     *
+     * Here, the counter in this method, is used to detect the lost
+     * invalidations case. If it is detected, we send expiry operations to
+     * remove leftover backup entries. Otherwise leftover entries can remain on
+     * backups forever.
+     */
+    @Override
+    public final void partitionLost(PartitionLostEvent event) {
+        partitionLostCounter.incrementAndGet();
+    }
+
+    private static long nowInMillis() {
+        return Clock.currentTimeMillis();
+    }
+
+    /**
+     * see {@link #partitionLost}
+     */
+    private boolean shouldEqualizeBackupSizeWithPrimary() {
+        boolean equalizeBackupSizeWithPrimary = false;
+        int currentPartitionLostCount = partitionLostCounter.get();
+        if (currentPartitionLostCount != lastSeenPartitionLostCount) {
+            lastSeenPartitionLostCount = currentPartitionLostCount;
+            equalizeBackupSizeWithPrimary = true;
+        }
+        return equalizeBackupSizeWithPrimary;
     }
 
     private static int calculateCleanupOperationCount(HazelcastProperties properties,
@@ -166,7 +235,7 @@ public abstract class ClearExpiredRecordsTask<T> implements Runnable {
         return now - getLastCleanupTime(container) < DIFFERENCE_BETWEEN_TWO_SUBSEQUENT_PARTITION_CLEANUP_MILLIS;
     }
 
-    private List<T> addContainerTo(T container, List<T> containersToProcess) {
+    private List<T> addContainerTo(List<T> containersToProcess, T container) {
         if (containersToProcess == null) {
             containersToProcess = new ArrayList<T>();
         }
@@ -176,7 +245,7 @@ public abstract class ClearExpiredRecordsTask<T> implements Runnable {
         return containersToProcess;
     }
 
-    protected void sendCleanupOperations(List<T> partitionContainers) {
+    private void sendCleanupOperations(List<T> partitionContainers) {
         final int start = 0;
         int end = cleanupOperationCount;
         if (end > partitionContainers.size()) {
@@ -185,10 +254,19 @@ public abstract class ClearExpiredRecordsTask<T> implements Runnable {
         List<T> partitionIds = partitionContainers.subList(start, end);
         for (T container : partitionIds) {
             // mark partition container as has on going expiration operation.
-            setHasRunningCleanup(container, true);
-            Operation operation = createExpirationOperation(cleanupPercentage, container);
+            setHasRunningCleanup(container);
+            Operation operation = newPrimaryExpiryOp(cleanupPercentage, container);
             operationService.execute(operation);
         }
+    }
+
+    private IBiFunction<S, Collection<ExpiredKey>, Operation> newBackupExpiryOpSupplier() {
+        return new IBiFunction<S, Collection<ExpiredKey>, Operation>() {
+            @Override
+            public Operation apply(S recordStore, Collection<ExpiredKey> expiredKeys) {
+                return newBackupExpiryOp(recordStore, expiredKeys);
+            }
+        };
     }
 
     // only used for testing purposes
@@ -200,25 +278,57 @@ public abstract class ClearExpiredRecordsTask<T> implements Runnable {
         return taskPeriodSeconds;
     }
 
-    public int getCleanupOperationCount() {
+    int getCleanupOperationCount() {
         return cleanupOperationCount;
     }
-
-    protected abstract boolean hasExpiredKeyToSendBackup(T container);
 
     protected abstract boolean isContainerEmpty(T container);
 
     protected abstract boolean hasRunningCleanup(T container);
 
-    protected abstract void setHasRunningCleanup(T container, boolean status);
+    protected abstract long getLastCleanupTime(T container);
+
+    protected abstract void equalizeBackupSizeWithPrimary(T container);
+
+    protected abstract boolean hasExpiredKeyToSendBackup(T container);
 
     protected abstract boolean notHaveAnyExpirableRecord(T container);
-
-    protected abstract long getLastCleanupTime(T container);
 
     protected abstract void clearLeftoverExpiredKeyQueues(T container);
 
     protected abstract void sortPartitionContainers(List<T> containers);
 
-    protected abstract Operation createExpirationOperation(int cleanupPercentage, T container);
+    protected abstract void setHasRunningCleanup(T container);
+
+    protected abstract ProcessablePartitionType getProcessablePartitionType();
+
+    protected abstract Operation newPrimaryExpiryOp(int cleanupPercentage, T container);
+
+    protected abstract Operation newBackupExpiryOp(S store, Collection<ExpiredKey> expiredKeys);
+
+    public abstract void tryToSendBackupExpiryOp(S store, boolean checkIfReachedBatch);
+
+    /**
+     * Used when traversing partitions.
+     * Map needs to traverse both backup and primary partitions due to catch
+     * ttl expired entries but Cache only needs primary ones.
+     */
+    protected enum ProcessablePartitionType {
+        PRIMARY_PARTITION {
+            @Override
+            boolean isProcessable(IPartition partition, Address address) {
+                return partition.isLocal();
+            }
+        },
+
+        PRIMARY_OR_BACKUP_PARTITION {
+            @Override
+            boolean isProcessable(IPartition partition, Address address) {
+                return partition.isOwnerOrBackup(address);
+            }
+        };
+
+        abstract boolean isProcessable(IPartition partition, Address address);
+
+    }
 }

@@ -640,6 +640,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             if ("wan-publisher".equals(nodeName)) {
                 WanPublisherConfig publisherConfig = new WanPublisherConfig();
                 publisherConfig.setGroupName(getAttribute(nodeTarget, "group-name"));
+                publisherConfig.setPublisherId(getAttribute(nodeTarget, "publisher-id"));
                 for (Node targetChild : childElements(nodeTarget)) {
                     handleWanPublisherConfig(publisherConfig, targetChild);
                 }

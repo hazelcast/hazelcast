@@ -14,7 +14,17 @@
  * limitations under the License.
  */
 
+package com.hazelcast.internal.util.comparators;
+
+import com.hazelcast.spi.serialization.SerializationService;
+
 /**
- * Provides Spring task scheduling support.
+ * Comparator contract for stored values.
+ *
+ * @see BinaryValueComparator
+ * @see ObjectValueComparator
  */
-package com.hazelcast.spring.scheduler;
+public interface ValueComparator {
+
+    boolean isEqual(Object value1, Object value2, SerializationService ss);
+}

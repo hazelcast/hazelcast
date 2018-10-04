@@ -18,6 +18,7 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientExtension;
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
@@ -66,10 +67,9 @@ import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
@@ -104,7 +104,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ConcurrentMap<Address, ClientConnection> activeConnections = new ConcurrentHashMap<Address, ClientConnection>();
     private final ConcurrentMap<Address, AuthenticationFuture> connectionsInProgress =
             new ConcurrentHashMap<Address, AuthenticationFuture>();
-    private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+    private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<ConnectionListener>();
     private final boolean allowInvokeWhenDisconnected;
     private final ICredentialsFactory credentialsFactory;
     private final NioNetworking networking;
@@ -323,6 +323,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void checkAllowed(Address target, boolean asOwner, boolean acquiresResources) throws IOException {
+        if (!alive) {
+            throw new HazelcastClientNotActiveException("ConnectionManager is not active!");
+        }
         if (asOwner) {
             connectionStrategy.beforeConnectToCluster(target);
             //opening an owner connection is always allowed
@@ -376,9 +379,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
         if (!asOwner) {
             connectionStrategy.beforeOpenConnection(target);
-        }
-        if (!alive) {
-            throw new HazelcastException("ConnectionManager is not active!");
         }
 
         AuthenticationFuture future = new AuthenticationFuture();
@@ -460,9 +460,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     protected ClientConnection createSocketConnection(final Address remoteAddress) throws IOException {
-        if (!alive) {
-            throw new HazelcastException("ConnectionManager is not active!");
-        }
         SocketChannel socketChannel = null;
         try {
             socketChannel = SocketChannel.open();

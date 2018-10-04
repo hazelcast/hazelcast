@@ -28,6 +28,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
@@ -74,6 +75,7 @@ import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -766,6 +768,20 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         }
         Set<Data> dataKeys = createHashSet(keys.size());
         return executeOnKeysInternal(keys, dataKeys, entryProcessor);
+    }
+
+    /**
+     * Async version of {@link #executeOnKeys}.
+     */
+    public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
+        if (keys.isEmpty()) {
+            return new SimpleCompletedFuture<Map<K, Object>>(Collections.<K, Object>emptyMap());
+        }
+        handleHazelcastInstanceAwareParams(entryProcessor);
+
+        Set<Data> dataKeys = createHashSet(keys.size());
+        return executeOnKeysInternalAsync(keys, dataKeys, entryProcessor, null);
     }
 
     @Override

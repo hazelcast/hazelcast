@@ -175,7 +175,8 @@ public class DefaultClientExtension implements ClientExtension {
         SerializationService ss = client.getSerializationService();
         ClientExecutionService es = client.getClientExecutionService();
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
+        HazelcastProperties properties = client.getProperties();
 
-        return new DefaultNearCacheManager(ss, es, classLoader);
+        return new DefaultNearCacheManager(ss, es, classLoader, properties);
     }
 }

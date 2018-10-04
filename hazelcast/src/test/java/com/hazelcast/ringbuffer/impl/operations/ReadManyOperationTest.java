@@ -32,8 +32,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static java.util.Arrays.asList;
@@ -50,6 +52,9 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     private RingbufferContainer ringbufferContainer;
     private SerializationService serializationService;
     private RingbufferService ringbufferService;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -103,7 +108,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         assertEquals(0, response.readCount());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void whenTooFarAfterTail() throws Exception {
         ringbuffer.add("tail");
 
@@ -111,7 +116,9 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         op.setNodeEngine(nodeEngine);
 
         // since there is an item, we don't need to wait
-        op.shouldWait();
+        assertFalse(op.shouldWait());
+        expectedException.expect(IllegalArgumentException.class);
+        op.beforeRun();
     }
 
     @Test
@@ -128,13 +135,15 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         assertEquals(0, response.size());
     }
 
-    @Test(expected = StaleSequenceException.class)
+    @Test
     public void whenOnTailAndBufferEmpty() throws Exception {
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence(), 1, 1, null);
         op.setNodeEngine(nodeEngine);
 
         // since there is an item, we don't need to wait
-        op.shouldWait();
+        assertFalse(op.shouldWait());
+        expectedException.expect(StaleSequenceException.class);
+        op.beforeRun();
     }
 
     @Test
@@ -179,7 +188,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         assertEquals(1, response.size());
     }
 
-    @Test(expected = StaleSequenceException.class)
+    @Test
     public void whenBeforeHead() throws Exception {
         ringbuffer.add("item1");
         ringbuffer.add("item2");
@@ -191,7 +200,9 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         ReadManyOperation op = getReadManyOperation(oldhead, 1, 1, null);
         op.setNodeEngine(nodeEngine);
 
-        op.shouldWait();
+        assertFalse(op.shouldWait());
+        expectedException.expect(StaleSequenceException.class);
+        op.beforeRun();
     }
 
     @Test

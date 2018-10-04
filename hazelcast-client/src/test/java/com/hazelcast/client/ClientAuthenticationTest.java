@@ -47,16 +47,6 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-
-    @Test(expected = IllegalStateException.class)
-    public void testFailedAuthentication() throws Exception {
-        hazelcastFactory.newHazelcastInstance();
-        final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptPeriod(1);
-        clientConfig.getGroupConfig().setPassword("InvalidPassword");
-        hazelcastFactory.newHazelcastClient(clientConfig);
-    }
-
     @Test(expected = IllegalStateException.class)
     public void testNoClusterFound() throws Exception {
         final ClientConfig clientConfig = new ClientConfig();

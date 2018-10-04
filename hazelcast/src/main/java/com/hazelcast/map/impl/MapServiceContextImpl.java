@@ -26,6 +26,8 @@ import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.LocalRetryableExecution;
+import com.hazelcast.internal.util.comparators.ValueComparator;
+import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -58,10 +60,7 @@ import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.querycache.NodeQueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
-import com.hazelcast.map.impl.record.DataRecordComparator;
-import com.hazelcast.map.impl.record.ObjectRecordComparator;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.EventJournalWriterRecordStoreMutationObserver;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -93,7 +92,6 @@ import com.hazelcast.util.function.Predicate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -130,8 +128,6 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final AtomicReference<Collection<Integer>> ownedPartitions = new AtomicReference<Collection<Integer>>();
     protected final IndexProvider indexProvider = new DefaultIndexProvider();
     protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
-    protected final Map<InMemoryFormat, RecordComparator> recordComparatorMap
-            = new HashMap<InMemoryFormat, RecordComparator>();
 
     /**
      * Per node global write behind queue item counter.
@@ -172,7 +168,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapConstructor = createMapConstructor();
         this.queryCacheContext = new NodeQueryCacheContext(this);
         this.partitionContainers = createPartitionContainers();
-        this.clearExpiredRecordsTask = new MapClearExpiredRecordsTask(nodeEngine, partitionContainers);
+        this.clearExpiredRecordsTask = new MapClearExpiredRecordsTask(partitionContainers, nodeEngine);
         this.expirationManager = new ExpirationManager(clearExpiredRecordsTask, nodeEngine);
         this.mapNearCacheManager = createMapNearCacheManager();
         this.localMapStatsProvider = createLocalMapStatsProvider();
@@ -188,8 +184,6 @@ class MapServiceContextImpl implements MapServiceContext {
         this.operationProviders = createOperationProviders();
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
         this.logger = nodeEngine.getLogger(getClass());
-
-        initRecordComparators();
     }
 
     ConstructorFunction<String, MapContainer> createMapConstructor() {
@@ -215,12 +209,6 @@ class MapServiceContextImpl implements MapServiceContext {
     // this method is overridden in another context
     MapEventPublisherImpl createMapEventPublisherSupport() {
         return new MapEventPublisherImpl(this);
-    }
-
-    // this method is overridden in another context
-    void initRecordComparators() {
-        recordComparatorMap.put(InMemoryFormat.OBJECT, new ObjectRecordComparator(serializationService));
-        recordComparatorMap.put(InMemoryFormat.BINARY, new DataRecordComparator(serializationService));
     }
 
     private MapEventJournal createEventJournal() {
@@ -283,11 +271,6 @@ class MapServiceContextImpl implements MapServiceContext {
     private PartitionContainer[] createPartitionContainers() {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new PartitionContainer[partitionCount];
-    }
-
-    @Override
-    public RecordComparator getRecordComparator(InMemoryFormat inMemoryFormat) {
-        return recordComparatorMap.get(inMemoryFormat);
     }
 
     @Override
@@ -878,4 +861,8 @@ class MapServiceContextImpl implements MapServiceContext {
         observers.add(observer);
     }
 
+    @Override
+    public ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat) {
+        return ValueComparatorUtil.getValueComparatorOf(inMemoryFormat);
+    }
 }

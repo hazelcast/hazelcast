@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -32,7 +31,7 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -42,47 +41,26 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Collection;
-
+import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
+import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
-import static java.util.Arrays.asList;
 
 /**
  * Basic Near Cache tests for {@link IMap} on Hazelcast members.
  */
-@RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({ParallelTest.class, QuickTest.class})
 public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
-    @Parameter
-    public InMemoryFormat inMemoryFormat;
-
-    @Parameter(value = 1)
-    public boolean serializeKeys;
-
     private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
-
-    @Parameters(name = "format:{0} serializeKeys:{1}")
-    public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{
-                {InMemoryFormat.BINARY, true},
-                {InMemoryFormat.BINARY, false},
-                {InMemoryFormat.OBJECT, true},
-                {InMemoryFormat.OBJECT, false},
-        });
-    }
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys)
+        nearCacheConfig
+                = createNearCacheConfig(DEFAULT_MEMORY_FORMAT, DEFAULT_SERIALIZE_KEYS)
                 .setCacheLocalEntries(true);
     }
 

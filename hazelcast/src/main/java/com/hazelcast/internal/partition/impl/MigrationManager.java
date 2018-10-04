@@ -23,7 +23,6 @@ import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -319,9 +318,7 @@ public class MigrationManager {
     void scheduleActiveMigrationFinalization(final MigrationInfo migrationInfo) {
         partitionServiceLock.lock();
         try {
-            // we use activeMigrationInfo because it contains migrated replica fragment namespaces
-            final MigrationInfo activeMigrationInfo = this.activeMigrationInfo;
-            if (activeMigrationInfo != null && migrationInfo.equals(activeMigrationInfo)) {
+            if (migrationInfo.equals(activeMigrationInfo)) {
                 if (activeMigrationInfo.startProcessing()) {
                     activeMigrationInfo.setStatus(migrationInfo.getStatus());
                     finalizeMigration(activeMigrationInfo);
@@ -331,9 +328,9 @@ public class MigrationManager {
                     nodeEngine.getExecutionService().schedule(new Runnable() {
                         @Override
                         public void run() {
-                            scheduleActiveMigrationFinalization(activeMigrationInfo);
+                            scheduleActiveMigrationFinalization(migrationInfo);
                         }
-                    }, 3, TimeUnit.SECONDS);
+                    }, 1, TimeUnit.SECONDS);
                 }
                 return;
             }
@@ -1344,8 +1341,6 @@ public class MigrationManager {
                 logger.warning("Destination " + destination + " is not a member anymore");
                 return false;
             }
-            // RU_COMPAT_39
-            boolean idempotentRetry = node.getClusterService().getClusterVersion().isGreaterThan(Versions.V3_9);
             try {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Sending commit operation to " + destination + " for " + migrations);
@@ -1356,7 +1351,7 @@ public class MigrationManager {
                 Future<Boolean> future = nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, op, destination)
                         .setTryCount(Integer.MAX_VALUE)
-                        .setCallTimeout(idempotentRetry ? memberHeartbeatTimeoutMillis : Long.MAX_VALUE).invoke();
+                        .setCallTimeout(memberHeartbeatTimeoutMillis).invoke();
 
                 boolean result = future.get();
                 if (logger.isFinestEnabled()) {
@@ -1367,7 +1362,7 @@ public class MigrationManager {
             } catch (Throwable t) {
                 logPromotionCommitFailure(destination, migrations, t);
 
-                if (idempotentRetry && t.getCause() instanceof OperationTimeoutException) {
+                if (t.getCause() instanceof OperationTimeoutException) {
                     return commitPromotionsToDestination(destination, migrations);
                 }
             }

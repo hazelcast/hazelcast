@@ -477,7 +477,7 @@ public class Node {
     }
 
     private boolean callGracefulShutdownAwareServices(final int maxWaitSeconds) {
-        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
+        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.SYSTEM_EXECUTOR);
         Collection<GracefulShutdownAwareService> services = nodeEngine.getServices(GracefulShutdownAwareService.class);
         Collection<Future> futures = new ArrayList<Future>(services.size());
 
@@ -489,6 +489,11 @@ public class Node {
                     if (!success) {
                         throw new HazelcastException("Graceful shutdown failed for " + service);
                     }
+                }
+
+                @Override
+                public String toString() {
+                    return "Graceful shutdown task for service [" + service.toString() + "]";
                 }
             });
             futures.add(future);

@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.KeyBasedCacheOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.internal.eviction.EvictionChecker;
@@ -55,13 +54,11 @@ public class CacheRecordStore
         extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap> {
 
     protected SerializationService serializationService;
-    protected CacheRecordFactory cacheRecordFactory;
 
     public CacheRecordStore(String cacheNameWithPrefix, int partitionId, NodeEngine nodeEngine,
                             AbstractCacheService cacheService) {
         super(cacheNameWithPrefix, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
-        this.cacheRecordFactory = createCacheRecordFactory();
     }
 
     /**
@@ -100,11 +97,6 @@ public class CacheRecordStore
     protected CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key, CacheRecord record,
                                                                       long now, int completionId) {
         return new CacheEntryProcessorEntry(key, record, this, now, completionId);
-    }
-
-    protected CacheRecordFactory createCacheRecordFactory() {
-        return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                nodeEngine.getSerializationService());
     }
 
     @Override

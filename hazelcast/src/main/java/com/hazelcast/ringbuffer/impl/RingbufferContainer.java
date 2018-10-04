@@ -408,6 +408,14 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         }
     }
 
+    public boolean isStaleSequence(long sequence) {
+        return sequence < headSequence() && !store.isEnabled();
+    }
+
+    public boolean isTooLargeSequence(long sequence) {
+        return sequence > tailSequence() + 1;
+    }
+
     /**
      * Check if the sequence is of an item that can be read immediately
      * or is the sequence of the next item to be added into the ringbuffer.
@@ -423,19 +431,15 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      * @throws IllegalArgumentException if the requested sequence is greater than the tail sequence + 1 or
      */
     public void checkBlockableReadSequence(long readSequence) {
-        final long tailSequence = ringbuffer.tailSequence();
-
-        if (readSequence > tailSequence + 1) {
+        if (isTooLargeSequence(readSequence)) {
             throw new IllegalArgumentException("sequence:" + readSequence
-                    + " is too large. The current tailSequence is:" + tailSequence);
+                    + " is too large. The current tailSequence is:" + tailSequence());
         }
-
-        final long headSequence = ringbuffer.headSequence();
-        if (readSequence < headSequence && !store.isEnabled()) {
+        if (isStaleSequence(readSequence)) {
             throw new StaleSequenceException("sequence:" + readSequence
                     + " is too small and data store is disabled. "
-                    + "The current headSequence is:" + headSequence
-                    + " tailSequence is:" + tailSequence, headSequence);
+                    + "The current headSequence is:" + headSequence()
+                    + " tailSequence is:" + tailSequence(), headSequence());
         }
     }
 
@@ -453,13 +457,11 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
             throw new IllegalArgumentException("sequence:" + sequence
                     + " is too large. The current tailSequence is:" + tailSequence);
         }
-
-        final long headSequence = ringbuffer.headSequence();
-        if (sequence < headSequence && !store.isEnabled()) {
+        if (isStaleSequence(sequence)) {
             throw new StaleSequenceException("sequence:" + sequence
                     + " is too small and data store is disabled."
-                    + " The current headSequence is:" + headSequence
-                    + " tailSequence is:" + tailSequence, headSequence);
+                    + " The current headSequence is:" + headSequence()
+                    + " tailSequence is:" + tailSequence, headSequence());
         }
     }
 

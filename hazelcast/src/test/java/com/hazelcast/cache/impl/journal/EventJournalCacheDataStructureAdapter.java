@@ -68,6 +68,11 @@ public class EventJournalCacheDataStructureAdapter<K, V>
     }
 
     @Override
+    public void putAll(Map<K, V> map) {
+        cache.putAll(map);
+    }
+
+    @Override
     public void load(K key) {
         throw new UnsupportedOperationException();
     }

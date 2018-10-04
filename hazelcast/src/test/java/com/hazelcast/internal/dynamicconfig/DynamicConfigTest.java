@@ -44,6 +44,7 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -657,6 +658,18 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMerkleTreeConfig() {
+        MerkleTreeConfig config = new MerkleTreeConfig()
+                .setEnabled(true)
+                .setMapName(randomName())
+                .setDepth(10);
+
+        driver.getConfig().addMerkleTreeConfig(config);
+
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
     public void testReliableTopicConfig_whenHasExecutor() {
         ReliableTopicConfig reliableTopicConfig = new ReliableTopicConfig(name)
                 .setTopicOverloadPolicy(TopicOverloadPolicy.DISCARD_OLDEST)
@@ -813,6 +826,14 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         for (HazelcastInstance instance : members) {
             SemaphoreConfig registeredConfig = instance.getConfig().getSemaphoreConfig(name);
             assertEquals(semaphoreConfig, registeredConfig);
+        }
+    }
+
+    private void assertConfigurationsEqualsOnAllMembers(MerkleTreeConfig merkleTreeConfig) {
+        String mapName = merkleTreeConfig.getMapName();
+        for (HazelcastInstance instance : members) {
+            MerkleTreeConfig registeredConfig = instance.getConfig().getMapMerkleTreeConfig(mapName);
+            assertEquals(merkleTreeConfig, registeredConfig);
         }
     }
 

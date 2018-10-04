@@ -1075,6 +1075,7 @@ class ConfigCompatibilityChecker {
         boolean check(WanPublisherConfig c1, WanPublisherConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getGroupName(), c2.getGroupName())
+                    && nullSafeEqual(c1.getPublisherId(), c2.getPublisherId())
                     && nullSafeEqual(c1.getQueueCapacity(), c2.getQueueCapacity())
                     && nullSafeEqual(c1.getQueueFullBehavior(), c2.getQueueFullBehavior())
                     && nullSafeEqual(c1.getInitialPublisherState(), c2.getInitialPublisherState())

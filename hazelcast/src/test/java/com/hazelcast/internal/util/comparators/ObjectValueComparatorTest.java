@@ -14,9 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.record;
+package com.hazelcast.internal.util.comparators;
 
-public interface RecordComparator {
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-    boolean isEqual(Object value1, Object value2);
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class ObjectValueComparatorTest extends AbstractValueComparatorTest {
+
+    @Override
+    void newRecordComparator() {
+        comparator = ObjectValueComparator.INSTANCE;
+    }
 }

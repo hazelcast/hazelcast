@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEventServ
 import com.hazelcast.client.impl.querycache.subscriber.QueryCacheToListenerMapper;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
@@ -378,8 +377,7 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
     }
 
     private static void assertNoUserListenerLeft(String mapName, HazelcastInstance client) {
-        ProxyManager proxyManager = ((HazelcastClientProxy) client).client.getProxyManager();
-        ClientContext context = proxyManager.getContext();
+        ClientContext context = new ClientContext(((HazelcastClientProxy) client).client);
         ClientQueryCacheContext queryCacheContext = context.getQueryCacheContext();
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEventService eventService = subscriberContext.getEventService();

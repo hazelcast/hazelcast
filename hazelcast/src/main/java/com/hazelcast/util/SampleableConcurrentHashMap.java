@@ -197,10 +197,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     }
 
     /**
-     * This class is implements both of "Iterable" and "Iterator" interfaces.
-     * So we can use only one object (instead of two) both for "Iterable" and "Iterator" interfaces.
-     *
-     * NOTE: Assumed that it is not accessed by multiple threads. So there is no synchronization.
+     * Not thread safe
      */
     private final class LazySamplingEntryIterableIterator<E extends SamplingEntry> implements Iterable<E>, Iterator<E> {
 

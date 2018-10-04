@@ -21,7 +21,7 @@ import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -32,6 +32,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import javax.cache.Cache;
 import javax.cache.configuration.FactoryBuilder;
@@ -44,6 +45,7 @@ import javax.cache.expiry.Duration;
 import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -52,14 +54,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupSizeEventually;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CacheExpirationTest extends CacheTestSupport {
 
     @Rule
     public final OverridePropertyRule overrideTaskSecondsRule = set(PROP_TASK_PERIOD_SECONDS, "1");
+
+    @Parameterized.Parameters(name = "useSyncBackups:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true},
+                {false},
+        });
+    }
+
+    @Parameterized.Parameter(0)
+    public boolean useSyncBackups;
 
     private final Duration FIVE_SECONDS = new Duration(TimeUnit.SECONDS, 5);
 
@@ -102,7 +118,15 @@ public class CacheExpirationTest extends CacheTestSupport {
         CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>();
         cacheConfig.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicy));
         cacheConfig.setName(randomName());
-        cacheConfig.setBackupCount(CLUSTER_SIZE - 1);
+
+        if (useSyncBackups) {
+            cacheConfig.setBackupCount(CLUSTER_SIZE - 1);
+            cacheConfig.setAsyncBackupCount(0);
+        } else {
+            cacheConfig.setBackupCount(0);
+            cacheConfig.setAsyncBackupCount(CLUSTER_SIZE - 1);
+        }
+
         return cacheConfig;
     }
 
@@ -263,15 +287,19 @@ public class CacheExpirationTest extends CacheTestSupport {
     @Test
     public void test_whenEntryIsRemovedBackupIsCleaned() {
         SimpleExpiryListener listener = new SimpleExpiryListener();
-        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(FIVE_SECONDS, FIVE_SECONDS, FIVE_SECONDS), listener);
+        int ttlSeconds = 10;
+        Duration duration = new Duration(TimeUnit.SECONDS, ttlSeconds);
+        HazelcastExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(duration, duration, duration);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(expiryPolicy, listener);
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
         for (int i = 0; i < KEY_RANGE; i++) {
             cache.put(i, i);
-            cache.remove(i);
+            assertTrue("Expected to remove entry " + i + " but entry was not present. Expired entry count: "
+                    + listener.getExpirationCount().get(), cache.remove(i));
         }
 
-        sleepAtLeastSeconds(5);
+        sleepAtLeastSeconds(ttlSeconds);
         assertEquals(0, listener.getExpirationCount().get());
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);

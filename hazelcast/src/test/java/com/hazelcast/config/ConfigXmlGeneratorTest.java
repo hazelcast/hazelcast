@@ -1120,6 +1120,7 @@ public class ConfigXmlGeneratorTest {
                 .setWanConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
         WanPublisherConfig publisherConfig = new WanPublisherConfig()
                 .setGroupName("dummyGroup")
+                .setPublisherId("dummyPublisherId")
                 .setClassName("dummyClass")
                 .setAwsConfig(getDummyAwsConfig())
                 .setInitialPublisherState(WanPublisherState.STOPPED)

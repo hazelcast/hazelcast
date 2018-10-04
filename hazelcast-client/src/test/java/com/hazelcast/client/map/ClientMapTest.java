@@ -18,6 +18,7 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.map.helpers.GenericEvent;
+import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
@@ -709,7 +710,16 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecuteOnKeys() {
+    public void testExecuteOnKeys() throws Exception {
+        testExecuteOnKeys(false);
+    }
+
+    @Test
+    public void testSubmitToKeys() throws Exception {
+        testExecuteOnKeys(true);
+    }
+
+    private void testExecuteOnKeys(boolean async) throws Exception {
         String name = randomString();
         IMap<Integer, Integer> map = client.getMap(name);
         IMap<Integer, Integer> map2 = client.getMap(name);
@@ -723,7 +733,12 @@ public class ClientMapTest extends HazelcastTestSupport {
         keys.add(7);
         keys.add(9);
 
-        Map<Integer, Object> resultMap = map2.executeOnKeys(keys, new IncrementerEntryProcessor());
+        Map<Integer, Object> resultMap;
+        if (async) {
+            resultMap = ((ClientMapProxy<Integer, Integer>) map2).submitToKeys(keys, new IncrementerEntryProcessor()).get();
+        } else {
+            resultMap = map2.executeOnKeys(keys, new IncrementerEntryProcessor());
+        }
         assertEquals(1, resultMap.get(1));
         assertEquals(1, resultMap.get(4));
         assertEquals(1, resultMap.get(7));

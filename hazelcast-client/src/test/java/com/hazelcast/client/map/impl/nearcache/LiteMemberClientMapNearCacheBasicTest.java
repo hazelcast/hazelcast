@@ -123,7 +123,10 @@ public class LiteMemberClientMapNearCacheBasicTest extends AbstractNearCacheBasi
     }
 
     protected ClientConfig getClientConfig() {
-        return new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(NearCache.PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS, "0");
+        clientConfig.setProperty(NearCache.PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
+        return clientConfig;
     }
 
     private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder(IMapMapStore mapStore) {

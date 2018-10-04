@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -42,8 +41,10 @@ import java.util.Enumeration;
 import java.util.List;
 
 import static com.hazelcast.instance.DefaultAddressPicker.PREFER_IPV4_STACK;
+import static com.hazelcast.instance.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
 import static com.hazelcast.instance.DefaultAddressPickerInterfacesTest.NetworkInterfaceOptions.builder;
 import static com.hazelcast.instance.TestUtil.setSystemProperty;
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.enumeration;
@@ -72,10 +73,11 @@ public class DefaultAddressPickerInterfacesTest {
 
     private final ILogger logger = Logger.getLogger(AddressPicker.class);
     private final Config config = new Config();
-    private final HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
 
     @Rule
     public final OverridePropertyRule ruleSysPropPreferIpv4 = set(PREFER_IPV4_STACK, "true");
+    @Rule
+    public final OverridePropertyRule ruleSysPropPreferIpv6 = clear(PREFER_IPV6_ADDRESSES);
     @Rule
     public final OverridePropertyRule ruleSysPropHzPreferIpv4 = set(GroupProperty.PREFER_IPv4_STACK.getName(), "false");
 
@@ -286,19 +288,17 @@ public class DefaultAddressPickerInterfacesTest {
      */
     @Test
     public void testIPv6Preferred() throws Exception {
-        String origPref = setSystemProperty(PREFER_IPV4_STACK, "false");
-        try {
-            List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-            networkInterfaces.add(createNetworkConfig(
-                    builder().withName("eth0").withAddresses("fe80::9711:82f4:383a:e254", "172.17.0.1")));
-            when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
+        setSystemProperty(PREFER_IPV4_STACK, "false");
+        setSystemProperty(PREFER_IPV6_ADDRESSES, "true");
 
-            InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
-            assertNotNull("Not-null InetAddress is expected", inetAddress);
-            assertEquals("fe80:0:0:0:9711:82f4:383a:e254", inetAddress.getHostAddress());
-        } finally {
-            setSystemProperty(PREFER_IPV4_STACK, origPref);
-        }
+        List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
+        networkInterfaces.add(createNetworkConfig(
+                builder().withName("eth0").withAddresses("fe80::9711:82f4:383a:e254", "172.17.0.1")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
+
+        InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
+        assertNotNull("Not-null InetAddress is expected", inetAddress);
+        assertEquals("fe80:0:0:0:9711:82f4:383a:e254", inetAddress.getHostAddress());
     }
 
     /**
@@ -330,7 +330,7 @@ public class DefaultAddressPickerInterfacesTest {
      * or {@code null} if the result was {@code null}.
      */
     private InetAddress getInetAddressFromDefaultAddressPicker() throws Exception {
-        DefaultAddressPicker picker = new DefaultAddressPicker(config, hazelcastProperties, logger);
+        DefaultAddressPicker picker = new DefaultAddressPicker(config, logger);
         DefaultAddressPicker.AddressDefinition addressDefinition = picker.pickMatchingAddress(null);
         return addressDefinition == null ? null : addressDefinition.inetAddress;
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.record;
+package com.hazelcast.internal.util.comparators;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -24,10 +24,10 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class DataRecordComparatorTest extends AbstractRecordComparatorTest {
+public class BinaryValueComparatorTest extends AbstractValueComparatorTest {
 
     @Override
     void newRecordComparator() {
-        comparator = new DataRecordComparator(serializationService);
+        comparator = BinaryValueComparator.INSTANCE;
     }
 }

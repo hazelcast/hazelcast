@@ -58,7 +58,7 @@
         <property name="foo">bar</property>
     </properties>
     <wan-replication name="my-wan-cluster">
-        <wan-publisher group-name="tokyo">
+        <wan-publisher group-name="tokyo" publisher-id="tokyoPublisherId">
             <class-name>com.hazelcast.enterprise.wan.replication.WanBatchReplication</class-name>
             <queue-capacity>1000</queue-capacity>
             <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
