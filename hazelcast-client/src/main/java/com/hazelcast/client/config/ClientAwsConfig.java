@@ -24,7 +24,8 @@ import com.hazelcast.config.AwsConfig;
  * @deprecated Use {@link AwsConfig} instead.
  */
 @Deprecated
-public class ClientAwsConfig extends AwsConfig {
+public class ClientAwsConfig
+        extends AwsConfig {
     private static final String INSIDE_AWS_PROPERTY = "inside-aws";
 
     /**
@@ -51,12 +52,21 @@ public class ClientAwsConfig extends AwsConfig {
         return this;
     }
 
+    /**
+     * Sets the property understood by the AWS SPI Discovery Strategy.
+     * <p>
+     * Note that it interprets the "inside-aws" property and maps it to the contrary of the generic "use-public-ip" property.
+     *
+     * @param name  property name
+     * @param value property value
+     * @return the updated Client Aws Config
+     */
     @Override
-    public ClientAwsConfig setProperty(String key, String value) {
-        if (INSIDE_AWS_PROPERTY.equals(key)) {
+    public ClientAwsConfig setProperty(String name, String value) {
+        if (INSIDE_AWS_PROPERTY.equals(name)) {
             setInsideAws(Boolean.parseBoolean(value));
         } else {
-            super.setProperty(key, value);
+            super.setProperty(name, value);
         }
         return this;
     }

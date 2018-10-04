@@ -54,14 +54,23 @@ public final class AliasedDiscoveryConfigUtils {
         return config.getTag();
     }
 
+    /**
+     * Extracts aliased discovery configs from {@code config} and creates a list of {@link DiscoveryStrategyConfig} out of them.
+     */
     public static List<DiscoveryStrategyConfig> createDiscoveryStrategyConfigs(JoinConfig config) {
         return map(aliasedDiscoveryConfigsFrom(config));
     }
 
+    /**
+     * Extracts aliased discovery configs from {@code config} and creates a list of {@link DiscoveryStrategyConfig} out of them.
+     */
     public static List<DiscoveryStrategyConfig> createDiscoveryStrategyConfigs(WanPublisherConfig config) {
         return map(aliasedDiscoveryConfigsFrom(config));
     }
 
+    /**
+     * Maps aliased discovery strategy configs into discovery strategy configs.
+     */
     public static List<DiscoveryStrategyConfig> map(List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigs) {
         List<DiscoveryStrategyConfig> result = new ArrayList<DiscoveryStrategyConfig>();
         for (AliasedDiscoveryConfig config : aliasedDiscoveryConfigs) {
@@ -100,22 +109,28 @@ public final class AliasedDiscoveryConfigUtils {
         }
     }
 
-    public static AliasedDiscoveryConfig getConfigByTag(JoinConfig joinConfig, String tag) {
+    /**
+     * Gets the {@link AliasedDiscoveryConfig} from {@code config} by {@code tag}.
+     */
+    public static AliasedDiscoveryConfig getConfigByTag(JoinConfig config, String tag) {
         if ("aws".equals(tag)) {
-            return joinConfig.getAwsConfig();
+            return config.getAwsConfig();
         } else if ("gcp".equals(tag)) {
-            return joinConfig.getGcpConfig();
+            return config.getGcpConfig();
         } else if ("azure".equals(tag)) {
-            return joinConfig.getAzureConfig();
+            return config.getAzureConfig();
         } else if ("kubernetes".equals(tag)) {
-            return joinConfig.getKubernetesConfig();
+            return config.getKubernetesConfig();
         } else if ("eureka".equals(tag)) {
-            return joinConfig.getEurekaConfig();
+            return config.getEurekaConfig();
         } else {
             throw new IllegalArgumentException(String.format("Invalid tag: '%s'", tag));
         }
     }
 
+    /**
+     * Gets the {@link AliasedDiscoveryConfig} from {@code config} by {@code tag}.
+     */
     public static AliasedDiscoveryConfig getConfigByTag(WanPublisherConfig config, String tag) {
         if ("aws".equals(tag)) {
             return config.getAwsConfig();
@@ -132,11 +147,17 @@ public final class AliasedDiscoveryConfigUtils {
         }
     }
 
+    /**
+     * Gets a list of all aliased discovery configs from {@code config}.
+     */
     public static List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigsFrom(JoinConfig config) {
         return asList(config.getAwsConfig(), config.getGcpConfig(), config.getAzureConfig(), config.getKubernetesConfig(),
                 config.getEurekaConfig());
     }
 
+    /**
+     * Gets a list of all aliased discovery configs from {@code config}.
+     */
     public static List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigsFrom(WanPublisherConfig config) {
         return asList(config.getAwsConfig(), config.getGcpConfig(), config.getAzureConfig(), config.getKubernetesConfig(),
                 config.getEurekaConfig());
@@ -160,6 +181,9 @@ public final class AliasedDiscoveryConfigUtils {
         return atLeastOneEnabled;
     }
 
+    /**
+     * Creates new {@link AliasedDiscoveryConfig} by the given {@code tag}.
+     */
     public static AliasedDiscoveryConfig newConfigFor(String tag) {
         if ("aws".equals(tag)) {
             return new AwsConfig();

@@ -37,39 +37,81 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
         this.tag = tag;
     }
 
+    /**
+     * Enables or disables the join mechanism based on the given discovery config.
+     *
+     * @param enabled {@code true} if enabled
+     * @return the updated discovery config
+     */
     public T setEnabled(boolean enabled) {
         this.enabled = enabled;
         return (T) this;
     }
 
+    /**
+     * Checks whether the given join mechanism is enabled.
+     *
+     * @return {@code true} if enabled
+     */
     public boolean isEnabled() {
         return enabled;
     }
 
-    public T setProperty(String key, String value) {
-        if (USE_PUBLIC_IP_PROPERTY.equals(key)) {
+    /**
+     * Sets the property understood by the given SPI Discovery Strategy.
+     * <p>
+     * Note that it interprets and stores as fields the following properties: "enabled", "use-public-ip".
+     *
+     * @param name  property name
+     * @param value property value
+     * @return the updated discovery config
+     */
+    public T setProperty(String name, String value) {
+        if (USE_PUBLIC_IP_PROPERTY.equals(name)) {
             usePublicIp = Boolean.parseBoolean(value);
-        } else if (ENABLED_PROPERTY.equals(key)) {
+        } else if (ENABLED_PROPERTY.equals(name)) {
             enabled = Boolean.parseBoolean(value);
         } else {
-            properties.put(key, value);
+            properties.put(name, value);
         }
         return (T) this;
     }
 
+    /**
+     * Returns property value by the property name.
+     *
+     * @param name property name
+     * @return property value
+     */
     public String getProperty(String name) {
         return properties.get(name);
     }
 
+    /**
+     * Returns all properties.
+     *
+     * @return all properties
+     */
     public Map<String, String> getProperties() {
         return properties;
     }
 
+    /**
+     * Decides whether the public or private IP should be used to connect to Hazelcast members.
+     *
+     * @param usePublicIp {@code true} for public IP, {@code false} for private IP
+     * @return the updated discovery config
+     */
     public T setUsePublicIp(boolean usePublicIp) {
         this.usePublicIp = usePublicIp;
         return (T) this;
     }
 
+    /**
+     * Checks whether the public or privat eIP should be used to connect to Hazelcast members.
+     *
+     * @return {@true} for public IP, {@code false} for private IP
+     */
     public boolean isUsePublicIp() {
         return usePublicIp;
     }
@@ -80,7 +122,7 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
 
     @Override
     public String toString() {
-        return "AliasedDiscoveryConfig{" + "enabled=" + enabled + ", usePublicIp=" + usePublicIp + ", properties=" + properties
-                + '}';
+        return "AliasedDiscoveryConfig{" + "tag='" + tag + '\'' + ", enabled=" + enabled + ", usePublicIp=" + usePublicIp
+                + ", properties=" + properties + '}';
     }
 }

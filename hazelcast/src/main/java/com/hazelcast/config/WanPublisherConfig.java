@@ -281,37 +281,85 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         return this;
     }
 
+    /**
+     * Returns the {@link GcpConfig} used by the discovery mechanism for this
+     * WAN publisher.
+     */
     public GcpConfig getGcpConfig() {
         return gcpConfig;
     }
 
+    /**
+     * Sets the {@link GcpConfig} used by the discovery mechanism for this
+     * WAN publisher.
+     *
+     * @param gcpConfig the GCP discovery configuration
+     * @return this config
+     * @throws IllegalArgumentException if gcpConfig is null
+     */
     public WanPublisherConfig setGcpConfig(final GcpConfig gcpConfig) {
         this.gcpConfig = isNotNull(gcpConfig, "gcpConfig");
         return this;
     }
 
+    /**
+     * Returns the {@link AzureConfig} used by the discovery mechanism for this
+     * WAN publisher.
+     */
     public AzureConfig getAzureConfig() {
         return azureConfig;
     }
 
+    /**
+     * Sets the {@link AzureConfig} used by the discovery mechanism for this
+     * WAN publisher.
+     *
+     * @param azureConfig the Azure discovery configuration
+     * @return this config
+     * @throws IllegalArgumentException if azureConfig is null
+     */
     public WanPublisherConfig setAzureConfig(final AzureConfig azureConfig) {
         this.azureConfig = isNotNull(azureConfig, "azureConfig");
         return this;
     }
 
+    /**
+     * Returns the {@link KubernetesConfig} used by the discovery mechanism for this
+     * WAN publisher.
+     */
     public KubernetesConfig getKubernetesConfig() {
         return kubernetesConfig;
     }
 
+    /**
+     * Sets the {@link KubernetesConfig} used by the discovery mechanism for this
+     * WAN publisher.
+     *
+     * @param kubernetesConfig the Kubernetes discovery configuration
+     * @return this config
+     * @throws IllegalArgumentException if kubernetesConfig is null
+     */
     public WanPublisherConfig setKubernetesConfig(final KubernetesConfig kubernetesConfig) {
         this.kubernetesConfig = isNotNull(kubernetesConfig, "kubernetesConfig");
         return this;
     }
 
+    /**
+     * Returns the {@link EurekaConfig} used by the discovery mechanism for this
+     * WAN publisher.
+     */
     public EurekaConfig getEurekaConfig() {
         return eurekaConfig;
     }
 
+    /**
+     * Sets the {@link EurekaConfig} used by the discovery mechanism for this
+     * WAN publisher.
+     *
+     * @param eurekaConfig the Eureka discovery configuration
+     * @return this config
+     * @throws IllegalArgumentException if eurekaConfig is null
+     */
     public WanPublisherConfig setEurekaConfig(final EurekaConfig eurekaConfig) {
         this.eurekaConfig = isNotNull(eurekaConfig, "eurekaConfig");
         return this;

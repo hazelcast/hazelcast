@@ -306,8 +306,7 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * Sets configuration to connect nodes in aws environment.
-     * null value indicates that no AwsConfig should be used.
+     * Sets configuration to connect nodes in AWS environment.
      *
      * @param clientAwsConfig the ClientAwsConfig
      * @see #getAwsConfig()
@@ -318,7 +317,7 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * Returns the current {@link ClientAwsConfig}. It is possible that null is returned if no SSLConfig has been
+     * Returns the current {@link ClientAwsConfig}.
      *
      * @return ClientAwsConfig
      * @see #setAwsConfig(ClientAwsConfig)
@@ -327,38 +326,86 @@ public class ClientNetworkConfig {
         return awsConfig;
     }
 
+    /**
+     * Sets configuration to connect nodes in GCP environment.
+     *
+     * @param gcpConfig the GcpConfig
+     * @see #getGcpConfig()
+     */
     public ClientNetworkConfig setGcpConfig(GcpConfig gcpConfig) {
         this.gcpConfig = gcpConfig;
         return this;
     }
 
+    /**
+     * Returns the current {@link GcpConfig}.
+     *
+     * @return GcpConfig
+     * @see #setGcpConfig(GcpConfig)
+     */
     public GcpConfig getGcpConfig() {
         return gcpConfig;
     }
 
+    /**
+     * Sets configuration to connect nodes in Azure environment.
+     *
+     * @param azureConfig the AzureConfig
+     * @see #getAzureConfig()
+     */
     public ClientNetworkConfig setAzureConfig(AzureConfig azureConfig) {
         this.azureConfig = azureConfig;
         return this;
     }
 
+    /**
+     * Returns the current {@link AzureConfig}.
+     *
+     * @return AzureConfig
+     * @see #setAzureConfig(AzureConfig)
+     */
     public AzureConfig getAzureConfig() {
         return azureConfig;
     }
 
+    /**
+     * Sets configuration to connect nodes in Kubernetes environment.
+     *
+     * @param kubernetesConfig the KubernetesConfig
+     * @see #getKubernetesConfig()
+     */
     public ClientNetworkConfig setKubernetesConfig(KubernetesConfig kubernetesConfig) {
         this.kubernetesConfig = kubernetesConfig;
         return this;
     }
 
+    /**
+     * Returns the current {@link KubernetesConfig}.
+     *
+     * @return KubernetesConfig
+     * @see #setKubernetesConfig(KubernetesConfig)
+     */
     public KubernetesConfig getKubernetesConfig() {
         return kubernetesConfig;
     }
 
+    /**
+     * Sets configuration to connect nodes in Eureka environment.
+     *
+     * @param eurekaConfig the EurekaConfig
+     * @see #getEurekaConfig()
+     */
     public ClientNetworkConfig setEurekaConfig(EurekaConfig eurekaConfig) {
         this.eurekaConfig = eurekaConfig;
         return this;
     }
 
+    /**
+     * Returns the current {@link EurekaConfig}.
+     *
+     * @return EurekaConfig
+     * @see #setEurekaConfig(EurekaConfig)
+     */
     public EurekaConfig getEurekaConfig() {
         return eurekaConfig;
     }

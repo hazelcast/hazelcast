@@ -33,16 +33,16 @@ public final class ClientAliasedDiscoveryConfigUtils {
     private ClientAliasedDiscoveryConfigUtils() {
     }
 
+    /**
+     * Extracts aliased discovery configs from {@code config} and creates a list of {@link DiscoveryStrategyConfig} out of them.
+     */
     public static List<DiscoveryStrategyConfig> createDiscoveryStrategyConfigs(ClientConfig config) {
         return AliasedDiscoveryConfigUtils.map(aliasedDiscoveryConfigsFrom(config));
     }
 
-    public static List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigsFrom(ClientConfig config) {
-        ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        return asList(networkConfig.getAwsConfig(), networkConfig.getGcpConfig(), networkConfig.getAzureConfig(),
-                networkConfig.getKubernetesConfig(), networkConfig.getEurekaConfig());
-    }
-
+    /**
+     * Gets the {@link AliasedDiscoveryConfig} from {@code config} by {@code tag}.
+     */
     public static AliasedDiscoveryConfig getConfigByTag(ClientNetworkConfig config, String tag) {
         if ("aws".equals(tag)) {
             return config.getAwsConfig();
@@ -59,6 +59,18 @@ public final class ClientAliasedDiscoveryConfigUtils {
         }
     }
 
+    /**
+     * Gets a list of all aliased discovery configs from {@code config}.
+     */
+    public static List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigsFrom(ClientConfig config) {
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        return asList(networkConfig.getAwsConfig(), networkConfig.getGcpConfig(), networkConfig.getAzureConfig(),
+                networkConfig.getKubernetesConfig(), networkConfig.getEurekaConfig());
+    }
+
+    /**
+     * Creates new {@link AliasedDiscoveryConfig} by the given {@code tag}.
+     */
     public static AliasedDiscoveryConfig newAliasedDiscoveryConfig(String name) {
         if ("aws".equals(name)) {
             return new ClientAwsConfig();

@@ -89,37 +89,65 @@ public class JoinConfig {
         return this;
     }
 
+    /**
+     * @return the gcpConfig join configuration
+     */
     public GcpConfig getGcpConfig() {
         return gcpConfig;
     }
 
+    /**
+     * @param gcpConfig the GcpConfig join configuration to set
+     * @throws IllegalArgumentException if gcpConfig is null
+     */
     public JoinConfig setGcpConfig(final GcpConfig gcpConfig) {
         this.gcpConfig = isNotNull(gcpConfig, "gcpConfig");
         return this;
     }
 
+    /**
+     * @return the azureConfig join configuration
+     */
     public AzureConfig getAzureConfig() {
         return azureConfig;
     }
 
+    /**
+     * @param azureConfig the AzureConfig join configuration to set
+     * @throws IllegalArgumentException if azureConfig is null
+     */
     public JoinConfig setAzureConfig(final AzureConfig azureConfig) {
         this.azureConfig = isNotNull(azureConfig, "azureConfig");
         return this;
     }
 
+    /**
+     * @return the kubernetesConfig join configuration
+     */
     public KubernetesConfig getKubernetesConfig() {
         return kubernetesConfig;
     }
 
+    /**
+     * @param kubernetesConfig the KubernetesConfig join configuration to set
+     * @throws IllegalArgumentException if kubernetesConfig is null
+     */
     public JoinConfig setKubernetesConfig(final KubernetesConfig kubernetesConfig) {
         this.kubernetesConfig = isNotNull(kubernetesConfig, "kubernetesConfig");
         return this;
     }
 
+    /**
+     * @return the eurekaConfig join configuration
+     */
     public EurekaConfig getEurekaConfig() {
         return eurekaConfig;
     }
 
+    /**
+     * @param eurekaConfig the EurekaConfig join configuration to set
+     * @throws IllegalArgumentException if eurekaConfig is null
+     */
     public JoinConfig setEurekaConfig(final EurekaConfig eurekaConfig) {
         this.eurekaConfig = isNotNull(eurekaConfig, "eurekaConfig");
         return this;
