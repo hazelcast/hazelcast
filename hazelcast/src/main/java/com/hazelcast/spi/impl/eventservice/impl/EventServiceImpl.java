@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperati
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
@@ -287,6 +288,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
 
         if (!localOnly) {
+            ensureNotCallingFromPartitionOperationThread();
             Supplier<Operation> supplier = new RegistrationOperationSupplier(reg, nodeEngine.getClusterService());
             invokeOnAllMembers(supplier);
         }
@@ -309,6 +311,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
         Registration reg = segment.removeRegistration(topic, String.valueOf(id));
         if (reg != null && !reg.isLocalOnly()) {
+            ensureNotCallingFromPartitionOperationThread();
             Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
             invokeOnAllMembers(supplier);
         }
@@ -324,6 +327,12 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
             throw rethrow(e);
         } catch (ExecutionException e) {
             throw rethrow(e);
+        }
+    }
+
+    private void ensureNotCallingFromPartitionOperationThread() {
+        if (Thread.currentThread() instanceof PartitionOperationThread) {
+            throw new IllegalThreadStateException(Thread.currentThread() + " cannot make register/deregister listeners!");
         }
     }
 

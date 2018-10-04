@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.CancellationException;
@@ -154,6 +155,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
             return resolveAndThrowIfException(response);
         }
 
+        ensureNotCallingFromPartitionOperationThread();
         boolean interrupted = false;
         try {
             for (; ; ) {
@@ -178,6 +180,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
             return resolveAndThrowIfException(response);
         }
 
+        ensureNotCallingFromPartitionOperationThread();
         long deadlineNanos = System.nanoTime() + unit.toNanos(timeout);
         boolean interrupted = false;
         try {
@@ -199,6 +202,12 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
 
         unregisterWaiter(Thread.currentThread());
         throw newTimeoutException(timeout, unit);
+    }
+
+    private void ensureNotCallingFromPartitionOperationThread() {
+        if (Thread.currentThread() instanceof PartitionOperationThread) {
+            throw new IllegalThreadStateException(Thread.currentThread() + " cannot block on " + this);
+        }
     }
 
     private static void restoreInterrupt(boolean interrupted) {
