@@ -106,12 +106,13 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         SerializationService serializationService = nodeEngine.getSerializationService();
 
         // create a PutAllPerMemberOperation with entries for all partitions
-        PartitionAwareOperationFactory factory = createPutAllOperationFactory(entriesPerPartition, mapName, hz,
+        int[] allPartitions = getAllPartitions();
+        PartitionAwareOperationFactory factory = createPutAllOperationFactory(allPartitions, entriesPerPartition, mapName, hz,
                 serializationService);
 
         // invoke the operation on a random remote target
         InternalOperationService operationService = nodeEngine.getOperationService();
-        operationService.invokeOnPartitions(MapService.SERVICE_NAME, factory, factory.getPartitions());
+        operationService.invokeOnPartitions(MapService.SERVICE_NAME, factory, allPartitions);
 
         // assert that all entries have been written
         IMap<String, String> map = hz.getMap(mapName);
@@ -123,7 +124,7 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         // assert that each member owns entriesPerPartition entries of the map and that all backups have been written
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int totalBackups = 0;
                 for (int i = 0; i < INSTANCE_COUNT; i++) {
                     IMap map = instances[i].getMap(mapName);
@@ -137,12 +138,19 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         });
     }
 
-    private PartitionAwareOperationFactory createPutAllOperationFactory(int entriesPerPartition, String mapName,
+    private int[] getAllPartitions() {
+        int[] partitions = new int[INSTANCE_COUNT];
+        for (int partitionId = 0; partitionId < INSTANCE_COUNT; partitionId++) {
+            partitions[partitionId] = partitionId;
+        }
+        return partitions;
+    }
+
+    private PartitionAwareOperationFactory createPutAllOperationFactory(int[] partitions, int entriesPerPartition, String mapName,
                                                                         HazelcastInstance hz,
                                                                         SerializationService serializationService) {
-        int[] partitions = new int[INSTANCE_COUNT];
         MapEntries[] entries = new MapEntries[INSTANCE_COUNT];
-        for (int partitionId = 0; partitionId < INSTANCE_COUNT; partitionId++) {
+        for (int partitionId : partitions) {
             MapEntries mapEntries = new MapEntries(entriesPerPartition);
 
             for (int i = 0; i < entriesPerPartition; i++) {
@@ -152,7 +160,6 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
                 mapEntries.add(data, data);
             }
 
-            partitions[partitionId] = partitionId;
             entries[partitionId] = mapEntries;
         }
         return getPutAllPartitionAwareOperationFactory(mapName, partitions, entries);
