@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
@@ -48,12 +47,6 @@ public abstract class AbstractMapPutMessageTask<P> extends AbstractMapPartitionM
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(getDistributedObjectName())
                     .incrementPutLatencyNanos(latencyNanos);
-        }
-    }
-
-    void checkCompatibility(boolean maxIdleExists) {
-        if (maxIdleExists && nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
-            throw new UnsupportedOperationException("Setting MaxIdle is available when cluster version is 3.11 or higher");
         }
     }
 

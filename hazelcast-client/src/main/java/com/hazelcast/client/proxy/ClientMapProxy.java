@@ -63,7 +63,10 @@ import com.hazelcast.client.impl.protocol.codec.MapProjectWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentWithMaxIdleCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutTransientCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutTransientWithMaxIdleCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutWithMaxIdleCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
@@ -74,6 +77,7 @@ import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetTtlCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSetWithMaxIdleCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSubmitToKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryLockCodec;
@@ -176,8 +180,8 @@ import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
-import static com.hazelcast.util.TimeUtil.timeInMsOrTimeIfNullUnit;
 import static com.hazelcast.util.TimeUtil.timeInMsOrOneIfResultIsZero;
+import static com.hazelcast.util.TimeUtil.timeInMsOrTimeIfNullUnit;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -456,7 +460,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, timeunit);
             ClientMessage request;
             if (maxIdle != null) {
-                request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(),
+                request = MapPutWithMaxIdleCodec.encodeRequest(name, keyData, valueData, getThreadId(),
                         ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
             } else {
                 request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
@@ -497,7 +501,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, timeunit);
             ClientMessage request;
             if (maxIdle != null) {
-                request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(),
+                request = MapSetWithMaxIdleCodec.encodeRequest(name, keyData, valueData, getThreadId(),
                         ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
             } else {
                 request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
@@ -573,7 +577,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, ttlUnit);
         ClientMessage request;
         if (maxIdle != null) {
-            request = MapPutCodec.encodeRequest(name, keyData, valueData,
+            request = MapPutWithMaxIdleCodec.encodeRequest(name, keyData, valueData,
                     getThreadId(), ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
         } else {
             request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
@@ -606,7 +610,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, timeunit);
         ClientMessage request;
         if (maxIdle != null) {
-            request = MapPutTransientCodec.encodeRequest(name, keyData, valueData,
+            request = MapPutTransientWithMaxIdleCodec.encodeRequest(name, keyData, valueData,
                     getThreadId(), ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
         } else {
             request = MapPutTransientCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
@@ -645,7 +649,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, timeunit);
         ClientMessage request;
         if (maxIdle != null) {
-             request = MapPutIfAbsentCodec.encodeRequest(name, keyData, valueData,
+            request = MapPutIfAbsentWithMaxIdleCodec.encodeRequest(name, keyData, valueData,
                     getThreadId(), ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
         } else {
              request = MapPutIfAbsentCodec.encodeRequest(name, keyData, valueData,
@@ -715,7 +719,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         long ttlMillis = timeInMsOrOneIfResultIsZero(ttl, timeunit);
         ClientMessage request;
         if (maxIdle != null) {
-            request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(),
+            request = MapSetWithMaxIdleCodec.encodeRequest(name, keyData, valueData, getThreadId(),
                     ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
         } else {
             request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);

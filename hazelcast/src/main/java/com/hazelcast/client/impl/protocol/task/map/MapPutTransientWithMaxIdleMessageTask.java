@@ -17,36 +17,34 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutTransientWithMaxIdleCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+public class MapPutTransientWithMaxIdleMessageTask
+        extends AbstractMapPutWithMaxIdleMessageTask<MapPutTransientWithMaxIdleCodec.RequestParameters> {
 
-public class MapPutIfAbsentMessageTask
-        extends AbstractMapPutMessageTask<MapPutIfAbsentCodec.RequestParameters> {
-
-    public MapPutIfAbsentMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MapPutTransientWithMaxIdleMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected MapPutIfAbsentCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapPutIfAbsentCodec.decodeRequest(clientMessage);
+    protected MapPutTransientWithMaxIdleCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapPutTransientWithMaxIdleCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapPutIfAbsentCodec.encodeResponse(serializationService.toData(response));
+        return MapPutTransientWithMaxIdleCodec.encodeResponse(serializationService.toData(response));
     }
 
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        MapOperation op = operationProvider.createPutIfAbsentOperation(parameters.name, parameters.key,
-                parameters.value, parameters.ttl, DEFAULT_MAX_IDLE);
+        MapOperation op = operationProvider.createPutTransientOperation(parameters.name, parameters.key,
+                parameters.value, parameters.ttl, parameters.maxIdle);
         op.setThreadId(parameters.threadId);
         return op;
     }
@@ -58,14 +56,11 @@ public class MapPutIfAbsentMessageTask
 
     @Override
     public String getMethodName() {
-        return "putIfAbsent";
+        return "putTransientWithMaxIdle";
     }
 
     @Override
     public Object[] getParameters() {
-        if (parameters.ttl == -1) {
-            return new Object[]{parameters.key, parameters.value};
-        }
-        return new Object[]{parameters.key, parameters.value, parameters.ttl};
+        return new Object[]{parameters.key, parameters.value, parameters.ttl, parameters.maxIdle};
     }
 }
