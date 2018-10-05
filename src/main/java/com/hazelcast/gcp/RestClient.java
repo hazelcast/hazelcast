@@ -110,6 +110,9 @@ final class RestClient {
     }
 
     private static String read(InputStream stream) {
+        if (stream == null) {
+            return "";
+        }
         Scanner scanner = new Scanner(stream, "UTF-8");
         scanner.useDelimiter("\\Z");
         return scanner.next();
