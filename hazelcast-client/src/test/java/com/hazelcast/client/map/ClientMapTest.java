@@ -416,11 +416,10 @@ public class ClientMapTest extends HazelcastTestSupport {
         assertEquals("value2", map.get("key1"));
 
         map.set("key1", "value3", 1, TimeUnit.SECONDS);
-        assertEquals("value3", map.get("key1"));
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(map.get("key1"));
             }
         });
