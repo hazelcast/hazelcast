@@ -136,7 +136,23 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
         pausingLoader.resume();
 
-        assertEquals(1, asyncVal.get());
+        // workaround for a known MapLoader issue documented in #12384
+        //
+        // in short, there is an edge case in which the get operation is
+        // processed before loading the partition holding the given key
+        // restarts on the previously replica node, after the owner node
+        // died during the load process
+        // for the details, see the issue
+        //
+        // we do this workaround since the goal of the test is to verify
+        // that loadAll() eventually loads all records even if a node
+        // dies in the middle of loading
+        Object getResult = asyncVal.get();
+        if (getResult == null) {
+            getResult = map.get(1);
+        }
+
+        assertEquals(1, getResult);
         assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
         assertTrue(mapLoader.getLoadedValueCount() >= MAP_STORE_ENTRY_COUNT);
         assertEquals(2, mapLoader.getLoadAllKeysInvocations());
