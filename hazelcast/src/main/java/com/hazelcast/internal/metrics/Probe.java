@@ -73,9 +73,10 @@ public @interface Probe {
     /**
      * A constant that can be used for {@link #name()} to blank out the name.
      *
-     * This mean neither the field name nor the annotated name becomes the name but
+     * This means neither the field name nor the annotated name becomes the name but
      * the empty string {@code ""}. This is useful to probe nested fields as if they
-     * were not nested.
+     * were not nested. To be distinguishable from the default this constant cannot
+     * be the empty string itself.
      */
     String BLANK_NAME = " ";
 

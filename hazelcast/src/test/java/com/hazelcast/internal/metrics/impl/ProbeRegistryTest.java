@@ -137,17 +137,41 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
         }
     }
 
+    private static final class NestedSource implements ProbeSource {
+
+        @Probe
+        long y;
+
+        @Probe
+        NestedSource sub;
+
+        @Probe
+        long z = 42;
+
+        NestedSource(long y, NestedSource sub) {
+            this.y = y;
+            this.sub = sub;
+        }
+
+        @Override
+        public void probeNow(ProbingCycle cycle) {
+            cycle.openContext(); // just to test relative nesting
+            cycle.probe(this);
+            cycle.probe("my", this);
+        }
+    }
+
     @Test
     public void onlyProbesOfEnabledLevelsAreRendered() {
         setLevel(ProbeLevel.MANDATORY);
         assertProbeCount(8);
         assertProbes("mandatory", 1);
         setLevel(ProbeLevel.INFO);
-        assertProbeCount(21); // 2x8 + 1 + 4
+        assertProbeCount(33); // 2x8 + 1 + 4 + 12
         assertProbes("mandatory", 1);
         assertProbes("info", 2);
         setLevel(ProbeLevel.DEBUG);
-        assertProbeCount(29); // 3x8 + 1 + 4
+        assertProbeCount(41); // 3x8 + 1 + 4 + 12
         assertProbes("mandatory", 1);
         assertProbes("info", 2);
         assertProbes("debug", 3);
@@ -175,6 +199,9 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
     @Probe(name = "b")
     private NestedB nestedB = new NestedB(1, new NestedB(2, null));
 
+    @Probe(name = "c")
+    private NestedSource nestedSource = new NestedSource(1, new NestedSource(2, null));
+
     @BeforeProbeCycle(value = 500, unit = TimeUnit.MILLISECONDS)
     private void update() {
         updates++;
@@ -195,6 +222,22 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
         assertProbed("a.path.sub.path.val", 2L);
         assertProbed("b.x", 1L);
         assertProbed("b.sub.x", 2L);
+    }
+
+    @Test
+    public void nestedSourceCollection() {
+        assertProbed("c.y", 1L);
+        assertProbed("c.z", 42L);
+        assertProbed("c.sub.y", 2L);
+        assertProbed("c.sub.z", 42L);
+        assertProbed("c.sub.my.y", 2L);
+        assertProbed("c.sub.my.z", 42L);
+        assertProbed("c.my.y", 1L);
+        assertProbed("c.my.z", 42L);
+        assertProbed("c.my.sub.y", 2L);
+        assertProbed("c.my.sub.z", 42L);
+        assertProbed("c.my.sub.my.y", 2L);
+        assertProbed("c.my.sub.my.z", 42L);
     }
 
     @Test

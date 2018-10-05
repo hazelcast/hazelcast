@@ -16,15 +16,23 @@
 
 package com.hazelcast.monitor.impl;
 
+import static com.hazelcast.internal.metrics.ProbeSource.TAG_INSTANCE;
+import static com.hazelcast.internal.metrics.ProbeSource.TAG_TARGET;
+
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbingContext;
+import com.hazelcast.internal.metrics.ProbingCycle.Tags;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.Clock;
 import com.hazelcast.wan.WanSyncStatus;
 
-public class WanSyncStateImpl implements WanSyncState {
+public class WanSyncStateImpl implements WanSyncState, ProbingContext {
 
+    @Probe
     private long creationTime;
     private WanSyncStatus status = WanSyncStatus.READY;
+    @Probe
     private int syncedPartitionCount;
     private String activeWanConfigName;
     private String activePublisherName;
@@ -41,6 +49,12 @@ public class WanSyncStateImpl implements WanSyncState {
     }
 
     @Override
+    public void tagNow(Tags context) {
+        context.tag(TAG_INSTANCE, getActiveWanConfigName());
+        context.tag(TAG_TARGET, getActivePublisherName());
+    }
+
+    @Override
     public long getCreationTime() {
         return creationTime;
     }
@@ -48,6 +62,11 @@ public class WanSyncStateImpl implements WanSyncState {
     @Override
     public WanSyncStatus getStatus() {
         return status;
+    }
+
+    @Probe(name = "status")
+    private int getStatusCode() {
+        return status.getStatus();
     }
 
     @Override

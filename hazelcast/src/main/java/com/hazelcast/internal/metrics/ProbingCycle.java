@@ -107,6 +107,15 @@ public interface ProbingCycle {
     void probe(CharSequence prefix, Object instance);
 
     /**
+     * Dynamically collect a nested {@link ProbeSource} that has not been registered
+     * as a root before.
+     *
+     * @param prefix use empty string or {@link Probe#BLANK_NAME} to not add a prefix
+     * @param source a dynamic source, null is a no-op with no consequences
+     */
+    void collect(CharSequence prefix, ProbeSource source);
+
+    /**
      * Similar to {@link #probe(Object)} just that probed methods are not identified
      * using annotations but given as a list. All methods use the specified level.
      * No fields will be probed.

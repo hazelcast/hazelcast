@@ -151,6 +151,7 @@ public final class ProbeUtils {
                 || Map.class.isAssignableFrom(type)
                 || Counter.class.isAssignableFrom(type)
                 || Semaphore.class.isAssignableFrom(type)
+                || ProbeSource.class.isAssignableFrom(type)
                 || type.isAnnotationPresent(Probe.class);
     }
 

@@ -171,6 +171,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         // render cycle state
         private final StringBuilder tags = new StringBuilder(128);
+        private int tagBaseIndex;
         private ProbeRenderer renderer;
         private ProbeLevel level;
         private CharSequence lastTagName;
@@ -216,6 +217,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                     entry.updateIfNeeded();
                 }
                 try {
+                    tagBaseIndex = 0;
                     openContext();
                     entry.source.probeNow(this);
                 } catch (Exception e) {
@@ -256,6 +258,21 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 metadata = register(type, new ProbeAnnotatedType(type));
             }
             metadata.probeNow(this, level, prefix, instance);
+        }
+
+        @Override
+        public void collect(CharSequence prefix, ProbeSource source) {
+            if (source == null) {
+                return;
+            }
+            int baseIndex = tagBaseIndex;
+            CharSequence lastTag = lastTagName;
+            prefix(prefix);
+            tagBaseIndex = tags.length();
+            source.probeNow(this);
+            tagBaseIndex = baseIndex;
+            lastTagName = lastTag;
+            tags.setLength(tagBaseIndex);
         }
 
         @Override
@@ -309,7 +326,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         @Override
         public Tags openContext() {
-            tags.setLength(0);
+            tags.setLength(tagBaseIndex);
             lastTagName = null;
             return this;
         }
@@ -355,7 +372,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         @Override
         public Tags prefix(CharSequence prefix) {
-            if (prefix.length() > 0) {
+            if (prefix.length() > 0 && !Probe.BLANK_NAME.contentEquals(prefix)) {
                 return append(prefix).append(".");
             }
             return this;
@@ -476,7 +493,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                             longFieldNames[longIndex++] = name;
                         }
                     } else {
-                        boolean nested = valueType.isAnnotationPresent(Probe.class);
+                        boolean nested = ProbeSource.class.isAssignableFrom(valueType)
+                                        || valueType.isAnnotationPresent(Probe.class);
                         otherFieldNested[otherIndex] = nested;
                         otherFields[otherIndex] = f;
                         otherFieldNames[otherIndex++] = name;
@@ -538,7 +556,11 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                         Object value = otherFields[i].get(instance);
                         String name = otherFieldNames[i];
                         if (otherFieldNested[i]) {
-                            cycle.probe(name, value);
+                            if (value instanceof ProbeSource) {
+                                cycle.collect(name, (ProbeSource) value);
+                            } else {
+                                cycle.probe(name, value);
+                            }
                         } else {
                             cycle.gather(level, name, ProbeUtils.toLong(value));
                         }

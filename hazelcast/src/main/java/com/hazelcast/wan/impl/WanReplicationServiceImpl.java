@@ -175,15 +175,8 @@ public class WanReplicationServiceImpl implements WanReplicationService, ProbeSo
                 }
             }
         }
-        WanSyncState state = getWanSyncState();
-        if (state != null) {
-            cycle.openContext()
-                .tag(TAG_TYPE, "wan")
-                .tag(TAG_INSTANCE, state.getActiveWanConfigName())
-                .tag(TAG_TARGET, state.getActivePublisherName());
-            cycle.gather("sync.syncedPartitionCount", state.getSyncedPartitionCount());
-            cycle.gather("sync.status", state.getStatus().getStatus());
-        }
+        cycle.openContext().tag(TAG_TYPE, "wan-sync");
+        cycle.probe(getWanSyncState());
     }
 
     private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
