@@ -32,9 +32,7 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.connection.nio.DefaultCredentialsFactory;
-import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.statistics.Statistics;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
@@ -51,7 +49,6 @@ import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientUserCodeDeploymentService;
@@ -164,19 +161,17 @@ import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.ServiceLoader;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static java.lang.System.currentTimeMillis;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport,
@@ -228,6 +223,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         String loggingType = config.getProperty(GroupProperty.LOGGING_TYPE.getName());
         loggingService = new ClientLoggingService(groupConfig.getName(),
                 loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
+        logGroupPasswordInfo();
         ClassLoader classLoader = config.getClassLoader();
         clientExtension = createClientInitializer(classLoader);
         clientExtension.beforeStart(this);
@@ -545,6 +541,16 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 config.getClassLoader(), properties, config.getExecutorPoolSize(), loggingService);
     }
 
+    private void logGroupPasswordInfo() {
+        if (!isNullOrEmpty(config.getGroupConfig().getPassword())) {
+            ILogger logger = loggingService.getLogger(HazelcastClient.class);
+            logger.info("A non-empty group password is configured for the Hazelcast client."
+                    + " Starting with Hazelcast version 3.11, clients with the same group name,"
+                    + " but with different group passwords (that do not use authentication) will be accepted to a cluster."
+                    + " The group password configuration will be removed completely in a future release.");
+        }
+    }
+
     public void start() {
         lifecycleService.setStarted();
         invocationService.start();
@@ -793,27 +799,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
         try {
-            ClientMessage request = ClientGetDistributedObjectsCodec.encodeRequest();
-            final Future<ClientMessage> future = new ClientInvocation(this, request, getName()).invoke();
-            ClientMessage response = future.get();
-            ClientGetDistributedObjectsCodec.ResponseParameters resultParameters =
-                    ClientGetDistributedObjectsCodec.decodeResponse(response);
-
-            Collection<? extends DistributedObject> distributedObjects = proxyManager.getDistributedObjects();
-            Set<DistributedObjectInfo> localDistributedObjects = new HashSet<DistributedObjectInfo>();
-            for (DistributedObject localInfo : distributedObjects) {
-                localDistributedObjects.add(new DistributedObjectInfo(localInfo.getServiceName(), localInfo.getName()));
-            }
-
-            Collection<DistributedObjectInfo> newDistributedObjectInfo = resultParameters.response;
-            for (DistributedObjectInfo distributedObjectInfo : newDistributedObjectInfo) {
-                localDistributedObjects.remove(distributedObjectInfo);
-                getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
-            }
-
-            for (DistributedObjectInfo distributedObjectInfo : localDistributedObjects) {
-                proxyManager.destroyProxyLocally(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
-            }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {
             throw rethrow(e);

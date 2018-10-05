@@ -18,31 +18,24 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
-import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
-import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
@@ -54,8 +47,6 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
-import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.MAX_EXPIRED_KEY_COUNT_IN_BATCH;
-
 
 /**
  * Contains eviction specific functionality.
@@ -66,7 +57,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
     protected final Address thisAddress;
-    protected final ExpirationManager expirationManager;
     protected final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<ExpiredKey>();
     /**
      * Iterates over a pre-set entry count/percentage in one round.
@@ -83,7 +73,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         eventService = nodeEngine.getEventService();
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
         thisAddress = nodeEngine.getThisAddress();
-        expirationManager = mapServiceContext.getExpirationManager();
     }
 
     /**
@@ -228,7 +217,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
         evict(key, backup);
         if (!backup) {
-            doPostEvictionOperations(record, backup);
+            doPostEvictionOperations(record);
         }
         return null;
     }
@@ -288,7 +277,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public void doPostEvictionOperations(Record record, boolean backup) {
+    public void doPostEvictionOperations(Record record) {
         // Fire EVICTED event also in case of expiration because historically eviction-listener
         // listens all kind of eviction and expiration events and by firing EVICTED event we are preserving
         // this behavior.
@@ -302,8 +291,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
 
         long now = getNow();
-        boolean idleExpired = isIdleExpired(record, now, backup);
-        boolean ttlExpired = isTTLExpired(record, now, backup);
+        boolean idleExpired = isIdleExpired(record, now, false);
+        boolean ttlExpired = isTTLExpired(record, now, false);
         boolean expired = idleExpired || ttlExpired;
 
         if (expired && hasEventRegistration) {
@@ -322,7 +311,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public InvalidationQueue<ExpiredKey> getExpiredKeys() {
+    public InvalidationQueue<ExpiredKey> getExpiredKeysQueue() {
         return expiredKeys;
     }
 
@@ -335,62 +324,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             expiredKeys.offer(new ExpiredKey(toHeapData(record.getKey()), record.getCreationTime()));
         }
 
-        sendExpiredKeysToBackups(true);
-    }
-
-    public void sendExpiredKeysToBackups(boolean checkIfReachedBatch) {
-        InvalidationQueue<ExpiredKey> invalidationQueue = getExpiredKeys();
-
-        int size = invalidationQueue.size();
-        if (size == 0 || checkIfReachedBatch && size < MAX_EXPIRED_KEY_COUNT_IN_BATCH) {
-            return;
-        }
-
-        if (!invalidationQueue.tryAcquire()) {
-            return;
-        }
-
-        Collection<ExpiredKey> expiredKeys;
-        try {
-            expiredKeys = pollExpiredKeys(invalidationQueue);
-        } finally {
-            invalidationQueue.release();
-        }
-
-        if (expiredKeys.size() == 0) {
-            return;
-        }
-
-        // send expired keys to all backups
-        OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
-        int backupReplicaCount = getMapContainer().getTotalBackupCount();
-        for (int replicaIndex = 1; replicaIndex < backupReplicaCount + 1; replicaIndex++) {
-            if (hasReplicaAddress(getPartitionId(), replicaIndex)) {
-                Operation operation = new EvictBatchBackupOperation(getName(), expiredKeys, size());
-                operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, getPartitionId())
-                        .setReplicaIndex(replicaIndex).invoke();
-            }
-        }
-    }
-
-    protected boolean hasReplicaAddress(int partitionId, int replicaIndex) {
-        return mapServiceContext.getNodeEngine()
-                .getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex) != null;
-    }
-
-
-    private static Collection<ExpiredKey> pollExpiredKeys(Queue<ExpiredKey> expiredKeys) {
-        Collection<ExpiredKey> polledKeys = new ArrayList<ExpiredKey>(expiredKeys.size());
-
-        do {
-            ExpiredKey expiredKey = expiredKeys.poll();
-            if (expiredKey == null) {
-                break;
-            }
-            polledKeys.add(expiredKey);
-        } while (true);
-
-        return polledKeys;
+        mapServiceContext.getExpirationManager().getTask().tryToSendBackupExpiryOp(this, true);
     }
 
     protected void accessRecord(Record record, long now) {

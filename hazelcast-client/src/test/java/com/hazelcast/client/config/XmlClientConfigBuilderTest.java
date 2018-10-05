@@ -402,6 +402,25 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSecurityConfig_onlyFactory() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "  <security>\n"
+                + "        <credentials-factory class-name=\"com.hazelcast.examples.MyCredentialsFactory\">\n"
+                + "            <properties>\n"
+                + "                <property name=\"property\">value</property>\n"
+                + "            </properties>\n"
+                + "        </credentials-factory>\n"
+                + "    </security>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        ClientSecurityConfig securityConfig = config.getSecurityConfig();
+        CredentialsFactoryConfig credentialsFactoryConfig = securityConfig.getCredentialsFactoryConfig();
+        assertEquals("com.hazelcast.examples.MyCredentialsFactory", credentialsFactoryConfig.getClassName());
+        Properties properties = credentialsFactoryConfig.getProperties();
+        assertEquals("value", properties.getProperty("property"));
+    }
+
+    @Test
     public void testLeftovers() {
         assertEquals(40, fullClientConfig.getExecutorPoolSize());
         assertEquals("com.hazelcast.client.util.RandomLB", fullClientConfig.getLoadBalancer().getClass().getName());

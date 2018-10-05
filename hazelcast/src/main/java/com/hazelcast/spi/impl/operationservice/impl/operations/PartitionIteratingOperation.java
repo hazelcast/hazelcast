@@ -179,7 +179,6 @@ public final class PartitionIteratingOperation extends Operation implements Iden
 
         private void executeOperations(PartitionAwareOperationFactory givenFactory) {
             final NodeEngine nodeEngine = getNodeEngine();
-
             final PartitionAwareOperationFactory factory = givenFactory.createFactoryOnRunner(nodeEngine, partitions);
             final OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
             final Object service = getServiceName() == null ? null : getService();
@@ -299,6 +298,11 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         @SuppressFBWarnings("EI_EXPOSE_REP")
         public Object[] getResults() {
             return results;
+        }
+
+        @SuppressFBWarnings("EI_EXPOSE_REP")
+        public int[] getPartitions() {
+            return partitions;
         }
 
         @Override

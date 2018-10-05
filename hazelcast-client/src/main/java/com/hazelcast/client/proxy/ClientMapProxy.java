@@ -110,6 +110,7 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -155,6 +156,7 @@ import com.hazelcast.util.collection.InflatableSet;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -234,6 +236,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
             return (T) MapSubmitToKeyCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    @SuppressWarnings("unchecked")
+    private final ClientMessageDecoder submitToKeysResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) prepareResult(MapExecuteOnKeysCodec.decodeResponse(clientMessage).response);
         }
     };
 
@@ -1645,6 +1655,22 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invoke(request);
         MapExecuteOnKeysCodec.ResponseParameters resultParameters = MapExecuteOnKeysCodec.decodeResponse(response);
         return prepareResult(resultParameters.response);
+    }
+
+    /**
+     * Async version of {@link #executeOnKeys}.
+     */
+    public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
+        if (keys.isEmpty()) {
+            return new SimpleCompletedFuture<Map<K, Object>>(Collections.<K, Object>emptyMap());
+        }
+
+        Collection<Data> dataCollection = objectToDataCollection(keys, getSerializationService());
+
+        ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataCollection);
+        ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
+        return new ClientDelegatingFuture<Map<K, Object>>(future, getSerializationService(), submitToKeysResponseDecoder);
     }
 
     @Override

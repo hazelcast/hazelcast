@@ -258,8 +258,8 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        protected void setResult(Object result) {
-            super.setResult(result);
+        protected boolean setResult(Object result) {
+            return super.setResult(result);
         }
     }
 

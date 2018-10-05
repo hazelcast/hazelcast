@@ -32,6 +32,7 @@ import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -324,8 +325,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         // the entry has been removed from the primary store but not the backup,
         // so let's kill the primary and execute the logging processor again
         HazelcastInstance newPrimary;
-        String aMemberUiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
-        if (aMemberUiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+        String aMemberUuid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+        if (aMemberUuid.equals(instance1.getCluster().getLocalMember().getUuid())) {
             instance1.shutdown();
             newPrimary = instance2;
         } else {
@@ -1209,7 +1210,16 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecuteOnKeys() {
+    public void testExecuteOnKeys() throws Exception {
+        testExecuteOrSubmitOnKeys(false);
+    }
+
+    @Test
+    public void testSubmitToKeys() throws Exception {
+        testExecuteOrSubmitOnKeys(true);
+    }
+
+    private void testExecuteOrSubmitOnKeys(boolean sync) throws Exception {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -1227,7 +1237,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         keys.add(7);
         keys.add(9);
 
-        Map<Integer, Object> resultMap = map2.executeOnKeys(keys, new IncrementorEntryProcessor());
+        Map<Integer, Object> resultMap;
+        if (sync) {
+            resultMap = map2.executeOnKeys(keys, new IncrementorEntryProcessor());
+        } else {
+            resultMap = ((MapProxyImpl<Integer, Integer>) map2).submitToKeys(keys, new IncrementorEntryProcessor()).get();
+        }
         assertEquals(1, resultMap.get(1));
         assertEquals(1, resultMap.get(4));
         assertEquals(1, resultMap.get(7));
@@ -1241,6 +1256,28 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(1, (int) map.get(7));
         assertEquals(0, (int) map.get(8));
         assertEquals(1, (int) map.get(9));
+    }
+
+    @Test
+    public void testExecuteOnKeys_nullKeyInSet() {
+        Config config = getConfig();
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
+        for (int i = 0; i < 10; i++) {
+            map.put(i, 0);
+        }
+
+        Set<Integer> keys = new HashSet<Integer>();
+        keys.add(1);
+        keys.add(null);
+
+        try {
+            map.executeOnKeys(keys, new IncrementorEntryProcessor());
+            fail("call didn't fail as documented in executeOnKeys' javadoc");
+        } catch (NullPointerException expected) {
+        }
     }
 
     /**

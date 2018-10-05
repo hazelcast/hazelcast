@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
@@ -525,6 +526,22 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         }
         try {
             return super.executeOnKeysInternal(keys, dataKeys, entryProcessor);
+        } finally {
+            Set<?> ncKeys = serializeKeys ? dataKeys : keys;
+            for (Object key : ncKeys) {
+                invalidateNearCache(key);
+            }
+        }
+    }
+
+    @Override
+    public ICompletableFuture<Map<K, Object>> executeOnKeysInternalAsync(Set<K> keys, Set<Data> dataKeys,
+                EntryProcessor entryProcessor, ExecutionCallback<Map<K, Object>> callback) {
+        if (serializeKeys) {
+            toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
+        }
+        try {
+            return super.executeOnKeysInternalAsync(keys, dataKeys, entryProcessor, callback);
         } finally {
             Set<?> ncKeys = serializeKeys ? dataKeys : keys;
             for (Object key : ncKeys) {

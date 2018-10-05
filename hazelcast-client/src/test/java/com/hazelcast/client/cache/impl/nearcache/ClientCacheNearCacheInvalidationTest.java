@@ -394,7 +394,10 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
     }
 
     protected ClientConfig getClientConfig() {
-        return new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(NearCache.PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS, "0");
+        clientConfig.setProperty(NearCache.PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
+        return clientConfig;
     }
 
     protected NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat) {

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.spi.NodeEngine;
@@ -30,35 +31,40 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * This class is responsible for gradual cleanup of expired entries from IMap and ICache. For this purpose it uses a background
- * task. Gradual cleanup is in place for IMap since {@code 3.3} and ICache since {@code 3.11}
+ * This class is responsible for gradual cleanup of expired entries from
+ * IMap and ICache. For this purpose it uses a background task. Gradual
+ * cleanup is in place for IMap since {@code 3.3} and ICache since
+ * {@code 3.11}
  */
 @SuppressWarnings("checkstyle:linelength")
 public final class ExpirationManager implements LifecycleListener {
 
-    final ClearExpiredRecordsTask task;
-
     private final int taskPeriodSeconds;
     private final NodeEngine nodeEngine;
+    private final ClearExpiredRecordsTask task;
     private final TaskScheduler globalTaskScheduler;
     /**
      * @see #rescheduleIfScheduledBefore()
      */
     private final AtomicBoolean scheduledOneTime = new AtomicBoolean(false);
-
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
 
-    private volatile ScheduledFuture<?> expirationTask;
+    private volatile ScheduledFuture<?> scheduledExpirationTask;
 
     @SuppressWarnings("checkstyle:magicnumber")
     @SuppressFBWarnings({"EI_EXPOSE_REP2"})
     public ExpirationManager(ClearExpiredRecordsTask task, NodeEngine nodeEngine) {
+        this.task = task;
         this.nodeEngine = nodeEngine;
         this.globalTaskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
-        this.taskPeriodSeconds = task.getTaskPeriodSeconds();
-        checkPositive(taskPeriodSeconds, "taskPeriodSeconds should be a positive number");
-        this.nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(this);
-        this.task = task;
+        this.taskPeriodSeconds = checkPositive(task.getTaskPeriodSeconds(),
+                "taskPeriodSeconds should be a positive number");
+
+        getHazelcastInstance().getLifecycleService().addLifecycleListener(this);
+    }
+
+    protected HazelcastInstance getHazelcastInstance() {
+        return this.nodeEngine.getHazelcastInstance();
     }
 
     /**
@@ -66,12 +72,15 @@ public final class ExpirationManager implements LifecycleListener {
      * Calling this method multiple times has same effect.
      */
     public void scheduleExpirationTask() {
-        if (nodeEngine.getLocalMember().isLiteMember() || scheduled.get() || !scheduled.compareAndSet(false, true)) {
+        if (nodeEngine.getLocalMember().isLiteMember() || scheduled.get()
+                || !scheduled.compareAndSet(false, true)) {
             return;
         }
 
-        expirationTask = globalTaskScheduler.scheduleWithRepetition(task, taskPeriodSeconds,
-                taskPeriodSeconds, SECONDS);
+        scheduledExpirationTask =
+                globalTaskScheduler.scheduleWithRepetition(task, taskPeriodSeconds,
+                        taskPeriodSeconds, SECONDS);
+
         scheduledOneTime.set(true);
     }
 
@@ -81,7 +90,7 @@ public final class ExpirationManager implements LifecycleListener {
      */
     void unscheduleExpirationTask() {
         scheduled.set(false);
-        ScheduledFuture<?> scheduledFuture = this.expirationTask;
+        ScheduledFuture<?> scheduledFuture = this.scheduledExpirationTask;
         if (scheduledFuture != null) {
             scheduledFuture.cancel(true);
         }
@@ -108,6 +117,10 @@ public final class ExpirationManager implements LifecycleListener {
         } else {
             rescheduleIfScheduledBefore();
         }
+    }
+
+    public ClearExpiredRecordsTask getTask() {
+        return task;
     }
 
     /**

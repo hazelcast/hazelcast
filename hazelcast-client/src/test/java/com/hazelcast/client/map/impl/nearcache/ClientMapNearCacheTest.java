@@ -1301,7 +1301,10 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     protected ClientConfig newClientConfig() {
-        return new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(NearCache.PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS, "0");
+        clientConfig.setProperty(NearCache.PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
+        return clientConfig;
     }
 
     protected void assertNearCacheInvalidation_whenMaxSizeExceeded(NearCacheConfig config) {

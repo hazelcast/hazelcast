@@ -34,7 +34,7 @@ public class NearCacheTest extends NearCacheTestSupport {
     protected NearCache<Integer, String> createNearCache(String name, NearCacheConfig nearCacheConfig,
                                                          ManagedNearCacheRecordStore nearCacheRecordStore) {
         return new DefaultNearCache<Integer, String>(name, nearCacheConfig, nearCacheRecordStore, ss,
-                executionService.getGlobalTaskScheduler(), null);
+                executionService.getGlobalTaskScheduler(), null, properties);
     }
 
     @Test

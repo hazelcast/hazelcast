@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -25,7 +26,6 @@ import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -47,8 +47,6 @@ import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperat
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.executor.ExecutorType;
-import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -95,7 +93,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class OperationServiceImpl implements InternalOperationService, LiveOperationsTracker {
 
-    private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 
     // contains the current executing asyncOperations. This information is needed for the operation-heartbeats.
@@ -404,6 +401,27 @@ public final class OperationServiceImpl implements InternalOperationService, Liv
     }
 
     @Override
+    public <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
+            String serviceName, OperationFactory operationFactory, Collection<Integer> partitions,
+            ExecutionCallback<Map<Integer, T>> callback) {
+
+        Map<Address, List<Integer>> memberPartitions = createHashMap(3);
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        for (int partition : partitions) {
+            Address owner = partitionService.getPartitionOwnerOrWait(partition);
+
+            if (!memberPartitions.containsKey(owner)) {
+                memberPartitions.put(owner, new ArrayList<Integer>());
+            }
+
+            memberPartitions.get(owner).add(partition);
+        }
+        InvokeOnPartitionsAsync invokeOnPartitions =
+                new InvokeOnPartitionsAsync(this, serviceName, operationFactory, memberPartitions);
+        return invokeOnPartitions.invokeAsync(callback);
+    }
+
+    @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory, int[] partitions)
             throws Exception {
         return invokeOnPartitions(serviceName, operationFactory, toIntegerList(partitions));
@@ -435,12 +453,8 @@ public final class OperationServiceImpl implements InternalOperationService, Liv
     }
 
     private void initInvocationContext() {
-        ManagedExecutorService asyncExecutor = nodeEngine.getExecutionService().register(
-                ExecutionService.ASYNC_EXECUTOR, RuntimeAvailableProcessors.get(),
-                ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
-
         this.invocationContext = new Invocation.Context(
-                asyncExecutor,
+                nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR),
                 nodeEngine.getClusterService().getClusterClock(),
                 nodeEngine.getClusterService(),
                 node.connectionManager,

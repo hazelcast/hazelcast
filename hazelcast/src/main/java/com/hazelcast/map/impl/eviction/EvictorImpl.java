@@ -98,7 +98,7 @@ public class EvictorImpl implements Evictor {
         recordStore.evict(key, backup);
 
         if (!backup) {
-            recordStore.doPostEvictionOperations(record, backup);
+            recordStore.doPostEvictionOperations(record);
         }
     }
 

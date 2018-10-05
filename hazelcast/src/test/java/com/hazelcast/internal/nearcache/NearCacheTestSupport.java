@@ -25,6 +25,8 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import org.junit.Before;
@@ -33,7 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
-import static com.hazelcast.internal.nearcache.NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS;
+import static com.hazelcast.internal.nearcache.NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -43,13 +45,16 @@ import static org.junit.Assert.assertTrue;
 public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
     protected SerializationService ss;
+    protected HazelcastProperties properties;
     protected ExecutionService executionService;
 
     @Before
     public void setUp() throws Exception {
         HazelcastInstance instance = createHazelcastInstance();
-        ss = getSerializationService(instance);
-        executionService = getNodeEngineImpl(instance).getExecutionService();
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+        ss = nodeEngineImpl.getSerializationService();
+        executionService = nodeEngineImpl.getExecutionService();
+        properties = nodeEngineImpl.getProperties();
     }
 
     protected abstract NearCache<Integer, String> createNearCache(String name, NearCacheConfig nearCacheConfig,
@@ -212,14 +217,14 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, DEFAULT_MEMORY_FORMAT);
         if (useTTL) {
-            nearCacheConfig.setTimeToLiveSeconds(DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS - 1);
+            nearCacheConfig.setTimeToLiveSeconds(DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS - 1);
         } else {
-            nearCacheConfig.setMaxIdleSeconds(DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS - 1);
+            nearCacheConfig.setMaxIdleSeconds(DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS - 1);
         }
 
         createNearCache(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, managedNearCacheRecordStore).initialize();
 
-        sleepSeconds(DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS + 1);
+        sleepSeconds(DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS + 1);
 
         // expiration will be called eventually
         assertTrueEventually(new AssertTask() {

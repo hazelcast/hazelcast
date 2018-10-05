@@ -25,12 +25,14 @@ import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.cache.impl.operation.AddCacheConfigOperationSupplier;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.metrics.ProbingCycle;
@@ -82,7 +84,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
-        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ProbeSource {
+        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ClusterStateListener, ProbeSource {
 
     private static final String SETUP_REF = "setupRef";
 
@@ -152,7 +154,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         for (int i = 0; i < partitionCount; i++) {
             segments[i] = newPartitionSegment(i);
         }
-        this.clearExpiredRecordsTask = new CacheClearExpiredRecordsTask(nodeEngine, this.segments);
+        this.clearExpiredRecordsTask = new CacheClearExpiredRecordsTask(this.segments, nodeEngine);
         this.expirationManager = new ExpirationManager(this.clearExpiredRecordsTask, nodeEngine);
         this.cacheEventHandler = new CacheEventHandler(nodeEngine);
         this.splitBrainHandlerService = new CacheSplitBrainHandlerService(nodeEngine, segments);
@@ -173,9 +175,9 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     public Object getMergePolicy(String name) {
-            CacheConfig cacheConfig = configs.get(name);
-            String mergePolicyName = cacheConfig.getMergePolicy();
-            return mergePolicyProvider.getMergePolicy(mergePolicyName);
+        CacheConfig cacheConfig = configs.get(name);
+        String mergePolicyName = cacheConfig.getMergePolicy();
+        return mergePolicyProvider.getMergePolicy(mergePolicyName);
     }
 
     public ConcurrentMap<String, CacheConfig> getConfigs() {
@@ -791,7 +793,15 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     public <K, V> ICompletableFuture createCacheConfigOnAllMembersAsync(PreJoinCacheConfig<K, V> cacheConfig) {
         return InvocationUtil.invokeOnStableClusterSerial(getNodeEngine(),
-                    new AddCacheConfigOperationSupplier(cacheConfig),
-                    MAX_ADD_CACHE_CONFIG_RETRIES);
+                new AddCacheConfigOperationSupplier(cacheConfig),
+                MAX_ADD_CACHE_CONFIG_RETRIES);
+    }
+
+    @Override
+    public void onClusterStateChange(ClusterState newState) {
+        ExpirationManager expManager = expirationManager;
+        if (expManager != null) {
+            expManager.onClusterStateChange(newState);
+        }
     }
 }
