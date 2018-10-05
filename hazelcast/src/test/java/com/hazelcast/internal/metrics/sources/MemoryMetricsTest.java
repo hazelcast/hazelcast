@@ -37,51 +37,51 @@ public class MemoryMetricsTest extends AbstractMetricsTest {
 
     @Test
     public void totalPhysical() {
-        assertProbed("memory.totalPhysical", -1L);
+        assertCollected("memory.totalPhysical", -1L);
     }
 
     @Test
     public void freePhysical() {
-        assertProbed("memory.freePhysical", -1L);
+        assertCollected("memory.freePhysical", -1L);
     }
 
     @Test
     public void maxHeap() {
-        assertProbed("memory.maxHeap");
+        assertCollected("memory.maxHeap");
     }
 
     @Test
     public void committedHeap() {
-        assertProbed("memory.committedHeap");
+        assertCollected("memory.committedHeap");
     }
 
     @Test
     public void usedHeap() {
-        assertProbed("memory.usedHeap");
+        assertCollected("memory.usedHeap");
     }
 
     @Test
     public void freeHeap() {
-        assertProbed("memory.freeHeap");
+        assertCollected("memory.freeHeap");
     }
 
     @Test
     public void maxNative() {
-        assertProbed("memory.maxNative");
+        assertCollected("memory.maxNative");
     }
 
     @Test
     public void committedNative() {
-        assertProbed("memory.committedNative");
+        assertCollected("memory.committedNative");
     }
 
     @Test
     public void usedNative() {
-        assertProbed("memory.usedNative");
+        assertCollected("memory.usedNative");
     }
 
     @Test
     public void freeNative() {
-        assertProbed("memory.freeNative");
+        assertCollected("memory.freeNative");
     }
 }

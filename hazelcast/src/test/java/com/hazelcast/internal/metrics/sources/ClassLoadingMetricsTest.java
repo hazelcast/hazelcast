@@ -45,7 +45,7 @@ public class ClassLoadingMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("classloading.loadedClassCount", BEAN.getLoadedClassCount(), 100);
+                assertCollected("classloading.loadedClassCount", BEAN.getLoadedClassCount(), 100);
             }
         });
     }
@@ -55,7 +55,7 @@ public class ClassLoadingMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("classloading.totalLoadedClassCount", BEAN.getTotalLoadedClassCount(), 100);
+                assertCollected("classloading.totalLoadedClassCount", BEAN.getTotalLoadedClassCount(), 100);
             }
         });
     }
@@ -65,7 +65,7 @@ public class ClassLoadingMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("classloading.unloadedClassCount", BEAN.getUnloadedClassCount(), 100);
+                assertCollected("classloading.unloadedClassCount", BEAN.getUnloadedClassCount(), 100);
             }
         });
     }

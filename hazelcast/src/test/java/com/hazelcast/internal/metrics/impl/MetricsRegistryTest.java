@@ -162,32 +162,32 @@ public class MetricsRegistryTest extends AbstractMetricsTest implements MetricsS
     }
 
     @Test
-    public void onlyProbesOfEnabledLevelsAreRendered() {
+    public void onlyProbesOfEnabledLevelsAreCollected() {
         setLevel(ProbeLevel.MANDATORY);
-        assertProbeCount(8);
-        assertProbes("mandatory", 1);
+        assertCollectedCount(8);
+        assertMetric("mandatory", 1);
         setLevel(ProbeLevel.INFO);
-        assertProbeCount(33); // 2x8 + 1 + 4 + 12
-        assertProbes("mandatory", 1);
-        assertProbes("info", 2);
+        assertCollectedCount(33); // 2x8 + 1 + 4 + 12
+        assertMetric("mandatory", 1);
+        assertMetric("info", 2);
         setLevel(ProbeLevel.DEBUG);
-        assertProbeCount(41); // 3x8 + 1 + 4 + 12
-        assertProbes("mandatory", 1);
-        assertProbes("info", 2);
-        assertProbes("debug", 3);
+        assertCollectedCount(41); // 3x8 + 1 + 4 + 12
+        assertMetric("mandatory", 1);
+        assertMetric("info", 2);
+        assertMetric("debug", 3);
     }
 
-    private void assertProbes(String name, long value) {
+    private void assertMetric(String name, long value) {
         String i = TAG_INSTANCE;
         String t = TAG_TYPE;
-        assertProbed(i + "=a foo." + name, value);
-        assertProbed(i + "=b bar." + name, value);
-        assertProbed("baz." + name, value);
-        assertProbed("target=special " + name, value);
-        assertProbed(t + "=map " + i + "=a " + name, value);
-        assertProbed(t + "=map " + i + "=b " + name, value);
-        assertProbed(t + "=map " + i + "=z " + name, value);
-        assertProbed(t + "=map " + i + "=s target=special " + name, value);
+        assertCollected(i + "=a foo." + name, value);
+        assertCollected(i + "=b bar." + name, value);
+        assertCollected("baz." + name, value);
+        assertCollected("target=special " + name, value);
+        assertCollected(t + "=map " + i + "=a " + name, value);
+        assertCollected(t + "=map " + i + "=b " + name, value);
+        assertCollected(t + "=map " + i + "=z " + name, value);
+        assertCollected(t + "=map " + i + "=s target=special " + name, value);
     }
 
     @Probe
@@ -209,35 +209,35 @@ public class MetricsRegistryTest extends AbstractMetricsTest implements MetricsS
 
     @Test
     public void reprobingOccursInSpecifiedCycleTime() {
-        assertProbed("updates", 1);
-        assertProbed("updates", 1);
+        assertCollected("updates", 1);
+        assertCollected("updates", 1);
         sleepAtLeastMillis(501L);
-        assertProbed("updates", 2);
-        assertProbed("updates", 2);
+        assertCollected("updates", 2);
+        assertCollected("updates", 2);
     }
 
     @Test
     public void nestedProbing() {
-        assertProbed("a.path.val", 1L);
-        assertProbed("a.path.sub.path.val", 2L);
-        assertProbed("b.x", 1L);
-        assertProbed("b.sub.x", 2L);
+        assertCollected("a.path.val", 1L);
+        assertCollected("a.path.sub.path.val", 2L);
+        assertCollected("b.x", 1L);
+        assertCollected("b.sub.x", 2L);
     }
 
     @Test
     public void nestedSourceCollection() {
-        assertProbed("c.y", 1L);
-        assertProbed("c.z", 42L);
-        assertProbed("c.sub.y", 2L);
-        assertProbed("c.sub.z", 42L);
-        assertProbed("c.sub.my.y", 2L);
-        assertProbed("c.sub.my.z", 42L);
-        assertProbed("c.my.y", 1L);
-        assertProbed("c.my.z", 42L);
-        assertProbed("c.my.sub.y", 2L);
-        assertProbed("c.my.sub.z", 42L);
-        assertProbed("c.my.sub.my.y", 2L);
-        assertProbed("c.my.sub.my.z", 42L);
+        assertCollected("c.y", 1L);
+        assertCollected("c.z", 42L);
+        assertCollected("c.sub.y", 2L);
+        assertCollected("c.sub.z", 42L);
+        assertCollected("c.sub.my.y", 2L);
+        assertCollected("c.sub.my.z", 42L);
+        assertCollected("c.my.y", 1L);
+        assertCollected("c.my.z", 42L);
+        assertCollected("c.my.sub.y", 2L);
+        assertCollected("c.my.sub.z", 42L);
+        assertCollected("c.my.sub.my.y", 2L);
+        assertCollected("c.my.sub.my.z", 42L);
     }
 
     @Test

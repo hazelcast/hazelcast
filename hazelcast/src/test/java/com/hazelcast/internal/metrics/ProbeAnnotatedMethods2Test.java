@@ -85,7 +85,7 @@ public class ProbeAnnotatedMethods2Test extends AbstractMetricsTest implements M
     }
 
     private void assertLong(String methodName, int expectedValue) {
-        assertProbed(methodName, expectedValue);
+        assertCollected(methodName, expectedValue);
     }
 
     @Test
@@ -99,7 +99,7 @@ public class ProbeAnnotatedMethods2Test extends AbstractMetricsTest implements M
     }
 
     private void assertDouble(String fieldName, double expected) throws Exception {
-        assertProbed(fieldName, expected == -1d ? -1L : ProbeUtils.toLong(expected));
+        assertCollected(fieldName, expected == -1d ? -1L : ProbeUtils.toLong(expected));
     }
 
     private static final class SomeSource {

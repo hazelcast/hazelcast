@@ -47,41 +47,41 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
         this.level = level;
     }
 
-    protected final void assertProbed(final String expectedKey) {
-        CountingMetricsCollector renderer = runCycle(expectedKey);
-        assertProbedTimes(1, renderer);
-        assertNotEquals(-1L, renderer.matchValue);
+    protected final void assertCollected(final String expectedKey) {
+        CountingMetricsCollector collector = runCycle(expectedKey);
+        assertCollectedTimes(1, collector);
+        assertNotEquals(-1L, collector.matchValue);
     }
 
-    protected final void assertProbed(String expectedKey, long expectedValue, double deltaFactor) {
-        assertProbed(expectedKey, expectedValue, (long) (expectedValue * deltaFactor));
+    protected final void assertCollected(String expectedKey, long expectedValue, double deltaFactor) {
+        assertCollected(expectedKey, expectedValue, (long) (expectedValue * deltaFactor));
     }
 
-    protected final void assertProbed(String expectedKey, long expectedValue) {
-        assertProbed(expectedKey, expectedValue, 0L);
+    protected final void assertCollected(String expectedKey, long expectedValue) {
+        assertCollected(expectedKey, expectedValue, 0L);
     }
 
-    protected final void assertProbed(String expectedKey, long expectedValue, long absoluteDelta) {
-        CountingMetricsCollector renderer = runCycle(expectedKey);
-        assertProbedTimes(1, renderer);
-        assertProbeValue(expectedValue, renderer.matchValue, absoluteDelta);
+    protected final void assertCollected(String expectedKey, long expectedValue, long absoluteDelta) {
+        CountingMetricsCollector collector = runCycle(expectedKey);
+        assertCollectedTimes(1, collector);
+        assertCollectedValue(expectedValue, collector.matchValue, absoluteDelta);
     }
 
-    protected final void assertNotProbed(String notExpectedKey) {
-        assertProbedTimes(0, runCycle(notExpectedKey));
+    protected final void assertNotCollected(String notExpectedKey) {
+        assertCollectedTimes(0, runCycle(notExpectedKey));
     }
 
-    protected final void assertProbeCount(int expectedCount) {
-        CountingMetricsCollector renderer = runCycle("");
-        assertEquals(expectedCount, renderer.totalCount);
+    protected final void assertCollectedCount(int expectedCount) {
+        CountingMetricsCollector collector = runCycle("");
+        assertEquals(expectedCount, collector.totalCount);
     }
 
-    protected static void assertProbedTimes(int expectedTimes, CountingMetricsCollector actual) {
+    protected static void assertCollectedTimes(int expectedTimes, CountingMetricsCollector actual) {
         String msg = "metric `" + actual.expectedKey + "` occurence ";
         assertEquals(msg, expectedTimes, actual.matchCount);
     }
 
-    protected static void assertProbeValue(final long expected, long actual, final long absoluteDelta) {
+    protected static void assertCollectedValue(final long expected, long actual, final long absoluteDelta) {
         if (absoluteDelta == 0L) {
             assertEquals(expected, actual);
         } else {

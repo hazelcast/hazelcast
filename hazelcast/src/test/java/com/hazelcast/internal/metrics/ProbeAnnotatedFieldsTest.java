@@ -72,42 +72,42 @@ public class ProbeAnnotatedFieldsTest extends AbstractMetricsTest implements Met
 
     @Test
     public void customName() {
-        assertProbed("foo.myfield", 10L);
+        assertCollected("foo.myfield", 10L);
     }
 
     @Test
     public void primitiveInteger() {
-        assertProbed("foo.intField", 10L);
+        assertCollected("foo.intField", 10L);
     }
 
     @Test
     public void primitiveLong() {
-        assertProbed("foo.longField", 10L);
+        assertCollected("foo.longField", 10L);
     }
 
     @Test
     public void primitiveDouble() {
-        assertProbed("foo.doubleField", ProbeUtils.toLong(10d));
+        assertCollected("foo.doubleField", ProbeUtils.toLong(10d));
     }
 
     @Test
     public void concurrentHashMap() {
-        assertProbed("foo.mapField", 1L);
+        assertCollected("foo.mapField", 1L);
     }
 
     @Test
     public void counterFields() {
-        assertProbed("foo.counterField", 10L);
+        assertCollected("foo.counterField", 10L);
     }
 
     @Test
     public void staticField() {
-        assertProbed("foo.staticfield", 10L);
+        assertCollected("foo.staticfield", 10L);
     }
 
     @Test
     public void superclassRegistration() {
-        assertProbed("foo.inheritedField", 10L);
+        assertCollected("foo.inheritedField", 10L);
     }
 
     private static class SuperClass {

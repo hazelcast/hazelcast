@@ -39,42 +39,42 @@ public final class MachineMetrics implements MetricsSource {
             "getTotalPhysicalMemorySize", "getTotalSwapSpaceSize", "getMaxFileDescriptorCount",
             "getOpenFileDescriptorCount", "getProcessCpuLoad", "getSystemCpuLoad" };
 
+    private final File userHome = new File(System.getProperty("user.home"));
     private final Runtime runtime = Runtime.getRuntime();
     private final RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
     private final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-    private final File userHome = new File(System.getProperty("user.home"));
     private final ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
-    private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
+    private final OperatingSystemMXBean osMXBean = ManagementFactory.getOperatingSystemMXBean();
 
     @Override
     public void collectAll(CollectionCycle cycle) {
         cycle.openContext().prefix("classloading");
-        probeProperties(cycle, classLoadingMXBean);
+        collectProperties(cycle, classLoadingMXBean);
         cycle.openContext().prefix("os");
-        probeProperties(cycle, operatingSystemMXBean);
+        collectProperties(cycle, osMXBean);
         cycle.openContext().prefix("runtime");
-        probeProperties(cycle, runtime);
-        probeProperties(cycle, runtimeMXBean);
+        collectProperties(cycle, runtime);
+        collectProperties(cycle, runtimeMXBean);
         cycle.openContext().prefix("thread");
-        probeProperties(cycle, threadMXBean);
+        collectProperties(cycle, threadMXBean);
         cycle.openContext().tag(TAG_TYPE, "file.partition").tag(TAG_INSTANCE, "user.home");
-        probeProperties(cycle, userHome);
+        collectProperties(cycle, userHome);
     }
 
-    public static void probeProperties(CollectionCycle cycle, File f) {
+    public static void collectProperties(CollectionCycle cycle, File f) {
         cycle.collect(MANDATORY, "creationTime", f.lastModified());
         cycle.collect(MANDATORY, "freeSpace", f.getFreeSpace());
         cycle.collect(MANDATORY, "totalSpace", f.getTotalSpace());
         cycle.collect(MANDATORY, "usableSpace", f.getUsableSpace());
     }
 
-    public static void probeProperties(CollectionCycle cycle, ClassLoadingMXBean bean) {
+    public static void collectProperties(CollectionCycle cycle, ClassLoadingMXBean bean) {
         cycle.collect(MANDATORY, "loadedClassCount", bean.getLoadedClassCount());
         cycle.collect(MANDATORY, "totalLoadedClassCount", bean.getTotalLoadedClassCount());
         cycle.collect(MANDATORY, "unloadedClassCount", bean.getUnloadedClassCount());
     }
 
-    public static void probeProperties(CollectionCycle cycle, Runtime runtime) {
+    public static void collectProperties(CollectionCycle cycle, Runtime runtime) {
         long free = runtime.freeMemory();
         long total = runtime.totalMemory();
         cycle.collect(MANDATORY, "availableProcessors", runtime.availableProcessors());
@@ -84,19 +84,19 @@ public final class MachineMetrics implements MetricsSource {
         cycle.collect(MANDATORY, "usedMemory", total - free);
     }
 
-    public static void probeProperties(CollectionCycle cycle, RuntimeMXBean bean) {
+    public static void collectProperties(CollectionCycle cycle, RuntimeMXBean bean) {
         cycle.collect("startTime", bean.getStartTime());
         cycle.collect(MANDATORY, "uptime", bean.getUptime());
     }
 
-    public static void probeProperties(CollectionCycle cycle, ThreadMXBean bean) {
+    public static void collectProperties(CollectionCycle cycle, ThreadMXBean bean) {
         cycle.collect(MANDATORY, "daemonThreadCount", bean.getDaemonThreadCount());
         cycle.collect(MANDATORY, "peakThreadCount", bean.getPeakThreadCount());
         cycle.collect(MANDATORY, "threadCount", bean.getThreadCount());
         cycle.collect(MANDATORY, "totalStartedThreadCount", bean.getTotalStartedThreadCount());
     }
 
-    public static void probeProperties(CollectionCycle cycle, OperatingSystemMXBean bean) {
+    public static void collectProperties(CollectionCycle cycle, OperatingSystemMXBean bean) {
         cycle.collect(MANDATORY, bean, PROBED_OS_METHODS);
         cycle.collect(MANDATORY, "systemLoadAverage", bean.getSystemLoadAverage());
     }

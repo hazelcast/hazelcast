@@ -26,7 +26,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * a way that allows reuse between collection cycles.
  *
  * The {@link MetricsCollector} itself usually changes for each cycle as it tends
- * to be dependent on output stream objects handed to it.
+ * to be dependent on an output stream object handed to it.
  */
 @PrivateApi
 public interface CollectionContext {
@@ -39,6 +39,7 @@ public interface CollectionContext {
      * to this method should be made each should originate from its own
      * {@link CollectionContext}.
      *
+     * @param level the finest level that still should be collected
      * @param collector not null; is called for each active metric with a key and
      *        value to convert them to the collectors specific format.
      */

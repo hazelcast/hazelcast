@@ -37,32 +37,32 @@ public class GarbageCollectionMetricsTest extends AbstractMetricsTest {
 
     @Test
     public void minorCount() {
-        assertProbed("gc.minorCount");
+        assertCollected("gc.minorCount");
     }
 
     @Test
     public void minorTime() {
-        assertProbed("gc.minorTime");
+        assertCollected("gc.minorTime");
     }
 
     @Test
     public void majorCount() {
-        assertProbed("gc.majorCount");
+        assertCollected("gc.majorCount");
     }
 
     @Test
     public void majorTime() {
-        assertProbed("gc.majorTime");
+        assertCollected("gc.majorTime");
     }
 
 
     @Test
     public void unknownCount() {
-        assertProbed("gc.unknownCount");
+        assertCollected("gc.unknownCount");
     }
 
     @Test
     public void unknownTime() {
-        assertProbed("gc.unknownTime");
+        assertCollected("gc.unknownTime");
     }
 }

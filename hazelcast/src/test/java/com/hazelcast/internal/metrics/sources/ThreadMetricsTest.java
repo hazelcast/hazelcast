@@ -45,7 +45,7 @@ public class ThreadMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("thread.threadCount", MX_BEAN.getThreadCount(), 10);
+                assertCollected("thread.threadCount", MX_BEAN.getThreadCount(), 10);
             }
         });
     }
@@ -55,7 +55,7 @@ public class ThreadMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("thread.peakThreadCount", MX_BEAN.getPeakThreadCount(), 10);
+                assertCollected("thread.peakThreadCount", MX_BEAN.getPeakThreadCount(), 10);
             }
         });
     }
@@ -65,7 +65,7 @@ public class ThreadMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("thread.daemonThreadCount", MX_BEAN.getDaemonThreadCount(), 10);
+                assertCollected("thread.daemonThreadCount", MX_BEAN.getDaemonThreadCount(), 10);
             }
         });
     }
@@ -75,7 +75,7 @@ public class ThreadMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("thread.totalStartedThreadCount", MX_BEAN.getTotalStartedThreadCount(), 10);
+                assertCollected("thread.totalStartedThreadCount", MX_BEAN.getTotalStartedThreadCount(), 10);
             }
         });
     }

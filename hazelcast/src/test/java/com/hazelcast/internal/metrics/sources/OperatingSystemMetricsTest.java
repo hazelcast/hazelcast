@@ -86,7 +86,7 @@ public class OperatingSystemMetricsTest extends AbstractMetricsTest {
     }
 
     private void assertContainsSensor(String expectedKey) {
-        assertProbed(expectedKey);
+        assertCollected(expectedKey);
     }
 
     private void assumeOperatingSystemMXBeanType(String expected) {
@@ -101,17 +101,17 @@ public class OperatingSystemMetricsTest extends AbstractMetricsTest {
 
     @Test
     public void registerMethod_whenDouble() {
-        assertProbed("doubleMethod", ProbeUtils.toLong(10d));
+        assertCollected("doubleMethod", ProbeUtils.toLong(10d));
     }
 
     @Test
     public void registerMethod_whenLong() {
-        assertProbed("longMethod", 10L);
+        assertCollected("longMethod", 10L);
     }
 
     @Test
     public void registerMethod_whenNotExist() {
-        assertNotProbed("notExist");
+        assertNotCollected("notExist");
     }
 
     public static class FakeOperatingSystemBean {

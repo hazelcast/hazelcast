@@ -25,6 +25,7 @@ import static com.hazelcast.internal.metrics.ProbeUtils.isSupportedProbeType;
 import static com.hazelcast.internal.metrics.ProbeUtils.probeName;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -609,6 +610,10 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                     try {
                         cycle.collect(level, methodNames[i],
                                 ProbeUtils.toLong(methods[i].invoke(instance, EMPTY_ARGS)));
+                    } catch (InvocationTargetException e) {
+                        LOGGER.warning(
+                                "@Probe method `" + methods[i].getName() + "` throw exception:",
+                                e.getTargetException());
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read method probe: " + methods[i].getName(), e);
                     }

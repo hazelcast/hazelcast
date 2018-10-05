@@ -167,104 +167,104 @@ public class ProbeAnnotatedMethodsTest extends AbstractMetricsTest implements Me
 
     @Test
     public void methodReturningNull() {
-        assertProbed("foo.nullMethod", -1L);
+        assertCollected("foo.nullMethod", -1L);
     }
 
     @Test
     public void methodThrowingAnException() {
-        assertNotProbed("foo.exceptionMethod");
+        assertNotCollected("foo.exceptionMethod");
     }
 
     @Test
     public void methodWithArguments() {
-        assertNotProbed("foo.argMethod");
+        assertNotCollected("foo.argMethod");
     }
 
     @Test
     public void withCustomName() {
-        assertProbed("foo.mymethod", 10);
+        assertCollected("foo.mymethod", 10);
     }
 
     @Test
     public void methodReturnsVoid() {
-        assertNotProbed("foo.voidMethod");
+        assertNotCollected("foo.voidMethod");
     }
 
     @Test
     public void primitiveByte() {
-        assertProbed("foo.byteMethod", 10);
+        assertCollected("foo.byteMethod", 10);
     }
 
     @Test
     public void primitiveShort() {
-        assertProbed("foo.shortMethod", 10);
+        assertCollected("foo.shortMethod", 10);
     }
 
     @Test
     public void primitiveInt() {
-        assertProbed("foo.intMethod", 10);
+        assertCollected("foo.intMethod", 10);
     }
 
     @Test
     public void primitiveLong() {
-        assertProbed("foo.longMethod", 10L);
+        assertCollected("foo.longMethod", 10L);
     }
 
 
     @Test
     public void primitiveFloat() {
-        assertProbed("foo.floatMethod", ProbeUtils.toLong(10d));
+        assertCollected("foo.floatMethod", ProbeUtils.toLong(10d));
     }
 
     @Test
     public void primitiveDouble() {
-        assertProbed("foo.doubleMethod", ProbeUtils.toLong(10d));
+        assertCollected("foo.doubleMethod", ProbeUtils.toLong(10d));
     }
 
     @Test
     public void atomicLong() {
-        assertProbed("foo.atomicLongMethod", 10L);
+        assertCollected("foo.atomicLongMethod", 10L);
     }
 
     @Test
     public void atomicInteger() {
-        assertProbed("foo.atomicIntegerMethod", 10L);
+        assertCollected("foo.atomicIntegerMethod", 10L);
     }
 
     @Test
     public void counter() {
-        assertProbed("foo.counterMethod", 10L);
+        assertCollected("foo.counterMethod", 10L);
     }
 
     @Test
     public void collection() {
-        assertProbed("foo.collectionMethod", 10L);
+        assertCollected("foo.collectionMethod", 10L);
     }
 
     @Test
     public void map() {
-        assertProbed("foo.mapMethod", 10L);
+        assertCollected("foo.mapMethod", 10L);
     }
 
     @Test
     public void subclass() {
-        assertProbed("foo.subclassMapMethod", 10L);
+        assertCollected("foo.subclassMapMethod", 10L);
     }
 
     @Test
     public void staticMethod() {
-        assertProbed("foo.staticMethod", 10L);
+        assertCollected("foo.staticMethod", 10L);
     }
 
     @Test
     public void interfaceMethod() {
-        assertProbed("foo.interfaceMethod", 10L);
+        assertCollected("foo.interfaceMethod", 10L);
     }
 
     @Test
     public void superclassWithGaugeMethods() {
-        assertProbed("foo.inheritedMethod", 10L);
-        assertProbed("foo.inheritedField", 10L);
+        assertCollected("foo.inheritedMethod", 10L);
+        assertCollected("foo.inheritedField", 10L);
     }
 
     abstract static class ClassWithProbes {

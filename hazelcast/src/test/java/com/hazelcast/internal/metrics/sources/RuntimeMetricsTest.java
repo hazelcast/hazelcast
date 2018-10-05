@@ -48,7 +48,7 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("runtime.freeMemory", runtime.freeMemory(), TEN_MB);
+                assertCollected("runtime.freeMemory", runtime.freeMemory(), TEN_MB);
             }
         });
     }
@@ -58,7 +58,7 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("runtime.totalMemory", runtime.totalMemory(), TEN_MB);
+                assertCollected("runtime.totalMemory", runtime.totalMemory(), TEN_MB);
             }
         });
     }
@@ -68,7 +68,7 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertProbed("runtime.maxMemory", runtime.maxMemory(), TEN_MB);
+                assertCollected("runtime.maxMemory", runtime.maxMemory(), TEN_MB);
             }
         });
     }
@@ -79,14 +79,14 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
             @Override
             public void run() throws Exception {
                 long expected = runtime.totalMemory() - runtime.freeMemory();
-                assertProbed("runtime.usedMemory", expected, TEN_MB);
+                assertCollected("runtime.usedMemory", expected, TEN_MB);
             }
         });
     }
 
     @Test
     public void availableProcessors() {
-        assertProbed("runtime.availableProcessors", runtime.availableProcessors());
+        assertCollected("runtime.availableProcessors", runtime.availableProcessors());
     }
 
     @Test
@@ -95,7 +95,7 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
             @Override
             public void run() throws Exception {
                 long expected = ManagementFactory.getRuntimeMXBean().getUptime();
-                assertProbed("runtime.uptime", expected, TimeUnit.MINUTES.toMillis(1));
+                assertCollected("runtime.uptime", expected, TimeUnit.MINUTES.toMillis(1));
             }
         });
     }

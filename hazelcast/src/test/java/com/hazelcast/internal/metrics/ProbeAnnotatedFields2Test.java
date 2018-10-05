@@ -52,7 +52,7 @@ public class ProbeAnnotatedFields2Test extends AbstractMetricsTest implements Me
 
     @Test
     public void whenUnknownType() {
-        assertNotProbed("unknownTypeField");
+        assertNotCollected("unknownTypeField");
     }
 
     private static final class UnknownFieldType {
@@ -91,7 +91,7 @@ public class ProbeAnnotatedFields2Test extends AbstractMetricsTest implements Me
     }
 
     private void assertLong(String fieldName, long expectedValue) throws Exception {
-        assertProbed(fieldName, expectedValue);
+        assertCollected(fieldName, expectedValue);
     }
 
     @Test
@@ -105,7 +105,7 @@ public class ProbeAnnotatedFields2Test extends AbstractMetricsTest implements Me
     }
 
     private void assertDouble(String fieldName, double expected) throws Exception {
-        assertProbed(fieldName, expected == -1d ? -1L : ProbeUtils.toLong(expected));
+        assertCollected(fieldName, expected == -1d ? -1L : ProbeUtils.toLong(expected));
     }
 
     private static final class SomeSource {

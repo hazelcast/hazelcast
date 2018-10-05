@@ -48,32 +48,32 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
         this.context = context;
     }
 
-    protected final void assertHasStatsEventually(int minimumProbes, String type, String name) {
-        assertHasStatsEventually(minimumProbes, type, name, "");
+    protected final void assertHasStatsEventually(int minimumMetrics, String type, String name) {
+        assertHasStatsEventually(minimumMetrics, type, name, "");
     }
 
-    protected final void assertHasStatsEventually(int minimumProbes, String type, String name,
+    protected final void assertHasStatsEventually(int minimumMetrics, String type, String name,
             String additionalPrefix) {
-        assertHasStatsEventually(minimumProbes,
+        assertHasStatsEventually(minimumMetrics,
                 MetricsSource.TAG_TYPE + "=" + type + " "
                         + MetricsSource.TAG_INSTANCE + "=" + name + " "
                         + additionalPrefix);
     }
 
-    protected final void assertHasStatsEventually(final int minimumProbes, final String prefix) {
+    protected final void assertHasStatsEventually(final int minimumMetrics, final String prefix) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertHasStatsWith(minimumProbes, prefix);
+                assertHasStatsWith(minimumMetrics, prefix);
             }
         });
     }
 
-    protected final void assertHasStatsWith(int minimumProbes, final String prefix) {
+    protected final void assertHasStatsWith(int minimumMetrics, final String prefix) {
         final StringMetricsCollector collector = new StringMetricsCollector(prefix);
         context.collectAll(probeLevel, collector);
-        assertThat("minimum number of metrics ", collector.probes.size(), greaterThanOrEqualTo(minimumProbes));
-        if (minimumProbes > 1) {
+        assertThat("minimum number of metrics ", collector.matches.size(), greaterThanOrEqualTo(minimumMetrics));
+        if (minimumMetrics > 1) {
             assertHasCreationTime(prefix, collector);
         }
     }
@@ -82,13 +82,13 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
         boolean expectCreationTime = prefix.contains(MetricsSource.TAG_INSTANCE + "=")
                 && !prefix.contains("type=internal-");
         if (expectCreationTime) {
-            for (String key : collector.probes.keySet()) {
+            for (String key : collector.matches.keySet()) {
                 if (key.contains("creationTime")) {
                     return;
                 }
             }
             fail("Expected at least one metric with name `creationTime` but found: "
-                    + collector.probes.keySet());
+                    + collector.matches.keySet());
         }
     }
 
@@ -99,9 +99,9 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
             public void run() throws Exception {
                 final StringMetricsCollector collector = new StringMetricsCollector(prefixes);
                 context.collectAll(probeLevel, collector);
-                if (!collector.probes.keySet().containsAll(prefixes)) {
+                if (!collector.matches.keySet().containsAll(prefixes)) {
                     HashSet<String> missing = new HashSet<String>(prefixes);
-                    missing.removeAll(collector.probes.keySet());
+                    missing.removeAll(collector.matches.keySet());
                     fail("Missing statistics are: " + missing);
                 }
             }
@@ -109,7 +109,7 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
     }
 
     static class StringMetricsCollector implements MetricsCollector {
-        final HashMap<String, Object> probes = new HashMap<String, Object>();
+        final HashMap<String, Object> matches = new HashMap<String, Object>();
         private final Set<String> expectedPrefixes;
 
         StringMetricsCollector(String prefix) {
@@ -123,7 +123,7 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
         @Override
         public void collect(CharSequence key, long value) {
             if (startsWithAnyPrefix(key)) {
-                probes.put(key.toString(), value);
+                matches.put(key.toString(), value);
             }
         }
 
@@ -139,8 +139,8 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
-            for (Entry<String, Object> probe : probes.entrySet()) {
-                sb.append(probe.getKey()).append(" - ").append(probe.getValue()).append("\n");
+            for (Entry<String, Object> match : matches.entrySet()) {
+                sb.append(match.getKey()).append(" - ").append(match.getValue()).append("\n");
             }
             return sb.toString();
         }

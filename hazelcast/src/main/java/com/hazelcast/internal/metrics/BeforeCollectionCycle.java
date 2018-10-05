@@ -42,7 +42,7 @@ public @interface BeforeCollectionCycle {
 
     /**
      * By setting a {@link ProbeLevel} with less precedence this the update can
-     * effectively be disabled when rendering is on a higher precedence level.
+     * effectively be disabled when collection is on a higher precedence level.
      *
      * @return the minimum level for which the update should occur
      */
