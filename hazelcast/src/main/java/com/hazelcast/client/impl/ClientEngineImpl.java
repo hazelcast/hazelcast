@@ -368,7 +368,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, getLogger(ClientHeartbeatMonitor.class), nodeEngine.getExecutionService(), node.getProperties());
         heartbeatMonitor.start();
-        node.nodeEngine.getProbeRegistry().register(new ClientEngineProbeSource(endpointManager));
+        node.nodeEngine.getMetricsRegistry().register(new ClientEngineMetrics(endpointManager));
     }
 
     @Override

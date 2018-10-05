@@ -22,8 +22,8 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -48,7 +48,7 @@ import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatis
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
-        ProbeSource {
+        MetricsSource {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
 
@@ -80,7 +80,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         probeStatistics(cycle, "topic", statsMap);
     }
 

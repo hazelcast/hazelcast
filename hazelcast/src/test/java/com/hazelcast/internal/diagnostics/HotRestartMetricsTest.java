@@ -44,7 +44,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 
 @RunWith(HazelcastParallelClassRunner.class)
-public class HotRestartMetricsTest extends AbstractMetricsTest {
+public class HotRestartMetricsTest extends AbstractMetricsIntegrationTest {
 
     private HazelcastInstance hz;
 
@@ -53,7 +53,7 @@ public class HotRestartMetricsTest extends AbstractMetricsTest {
         Config config = new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
         hz = HazelcastInstanceFactory.newHazelcastInstance(config, randomName(),
                 new HotRestartMockingNodeContext());
-        setRenderContext(getNode(hz).nodeEngine.getProbeRegistry().newRenderContext());
+        setCollectionContext(getNode(hz).nodeEngine.getMetricsRegistry().openContext());
     }
 
     @After

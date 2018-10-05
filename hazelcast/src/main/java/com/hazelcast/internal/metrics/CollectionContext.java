@@ -19,28 +19,28 @@ package com.hazelcast.internal.metrics;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
- * From a usability point of view the {@link ProbeRenderContext} is a bit
+ * From a usability point of view the {@link CollectionContext} is a bit
  * cumbersome and smells like over-abstraction. It is purely introduced to
- * achieve the goal of rendering without creating garbage objects. That means
- * state needs to be reused. This object is the place where state can be kept in
- * a way that allows reuse between rendering cycles.
+ * achieve the goal of collecting without creating garbage objects. That means
+ * some collection meta data needs to be reused. This object is the place where it can be kept in
+ * a way that allows reuse between collection cycles.
  *
- * The {@link ProbeRenderer} itself usually changes for each cycle as it tends
+ * The {@link MetricsCollector} itself usually changes for each cycle as it tends
  * to be dependent on output stream objects handed to it.
  */
 @PrivateApi
-public interface ProbeRenderContext {
+public interface CollectionContext {
 
     /**
-     * Causes a {@link ProbingCycle} that is directed at the given
-     * {@link ProbeRenderer}.
+     * Causes a {@link CollectionCycle} that is directed at the given
+     * {@link MetricsCollector}.
      *
      * This method does not support multi-threading. If potentially concurrent calls
      * to this method should be made each should originate from its own
-     * {@link ProbeRenderContext}.
+     * {@link CollectionContext}.
      *
-     * @param renderer not null; is called for each active prove with a key and
-     *        value to convert them to the renderer specific format.
+     * @param collector not null; is called for each active metric with a key and
+     *        value to convert them to the collectors specific format.
      */
-    void render(ProbeLevel level, ProbeRenderer renderer);
+    void collectAll(ProbeLevel level, MetricsCollector collector);
 }

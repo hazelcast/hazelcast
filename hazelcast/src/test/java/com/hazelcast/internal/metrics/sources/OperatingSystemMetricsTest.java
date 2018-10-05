@@ -28,30 +28,30 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.internal.metrics.AbstractProbeTest;
-import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.AbstractMetricsTest;
+import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.ProbeUtils;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ProbeOperatingSystemTest extends AbstractProbeTest {
+public class OperatingSystemMetricsTest extends AbstractMetricsTest {
 
-    private final ProbeSource OS = new ProbeSource() {
+    private final MetricsSource OS = new MetricsSource() {
 
         @Override
-        public void probeNow(ProbingCycle cycle) {
-            cycle.gather(MANDATORY, new FakeOperatingSystemBean(),
+        public void collectAll(CollectionCycle cycle) {
+            cycle.collect(MANDATORY, new FakeOperatingSystemBean(),
                     new String[] { "longMethod", "doubleMethod", "notExist" });
         }
     };
 
     @Before
     public void setup() {
-        registry.register(new MachineProbeSource());
+        registry.register(new MachineMetrics());
         registry.register(OS);
     }
 

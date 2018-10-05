@@ -16,20 +16,20 @@
 
 package com.hazelcast.internal.metrics.sources;
 
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.memory.MemoryStats;
 
-public final class MemoryProbeSource implements ProbeSource {
+public final class MemoryMetrics implements MetricsSource {
 
     private final MemoryStats memoryStats;
 
-    public MemoryProbeSource(MemoryStats memoryStats) {
+    public MemoryMetrics(MemoryStats memoryStats) {
         this.memoryStats = memoryStats;
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         if (memoryStats != null) {
             cycle.probe("memory", memoryStats);
             cycle.probe("gc", memoryStats.getGCStats());

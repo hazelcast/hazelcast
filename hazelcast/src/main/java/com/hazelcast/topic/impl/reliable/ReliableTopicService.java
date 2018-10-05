@@ -18,8 +18,8 @@ package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.spi.ManagedService;
@@ -36,7 +36,7 @@ import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatis
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class ReliableTopicService
-        implements ManagedService, RemoteService, ProbeSource {
+        implements ManagedService, RemoteService, MetricsSource {
 
     public static final String SERVICE_NAME = "hz:impl:reliableTopicService";
     private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
@@ -77,7 +77,7 @@ public class ReliableTopicService
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         probeStatistics(cycle, "reliableTopic", statsMap);
     }
 

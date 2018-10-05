@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.metrics;
 
-import static com.hazelcast.internal.metrics.ProbeSource.TAG_INSTANCE;
-import static com.hazelcast.internal.metrics.ProbeSource.TAG_TYPE;
+import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
+import static com.hazelcast.internal.metrics.MetricsSource.TAG_TYPE;
 import static com.hazelcast.util.StringUtil.getterIntoProperty;
 import static java.lang.Math.round;
 
@@ -32,7 +32,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.hazelcast.internal.metrics.ProbingCycle.Tags;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -59,7 +59,7 @@ public final class ProbeUtils {
     /**
      * @param value any double value
      * @return the long value representing the double as expected by a
-     *         {@link ProbeRenderer} that only works in longs
+     *         {@link MetricsCollector} that only works in longs
      */
     public static long toLong(double value) {
         return round(value * DOUBLE_TO_LONG_FACTOR);
@@ -79,7 +79,7 @@ public final class ProbeUtils {
     /**
      * @param value any boolean value
      * @return the long representing the boolean as expected by a
-     *         {@link ProbeRenderer} that only works in longs
+     *         {@link MetricsCollector} that only works in longs
      */
     public static long toLong(boolean value) {
         return value ? 1 : 0;
@@ -151,7 +151,7 @@ public final class ProbeUtils {
                 || Map.class.isAssignableFrom(type)
                 || Counter.class.isAssignableFrom(type)
                 || Semaphore.class.isAssignableFrom(type)
-                || ProbeSource.class.isAssignableFrom(type)
+                || MetricsSource.class.isAssignableFrom(type)
                 || type.isAnnotationPresent(Probe.class);
     }
 
@@ -238,7 +238,7 @@ public final class ProbeUtils {
     }
 
 
-    public static void probeAllThreads(ProbingCycle cycle, String type, Thread[] threads) {
+    public static void probeAllThreads(CollectionCycle cycle, String type, Thread[] threads) {
         if (threads.length == 0) {
             // avoid unnecessary context manipulation
             return;
@@ -250,7 +250,7 @@ public final class ProbeUtils {
         }
     }
 
-    public static <T> void probeAllInstances(ProbingCycle cycle, String type, Map<String, T> entries) {
+    public static <T> void probeAllInstances(CollectionCycle cycle, String type, Map<String, T> entries) {
         if (entries.isEmpty()) {
             // avoid unnecessary context manipulation
             return;

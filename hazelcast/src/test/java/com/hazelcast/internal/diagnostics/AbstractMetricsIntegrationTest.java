@@ -29,22 +29,23 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRenderContext;
-import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.CollectionContext;
+import com.hazelcast.internal.metrics.MetricsCollector;
+import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
-public abstract class AbstractMetricsTest extends HazelcastTestSupport {
+public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSupport {
 
     private ProbeLevel probeLevel = ProbeLevel.INFO;
-    private ProbeRenderContext renderContext;
+    private CollectionContext context;
 
     public void setProbeLevel(ProbeLevel probeLevel) {
         this.probeLevel = probeLevel;
     }
 
-    public void setRenderContext(ProbeRenderContext renderContext) {
-        this.renderContext = renderContext;
+    public void setCollectionContext(CollectionContext context) {
+        this.context = context;
     }
 
     protected final void assertHasStatsEventually(int minimumProbes, String type, String name) {
@@ -54,8 +55,8 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
     protected final void assertHasStatsEventually(int minimumProbes, String type, String name,
             String additionalPrefix) {
         assertHasStatsEventually(minimumProbes,
-                ProbeSource.TAG_TYPE + "=" + type + " "
-                        + ProbeSource.TAG_INSTANCE + "=" + name + " "
+                MetricsSource.TAG_TYPE + "=" + type + " "
+                        + MetricsSource.TAG_INSTANCE + "=" + name + " "
                         + additionalPrefix);
     }
 
@@ -69,25 +70,25 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
     }
 
     protected final void assertHasStatsWith(int minimumProbes, final String prefix) {
-        final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
-        renderContext.render(probeLevel, renderer);
-        assertThat("minimum number of probes ", renderer.probes.size(), greaterThanOrEqualTo(minimumProbes));
+        final StringMetricsCollector collector = new StringMetricsCollector(prefix);
+        context.collectAll(probeLevel, collector);
+        assertThat("minimum number of metrics ", collector.probes.size(), greaterThanOrEqualTo(minimumProbes));
         if (minimumProbes > 1) {
-            assertHasCreationTime(prefix, renderer);
+            assertHasCreationTime(prefix, collector);
         }
     }
 
-    private static void assertHasCreationTime(String prefix, StringProbeRenderer renderer) {
-        boolean expectCreationTime = prefix.contains(ProbeSource.TAG_INSTANCE + "=")
+    private static void assertHasCreationTime(String prefix, StringMetricsCollector collector) {
+        boolean expectCreationTime = prefix.contains(MetricsSource.TAG_INSTANCE + "=")
                 && !prefix.contains("type=internal-");
         if (expectCreationTime) {
-            for (String key : renderer.probes.keySet()) {
+            for (String key : collector.probes.keySet()) {
                 if (key.contains("creationTime")) {
                     return;
                 }
             }
             fail("Expected at least one metric with name `creationTime` but found: "
-                    + renderer.probes.keySet());
+                    + collector.probes.keySet());
         }
     }
 
@@ -96,31 +97,31 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final StringProbeRenderer renderer = new StringProbeRenderer(prefixes);
-                renderContext.render(probeLevel, renderer);
-                if (!renderer.probes.keySet().containsAll(prefixes)) {
+                final StringMetricsCollector collector = new StringMetricsCollector(prefixes);
+                context.collectAll(probeLevel, collector);
+                if (!collector.probes.keySet().containsAll(prefixes)) {
                     HashSet<String> missing = new HashSet<String>(prefixes);
-                    missing.removeAll(renderer.probes.keySet());
+                    missing.removeAll(collector.probes.keySet());
                     fail("Missing statistics are: " + missing);
                 }
             }
         });
     }
 
-    static class StringProbeRenderer implements com.hazelcast.internal.metrics.ProbeRenderer {
+    static class StringMetricsCollector implements MetricsCollector {
         final HashMap<String, Object> probes = new HashMap<String, Object>();
         private final Set<String> expectedPrefixes;
 
-        StringProbeRenderer(String prefix) {
+        StringMetricsCollector(String prefix) {
             this(Collections.singleton(prefix));
         }
 
-        StringProbeRenderer(Set<String> expectedPrefixes) {
+        StringMetricsCollector(Set<String> expectedPrefixes) {
             this.expectedPrefixes = expectedPrefixes;
         }
 
         @Override
-        public void render(CharSequence key, long value) {
+        public void collect(CharSequence key, long value) {
             if (startsWithAnyPrefix(key)) {
                 probes.put(key.toString(), value);
             }

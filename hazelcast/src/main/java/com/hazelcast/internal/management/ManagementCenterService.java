@@ -101,7 +101,7 @@ public class ManagementCenterService {
     private final TaskPollThread taskPollThread;
     private final StateSendThread stateSendThread;
     private final Thread probeDataSendThread;
-    private final ProbeDataSender  probeDataSender;
+    private final MetricsUrlSender  probeDataSender;
     private final PrepareStateThread prepareStateThread;
     private final ILogger logger;
 
@@ -129,9 +129,9 @@ public class ManagementCenterService {
         this.connectionFactory = instance.node.getNodeExtension().getManagementCenterConnectionFactory();
         Address address = instance.node.getThisAddress();
         String member = address.getHost() + ":" + address.getPort();
-        this.probeDataSender = new ProbeDataSender(managementCenterUrl("metrics.do"), connectionFactory,
+        this.probeDataSender = new MetricsUrlSender(managementCenterUrl("metrics.do"), connectionFactory,
                 instance.getConfig().getGroupConfig().getName(), member,
-                instance.node.nodeEngine.getProbeRegistry().newRenderContext());
+                instance.node.nodeEngine.getMetricsRegistry().openContext());
         this.probeDataSendThread = new Thread(probeDataSender, createThreadName(instance.getName(), "MC.ProbeData.Sender"));
         if (this.managementCenterConfig.isEnabled()) {
             this.instance.getCluster().addMembershipListener(new ManagementCenterService.MemberListenerImpl());

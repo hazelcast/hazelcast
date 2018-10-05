@@ -19,9 +19,9 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRegistry;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
@@ -64,7 +64,7 @@ import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.newSetFromMap;
 
 public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet>,
-    ProbeSource {
+    MetricsSource {
 
     private static final int RETRY_NUMBER = 5;
     private static final long DELAY_FACTOR = 100L;
@@ -130,15 +130,15 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
-                                  ProbeRegistry probeRegistry,
+                                  MetricsRegistry metricsRegistry,
                                   Networking networking) {
-        this(ioService, serverSocketChannel, loggingService, probeRegistry, networking, null);
+        this(ioService, serverSocketChannel, loggingService, metricsRegistry, networking, null);
     }
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
-                                  ProbeRegistry probeRegistry,
+                                  MetricsRegistry metricsRegistry,
                                   Networking networking,
                                   HazelcastProperties properties) {
         this.ioService = ioService;
@@ -151,11 +151,11 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpConnectionManager")));
         this.spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
         // the problem is that this is behind a delegate and therefore not automatically recognized as probe source
-        probeRegistry.register(this);
+        metricsRegistry.register(this);
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         cycle.probe("tcp.connection", this);
         if (acceptor != null && cycle.isProbed(ProbeLevel.INFO)) {
             cycle.openContext().tag(TAG_TYPE, "acceptor").tag(TAG_INSTANCE, acceptor.getName());

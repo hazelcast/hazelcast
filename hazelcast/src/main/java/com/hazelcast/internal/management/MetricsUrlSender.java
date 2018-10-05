@@ -28,43 +28,43 @@ import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRenderContext;
+import com.hazelcast.internal.metrics.CollectionContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
 
 /**
- * A {@link Runnable} sending probe data of {@link ProbeRenderContext} to given
- * the {@link URL} using a {@link CompressingProbeRenderer}.
+ * A {@link Runnable} sending probe data of {@link CollectionContext} to given
+ * the {@link URL} using a {@link MetricsStreamer}.
  */
-final class ProbeDataSender implements Runnable, Closeable {
+final class MetricsUrlSender implements Runnable, Closeable {
 
     private static final int RECONNECT_SLOWDOWN_FACTOR = 5;
     private static final int CONNECTION_TIMEOUT_MILLIS = 3000;
     private static final int STANDED_INTERVAL_MILLIS = 1000;
 
-    private static final ILogger LOGGER = Logger.getLogger(ProbeDataSender.class);
+    private static final ILogger LOGGER = Logger.getLogger(MetricsUrlSender.class);
 
     private volatile URL url;
     private final ManagementCenterConnectionFactory connectionFactory;
 
-    private final ProbeRenderContext renderContext;
+    private final CollectionContext context;
     private final long intervalMs;
     private final String timeKey;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final String member;
 
-    public ProbeDataSender(URL url, ManagementCenterConnectionFactory connectionFactory,
-            String group, String member, ProbeRenderContext renderContext) {
-        this(url, connectionFactory, group, member, renderContext, STANDED_INTERVAL_MILLIS);
+    public MetricsUrlSender(URL url, ManagementCenterConnectionFactory connectionFactory,
+            String group, String member, CollectionContext context) {
+        this(url, connectionFactory, group, member, context, STANDED_INTERVAL_MILLIS);
     }
 
-    public ProbeDataSender(URL url, ManagementCenterConnectionFactory connectionFactory,
-            String group, String member, ProbeRenderContext renderContext, long intervalMs) {
+    public MetricsUrlSender(URL url, ManagementCenterConnectionFactory connectionFactory,
+            String group, String member, CollectionContext context, long intervalMs) {
         this.url = url;
         this.connectionFactory = connectionFactory;
         this.member = member;
-        this.renderContext = renderContext;
+        this.context = context;
         this.intervalMs = intervalMs;
         this.timeKey = "group=" + group + " member=" + member + " time";
     }
@@ -92,7 +92,7 @@ final class ProbeDataSender implements Runnable, Closeable {
             while (isRunning()) {
                 long startMs = Clock.currentTimeMillis();
                 URL currentURL = url;
-                boolean isFailure = !sendProbeData(currentURL, assumeConnected);
+                boolean isFailure = !collectAndSend(currentURL, assumeConnected);
                 long endMs = Clock.currentTimeMillis();
                 long durationMs = endMs - startMs;
                 boolean isSlow = durationMs > intervalMs / 2;
@@ -127,7 +127,7 @@ final class ProbeDataSender implements Runnable, Closeable {
         }
     }
 
-    private boolean sendProbeData(URL url, boolean connected) throws IOException {
+    private boolean collectAndSend(URL url, boolean connected) throws IOException {
         if (url == null) {
             return false;
         }
@@ -135,13 +135,13 @@ final class ProbeDataSender implements Runnable, Closeable {
         try {
             HttpURLConnection conn = openConnection(url);
             out = conn.getOutputStream();
-            CompressingProbeRenderer renderer = new CompressingProbeRenderer(out);
+            MetricsStreamer streamer = new MetricsStreamer(out);
             // start with the common group member and time
-            renderer.render(timeKey, Clock.currentTimeMillis());
+            streamer.collect(timeKey, Clock.currentTimeMillis());
             if (connected) {
-                renderContext.render(ProbeLevel.INFO, renderer);
+                context.collectAll(ProbeLevel.INFO, streamer);
             }
-            renderer.done();
+            streamer.done();
             return conn.getResponseCode() == HTTP_OK;
         } catch (Exception e) {
             return false;

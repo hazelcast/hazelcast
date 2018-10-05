@@ -15,14 +15,15 @@
  */
 
 /**
- * Contains the Hazelcast probing facility.
+ * Contains the Hazelcast metrics facility.
  *
  * A client or node will create a
- * {@link com.hazelcast.internal.metrics.ProbeRegistry}. During startup the
+ * {@link com.hazelcast.internal.metrics.MetricsRegistry}. During startup the
  * central services and managers are registered as
- * {@link com.hazelcast.internal.metrics.ProbeRegistry.ProbeSource}.
- * These are the root objects that are the starting points of running
- * {@link com.hazelcast.internal.metrics.ProbingCycle}s to render the measured
- * data using a {@link com.hazelcast.internal.metrics.ProbeRenderer}.
+ * {@link com.hazelcast.internal.metrics.MetricsSource}. These are the root
+ * objects that are the starting points of running
+ * {@link com.hazelcast.internal.metrics.CollectionCycle}s to collect the
+ * measured data using a
+ * {@link com.hazelcast.internal.metrics.MetricsCollector}.
  */
 package com.hazelcast.internal.metrics;

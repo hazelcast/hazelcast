@@ -24,20 +24,20 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.internal.metrics.AbstractProbeTest;
+import com.hazelcast.internal.metrics.AbstractMetricsTest;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeClassLoadingTest extends AbstractProbeTest {
+public class ClassLoadingMetricsTest extends AbstractMetricsTest {
 
     private static final ClassLoadingMXBean BEAN = ManagementFactory.getClassLoadingMXBean();
 
     @Before
     public void setup() {
-        registry.register(new MachineProbeSource());
+        registry.register(new MachineMetrics());
     }
 
     @Test

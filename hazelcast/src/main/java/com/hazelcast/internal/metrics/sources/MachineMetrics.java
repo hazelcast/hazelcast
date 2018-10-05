@@ -25,14 +25,14 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 
 /**
- * A {@link ProbeSource} providing information on runtime, threads,
+ * A {@link MetricsSource} providing information on runtime, threads,
  * class-loading and OS properties
  */
-public final class MachineProbeSource implements ProbeSource {
+public final class MachineMetrics implements MetricsSource {
 
     private static final String[] PROBED_OS_METHODS = { "getCommittedVirtualMemorySize",
             "getFreePhysicalMemorySize", "getFreeSwapSpaceSize", "getProcessCpuTime",
@@ -47,7 +47,7 @@ public final class MachineProbeSource implements ProbeSource {
     private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         cycle.openContext().prefix("classloading");
         probeProperties(cycle, classLoadingMXBean);
         cycle.openContext().prefix("os");
@@ -61,43 +61,43 @@ public final class MachineProbeSource implements ProbeSource {
         probeProperties(cycle, userHome);
     }
 
-    public static void probeProperties(ProbingCycle cycle, File f) {
-        cycle.gather(MANDATORY, "creationTime", f.lastModified());
-        cycle.gather(MANDATORY, "freeSpace", f.getFreeSpace());
-        cycle.gather(MANDATORY, "totalSpace", f.getTotalSpace());
-        cycle.gather(MANDATORY, "usableSpace", f.getUsableSpace());
+    public static void probeProperties(CollectionCycle cycle, File f) {
+        cycle.collect(MANDATORY, "creationTime", f.lastModified());
+        cycle.collect(MANDATORY, "freeSpace", f.getFreeSpace());
+        cycle.collect(MANDATORY, "totalSpace", f.getTotalSpace());
+        cycle.collect(MANDATORY, "usableSpace", f.getUsableSpace());
     }
 
-    public static void probeProperties(ProbingCycle cycle, ClassLoadingMXBean bean) {
-        cycle.gather(MANDATORY, "loadedClassCount", bean.getLoadedClassCount());
-        cycle.gather(MANDATORY, "totalLoadedClassCount", bean.getTotalLoadedClassCount());
-        cycle.gather(MANDATORY, "unloadedClassCount", bean.getUnloadedClassCount());
+    public static void probeProperties(CollectionCycle cycle, ClassLoadingMXBean bean) {
+        cycle.collect(MANDATORY, "loadedClassCount", bean.getLoadedClassCount());
+        cycle.collect(MANDATORY, "totalLoadedClassCount", bean.getTotalLoadedClassCount());
+        cycle.collect(MANDATORY, "unloadedClassCount", bean.getUnloadedClassCount());
     }
 
-    public static void probeProperties(ProbingCycle cycle, Runtime runtime) {
+    public static void probeProperties(CollectionCycle cycle, Runtime runtime) {
         long free = runtime.freeMemory();
         long total = runtime.totalMemory();
-        cycle.gather(MANDATORY, "availableProcessors", runtime.availableProcessors());
-        cycle.gather(MANDATORY, "freeMemory", free);
-        cycle.gather(MANDATORY, "maxMemory", runtime.maxMemory());
-        cycle.gather(MANDATORY, "totalMemory", total);
-        cycle.gather(MANDATORY, "usedMemory", total - free);
+        cycle.collect(MANDATORY, "availableProcessors", runtime.availableProcessors());
+        cycle.collect(MANDATORY, "freeMemory", free);
+        cycle.collect(MANDATORY, "maxMemory", runtime.maxMemory());
+        cycle.collect(MANDATORY, "totalMemory", total);
+        cycle.collect(MANDATORY, "usedMemory", total - free);
     }
 
-    public static void probeProperties(ProbingCycle cycle, RuntimeMXBean bean) {
-        cycle.gather("startTime", bean.getStartTime());
-        cycle.gather(MANDATORY, "uptime", bean.getUptime());
+    public static void probeProperties(CollectionCycle cycle, RuntimeMXBean bean) {
+        cycle.collect("startTime", bean.getStartTime());
+        cycle.collect(MANDATORY, "uptime", bean.getUptime());
     }
 
-    public static void probeProperties(ProbingCycle cycle, ThreadMXBean bean) {
-        cycle.gather(MANDATORY, "daemonThreadCount", bean.getDaemonThreadCount());
-        cycle.gather(MANDATORY, "peakThreadCount", bean.getPeakThreadCount());
-        cycle.gather(MANDATORY, "threadCount", bean.getThreadCount());
-        cycle.gather(MANDATORY, "totalStartedThreadCount", bean.getTotalStartedThreadCount());
+    public static void probeProperties(CollectionCycle cycle, ThreadMXBean bean) {
+        cycle.collect(MANDATORY, "daemonThreadCount", bean.getDaemonThreadCount());
+        cycle.collect(MANDATORY, "peakThreadCount", bean.getPeakThreadCount());
+        cycle.collect(MANDATORY, "threadCount", bean.getThreadCount());
+        cycle.collect(MANDATORY, "totalStartedThreadCount", bean.getTotalStartedThreadCount());
     }
 
-    public static void probeProperties(ProbingCycle cycle, OperatingSystemMXBean bean) {
-        cycle.gather(MANDATORY, bean, PROBED_OS_METHODS);
-        cycle.gather(MANDATORY, "systemLoadAverage", bean.getSystemLoadAverage());
+    public static void probeProperties(CollectionCycle cycle, OperatingSystemMXBean bean) {
+        cycle.collect(MANDATORY, bean, PROBED_OS_METHODS);
+        cycle.collect(MANDATORY, "systemLoadAverage", bean.getSystemLoadAverage());
     }
 }

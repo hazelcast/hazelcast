@@ -21,29 +21,29 @@ import static com.hazelcast.internal.metrics.CharSequenceUtils.startsWith;
 import java.util.Collection;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.CharSequenceUtils.Lines;
-import com.hazelcast.internal.metrics.ProbingCycle.Tags;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 
 /**
- * {@link ProbeSource} for {@link ClientEngineImpl} that got extracted into a
+ * {@link MetricsSource} for {@link ClientEngineImpl} that got extracted into a
  * class on its own to not clutter {@link ClientEngineImpl} too much with
  * probing concerns.
  *
- * That means this {@link ProbeSource} is created and registered by the
+ * That means this {@link MetricsSource} is created and registered by the
  * {@link ClientEngineImpl}.
  */
-public final class ClientEngineProbeSource implements ProbeSource {
+public final class ClientEngineMetrics implements MetricsSource {
 
     private final ClientEndpointManagerImpl endpointManager;
 
-    ClientEngineProbeSource(ClientEndpointManagerImpl endpointManager) {
+    ClientEngineMetrics(ClientEndpointManagerImpl endpointManager) {
         this.endpointManager = endpointManager;
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         cycle.probe("client.endpoint", endpointManager);
         if (!cycle.isProbed(ProbeLevel.INFO)) {
             return;
@@ -62,7 +62,7 @@ public final class ClientEngineProbeSource implements ProbeSource {
                     .tag("address", address == null ? "?" : address);
                     // this particular metric is used to convey details of the endpoint via tags
                     boolean isOwnerConnection = endpoint.isOwnerConnection();
-                    cycle.gather("ownerConnection", isOwnerConnection);
+                    cycle.collect("ownerConnection", isOwnerConnection);
                     if (isOwnerConnection) {
                         probeClientStatistics(cycle, endpoint.getUuid(), endpoint.getClientStatistics());
                     }
@@ -71,7 +71,7 @@ public final class ClientEngineProbeSource implements ProbeSource {
         }
     }
 
-    public static void probeClientStatistics(ProbingCycle cycle, CharSequence origin, CharSequence stats) {
+    public static void probeClientStatistics(CollectionCycle cycle, CharSequence origin, CharSequence stats) {
         if (stats == null) {
             return;
         }
@@ -85,11 +85,11 @@ public final class ClientEngineProbeSource implements ProbeSource {
             .tag(TAG_TARGET, lines.next())
             .tag("version", lines.next());
             // this additional metric is used to convey client details via tags
-            cycle.gather("principal", "?".contentEquals(lines.next()));
+            cycle.collect("principal", "?".contentEquals(lines.next()));
             cycle.openContext().tag("origin", origin);
             lines.next();
             while (lines.length() > 0) {
-                cycle.gatherForwarded(lines.key(), lines.value());
+                cycle.collectForwarded(lines.key(), lines.value());
                 // first to end of current line as key goes back
                 lines.next().next();
             }

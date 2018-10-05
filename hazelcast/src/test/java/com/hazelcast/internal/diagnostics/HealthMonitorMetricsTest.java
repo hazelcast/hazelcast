@@ -29,7 +29,7 @@ import com.hazelcast.test.annotation.QuickTest;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
-public class HealthMonitorMetricsTest extends DefaultMetricsTest {
+public class HealthMonitorMetricsTest extends HazelcastInstanceMetricsIntegrationTest {
 
     /**
      * Check that the statistics used by the {@link HealthMonitor} are available.

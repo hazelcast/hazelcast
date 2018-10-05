@@ -16,13 +16,13 @@
 
 package com.hazelcast.monitor.impl;
 
-import static com.hazelcast.internal.metrics.ProbeSource.TAG_INSTANCE;
-import static com.hazelcast.internal.metrics.ProbeSource.TAG_TYPE;
+import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
+import static com.hazelcast.internal.metrics.MetricsSource.TAG_TYPE;
 
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.NearCacheStats;
@@ -42,13 +42,13 @@ public abstract class LocalDistributedObjectStats implements LocalInstanceStats 
         return statisticsEnabled;
     }
 
-    public static <T extends LocalDistributedObjectStats> void probeStatistics(ProbingCycle cycle,
+    public static <T extends LocalDistributedObjectStats> void probeStatistics(CollectionCycle cycle,
             String type, Map<String, T> stats) {
         if (stats.isEmpty()) {
             // avoid unnecessary context manipulation
             return;
         }
-        ProbingCycle.Tags tags = cycle.openContext().tag(TAG_TYPE, type);
+        CollectionCycle.Tags tags = cycle.openContext().tag(TAG_TYPE, type);
         for (Entry<String, T> e : stats.entrySet()) {
             T val = e.getValue();
             if (val.isStatisticsEnabled()) {

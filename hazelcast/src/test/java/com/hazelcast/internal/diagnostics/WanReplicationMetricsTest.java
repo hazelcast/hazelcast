@@ -48,7 +48,7 @@ import com.hazelcast.wan.impl.WanReplicationServiceImpl;
  * These tests are isolated as they require special setup including real network IO.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-public class WanReplicationMetricsTest extends AbstractMetricsTest {
+public class WanReplicationMetricsTest extends AbstractMetricsIntegrationTest {
 
     private HazelcastInstance hz;
 
@@ -57,7 +57,7 @@ public class WanReplicationMetricsTest extends AbstractMetricsTest {
         Config config = new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
         hz = HazelcastInstanceFactory.newHazelcastInstance(config, randomName(),
                 new WanServiceMockingNodeContext());
-        setRenderContext(getNode(hz).nodeEngine.getProbeRegistry().newRenderContext());
+        setCollectionContext(getNode(hz).nodeEngine.getMetricsRegistry().openContext());
     }
 
     @After

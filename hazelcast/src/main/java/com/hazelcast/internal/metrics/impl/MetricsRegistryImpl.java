@@ -40,15 +40,15 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.hazelcast.internal.metrics.BeforeProbeCycle;
+import com.hazelcast.internal.metrics.BeforeCollectionCycle;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRegistry;
-import com.hazelcast.internal.metrics.ProbeRenderContext;
-import com.hazelcast.internal.metrics.ProbeRenderer;
-import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.CollectionContext;
+import com.hazelcast.internal.metrics.MetricsCollector;
+import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.ProbeUtils;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.ProbingContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -56,9 +56,9 @@ import com.hazelcast.util.Clock;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-public final class ProbeRegistryImpl implements ProbeRegistry {
+public final class MetricsRegistryImpl implements MetricsRegistry {
 
-    private static final ILogger LOGGER = Logger.getLogger(ProbeRegistryImpl.class);
+    private static final ILogger LOGGER = Logger.getLogger(MetricsRegistryImpl.class);
 
     private static final Object[] EMPTY_ARGS = new Object[0];
 
@@ -72,8 +72,8 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 }
             });
 
-    private final ConcurrentMap<Class<?>, ProbeSourceEntry> sources =
-            new ConcurrentHashMap<Class<?>, ProbeRegistryImpl.ProbeSourceEntry>();
+    private final ConcurrentMap<Class<?>, MetricsSourceEntry> sources =
+            new ConcurrentHashMap<Class<?>, MetricsRegistryImpl.MetricsSourceEntry>();
 
     private static ProbeAnnotatedType register(Class<?> type, ProbeAnnotatedType metadata) {
         ProbeAnnotatedType existing = PROBE_METADATA.putIfAbsent(type, metadata);
@@ -81,9 +81,9 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     }
 
     @Override
-    public void register(ProbeSource source) {
+    public void register(MetricsSource source) {
         if (!sources.containsKey(source.getClass())) {
-            sources.putIfAbsent(source.getClass(), new ProbeSourceEntry(source));
+            sources.putIfAbsent(source.getClass(), new MetricsSourceEntry(source));
         } else {
             LOGGER.info("Probe source tried to register more then once: "
                     + source.getClass().getSimpleName());
@@ -93,33 +93,33 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
     @Override
     public void registerIfSource(Object source) {
-        if (source instanceof ProbeSource) {
-            register((ProbeSource) source);
+        if (source instanceof MetricsSource) {
+            register((MetricsSource) source);
         }
     }
 
     @Override
-    public ProbeRenderContext newRenderContext(Class<? extends ProbeSource>... selection) {
-        return new ProbingCycleImpl(sources.values(), selection);
+    public CollectionContext openContext(Class<? extends MetricsSource>... selection) {
+        return new CollectionCycleImpl(sources.values(), selection);
     }
 
     /**
-     * Wrapper for a {@link ProbeSource} for the state to keep track of it potential
+     * Wrapper for a {@link MetricsSource} for the state to keep track of it potential
      * need to be updated before being probed.
      */
-    private static final class ProbeSourceEntry {
+    private static final class MetricsSourceEntry {
 
-        final ProbeSource source;
+        final MetricsSource source;
         final Method update;
         final long updateIntervalMs;
         final AtomicLong nextUpdateTimeMs = new AtomicLong();
         final ProbeLevel updateLevel;
 
-        public ProbeSourceEntry(ProbeSource source) {
+        public MetricsSourceEntry(MetricsSource source) {
             this.source = source;
             this.update = reprobeFor(source.getClass());
             if (update != null) {
-                BeforeProbeCycle reprobe = update.getAnnotation(BeforeProbeCycle.class);
+                BeforeCollectionCycle reprobe = update.getAnnotation(BeforeCollectionCycle.class);
                 updateIntervalMs = ProbeUtils.updateInterval(reprobe.value(), reprobe.unit());
                 updateLevel = reprobe.level();
             } else {
@@ -146,7 +146,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
 
         static Method reprobeFor(Class<?> type) {
             for (Method m : type.getDeclaredMethods()) {
-                if (m.isAnnotationPresent(BeforeProbeCycle.class)) {
+                if (m.isAnnotationPresent(BeforeCollectionCycle.class)) {
                     m.setAccessible(true);
                     return m;
                 }
@@ -156,28 +156,28 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
     }
 
     /**
-     * A {@link ProbeRenderContext} and the {@link ProbingCycle} it represents as
+     * A {@link CollectionContext} and the {@link CollectionCycle} it represents as
      * well are thread specific (per thread) and therefore not thread-safe or build
      * to be used by or from multiple threads.
      */
-    private static final class ProbingCycleImpl
-    implements ProbingCycle, ProbingCycle.Tags, ProbeRenderContext {
+    private static final class CollectionCycleImpl
+    implements CollectionCycle, CollectionCycle.Tags, CollectionContext {
 
-        // render context state
-        private final Collection<ProbeSourceEntry> sources;
-        private final Class<? extends ProbeSource>[] selection;
-        private final List<ProbeSourceEntry> effectiveSource = new ArrayList<ProbeSourceEntry>();
+        // collection context state
+        private final Collection<MetricsSourceEntry> sources;
+        private final Class<? extends MetricsSource>[] selection;
+        private final List<MetricsSourceEntry> effectiveSource = new ArrayList<MetricsSourceEntry>();
         private int sourceCount;
 
-        // render cycle state
+        // collection cycle state
         private final StringBuilder tags = new StringBuilder(128);
         private int tagBaseIndex;
-        private ProbeRenderer renderer;
+        private MetricsCollector collector;
         private ProbeLevel level;
         private CharSequence lastTagName;
         private int lastTagValuePosition;
 
-        ProbingCycleImpl(Collection<ProbeSourceEntry> sources, Class<? extends ProbeSource>[] selection) {
+        CollectionCycleImpl(Collection<MetricsSourceEntry> sources, Class<? extends MetricsSource>[] selection) {
             this.sources = sources;
             this.selection = selection;
         }
@@ -187,7 +187,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             if (sourceCount != size) {
                 sourceCount = size;
                 effectiveSource.clear();
-                for (ProbeSourceEntry e : sources) {
+                for (MetricsSourceEntry e : sources) {
                     if (activeSource(e.source.getClass())) {
                         effectiveSource.add(e);
                     }
@@ -208,27 +208,27 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         @Override
-        public void render(ProbeLevel level, ProbeRenderer renderer) {
+        public void collectAll(ProbeLevel level, MetricsCollector collector) {
             updateSources();
             this.level = level;
-            this.renderer = renderer;
-            for (ProbeSourceEntry entry : effectiveSource) {
+            this.collector = collector;
+            for (MetricsSourceEntry entry : effectiveSource) {
                 if (isProbed(entry.updateLevel)) {
                     entry.updateIfNeeded();
                 }
                 try {
                     tagBaseIndex = 0;
                     openContext();
-                    entry.source.probeNow(this);
+                    entry.source.collectAll(this);
                 } catch (Exception e) {
-                    LOGGER.warning("Exception while probing source "
+                    LOGGER.warning("Exception while collecting source "
                             + entry.source.getClass().getSimpleName(), e);
                 }
             }
         }
 
         @Override
-        public void gather(ProbeLevel level, Object instance, String[] methods) {
+        public void collect(ProbeLevel level, Object instance, String[] methods) {
             if (instance == null || !isProbed(level)) {
                 return;
             }
@@ -261,7 +261,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         @Override
-        public void collect(CharSequence prefix, ProbeSource source) {
+        public void collect(CharSequence prefix, MetricsSource source) {
             if (source == null) {
                 return;
             }
@@ -269,7 +269,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             CharSequence lastTag = lastTagName;
             prefix(prefix);
             tagBaseIndex = tags.length();
-            source.probeNow(this);
+            source.collectAll(this);
             tagBaseIndex = baseIndex;
             lastTagName = lastTag;
             tags.setLength(tagBaseIndex);
@@ -285,42 +285,45 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
         }
 
         @Override
-        public void gather(CharSequence name, long value) {
-            gather(ProbeLevel.INFO, name, value);
+        public void collect(CharSequence name, long value) {
+            collect(ProbeLevel.INFO, name, value);
         }
 
         @Override
-        public void gather(CharSequence name, double value) {
-            gather(ProbeLevel.INFO, name, value);
+        public void collect(CharSequence name, double value) {
+            collect(ProbeLevel.INFO, name, value);
         }
 
         @Override
-        public void gather(CharSequence name, boolean value) {
-            gather(ProbeLevel.INFO, name, value);
+        public void collect(CharSequence name, boolean value) {
+            collect(ProbeLevel.INFO, name, value);
         }
 
         @Override
-        public void gather(ProbeLevel level, CharSequence name, long value) {
+        public void collect(ProbeLevel level, CharSequence name, long value) {
             if (isProbed(level)) {
-                render(name, value);
+                int len0 = tags.length();
+                appendEscaped(tags, name);
+                collector.collect(tags, value);
+                tags.setLength(len0);
             }
         }
 
         @Override
-        public void gather(ProbeLevel level, CharSequence name, double value) {
-            gather(level, name, ProbeUtils.toLong(value));
+        public void collect(ProbeLevel level, CharSequence name, double value) {
+            collect(level, name, ProbeUtils.toLong(value));
         }
 
         @Override
-        public void gather(ProbeLevel level, CharSequence name, boolean value) {
-            gather(level, name, value ? 1 : 0);
+        public void collect(ProbeLevel level, CharSequence name, boolean value) {
+            collect(level, name, value ? 1 : 0);
         }
 
         @Override
-        public void gatherForwarded(CharSequence name, long value) {
+        public void collectForwarded(CharSequence name, long value) {
             int len0 = tags.length();
             appendUnescaped(tags, name);
-            renderer.render(tags, value);
+            collector.collect(tags, value);
             tags.setLength(len0);
         }
 
@@ -376,13 +379,6 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                 return append(prefix).append(".");
             }
             return this;
-        }
-
-        private void render(CharSequence name, long value) {
-            int len0 = tags.length();
-            appendEscaped(tags, name);
-            renderer.render(tags, value);
-            tags.setLength(len0);
         }
 
         @Override
@@ -493,7 +489,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
                             longFieldNames[longIndex++] = name;
                         }
                     } else {
-                        boolean nested = ProbeSource.class.isAssignableFrom(valueType)
+                        boolean nested = MetricsSource.class.isAssignableFrom(valueType)
                                         || valueType.isAnnotationPresent(Probe.class);
                         otherFieldNested[otherIndex] = nested;
                         otherFields[otherIndex] = f;
@@ -541,7 +537,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             return false;
         }
 
-        void probeIn(ProbingCycle cycle, Object instance) {
+        void probeIn(CollectionCycle cycle, Object instance) {
             probeMethods(cycle, instance);
             probeLongFields(cycle, instance);
             probeDoubleFields(cycle, instance);
@@ -549,20 +545,20 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             probeOtherFields(cycle, instance);
         }
 
-        private void probeOtherFields(ProbingCycle cycle, Object instance) {
+        private void probeOtherFields(CollectionCycle cycle, Object instance) {
             if (otherFields != null) {
                 for (int i = 0; i < otherFields.length; i++) {
                     try {
                         Object value = otherFields[i].get(instance);
                         String name = otherFieldNames[i];
                         if (otherFieldNested[i]) {
-                            if (value instanceof ProbeSource) {
-                                cycle.collect(name, (ProbeSource) value);
+                            if (value instanceof MetricsSource) {
+                                cycle.collect(name, (MetricsSource) value);
                             } else {
                                 cycle.probe(name, value);
                             }
                         } else {
-                            cycle.gather(level, name, ProbeUtils.toLong(value));
+                            cycle.collect(level, name, ProbeUtils.toLong(value));
                         }
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read field probe", e);
@@ -571,11 +567,11 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        private void probeBooleanFields(ProbingCycle cycle, Object instance) {
+        private void probeBooleanFields(CollectionCycle cycle, Object instance) {
             if (booleanFields != null) {
                 for (int i = 0; i < booleanFields.length; i++) {
                     try {
-                        cycle.gather(level, booleanFieldNames[i], booleanFields[i].getBoolean(instance));
+                        cycle.collect(level, booleanFieldNames[i], booleanFields[i].getBoolean(instance));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read boolean field probe", e);
                     }
@@ -583,11 +579,11 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        private void probeDoubleFields(ProbingCycle cycle, Object instance) {
+        private void probeDoubleFields(CollectionCycle cycle, Object instance) {
             if (doubleFields != null) {
                 for (int i = 0; i < doubleFields.length; i++) {
                     try {
-                        cycle.gather(level, doubleFieldNames[i], doubleFields[i].getDouble(instance));
+                        cycle.collect(level, doubleFieldNames[i], doubleFields[i].getDouble(instance));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read double field probe", e);
                     }
@@ -595,11 +591,11 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        private void probeLongFields(ProbingCycle cycle, Object instance) {
+        private void probeLongFields(CollectionCycle cycle, Object instance) {
             if (longFields != null) {
                 for (int i = 0; i < longFields.length; i++) {
                     try {
-                        cycle.gather(level, longFieldNames[i], longFields[i].getLong(instance));
+                        cycle.collect(level, longFieldNames[i], longFields[i].getLong(instance));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read long field probe", e);
                     }
@@ -607,11 +603,11 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        private void probeMethods(ProbingCycle cycle, Object instance) {
+        private void probeMethods(CollectionCycle cycle, Object instance) {
             if (methods != null) {
                 for (int i = 0; i < methods.length; i++) {
                     try {
-                        cycle.gather(level, methodNames[i],
+                        cycle.collect(level, methodNames[i],
                                 ProbeUtils.toLong(methods[i].invoke(instance, EMPTY_ARGS)));
                     } catch (Exception e) {
                         LOGGER.warning("Failed to read method probe: " + methods[i].getName(), e);
@@ -692,7 +688,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             }
         }
 
-        void probeNow(ProbingCycleImpl cycle, ProbeLevel level, CharSequence dynamicPrefix,
+        void probeNow(CollectionCycleImpl cycle, ProbeLevel level, CharSequence dynamicPrefix,
                 Object instance) {
             if (tagging) {
                 probeNowTagging(cycle, level, dynamicPrefix, instance);
@@ -705,7 +701,7 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
          * When instance itself is adding tags the tag context has to be restored as
          * well.
          */
-        private void probeNowTagging(ProbingCycleImpl cycle, ProbeLevel level,
+        private void probeNowTagging(CollectionCycleImpl cycle, ProbeLevel level,
                 CharSequence dynamicPrefix, Object instance) {
             CharSequence lastTagName = cycle.lastTagName;
             int lastTagValuePosition = cycle.lastTagValuePosition;
@@ -714,11 +710,11 @@ public final class ProbeRegistryImpl implements ProbeRegistry {
             cycle.lastTagValuePosition = lastTagValuePosition;
         }
 
-        private void probeNowNonTagging(ProbingCycleImpl cycle, ProbeLevel level,
+        private void probeNowNonTagging(CollectionCycleImpl cycle, ProbeLevel level,
                 CharSequence dynamicPrefix, Object instance) {
             int len0 = cycle.tags.length();
             if (tagging) {
-                ((ProbingContext) instance).tagNow(cycle);
+                ((ProbingContext) instance).tag(cycle);
             }
             if (dynamicPrefix != null) {
                 cycle.prefix(dynamicPrefix);

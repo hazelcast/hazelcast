@@ -18,8 +18,8 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -49,7 +49,7 @@ import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatis
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class DistributedExecutorService implements ManagedService, RemoteService,
-    QuorumAwareService, ProbeSource {
+    QuorumAwareService, MetricsSource {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
@@ -202,7 +202,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         probeStatistics(cycle, "executor", statsMap);
     }
 

@@ -47,7 +47,7 @@ import java.util.concurrent.CountDownLatch;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class DistributedDatastructuresMetricsTest extends DefaultMetricsTest {
+public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetricsIntegrationTest {
 
     private static final int EVENT_COUNTER = 1000;
 

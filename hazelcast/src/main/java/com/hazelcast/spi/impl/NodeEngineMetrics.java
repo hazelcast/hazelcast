@@ -25,27 +25,27 @@ import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.ClusterHotRestartStatus;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.MemberHotRestartStatus;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.util.ProbeEnumUtils;
 
 /**
- * {@link ProbeSource} for {@link NodeEngineImpl} that got extracted into a
+ * {@link MetricsSource} for {@link NodeEngineImpl} that got extracted into a
  * class on its own to not clutter {@link NodeEngineImpl} too much with probing
  * concerns.
  *
- * That means this {@link ProbeSource} is created and registered by the
+ * That means this {@link MetricsSource} is created and registered by the
  * {@link NodeEngineImpl}.
  */
-public final class NodeEngineProbeSource implements ProbeSource {
+public final class NodeEngineMetrics implements MetricsSource {
 
     private final NodeEngineImpl nodeEngine;
     private final OperationServiceImpl operationService;
     private final InternalPartitionServiceImpl partitionService;
 
-    NodeEngineProbeSource(NodeEngineImpl nodeEngine, OperationServiceImpl operationService,
+    NodeEngineMetrics(NodeEngineImpl nodeEngine, OperationServiceImpl operationService,
             InternalPartitionServiceImpl partitionService) {
         this.nodeEngine = nodeEngine;
         this.operationService = operationService;
@@ -53,7 +53,7 @@ public final class NodeEngineProbeSource implements ProbeSource {
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         cycle.probe("proxy", nodeEngine.getProxyService());
         cycle.probe("operation", operationService);
         cycle.probe("operation", operationService.getInvocationRegistry());
@@ -71,22 +71,22 @@ public final class NodeEngineProbeSource implements ProbeSource {
         }
     }
 
-    private void probeHotBackupStateIn(ProbingCycle cycle) {
+    private void probeHotBackupStateIn(CollectionCycle cycle) {
         HotRestartService hotRestartService = nodeEngine.getNode().getNodeExtension().getHotRestartService();
         boolean enabled = hotRestartService.isHotBackupEnabled();
         cycle.openContext().prefix("hotBackup");
-        cycle.gather("enabled", enabled);
+        cycle.collect("enabled", enabled);
         if (enabled) {
             BackupTaskStatus status = hotRestartService.getBackupTaskStatus();
             if (status != null) {
-                cycle.gather("state", ProbeEnumUtils.codeOf(status.getState()));
-                cycle.gather("completed", status.getCompleted());
-                cycle.gather("total", status.getTotal());
+                cycle.collect("state", ProbeEnumUtils.codeOf(status.getState()));
+                cycle.collect("completed", status.getCompleted());
+                cycle.collect("total", status.getTotal());
             }
         }
     }
 
-    private void probeHotRestartStateIn(ProbingCycle cycle) {
+    private void probeHotRestartStateIn(CollectionCycle cycle) {
         if (!nodeEngine.getNode().isMaster()) {
             return;
         }
@@ -95,14 +95,14 @@ public final class NodeEngineProbeSource implements ProbeSource {
         ClusterHotRestartStatusDTO status = hotRestartService.getCurrentClusterHotRestartStatus();
         if (status != null && status.getHotRestartStatus() != ClusterHotRestartStatus.UNKNOWN) {
             cycle.openContext().prefix("hotRestart");
-            cycle.gather("remainingDataLoadTime", status.getRemainingDataLoadTimeMillis());
-            cycle.gather("remainingValidationTime", status.getRemainingValidationTimeMillis());
-            cycle.gather("status", ProbeEnumUtils.codeOf(status.getHotRestartStatus()));
-            cycle.gather("dataRecoveryPolicy", ProbeEnumUtils.codeOf(status.getDataRecoveryPolicy()));
+            cycle.collect("remainingDataLoadTime", status.getRemainingDataLoadTimeMillis());
+            cycle.collect("remainingValidationTime", status.getRemainingValidationTimeMillis());
+            cycle.collect("status", ProbeEnumUtils.codeOf(status.getHotRestartStatus()));
+            cycle.collect("dataRecoveryPolicy", ProbeEnumUtils.codeOf(status.getDataRecoveryPolicy()));
             for (Entry<String, MemberHotRestartStatus> memberStatus : status
                     .getMemberHotRestartStatusMap().entrySet()) {
                 cycle.openContext().tag(TAG_INSTANCE, memberStatus.getKey()).prefix("hotRestart");
-                cycle.gather("memberStatus", ProbeEnumUtils.codeOf(memberStatus.getValue()));
+                cycle.collect("memberStatus", ProbeEnumUtils.codeOf(memberStatus.getValue()));
             }
         }
     }

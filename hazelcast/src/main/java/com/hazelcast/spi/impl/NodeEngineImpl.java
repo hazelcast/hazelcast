@@ -26,11 +26,11 @@ import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.metrics.ProbeRegistry;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.impl.ProbeRegistryImpl;
-import com.hazelcast.internal.metrics.sources.MachineProbeSource;
-import com.hazelcast.internal.metrics.sources.MemoryProbeSource;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.metrics.sources.MachineMetrics;
+import com.hazelcast.internal.metrics.sources.MemoryMetrics;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
@@ -96,7 +96,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SerializationService serializationService;
     private final LoggingServiceImpl loggingService;
     private final ILogger logger;
-    private final ProbeRegistry probeRegistry;
+    private final MetricsRegistry metricsRegistry;
     private final ProxyServiceImpl proxyService;
     private final ServiceManagerImpl serviceManager;
     private final ExecutionServiceImpl executionService;
@@ -148,7 +148,7 @@ public class NodeEngineImpl implements NodeEngine {
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
-            this.probeRegistry = new ProbeRegistryImpl();
+            this.metricsRegistry = new MetricsRegistryImpl();
         } catch (Throwable e) {
             try {
                 shutdown(true);
@@ -175,23 +175,23 @@ public class NodeEngineImpl implements NodeEngine {
         return loggingService;
     }
 
-    public ProbeRegistry getProbeRegistry() {
-        return probeRegistry;
+    public MetricsRegistry getMetricsRegistry() {
+        return metricsRegistry;
     }
 
     /**
      * For convenience this method automatically registers services that are
-     * {@link ProbeSource}s.
+     * {@link MetricsSource}s.
      */
-    private void initProbeSources() {
-        probeRegistry.register(new NodeEngineProbeSource(this, operationService, node.partitionService));
-        probeRegistry.register(new MachineProbeSource());
-        probeRegistry.register(new MemoryProbeSource(node.getNodeExtension().getMemoryStats()));
-        probeRegistry.register(executionService);
-        probeRegistry.registerIfSource(operationService.getOperationExecutor());
-        probeRegistry.registerIfSource(node.getNodeExtension());
-        for (ProbeSource s : serviceManager.getServices(ProbeSource.class)) {
-            probeRegistry.register(s);
+    private void initMetricsSources() {
+        metricsRegistry.register(new NodeEngineMetrics(this, operationService, node.partitionService));
+        metricsRegistry.register(new MachineMetrics());
+        metricsRegistry.register(new MemoryMetrics(node.getNodeExtension().getMemoryStats()));
+        metricsRegistry.register(executionService);
+        metricsRegistry.registerIfSource(operationService.getOperationExecutor());
+        metricsRegistry.registerIfSource(node.getNodeExtension());
+        for (MetricsSource s : serviceManager.getServices(MetricsSource.class)) {
+            metricsRegistry.register(s);
         }
     }
 
@@ -205,7 +205,7 @@ public class NodeEngineImpl implements NodeEngine {
 
         node.getNodeExtension().registerPlugins(diagnostics);
 
-        initProbeSources();
+        initMetricsSources();
     }
 
     public Consumer<Packet> getPacketDispatcher() {

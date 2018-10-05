@@ -19,8 +19,8 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
@@ -79,7 +79,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class OperationExecutorImpl implements OperationExecutor, ProbeSource {
+public final class OperationExecutorImpl implements OperationExecutor, MetricsSource {
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
 
@@ -219,7 +219,7 @@ public final class OperationExecutorImpl implements OperationExecutor, ProbeSour
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         cycle.probe("operation", this);
         if (cycle.isProbed(ProbeLevel.INFO)) {
             probeAllThreads(cycle, "operation.thread", genericThreads);

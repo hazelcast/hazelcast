@@ -26,7 +26,7 @@ import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbingContext;
-import com.hazelcast.internal.metrics.ProbingCycle.Tags;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.util.counters.Counter;
@@ -65,8 +65,8 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
-import static com.hazelcast.internal.metrics.ProbeSource.TAG_INSTANCE;
-import static com.hazelcast.internal.metrics.ProbeSource.TAG_TYPE;
+import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
+import static com.hazelcast.internal.metrics.MetricsSource.TAG_TYPE;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.CallStatus.DONE_RESPONSE_ORDINAL;
@@ -141,7 +141,7 @@ class OperationRunnerImpl extends OperationRunner implements ProbingContext {
     }
 
     @Override
-    public void tagNow(Tags context) {
+    public void tag(Tags context) {
         if (partitionId >= 0) {
             context.tag(TAG_TYPE, "operation.partition").tag(TAG_INSTANCE, partitionId);
         } else if (partitionId == -1) {

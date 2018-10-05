@@ -19,8 +19,8 @@ package com.hazelcast.internal.metrics;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
- * For each probe measurement a {@link ProbingCycle} is passed to all
- * {@link ProbeSource}s. The {@link ProbeSource} uses the API to communicate its
+ * For each probe measurement a {@link CollectionCycle} is passed to all
+ * {@link MetricsSource}s. The {@link MetricsSource} uses the API to communicate its
  * probes and their current values.
  *
  * This has two steps:
@@ -29,7 +29,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * is used to describe the general context of the probes. The context described
  * before acts as a "prefix" for all subsequent measurements.</li>
  *
- * <li>{@link #gather(CharSequence, long)} and its sibling methods are used to
+ * <li>{@link #collect(CharSequence, long)} and its sibling methods are used to
  * state one measurement at a time with its name and value. Alternatively to
  * stating measurements directly an instance of a type annotated with
  * {@link Probe} can be passed to {@link #probe(Object)} to measure all
@@ -40,7 +40,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * repeating the two steps:
  *
  * <pre>
- * public void probeIn(ProbingCycle cycle) {
+ * public void probeIn(CollectionCycle cycle) {
  *     cycle.openContext().tag(TAG_TYPE, "x").tag(TAG_INSTANCE, "foo");
  *     cycle.probe(foo);
  *     cycle.openContext().tag(TAG_INSTANCE, "bar");
@@ -49,19 +49,19 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * </pre>
  */
 @PrivateApi
-public interface ProbingCycle {
+public interface CollectionCycle {
 
     /*
      * Probing values:
      */
 
     /**
-     * Allows {@link ProbeSource}s to optimize their implementations by skipping
+     * Allows {@link MetricsSource}s to optimize their implementations by skipping
      * handling probes for {@link ProbeLevel}s that are not relevant.
      *
-     * {@link ProbeSource}s do not have to obligation to perform this check. They
+     * {@link MetricsSource}s do not have to obligation to perform this check. They
      * may just probe everything providing the level for each probe. It is the
-     * {@link ProbingCycle}s obligation to make sure only relevant probes are
+     * {@link CollectionCycle}s obligation to make sure only relevant probes are
      * considered.
      *
      * @param level the level to check
@@ -70,7 +70,7 @@ public interface ProbingCycle {
     boolean isProbed(ProbeLevel level);
 
     /**
-     * The main way of rendering metrics is to render instances that have methods
+     * The main way of collecting metrics is to collect instances that have methods
      * and fields annotated with {@link Probe}. The metric name is derived from
      * field or method name or {@link Probe#name()} (if given). The metric type
      * (long or double) is derived from the field type or method return type. The
@@ -107,13 +107,13 @@ public interface ProbingCycle {
     void probe(CharSequence prefix, Object instance);
 
     /**
-     * Dynamically collect a nested {@link ProbeSource} that has not been registered
+     * Dynamically collect a nested {@link MetricsSource} that has not been registered
      * as a root before.
      *
      * @param prefix use empty string or {@link Probe#BLANK_NAME} to not add a prefix
      * @param source a dynamic source, null is a no-op with no consequences
      */
-    void collect(CharSequence prefix, ProbeSource source);
+    void collect(CharSequence prefix, MetricsSource source);
 
     /**
      * Similar to {@link #probe(Object)} just that probed methods are not identified
@@ -129,22 +129,22 @@ public interface ProbingCycle {
      * @param methods the names of the methods to probe. Methods that do not exist
      *        or have the wrong number of arguments (not none) are ignored.
      */
-    void gather(ProbeLevel level, Object instance, String[] methods);
+    void collect(ProbeLevel level, Object instance, String[] methods);
 
     /**
-     * Equal to {@link #gather(ProbeLevel, CharSequence, long)} with {@link ProbeLevel#INFO}.
+     * Equal to {@link #collect(ProbeLevel, CharSequence, long)} with {@link ProbeLevel#INFO}.
      */
-    void gather(CharSequence name, long value);
+    void collect(CharSequence name, long value);
 
     /**
-     * Equal to {@link #gather(ProbeLevel, CharSequence, double)} with {@link ProbeLevel#INFO}.
+     * Equal to {@link #collect(ProbeLevel, CharSequence, double)} with {@link ProbeLevel#INFO}.
      */
-    void gather(CharSequence name, double value);
+    void collect(CharSequence name, double value);
 
     /**
-     * Equal to {@link #gather(ProbeLevel, CharSequence, boolean)} with {@link ProbeLevel#INFO}.
+     * Equal to {@link #collect(ProbeLevel, CharSequence, boolean)} with {@link ProbeLevel#INFO}.
      */
-    void gather(CharSequence name, boolean value);
+    void collect(CharSequence name, boolean value);
 
     /**
      * Collects the given key-value pair as long as {@link #isProbed(ProbeLevel)}.
@@ -153,27 +153,27 @@ public interface ProbingCycle {
      * @param name name relative to context (full key is {@code context+name})
      * @param value current value measured ({@code -1} if unknown or unspecified)
      */
-    void gather(ProbeLevel level, CharSequence name, long value);
+    void collect(ProbeLevel level, CharSequence name, long value);
 
     /**
-     * Equal to {@link #gather(ProbeLevel, CharSequence, long)} with {@link ProbeUtils#toLong(double)}.
+     * Equal to {@link #collect(ProbeLevel, CharSequence, long)} with {@link ProbeUtils#toLong(double)}.
      */
-    void gather(ProbeLevel level, CharSequence name, double value);
+    void collect(ProbeLevel level, CharSequence name, double value);
 
     /**
-     * Equal to {@link #gather(ProbeLevel, CharSequence, long)} with {@link ProbeUtils#toLong(boolean)}.
+     * Equal to {@link #collect(ProbeLevel, CharSequence, long)} with {@link ProbeUtils#toLong(boolean)}.
      */
-    void gather(ProbeLevel level, CharSequence name, boolean value);
+    void collect(ProbeLevel level, CharSequence name, boolean value);
 
     /**
      * Used to forward metrics received from the client. This is only different from
-     * {@link #gather(CharSequence, long)} except that it will not escape the name
+     * {@link #collect(CharSequence, long)} except that it will not escape the name
      * but un-escaping escaped line-feeds.
      *
      * @param name a properly escaped name (as written before)
      * @param value value as written before (double/boolean already converted to long)
      */
-    void gatherForwarded(CharSequence name, long value);
+    void collectForwarded(CharSequence name, long value);
 
     /*
      * Describing probing context to the cycle:
@@ -195,7 +195,7 @@ public interface ProbingCycle {
 
     /**
      * The reason for {@link Tags} API is to allow "describing" complex "assembled"
-     * multi-part keys to the {@link ProbingCycle} without the need to create
+     * multi-part keys to the {@link CollectionCycle} without the need to create
      * intermediate objects like {@link String} concatenation would.
      */
     interface Tags {

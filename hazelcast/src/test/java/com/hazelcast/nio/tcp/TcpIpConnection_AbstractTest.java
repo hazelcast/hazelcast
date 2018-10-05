@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.metrics.ProbeRegistry;
-import com.hazelcast.internal.metrics.impl.ProbeRegistryImpl;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.networking.nio.Select_NioNetworkingFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -58,9 +58,9 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     protected MockIOService ioServiceB;
     protected MockIOService ioServiceC;
 
-    protected ProbeRegistry probeRegistryA;
-    protected ProbeRegistry probeRegistryB;
-    protected ProbeRegistry probeRegistryC;
+    protected MetricsRegistry metricsRegistryA;
+    protected MetricsRegistry metricsRegistryB;
+    protected MetricsRegistry metricsRegistryC;
 
     @Before
     public void setup() throws Exception {
@@ -71,16 +71,16 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
         logger = loggingService.getLogger(TcpIpConnection_AbstractTest.class);
 
-        probeRegistryA = newProbeRegistry();
-        connManagerA = newConnectionManager(addressA.getPort(), probeRegistryA);
+        metricsRegistryA = newMetricsRegistry();
+        connManagerA = newConnectionManager(addressA.getPort(), metricsRegistryA);
         ioServiceA = (MockIOService) connManagerA.getIoService();
 
-        probeRegistryB = newProbeRegistry();
-        connManagerB = newConnectionManager(addressB.getPort(), probeRegistryB);
+        metricsRegistryB = newMetricsRegistry();
+        connManagerB = newConnectionManager(addressB.getPort(), metricsRegistryB);
         ioServiceB = (MockIOService) connManagerB.getIoService();
 
-        probeRegistryC = newProbeRegistry();
-        connManagerC = newConnectionManager(addressC.getPort(), probeRegistryC);
+        metricsRegistryC = newMetricsRegistry();
+        connManagerC = newConnectionManager(addressC.getPort(), metricsRegistryC);
         ioServiceC = (MockIOService) connManagerB.getIoService();
 
         serializationService = new DefaultSerializationServiceBuilder()
@@ -101,18 +101,18 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         connManagerC.start();
     }
 
-    protected ProbeRegistry newProbeRegistry() {
-        return new ProbeRegistryImpl();
+    protected MetricsRegistry newMetricsRegistry() {
+        return new MetricsRegistryImpl();
     }
 
-    protected TcpIpConnectionManager newConnectionManager(int port, ProbeRegistry probeRegistry) throws Exception {
+    protected TcpIpConnectionManager newConnectionManager(int port, MetricsRegistry metricsRegistry) throws Exception {
         MockIOService ioService = new MockIOService(port);
 
         return new TcpIpConnectionManager(
                 ioService,
                 ioService.serverSocketChannel,
                 ioService.loggingService,
-                probeRegistry,
+                metricsRegistry,
                 networkingFactory.create(ioService));
     }
 

@@ -48,7 +48,7 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.internal.diagnostics.AbstractMetricsTest;
+import com.hazelcast.internal.diagnostics.AbstractMetricsIntegrationTest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.nio.ConnectionManager;
@@ -58,7 +58,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
-public class ClientMetricsTest extends AbstractMetricsTest {
+public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
 
     private static final int STATS_PERIOD_SECONDS = 1;
 
@@ -82,7 +82,7 @@ public class ClientMetricsTest extends AbstractMetricsTest {
 
     private void newMember() {
         hz = hazelcastFactory.newHazelcastInstance();
-        setRenderContext(getNode(hz).nodeEngine.getProbeRegistry().newRenderContext());
+        setCollectionContext(getNode(hz).nodeEngine.getMetricsRegistry().openContext());
     }
 
     @After

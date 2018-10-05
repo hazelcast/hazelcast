@@ -27,7 +27,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class NodeMetricsTest extends DefaultMetricsTest {
+public class NodeMetricsTest extends HazelcastInstanceMetricsIntegrationTest {
 
     @Test
     public void clusterServiceStats() {

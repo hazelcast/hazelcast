@@ -21,12 +21,12 @@ import org.junit.Before;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRegistry;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 
-public abstract class DefaultMetricsTest extends AbstractMetricsTest {
+public abstract class HazelcastInstanceMetricsIntegrationTest extends AbstractMetricsIntegrationTest {
 
     protected HazelcastInstance hz;
-    private ProbeRegistry registry;
+    private MetricsRegistry registry;
 
     protected Config configure() {
         return new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(),
@@ -36,8 +36,8 @@ public abstract class DefaultMetricsTest extends AbstractMetricsTest {
     @Before
     public void setup() {
         hz = createHazelcastInstance(configure());
-        registry = getNode(hz).nodeEngine.getProbeRegistry();
-        setRenderContext(registry.newRenderContext());
+        registry = getNode(hz).nodeEngine.getMetricsRegistry();
+        setCollectionContext(registry.openContext());
         warmUpPartitions(hz);
     }
 

@@ -18,9 +18,9 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.metrics.ProbeRegistry;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -53,7 +53,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
     private Diagnostics diagnostics;
     private DiagnosticsLogFile diagnosticsLogFile;
-    private ProbeRegistry probeRegistry;
+    private MetricsRegistry metricsRegistry;
 
     @Before
     public void setup() {
@@ -67,7 +67,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
         diagnostics = AbstractDiagnosticsPluginTest.getDiagnostics(hz);
         diagnosticsLogFile = diagnostics.diagnosticsLogFile;
-        probeRegistry = getNodeEngineImpl(hz).getProbeRegistry();
+        metricsRegistry = getNodeEngineImpl(hz).getMetricsRegistry();
     }
 
     @After
@@ -94,13 +94,13 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
     @Test
     public void testRollover() {
         final String id = generateRandomString(10000);
-        probeRegistry.register(new ProbeSource() {
+        metricsRegistry.register(new MetricsSource() {
 
             @Override
-            public void probeNow(ProbingCycle cycle) {
+            public void collectAll(CollectionCycle cycle) {
                 // we render 50 probes to quickly fill up the diagnostics log file
                 for (int k = 0; k < 50; k++) {
-                    cycle.gather(MANDATORY, id + k, k);
+                    cycle.collect(MANDATORY, id + k, k);
                 }
 
             }

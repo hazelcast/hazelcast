@@ -20,8 +20,8 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.ClientAwareService;
@@ -80,7 +80,7 @@ import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatis
 @SuppressWarnings("checkstyle:methodcount")
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
-        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, ProbeSource,
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, MetricsSource,
         PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener,
         ClusterVersionListener {
 
@@ -202,7 +202,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         probeStatistics(cycle, "map", mapServiceContext.getLocalMapStatsProvider().createAllLocalMapStats());
         probeAllInstances(cycle, "map", mapServiceContext.getMapContainers());
     }

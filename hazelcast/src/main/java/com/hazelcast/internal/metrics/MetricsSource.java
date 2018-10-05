@@ -21,32 +21,35 @@ import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 
 /**
  * Implemented by "root objects" (like core services) that know about a
- * particular set of instances they want to probe.
+ * particular set of instances they want to publish.
  *
  * Probes can have the form of objects with {@link Probe} annotated fields or
- * methods or are directly provide a value for a given name using
- * {@link ProbingCycle#gather(CharSequence, long)} (and its sibling methods).
+ * methods or directly provide value for a given name using
+ * {@link CollectionCycle#collect(CharSequence, long)} (and its sibling
+ * methods).
  *
- * Implementations of {@link ProbeSource}s that are registered services at the
+ * Implementations of {@link MetricsSource}s that are registered services at the
  * {@link ServiceManager} do not need explicit registration in the
- * {@link ProbeRegistry} as all services implementing the interface are
- * registered automatically at the end of the node startup.
+ * {@link MetricsRegistry} as all services implementing the interface are
+ * registered automatically at the end of the node startup. This is not the case
+ * for a client HZ instance.
  */
  @PrivateApi
-public interface ProbeSource {
+public interface MetricsSource {
 
     String TAG_INSTANCE = "instance";
     String TAG_TYPE = "type";
     String TAG_TARGET = "target";
 
     /**
-     * Called for each {@link ProbingCycle} asking this source to probe all its
+     * Called for each {@link CollectionCycle} asking this source to publish all its
      * metrics using the provided cycle instance.
      *
      * Implementations can expect a clean context and do not have to start with
-     * {@link ProbingCycle#openContext()}.
+     * {@link CollectionCycle#openContext()} if nothing should be appended to the
+     * root context.
      *
-     * @param cycle accumulating probing data
+     * @param cycle accumulating metrics data
      */
-    void probeNow(ProbingCycle cycle);
+    void collectAll(CollectionCycle cycle);
 }

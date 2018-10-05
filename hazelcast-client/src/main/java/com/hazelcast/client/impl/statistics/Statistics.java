@@ -27,10 +27,10 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRenderContext;
-import com.hazelcast.internal.metrics.ProbeRenderer;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.CollectionContext;
+import com.hazelcast.internal.metrics.MetricsCollector;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -50,7 +50,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * statistics to the cluster. If the client statistics feature is enabled,
  * it will be scheduled for periodic statistics collection and sent.
  */
-public class Statistics implements ProbeSource {
+public class Statistics implements MetricsSource {
     /**
      * Use to enable the client statistics collection.
      * <p>
@@ -68,7 +68,7 @@ public class Statistics implements ProbeSource {
     private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.11";
     private static final int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
 
-    private final ProbeRenderContext probeRenderContext;
+    private final CollectionContext context;
     private final boolean enabled;
     private final HazelcastProperties properties;
     private final ILogger logger = Logger.getLogger(this.getClass());
@@ -87,7 +87,7 @@ public class Statistics implements ProbeSource {
         this.enabled = properties.getBoolean(ENABLED);
         this.client = clientInstance;
         this.enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
-        this.probeRenderContext = clientInstance.getProbeRegistry().newRenderContext();
+        this.context = clientInstance.getMetricsRegistry().openContext();
         this.probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
     }
 
@@ -188,14 +188,14 @@ public class Statistics implements ProbeSource {
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         ClientConnection conn = ownerConnection;
         if (conn == null) {
             return;
         }
-        cycle.gather(MANDATORY, "enterprise", enterprise);
-        cycle.gather(MANDATORY, "lastStatisticsCollectionTime", System.currentTimeMillis());
-        cycle.gather(MANDATORY, "clusterConnectionTimestamp", conn.getStartTime());
+        cycle.collect(MANDATORY, "enterprise", enterprise);
+        cycle.collect(MANDATORY, "lastStatisticsCollectionTime", System.currentTimeMillis());
+        cycle.collect(MANDATORY, "clusterConnectionTimestamp", conn.getStartTime());
         Collection<NearCache> caches = client.getNearCacheManager().listAllNearCaches();
         if (caches.isEmpty()) {
             return;
@@ -236,9 +236,9 @@ public class Statistics implements ProbeSource {
         // writing header: type, name, address, version, principal (each on a line)
         appendHeader(stats);
         // body: render metrics
-        probeRenderContext.render(probeLevel, new ProbeRenderer() {
+        context.collectAll(probeLevel, new MetricsCollector() {
             @Override
-            public void render(CharSequence key, long value) {
+            public void collect(CharSequence key, long value) {
                 appendEscapingLineFeed(stats, key);
                 stats.append(' ').append(value).append('\n');
             }

@@ -17,9 +17,9 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRegistry;
-import com.hazelcast.internal.metrics.ProbeRenderContext;
-import com.hazelcast.internal.metrics.ProbeRenderer;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.CollectionContext;
+import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -30,7 +30,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A {@link DiagnosticsPlugin} that displays the content of the
- * {@link ProbeRegistry}.
+ * {@link MetricsRegistry}.
  */
 public class MetricsPlugin extends DiagnosticsPlugin {
 
@@ -48,18 +48,18 @@ public class MetricsPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty PERIOD_SECONDS
             = new HazelcastProperty(PREFIX + ".metrics.period.seconds", 60, SECONDS);
 
-    private final ProbeRenderContext probeRenderContext;
+    private final CollectionContext context;
     private final long periodMillis;
-    private final ProbeRendererImpl probeRenderer = new ProbeRendererImpl();
+    private final DiagnosticsMetricsCollector collector = new DiagnosticsMetricsCollector();
     private final ProbeLevel probeLevel;
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getProbeRegistry(), nodeEngine.getProperties());
+        this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getProperties());
     }
 
-    public MetricsPlugin(ILogger logger, ProbeRegistry probeRegistry, HazelcastProperties properties) {
+    public MetricsPlugin(ILogger logger, MetricsRegistry registry, HazelcastProperties properties) {
         super(logger);
-        this.probeRenderContext = probeRegistry.newRenderContext();
+        this.context = registry.openContext();
         this.periodMillis = properties.getMillis(PERIOD_SECONDS);
         this.probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
     }
@@ -76,22 +76,22 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
-        probeRenderer.writer = writer;
+        collector.writer = writer;
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
         // the same timestamp
-        probeRenderer.timeMillis = System.currentTimeMillis();
-        probeRenderContext.render(probeLevel, probeRenderer);
-        probeRenderer.writer = null;
+        collector.timeMillis = System.currentTimeMillis();
+        context.collectAll(probeLevel, collector);
+        collector.writer = null;
     }
 
-    private static class ProbeRendererImpl implements ProbeRenderer {
+    private static class DiagnosticsMetricsCollector implements MetricsCollector {
         private static final String SECTION_NAME = "Metric";
 
         private DiagnosticsLogWriter writer;
         private long timeMillis;
 
         @Override
-        public void render(CharSequence key, long value) {
+        public void collect(CharSequence key, long value) {
             writer.writeSectionKeyValue(SECTION_NAME, timeMillis, key, value);
         }
     }

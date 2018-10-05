@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.internal.metrics.BeforeProbeCycle;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
-import com.hazelcast.internal.metrics.ProbingCycle.Tags;
+import com.hazelcast.internal.metrics.BeforeCollectionCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
@@ -74,7 +74,7 @@ import static java.util.logging.Level.INFO;
  * feature and will cause the io threads to run hot. For this reason, when this feature
  * is enabled, the number of io threads should be reduced (preferably 1).
  */
-public final class NioNetworking implements Networking, ProbeSource {
+public final class NioNetworking implements Networking, MetricsSource {
 
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
@@ -129,7 +129,7 @@ public final class NioNetworking implements Networking, ProbeSource {
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         Tags tags = cycle.openContext().tag(TAG_TYPE, "inputThread");
         for (int i = 0; i < inputThreads.length; i++) {
             NioThread thread = inputThreads[i];
@@ -286,7 +286,7 @@ public final class NioNetworking implements Networking, ProbeSource {
         }
     }
 
-    @BeforeProbeCycle(level = DEBUG)
+    @BeforeCollectionCycle(level = DEBUG)
     public void updateChannels() {
         for (NioChannel channel : channels) {
             final NioInboundPipeline inboundPipeline = channel.inboundPipeline;

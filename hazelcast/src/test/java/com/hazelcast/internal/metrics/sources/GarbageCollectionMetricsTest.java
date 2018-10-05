@@ -21,67 +21,48 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.internal.metrics.AbstractProbeTest;
+import com.hazelcast.internal.metrics.AbstractMetricsTest;
 import com.hazelcast.memory.DefaultMemoryStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeMemoryTest extends AbstractProbeTest {
+public class GarbageCollectionMetricsTest extends AbstractMetricsTest {
 
     @Before
     public void setup() {
-        registry.register(new MemoryProbeSource(new DefaultMemoryStats()));
+        registry.register(new MemoryMetrics(new DefaultMemoryStats()));
     }
 
     @Test
-    public void totalPhysical() {
-        assertProbed("memory.totalPhysical", -1L);
+    public void minorCount() {
+        assertProbed("gc.minorCount");
     }
 
     @Test
-    public void freePhysical() {
-        assertProbed("memory.freePhysical", -1L);
+    public void minorTime() {
+        assertProbed("gc.minorTime");
     }
 
     @Test
-    public void maxHeap() {
-        assertProbed("memory.maxHeap");
+    public void majorCount() {
+        assertProbed("gc.majorCount");
     }
 
     @Test
-    public void committedHeap() {
-        assertProbed("memory.committedHeap");
+    public void majorTime() {
+        assertProbed("gc.majorTime");
+    }
+
+
+    @Test
+    public void unknownCount() {
+        assertProbed("gc.unknownCount");
     }
 
     @Test
-    public void usedHeap() {
-        assertProbed("memory.usedHeap");
-    }
-
-    @Test
-    public void freeHeap() {
-        assertProbed("memory.freeHeap");
-    }
-
-    @Test
-    public void maxNative() {
-        assertProbed("memory.maxNative");
-    }
-
-    @Test
-    public void committedNative() {
-        assertProbed("memory.committedNative");
-    }
-
-    @Test
-    public void usedNative() {
-        assertProbed("memory.usedNative");
-    }
-
-    @Test
-    public void freeNative() {
-        assertProbed("memory.freeNative");
+    public void unknownTime() {
+        assertProbed("gc.unknownTime");
     }
 }

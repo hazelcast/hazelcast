@@ -24,17 +24,17 @@ import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Marks the method of a {@link ProbeSource} that should be called when it is
- * time to update the probe state by calling the annotated method.
+ * Marks the method of a {@link MetricsSource} that should be called when it is
+ * time to update the internal state by calling the annotated method.
  *
  * This can be used as an alternative when computing current values for or
- * during each {@link ProbingCycle} is too "expensive". Updating instead is
- * issued by calling the annotated method before probing when at least the the
- * specified amount of time has passed.
+ * during each {@link CollectionCycle} is too "expensive". Updating instead is
+ * issued by calling the annotated method before data collection when at least
+ * the the specified amount of time has passed since the last update.
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface BeforeProbeCycle {
+public @interface BeforeCollectionCycle {
 
     int value() default 1;
 

@@ -28,19 +28,23 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-import com.hazelcast.internal.metrics.ProbeRenderer;
+import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-final class CompressingProbeRenderer implements ProbeRenderer {
+/**
+ * A {@link MetricsCollector} that compacts metrics using a {@link Deflater} and
+ * writes the result to the wrapped {@link OutputStream}.
+ */
+final class MetricsStreamer implements MetricsCollector {
 
-    private static final ILogger LOGGER = Logger.getLogger(CompressingProbeRenderer.class);
+    private static final ILogger LOGGER = Logger.getLogger(MetricsStreamer.class);
 
     private static final int BINARY_FORMAT_VERSION = 1;
 
     private final DataOutputStream out;
 
-    public CompressingProbeRenderer(OutputStream out) throws IOException {
+    public MetricsStreamer(OutputStream out) throws IOException {
         Deflater compressor = new Deflater(Deflater.BEST_SPEED);
         out.write(BINARY_FORMAT_VERSION);
         this.out = new DataOutputStream(new DeflaterOutputStream(out, compressor));
@@ -55,12 +59,12 @@ final class CompressingProbeRenderer implements ProbeRenderer {
     }
 
     @Override
-    public void render(CharSequence key, long value) {
+    public void collect(CharSequence key, long value) {
         try {
             writeKey(key);
             out.writeLong(value);
         } catch (Exception e) {
-            LOGGER.fine("Failed to render metric.", e);
+            LOGGER.fine("Failed to collect metric.", e);
         }
     }
 

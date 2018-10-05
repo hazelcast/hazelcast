@@ -28,13 +28,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.internal.metrics.AbstractProbeTest;
-import com.hazelcast.internal.metrics.BeforeProbeCycle;
+import com.hazelcast.internal.metrics.AbstractMetricsTest;
+import com.hazelcast.internal.metrics.BeforeCollectionCycle;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
-import com.hazelcast.internal.metrics.ProbingCycle.Tags;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.metrics.ProbingContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,7 +45,7 @@ import com.hazelcast.test.annotation.QuickTest;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource {
+public class MetricsRegistryTest extends AbstractMetricsTest implements MetricsSource {
 
     @Before
     public void setUp() {
@@ -53,7 +53,7 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         LevelBean a = new LevelBean("a");
         LevelBean b = new LevelBean("b");
         LevelBean c = new LevelBean("");
@@ -94,7 +94,7 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
         long debug = 3;
 
         @Override
-        public void tagNow(Tags context) {
+        public void tag(Tags context) {
             if (name.equals("special")) {
                 context.tag(TAG_TARGET, name);
             } else if (!name.isEmpty()) {
@@ -137,7 +137,7 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
         }
     }
 
-    private static final class NestedSource implements ProbeSource {
+    private static final class NestedSource implements MetricsSource {
 
         @Probe
         long y;
@@ -154,7 +154,7 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
         }
 
         @Override
-        public void probeNow(ProbingCycle cycle) {
+        public void collectAll(CollectionCycle cycle) {
             cycle.openContext(); // just to test relative nesting
             cycle.probe(this);
             cycle.probe("my", this);
@@ -202,7 +202,7 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
     @Probe(name = "c")
     private NestedSource nestedSource = new NestedSource(1, new NestedSource(2, null));
 
-    @BeforeProbeCycle(value = 500, unit = TimeUnit.MILLISECONDS)
+    @BeforeCollectionCycle(value = 500, unit = TimeUnit.MILLISECONDS)
     private void update() {
         updates++;
     }
@@ -244,7 +244,7 @@ public class ProbeRegistryTest extends AbstractProbeTest implements ProbeSource 
     public void sort() {
         String[] names = { "a", "c", "b" };
         Integer[] values = { 1, 3, 2 };
-        ProbeRegistryImpl.sort(names, values);
+        MetricsRegistryImpl.sort(names, values);
         assertArrayEquals(new String[] { "a", "b", "c" }, names);
         assertArrayEquals(new Integer[] { 1, 2, 3 }, values);
     }

@@ -16,23 +16,22 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.client.impl.ClientEngineProbeSource;
+import com.hazelcast.client.impl.ClientEngineMetrics;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeRegistry;
-import com.hazelcast.internal.metrics.ProbeRenderContext;
-import com.hazelcast.internal.metrics.ProbeRenderer;
-import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.CollectionContext;
+import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.internal.metrics.ProbeUtils;
-import com.hazelcast.internal.metrics.sources.MachineProbeSource;
-import com.hazelcast.internal.metrics.sources.MemoryProbeSource;
+import com.hazelcast.internal.metrics.sources.MachineMetrics;
+import com.hazelcast.internal.metrics.sources.MemoryMetrics;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.spi.impl.NodeEngineProbeSource;
+import com.hazelcast.spi.impl.NodeEngineMetrics;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
@@ -95,7 +94,7 @@ public class HealthMonitor {
         this.thresholdMemoryPercentage = node.getProperties().getInteger(HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
         this.thresholdCPUPercentage = node.getProperties().getInteger(HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
         this.monitorThread = initMonitorThread();
-        this.healthMetrics = new HealthMetrics(node.nodeEngine.getProbeRegistry());
+        this.healthMetrics = new HealthMetrics(node.nodeEngine.getMetricsRegistry());
     }
 
     private HealthMonitorThread initMonitorThread() {
@@ -197,7 +196,7 @@ public class HealthMonitor {
         }
     }
 
-    class HealthMetrics implements ProbeRenderer {
+    class HealthMetrics implements MetricsCollector {
 
         /**
          * Values originally being a double are multiplied by 10k. The original value
@@ -205,37 +204,26 @@ public class HealthMonitor {
          */
         private static final int DOUBLE_TO_PERCENT = 100;
 
-        private final ProbeRegistry registry;
+        private final MetricsRegistry registry;
         private final StringBuilder sb = new StringBuilder();
         private final Map<String, Long> metrics = new HashMap<String, Long>();
-        private ProbeRenderContext thresholdRenderContext;
-        private ProbeRenderContext printoutRenderContext;
+        private final CollectionContext thresholdContext;
+        private final CollectionContext printoutContext;
 
-        public HealthMetrics(ProbeRegistry registry) {
-            this.registry = registry;
-        }
-
-        /**
-         * The {@link ProbeRenderContext} has to be created after all
-         * {@link ProbeSource}s are registered.
-         */
         @SuppressWarnings("unchecked")
-        private void init() {
-            if (thresholdRenderContext == null) {
-                thresholdRenderContext = registry.newRenderContext(NodeEngineProbeSource.class,
-                        MachineProbeSource.class);
-            }
-            if (printoutRenderContext == null) {
-                printoutRenderContext = registry.newRenderContext(NodeEngineProbeSource.class,
-                        ClientEngineProbeSource.class, ClusterServiceImpl.class,
-                        ExecutionServiceImpl.class, EventServiceImpl.class,
-                        OperationExecutorImpl.class, TcpIpConnectionManager.class,
-                        MachineProbeSource.class, MemoryProbeSource.class);
-            }
+        public HealthMetrics(MetricsRegistry registry) {
+            this.registry = registry;
+            thresholdContext = registry.openContext(NodeEngineMetrics.class,
+                    MachineMetrics.class);
+            printoutContext = registry.openContext(NodeEngineMetrics.class,
+                    ClientEngineMetrics.class, ClusterServiceImpl.class,
+                    ExecutionServiceImpl.class, EventServiceImpl.class,
+                    OperationExecutorImpl.class, TcpIpConnectionManager.class,
+                    MachineMetrics.class, MemoryMetrics.class);
         }
 
         @Override
-        public void render(CharSequence key, long value) {
+        public void collect(CharSequence key, long value) {
             metrics.put(key.toString(), value);
         }
 
@@ -259,8 +247,7 @@ public class HealthMonitor {
         }
 
         void updateThreshHoldMetrics() {
-            init();
-            thresholdRenderContext.render(ProbeLevel.MANDATORY, this);
+            thresholdContext.collectAll(ProbeLevel.MANDATORY, this);
         }
 
         boolean exceedsThreshold() {
@@ -274,8 +261,7 @@ public class HealthMonitor {
         }
 
         public String render() {
-            init();
-            printoutRenderContext.render(ProbeLevel.MANDATORY, this);
+            printoutContext.collectAll(ProbeLevel.MANDATORY, this);
             sb.setLength(0);
             renderProcessors();
             renderPhysicalMemory();

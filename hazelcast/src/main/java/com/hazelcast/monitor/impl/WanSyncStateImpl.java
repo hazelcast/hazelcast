@@ -16,13 +16,13 @@
 
 package com.hazelcast.monitor.impl;
 
-import static com.hazelcast.internal.metrics.ProbeSource.TAG_INSTANCE;
-import static com.hazelcast.internal.metrics.ProbeSource.TAG_TARGET;
+import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
+import static com.hazelcast.internal.metrics.MetricsSource.TAG_TARGET;
 
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbingContext;
-import com.hazelcast.internal.metrics.ProbingCycle.Tags;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.Clock;
 import com.hazelcast.wan.WanSyncStatus;
@@ -49,7 +49,7 @@ public class WanSyncStateImpl implements WanSyncState, ProbingContext {
     }
 
     @Override
-    public void tagNow(Tags context) {
+    public void tag(Tags context) {
         context.tag(TAG_INSTANCE, getActiveWanConfigName());
         context.tag(TAG_TARGET, getActivePublisherName());
     }

@@ -37,7 +37,7 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeAnnotatedMethodsTest extends AbstractProbeTest implements ProbeSource {
+public class ProbeAnnotatedMethodsTest extends AbstractMetricsTest implements MetricsSource {
 
     @Before
     public void setUp() {
@@ -45,7 +45,7 @@ public class ProbeAnnotatedMethodsTest extends AbstractProbeTest implements Prob
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         cycle.probe("foo", new ProbeAnnotatedMethods());
         cycle.probe("foo", new SubclassWithProbes());
     }

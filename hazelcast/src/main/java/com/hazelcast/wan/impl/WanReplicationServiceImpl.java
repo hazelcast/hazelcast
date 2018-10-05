@@ -20,9 +20,9 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
-import com.hazelcast.internal.metrics.ProbingCycle.Tags;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
@@ -42,7 +42,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 /**
  * Open source implementation of the {@link com.hazelcast.wan.WanReplicationService}
  */
-public class WanReplicationServiceImpl implements WanReplicationService, ProbeSource {
+public class WanReplicationServiceImpl implements WanReplicationService, MetricsSource {
 
     private final Node node;
 
@@ -162,7 +162,7 @@ public class WanReplicationServiceImpl implements WanReplicationService, ProbeSo
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         Map<String, LocalWanStats> wanStats = getStats();
         if (wanStats != null && !wanStats.isEmpty()) {
             for (Entry<String, LocalWanStats> config : wanStats.entrySet()) {
@@ -171,7 +171,7 @@ public class WanReplicationServiceImpl implements WanReplicationService, ProbeSo
                         .getLocalWanPublisherStats().entrySet()) {
                     tags.tag(TAG_TARGET, stats.getKey());
                     cycle.probe(stats.getValue());
-                    cycle.gather("state", stats.getValue().getPublisherState().getId());
+                    cycle.collect("state", stats.getValue().getPublisherState().getId());
                 }
             }
         }

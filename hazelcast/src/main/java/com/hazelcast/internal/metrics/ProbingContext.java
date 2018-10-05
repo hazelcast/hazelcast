@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.metrics;
 
-import com.hazelcast.internal.metrics.ProbingCycle.Tags;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
- * Can be implemented by instances passed to {@link ProbingCycle#probe(Object)}
- * (and its sibling methods) to provided the {@link Tags} context by the object
- * itself instead of before calling {@code probe}.
+ * Can be implemented by instances passed to
+ * {@link CollectionCycle#probe(Object)} (and its sibling methods) to provided
+ * the {@link Tags} context through the probed object itself instead building it
+ * on the level above.
  */
 @PrivateApi
 public interface ProbingContext {
@@ -35,10 +36,13 @@ public interface ProbingContext {
      * that were added before probing the implementing instance.
      *
      * This is an alternative to building the context in the
-     * {@link ProbeSource#probeNow(ProbingCycle)} implementation.
+     * {@link MetricsSource#collectAll(CollectionCycle)} implementation. This is for
+     * example useful when the probed object is an abstraction and the context
+     * relies on private information that cannot be accessed or that is different
+     * for different implementation classes.
      *
      * @param context to use to build the objects context using the {@link Tags}
      *        methods.
      */
-    void tagNow(Tags context);
+    void tag(Tags context);
 }

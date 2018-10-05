@@ -18,8 +18,8 @@ package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.monitor.impl.LocalFlakeIdGeneratorStatsImpl;
 import com.hazelcast.spi.ManagedService;
@@ -35,7 +35,7 @@ import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatis
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class FlakeIdGeneratorService implements ManagedService, RemoteService,
-        ProbeSource {
+        MetricsSource {
 
     public static final String SERVICE_NAME = "hz:impl:flakeIdGeneratorService";
 
@@ -80,7 +80,7 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         probeStatistics(cycle, "flakeIdGenerator", statsMap);
     }
 

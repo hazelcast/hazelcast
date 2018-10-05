@@ -56,11 +56,11 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Test
     public void exceedsThreshold_when_notTooHigh() {
         metrics.updateThreshHoldMetrics();
-        metrics.render("os.processCpuLoad", 0);
-        metrics.render("operation.invocations.pending", 0);
-        metrics.render("os.systemCpuLoad", 0);
-        metrics.render("runtime.usedMemory", 0);
-        metrics.render("runtime.maxMemory", 100);
+        metrics.collect("os.processCpuLoad", 0);
+        metrics.collect("operation.invocations.pending", 0);
+        metrics.collect("os.systemCpuLoad", 0);
+        metrics.collect("runtime.usedMemory", 0);
+        metrics.collect("runtime.maxMemory", 100);
 
         assertFalse(metrics.exceedsThreshold());
     }
@@ -68,29 +68,29 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Test
     public void exceedsThreshold_when_osProcessCpuLoad_tooHigh() {
         metrics.updateThreshHoldMetrics();
-        metrics.render("os.processCpuLoad", ProbeUtils.toLong(90d));
+        metrics.collect("os.processCpuLoad", ProbeUtils.toLong(90d));
         assertTrue(metrics.exceedsThreshold());
     }
 
     @Test
     public void exceedsThreshold_when_osSystemCpuLoad_TooHigh() {
         metrics.updateThreshHoldMetrics();
-        metrics.render("os.systemCpuLoad", ProbeUtils.toLong(90d));
+        metrics.collect("os.systemCpuLoad", ProbeUtils.toLong(90d));
         assertTrue(metrics.exceedsThreshold());
     }
 
     @Test
     public void exceedsThreshold_operationServicePendingInvocationsPercentage() {
         metrics.updateThreshHoldMetrics();
-        metrics.render("operation.invocations.usedPercentage", ProbeUtils.toLong(90d));
+        metrics.collect("operation.invocations.usedPercentage", ProbeUtils.toLong(90d));
         assertTrue(metrics.exceedsThreshold());
     }
 
     @Test
     public void exceedsThreshold_memoryUsedOfMaxPercentage() {
         metrics.updateThreshHoldMetrics();
-        metrics.render("runtime.usedMemory", 90);
-        metrics.render("runtime.maxMemory", 100);
+        metrics.collect("runtime.usedMemory", 90);
+        metrics.collect("runtime.maxMemory", 100);
         assertTrue(metrics.exceedsThreshold());
     }
 

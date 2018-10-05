@@ -37,6 +37,9 @@ public final class ProbeEnumUtils {
     }
 
     public static int codeOf(MemberHotRestartStatus status) {
+        if (status == null) {
+            return -1;
+        }
         switch (status) {
         case FAILED: return 0;
         case PENDING: return 1;
@@ -47,6 +50,9 @@ public final class ProbeEnumUtils {
     }
 
     public static int codeOf(BackupTaskState state) {
+        if (state == null) {
+            return -1;
+        }
         switch (state) {
         case FAILURE: return 0;
         case NOT_STARTED: return 1;
@@ -58,6 +64,9 @@ public final class ProbeEnumUtils {
     }
 
     public static int codeOf(ClusterHotRestartStatus status) {
+        if (status == null) {
+            return -1;
+        }
         switch (status) {
         case FAILED: return 0;
         case IN_PROGRESS: return 3;
@@ -68,6 +77,9 @@ public final class ProbeEnumUtils {
     }
 
     public static int codeOf(ClusterState state) {
+        if (state == null) {
+            return -1;
+        }
         switch (state) {
         case PASSIVE: return 1;
         case FROZEN: return 2;
@@ -79,6 +91,9 @@ public final class ProbeEnumUtils {
     }
 
     public static int codeOf(NodeState state) {
+        if (state == null) {
+            return -1;
+        }
         switch (state) {
         case PASSIVE: return 0;
         case SHUT_DOWN: return 6;
@@ -88,6 +103,9 @@ public final class ProbeEnumUtils {
     }
 
     public static int codeOf(HotRestartClusterDataRecoveryPolicy policy) {
+        if (policy == null) {
+            return -1;
+        }
         switch (policy) {
         case FULL_RECOVERY_ONLY: return 10;
         case PARTIAL_RECOVERY_MOST_COMPLETE: return 11;

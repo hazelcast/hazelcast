@@ -28,13 +28,13 @@ import java.util.Map;
 
 import org.junit.Before;
 
-import com.hazelcast.internal.metrics.impl.ProbeRegistryImpl;
+import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 
-public abstract class AbstractProbeTest extends HazelcastTestSupport {
+public abstract class AbstractMetricsTest extends HazelcastTestSupport {
 
-    protected final ProbeRegistry registry = new ProbeRegistryImpl();
-    protected final ProbeRenderContext rendering = registry.newRenderContext(null);
+    protected final MetricsRegistry registry = new MetricsRegistryImpl();
+    protected final CollectionContext context = registry.openContext();
     private ProbeLevel level = ProbeLevel.DEBUG;
 
     @Before
@@ -48,7 +48,7 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
     }
 
     protected final void assertProbed(final String expectedKey) {
-        CountingProbeRenderer renderer = runCycle(expectedKey);
+        CountingMetricsCollector renderer = runCycle(expectedKey);
         assertProbedTimes(1, renderer);
         assertNotEquals(-1L, renderer.matchValue);
     }
@@ -62,7 +62,7 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
     }
 
     protected final void assertProbed(String expectedKey, long expectedValue, long absoluteDelta) {
-        CountingProbeRenderer renderer = runCycle(expectedKey);
+        CountingMetricsCollector renderer = runCycle(expectedKey);
         assertProbedTimes(1, renderer);
         assertProbeValue(expectedValue, renderer.matchValue, absoluteDelta);
     }
@@ -72,12 +72,12 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
     }
 
     protected final void assertProbeCount(int expectedCount) {
-        CountingProbeRenderer renderer = runCycle("");
+        CountingMetricsCollector renderer = runCycle("");
         assertEquals(expectedCount, renderer.totalCount);
     }
 
-    protected static void assertProbedTimes(int expectedTimes, CountingProbeRenderer actual) {
-        String msg = "probe `" + actual.expectedKey + "` occurence ";
+    protected static void assertProbedTimes(int expectedTimes, CountingMetricsCollector actual) {
+        String msg = "metric `" + actual.expectedKey + "` occurence ";
         assertEquals(msg, expectedTimes, actual.matchCount);
     }
 
@@ -91,27 +91,28 @@ public abstract class AbstractProbeTest extends HazelcastTestSupport {
         }
     }
 
-    CountingProbeRenderer runCycle(final String expectedKey) {
-        return runCycle(expectedKey, rendering, level);
+    CountingMetricsCollector runCycle(final String expectedKey) {
+        return runCycle(expectedKey, context, level);
     }
 
-    public static CountingProbeRenderer runCycle(final String expectedKey, ProbeRenderContext renderContext, ProbeLevel level) {
-        CountingProbeRenderer renderer = new CountingProbeRenderer(expectedKey);
-        renderContext.render(level, renderer);
-        return renderer;
+    public static CountingMetricsCollector runCycle(final String expectedKey,
+            CollectionContext context, ProbeLevel level) {
+        CountingMetricsCollector collector = new CountingMetricsCollector(expectedKey);
+        context.collectAll(level, collector);
+        return collector;
     }
 
-    public static final class CountingProbeRenderer implements ProbeRenderer {
+    public static final class CountingMetricsCollector implements MetricsCollector {
         final String expectedKey;
         long matchValue = -1;
         int matchCount = 0;
         int totalCount = 0;
-        private CountingProbeRenderer(String expectedKey) {
+        private CountingMetricsCollector(String expectedKey) {
             this.expectedKey = expectedKey;
         }
 
         @Override
-        public void render(CharSequence key, long value) {
+        public void collect(CharSequence key, long value) {
             totalCount++;
             if (expectedKey.contentEquals(key)) {
                 matchCount++;

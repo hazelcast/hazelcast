@@ -16,53 +16,41 @@
 
 package com.hazelcast.internal.metrics.sources;
 
+import java.io.File;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.internal.metrics.AbstractProbeTest;
-import com.hazelcast.memory.DefaultMemoryStats;
+import com.hazelcast.internal.metrics.AbstractMetricsTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeGarbageCollectionTest extends AbstractProbeTest {
+public class FileMetricsTest extends AbstractMetricsTest {
+
+    final File userHome = new File(System.getProperty("user.home"));
 
     @Before
     public void setup() {
-        registry.register(new MemoryProbeSource(new DefaultMemoryStats()));
+        registry.register(new MachineMetrics());
     }
 
     @Test
-    public void minorCount() {
-        assertProbed("gc.minorCount");
+    public void freeSpace() {
+        assertProbed("type=file.partition instance=user.home freeSpace", userHome.getFreeSpace(), 0.1);
     }
 
     @Test
-    public void minorTime() {
-        assertProbed("gc.minorTime");
+    public void totalSpace() {
+        assertProbed("type=file.partition instance=user.home totalSpace", userHome.getTotalSpace(),  0.1);
     }
 
     @Test
-    public void majorCount() {
-        assertProbed("gc.majorCount");
+    public void usableSpace() {
+        assertProbed("type=file.partition instance=user.home usableSpace", userHome.getUsableSpace(), 0.1);
     }
 
-    @Test
-    public void majorTime() {
-        assertProbed("gc.majorTime");
-    }
-
-
-    @Test
-    public void unknownCount() {
-        assertProbed("gc.unknownCount");
-    }
-
-    @Test
-    public void unknownTime() {
-        assertProbed("gc.unknownTime");
-    }
 }

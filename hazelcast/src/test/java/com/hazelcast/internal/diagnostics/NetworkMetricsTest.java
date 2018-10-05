@@ -28,7 +28,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 
 @RunWith(HazelcastParallelClassRunner.class)
-public class NetworkMetricsTest extends DefaultMetricsTest {
+public class NetworkMetricsTest extends HazelcastInstanceMetricsIntegrationTest {
 
     /**
      * In order to get the TCP statistics we need a real {@link ConnectionManager}.

@@ -19,16 +19,16 @@ package com.hazelcast.internal.metrics;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 @PrivateApi
-public interface ProbeRenderer {
+public interface MetricsCollector {
 
     /**
      * Appends the given key value pair to the output in the format specific to the
-     * renderer.
+     * collector.
      *
      * @param key not null, only guaranteed to be stable throughout the call
      * @param value -1 for unknown, >= 0 otherwise (double encoded as 10000 x double
      *        value)
      */
-    void render(CharSequence key, long value);
+    void collect(CharSequence key, long value);
 
 }

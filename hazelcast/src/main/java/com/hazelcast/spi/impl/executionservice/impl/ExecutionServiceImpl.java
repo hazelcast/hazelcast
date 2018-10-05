@@ -21,8 +21,8 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
@@ -58,7 +58,7 @@ import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public final class ExecutionServiceImpl implements InternalExecutionService, ProbeSource {
+public final class ExecutionServiceImpl implements InternalExecutionService, MetricsSource {
 
     private static final int CORE_POOL_SIZE = 3;
     private static final long KEEP_ALIVE_TIME = 60L;
@@ -162,7 +162,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService, Pro
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         probeAllInstances(cycle, "internal-executor", executors);
     }
 

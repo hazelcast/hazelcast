@@ -26,8 +26,8 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ProbingCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
@@ -87,7 +87,7 @@ import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService, RemoteService,
         EventPublishingService<QueueEvent, ItemListener>,  QuorumAwareService,
-        SplitBrainHandlerService, ProbeSource {
+        SplitBrainHandlerService, MetricsSource {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
 
@@ -367,7 +367,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public void probeNow(ProbingCycle cycle) {
+    public void collectAll(CollectionCycle cycle) {
         probeStatistics(cycle, "queue", statsMap);
     }
 
