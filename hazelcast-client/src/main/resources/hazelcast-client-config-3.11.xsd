@@ -412,7 +412,7 @@
     </xs:complexType>
     <xs:complexType name="security">
         <xs:sequence>
-            <xs:element name="credentials" type="credentials" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="credentials" type="credentials" minOccurs="0" maxOccurs="1"/>
             <xs:element name="credentials-factory" type="security-object" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
