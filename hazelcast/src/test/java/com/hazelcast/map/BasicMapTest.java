@@ -59,6 +59,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -602,60 +603,59 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapLockAndUnlockAndTryLock() throws Exception {
-        final int timeout = 10; //seconds
+    public void testMapTryLock() throws Exception {
+        final IMap<Object, Object> map = getInstance().getMap("testMapTryLock");
+        final String key = "key";
+        map.lock(key);
 
-        final IMap<Object, Object> map = getInstance().getMap("testMapLockAndUnlockAndTryLock");
-        map.lock("key0");
-        map.lock("key1");
-        map.lock("key2");
-        map.lock("key3");
+        final CountDownLatch latch = new CountDownLatch(1);
+        Future<Object> f = spawn(new Callable<Object>() {
+            public Object call() throws Exception {
+                assertFalse("Should NOT be able to acquire lock!", map.tryLock(key));
+                latch.countDown();
 
-        final AtomicBoolean check1 = new AtomicBoolean(false);
-        final AtomicBoolean check2 = new AtomicBoolean(false);
-        final CountDownLatch latch0 = new CountDownLatch(1);
-        final CountDownLatch latch1 = new CountDownLatch(1);
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        final CountDownLatch latch3 = new CountDownLatch(1);
-        final CountDownLatch latch4 = new CountDownLatch(1);
-
-        Thread thread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    check1.set(map.tryLock("key0"));
-                    latch0.countDown();
-
-                    check2.set(map.tryLock("key0", timeout, SECONDS));
-                    latch1.countDown();
-
-                    map.put("key1", "value1");
-                    latch2.countDown();
-
-                    map.put("key2", "value2");
-                    latch3.countDown();
-
-                    map.put("key3", "value3");
-                    latch4.countDown();
-                } catch (Exception e) {
-                    fail(e.getMessage());
-                }
+                assertTrue("Should be able to acquire lock!", map.tryLock(key, 60, SECONDS));
+                return null;
             }
         });
-        thread.start();
 
-        assertTrue(latch0.await(timeout, SECONDS));
-        map.unlock("key0");
+        assertOpenEventually(latch);
+        map.unlock(key);
+        f.get();
+    }
 
-        assertTrue(latch1.await(timeout, SECONDS));
-        assertFalse(check1.get());
-        assertTrue(check2.get());
+    @Test
+    public void testMapPut_whenKeyLocked() throws Exception {
+        final IMap<Object, Object> map = getInstance().getMap("testMapPut_whenKeyLocked");
+        final String key = "key";
+        final String invalidValue = "valuex";
+        final String value = "value";
+        map.lock(key);
 
-        map.unlock("key1");
-        assertTrue(latch2.await(timeout, SECONDS));
-        map.unlock("key2");
-        assertTrue(latch3.await(timeout, SECONDS));
-        map.unlock("key3");
-        assertTrue(latch4.await(timeout, SECONDS));
+        Future f1 = spawn(new Runnable() {
+            @Override
+            public void run() {
+                assertFalse(map.tryPut(key, invalidValue, 1, SECONDS));
+            }
+        });
+
+        Future f2 = spawn(new Runnable() {
+            @Override
+            public void run() {
+                map.put(key, value);
+            }
+        });
+
+        f1.get();
+        try {
+            f2.get(1, SECONDS);
+            fail("Should not be able to put entry when key is locked!");
+        } catch (TimeoutException ignored) {
+        }
+        map.unlock(key);
+
+        f2.get();
+        assertEquals(value, map.get(key));
     }
 
     @Test
