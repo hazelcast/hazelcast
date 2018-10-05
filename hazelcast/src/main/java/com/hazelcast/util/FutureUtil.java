@@ -254,19 +254,20 @@ public final class FutureUtil {
                                                        long perFutureTimeout, TimeUnit perFutureTimeUnit,
                                                        ExceptionHandler exceptionHandler) {
 
-        // Calculate timeouts for whole operation and per future. If corresponding TimeUnits not set assume
+        // Calculate timeouts for whole operation and per future. If per future timeout is greater than overall timeout
+        // then use per future timeout as overall timeout. If corresponding TimeUnits not set assume
         // the default of TimeUnit.SECONDS
-        long overallTimeoutNanos = calculateTimeout(overallTimeout, overallTimeUnit);
         long perFutureTimeoutNanos = calculateTimeout(perFutureTimeout, perFutureTimeUnit);
+        long overallTimeoutNanos = Math.max(perFutureTimeoutNanos, calculateTimeout(overallTimeout, overallTimeUnit));
 
-        // Common deadline for all futures
-        long deadline = System.nanoTime() + overallTimeoutNanos;
+        // Elapsed time will be calculated according to this value
+        long begin = System.nanoTime();
 
         List<V> results = new ArrayList<V>(futures.size());
         for (Future<V> future : futures) {
             try {
-                long timeoutNanos = calculateFutureTimeout(perFutureTimeoutNanos, deadline);
-                V value = executeWithDeadline(future, timeoutNanos);
+                long timeoutNanos = calculateFutureTimeout(perFutureTimeoutNanos, overallTimeoutNanos, begin);
+                V value = executeWithTimeout(future, timeoutNanos);
                 if (value != null) {
                     results.add(value);
                 }
@@ -349,25 +350,25 @@ public final class FutureUtil {
     public static void waitWithDeadline(Collection<? extends Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
                                         long perFutureTimeout, TimeUnit perFutureTimeUnit, ExceptionHandler exceptionHandler) {
 
-        // Calculate timeouts for whole operation and per future. If corresponding TimeUnits not set assume
+        // Calculate timeouts for whole operation and per future. If per future timeout is greater than overall timeout
+        // then use per future timeout as overall timeout. If corresponding TimeUnits not set assume
         // the default of TimeUnit.SECONDS
-        long overallTimeoutNanos = calculateTimeout(overallTimeout, overallTimeUnit);
         long perFutureTimeoutNanos = calculateTimeout(perFutureTimeout, perFutureTimeUnit);
+        long overallTimeoutNanos = Math.max(perFutureTimeoutNanos, calculateTimeout(overallTimeout, overallTimeUnit));
 
-        // Common deadline for all futures
-        long deadline = System.nanoTime() + overallTimeoutNanos;
-
+        // Elapsed time will be calculated according to this value
+        long begin = System.nanoTime();
         for (Future future : futures) {
             try {
-                long timeoutNanos = calculateFutureTimeout(perFutureTimeoutNanos, deadline);
-                executeWithDeadline(future, timeoutNanos);
+                long timeoutNanos = calculateFutureTimeout(perFutureTimeoutNanos, overallTimeoutNanos, begin);
+                executeWithTimeout(future, timeoutNanos);
             } catch (Throwable e) {
                 exceptionHandler.handleException(e);
             }
         }
     }
 
-    private static <V> V executeWithDeadline(Future<V> future, long timeoutNanos) throws Exception {
+    private static <V> V executeWithTimeout(Future<V> future, long timeoutNanos) throws Exception {
         if (timeoutNanos <= 0) {
             // Maybe we just finished in time
             if (future.isDone() || future.isCancelled()) {
@@ -394,9 +395,9 @@ public final class FutureUtil {
         return timeUnit.toNanos(timeout);
     }
 
-    private static long calculateFutureTimeout(long perFutureTimeoutNanos, long deadline) {
-        long remainingNanos = deadline - System.nanoTime();
-        return Math.min(remainingNanos, perFutureTimeoutNanos);
+    private static long calculateFutureTimeout(long perFutureTimeoutNanos, long overallTimeoutNanos, long begin) {
+        long elapsed = System.nanoTime() - begin;
+        return Math.min(overallTimeoutNanos - elapsed, perFutureTimeoutNanos);
     }
 
     /**
