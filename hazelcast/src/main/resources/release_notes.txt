@@ -1,5 +1,34 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for 3.10.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.10.6 ====
+
+1. Enhancements 
+
+- Added the ability to log `IOException`s thrown by the ICMP ping task as ping failures. [#13826]
+
+2. Fixes
+
+- Entry processors equipped with predicates try to utilize global indexes to
+narrow down the key set to operate on. [#13892] fixes the following issues for this utilization:
+    - There were no migration stamp validations performed to prevent entry processors from operating on stale index data.
+    - `WrongTargetException` was not thrown for out-migrated partitions, as a result the caller (`InvokeOnPartitions`) was not retrying entry processors on such partitions.
+    - Partition scope provided to `PartitionIteratingOperation` was not respected. As a result, operations produced by factories providing
+their own partition sets were running on more partitions than expected.
+- Fixed the incorrect dependencies in `hazelcast-all.pom`. [#13885]
+- Hazelcast lacks a mechanism for the client/server recovery within Spring cache context. This is fixed by recreating the local cache configurations when the client is connecting to a restarted member. [#13811]
+- Clients were sometimes failing to reconnect to another owner member with the `ExecutionException`. This is fixed by making `ClientReauthOperation` to be retryable. [#13790]
+- When an `unserializableResponse` is tried to be sent to the client as a response from the executor service tasks, the exception was logged on the server side and there was no response returned back to the client. This has been fixed by removing the logging and  sending `HazelcastSerializationException` to the client. [#13777]
+- Queryable entries returned by High-Density Memory Store indexes were unaware of the map value extractors, so it was not possible to extract values provided by the extractors from the returned entries. This is fixed by forwarding the map value extractor to these indexes. [#13775]
+- Hazelcast 3.10.5 client was not being auto-discovered on Kubernetes. This is fixed by using a specific TLS version, namely v1.2, for `SSLContext`. [#13760]
+- There is a scheduled task to clean the client resources. When an endpoint is removed, this task keeps a reference to it and this was causing unnecessary leak. This is fixed by passing only the necessary field objects of the client endpoint to this task to avoid keeping reference to the client endpoint itself. [#13755]
+- When merging MultiMap entries, `MERGE` events were being fired. Now they are not since MultiMap does not have a merging listener. [#13714]
+- Fixed the heartbeat resume mechanism where the heartbeat of a connection was becoming unhealthy when the last read time is lower than the heartbeat timeout. [#13684]
+- Added the `storage.clear` operation before `storage.destroy` to release the High-Density (HD) Memory Store resources, since using only `storage.destroy` releases the internal resources of backing data structure, not the HD resources. [#13659]
+- Moved the alive check in `ClientConnectionManager` to a more centralized method and fixed the exception type. [#13525]
+- Fixed an issue where a joining member was not validating the initial cluster version. [#13390]
+- When a Near Cache is used for an IMap and a TransactionalMap is used on a client then the `get(key)` operation fails reporting a wrong key type. This is fixed by skipping the Near Cache lookup at the member side, for the client's transaction request. [#13371]
+- `HDTxnSetOperation` was not taking the changes made by `MapInterceptor` into account while sending the backups. Now it replicates the result of `interceptPut`. [#12705]
+
 ==== 3.10.5 ====
 
 1. Enhancements
