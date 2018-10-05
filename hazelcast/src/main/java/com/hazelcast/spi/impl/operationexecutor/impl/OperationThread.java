@@ -181,7 +181,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
                 throw new IllegalStateException("Unhandled task: " + task + " from " + batch.taskFactory());
             }
         } finally {
-            queue.add(batch, false);
+            queue.returnBatch(batch);
         }
     }
 

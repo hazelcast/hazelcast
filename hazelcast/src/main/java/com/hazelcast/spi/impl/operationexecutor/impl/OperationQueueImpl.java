@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -26,6 +27,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public final class OperationQueueImpl implements OperationQueue {
 
     static final Object TRIGGER_TASK = new Object() {
+        // purely for debugging purposes.
+        @Override
         public String toString() {
             return "triggerTask";
         }
@@ -33,6 +36,10 @@ public final class OperationQueueImpl implements OperationQueue {
 
     private final BlockingQueue<Object> normalQueue;
     private final Queue<Object> priorityQueue;
+
+    // this queue is used for returned batches so these bathes can be interleaved
+    // with other operations to prevent bubbles.
+    private final Queue<TaskBatch> batchesInProgressQueue = new LinkedList<TaskBatch>();
 
     public OperationQueueImpl() {
         this(new LinkedBlockingQueue<Object>(), new ConcurrentLinkedQueue<Object>());
@@ -71,6 +78,11 @@ public final class OperationQueueImpl implements OperationQueue {
     }
 
     @Override
+    public void returnBatch(TaskBatch batch) {
+        batchesInProgressQueue.add(batch);
+    }
+
+    @Override
     public Object take(boolean priorityOnly) throws InterruptedException {
         if (priorityOnly) {
             return ((BlockingQueue) priorityQueue).take();
@@ -82,12 +94,28 @@ public final class OperationQueueImpl implements OperationQueue {
                 return priorityItem;
             }
 
-            Object normalItem = normalQueue.take();
-            if (normalItem == TRIGGER_TASK) {
-                continue;
-            }
+            Object normalItem;
+            if (batchesInProgressQueue.isEmpty()) {
+                normalItem = normalQueue.take();
 
-            return normalItem;
+                if (normalItem == TRIGGER_TASK) {
+                    continue;
+                }
+
+                return normalItem;
+            } else {
+                normalItem = normalQueue.poll();
+
+                if (normalItem == TRIGGER_TASK) {
+                    continue;
+                }
+
+                if (normalItem != null) {
+                    return normalItem;
+                }
+
+                return batchesInProgressQueue.poll();
+            }
         }
     }
 }
