@@ -266,7 +266,7 @@ public final class FutureUtil {
         List<V> results = new ArrayList<V>(futures.size());
         for (Future<V> future : futures) {
             try {
-                long timeoutNanos = calculateFutureTimeout(perFutureTimeoutNanos, overallTimeoutNanos, begin);
+                long timeoutNanos = remainingTimeout(perFutureTimeoutNanos, overallTimeoutNanos, begin);
                 V value = executeWithTimeout(future, timeoutNanos);
                 if (value != null) {
                     results.add(value);
@@ -360,7 +360,7 @@ public final class FutureUtil {
         long begin = System.nanoTime();
         for (Future future : futures) {
             try {
-                long timeoutNanos = calculateFutureTimeout(perFutureTimeoutNanos, overallTimeoutNanos, begin);
+                long timeoutNanos = remainingTimeout(perFutureTimeoutNanos, overallTimeoutNanos, begin);
                 executeWithTimeout(future, timeoutNanos);
             } catch (Throwable e) {
                 exceptionHandler.handleException(e);
@@ -395,7 +395,7 @@ public final class FutureUtil {
         return timeUnit.toNanos(timeout);
     }
 
-    private static long calculateFutureTimeout(long perFutureTimeoutNanos, long overallTimeoutNanos, long begin) {
+    private static long remainingTimeout(long perFutureTimeoutNanos, long overallTimeoutNanos, long begin) {
         long elapsed = System.nanoTime() - begin;
         return Math.min(overallTimeoutNanos - elapsed, perFutureTimeoutNanos);
     }
