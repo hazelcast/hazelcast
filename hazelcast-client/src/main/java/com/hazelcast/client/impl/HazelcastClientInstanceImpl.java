@@ -30,8 +30,10 @@ import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.statistics.Statistics;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
@@ -48,6 +50,7 @@ import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientUserCodeDeploymentService;
@@ -163,11 +166,14 @@ import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.ServiceLoader;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
@@ -750,6 +756,27 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
         try {
+            ClientMessage request = ClientGetDistributedObjectsCodec.encodeRequest();
+            final Future<ClientMessage> future = new ClientInvocation(this, request, getName()).invoke();
+            ClientMessage response = future.get();
+            ClientGetDistributedObjectsCodec.ResponseParameters resultParameters =
+                    ClientGetDistributedObjectsCodec.decodeResponse(response);
+
+            Collection<? extends DistributedObject> distributedObjects = proxyManager.getDistributedObjects();
+            Set<DistributedObjectInfo> localDistributedObjects = new HashSet<DistributedObjectInfo>();
+            for (DistributedObject localInfo : distributedObjects) {
+                localDistributedObjects.add(new DistributedObjectInfo(localInfo.getServiceName(), localInfo.getName()));
+            }
+
+            Collection<DistributedObjectInfo> newDistributedObjectInfo = resultParameters.response;
+            for (DistributedObjectInfo distributedObjectInfo : newDistributedObjectInfo) {
+                localDistributedObjects.remove(distributedObjectInfo);
+                getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+            }
+
+            for (DistributedObjectInfo distributedObjectInfo : localDistributedObjects) {
+                proxyManager.destroyProxyLocally(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+            }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {
             throw rethrow(e);
