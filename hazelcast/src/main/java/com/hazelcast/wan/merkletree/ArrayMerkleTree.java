@@ -186,6 +186,33 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
     }
 
     @Override
+    public int getNodeKeyCount(int nodeOrder) {
+        if (MerkleTreeUtil.isLeaf(nodeOrder, depth)) {
+            return getLeafKeyCount(nodeOrder);
+        } else {
+            return getNonLeafKeyCount(nodeOrder);
+        }
+    }
+
+    private int getLeafKeyCount(int nodeOrder) {
+        int relativeLeafOrder = nodeOrder - leafLevelOrder;
+        return leafKeys[relativeLeafOrder].size();
+    }
+
+    private int getNonLeafKeyCount(int nodeOrder) {
+        final int leftMostLeaf = MerkleTreeUtil.getLeftMostLeafUnderNode(nodeOrder, depth);
+        final int rightMostLeaf = MerkleTreeUtil.getRightMostLeafUnderNode(nodeOrder, depth);
+
+        int count = 0;
+        for (int leafOrder = leftMostLeaf; leafOrder <= rightMostLeaf; leafOrder++) {
+            int relativeLeafOrder = leafOrder - leafLevelOrder;
+            count += leafKeys[relativeLeafOrder].size();
+        }
+
+        return count;
+    }
+
+    @Override
     public long footprint() {
         return footprint;
     }

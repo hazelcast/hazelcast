@@ -270,6 +270,29 @@ public class ArrayMerkleTreeTest {
     }
 
     @Test
+    public void getNodeKeyCount() {
+        MerkleTree merkleTree = new ArrayMerkleTree(3);
+
+        merkleTree.updateAdd(0x80000000, 1); // leaf 3
+        merkleTree.updateAdd(0xC0000000, 2); // leaf 4
+        merkleTree.updateAdd(0x00000000, 3); // leaf 5
+        merkleTree.updateAdd(0x40000000, 4); // leaf 6
+
+        // level 0
+        assertEquals(4, merkleTree.getNodeKeyCount(0));
+
+        // level 1
+        assertEquals(2, merkleTree.getNodeKeyCount(1));
+        assertEquals(2, merkleTree.getNodeKeyCount(2));
+
+        // level 2 (leaves)
+        assertEquals(1, merkleTree.getNodeKeyCount(3));
+        assertEquals(1, merkleTree.getNodeKeyCount(4));
+        assertEquals(1, merkleTree.getNodeKeyCount(5));
+        assertEquals(1, merkleTree.getNodeKeyCount(6));
+    }
+
+    @Test
     public void testTreeDepthsDontImpactNodeHashes() {
         MerkleTree merkleTreeShallow = new ArrayMerkleTree(2);
         MerkleTree merkleTreeDeep = new ArrayMerkleTree(4);

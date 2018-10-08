@@ -189,7 +189,7 @@ public final class MerkleTreeUtil {
      * @param level The level
      * @return the number of the nodes on the given level
      */
-    static int getNodesOnLevel(int level) {
+    public static int getNodesOnLevel(int level) {
         return 1 << level;
     }
 
