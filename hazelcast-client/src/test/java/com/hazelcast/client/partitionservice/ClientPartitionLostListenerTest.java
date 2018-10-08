@@ -76,8 +76,9 @@ public class ClientPartitionLostListenerTest {
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         client.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
-        // Expected = 2 -> 1 added & 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        assertRegistrationsSizeEventually(instance, 2);
+        // Expected = 4 -> 1 added & 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers
+        assertRegistrationsSizeEventually(instance, 4);
     }
 
     @Test
@@ -86,12 +87,14 @@ public class ClientPartitionLostListenerTest {
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final String registrationId = client.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
-        // Expected = 2 -> 1 added & 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        assertRegistrationsSizeEventually(instance, 2);
+        // Expected = 4 -> 1 added & 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers
+        assertRegistrationsSizeEventually(instance, 4);
 
         client.getPartitionService().removePartitionLostListener(registrationId);
-        // Expected = 1 -> see {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        assertRegistrationsSizeEventually(instance, 1);
+        // Expected = 3 -> see {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers
+        assertRegistrationsSizeEventually(instance, 3);
     }
 
     @Test
@@ -103,8 +106,9 @@ public class ClientPartitionLostListenerTest {
         final EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
 
         client.getPartitionService().addPartitionLostListener(listener);
-        // Expected = 2 -> 1 added & 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        assertRegistrationsSizeEventually(instance, 2);
+        // Expected = 4 -> 1 added & 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers
+        assertRegistrationsSizeEventually(instance, 4);
 
         final InternalPartitionServiceImpl partitionService = getNode(instance).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
@@ -130,9 +134,9 @@ public class ClientPartitionLostListenerTest {
         final EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
         client.getPartitionService().addPartitionLostListener(listener);
         // Expected = 2 -> 1 added & 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        // * instances
-        assertRegistrationsSizeEventually(instance1, 3);
-        assertRegistrationsSizeEventually(instance2, 3);
+        // + 2 from map and cache ExpirationManagers * instances
+        assertRegistrationsSizeEventually(instance1, 7);
+        assertRegistrationsSizeEventually(instance2, 7);
 
         final InternalPartitionServiceImpl partitionService = getNode(other).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;

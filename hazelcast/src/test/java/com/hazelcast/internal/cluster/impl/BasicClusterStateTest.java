@@ -359,10 +359,10 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(master, ClusterState.PASSIVE);
         master.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
-        // Expected = 2 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        // * instances
-        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 3);
-        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 3);
+        // Expected = 7 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers * instances
+        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 7);
+        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 7);
     }
 
     @Test
@@ -372,16 +372,17 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance other = factory.newHazelcastInstance();
 
         final String registrationId = master.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
-        // Expected = 3 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        // * instances
-        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 3);
-        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 3);
+        // Expected = 7 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers * instances
+        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 7);
+        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 7);
 
         changeClusterStateEventually(master, ClusterState.PASSIVE);
         master.getPartitionService().removePartitionLostListener(registrationId);
-        // Expected = 2 -> see {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService} * instances
-        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 2);
-        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 2);
+        // Expected = 6 -> see {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers* instances
+        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 6);
+        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 6);
     }
 
     @Test

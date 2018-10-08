@@ -19,7 +19,6 @@ package com.hazelcast.internal.eviction;
 import com.hazelcast.core.IBiFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostEvent;
-import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -45,7 +44,7 @@ import static java.lang.Math.min;
 
 @SuppressWarnings("checkstyle:magicnumber")
 @SuppressFBWarnings({"URF_UNREAD_FIELD"})
-public abstract class ClearExpiredRecordsTask<T, S> implements Runnable, PartitionLostListener {
+public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     private static final int DIFFERENCE_BETWEEN_TWO_SUBSEQUENT_PARTITION_CLEANUP_MILLIS = 1000;
 
@@ -63,7 +62,6 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable, Partiti
     private final InternalOperationService operationService;
     private final AtomicBoolean singleRunPermit = new AtomicBoolean(false);
     private final AtomicInteger partitionLostCounter = new AtomicInteger();
-    private final AtomicBoolean partitionLostListenerRegistered = new AtomicBoolean(false);
 
     private volatile int lastSeenPartitionLostCount;
 
@@ -110,10 +108,6 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable, Partiti
         try {
             if (!singleRunPermit.compareAndSet(false, true)) {
                 return;
-            }
-
-            if (partitionLostListenerRegistered.compareAndSet(false, true)) {
-                partitionService.addPartitionLostListener(this);
             }
 
             runInternal();
@@ -186,7 +180,6 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable, Partiti
      * remove leftover backup entries. Otherwise leftover entries can remain on
      * backups forever.
      */
-    @Override
     public final void partitionLost(PartitionLostEvent event) {
         partitionLostCounter.incrementAndGet();
     }
