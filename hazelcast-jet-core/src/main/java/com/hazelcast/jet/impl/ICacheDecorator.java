@@ -55,6 +55,16 @@ public class ICacheDecorator<K, V> implements ICacheJet<K, V> {
     // ICache decorated methods
 
     @Override
+    public boolean setExpiryPolicy(K key, ExpiryPolicy expiryPolicy) {
+        return cache.setExpiryPolicy(key, expiryPolicy);
+    }
+
+    @Override
+    public void setExpiryPolicy(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
+        cache.setExpiryPolicy(keys, expiryPolicy);
+    }
+
+    @Override
     public ICompletableFuture<V> getAsync(K key) {
         return cache.getAsync(key);
     }

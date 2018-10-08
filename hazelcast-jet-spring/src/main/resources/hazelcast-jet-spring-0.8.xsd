@@ -26,7 +26,7 @@
     <xs:import namespace="http://www.springframework.org/schema/tool"
                schemaLocation="http://www.springframework.org/schema/tool/spring-tool.xsd"/>
     <xs:import namespace="http://www.hazelcast.com/schema/spring"
-               schemaLocation="hazelcast-spring-3.10.xsd"/>
+               schemaLocation="hazelcast-spring-3.11.xsd"/>
 
     <xs:element name="instance">
         <xs:annotation>

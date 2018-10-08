@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
+import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
+import com.hazelcast.client.impl.clientside.ClientExceptionFactory.ExceptionFactory;
+import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -24,6 +26,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -37,8 +40,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.JET_EXCEPTIONS_RANGE_START;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 
 public final class ExceptionUtil {
+
+    private static final Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory>[] EXCEPTIONS = new Tuple3[] {
+            tuple3(JET_EXCEPTIONS_RANGE_START, JetException.class,
+                    (ExceptionFactory) JetException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class,
+                    (ExceptionFactory) TopologyChangedException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class,
+                    (ExceptionFactory) JobNotFoundException::new),
+    };
 
     private ExceptionUtil() { }
 
@@ -61,10 +74,19 @@ public final class ExceptionUtil {
     /**
      * Called during startup to make our exceptions known to Hazelcast serialization
      */
+    public static void registerJetExceptions(@Nonnull ClientExceptions factory) {
+        for (Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory> exception : EXCEPTIONS) {
+            factory.register(exception.f0(), exception.f1());
+        }
+    }
+
+    /**
+     * Called during startup to make our exceptions known to Hazelcast serialization
+     */
     public static void registerJetExceptions(@Nonnull ClientExceptionFactory factory) {
-        factory.register(JET_EXCEPTIONS_RANGE_START, JetException.class, JetException::new);
-        factory.register(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class, TopologyChangedException::new);
-        factory.register(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class, JobNotFoundException::new);
+        for (Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory> exception : EXCEPTIONS) {
+            factory.register(exception.f0(), exception.f1(), exception.f2());
+        }
     }
 
     /**

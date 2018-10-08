@@ -156,6 +156,11 @@ public class IMapDecorator<K, V> implements IMapJet<K, V> {
     }
 
     @Override
+    public ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+        return map.putAsync(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
+    }
+
+    @Override
     public ICompletableFuture<Void> setAsync(K key, V value) {
         return map.setAsync(key, value);
     }
@@ -163,6 +168,12 @@ public class IMapDecorator<K, V> implements IMapJet<K, V> {
     @Override
     public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
         return map.setAsync(key, value, ttl, timeunit);
+    }
+
+    @Override
+    public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle,
+                                             TimeUnit maxIdleUnit) {
+        return map.setAsync(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
     }
 
     @Override
@@ -186,8 +197,18 @@ public class IMapDecorator<K, V> implements IMapJet<K, V> {
     }
 
     @Override
+    public V put(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+        return map.put(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
+    }
+
+    @Override
     public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
         map.putTransient(key, value, ttl, timeunit);
+    }
+
+    @Override
+    public void putTransient(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+        map.putTransient(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
     }
 
     @Override
@@ -198,6 +219,11 @@ public class IMapDecorator<K, V> implements IMapJet<K, V> {
     @Override
     public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
         return map.putIfAbsent(key, value, ttl, timeunit);
+    }
+
+    @Override
+    public V putIfAbsent(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+        return map.putIfAbsent(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
     }
 
     @Override
@@ -218,6 +244,11 @@ public class IMapDecorator<K, V> implements IMapJet<K, V> {
     @Override
     public void set(K key, V value, long ttl, TimeUnit timeunit) {
         map.set(key, value, ttl, timeunit);
+    }
+
+    @Override
+    public void set(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+        map.set(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
     }
 
     @Override
@@ -503,6 +534,11 @@ public class IMapDecorator<K, V> implements IMapJet<K, V> {
     }
 
     @Override
+    public boolean setTtl(K key, long ttl, TimeUnit timeunit) {
+        return map.setTtl(key, ttl, timeunit);
+    }
+
+    @Override
     public String getPartitionKey() {
         return map.getPartitionKey();
     }
@@ -521,6 +557,4 @@ public class IMapDecorator<K, V> implements IMapJet<K, V> {
     public void destroy() {
         map.destroy();
     }
-
-
 }

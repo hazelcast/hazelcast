@@ -42,7 +42,7 @@ import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.util.function.Consumer;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -51,12 +51,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class JetService
-        implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, MembershipAwareService,
+        implements ManagedService, ConfigurableService<JetConfig>, Consumer<Packet>, MembershipAwareService,
         LiveOperationsTracker {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
@@ -115,7 +116,7 @@ public class JetService
         networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
 
         ClientEngineImpl clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
-        ExceptionUtil.registerJetExceptions(clientEngine.getClientExceptionFactory());
+        ExceptionUtil.registerJetExceptions(clientEngine.getClientExceptions());
 
         jobCoordinationService.init();
 
@@ -243,8 +244,12 @@ public class JetService
     }
 
     @Override
-    public void handle(Packet packet) throws IOException {
-        networking.handle(packet);
+    public void accept(Packet packet) {
+        try {
+            networking.handle(packet);
+        } catch (IOException e) {
+            throw sneakyThrow(e);
+        }
     }
 
     @Override
