@@ -22,9 +22,11 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.DefaultAddressPicker.HostnameResolver;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -80,6 +82,11 @@ public class DefaultAddressPickerHostnameTest {
         networkConfig.getJoin().getTcpIpConfig().setEnabled(true).addMember(theHostname);
 
         addressPicker.setHostnameResolver(hostnameResolver);
+    }
+
+    @After
+    public void after() {
+        IOUtil.closeResource(addressPicker.getServerSocketChannel());
     }
 
     @Test
@@ -163,7 +170,7 @@ public class DefaultAddressPickerHostnameTest {
         interfacesConfig.setEnabled(true).addInterface(pattern);
     }
 
-    private static NetworkInterface createNetworkInterface(String name, String...addresses) throws IOException {
+    private static NetworkInterface createNetworkInterface(String name, String... addresses) throws IOException {
         Enumeration<InetAddress> inetAddresses = createInetAddresses(addresses);
         NetworkInterface networkInterface = mock(NetworkInterface.class);
         when(networkInterface.getName()).thenReturn(name);
@@ -174,7 +181,7 @@ public class DefaultAddressPickerHostnameTest {
         return networkInterface;
     }
 
-    private static Enumeration<InetAddress> createInetAddresses(String...addresses) throws UnknownHostException {
+    private static Enumeration<InetAddress> createInetAddresses(String... addresses) throws UnknownHostException {
         List<InetAddress> inetAddresses = new ArrayList<InetAddress>();
         for (String address : addresses) {
             inetAddresses.add(InetAddress.getByName(address));
