@@ -212,6 +212,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     @Override
     public void shutdown(boolean terminate) {
         if (!terminate) {
+            expirationManager.onShutdown();
             cacheEventHandler.shutdown();
             reset(true);
         }
