@@ -54,6 +54,7 @@ import com.hazelcast.internal.metrics.ProbingContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ConcurrentReferenceHashMap;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -64,14 +65,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
     private static final Object[] EMPTY_ARGS = new Object[0];
 
     private static final ConcurrentMap<Class<?>, ProbeAnnotatedType> PROBE_METADATA =
-            new ConcurrentSkipListMap<Class<?>, ProbeAnnotatedType>(new Comparator<Class<?>>() {
-
-                @Override
-                public int compare(Class<?> one, Class<?> other) {
-                    int res = one.getSimpleName().compareTo(other.getSimpleName());
-                    return res != 0 ? res : one.getName().compareTo(other.getName());
-                }
-            });
+            new ConcurrentReferenceHashMap<Class<?>, ProbeAnnotatedType>();
 
     private final ConcurrentMap<Class<?>, MetricsSourceEntry> sources =
             new ConcurrentHashMap<Class<?>, MetricsRegistryImpl.MetricsSourceEntry>();
