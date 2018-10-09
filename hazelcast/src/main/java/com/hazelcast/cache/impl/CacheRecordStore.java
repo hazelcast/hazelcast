@@ -162,4 +162,9 @@ public class CacheRecordStore
             return serializationService.toData(obj);
         }
     }
+
+    @Override
+    public void disposeDeferredBlocks() {
+        // NOP
+    }
 }

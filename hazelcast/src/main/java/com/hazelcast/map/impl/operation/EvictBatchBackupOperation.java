@@ -31,6 +31,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Queue;
 
 import static com.hazelcast.util.TimeUtil.zeroOutMs;
 
@@ -73,6 +74,15 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         equalizeEntryCountWithPrimary();
     }
 
+    @Override
+    public void afterRun() throws Exception {
+        try {
+            super.afterRun();
+        } finally {
+            recordStore.disposeDeferredBlocks();
+        }
+    }
+
     /**
      * Equalizes backup entry count with primary in order to have identical
      * memory occupancy.
@@ -83,6 +93,9 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
      */
     private void equalizeEntryCountWithPrimary() {
         int diff = recordStore.size() - primaryEntryCount;
+        if (diff <= 0) {
+            return;
+        }
 
         Evictor evictor = mapContainer.getEvictor();
         if (evictor != Evictor.NULL_EVICTOR) {
@@ -90,12 +103,24 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
                 evictor.evict(recordStore, null);
             }
         } else {
+            Queue<Data> keysToRemove = new LinkedList<Data>();
             Iterable<LazyEntryViewFromRecord> sample = recordStore.getStorage().getRandomSamples(diff);
             for (LazyEntryViewFromRecord entryViewFromRecord : sample) {
                 Data dataKey = entryViewFromRecord.getRecord().getKey();
+                keysToRemove.add(dataKey);
+            }
+
+            Data dataKey;
+            while ((dataKey = keysToRemove.poll()) != null) {
                 recordStore.evict(dataKey, true);
             }
         }
+
+        assert recordStore.size() == primaryEntryCount : String.format("Failed"
+                        + " to remove %d entries while attempting to match"
+                        + " primary entry count %d,"
+                        + " recordStore size is now %d",
+                diff, primaryEntryCount, recordStore.size());
     }
 
     @Override

@@ -67,9 +67,20 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
         if (diff > 0) {
             recordStore.sampleAndHardRemoveEntries(diff);
 
-            assert recordStore.size() == primaryEntryCount : String.format("Failed to remove %d entries while attempting "
-                    + "to match primary entry count %d, recordStore size is now %d",
+            assert recordStore.size() == primaryEntryCount : String.format("Failed"
+                            + " to remove %d entries while attempting to match"
+                            + " primary entry count %d,"
+                            + " recordStore size is now %d",
                     diff, primaryEntryCount, recordStore.size());
+        }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        try {
+            super.afterRun();
+        } finally {
+            recordStore.disposeDeferredBlocks();
         }
     }
 
@@ -86,9 +97,6 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
     }
 
     protected void evictIfSame(ExpiredKey key) {
-        if (recordStore == null) {
-            return;
-        }
         CacheRecord record = recordStore.getRecord(key.getKey());
         if (record != null && record.getCreationTime() == key.getCreationTime()) {
             recordStore.removeRecord(key.getKey());
