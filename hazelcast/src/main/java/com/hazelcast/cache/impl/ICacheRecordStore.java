@@ -553,4 +553,6 @@ public interface ICacheRecordStore {
     void evictExpiredEntries(int percentage);
 
     InvalidationQueue<ExpiredKey> getExpiredKeysQueue();
+
+    void disposeDeferredBlocks();
 }
