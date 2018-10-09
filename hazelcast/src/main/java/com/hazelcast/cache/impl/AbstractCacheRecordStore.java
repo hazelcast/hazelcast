@@ -375,7 +375,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         Data dataKey;
         while ((dataKey = keysToRemove.poll()) != null) {
             removeRecord(dataKey);
+            addToDeferredDisposeQueue(dataKey);
         }
+    }
+
+    protected void addToDeferredDisposeQueue(Object object) {
+        // NOP intentionally
     }
 
     protected Data toData(Object obj) {
