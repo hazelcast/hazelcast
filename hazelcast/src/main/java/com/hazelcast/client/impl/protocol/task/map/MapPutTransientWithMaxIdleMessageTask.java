@@ -58,7 +58,7 @@ public class MapPutTransientWithMaxIdleMessageTask
 
     @Override
     public String getMethodName() {
-        return "put";
+        return "putTransient";
     }
 
     @Override
