@@ -66,7 +66,7 @@ public class StoreSnapshotTasklet implements Tasklet {
         this.isHigherPrioritySource = isHigherPrioritySource;
 
         this.ssWriter = ssWriter;
-        this.pendingSnapshotId = snapshotContext.lastSnapshotId() + 1;
+        this.pendingSnapshotId = snapshotContext.activeSnapshotId() + 1;
 
         resetCurrentMap();
     }

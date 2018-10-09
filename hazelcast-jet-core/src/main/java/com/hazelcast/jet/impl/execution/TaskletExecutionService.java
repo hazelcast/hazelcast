@@ -45,6 +45,7 @@ import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.Thread.currentThread;
@@ -327,6 +328,7 @@ public class TaskletExecutionService {
         }
 
         private void dismissTasklet(TaskletTracker t) {
+            logFinest(logger, "Tasklet %s is done", t.tasklet);
             t.executionTracker.taskletDone();
             trackers.remove(t);
         }

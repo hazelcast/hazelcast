@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -96,5 +97,17 @@ public class SnapshotContextSimpleTest {
 
         // Then
         ssContext.snapshotDoneForTasklet(1, 1, 1);
+    }
+
+    @Test
+    public void test_taskletDoneWhilePostponed() {
+        ssContext.initTaskletCount(2, 2);
+        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, false);
+        assertEquals(9, ssContext.activeSnapshotId());
+        ssContext.taskletDone(9, true);
+        assertEquals(9, ssContext.activeSnapshotId());
+        ssContext.taskletDone(9, true);
+        assertEquals(10, ssContext.activeSnapshotId());
+        assertTrue(future.isDone());
     }
 }

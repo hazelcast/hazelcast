@@ -340,7 +340,7 @@ public class MasterContext {
         MembersView membersView = getMembersView();
         ClassLoader previousCL = swapContextClassLoader(classLoader);
         try {
-            logger.info("Start executing " + jobIdString() + ", status " + jobStatus()
+            logger.info("Start executing " + jobIdString()
                     + ", execution graph in DOT format:\n" + dotString
                     + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
             logger.fine("Building execution plan for " + jobIdString());
@@ -534,6 +534,10 @@ public class MasterContext {
 
             if (snapshotInProgress) {
                 logger.fine("Not beginning snapshot since one is already in progress " + jobIdString());
+                return;
+            }
+            if (terminalSnapshotFuture.isDone()) {
+                logger.fine("Not beginning snapshot since terminal snapshot is already completed");
                 return;
             }
             snapshotInProgress = true;
@@ -929,7 +933,7 @@ public class MasterContext {
         // If there is any member in our participants that is not among current data members,
         // this job will be restarted anyway. If it's the other way, then the sizes won't match.
         if (executionPlanMap == null || executionPlanMap.size() == currentDataMembers.size()) {
-            LoggingUtil.logFine(logger, "Not scaling job %s up: not running or already running on all members",
+            LoggingUtil.logFine(logger, "Not scaling %s up: not running or already running on all members",
                     jobIdString());
             return true;
         }

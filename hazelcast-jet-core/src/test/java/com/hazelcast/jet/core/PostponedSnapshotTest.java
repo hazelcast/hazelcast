@@ -24,9 +24,12 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import static com.hazelcast.jet.core.Edge.between;
@@ -37,6 +40,7 @@ import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.SUC
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class PostponedSnapshotTest extends JetTestSupport {
 
     private static volatile AtomicIntegerArray latches;
@@ -50,10 +54,37 @@ public class PostponedSnapshotTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobHasHigherPriorityEdge_then_noSnapshotUntilEdgeDone() throws InterruptedException {
+    public void when_jobHasHigherPriorityEdge_then_noSnapshotUntilEdgeDone() {
+        Job job = startJob();
+
+        latches.set(0, 1);
+        IMapJet<Object, Object> snapshotsMap = instance.getMap(SnapshotRepository.snapshotsMapName(job.getId()));
+        assertTrueEventually(() -> assertTrue(existsSnapshot(snapshotsMap, SUCCESSFUL)), 5);
+
+        // finish the job
+        latches.set(1, 1);
+        job.join();
+    }
+
+    @Test
+    public void when_gracefulShutdownWhilePostponed_then_shutsDown() {
+        startJob();
+
+        // When
+        Future shutdownFuture = spawn(() -> instance.shutdown());
+        assertTrueAllTheTime(() -> assertFalse(shutdownFuture.isDone()), 3);
+
+        // finish the job
+        latches.set(0, 1);
+
+        // Then
+        assertTrueEventually(() -> assertTrue(shutdownFuture.isDone()));
+    }
+
+    private Job startJob() {
         DAG dag = new DAG();
-        Vertex highPrioritySource = dag.newVertex("highPrioritySource", () -> new SourceP(0));
-        Vertex lowPrioritySource = dag.newVertex("lowPrioritySource", () -> new SourceP(1));
+        Vertex highPrioritySource = dag.newVertex("highPrioritySource", () -> new SourceP(0)).localParallelism(1);
+        Vertex lowPrioritySource = dag.newVertex("lowPrioritySource", () -> new SourceP(1)).localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeLoggerP());
 
         dag.edge(between(highPrioritySource, sink).priority(-1))
@@ -62,21 +93,17 @@ public class PostponedSnapshotTest extends JetTestSupport {
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(100);
-        Job job = instance.newJob(dag, config);
 
+        Job job = instance.newJob(dag, config);
         IMapJet<Object, Object> snapshotsMap = instance.getMap(SnapshotRepository.snapshotsMapName(job.getId()));
 
         // check, that snapshot starts, but stays in ONGOING state
         assertTrueEventually(() -> assertTrue(existsSnapshot(snapshotsMap, ONGOING)), 5);
-        Thread.sleep(1000);
-        assertFalse(existsSnapshot(snapshotsMap, SUCCESSFUL));
-
-        latches.set(0, 1);
-        assertTrueEventually(() -> assertTrue(existsSnapshot(snapshotsMap, SUCCESSFUL)), 5);
-
-        // finish the job
-        latches.set(1, 1);
-        job.join();
+        assertTrueAllTheTime(() -> {
+            assertTrue(existsSnapshot(snapshotsMap, ONGOING));
+            assertFalse(existsSnapshot(snapshotsMap, SUCCESSFUL));
+        }, 2);
+        return job;
     }
 
     private boolean existsSnapshot(IMapJet<Object, Object> snapshotsMap, SnapshotStatus state) {

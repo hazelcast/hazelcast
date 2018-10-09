@@ -142,7 +142,7 @@ public class ProcessorTasklet implements Tasklet {
         outbox = createOutbox(ssCollector);
         receivedBarriers = new BitSet(instreams.size());
         state = initialProcessingState();
-        pendingSnapshotId = ssContext.lastSnapshotId() + 1;
+        pendingSnapshotId = ssContext.activeSnapshotId() + 1;
         waitForAllBarriers = ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE;
 
         watermarkCoalescer = WatermarkCoalescer.create(maxWatermarkRetainMillis, instreams.size());
@@ -337,7 +337,7 @@ public class ProcessorTasklet implements Tasklet {
                 progTracker.notDone();
                 // check ssContext to see if a barrier should be emitted
                 if (context.snapshottingEnabled()) {
-                    long currSnapshotId = ssContext.lastSnapshotId();
+                    long currSnapshotId = ssContext.activeSnapshotId();
                     assert currSnapshotId <= pendingSnapshotId : "Unexpected new snapshot id " + currSnapshotId
                             + ", current was" + pendingSnapshotId;
                     if (currSnapshotId == pendingSnapshotId) {
