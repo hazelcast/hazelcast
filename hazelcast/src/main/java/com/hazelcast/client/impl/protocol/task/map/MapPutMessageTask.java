@@ -24,6 +24,8 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 
 public class MapPutMessageTask
@@ -68,6 +70,6 @@ public class MapPutMessageTask
         if (parameters.ttl == -1) {
             return new Object[]{parameters.key, parameters.value};
         }
-        return new Object[]{parameters.key, parameters.value, parameters.ttl};
+        return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS};
     }
 }
