@@ -108,7 +108,7 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
     }
 
     /**
-     * Checks whether the public or privat eIP should be used to connect to Hazelcast members.
+     * Checks whether the public or private IP should be used to connect to Hazelcast members.
      *
      * @return {@true} for public IP, {@code false} for private IP
      */
