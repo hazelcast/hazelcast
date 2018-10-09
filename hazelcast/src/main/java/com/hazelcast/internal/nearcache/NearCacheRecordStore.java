@@ -40,14 +40,6 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     V get(K key);
 
     /**
-     * Gets the record associated with the given {@code key}.
-     *
-     * @param key the key from which to get the associated {@link NearCacheRecord}.
-     * @return the {@link NearCacheRecord} associated with the given {@code key}.
-     */
-    NearCacheRecord getRecord(K key);
-
-    /**
      * Puts (associates) a value with the given {@code key}.
      *
      * @param key     the key to which the given value will be associated.
@@ -57,20 +49,12 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     void put(K key, Data keyData, V value);
 
     /**
-     * Removes the value associated with the given {@code key}.
-     *
-     * @param key the key from which the value will be removed.
-     * @return {@code true} if the value was removed, otherwise {@code false}.
-     */
-    boolean remove(K key);
-
-    /**
      * Removes the value associated with the given {@code key}
      * and increases the invalidation statistics.
      *
      * @param key the key of the value will be invalidated
      */
-    boolean invalidate(K key);
+    void invalidate(K key);
 
     /**
      * Removes all stored values.
@@ -81,6 +65,21 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * Clears the record store and destroys it.
      */
     void destroy();
+
+    /**
+     * Gets the number of stored records.
+     *
+     * @return the number of stored records.
+     */
+    int size();
+
+    /**
+     * Gets the record associated with the given {@code key}.
+     *
+     * @param key the key from which to get the associated {@link NearCacheRecord}.
+     * @return the {@link NearCacheRecord} associated with the given {@code key}.
+     */
+    NearCacheRecord getRecord(K key);
 
     /**
      * Get the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this record store.
@@ -96,13 +95,6 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * @return the best candidate object to store, selected from the given {@code candidates}.
      */
     Object selectToSave(Object... candidates);
-
-    /**
-     * Gets the number of stored records.
-     *
-     * @return the number of stored records.
-     */
-    int size();
 
     /**
      * Performs expiration and evicts expired records.
