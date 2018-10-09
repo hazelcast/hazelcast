@@ -24,6 +24,8 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
+import java.util.concurrent.TimeUnit;
+
 public class MapSetWithMaxIdleMessageTask
         extends AbstractMapPutWithMaxIdleMessageTask<MapSetWithMaxIdleCodec.RequestParameters> {
 
@@ -56,11 +58,12 @@ public class MapSetWithMaxIdleMessageTask
 
     @Override
     public String getMethodName() {
-        return "setWithMaxIdle";
+        return "set";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.key, parameters.value, parameters.ttl, parameters.maxIdle};
+        return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS,
+                parameters.maxIdle, TimeUnit.MILLISECONDS};
     }
 }
