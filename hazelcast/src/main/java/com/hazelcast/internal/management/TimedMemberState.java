@@ -33,7 +33,6 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     long time;
     MemberStateImpl memberState;
-    boolean master;
     String clusterName;
     boolean socketInterceptorEnabled;
 
