@@ -1775,70 +1775,10 @@
         </xs:attribute>
         <xs:attribute name="loopbackModeEnabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
-    <xs:complexType name="aws">
-        <xs:all>
-            <xs:element name="access-key" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Access key of your account on EC2.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="secret-key" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Secret key of your account on EC2.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="iam-role" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        IAM role that binds with your instance.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="region" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        The region where your nodes are running. Default value is us-east-1.
-                        Needs to be specified if the region is other than the default one.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="host-header" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        The URL that is the entry point for a web service. It is optional.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="security-group-name" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Name of the security group you specified at the EC2 management console.
-                        It is used to narrow the Hazelcast nodes to be within this group.
-                        It is optional.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="tag-key" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        To narrow the members in the cloud down to only Hazelcast nodes, you can set
-                        this to the one you specified in the EC2 console. It is optional.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="tag-value" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        To narrow the members in the cloud down to only Hazelcast nodes, you can set
-                        this to the one you specified in the EC2 console. It is optional.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
+    <xs:complexType name="aliased-discovery-strategy">
+        <xs:sequence>
+            <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+        </xs:sequence>
         <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true">
             <xs:annotation>
                 <xs:documentation>
@@ -1850,11 +1790,7 @@
             <xs:annotation>
                 <xs:documentation>
                     The maximum amount of time Hazelcast is going to try to connect to a well known member
-                    before giving up. Setting its value too low value could mean that a member is not able
-                    to connect to a cluster. Setting it too high value means that member startup could slow
-                    down because of longer timeouts (e.g. when a well known member is not up). Increasing
-                    this value is recommended if you have many IPs listed and the members cannot properly
-                    build up the cluster. Its default value is 5.
+                    before giving up. Please check if the specific discovery strategy supports this property.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1870,7 +1806,11 @@
         <xs:all>
             <xs:element name="multicast" type="multicast" minOccurs="0"/>
             <xs:element name="tcp-ip" type="tcp-ip" minOccurs="0"/>
-            <xs:element name="aws" type="aws" minOccurs="0"/>
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
@@ -2460,7 +2400,11 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wan-sync" type="wan-sync" minOccurs="0"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>

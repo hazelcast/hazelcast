@@ -197,9 +197,99 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        AwsConfig aws = config.getNetworkConfig().getJoin().getAwsConfig();
-        assertTrue(aws.isEnabled());
-        assertAwsConfig(aws);
+
+        AwsConfig awsConfig = config.getNetworkConfig().getJoin().getAwsConfig();
+        assertTrue(awsConfig.isEnabled());
+        assertAwsConfig(awsConfig);
+    }
+
+    @Test
+    public void readGcpConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <network>\n"
+                + "        <join>\n"
+                + "            <multicast enabled=\"false\"/>\n"
+                + "            <tcp-ip enabled=\"false\"/>\n"
+                + "            <gcp enabled=\"true\">\n"
+                + "                <zones>us-east1-b</zones>\n"
+                + "            </gcp>\n"
+                + "        </join>\n"
+                + "    </network>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        GcpConfig gcpConfig = config.getNetworkConfig().getJoin().getGcpConfig();
+
+        assertTrue(gcpConfig.isEnabled());
+        assertFalse(gcpConfig.isUsePublicIp());
+        assertEquals("us-east1-b", gcpConfig.getProperty("zones"));
+    }
+
+    @Test
+    public void readAzureConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <network>\n"
+                + "        <join>\n"
+                + "            <multicast enabled=\"false\"/>\n"
+                + "            <tcp-ip enabled=\"false\"/>\n"
+                + "            <azure enabled=\"true\">\n"
+                + "                <client-id>123456789!</client-id>\n"
+                + "            </azure>\n"
+                + "        </join>\n"
+                + "    </network>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        AzureConfig azureConfig = config.getNetworkConfig().getJoin().getAzureConfig();
+
+        assertTrue(azureConfig.isEnabled());
+        assertEquals("123456789!", azureConfig.getProperty("client-id"));
+    }
+
+    @Test
+    public void readKubernetesConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <network>\n"
+                + "        <join>\n"
+                + "            <multicast enabled=\"false\"/>\n"
+                + "            <tcp-ip enabled=\"false\"/>\n"
+                + "            <kubernetes enabled=\"true\">\n"
+                + "                <namespace>hazelcast</namespace>\n"
+                + "            </kubernetes>\n"
+                + "        </join>\n"
+                + "    </network>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        KubernetesConfig kubernetesConfig = config.getNetworkConfig().getJoin().getKubernetesConfig();
+
+        assertTrue(kubernetesConfig.isEnabled());
+        assertEquals("hazelcast", kubernetesConfig.getProperty("namespace"));
+    }
+
+    @Test
+    public void readEurekaConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <network>\n"
+                + "        <join>\n"
+                + "            <multicast enabled=\"false\"/>\n"
+                + "            <tcp-ip enabled=\"false\"/>\n"
+                + "            <eureka enabled=\"true\">\n"
+                + "                <namespace>hazelcast</namespace>\n"
+                + "            </eureka>\n"
+                + "        </join>\n"
+                + "    </network>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        EurekaConfig eurekaConfig = config.getNetworkConfig().getJoin().getEurekaConfig();
+
+        assertTrue(eurekaConfig.isEnabled());
+        assertEquals("hazelcast", eurekaConfig.getProperty("namespace"));
     }
 
     @Test
@@ -1559,6 +1649,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("2", pubProperties.get("maxEndpoints"));
         assertFalse(publisherConfig1.getAwsConfig().isEnabled());
         assertAwsConfig(publisherConfig1.getAwsConfig());
+        assertFalse(publisherConfig1.getGcpConfig().isEnabled());
+        assertFalse(publisherConfig1.getAzureConfig().isEnabled());
+        assertFalse(publisherConfig1.getKubernetesConfig().isEnabled());
+        assertFalse(publisherConfig1.getEurekaConfig().isEnabled());
         assertDiscoveryConfig(publisherConfig1.getDiscoveryConfig());
 
         WanPublisherConfig publisherConfig2 = publisherConfigs.get(1);
@@ -1588,15 +1682,15 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     private void assertAwsConfig(AwsConfig aws) {
-        assertEquals(10, aws.getConnectionTimeoutSeconds());
-        assertEquals("sample-access-key", aws.getAccessKey());
-        assertEquals("sample-secret-key", aws.getSecretKey());
-        assertEquals("sample-region", aws.getRegion());
-        assertEquals("sample-header", aws.getHostHeader());
-        assertEquals("sample-group", aws.getSecurityGroupName());
-        assertEquals("sample-tag-key", aws.getTagKey());
-        assertEquals("sample-tag-value", aws.getTagValue());
-        assertEquals("sample-role", aws.getIamRole());
+        assertEquals("sample-access-key", aws.getProperties().get("access-key"));
+        assertEquals("sample-secret-key", aws.getProperties().get("secret-key"));
+        assertEquals("sample-role", aws.getProperties().get("iam-role"));
+        assertEquals("sample-region", aws.getProperties().get("region"));
+        assertEquals("sample-header", aws.getProperties().get("host-header"));
+        assertEquals("sample-group", aws.getProperties().get("security-group-name"));
+        assertEquals("sample-tag-key", aws.getProperties().get("tag-key"));
+        assertEquals("sample-tag-value", aws.getProperties().get("tag-value"));
+        assertEquals("10", aws.getProperties().get("connection-timeout-seconds"));
     }
 
     @Test

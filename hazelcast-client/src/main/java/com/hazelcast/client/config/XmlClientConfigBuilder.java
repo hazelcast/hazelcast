@@ -20,8 +20,10 @@ import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractConfigBuilder;
+import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -488,8 +490,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 handleSocketInterceptorConfig(child, clientNetworkConfig);
             } else if ("ssl".equals(nodeName)) {
                 handleSSLConfig(child, clientNetworkConfig);
-            } else if ("aws".equals(nodeName)) {
-                handleAWS(child, clientNetworkConfig);
+            } else if (AliasedDiscoveryConfigUtils.supports(nodeName)) {
+                handleAliasedDiscoveryStrategy(child, clientNetworkConfig, nodeName);
             } else if ("discovery-strategies".equals(nodeName)) {
                 handleDiscoveryStrategies(child, clientNetworkConfig);
             } else if ("outbound-ports".equals(nodeName)) {
@@ -595,50 +597,23 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         discoveryConfig.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig(clazz, properties));
     }
 
-    private void handleAWS(Node node, ClientNetworkConfig clientNetworkConfig) {
-        ClientAwsConfig clientAwsConfig = handleAwsAttributes(node);
-        for (Node n : childElements(node)) {
-            String value = getTextContent(n).trim();
-            if ("secret-key".equals(cleanNodeName(n))) {
-                clientAwsConfig.setSecretKey(value);
-            } else if ("access-key".equals(cleanNodeName(n))) {
-                clientAwsConfig.setAccessKey(value);
-            } else if ("region".equals(cleanNodeName(n))) {
-                clientAwsConfig.setRegion(value);
-            } else if ("host-header".equals(cleanNodeName(n))) {
-                clientAwsConfig.setHostHeader(value);
-            } else if ("security-group-name".equals(cleanNodeName(n))) {
-                clientAwsConfig.setSecurityGroupName(value);
-            } else if ("tag-key".equals(cleanNodeName(n))) {
-                clientAwsConfig.setTagKey(value);
-            } else if ("tag-value".equals(cleanNodeName(n))) {
-                clientAwsConfig.setTagValue(value);
-            } else if ("inside-aws".equals(cleanNodeName(n))) {
-                clientAwsConfig.setInsideAws(getBooleanValue(value));
-            } else if ("iam-role".equals(cleanNodeName(n))) {
-                clientAwsConfig.setIamRole(value);
-            }
-        }
-        if (!clientAwsConfig.isInsideAws() && clientAwsConfig.getIamRole() != null) {
-            throw new InvalidConfigurationException("You cannot set IAM Role from outside EC2");
-        }
-        clientNetworkConfig.setAwsConfig(clientAwsConfig);
-    }
-
-    private ClientAwsConfig handleAwsAttributes(Node node) {
+    private void handleAliasedDiscoveryStrategy(Node node, ClientNetworkConfig clientNetworkConfig, String tag) {
+        AliasedDiscoveryConfig config = ClientAliasedDiscoveryConfigUtils.getConfigByTag(clientNetworkConfig, tag);
         NamedNodeMap atts = node.getAttributes();
-        ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
         for (int i = 0; i < atts.getLength(); i++) {
             Node att = atts.item(i);
             String value = getTextContent(att).trim();
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
-                clientAwsConfig.setEnabled(getBooleanValue(value));
+                config.setEnabled(getBooleanValue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                int timeout = getIntegerValue("connection-timeout-seconds", value);
-                clientAwsConfig.setConnectionTimeoutSeconds(timeout);
+                config.setProperty("connection-timeout-seconds", value);
             }
         }
-        return clientAwsConfig;
+        for (Node n : childElements(node)) {
+            String key = cleanNodeName(n);
+            String value = getTextContent(n).trim();
+            config.setProperty(key, value);
+        }
     }
 
     private void handleSSLConfig(Node node, ClientNetworkConfig clientNetworkConfig) {

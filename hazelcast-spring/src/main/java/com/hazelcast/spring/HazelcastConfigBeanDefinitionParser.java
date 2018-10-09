@@ -16,9 +16,10 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
-import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -617,8 +618,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMulticast(child, joinConfigBuilder);
                 } else if ("tcp-ip".equals(name)) {
                     handleTcpIp(child, joinConfigBuilder);
-                } else if ("aws".equals(name)) {
-                    handleAws(child, joinConfigBuilder);
+                } else if (AliasedDiscoveryConfigUtils.supports(name)) {
+                    handleAliasedDiscoveryStrategy(child, joinConfigBuilder, name);
                 } else if ("discovery-strategies".equals(name)) {
                     handleDiscoveryStrategies(child, joinConfigBuilder);
                 }
@@ -807,8 +808,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             builder.addPropertyValue("members", members);
         }
 
-        public void handleAws(Node node, BeanDefinitionBuilder builder) {
-            createAndFillBeanBuilder(node, AwsConfig.class, "awsConfig", builder);
+        private void handleAliasedDiscoveryStrategy(Node node, BeanDefinitionBuilder builder, String name) {
+            AliasedDiscoveryConfig config = AliasedDiscoveryConfigUtils.newConfigFor(name);
+            fillAttributesForAliasedDiscoveryStrategy(config, node, builder, name);
         }
 
         public void handleReliableTopic(Node node) {
@@ -1293,8 +1295,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         || "initial-publisher-state".equals(nodeName)
                         || "queue-capacity".equals(nodeName)) {
                     publisherBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
-                } else if ("aws".equals(nodeName)) {
-                    handleAws(child, publisherBuilder);
+                } else if (AliasedDiscoveryConfigUtils.supports(nodeName)) {
+                    handleAliasedDiscoveryStrategy(child, publisherBuilder, nodeName);
                 } else if ("discovery-strategies".equals(nodeName)) {
                     handleDiscoveryStrategies(child, publisherBuilder);
                 } else if ("wan-sync".equals(nodeName)) {

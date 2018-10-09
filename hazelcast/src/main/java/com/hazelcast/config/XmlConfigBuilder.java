@@ -60,6 +60,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.config.JobTrackerConfig.DEFAULT_COMMUNICATE_STATS;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.ATOMIC_LONG;
@@ -672,8 +673,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             publisherConfig.setQueueCapacity(queueCapacity);
         } else if ("properties".equals(targetChildName)) {
             fillProperties(targetChild, publisherConfig.getProperties());
-        } else if ("aws".equals(targetChildName)) {
-            handleAWS(publisherConfig.getAwsConfig(), targetChild);
+        } else if (AliasedDiscoveryConfigUtils.supports(targetChildName)) {
+            handleAliasedDiscoveryStrategy(publisherConfig, targetChild, targetChildName);
         } else if ("discovery-strategies".equals(targetChildName)) {
             handleDiscoveryStrategies(publisherConfig.getDiscoveryConfig(), targetChild);
         } else if ("wan-sync".equals(targetChildName)) {
@@ -953,8 +954,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleMulticast(child);
             } else if ("tcp-ip".equals(name)) {
                 handleTcpIp(child);
-            } else if ("aws".equals(name)) {
-                handleAWS(config.getNetworkConfig().getJoin().getAwsConfig(), child);
+            } else if (AliasedDiscoveryConfigUtils.supports(name)) {
+                handleAliasedDiscoveryStrategy(config.getNetworkConfig().getJoin(), child, name);
             } else if ("discovery-strategies".equals(name)) {
                 handleDiscoveryStrategies(config.getNetworkConfig().getJoin().getDiscoveryConfig(), child);
             }
@@ -1013,36 +1014,31 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         discoveryConfig.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig(clazz, properties));
     }
 
-    private void handleAWS(AwsConfig awsConfig, Node node) {
+    private void handleAliasedDiscoveryStrategy(JoinConfig joinConfig, Node node, String tag) {
+        AliasedDiscoveryConfig aliasedDiscoveryConfig = AliasedDiscoveryConfigUtils.getConfigByTag(joinConfig, tag);
+        updateConfig(aliasedDiscoveryConfig, node);
+    }
+
+    private void handleAliasedDiscoveryStrategy(WanPublisherConfig publisherConfig, Node node, String tag) {
+        AliasedDiscoveryConfig aliasedDiscoveryConfig = getConfigByTag(publisherConfig, tag);
+        updateConfig(aliasedDiscoveryConfig, node);
+    }
+
+    private void updateConfig(AliasedDiscoveryConfig config, Node node) {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
             String value = getTextContent(att).trim();
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
-                awsConfig.setEnabled(getBooleanValue(value));
+                config.setEnabled(getBooleanValue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                awsConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value));
+                config.setProperty("connection-timeout-seconds", value);
             }
         }
         for (Node n : childElements(node)) {
+            String key = cleanNodeName(n);
             String value = getTextContent(n).trim();
-            if ("secret-key".equals(cleanNodeName(n))) {
-                awsConfig.setSecretKey(value);
-            } else if ("access-key".equals(cleanNodeName(n))) {
-                awsConfig.setAccessKey(value);
-            } else if ("region".equals(cleanNodeName(n))) {
-                awsConfig.setRegion(value);
-            } else if ("host-header".equals(cleanNodeName(n))) {
-                awsConfig.setHostHeader(value);
-            } else if ("security-group-name".equals(cleanNodeName(n))) {
-                awsConfig.setSecurityGroupName(value);
-            } else if ("tag-key".equals(cleanNodeName(n))) {
-                awsConfig.setTagKey(value);
-            } else if ("tag-value".equals(cleanNodeName(n))) {
-                awsConfig.setTagValue(value);
-            } else if ("iam-role".equals(cleanNodeName(n))) {
-                awsConfig.setIamRole(value);
-            }
+            config.setProperty(key, value);
         }
     }
 
