@@ -283,14 +283,18 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
 
         @Override
         public boolean hasNext() {
-            iterate();
+            if (currentSample == null) {
+                iterate();
+            }
             return currentSample != null;
         }
 
         @Override
         public E next() {
-            if (currentSample != null) {
-                return currentSample;
+            if (hasNext()) {
+                E returnValue = currentSample;
+                currentSample = null;
+                return returnValue;
             } else {
                 throw new NoSuchElementException();
             }
