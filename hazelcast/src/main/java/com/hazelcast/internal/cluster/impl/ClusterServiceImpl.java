@@ -170,6 +170,22 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         cycle.probe("cluster", this);
         cycle.collect(MANDATORY, "cluster.state", ProbeEnumUtils.codeOf(getClusterState()));
         cycle.collect(MANDATORY, "cluster.memberState", ProbeEnumUtils.codeOf(node.getState()));
+        cycle.collect(MANDATORY, "cluster.isMaster", isMaster());
+        cycle.collect(MANDATORY, "cluster.isLiteMember", node.isLiteMember());
+        cycle.collect(MANDATORY, "cluster.version", getClusterVersionAsInt());
+        cycle.collect(MANDATORY, "cluster.member.version", getMemberVersionAsInt());
+    }
+
+    @SuppressWarnings("checkstyle:magicnumber")
+    private int getClusterVersionAsInt() {
+        Version v = node.clusterService.getClusterVersion();
+        return (v.getMajor() & 0xFF) << 8 | v.getMinor() & 0xFF;
+    }
+
+    @SuppressWarnings({ "checkstyle:magicnumber", "checkstyle:booleanexpressioncomplexity" })
+    private int getMemberVersionAsInt() {
+        MemberVersion v = node.getVersion();
+        return (v.getMajor() & 0xFF) << 16 | (v.getMinor() & 0xFF) << 8 | v.getPatch() & 0xFF;
     }
 
     @Override
@@ -715,28 +731,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    @Probe(level = ProbeLevel.MANDATORY)
     public boolean isMaster() {
         return node.getThisAddress().equals(masterAddress);
-    }
-
-    @Probe(level = ProbeLevel.MANDATORY)
-    private boolean isLiteMember() {
-        return node.isLiteMember();
-    }
-
-    @Probe(name = "version")
-    @SuppressWarnings("checkstyle:magicnumber")
-    private int getClusterVersionAsInt() {
-        Version v = node.clusterService.getClusterVersion();
-        return (v.getMajor() & 0xFF) << 8 | v.getMinor() & 0xFF;
-    }
-
-    @Probe(name = "member.version")
-    @SuppressWarnings({ "checkstyle:magicnumber", "checkstyle:booleanexpressioncomplexity" })
-    private int getMemberVersionAsInt() {
-        MemberVersion v = node.getVersion();
-        return (v.getMajor() & 0xFF) << 16 | (v.getMinor() & 0xFF) << 8 | v.getPatch() & 0xFF;
     }
 
     @Override

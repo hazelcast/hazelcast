@@ -62,16 +62,11 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
 
     private static final Object[] EMPTY_ARGS = new Object[0];
 
-    private static final ConcurrentMap<Class<?>, ProbeAnnotatedType> PROBE_METADATA =
+    private final ConcurrentMap<Class<?>, ProbeAnnotatedType> metaDataCache =
             new ConcurrentReferenceHashMap<Class<?>, ProbeAnnotatedType>();
 
     private final ConcurrentMap<Class<?>, MetricsSourceEntry> sources =
             new ConcurrentHashMap<Class<?>, MetricsRegistryImpl.MetricsSourceEntry>();
-
-    private static ProbeAnnotatedType register(Class<?> type, ProbeAnnotatedType metadata) {
-        ProbeAnnotatedType existing = PROBE_METADATA.putIfAbsent(type, metadata);
-        return existing == null ? metadata : existing;
-    }
 
     @Override
     public void register(MetricsSource source) {
@@ -93,7 +88,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public CollectionContext openContext(Class<? extends MetricsSource>... selection) {
-        return new CollectionCycleImpl(sources.values(), selection);
+        return new CollectionCycleImpl(metaDataCache, sources.values(), selection);
     }
 
     /**
@@ -156,6 +151,9 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
     private static final class CollectionCycleImpl
     implements CollectionCycle, CollectionCycle.Tags, CollectionContext {
 
+        // shared state
+        private final ConcurrentMap<Class<?>, ProbeAnnotatedType> mataDataCache;
+
         // collection context state
         private final Collection<MetricsSourceEntry> sources;
         private final Class<? extends MetricsSource>[] selection;
@@ -170,9 +168,16 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         private CharSequence lastTagName;
         private int lastTagValuePosition;
 
-        CollectionCycleImpl(Collection<MetricsSourceEntry> sources, Class<? extends MetricsSource>[] selection) {
+        CollectionCycleImpl(ConcurrentMap<Class<?>, ProbeAnnotatedType> mataDataCache,
+                Collection<MetricsSourceEntry> sources, Class<? extends MetricsSource>[] selection) {
+            this.mataDataCache = mataDataCache;
             this.sources = sources;
             this.selection = selection;
+        }
+
+        private ProbeAnnotatedType register(Class<?> type, ProbeAnnotatedType metadata) {
+            ProbeAnnotatedType existing = mataDataCache.putIfAbsent(type, metadata);
+            return existing == null ? metadata : existing;
         }
 
         private void updateSources() {
@@ -226,7 +231,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                 return;
             }
             Class<?> type = instance.getClass();
-            ProbeAnnotatedType metadata = PROBE_METADATA.get(type);
+            ProbeAnnotatedType metadata = mataDataCache.get(type);
             if (metadata == null) {
                 // main goal was to avoid creating expensive metadata but at this point we have to
                 metadata = register(type, new ProbeAnnotatedType(type, level, methods));
@@ -245,7 +250,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                 return;
             }
             Class<?> type = instance.getClass();
-            ProbeAnnotatedType metadata = PROBE_METADATA.get(type);
+            ProbeAnnotatedType metadata = mataDataCache.get(type);
             if (metadata == null) {
                 // main goal was to avoid creating expensive metadata but at this point we have to
                 metadata = register(type, new ProbeAnnotatedType(type));

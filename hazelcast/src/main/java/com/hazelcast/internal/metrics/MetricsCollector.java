@@ -27,7 +27,7 @@ public interface MetricsCollector {
      *
      * @param key not null, only guaranteed to be stable throughout the call
      * @param value -1 for unknown, >= 0 otherwise (double encoded as 10000 x double
-     *        value)
+     *        value; boolean as 1/0)
      */
     void collect(CharSequence key, long value);
 

@@ -49,7 +49,7 @@ public interface MetricsSource {
      * {@link CollectionCycle#openContext()} if nothing should be appended to the
      * root context.
      *
-     * @param cycle accumulating metrics data
+     * @param cycle collecting metrics data
      */
     void collectAll(CollectionCycle cycle);
 }
