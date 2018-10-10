@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedConsumer;
@@ -66,6 +66,7 @@ import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
 import static com.hazelcast.jet.Util.mapPutEvents;
+import static com.hazelcast.jet.impl.connector.StreamEventJournalP.streamRemoteCacheSupplier;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 
@@ -123,9 +124,9 @@ public final class SourceProcessors {
     public static <K, V> ProcessorMetaSupplier streamMapP(
             @Nonnull String mapName,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<? super Entry<K, V>> wmGenParams
+            @Nonnull EventTimePolicy<? super Entry<K, V>> eventTimePolicy
     ) {
-        return streamMapP(mapName, mapPutEvents(), mapEventToEntry(), initialPos, wmGenParams);
+        return streamMapP(mapName, mapPutEvents(), mapEventToEntry(), initialPos, eventTimePolicy);
     }
 
     /**
@@ -138,12 +139,12 @@ public final class SourceProcessors {
             @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
         checkSerializable(predicateFn, "predicateFn");
         checkSerializable(projectionFn, "projectionFn");
 
-        return StreamEventJournalP.streamMapSupplier(mapName, predicateFn, projectionFn, initialPos, wmGenParams);
+        return StreamEventJournalP.streamMapSupplier(mapName, predicateFn, projectionFn, initialPos, eventTimePolicy);
     }
 
     /**
@@ -194,10 +195,10 @@ public final class SourceProcessors {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<? super Entry<K, V>> wmGenParams
+            @Nonnull EventTimePolicy<? super Entry<K, V>> eventTimePolicy
     ) {
         return streamRemoteMapP(mapName, clientConfig, mapPutEvents(), mapEventToEntry(), initialPos,
-                wmGenParams);
+                eventTimePolicy);
     }
 
     /**
@@ -212,10 +213,10 @@ public final class SourceProcessors {
             @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
         return StreamEventJournalP.streamRemoteMapSupplier(
-                mapName, clientConfig, predicateFn, projectionFn, initialPos, wmGenParams);
+                mapName, clientConfig, predicateFn, projectionFn, initialPos, eventTimePolicy);
     }
 
     /**
@@ -235,9 +236,9 @@ public final class SourceProcessors {
     public static <K, V> ProcessorMetaSupplier streamCacheP(
             @Nonnull String cacheName,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<? super Entry<K, V>> wmGenParams
+            @Nonnull EventTimePolicy<? super Entry<K, V>> eventTimePolicy
     ) {
-        return streamCacheP(cacheName, cachePutEvents(), cacheEventToEntry(), initialPos, wmGenParams);
+        return streamCacheP(cacheName, cachePutEvents(), cacheEventToEntry(), initialPos, eventTimePolicy);
     }
 
     /**
@@ -251,10 +252,10 @@ public final class SourceProcessors {
             @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
         return StreamEventJournalP.streamCacheSupplier(cacheName, predicateFn, projectionFn, initialPos,
-                wmGenParams);
+                eventTimePolicy);
     }
 
     /**
@@ -277,10 +278,10 @@ public final class SourceProcessors {
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<? super Entry<K, V>> wmGenParams
+            @Nonnull EventTimePolicy<? super Entry<K, V>> eventTimePolicy
     ) {
         return streamRemoteCacheP(
-                cacheName, clientConfig, cachePutEvents(), cacheEventToEntry(), initialPos, wmGenParams);
+                cacheName, clientConfig, cachePutEvents(), cacheEventToEntry(), initialPos, eventTimePolicy);
     }
 
     /**
@@ -295,10 +296,10 @@ public final class SourceProcessors {
             @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        return StreamEventJournalP
-                .streamRemoteCacheSupplier(cacheName, clientConfig, predicateFn, projectionFn, initialPos, wmGenParams);
+        return streamRemoteCacheSupplier(
+                cacheName, clientConfig, predicateFn, projectionFn, initialPos, eventTimePolicy);
     }
 
     /**
@@ -493,7 +494,7 @@ public final class SourceProcessors {
     public static <S, T> ProcessorMetaSupplier convenientTimestampedSourceP(
             @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn,
             @Nonnull DistributedBiConsumer<? super S, ? super TimestampedSourceBuffer<T>> fillBufferFn,
-            @Nonnull WatermarkGenerationParams<? super JetEvent<T>> wmParams,
+            @Nonnull EventTimePolicy<? super JetEvent<T>> eventTimePolicy,
             @Nonnull DistributedConsumer<? super S> destroyFn,
             int preferredLocalParallelism
     ) {
@@ -507,7 +508,7 @@ public final class SourceProcessors {
                         (BiConsumer<? super S, ? super SourceBufferConsumerSide<? extends JetEvent<T>>>) fillBufferFn,
                         destroyFn,
                         new SourceBufferImpl.Timestamped<>(),
-                        wmParams
+                        eventTimePolicy
                 ));
         return preferredLocalParallelism > 0
                 ? ProcessorMetaSupplier.of(procSup, preferredLocalParallelism)

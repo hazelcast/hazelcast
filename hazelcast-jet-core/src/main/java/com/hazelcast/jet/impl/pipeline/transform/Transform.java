@@ -50,8 +50,13 @@ public interface Transform {
     void addToDag(Planner p);
 
     /**
-     * Returns the frame length for which this transform needs watermarks. If
-     * {@code frameLength == 0}, this transform doesn't need watermarks.
+     * Returns the optimal watermark stride for this windowed transform.
+     * Watermarks that are more spaced out are better for performance, but
+     * they hurt the responsiveness of a windowed pipeline stage. The Planner
+     * will determine the actual stride, which may be an integer fraction of
+     * the value returned here.
+     * <p>
+     * If it returns {@code 0}, this transform doesn't need watermarks.
      */
-    long watermarkFrameSize();
+    long preferredWatermarkStride();
 }

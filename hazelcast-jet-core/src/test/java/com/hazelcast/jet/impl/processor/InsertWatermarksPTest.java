@@ -44,7 +44,7 @@ import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByMinStep;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
+import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.WatermarkPolicyUtil.limitingTimestampAndWallClockLag;
@@ -322,7 +322,7 @@ public class InsertWatermarksPTest {
     }
 
     private void createProcessor(long idleTimeoutMillis) {
-        p = new InsertWatermarksP<>(wmGenParams(Item::getTimestamp, wmPolicy, wmEmissionPolicy, idleTimeoutMillis));
+        p = new InsertWatermarksP<>(eventTimePolicy(Item::getTimestamp, wmPolicy, wmEmissionPolicy, idleTimeoutMillis));
         p.init(outbox, context);
     }
 

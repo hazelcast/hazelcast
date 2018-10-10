@@ -31,7 +31,7 @@ import java.util.Arrays;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
+import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static java.util.Arrays.asList;
@@ -50,7 +50,7 @@ public class InsertWatermarksP_IntegrationTest extends JetTestSupport {
     public void test() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", ListSource.supplier(asList(111L, 222L, 333L)));
-        Vertex iwm = dag.newVertex("iwm", Processors.insertWatermarksP(wmGenParams(
+        Vertex iwm = dag.newVertex("iwm", Processors.insertWatermarksP(eventTimePolicy(
                 (Long x) -> x, limitingLag(100), emitByFrame(tumblingWinPolicy(100)), -1)))
                 .localParallelism(1);
         Vertex mapWmToStr = dag.newVertex("mapWmToStr", MapWatermarksToString::new)

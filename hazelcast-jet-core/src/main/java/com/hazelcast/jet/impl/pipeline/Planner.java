@@ -43,7 +43,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noWatermarks;
 import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
 import static java.util.stream.Collectors.toList;
 
@@ -67,7 +67,7 @@ public class Planner {
         // Find the greatest common denominator of all frame lengths
         // appearing in the pipeline
         long frameSizeGcd = Util.gcd(adjacencyMap.keySet().stream()
-                                                 .map(Transform::watermarkFrameSize)
+                                                 .map(Transform::preferredWatermarkStride)
                                                  .filter(frameSize -> frameSize > 0)
                                                  .mapToLong(i -> i)
                                                  .toArray());
@@ -75,16 +75,16 @@ public class Planner {
         // with the GCD frame length
         WatermarkEmissionPolicy emitPolicy = frameSizeGcd > 0
                 ? emitByFrame(tumblingWinPolicy(frameSizeGcd))
-                : noThrottling();
+                : noWatermarks();
         for (Transform transform : adjacencyMap.keySet()) {
             if (transform instanceof StreamSourceTransform) {
                 StreamSourceTransform t = (StreamSourceTransform) transform;
-                if (t.getWmParams() != null) {
-                    t.setWmGenerationParams(t.getWmParams().withEmitPolicy(emitPolicy));
+                if (t.getEventTimePolicy() != null) {
+                    t.setEventTimePolicy(t.getEventTimePolicy().withEmitPolicy(emitPolicy));
                 }
             } else if (transform instanceof TimestampTransform) {
                 TimestampTransform t = (TimestampTransform) transform;
-                t.setWmGenerationParams(t.getWmGenParams().withEmitPolicy(emitPolicy));
+                t.setEventTimePolicy(t.getEventTimePolicy().withEmitPolicy(emitPolicy));
             }
         }
 

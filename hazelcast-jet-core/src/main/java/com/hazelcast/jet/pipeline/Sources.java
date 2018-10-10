@@ -26,7 +26,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.GenericPredicates;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -119,7 +119,7 @@ public final class Sources {
     @Nonnull
     public static <T> StreamSource<T> streamFromProcessorWithWatermarks(
             @Nonnull String sourceName,
-            @Nonnull Function<WatermarkGenerationParams<? super T>, ProcessorMetaSupplier> metaSupplierFn
+            @Nonnull Function<EventTimePolicy<? super T>, ProcessorMetaSupplier> metaSupplierFn
     ) {
         return new StreamSourceTransform<>(sourceName, metaSupplierFn, true);
     }

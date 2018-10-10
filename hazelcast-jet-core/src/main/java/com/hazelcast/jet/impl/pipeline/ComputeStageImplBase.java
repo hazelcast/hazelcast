@@ -18,10 +18,9 @@ package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.impl.JetEvent;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
@@ -30,6 +29,7 @@ import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FilterTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FlatMapTransform;
@@ -52,9 +52,9 @@ import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
+import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.NULL_EMIT_POLICY;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.DEFAULT_IDLE_TIMEOUT;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.filterUsingPartitionedContextTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.flatMapUsingPartitionedContextTransform;
@@ -102,12 +102,12 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
         checkFalse(hasJetEvents(), "This stage already has timestamps assigned to it.");
 
         DistributedSupplier<WatermarkPolicy> wmPolicy = limitingLag(allowedLateness);
-        WatermarkGenerationParams<T> wmParams = wmGenParams(
+        EventTimePolicy<T> wmParams = eventTimePolicy(
                 timestampFn, JetEvent::jetEvent, wmPolicy, NULL_EMIT_POLICY, DEFAULT_IDLE_TIMEOUT
         );
 
         if (transform instanceof StreamSourceTransform) {
-            ((StreamSourceTransform<T>) transform).setWmGenerationParams(wmParams);
+            ((StreamSourceTransform<T>) transform).setEventTimePolicy(wmParams);
             this.fnAdapter = ADAPT_TO_JET_EVENT;
             return (StreamStage<T>) this;
         }

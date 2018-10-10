@@ -73,8 +73,8 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
     }
 
     @Override
-    public long watermarkFrameSize() {
-        return wDef.watermarkFrameSize();
+    public long preferredWatermarkStride() {
+        return wDef.preferredWatermarkStride();
     }
 
     @Override

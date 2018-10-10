@@ -26,8 +26,8 @@ import java.io.Serializable;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 
 /**
- * A holder of functions and parameters Jet needs to determine when and how
- * to insert watermarks into an event stream. These are the components:
+ * A holder of functions and parameters Jet needs handle event time and the
+ * associated watermarks. These are the components:
  * <ul><li>
  *     {@code timestampFn}: extracts the timestamp from an event in the stream
  * </li><li>
@@ -55,12 +55,14 @@ import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
  *
  * @param <T> event type
  */
-public final class WatermarkGenerationParams<T> implements Serializable {
+public final class EventTimePolicy<T> implements Serializable {
 
     /**
      * The default idle timeout in milliseconds.
      */
     public static final long DEFAULT_IDLE_TIMEOUT = 60_000L;
+
+    private static final DistributedObjLongBiFunction<?, ?> NO_WRAPPING = (event, timestamp) -> event;
 
     private static final DistributedSupplier<WatermarkPolicy> NO_WATERMARKS = () -> new WatermarkPolicy() {
         @Override
@@ -74,13 +76,14 @@ public final class WatermarkGenerationParams<T> implements Serializable {
         }
     };
 
+
     private final DistributedToLongFunction<? super T> timestampFn;
     private final DistributedObjLongBiFunction<? super T, ?> wrapFn;
     private final DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn;
     private final WatermarkEmissionPolicy wmEmitPolicy;
     private final long idleTimeoutMillis;
 
-    private WatermarkGenerationParams(
+    private EventTimePolicy(
             @Nonnull DistributedToLongFunction<? super T> timestampFn,
             @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
             @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
@@ -95,9 +98,8 @@ public final class WatermarkGenerationParams<T> implements Serializable {
     }
 
     /**
-     * Creates and returns new watermark generation parameters. To get
-     * parameters that result in no watermarks being emitted, call {@link
-     * #noWatermarks()}.
+     * Creates and returns a new event time policy. To get a policy that
+     * results in no timestamping, call {@link #noEventTime()}.
      *
      * @param timestampFn       function that extracts the timestamp from the event
      * @param wrapFn            function that transforms the received item and its timestamp into the
@@ -107,20 +109,20 @@ public final class WatermarkGenerationParams<T> implements Serializable {
      * @param idleTimeoutMillis the timeout after which a partition will be marked as <em>idle</em>.
      *                          If <= 0, partitions will never be marked as idle.
      */
-    public static <T> WatermarkGenerationParams<T> wmGenParams(
+    public static <T> EventTimePolicy<T> eventTimePolicy(
             @Nonnull DistributedToLongFunction<? super T> timestampFn,
             @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
             @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
             long idleTimeoutMillis
     ) {
-        return new WatermarkGenerationParams<>(timestampFn, wrapFn, newWmPolicyFn, wmEmitPolicy, idleTimeoutMillis);
+        return new EventTimePolicy<>(timestampFn, wrapFn, newWmPolicyFn, wmEmitPolicy, idleTimeoutMillis);
     }
 
     /**
-     * Creates and returns a watermark generation parameters object. To get
-     * parameters that result in no watermarks being emitted, call {@link
-     * #noWatermarks()}.
+     * Creates and returns a new event time policy. To get a policy that
+     * results in no watermarks being emitted, call {@link
+     * #noEventTime()}.
      *
      * @param timestampFn       function that extracts the timestamp from the event
      * @param wmPolicy          factory of the watermark policy objects
@@ -128,24 +130,28 @@ public final class WatermarkGenerationParams<T> implements Serializable {
      * @param idleTimeoutMillis the timeout after which a partition will be marked as <em>idle</em>.
      *                          If <= 0, partitions will never be marked as idle.
      */
-    public static <T> WatermarkGenerationParams<T> wmGenParams(
+    public static <T> EventTimePolicy<T> eventTimePolicy(
             @Nonnull DistributedToLongFunction<? super T> timestampFn,
             @Nonnull DistributedSupplier<? extends WatermarkPolicy> wmPolicy,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
             long idleTimeoutMillis
     ) {
-        return wmGenParams(timestampFn, (event, timestamp) -> event, wmPolicy, wmEmitPolicy, idleTimeoutMillis);
+        return eventTimePolicy(timestampFn, noWrapping(), wmPolicy, wmEmitPolicy, idleTimeoutMillis);
     }
 
     /**
-     * Returns watermark generation parameters that result in no watermarks
-     * being emitted. Only useful in jobs with streaming sources that don't do
-     * any aggregation. If there is an aggregation step in the job and you use
-     * these parameters, your job will keep accumulating the data without
-     * producing any output.
+     * Returns an event time policy that results in no timestamping. Only
+     * useful in jobs with streaming sources that don't do any aggregation.
+     * If there is an aggregation step in the job and you use these parameters,
+     * your job will keep accumulating the data without producing any output.
      */
-    public static <T> WatermarkGenerationParams<T> noWatermarks() {
-        return wmGenParams(i -> Long.MIN_VALUE, NO_WATERMARKS, noThrottling(), -1);
+    public static <T> EventTimePolicy<T> noEventTime() {
+        return eventTimePolicy(i -> Long.MIN_VALUE, noWrapping(), NO_WATERMARKS, noThrottling(), -1);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> DistributedObjLongBiFunction<T, Object> noWrapping() {
+        return (DistributedObjLongBiFunction<T, Object>) NO_WRAPPING;
     }
 
     /**
@@ -201,7 +207,7 @@ public final class WatermarkGenerationParams<T> implements Serializable {
      * Returns new instance with emit policy replaced with the given argument.
      */
     @Nonnull
-    public WatermarkGenerationParams<T> withEmitPolicy(WatermarkEmissionPolicy emitPolicy) {
-        return wmGenParams(timestampFn, wrapFn, newWmPolicyFn, emitPolicy, idleTimeoutMillis);
+    public EventTimePolicy<T> withEmitPolicy(WatermarkEmissionPolicy emitPolicy) {
+        return eventTimePolicy(timestampFn, wrapFn, newWmPolicyFn, emitPolicy, idleTimeoutMillis);
     }
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
-import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
@@ -26,31 +26,31 @@ import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 
 public class TimestampTransform<T> extends AbstractTransform {
     @Nonnull
-    public WatermarkGenerationParams<? super T> wmGenParams;
+    private EventTimePolicy<? super T> eventTimePolicy;
 
     public TimestampTransform(
             @Nonnull Transform upstream,
-            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
         super("timestamp", upstream);
-        this.wmGenParams = wmGenParams;
+        this.eventTimePolicy = eventTimePolicy;
     }
 
     @Override
     public void addToDag(Planner p) {
         @SuppressWarnings("unchecked")
         PlannerVertex pv = p.addVertex(
-                this, p.uniqueVertexName(name(), ""), localParallelism(), insertWatermarksP(wmGenParams)
+                this, p.uniqueVertexName(name(), ""), localParallelism(), insertWatermarksP(eventTimePolicy)
         );
         p.addEdges(this, pv.v);
     }
 
     @Nonnull
-    public WatermarkGenerationParams<? super T> getWmGenParams() {
-        return wmGenParams;
+    public EventTimePolicy<? super T> getEventTimePolicy() {
+        return eventTimePolicy;
     }
 
-    public void setWmGenerationParams(@Nonnull WatermarkGenerationParams<? super T> wmGenParams) {
-        this.wmGenParams = wmGenParams;
+    public void setEventTimePolicy(@Nonnull EventTimePolicy<? super T> eventTimePolicy) {
+        this.eventTimePolicy = eventTimePolicy;
     }
 }

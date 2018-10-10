@@ -54,7 +54,7 @@ public class SlidingWindowDef implements WindowDefinition {
     }
 
     @Override
-    public long watermarkFrameSize() {
+    public long preferredWatermarkStride() {
         return slideBy;
     }
 

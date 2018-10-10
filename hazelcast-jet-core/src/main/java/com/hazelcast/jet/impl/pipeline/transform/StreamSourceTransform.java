@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -28,35 +28,33 @@ import javax.annotation.Nullable;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
+import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static java.util.Collections.emptyList;
 
 public class StreamSourceTransform<T> extends AbstractTransform implements StreamSource<T> {
 
-    private final Function<? super WatermarkGenerationParams<? super T>, ? extends ProcessorMetaSupplier>
-            metaSupplierFn;
+    private final Function<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn;
     private final boolean emitsWatermarks;
 
     @Nullable
-    private WatermarkGenerationParams<? super T> wmParams;
+    private EventTimePolicy<? super T> eventTimePolicy;
 
     public StreamSourceTransform(
             @Nonnull String name,
-            @Nullable WatermarkGenerationParams<? super T> initialWmParams,
-            @Nonnull Function<? super WatermarkGenerationParams<? super T>, ? extends ProcessorMetaSupplier>
-                    metaSupplierFn,
+            @Nullable EventTimePolicy<? super T> initialEventTimePolicy,
+            @Nonnull Function<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn,
             boolean emitsWatermarks
     ) {
         super(name, emptyList());
-        this.wmParams = initialWmParams;
+        this.eventTimePolicy = initialEventTimePolicy;
         this.metaSupplierFn = metaSupplierFn;
         this.emitsWatermarks = emitsWatermarks;
     }
 
     public StreamSourceTransform(
             @Nonnull String name,
-            @Nonnull Function<? super WatermarkGenerationParams<? super T>, ? extends ProcessorMetaSupplier>
+            @Nonnull Function<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier>
                     metaSupplierFn,
             boolean emitsWatermarks
     ) {
@@ -66,12 +64,11 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
     @Override
     @SuppressWarnings("unchecked")
     public void addToDag(Planner p) {
-        WatermarkGenerationParams<? super T> params = wmParams != null ? wmParams : noWatermarks();
-        if (emitsWatermarks || wmParams == null) {
+        if (emitsWatermarks || eventTimePolicy == null) {
             // Reached when the source either emits both JetEvents and watermarks
             // or neither. In these cases we don't have to insert watermarks.
-            p.addVertex(this, p.uniqueVertexName(name(), ""),
-                    localParallelism(), metaSupplierFn.apply(params)
+            p.addVertex(this, p.uniqueVertexName(name(), ""), localParallelism(),
+                    metaSupplierFn.apply(eventTimePolicy != null ? eventTimePolicy : noEventTime())
             );
         } else {
             //                  ------------
@@ -84,24 +81,25 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
             //                 |  insertWMP  |
             //                  -------------
             String v1name = p.uniqueVertexName(name(), "");
-            Vertex v1 = p.dag.newVertex(v1name, metaSupplierFn.apply(params)).localParallelism(localParallelism());
+            Vertex v1 = p.dag.newVertex(v1name, metaSupplierFn.apply(eventTimePolicy))
+                             .localParallelism(localParallelism());
             PlannerVertex pv2 = p.addVertex(
-                    this, v1name + "-insertWM", localParallelism(), insertWatermarksP(params)
+                    this, v1name + "-insertWM", localParallelism(), insertWatermarksP(eventTimePolicy)
             );
             p.dag.edge(between(v1, pv2.v).isolated());
         }
     }
 
     @Nullable
-    public WatermarkGenerationParams<? super T> getWmParams() {
-        return wmParams;
+    public EventTimePolicy<? super T> getEventTimePolicy() {
+        return eventTimePolicy;
     }
 
-    public void setWmGenerationParams(@Nonnull WatermarkGenerationParams<? super T> wmParams) {
-        this.wmParams = wmParams;
+    public void setEventTimePolicy(@Nonnull EventTimePolicy<? super T> wmParams) {
+        this.eventTimePolicy = wmParams;
     }
 
     public boolean emitsJetEvents() {
-        return wmParams != null;
+        return eventTimePolicy != null;
     }
 }

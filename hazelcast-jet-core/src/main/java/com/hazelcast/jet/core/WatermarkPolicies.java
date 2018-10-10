@@ -130,7 +130,7 @@ public final class WatermarkPolicies {
      * event that will initialize the timestamp. Otherwise the empty substream
      * will hold back the processing of all other substreams by keeping the
      * watermark below any realistic value. Configuring {@link
-     * WatermarkGenerationParams#idleTimeoutMillis()} will cope with this.
+     * EventTimePolicy#idleTimeoutMillis()} will cope with this.
      *
      * @param lag the desired difference between the top observed timestamp
      *               and the watermark

@@ -67,7 +67,7 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
+import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
@@ -161,7 +161,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                 new SequencesInPartitionsGeneratorP(numPartitions, elementsInPartition, true);
         Vertex generator = dag.newVertex("generator", throttle(sup, 30))
                               .localParallelism(1);
-        Vertex insWm = dag.newVertex("insWm", insertWatermarksP(wmGenParams(
+        Vertex insWm = dag.newVertex("insWm", insertWatermarksP(eventTimePolicy(
                 entry -> ((Entry<Integer, Integer>) entry).getValue(), limitingLag(0), emitByFrame(wDef), -1)))
                           .localParallelism(1);
         Vertex map = dag.newVertex("map",

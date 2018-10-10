@@ -25,7 +25,7 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
@@ -63,7 +63,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
+import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
@@ -331,13 +331,13 @@ public class StreamKafkaPTest extends KafkaTestSupport {
                         (int) ((Entry) e).getKey()
                         :
                         System.currentTimeMillis();
-        WatermarkGenerationParams<T> wmParams = wmGenParams(
+        EventTimePolicy<T> eventTimePolicy = eventTimePolicy(
                 timestampFn, limitingLag(LAG), noThrottling(), idleTimeoutMillis);
         List<String> topics = numTopics == 1 ?
                 singletonList(topic1Name)
                 :
                 asList(topic1Name, topic2Name);
-        return new StreamKafkaP<>(properties, topics, projectionFn, wmParams);
+        return new StreamKafkaP<>(properties, topics, projectionFn, eventTimePolicy);
     }
 
     @Test
@@ -403,14 +403,14 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     @Test
     public void when_customProjectionToNull_then_filteredOut() {
         // When
-        WatermarkGenerationParams<String> wmParams = wmGenParams(
+        EventTimePolicy<String> eventTimePolicy = eventTimePolicy(
                 Long::parseLong,
                 limitingLag(0),
                 noThrottling(),
                 0
         );
         StreamKafkaP processor = new StreamKafkaP<Integer, String, String>(
-                properties, singletonList(topic1Name), r -> "0".equals(r.value()) ? null : r.value(), wmParams
+                properties, singletonList(topic1Name), r -> "0".equals(r.value()) ? null : r.value(), eventTimePolicy
         );
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());

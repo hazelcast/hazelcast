@@ -60,6 +60,15 @@ public interface WatermarkEmissionPolicy extends Serializable {
     }
 
     /**
+     * Returns a policy that doesn't emit watermarks. Use it in pipelines that
+     * contain timestamped stages, but no windowing stage.
+     */
+    @Nonnull
+    static WatermarkEmissionPolicy noWatermarks() {
+        return (currentWm, lastEmittedWm) -> lastEmittedWm;
+    }
+
+    /**
      * Returns a watermark emission policy that ensures that each emitted
      * watermark's value is at least {@code minStep} more than the previous
      * one. This is a general, scenario-agnostic throttling policy.

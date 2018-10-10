@@ -28,7 +28,7 @@ import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SESSION;
  * @param <T> type of the stream item
  */
 public class SessionWindowDef<T> implements WindowDefinition {
-    private static final int MAX_FRAME_RATE = 100;
+    private static final int MAX_WATERMARK_STRIDE = 100;
     private static final int MIN_WMS_PER_SESSION = 100;
     private final long sessionTimeout;
 
@@ -48,8 +48,8 @@ public class SessionWindowDef<T> implements WindowDefinition {
     }
 
     @Override
-    public long watermarkFrameSize() {
-        return Math.min(MAX_FRAME_RATE, sessionTimeout / MIN_WMS_PER_SESSION);
+    public long preferredWatermarkStride() {
+        return Math.min(MAX_WATERMARK_STRIDE, Math.max(1, sessionTimeout / MIN_WMS_PER_SESSION));
     }
 
     /**

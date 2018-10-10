@@ -78,7 +78,7 @@ public abstract class AbstractTransform implements Transform {
     }
 
     @Override
-    public long watermarkFrameSize() {
+    public long preferredWatermarkStride() {
         return 0;
     }
 

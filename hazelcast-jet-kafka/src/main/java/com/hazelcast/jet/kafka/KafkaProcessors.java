@@ -17,7 +17,7 @@
 package com.hazelcast.jet.kafka;
 
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
 import com.hazelcast.jet.kafka.impl.WriteKafkaP;
@@ -47,13 +47,13 @@ public final class KafkaProcessors {
     public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
             @Nonnull DistributedFunction<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
-            @Nonnull WatermarkGenerationParams<? super T> wmGenParams,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull String... topics
     ) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
         properties.put("enable.auto.commit", false);
         return ProcessorMetaSupplier.of(
-                StreamKafkaP.processorSupplier(properties, Arrays.asList(topics), projectionFn, wmGenParams),
+                StreamKafkaP.processorSupplier(properties, Arrays.asList(topics), projectionFn, eventTimePolicy),
                 PREFERRED_LOCAL_PARALLELISM
         );
     }

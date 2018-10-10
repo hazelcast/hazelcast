@@ -28,9 +28,9 @@ import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
+import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.NULL_EMIT_POLICY;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.DEFAULT_IDLE_TIMEOUT;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientTimestampedSourceP;
@@ -543,7 +543,7 @@ public final class SourceBuilder<S> {
             Preconditions.checkNotNull(fillBufferFn, "fillBufferFn must be set");
             StreamSourceTransform<JetEvent<T>> source = new StreamSourceTransform<>(
                     mName,
-                    wmGenParams(
+                    eventTimePolicy(
                             JetEvent::timestamp,
                             (e, timestamp) -> e,
                             limitingLag(maxLag),

@@ -21,7 +21,7 @@ import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -88,12 +88,12 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             @Nonnull Properties properties,
             @Nonnull List<String> topics,
             @Nonnull DistributedFunction<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
-            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
         this.properties = properties;
         this.topics = topics;
         this.projectionFn = projectionFn;
-        watermarkSourceUtil = new WatermarkSourceUtil<>(wmGenParams);
+        watermarkSourceUtil = new WatermarkSourceUtil<>(eventTimePolicy);
         partitionCounts = new int[topics.size()];
     }
 
@@ -294,9 +294,9 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             @Nonnull Properties properties,
             @Nonnull List<String> topics,
             @Nonnull DistributedFunction<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
-            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        return () -> new StreamKafkaP<>(properties, topics, projectionFn, wmGenParams);
+        return () -> new StreamKafkaP<>(properties, topics, projectionFn, eventTimePolicy);
     }
 
     /**

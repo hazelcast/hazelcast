@@ -49,8 +49,8 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
+import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
+import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
@@ -93,7 +93,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
         supplier = () -> new StreamEventJournalP<>(map, allPartitions, e -> true,
                 EventJournalMapEvent::getNewValue, START_FROM_OLDEST, false,
-                wmGenParams(Integer::intValue, limitingLag(0), suppressAll(), -1));
+                eventTimePolicy(Integer::intValue, limitingLag(0), suppressAll(), -1));
 
         key0 = generateKeyForPartition(instance.getHazelcastInstance(), 0);
         key1 = generateKeyForPartition(instance.getHazelcastInstance(), 1);
@@ -229,7 +229,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
     public void when_processorsWithNoPartitions_then_snapshotRestoreWorks() {
         DAG dag = new DAG();
         Vertex vertex = dag.newVertex("src",
-                streamMapP(map.getName(), JournalInitialPosition.START_FROM_OLDEST, noWatermarks()))
+                streamMapP(map.getName(), JournalInitialPosition.START_FROM_OLDEST, noEventTime()))
                            .localParallelism(8);
         int partitionCount = instance.getHazelcastInstance().getPartitionService().getPartitions().size();
         assertTrue("partition count should be lower than local parallelism",

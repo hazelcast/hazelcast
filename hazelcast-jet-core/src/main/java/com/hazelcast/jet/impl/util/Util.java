@@ -449,7 +449,7 @@ public final class Util {
      * Calculate greatest common divisor of a series of integer numbers. Returns
      * 0, if the number of values is 0.
      */
-    public static long gcd(long ... values) {
+    public static long gcd(long... values) {
         long res = 0;
         for (long value : values) {
             res = gcd(res, value);

@@ -26,7 +26,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
@@ -651,9 +651,9 @@ public final class Processors {
      */
     @Nonnull
     public static <T> DistributedSupplier<Processor> insertWatermarksP(
-            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        return () -> new InsertWatermarksP<>(wmGenParams);
+        return () -> new InsertWatermarksP<>(eventTimePolicy);
     }
 
     /**

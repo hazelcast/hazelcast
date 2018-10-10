@@ -62,9 +62,13 @@ public interface WindowDefinition {
     <W extends WindowDefinition> W downcast();
 
     /**
-     * Returns the frameLength and offset this window definition needs.
+     * Returns the optimal watermark stride for this window definition.
+     * Watermarks that are more spaced out are better for performance, but they
+     * hurt the responsiveness of a windowed pipeline stage. The Planner will
+     * determine the actual stride, which may be an integer fraction of the
+     * value returned here.
      */
-    long watermarkFrameSize();
+    long preferredWatermarkStride();
 
     /**
      * Returns a {@link WindowKind#SLIDING sliding} window definition with the

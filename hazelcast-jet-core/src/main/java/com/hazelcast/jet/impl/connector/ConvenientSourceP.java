@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
 
 import javax.annotation.Nonnull;
@@ -64,14 +64,14 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
             @Nonnull BiConsumer<? super S, ? super SourceBufferConsumerSide<? extends T>> fillBufferFn,
             @Nonnull Consumer<? super S> destroyFn,
             @Nonnull SourceBufferConsumerSide<? extends T> buffer,
-            @Nullable WatermarkGenerationParams<? super T> wmParams
+            @Nullable EventTimePolicy<? super T> eventTimePolicy
     ) {
         this.createFn = createFn;
         this.fillBufferFn = fillBufferFn;
         this.destroyFn = destroyFn;
         this.buffer = buffer;
-        if (wmParams != null) {
-            this.wsu = new WatermarkSourceUtil<>(wmParams);
+        if (eventTimePolicy != null) {
+            this.wsu = new WatermarkSourceUtil<>(eventTimePolicy);
             wsu.increasePartitionCount(1);
         } else {
             this.wsu = null;

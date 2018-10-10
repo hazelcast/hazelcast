@@ -131,7 +131,7 @@ public class WatermarkSourceUtil<T> {
      * The partition count is initially set to 0, call {@link
      * #increasePartitionCount} to set it.
      **/
-    public WatermarkSourceUtil(WatermarkGenerationParams<? super T> params) {
+    public WatermarkSourceUtil(EventTimePolicy<? super T> params) {
         this.idleTimeoutNanos = MILLISECONDS.toNanos(params.idleTimeoutMillis());
         this.timestampFn = params.timestampFn();
         this.wrapFn = params.wrapFn();
