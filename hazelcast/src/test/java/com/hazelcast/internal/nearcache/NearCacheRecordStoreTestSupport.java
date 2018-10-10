@@ -56,7 +56,7 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         assertEquals(DEFAULT_RECORD_COUNT, nearCacheRecordStore.size());
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.remove(i);
+            nearCacheRecordStore.invalidate(i);
             assertNull(nearCacheRecordStore.get(i));
         }
 
@@ -130,11 +130,13 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
                 // NOP
         }
 
+        int sizeBefore = nearCacheRecordStore.size();
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            if (nearCacheRecordStore.remove(i * 3)) {
-                expectedEntryCount--;
-            }
+            nearCacheRecordStore.invalidate(i * 3);
         }
+        int sizeAfter = nearCacheRecordStore.size();
+        int invalidatedSize = sizeBefore - sizeAfter;
+        expectedEntryCount -= invalidatedSize;
 
         assertEquals(expectedEntryCount, nearCacheStats.getOwnedEntryCount());
         switch (inMemoryFormat) {

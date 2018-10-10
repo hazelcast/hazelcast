@@ -560,7 +560,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     private void releaseRemainingReservedKeys(Map<Object, Long> reservedKeys) {
         for (Object key : reservedKeys.keySet()) {
-            nearCache.remove(key);
+            nearCache.invalidate(key);
         }
     }
 
