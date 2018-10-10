@@ -955,15 +955,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key", "value");
         map.put("key", "value2");
         map.remove("key");
-        sleepSeconds(1);
 
-        assertEquals(addedKey[0], "key");
-        assertEquals(addedValue[0], "value");
-        assertEquals(updatedKey[0], "key");
-        assertEquals(oldValue[0], "value");
-        assertEquals(newValue[0], "value2");
-        assertEquals(removedKey[0], "key");
-        assertEquals(removedValue[0], "value2");
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(addedKey[0], "key");
+                assertEquals(addedValue[0], "value");
+                assertEquals(updatedKey[0], "key");
+                assertEquals(oldValue[0], "value");
+                assertEquals(newValue[0], "value2");
+                assertEquals(removedKey[0], "key");
+                assertEquals(removedValue[0], "value2");
+            }
+        });
     }
 
     @Test
@@ -1108,15 +1112,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.remove("keyx");
         map.remove("key");
         map.remove("keyz");
-        sleepSeconds(1);
 
-        assertEquals(addedKey[0], "key");
-        assertEquals(addedValue[0], "value");
-        assertEquals(updatedKey[0], "key");
-        assertEquals(oldValue[0], "value");
-        assertEquals(newValue[0], "value2");
-        assertEquals(removedKey[0], "key");
-        assertEquals(removedValue[0], "value2");
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(addedKey[0], "key");
+                assertEquals(addedValue[0], "value");
+                assertEquals(updatedKey[0], "key");
+                assertEquals(oldValue[0], "value");
+                assertEquals(newValue[0], "value2");
+                assertEquals(removedKey[0], "key");
+                assertEquals(removedValue[0], "value2");
+            }
+        });
     }
 
     @Test
@@ -1168,15 +1176,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key", "value");
         map.put("key", "value2");
         map.remove("key");
-        sleepSeconds(1);
 
-        assertEquals(addedKey[0], "key");
-        assertEquals(addedValue[0], null);
-        assertEquals(updatedKey[0], "key");
-        assertEquals(oldValue[0], null);
-        assertEquals(newValue[0], null);
-        assertEquals(removedKey[0], "key");
-        assertEquals(removedValue[0], null);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(addedKey[0], "key");
+                assertEquals(addedValue[0], null);
+                assertEquals(updatedKey[0], "key");
+                assertEquals(oldValue[0], null);
+                assertEquals(newValue[0], null);
+                assertEquals(removedKey[0], "key");
+                assertEquals(removedValue[0], null);
+            }
+        });
     }
 
     @Test
