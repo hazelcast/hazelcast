@@ -21,6 +21,8 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,6 +35,8 @@ import javax.cache.CacheManager;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
+
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertNull;
 
@@ -65,8 +69,20 @@ public class ClientCacheProxyTest extends ClientTestSupport {
         javax.cache.Cache<String, String> cache = cacheManager.createCache("example", config);
         //restarting cluster
         instance.shutdown();
+
+        final CountDownLatch clientConnectedBack = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED.equals(event.getState())) {
+                    clientConnectedBack.countDown();
+                }
+            }
+        });
+
         factory.newHazelcastInstance();
 
+        assertOpenEventually(clientConnectedBack);
         //expected to work without throwing exception
         assertNull(cache.get("key"));
 
