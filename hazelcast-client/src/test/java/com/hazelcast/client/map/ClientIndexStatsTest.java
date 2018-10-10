@@ -43,6 +43,7 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -114,6 +115,13 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         assertEquals(0, map2.getLocalMapStats().getIndexedQueryCount());
         assertEquals(0, map1.getLocalMapStats().getIndexStats().get("this").getQueryCount());
         assertEquals(0, map2.getLocalMapStats().getIndexStats().get("this").getQueryCount());
+    }
+
+    @Test
+    @Ignore
+    @Override
+    public void testAverageQuerySelectivityCalculation_WhenSomePartitionsAreEmpty() {
+        // do nothing
     }
 
     @Override

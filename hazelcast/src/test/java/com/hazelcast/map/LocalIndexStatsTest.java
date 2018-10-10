@@ -265,13 +265,13 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testAverageQuerySelectivityCalculation_ChangingNumberOfIndex() {
-        double expected1 = 1.0 - 0.01;
+        double expected1 = 1.0 - 0.001;
         double expected2 = 1.0 - 0.1;
         double expected3 = 1.0 - 0.4;
 
         map.addIndex("__key", false);
         map.addIndex("this", true);
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 1000; ++i) {
             map.put(i, i);
         }
         assertEquals(0.0, keyStats().getAverageHitSelectivity(), 0.0);
@@ -284,24 +284,24 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
             assertEquals(expected1, valueStats().getAverageHitSelectivity(), 0.015);
         }
 
-        for (int i = 100; i < 200; ++i) {
+        for (int i = 1000; i < 2000; ++i) {
             map.put(i, i);
         }
 
         for (int i = 1; i <= QUERIES; ++i) {
-            map.entrySet(Predicates.greaterEqual("__key", 180));
-            map.entrySet(Predicates.greaterEqual("this", 180));
+            map.entrySet(Predicates.greaterEqual("__key", 1800));
+            map.entrySet(Predicates.greaterEqual("this", 1800));
             assertEquals((expected1 * QUERIES + expected2 * i) / (QUERIES + i), keyStats().getAverageHitSelectivity(), 0.015);
             assertEquals((expected1 * QUERIES + expected2 * i) / (QUERIES + i), valueStats().getAverageHitSelectivity(), 0.015);
         }
 
-        for (int i = 150; i < 200; ++i) {
+        for (int i = 1500; i < 2000; ++i) {
             map.remove(i);
         }
 
         for (int i = 1; i <= QUERIES; ++i) {
-            map.entrySet(Predicates.greaterEqual("__key", 90));
-            map.entrySet(Predicates.greaterEqual("this", 90));
+            map.entrySet(Predicates.greaterEqual("__key", 900));
+            map.entrySet(Predicates.greaterEqual("this", 900));
             assertEquals(((expected1 + expected2) * QUERIES + expected3 * i) / (2 * QUERIES + i),
                     keyStats().getAverageHitSelectivity(), 0.015);
             assertEquals(((expected1 + expected2) * QUERIES + expected3 * i) / (2 * QUERIES + i),
