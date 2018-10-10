@@ -182,6 +182,14 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         allTextConnections.incrementAndGet();
     }
 
+    Set<Channel> getAcceptedChannels() {
+        return acceptedChannels;
+    }
+
+    void removeAcceptedChannel(Channel channel) {
+        acceptedChannels.remove(channel);
+    }
+
     @Override
     public void addConnectionListener(ConnectionListener listener) {
         checkNotNull(listener, "listener can't be null");
@@ -614,6 +622,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         }
         return false;
     }
+
 
     private final class SendTask implements Runnable {
         private final Packet packet;
