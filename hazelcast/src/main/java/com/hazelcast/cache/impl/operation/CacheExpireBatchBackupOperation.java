@@ -65,7 +65,7 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
     private void equalizeEntryCountWithPrimary() {
         int diff = recordStore.size() - primaryEntryCount;
         if (diff > 0) {
-            recordStore.sampleAndHardRemoveEntries(diff);
+            recordStore.sampleAndForceRemoveEntries(diff);
 
             assert recordStore.size() == primaryEntryCount : String.format("Failed"
                             + " to remove %d entries while attempting to match"

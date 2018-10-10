@@ -498,7 +498,7 @@ public interface ICacheRecordStore {
      */
     boolean evictIfRequired();
 
-    void sampleAndHardRemoveEntries(int count);
+    void sampleAndForceRemoveEntries(int count);
 
     /**
      * Determines whether wan replication is enabled or not for this record store.

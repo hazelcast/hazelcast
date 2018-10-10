@@ -363,7 +363,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void sampleAndHardRemoveEntries(int entryCountToRemove) {
+    public void sampleAndForceRemoveEntries(int entryCountToRemove) {
         assertRunningOnPartitionThread();
 
         Queue<Data> keysToRemove = new LinkedList<Data>();
@@ -374,13 +374,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
         Data dataKey;
         while ((dataKey = keysToRemove.poll()) != null) {
-            removeRecord(dataKey);
-            addToDeferredDisposeQueue(dataKey);
+            forceRemoveRecord(dataKey);
         }
     }
 
-    protected void addToDeferredDisposeQueue(Object object) {
-        // NOP intentionally
+    protected void forceRemoveRecord(Data key) {
+        // overridden in other context
+        removeRecord(key);
     }
 
     protected Data toData(Object obj) {
