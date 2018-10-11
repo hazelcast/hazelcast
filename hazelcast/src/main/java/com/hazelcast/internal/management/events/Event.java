@@ -19,10 +19,26 @@ package com.hazelcast.internal.management.events;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.events.EventMetadata.EventType;
 
+/**
+ * Represents events sent to Management Center.
+ * <p/>
+ * Events are sent to Management Center periodically, which then informs the user about them.
+ * Events can be used where a log statement normally is used. They are usually generated as
+ * a result of an action that is triggered by the Management Center.
+ *
+ * @see com.hazelcast.internal.management.ManagementCenterService#log(Event)
+ * @since 3.11
+ */
 public interface Event {
     EventType getType();
 
+    /**
+     * Returns when the event happened as epoch millis.
+     */
     long getTimestamp();
 
+    /**
+     * Serialize the event as JSON, for sending to Management Center.
+     */
     JsonObject toJson();
 }

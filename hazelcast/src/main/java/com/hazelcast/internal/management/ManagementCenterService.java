@@ -284,6 +284,11 @@ public class ManagementCenterService {
         return commandHandler;
     }
 
+    /**
+     * Logs an event to Management Center.
+     *
+     * Events are used by Management Center to show the user what happens when on a cluster member.
+     */
     public void log(Event event) {
         events.add(event);
     }
@@ -370,7 +375,7 @@ public class ManagementCenterService {
 
         private HttpURLConnection openConnection(URL url) throws IOException {
             if (logger.isFinestEnabled()) {
-                logger.finest("Opening event connection:" + url);
+                logger.finest("Opening connection to Management Center:" + url);
             }
 
             HttpURLConnection connection = (HttpURLConnection) (connectionFactory != null
@@ -395,7 +400,7 @@ public class ManagementCenterService {
     }
 
     /**
-     * Thread for sending cluster state to the Management Center.
+     * Thread for sending events to the Management Center.
      */
     private final class EventSendThread extends AbstractSendThreadBase {
         private EventSendThread() {

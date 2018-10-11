@@ -36,7 +36,8 @@ public final class EventMetadata {
         WAN_SYNC_PROGRESS_UPDATE(6),
         WAN_SYNC_FINISHED_MERKLE(7),
         WAN_CONFIGURATION_ADDED(8),
-        ADD_WAN_CONFIGURATION_IGNORED(9);
+        ADD_WAN_CONFIGURATION_IGNORED(9),
+        WAN_SYNC_IGNORED(10);
 
         private final int code;
 

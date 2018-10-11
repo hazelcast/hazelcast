@@ -19,24 +19,31 @@ package com.hazelcast.internal.management.events;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.events.EventMetadata.EventType;
 
-import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_CONFIGURATION_ADDED;
+import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_IGNORED;
 
-public class WanConfigurationAddedEvent extends AbstractEventBase {
-    private final String wanConfigName;
+public class WanSyncIgnoredEvent extends AbstractWanEventBase {
+    private final String reason;
 
-    public WanConfigurationAddedEvent(String wanConfigName) {
-        this.wanConfigName = wanConfigName;
+    public static WanSyncIgnoredEvent enterpriseOnly(String wanReplicationName, String targetGroupName, String mapName) {
+        return new WanSyncIgnoredEvent(wanReplicationName, targetGroupName, mapName,
+                "WAN sync is supported for enterprise clusters only.");
+    }
+
+    private WanSyncIgnoredEvent(String wanReplicationName, String targetGroupName, String mapName, String reason) {
+        super(wanReplicationName, targetGroupName, mapName);
+
+        this.reason = reason;
     }
 
     @Override
     public EventType getType() {
-        return WAN_CONFIGURATION_ADDED;
+        return WAN_SYNC_IGNORED;
     }
 
     @Override
     public JsonObject toJson() {
-        JsonObject json = new JsonObject();
-        json.add("wanConfigName", wanConfigName);
+        JsonObject json = super.toJson();
+        json.add("reason", reason);
         return json;
     }
 }

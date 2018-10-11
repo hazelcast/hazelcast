@@ -21,6 +21,12 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.List;
 
+/**
+ * Batch of events to be sent to Management Center.
+ * <p/>
+ * Contains the cluster name, member address and list of events ordered by their occurrence time.
+ * Serialized as JSON for sending to Management Center.
+ */
 public class EventBatch {
     private final String cluster;
     private final String address;
