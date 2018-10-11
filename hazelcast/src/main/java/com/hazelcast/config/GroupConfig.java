@@ -81,8 +81,6 @@ public final class GroupConfig {
      * @param name the name to set for the group
      * @return the updated GroupConfig
      * @throws IllegalArgumentException if name is {@code null}
-     * @deprecated since 3.11, password check is removed.
-     * use {@link SecurityConfig()} ,  ClientSecurityConfig()  for authentication
      */
     public GroupConfig setName(final String name) {
         this.name = isNotNull(name, "name");
@@ -93,7 +91,10 @@ public final class GroupConfig {
      * Gets the password of the group.
      *
      * @return the password of the group
+     * @deprecated since 3.11, password check is removed.
+     * use {@link SecurityConfig()} ,  ClientSecurityConfig()  for authentication
      */
+    @Deprecated
     public String getPassword() {
         return password;
     }
