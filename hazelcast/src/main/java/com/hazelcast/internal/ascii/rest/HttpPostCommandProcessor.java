@@ -88,6 +88,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handlePartialStart(command);
             } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
                 handleListNodes(command);
+            } else if (uri.startsWith(URI_CLIENT_KICKOFF_URL)) {
+                handleDisconnectClient(command);
             } else if (uri.startsWith(URI_SHUTDOWN_NODE_CLUSTER_URL)) {
                 handleShutdownNode(command);
             } else if (uri.startsWith(URI_WAN_SYNC_MAP) || uri.startsWith(LEGACY_URI_WAN_SYNC_MAP)) {
@@ -115,6 +117,33 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             command.setResponse(HttpCommand.RES_500);
         }
         textCommandService.sendResponse(command);
+    }
+
+    private void handleDisconnectClient(HttpPostCommand command) throws UnsupportedEncodingException {
+        byte[] data = command.getData();
+        String[] strList = bytesToString(data).split("&");
+        String groupName = URLDecoder.decode(strList[0], "UTF-8");
+        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
+        String uuid = URLDecoder.decode(strList[2], "UTF-8");
+        String res;
+        try {
+            Node node = textCommandService.getNode();
+            GroupConfig groupConfig = node.getConfig().getGroupConfig();
+            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
+                res = response(ResponseType.FORBIDDEN);
+            } else {
+                boolean shutdown = node.getClientEngine().disconnect(uuid);
+                if (shutdown) {
+                    res = response(ResponseType.SUCCESS);
+                } else {
+                    res = response(ResponseType.FAIL);
+                }
+            }
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while changing cluster state", throwable);
+            res = exceptionResponse(throwable);
+        }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
     private void handleChangeClusterState(HttpPostCommand command) throws UnsupportedEncodingException {

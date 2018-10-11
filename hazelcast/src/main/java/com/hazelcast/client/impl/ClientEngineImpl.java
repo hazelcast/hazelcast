@@ -428,6 +428,29 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         return partitionListenerService;
     }
 
+    public boolean disconnect(String clientUuid) {
+
+
+        Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
+        OperationService operationService = nodeEngine.getOperationService();
+
+        String ownerMember = ownershipMappings.get(clientUuid);
+        if (ownerMember == null) {
+            logger.info("Client is not found to disconnect. client uuid " + clientUuid);
+            //there is no such client
+            return false;
+        }
+
+        logger.info("Disconnecting client manually. client uuid :" + clientUuid);
+
+        for (Member member : memberList) {
+            ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid, ownerMember);
+            operationService.createInvocationBuilder(SERVICE_NAME, op, member.getAddress()).invoke();
+        }
+
+        return true;
+    }
+
     private final class ConnectionListenerImpl implements ConnectionListener {
 
         @Override

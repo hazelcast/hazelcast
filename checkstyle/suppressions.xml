@@ -238,6 +238,9 @@
     <suppress checks="IllegalType"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]LinkedListStreamSerializer"/>
 
+    <!-- Rest -->
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]ascii[\\/]rest[\\/]HttpPostCommandProcessor"/>
+
     <!-- Spring -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]spring[\\/]HazelcastConfigBeanDefinitionParser"/>
 
