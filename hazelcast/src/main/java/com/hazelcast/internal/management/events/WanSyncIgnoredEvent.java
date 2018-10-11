@@ -21,18 +21,18 @@ import com.hazelcast.internal.management.events.EventMetadata.EventType;
 
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_IGNORED;
 
-public class WanSyncIgnoredEvent extends AbstractWanEventBase {
+public final class WanSyncIgnoredEvent extends AbstractWanEventBase {
     private final String reason;
-
-    public static WanSyncIgnoredEvent enterpriseOnly(String wanReplicationName, String targetGroupName, String mapName) {
-        return new WanSyncIgnoredEvent(wanReplicationName, targetGroupName, mapName,
-                "WAN sync is supported for enterprise clusters only.");
-    }
 
     private WanSyncIgnoredEvent(String wanReplicationName, String targetGroupName, String mapName, String reason) {
         super(wanReplicationName, targetGroupName, mapName);
 
         this.reason = reason;
+    }
+
+    public static WanSyncIgnoredEvent enterpriseOnly(String wanReplicationName, String targetGroupName, String mapName) {
+        return new WanSyncIgnoredEvent(wanReplicationName, targetGroupName, mapName,
+                "WAN sync is supported for enterprise clusters only.");
     }
 
     @Override

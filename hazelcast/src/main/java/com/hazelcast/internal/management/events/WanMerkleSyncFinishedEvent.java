@@ -27,6 +27,7 @@ public class WanMerkleSyncFinishedEvent extends AbstractWanSyncFinishedEvent {
     private final double avgEntriesPerLeaf;
     private final double stdDevEntriesPerLeaf;
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public WanMerkleSyncFinishedEvent(String wanReplicationName, String targetGroupName, String mapName, long durationSecs,
                                       int partitionsSynced, int nodesSynced, long recordsSynced, int minLeafEntryCount,
                                       int maxLeafEntryCount, double avgEntriesPerLeaf, double stdDevEntriesPerLeaf) {

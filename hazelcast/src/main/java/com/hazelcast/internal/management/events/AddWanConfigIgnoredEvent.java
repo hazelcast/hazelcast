@@ -21,9 +21,14 @@ import com.hazelcast.internal.management.events.EventMetadata.EventType;
 
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.ADD_WAN_CONFIGURATION_IGNORED;
 
-public class AddWanConfigIgnoredEvent extends AbstractEventBase {
+public final class AddWanConfigIgnoredEvent extends AbstractEventBase {
     private final String wanConfigName;
     private final String reason;
+
+    private AddWanConfigIgnoredEvent(String wanConfigName, String reason) {
+        this.wanConfigName = wanConfigName;
+        this.reason = reason;
+    }
 
     public static AddWanConfigIgnoredEvent alreadyExists(String wanConfigName) {
         return new AddWanConfigIgnoredEvent(wanConfigName,
@@ -33,11 +38,6 @@ public class AddWanConfigIgnoredEvent extends AbstractEventBase {
     public static AddWanConfigIgnoredEvent enterpriseOnly(String wanConfigName) {
         return new AddWanConfigIgnoredEvent(wanConfigName,
                 "Adding new WAN replication config is supported for enterprise clusters only.");
-    }
-
-    private AddWanConfigIgnoredEvent(String wanConfigName, String reason) {
-        this.wanConfigName = wanConfigName;
-        this.reason = reason;
     }
 
     @Override
