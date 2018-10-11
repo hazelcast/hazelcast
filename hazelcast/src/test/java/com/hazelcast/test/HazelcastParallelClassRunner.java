@@ -96,7 +96,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
                 Class<? extends ParallelRunnerOptions> optionsClass = annotation.value();
                 Constructor constructor = optionsClass.getConstructor();
                 ParallelRunnerOptions parallelRunnerOptions = (ParallelRunnerOptions) constructor.newInstance();
-                return parallelRunnerOptions.maxParallelTests();
+                return min(parallelRunnerOptions.maxParallelTests(), DEFAULT_MAX_THREADS);
             } catch (Exception e) {
                 throw new InitializationError(e);
             }
