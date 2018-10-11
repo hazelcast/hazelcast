@@ -105,6 +105,7 @@
                                             org.apache.commons.logging;resolution:=optional,
                                             javax.script.*;resolution:=optional,
                                             org.jclouds.*;resolution:=optional,
+                                            javax.naming.*;resolution:=optional
                                         </Import-Package>
                                     </overrideInstructions>
                                 </transformer>
