@@ -188,8 +188,8 @@ public class NodeEngineImpl implements NodeEngine {
         metricsRegistry.register(new MachineMetrics());
         metricsRegistry.register(new MemoryMetrics(node.getNodeExtension().getMemoryStats()));
         metricsRegistry.register(executionService);
-        metricsRegistry.registerIfSource(operationService.getOperationExecutor());
-        metricsRegistry.registerIfSource(node.getNodeExtension());
+        metricsRegistry.register(operationService.getOperationExecutor());
+        metricsRegistry.register(node.getNodeExtension());
         for (MetricsSource s : serviceManager.getServices(MetricsSource.class)) {
             metricsRegistry.register(s);
         }

@@ -284,7 +284,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             // null when testing with mock
             metricsRegistry.register(networking);
         }
-        metricsRegistry.registerIfSource(clientExtension);
+        metricsRegistry.register(clientExtension);
     }
 
     @Override

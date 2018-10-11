@@ -74,6 +74,7 @@ public class MetricsRegistryTest extends AbstractMetricsTest implements MetricsS
         probeAllInstances(cycle, "map", map);
         cycle.openContext(); // needed to reset context
         cycle.probe(this);
+        cycle.collectAll("", new AdjoinSource());
     }
 
     private static final class LevelBean implements ProbingContext {
@@ -161,17 +162,30 @@ public class MetricsRegistryTest extends AbstractMetricsTest implements MetricsS
         }
     }
 
+    private static final class AdjoinSource implements MetricsSource {
+
+        @Probe
+        long age = 13;
+
+        @Override
+        public void collectAll(CollectionCycle cycle) {
+            cycle.openContext().tag("foo", "bar").adjoin("tender");
+            cycle.probe(this);
+        }
+
+    }
+
     @Test
     public void onlyProbesOfEnabledLevelsAreCollected() {
         setLevel(ProbeLevel.MANDATORY);
         assertCollectedCount(8);
         assertMetric("mandatory", 1);
         setLevel(ProbeLevel.INFO);
-        assertCollectedCount(33); // 2x8 + 1 + 4 + 12
+        assertCollectedCount(34); // 2x8 + 1 + 4 + 12 + 1
         assertMetric("mandatory", 1);
         assertMetric("info", 2);
         setLevel(ProbeLevel.DEBUG);
-        assertCollectedCount(41); // 3x8 + 1 + 4 + 12
+        assertCollectedCount(42); // 3x8 + 1 + 4 + 12 + 1
         assertMetric("mandatory", 1);
         assertMetric("info", 2);
         assertMetric("debug", 3);
@@ -238,6 +252,11 @@ public class MetricsRegistryTest extends AbstractMetricsTest implements MetricsS
         assertCollected("c.my.sub.z", 42L);
         assertCollected("c.my.sub.my.y", 2L);
         assertCollected("c.my.sub.my.z", 42L);
+    }
+
+    @Test
+    public void adjoinTagCollection() {
+        assertCollected("foo=bartender age", 13L);
     }
 
     @Test

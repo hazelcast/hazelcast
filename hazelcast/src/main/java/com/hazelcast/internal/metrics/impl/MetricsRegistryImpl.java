@@ -68,21 +68,42 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
     private final ConcurrentMap<Class<?>, MetricsSourceEntry> sources =
             new ConcurrentHashMap<Class<?>, MetricsRegistryImpl.MetricsSourceEntry>();
 
-    @Override
-    public void register(MetricsSource source) {
+
+    static ProbeAnnotatedType register(ConcurrentMap<Class<?>, ProbeAnnotatedType> cache,
+            Class<?> type, ProbeAnnotatedType metadata) {
+        ProbeAnnotatedType existing = cache.putIfAbsent(type, metadata);
+        return existing == null ? metadata : existing;
+    }
+
+    static ProbeAnnotatedType getOrCreate(ConcurrentMap<Class<?>, ProbeAnnotatedType> cache,
+            Class<?> type) {
+        ProbeAnnotatedType metadata = cache.get(type);
+        // main goal was to avoid creating expensive metadata but at this point we have to
+        return metadata != null ? metadata : register(cache, type, new ProbeAnnotatedType(type));
+    }
+
+    private void registerSource(MetricsSource source) {
         if (!sources.containsKey(source.getClass())) {
             sources.putIfAbsent(source.getClass(), new MetricsSourceEntry(source));
         } else {
-            LOGGER.info("Probe source tried to register more then once: "
+            LOGGER.info(MetricsSource.class.getSimpleName() + " tried to register more then once: "
                     + source.getClass().getSimpleName());
-
         }
     }
 
     @Override
-    public void registerIfSource(Object source) {
+    public void register(final Object source) {
         if (source instanceof MetricsSource) {
-            register((MetricsSource) source);
+            registerSource((MetricsSource) source);
+        } else if (source != null) {
+            if (getOrCreate(metaDataCache, source.getClass()).hasProbes()) {
+                registerSource(new MetricsSource() {
+                    @Override
+                    public void collectAll(CollectionCycle cycle) {
+                        cycle.probe(source);
+                    }
+                });
+            }
         }
     }
 
@@ -175,11 +196,6 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             this.selection = selection;
         }
 
-        private ProbeAnnotatedType register(Class<?> type, ProbeAnnotatedType metadata) {
-            ProbeAnnotatedType existing = mataDataCache.putIfAbsent(type, metadata);
-            return existing == null ? metadata : existing;
-        }
-
         private void updateSources() {
             int size = sources.size();
             if (sourceCount != size) {
@@ -234,9 +250,9 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             ProbeAnnotatedType metadata = mataDataCache.get(type);
             if (metadata == null) {
                 // main goal was to avoid creating expensive metadata but at this point we have to
-                metadata = register(type, new ProbeAnnotatedType(type, level, methods));
+                metadata = register(mataDataCache, type, new ProbeAnnotatedType(type, level, methods));
             }
-            metadata.probeNow(this, this.level, null, instance);
+            metadata.collectAll(this, this.level, null, instance);
         }
 
         @Override
@@ -246,21 +262,14 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
 
         @Override
         public void probe(CharSequence prefix, Object instance) {
-            if (instance == null) {
-                return;
+            if (instance != null) {
+                getOrCreate(mataDataCache, instance.getClass()).collectAll(this, level, prefix, instance);
             }
-            Class<?> type = instance.getClass();
-            ProbeAnnotatedType metadata = mataDataCache.get(type);
-            if (metadata == null) {
-                // main goal was to avoid creating expensive metadata but at this point we have to
-                metadata = register(type, new ProbeAnnotatedType(type));
-            }
-            metadata.probeNow(this, level, prefix, instance);
         }
 
         @Override
-        public void collect(CharSequence prefix, MetricsSource source) {
-            if (source == null) {
+        public void collectAll(CharSequence prefix, MetricsSource source) {
+            if (source == null || !activeSource(source.getClass())) {
                 return;
             }
             int baseIndex = tagBaseIndex;
@@ -375,6 +384,20 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         public Tags prefix(CharSequence prefix) {
             if (prefix.length() > 0 && !Probe.BLANK_NAME.contentEquals(prefix)) {
                 return append(prefix).append(".");
+            }
+            return this;
+        }
+
+        @Override
+        public Tags adjoin(CharSequence s) {
+            if (s.length() > 0) {
+                int lastIndex = tags.length() - 1;
+                if (tags.charAt(lastIndex) != ' ') {
+                    return append(s);
+                }
+                tags.setLength(lastIndex);
+                appendEscaped(tags, s);
+                tags.append(' ');
             }
             return this;
         }
@@ -551,7 +574,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                         String name = otherFieldNames[i];
                         if (otherFieldNested[i]) {
                             if (value instanceof MetricsSource) {
-                                cycle.collect(name, (MetricsSource) value);
+                                cycle.collectAll(name, (MetricsSource) value);
                             } else {
                                 cycle.probe(name, value);
                             }
@@ -624,22 +647,31 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
      */
     private static final class ProbeAnnotatedType {
 
-        private final boolean tagging;
+        private final boolean addsContext;
         private final String fixedPrefix;
         private final ProbeAnnotatedTypeLevel[] levels =
                 new ProbeAnnotatedTypeLevel[ProbeLevel.values().length];
 
         ProbeAnnotatedType(Class<?> type) {
-            tagging = ProbingContext.class.isAssignableFrom(type);
+            addsContext = ProbingContext.class.isAssignableFrom(type);
             fixedPrefix = type.isAnnotationPresent(Probe.class) ? type.getAnnotation(Probe.class).name()
                     : null;
             initByAnnotations(type);
         }
 
         ProbeAnnotatedType(Class<?> type, ProbeLevel level, String... methodNames) {
-            tagging = ProbingContext.class.isAssignableFrom(type);
+            addsContext = ProbingContext.class.isAssignableFrom(type);
             fixedPrefix = null;
             initByNameList(type, level, methodNames);
+        }
+
+        boolean hasProbes() {
+            for (int i = 0; i < levels.length; i++) {
+                if (levels[i] != null) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void initByNameList(Class<?> type, ProbeLevel level, String... methodNames) {
@@ -690,12 +722,12 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             }
         }
 
-        void probeNow(CollectionCycleImpl cycle, ProbeLevel level, CharSequence dynamicPrefix,
+        void collectAll(CollectionCycleImpl cycle, ProbeLevel level, CharSequence dynamicPrefix,
                 Object instance) {
-            if (tagging) {
-                probeNowTagging(cycle, level, dynamicPrefix, instance);
+            if (addsContext) {
+                collectAllInContext(cycle, level, dynamicPrefix, instance);
             } else {
-                probeNowNonTagging(cycle, level, dynamicPrefix, instance);
+                collectAllInternal(cycle, level, dynamicPrefix, instance);
             }
         }
 
@@ -703,19 +735,19 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
          * When instance itself is adding tags the tag context has to be restored as
          * well.
          */
-        private void probeNowTagging(CollectionCycleImpl cycle, ProbeLevel level,
+        private void collectAllInContext(CollectionCycleImpl cycle, ProbeLevel level,
                 CharSequence dynamicPrefix, Object instance) {
             CharSequence lastTagName = cycle.lastTagName;
             int lastTagValuePosition = cycle.lastTagValuePosition;
-            probeNowNonTagging(cycle, level, dynamicPrefix, instance);
+            collectAllInternal(cycle, level, dynamicPrefix, instance);
             cycle.lastTagName = lastTagName;
             cycle.lastTagValuePosition = lastTagValuePosition;
         }
 
-        private void probeNowNonTagging(CollectionCycleImpl cycle, ProbeLevel level,
+        private void collectAllInternal(CollectionCycleImpl cycle, ProbeLevel level,
                 CharSequence dynamicPrefix, Object instance) {
             int len0 = cycle.tags.length();
-            if (tagging) {
+            if (addsContext) {
                 ((ProbingContext) instance).tag(cycle);
             }
             if (dynamicPrefix != null) {

@@ -113,7 +113,7 @@ public interface CollectionCycle {
      * @param prefix use empty string or {@link Probe#BLANK_NAME} to not add a prefix
      * @param source a dynamic source, null is a no-op with no consequences
      */
-    void collect(CharSequence prefix, MetricsSource source);
+    void collectAll(CharSequence prefix, MetricsSource source);
 
     /**
      * Similar to {@link #probe(Object)} just that probed methods are not identified
@@ -251,5 +251,17 @@ public interface CollectionCycle {
          *         new/litter objects.
          */
         Tags prefix(CharSequence prefix);
+
+        /**
+         * Similar to append but if the context ends with an un-escaped space the sequence s is inserted before that space.
+         * This is used to extend values of tags with further names.
+         *
+         * The given {@link CharSequence} will always be escaped.
+         *
+         * @param not null, only guaranteed to be stable throughout the call
+         * @return this {@link Tags} context for chaining. This call does not create any
+         *         new/litter objects.
+         */
+        Tags adjoin(CharSequence s);
     }
 }

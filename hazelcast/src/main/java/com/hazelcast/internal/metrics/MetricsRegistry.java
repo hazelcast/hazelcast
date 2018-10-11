@@ -36,25 +36,21 @@ public interface MetricsRegistry {
     /**
      * Called once at startup, typically by a core service registering itself.
      *
-     * @param source a object that "knows" how to make metrics known to a
-     *        {@link CollectionCycle} in their appropriate context. Each sources is
-     *        assumed to be unique per class. That means a second registration of a
-     *        source is considered identical and therefore unnecessary if the source
-     *        has the same type as an already registered source. Such a source
-     *        registration is simply ignored. This is the most practical behavior as
-     *        we usually do not want same source more then once.
-     */
-    void register(MetricsSource source);
-
-    /**
-     * Legacy support instances only known by their interface with implementations
-     * that possibly implement {@link MetricsSource}.
+     * @param source Typically implementation of a {@link MetricsSource} that
+     *        "knows" how to make metrics known to a {@link CollectionCycle} in
+     *        their appropriate context. Each sources is assumed to be unique per
+     *        class. That means a second registration of a source is considered
+     *        identical and therefore unnecessary if the source has the same type as
+     *        an already registered source. Such a source registration is simply
+     *        ignored. This is the most practical behavior as we usually do not want
+     *        same source more then once.
      *
-     * @param source a object possibly implementing {@link MetricsSource}, might be
-     *        null as well
+     *        If the source instance does not implement {@link MetricsSource} it is
+     *        checked for {@link Probe} annotations and collected as if another
+     *        source passed it to {@link CollectionCycle#probe(Object)}. If there
+     *        also are no annotation the instance is ignored and has no effect.
      */
-    @Deprecated
-    void registerIfSource(Object source);
+    void register(Object source);
 
     /**
      * Creates a new "private "context that should be kept by the caller to collect
