@@ -15,6 +15,7 @@
   --><project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>hazelcast-gcp</name>
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-gcp</artifactId>
     <version>1.0</version>
@@ -60,6 +61,14 @@
         <developerConnection>scm:git:git@github.com:hazelcast/hazelcast-gcp.git</developerConnection>
         <url>https://github.com/hazelcast/hazelcast-gcp/</url>
     </scm>
+
+    <developers>
+        <developer>
+            <id>leszko</id>
+            <name>Rafal Leszko</name>
+            <email>rafal@hazelcast.com</email>
+        </developer>
+    </developers>
 
     <dependencies>
         <dependency>
