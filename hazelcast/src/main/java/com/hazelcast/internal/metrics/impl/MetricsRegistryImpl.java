@@ -108,8 +108,8 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public CollectionContext openContext(Class<? extends MetricsSource>... selection) {
-        return new CollectionCycleImpl(metaDataCache, sources.values(), selection);
+    public CollectionContext openContext(ProbeLevel level, Class<? extends MetricsSource>... selection) {
+        return new CollectionCycleImpl(level, metaDataCache, sources.values(), selection);
     }
 
     /**
@@ -179,18 +179,19 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         private final Collection<MetricsSourceEntry> sources;
         private final Class<? extends MetricsSource>[] selection;
         private final List<MetricsSourceEntry> effectiveSource = new ArrayList<MetricsSourceEntry>();
+        private final ProbeLevel level;
         private int sourceCount;
 
         // collection cycle state
         private final StringBuilder tags = new StringBuilder(128);
         private int tagBaseIndex;
         private MetricsCollector collector;
-        private ProbeLevel level;
         private CharSequence lastTagName;
         private int lastTagValuePosition;
 
-        CollectionCycleImpl(ConcurrentMap<Class<?>, ProbeAnnotatedType> mataDataCache,
+        CollectionCycleImpl(ProbeLevel level, ConcurrentMap<Class<?>, ProbeAnnotatedType> mataDataCache,
                 Collection<MetricsSourceEntry> sources, Class<? extends MetricsSource>[] selection) {
+            this.level = level;
             this.mataDataCache = mataDataCache;
             this.sources = sources;
             this.selection = selection;
@@ -222,9 +223,8 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         }
 
         @Override
-        public void collectAll(ProbeLevel level, MetricsCollector collector) {
+        public void collectAll(MetricsCollector collector) {
             updateSources();
-            this.level = level;
             this.collector = collector;
             for (MetricsSourceEntry entry : effectiveSource) {
                 if (isProbed(entry.updateLevel)) {

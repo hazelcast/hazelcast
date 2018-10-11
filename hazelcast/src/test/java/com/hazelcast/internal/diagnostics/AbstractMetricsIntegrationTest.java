@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.CollectionContext;
 import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.internal.metrics.MetricsSource;
@@ -37,12 +36,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSupport {
 
-    private ProbeLevel probeLevel = ProbeLevel.INFO;
     private CollectionContext context;
-
-    public void setProbeLevel(ProbeLevel probeLevel) {
-        this.probeLevel = probeLevel;
-    }
 
     public void setCollectionContext(CollectionContext context) {
         this.context = context;
@@ -71,7 +65,7 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
 
     protected final void assertHasStatsWith(int minimumMetrics, final String prefix) {
         final StringMetricsCollector collector = new StringMetricsCollector(prefix);
-        context.collectAll(probeLevel, collector);
+        context.collectAll(collector);
         assertThat("minimum number of metrics ", collector.matches.size(), greaterThanOrEqualTo(minimumMetrics));
         if (minimumMetrics > 1) {
             assertHasCreationTime(prefix, collector);
@@ -98,7 +92,7 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
             @Override
             public void run() throws Exception {
                 final StringMetricsCollector collector = new StringMetricsCollector(prefixes);
-                context.collectAll(probeLevel, collector);
+                context.collectAll(collector);
                 if (!collector.matches.keySet().containsAll(prefixes)) {
                     HashSet<String> missing = new HashSet<String>(prefixes);
                     missing.removeAll(collector.matches.keySet());

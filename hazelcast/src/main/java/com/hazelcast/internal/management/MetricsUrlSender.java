@@ -27,7 +27,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.CollectionContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -139,7 +138,7 @@ final class MetricsUrlSender implements Runnable, Closeable {
             // start with the common group member and time
             streamer.collect(timeKey, Clock.currentTimeMillis());
             if (connected) {
-                context.collectAll(ProbeLevel.INFO, streamer);
+                context.collectAll(streamer);
             }
             streamer.done();
             return conn.getResponseCode() == HTTP_OK;

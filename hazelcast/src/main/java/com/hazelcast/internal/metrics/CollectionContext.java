@@ -39,9 +39,8 @@ public interface CollectionContext {
      * to this method should be made each should originate from its own
      * {@link CollectionContext}.
      *
-     * @param level the finest level that still should be collected
      * @param collector not null; is called for each active metric with a key and
      *        value to convert them to the collectors specific format.
      */
-    void collectAll(ProbeLevel level, MetricsCollector collector);
+    void collectAll(MetricsCollector collector);
 }

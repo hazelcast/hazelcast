@@ -204,7 +204,6 @@ public class HealthMonitor {
          */
         private static final int DOUBLE_TO_PERCENT = 100;
 
-        private final MetricsRegistry registry;
         private final StringBuilder sb = new StringBuilder();
         private final Map<String, Long> metrics = new HashMap<String, Long>();
         private final CollectionContext thresholdContext;
@@ -212,10 +211,10 @@ public class HealthMonitor {
 
         @SuppressWarnings("unchecked")
         public HealthMetrics(MetricsRegistry registry) {
-            this.registry = registry;
-            thresholdContext = registry.openContext(NodeEngineMetrics.class,
-                    MachineMetrics.class);
-            printoutContext = registry.openContext(NodeEngineMetrics.class,
+            thresholdContext = registry.openContext(ProbeLevel.MANDATORY,
+                    NodeEngineMetrics.class, MachineMetrics.class);
+            printoutContext = registry.openContext(ProbeLevel.MANDATORY,
+                    NodeEngineMetrics.class,
                     ClientEngineMetrics.class, ClusterServiceImpl.class,
                     ExecutionServiceImpl.class, EventServiceImpl.class,
                     OperationExecutorImpl.class, TcpIpConnectionManager.class,
@@ -247,7 +246,7 @@ public class HealthMonitor {
         }
 
         void updateThreshHoldMetrics() {
-            thresholdContext.collectAll(ProbeLevel.MANDATORY, this);
+            thresholdContext.collectAll(this);
         }
 
         boolean exceedsThreshold() {
@@ -261,7 +260,7 @@ public class HealthMonitor {
         }
 
         public String render() {
-            printoutContext.collectAll(ProbeLevel.MANDATORY, this);
+            printoutContext.collectAll(this);
             sb.setLength(0);
             renderProcessors();
             renderPhysicalMemory();

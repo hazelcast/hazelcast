@@ -82,7 +82,7 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
 
     private void newMember() {
         hz = hazelcastFactory.newHazelcastInstance();
-        setCollectionContext(getNode(hz).nodeEngine.getMetricsRegistry().openContext());
+        setCollectionContext(getNode(hz).nodeEngine.getMetricsRegistry().openContext(ProbeLevel.INFO));
     }
 
     @After

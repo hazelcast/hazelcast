@@ -37,8 +37,12 @@ public abstract class HazelcastInstanceMetricsIntegrationTest extends AbstractMe
     public void setup() {
         hz = createHazelcastInstance(configure());
         registry = getNode(hz).nodeEngine.getMetricsRegistry();
-        setCollectionContext(registry.openContext());
+        setCollectionContext(registry.openContext(ProbeLevel.INFO));
         warmUpPartitions(hz);
+    }
+
+    protected final void setProbeLevel(ProbeLevel level) {
+        setCollectionContext(registry.openContext(level));
     }
 
 }

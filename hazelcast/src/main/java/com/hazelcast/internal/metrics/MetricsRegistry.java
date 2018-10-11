@@ -59,12 +59,13 @@ public interface MetricsRegistry {
      * The implementation will not support multi-threading as each thread should
      * create its own context instance.
      *
+     * @param level the finest level that still should be collected
      * @param selection the set of sources that is accepted (kept) if it was or will
      *        be registered. A empty set or {@code null} results in usage of all
      *        registered sources.
      * @return a new private selective "context". The context is updated when
-     *         further {@link MetricsSource} are {@link #register(MetricsSource)}ed that
+     *         further {@link MetricsSource} are {@link #register(Object)}ed that
      *         were selected.
      */
-    CollectionContext openContext(Class<? extends MetricsSource>... selection);
+    CollectionContext openContext(ProbeLevel level, Class<? extends MetricsSource>... selection);
 }

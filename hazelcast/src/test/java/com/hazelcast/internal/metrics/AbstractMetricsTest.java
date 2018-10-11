@@ -34,8 +34,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 public abstract class AbstractMetricsTest extends HazelcastTestSupport {
 
     protected final MetricsRegistry registry = new MetricsRegistryImpl();
-    protected final CollectionContext context = registry.openContext();
-    private ProbeLevel level = ProbeLevel.DEBUG;
+    protected CollectionContext context = registry.openContext(ProbeLevel.DEBUG);
 
     @Before
     public void setUp() {
@@ -44,7 +43,7 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
     }
 
     public void setLevel(ProbeLevel level) {
-        this.level = level;
+        this.context = registry.openContext(level);
     }
 
     protected final void assertCollected(final String expectedKey) {
@@ -92,13 +91,13 @@ public abstract class AbstractMetricsTest extends HazelcastTestSupport {
     }
 
     CountingMetricsCollector runCycle(final String expectedKey) {
-        return runCycle(expectedKey, context, level);
+        return runCycle(expectedKey, context);
     }
 
     public static CountingMetricsCollector runCycle(final String expectedKey,
-            CollectionContext context, ProbeLevel level) {
+            CollectionContext context) {
         CountingMetricsCollector collector = new CountingMetricsCollector(expectedKey);
-        context.collectAll(level, collector);
+        context.collectAll(collector);
         return collector;
     }
 

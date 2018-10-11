@@ -49,6 +49,7 @@ import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
 import com.hazelcast.internal.management.request.TriggerPartialStartRequest;
 import com.hazelcast.internal.management.request.WanCheckConsistencyRequest;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;
@@ -131,7 +132,7 @@ public class ManagementCenterService {
         String member = address.getHost() + ":" + address.getPort();
         this.probeDataSender = new MetricsUrlSender(managementCenterUrl("metrics.do"), connectionFactory,
                 instance.getConfig().getGroupConfig().getName(), member,
-                instance.node.nodeEngine.getMetricsRegistry().openContext());
+                instance.node.nodeEngine.getMetricsRegistry().openContext(ProbeLevel.INFO));
         this.probeDataSendThread = new Thread(probeDataSender, createThreadName(instance.getName(), "MC.ProbeData.Sender"));
         if (this.managementCenterConfig.isEnabled()) {
             this.instance.getCluster().addMembershipListener(new ManagementCenterService.MemberListenerImpl());

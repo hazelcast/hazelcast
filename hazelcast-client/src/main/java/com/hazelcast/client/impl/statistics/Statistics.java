@@ -80,15 +80,14 @@ public class Statistics implements MetricsSource {
     private volatile ClientConnection ownerConnection;
     private volatile ClientConnection lastOwnerConnection;
     private final StringBuilder stats = new StringBuilder();
-    private final ProbeLevel probeLevel;
 
     public Statistics(final HazelcastClientInstanceImpl clientInstance) {
         this.properties = clientInstance.getProperties();
         this.enabled = properties.getBoolean(ENABLED);
         this.client = clientInstance;
         this.enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
-        this.context = clientInstance.getMetricsRegistry().openContext();
-        this.probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
+        this.context = clientInstance.getMetricsRegistry().openContext(
+                properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class));
     }
 
     /**
@@ -236,7 +235,7 @@ public class Statistics implements MetricsSource {
         // writing header: type, name, address, version, principal (each on a line)
         appendHeader(stats);
         // body: render metrics
-        context.collectAll(probeLevel, new MetricsCollector() {
+        context.collectAll(new MetricsCollector() {
             @Override
             public void collect(CharSequence key, long value) {
                 appendEscapingLineFeed(stats, key);

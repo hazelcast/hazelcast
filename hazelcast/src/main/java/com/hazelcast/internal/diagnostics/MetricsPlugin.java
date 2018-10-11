@@ -51,7 +51,6 @@ public class MetricsPlugin extends DiagnosticsPlugin {
     private final CollectionContext context;
     private final long periodMillis;
     private final DiagnosticsMetricsCollector collector = new DiagnosticsMetricsCollector();
-    private final ProbeLevel probeLevel;
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getProperties());
@@ -59,9 +58,8 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
     public MetricsPlugin(ILogger logger, MetricsRegistry registry, HazelcastProperties properties) {
         super(logger);
-        this.context = registry.openContext();
+        this.context = registry.openContext(properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class));
         this.periodMillis = properties.getMillis(PERIOD_SECONDS);
-        this.probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
     }
 
     @Override
@@ -80,7 +78,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
         // the same timestamp
         collector.timeMillis = System.currentTimeMillis();
-        context.collectAll(probeLevel, collector);
+        context.collectAll(collector);
         collector.writer = null;
     }
 
