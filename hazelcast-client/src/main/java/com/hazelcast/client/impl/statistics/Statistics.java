@@ -35,7 +35,6 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -195,6 +194,15 @@ public class Statistics implements MetricsSource {
         cycle.collect(MANDATORY, "enterprise", enterprise);
         cycle.collect(MANDATORY, "lastStatisticsCollectionTime", System.currentTimeMillis());
         cycle.collect(MANDATORY, "clusterConnectionTimestamp", conn.getStartTime());
+        String address = ownerConnection.getLocalSocketAddress().getAddress().getHostAddress() + ":"
+                + ownerConnection.getLocalSocketAddress().getPort();
+        cycle.openContext()
+            .tag(TAG_TYPE, ClientType.JAVA.toString())
+            .tag(TAG_INSTANCE, client.getName())
+            .tag(TAG_TARGET, address)
+            .tag("version", BuildInfoProvider.getBuildInfo().getVersion());
+        ClientConnectionManagerImpl cm = (ClientConnectionManagerImpl) client.getConnectionManager();
+        cycle.collect("principal", cm.getLastCredentials() != null);
         Collection<NearCache> caches = client.getNearCacheManager().listAllNearCaches();
         if (caches.isEmpty()) {
             return;
@@ -208,32 +216,10 @@ public class Statistics implements MetricsSource {
         }
     }
 
-    /**
-     * Besides the actual metrics (numbers) some base information are also send to
-     * server as part of the metrics data. These values don't really belong here but
-     * for now have to be included. Later improvements should separate metric data
-     * from informational key-value data. Also use of a {@link String} as aggregate
-     * is not ideal but can only be changed by changing the message format.
-     */
-    private void appendHeader(final StringBuilder stats) {
-        // start with a protocol version: 1 (to identify the new metrics format)
-        stats.append("1\n");
-        stats.append(ClientType.JAVA.toString()).append('\n');
-        appendEscapingLineFeed(stats, client.getName());
-        stats.append('\n');
-        stats.append(ownerConnection.getLocalSocketAddress().getAddress().getHostAddress()).append(":")
-        .append(ownerConnection.getLocalSocketAddress().getPort()).append('\n');
-        stats.append(BuildInfoProvider.getBuildInfo().getVersion()).append('\n');
-        ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
-        Credentials credentials = connectionManager.getLastCredentials();
-        String principal = credentials != null ? credentials.getPrincipal() : "?";
-        stats.append(principal).append('\n');
-    }
-
     void renderStats() {
         stats.setLength(0);
-        // writing header: type, name, address, version, principal (each on a line)
-        appendHeader(stats);
+        // start with a protocol version: 1 (to identify the new metrics format)
+        stats.append("1\n");
         // body: render metrics
         context.collectAll(new MetricsCollector() {
             @Override
