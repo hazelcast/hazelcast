@@ -23,7 +23,6 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
@@ -662,7 +661,6 @@ public class MasterContext {
                 })
                 .map(e -> (Throwable) e.getValue())
                 .filter(t -> !(t instanceof CancellationException) && !(t instanceof TerminatedWithSnapshotException))
-                .filter(t -> !isRestartableException(t))
                 .findFirst()
                 .map(ExceptionUtil::peel)
                 .orElseGet(TopologyChangedException::new);
@@ -737,12 +735,11 @@ public class MasterContext {
             if (terminationModeAction == RESTART) {
                 jobStatus = NOT_RUNNING;
                 nonSynchronizedAction = () -> coordinationService.restartJob(jobId);
-            } else if ((failure instanceof RestartableException || failure instanceof TopologyChangedException)
-                    && jobRecord.getConfig().isAutoScaling()) {
+            } else if (isRestartableException(failure) && jobRecord.getConfig().isAutoScaling()) {
                 // if restart is due to a failure, schedule a restart after a delay
                 scheduleRestart();
             } else if (terminationModeAction == SUSPEND
-                    || (failure instanceof RestartableException || failure instanceof TopologyChangedException)
+                    || isRestartableException(failure)
                             && !jobRecord.getConfig().isAutoScaling()
                             && jobRecord.getConfig().getProcessingGuarantee() != NONE) {
                 jobStatus = SUSPENDED;
@@ -857,6 +854,10 @@ public class MasterContext {
 
     private boolean isSnapshottingEnabled() {
         return jobConfig().getProcessingGuarantee() != NONE;
+    }
+
+    String jobName() {
+        return jobName;
     }
 
     String jobIdString() {

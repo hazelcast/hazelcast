@@ -545,7 +545,7 @@ public class JobCoordinationService {
             logger.severe("Master context for job " + idToString(jobId) + " not found to schedule restart");
             return;
         }
-        logger.fine("Scheduling restart on master for job " + idToString(jobId));
+        logger.fine("Scheduling restart on master for job " + masterContext.jobName());
         nodeEngine.getExecutionService().schedule(COORDINATOR_EXECUTOR_NAME, () -> restartJob(jobId),
                 RETRY_DELAY_IN_MILLIS, MILLISECONDS);
     }

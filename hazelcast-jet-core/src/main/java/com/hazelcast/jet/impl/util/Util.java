@@ -314,7 +314,7 @@ public final class Util {
                 .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
 
         for (int processor = 0; processor < count; processor++) {
-            processorToPartitions.computeIfAbsent(processor, x -> emptyList());
+            processorToPartitions.putIfAbsent(processor, emptyList());
         }
         return processorToPartitions;
     }
