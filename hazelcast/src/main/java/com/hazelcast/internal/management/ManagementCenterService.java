@@ -291,7 +291,7 @@ public class ManagementCenterService {
      * Events are used by Management Center to show the user what happens when on a cluster member.
      */
     public void log(Event event) {
-        if (this.managementCenterConfig.isEnabled()) {
+        if (this.managementCenterConfig.isEnabled() && isRunning()) {
             events.add(event);
         }
     }
