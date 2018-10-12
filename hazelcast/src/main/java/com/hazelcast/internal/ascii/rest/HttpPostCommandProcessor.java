@@ -33,6 +33,7 @@ import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationService;
@@ -114,6 +115,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 command.setResponse(HttpCommand.RES_400);
             }
         } catch (Exception e) {
+            EmptyStatement.ignore(e);
             command.setResponse(HttpCommand.RES_500);
         }
         textCommandService.sendResponse(command);
@@ -140,7 +142,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 }
             }
         } catch (Throwable throwable) {
-            logger.warning("Error occurred while changing cluster state", throwable);
+            logger.warning("Error occurred while disconnecting client", throwable);
             res = exceptionResponse(throwable);
         }
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
