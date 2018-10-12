@@ -2,16 +2,22 @@ You can also see the Release Notes document at http://docs.hazelcast.org/docs/re
 
 Release 3.11
 
-* Added fine-grained control over WAN replication events by Introducing the new event type LOADED and the class EntryLoadedListener.
-* Introduced a license monitor daemon that warns about license expirations and instructs about the next steps.
-* Enhanced the WAN Synchronization by adding Merkle Trees support.
-* Added ability to set custom TTL for map and cache entries.
-* Added ability to set custom maximum idle timeouts for map entries.
-* Introduced configurable backoff strategy for client reconnections.
-* Introduced map index statistics.
-* Improved JCache's lazy eviction with a periodic cleanup that eventually removes all expired entries and frees up the occupied space.
-* Enhanced network I/O to allow TLS handshake in a block-free manner and to support offloadable tasks, improving the latency and security.
-* Added support for discovery in GCP Compute Engine environment.
+- Added fine-grained control over WAN replication events by Introducing the new event type LOADED and the class EntryLoadedListener.
+- Introduced a license monitor daemon that warns about license expirations and instructs about the next steps.
+- Enhanced the WAN Synchronization by adding Merkle Trees support.
+- Added ability to set custom TTL for map and cache entries.
+- Added ability to set custom maximum idle timeouts for map entries.
+- Introduced configurable backoff strategy for client reconnections.
+- Introduced map index statistics.
+- Improved JCache's lazy eviction with a periodic cleanup that eventually removes all expired entries and frees up the occupied space.
+- Enhanced network I/O to allow TLS handshake in a block-free manner and to support offloadable tasks, improving the latency and security.
+- Added support for discovery in GCP Compute Engine environment.
+- Deprecated:
+  - The data structure IdGenerator is deprecated. Use Flake ID Generator.
+  - Following system properties are removed: 
+    - hazelcast.master.confirmation.interval.seconds 
+    - hazelcast.max.no.master.confirmation.seconds 
+    - hazelcast.mc.max.visible.instance.count
 
 Release 3.10
 
