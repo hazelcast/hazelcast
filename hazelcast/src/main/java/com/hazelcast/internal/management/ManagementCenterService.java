@@ -360,32 +360,32 @@ public class ManagementCenterService {
         }
 
         private void sendEvents() throws MalformedURLException {
+            ArrayList<Event> eventList = new ArrayList<Event>();
+            if (events.drainTo(eventList) == 0) {
+                return;
+            }
+
             URL url = new URL(cleanupUrl(managementCenterUrl) + "events.do");
             OutputStream outputStream = null;
             OutputStreamWriter writer = null;
             try {
+                String groupName = instance.getConfig().getGroupConfig().getName();
+                String address = instance.node.address.getHost() + ":" + instance.node.address.getPort();
+
+                JsonObject batch = new EventBatch(groupName, address, eventList).toJson();
+
                 HttpURLConnection connection = openJsonConnection(url);
                 outputStream = connection.getOutputStream();
                 writer = new OutputStreamWriter(outputStream, "UTF-8");
 
-                ArrayList<Event> eventList = new ArrayList<Event>();
-                events.drainTo(eventList);
+                batch.writeTo(writer);
 
-                String groupName = instance.getConfig().getGroupConfig().getName();
-                String address = instance.node.address.getHost() + ":" + instance.node.address.getPort();
-
-                JsonObject batch = !eventList.isEmpty() ? new EventBatch(groupName, address, eventList).toJson() : null;
-
-                if (batch != null) {
-                    batch.writeTo(writer);
-
-                    writer.flush();
-                    outputStream.flush();
-                    boolean success = post(connection);
-                    if (eventSendFailed && success) {
-                        logger.info("Sent events to Management Center successfully.");
-                        eventSendFailed = false;
-                    }
+                writer.flush();
+                outputStream.flush();
+                boolean success = post(connection);
+                if (eventSendFailed && success) {
+                    logger.info("Sent events to Management Center successfully.");
+                    eventSendFailed = false;
                 }
             } catch (Exception e) {
                 if (!eventSendFailed) {
