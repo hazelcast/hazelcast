@@ -91,7 +91,7 @@ public class InitExecutionOperation extends AbstractJobOperation {
         out.writeInt(coordinatorMemberListVersion);
         out.writeInt(participants.size());
         for (MemberInfo participant : participants) {
-            participant.writeData(out);
+            out.writeObject(participant);
         }
         out.writeData(serializedPlan);
     }
@@ -105,9 +105,7 @@ public class InitExecutionOperation extends AbstractJobOperation {
         int count = in.readInt();
         participants = new HashSet<>();
         for (int i = 0; i < count; i++) {
-            MemberInfo participant = new MemberInfo();
-            participant.readData(in);
-            participants.add(participant);
+            participants.add(in.readObject());
         }
         serializedPlan = in.readData();
     }
