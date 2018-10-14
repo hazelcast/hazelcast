@@ -32,7 +32,7 @@ public final class ComputeManagerHelper {
     }
 
     /**
-     * Create a compute manager client to manage compute resources
+     * Create a compute manager client to manage compute resources.
      *
      * @param properties the properties Map provided by Hazelcast
      * @return ComputeManager a client to manage compute resources
