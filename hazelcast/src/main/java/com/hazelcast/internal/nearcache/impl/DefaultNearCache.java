@@ -178,6 +178,11 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
+    public boolean isAvailable() {
+        return nearCacheRecordStore.isAvailable();
+    }
+
+    @Override
     public void preload(DataStructureAdapter<Object, ?> adapter) {
         nearCacheRecordStore.loadKeys(adapter);
         preloadDone = true;

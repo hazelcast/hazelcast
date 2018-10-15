@@ -130,6 +130,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     @Override
     public StaleReadDetector getStaleReadDetector() {
+        checkAvailable();
         return staleReadDetector;
     }
 
@@ -167,7 +168,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
-    protected boolean isAvailable() {
+    @Override
+    public boolean isAvailable() {
         return records != null;
     }
 
@@ -397,6 +399,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     @Override
     public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
+        checkAvailable();
         return updateAndGetReserved(key, value, reservationId, deserialize);
     }
 

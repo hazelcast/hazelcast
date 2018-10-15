@@ -136,4 +136,6 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     long tryReserveForUpdate(K key, Data keyData);
 
     V tryPublishReserved(K key, V value, long reservationId, boolean deserialize);
+
+    boolean isAvailable();
 }

@@ -443,9 +443,12 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void assertNearCacheSize(NearCacheTestContext<?, ?, ?, ?> context, long expectedSize, String... messages) {
         String message = messages.length > 0 ? messages[0] + " " : "";
 
-        long nearCacheSize = context.nearCache.size();
-        assertEquals(format("%sNear Cache size didn't reach the desired value (%d vs. %d) (%s)",
-                message, expectedSize, nearCacheSize, context.stats), expectedSize, nearCacheSize);
+        if (context.nearCache.isAvailable()) {
+            // if near cache is destroyed, it will not be available for size check.
+            long nearCacheSize = context.nearCache.size();
+            assertEquals(format("%sNear Cache size didn't reach the desired value (%d vs. %d) (%s)",
+                    message, expectedSize, nearCacheSize, context.stats), expectedSize, nearCacheSize);
+        }
 
         long ownedEntryCount = context.stats.getOwnedEntryCount();
         assertEquals(format("%sNear Cache owned entry count didn't reach the desired value (%d vs. %d) (%s)",
