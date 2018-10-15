@@ -31,6 +31,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,7 +43,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.Integer.parseInt;
 import static java.lang.Math.min;
 
-@SuppressWarnings("checkstyle:magicnumber")
+@SuppressWarnings({"checkstyle:magicnumber", "checkstyle:methodcount"})
 @SuppressFBWarnings({"URF_UNREAD_FIELD"})
 public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
@@ -61,9 +62,9 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     private final Address thisAddress;
     private final InternalOperationService operationService;
     private final AtomicBoolean singleRunPermit = new AtomicBoolean(false);
-    private final AtomicInteger partitionLostCounter = new AtomicInteger();
+    private final AtomicInteger lostPartitionCounter = new AtomicInteger();
 
-    private volatile int lastSeenPartitionLostCount;
+    private volatile int lastKnownLostPartitionCount;
 
     private int runningCleanupOperationsCount;
 
@@ -121,7 +122,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         runningCleanupOperationsCount = 0;
 
         long nowInMillis = nowInMillis();
-        boolean shouldEqualizeBackupSizeWithPrimary = shouldEqualizeBackupSizeWithPrimary();
+        boolean lostPartitionDetected = lostPartitionDetected();
 
         List<T> containersToProcess = null;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
@@ -129,7 +130,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
             IPartition partition = partitionService.getPartition(partitionId, false);
             if (partition.isLocal()) {
-                if (shouldEqualizeBackupSizeWithPrimary) {
+                if (lostPartitionDetected) {
                     equalizeBackupSizeWithPrimary(container);
                 }
             } else {
@@ -180,8 +181,8 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
      * remove leftover backup entries. Otherwise leftover entries can remain on
      * backups forever.
      */
-    public final void partitionLost(PartitionLostEvent event) {
-        partitionLostCounter.incrementAndGet();
+    public final void partitionLost(PartitionLostEvent ignored) {
+        lostPartitionCounter.incrementAndGet();
     }
 
     private static long nowInMillis() {
@@ -191,14 +192,14 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     /**
      * see {@link #partitionLost}
      */
-    private boolean shouldEqualizeBackupSizeWithPrimary() {
-        boolean equalizeBackupSizeWithPrimary = false;
-        int currentPartitionLostCount = partitionLostCounter.get();
-        if (currentPartitionLostCount != lastSeenPartitionLostCount) {
-            lastSeenPartitionLostCount = currentPartitionLostCount;
-            equalizeBackupSizeWithPrimary = true;
+    private boolean lostPartitionDetected() {
+        int currentLostPartitionCount = lostPartitionCounter.get();
+        if (currentLostPartitionCount == lastKnownLostPartitionCount) {
+            return false;
         }
-        return equalizeBackupSizeWithPrimary;
+
+        lastKnownLostPartitionCount = currentLostPartitionCount;
+        return true;
     }
 
     private static int calculateCleanupOperationCount(HazelcastProperties properties,
@@ -262,6 +263,17 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         };
     }
 
+    public final void sendResponse(Operation op, Object response) {
+        sendQueuedExpiredKeys(containers[op.getPartitionId()]);
+    }
+
+    public final void sendQueuedExpiredKeys(T container) {
+        Iterator<S> storeIterator = storeIterator(container);
+        while (storeIterator.hasNext()) {
+            tryToSendBackupExpiryOp(storeIterator.next(), false);
+        }
+    }
+
     // only used for testing purposes
     int getCleanupPercentage() {
         return cleanupPercentage;
@@ -300,6 +312,8 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     protected abstract Operation newBackupExpiryOp(S store, Collection<ExpiredKey> expiredKeys);
 
     public abstract void tryToSendBackupExpiryOp(S store, boolean checkIfReachedBatch);
+
+    public abstract Iterator<S> storeIterator(T container);
 
     /**
      * Used when traversing partitions.

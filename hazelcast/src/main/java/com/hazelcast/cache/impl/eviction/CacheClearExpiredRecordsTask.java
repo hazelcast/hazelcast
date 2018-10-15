@@ -108,21 +108,17 @@ public class CacheClearExpiredRecordsTask
     }
 
     @Override
-    public void sendResponse(Operation op, Object response) {
-        CachePartitionSegment container = containers[op.getPartitionId()];
-        Iterator<ICacheRecordStore> iterator = container.recordStoreIterator();
-        while (iterator.hasNext()) {
-            tryToSendBackupExpiryOp(iterator.next(), false);
-        }
-    }
-
-    @Override
     public void tryToSendBackupExpiryOp(ICacheRecordStore store, boolean checkIfReachedBatch) {
         InvalidationQueue<ExpiredKey> expiredKeys = store.getExpiredKeysQueue();
         int totalBackupCount = store.getConfig().getTotalBackupCount();
         int partitionId = store.getPartitionId();
 
         toBackupSender.trySendExpiryOp(store, expiredKeys, totalBackupCount, partitionId, checkIfReachedBatch);
+    }
+
+    @Override
+    public Iterator<ICacheRecordStore> storeIterator(CachePartitionSegment container) {
+        return container.recordStoreIterator();
     }
 
     @Override

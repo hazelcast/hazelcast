@@ -31,6 +31,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
@@ -119,23 +120,21 @@ public class MapClearExpiredRecordsTask
     }
 
     @Override
-    public void sendResponse(Operation op, Object response) {
+    public void tryToSendBackupExpiryOp(RecordStore store, boolean checkIfReachedBatch) {
         if (!canPrimaryDriveExpiration()) {
             return;
         }
 
-        for (RecordStore recordStore : containers[op.getPartitionId()].getMaps().values()) {
-            tryToSendBackupExpiryOp(recordStore, false);
-        }
-    }
-
-    @Override
-    public void tryToSendBackupExpiryOp(RecordStore store, boolean checkIfReachedBatch) {
         InvalidationQueue expiredKeys = store.getExpiredKeysQueue();
         int totalBackupCount = store.getMapContainer().getTotalBackupCount();
         int partitionId = store.getPartitionId();
 
         toBackupSender.trySendExpiryOp(store, expiredKeys, totalBackupCount, partitionId, checkIfReachedBatch);
+    }
+
+    @Override
+    public Iterator<RecordStore> storeIterator(PartitionContainer container) {
+        return container.getMaps().values().iterator();
     }
 
     @Override
@@ -264,5 +263,4 @@ public class MapClearExpiredRecordsTask
     public String toString() {
         return MapClearExpiredRecordsTask.class.getName();
     }
-
 }

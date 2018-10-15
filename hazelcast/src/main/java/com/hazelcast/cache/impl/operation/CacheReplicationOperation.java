@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,7 +66,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     }
 
     public final void prepare(CachePartitionSegment segment, Collection<ServiceNamespace> namespaces,
-            int replicaIndex) {
+                              int replicaIndex) {
 
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace ns = (ObjectNamespace) namespace;
@@ -144,7 +143,6 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         }
         int count = data.size();
         out.writeInt(count);
-        long now = Clock.currentTimeMillis();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
             Map<Data, CacheRecord> cacheMap = entry.getValue();
             int subCount = cacheMap.size();
@@ -154,9 +152,6 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
                 final Data key = e.getKey();
                 final CacheRecord record = e.getValue();
 
-                if (record.isExpiredAt(now)) {
-                    continue;
-                }
                 out.writeData(key);
                 out.writeObject(record);
             }
