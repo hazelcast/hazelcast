@@ -54,6 +54,8 @@ public class TcpIpConnectionManager_MemoryLeakTest extends HazelcastTestSupport 
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
         hz2.shutdown();
 
+        assertClusterSizeEventually(1, hz1);
+
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
