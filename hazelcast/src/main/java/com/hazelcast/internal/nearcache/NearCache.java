@@ -116,6 +116,9 @@ public interface NearCache<K, V> extends InitializingObject {
      */
     int size();
 
+
+    boolean isAvailable();
+
     /**
      * Gets the {@link com.hazelcast.config.InMemoryFormat} of the storage for internal records.
      *
