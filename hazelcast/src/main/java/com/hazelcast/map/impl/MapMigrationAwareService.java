@@ -55,18 +55,19 @@ import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
  */
 class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
+    protected final PartitionContainer[] containers;
     protected final MapServiceContext mapServiceContext;
     protected final SerializationService serializationService;
 
     MapMigrationAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
+        this.containers = mapServiceContext.getPartitionContainers();
     }
 
     @Override
     public Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event) {
-        PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
-        return container.getAllNamespaces(event.getReplicaIndex());
+        return containers[event.getPartitionId()].getAllNamespaces(event.getReplicaIndex());
     }
 
     @Override
@@ -115,9 +116,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         int partitionId = event.getPartitionId();
-        PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
 
-        Operation operation = new MapReplicationOperation(container, partitionId, event.getReplicaIndex());
+        Operation operation = new MapReplicationOperation(containers[partitionId], partitionId, event.getReplicaIndex());
         operation.setService(mapServiceContext.getService());
         operation.setNodeEngine(mapServiceContext.getNodeEngine());
 
@@ -126,13 +126,12 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ServiceNamespace> namespaces) {
-
         assert assertAllKnownNamespaces(namespaces);
 
         int partitionId = event.getPartitionId();
-        PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
 
-        Operation operation = new MapReplicationOperation(container, namespaces, partitionId, event.getReplicaIndex());
+        Operation operation = new MapReplicationOperation(containers[partitionId],
+                namespaces, partitionId, event.getReplicaIndex());
         operation.setService(mapServiceContext.getService());
         operation.setNodeEngine(mapServiceContext.getNodeEngine());
 
@@ -148,6 +147,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
+        mapServiceContext.getExpirationManager().onCommitMigration(event);
+
         if (event.getMigrationEndpoint() == DESTINATION) {
             populateIndexes(event, TargetIndexes.GLOBAL);
         } else {

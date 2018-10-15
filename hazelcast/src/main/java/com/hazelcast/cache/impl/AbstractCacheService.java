@@ -288,6 +288,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
+        expirationManager.onCommitMigration(event);
+
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearCachesHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
