@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.entry;
 
@@ -52,14 +53,24 @@ public class JmxPublisher implements MetricsPublisher {
      * key: jmx object name, value: mBean
      */
     private final Map<ObjectName, MetricsMBean> mBeans = new HashMap<>();
-    private final String domainPrefix;
 
     private volatile boolean isShutdown;
+    private final Function<String, MetricData> createMetricDataFunction;
+    private final Function<? super ObjectName, ? extends MetricsMBean> createMBeanFunction;
 
     public JmxPublisher(String instanceName, String domainPrefix) {
-        this.domainPrefix = domainPrefix;
         platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
         instanceNameEscaped = escapeObjectNameValue(instanceName);
+        createMetricDataFunction = n -> new MetricData(n, instanceNameEscaped, domainPrefix);
+        createMBeanFunction = objectName -> {
+            MetricsMBean bean = new MetricsMBean();
+            try {
+                platformMBeanServer.registerMBean(bean, objectName);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            return bean;
+        };
     }
 
     @Override
@@ -78,19 +89,10 @@ public class JmxPublisher implements MetricsPublisher {
     }
 
     private void publishNumber(String metricName, Number value) {
-        MetricData metricData = metricNameToMetricData.computeIfAbsent(metricName,
-                n -> new MetricData(n, instanceNameEscaped, domainPrefix));
+        MetricData metricData = metricNameToMetricData.computeIfAbsent(metricName, createMetricDataFunction);
         assert !metricData.wasPresent : "metric '" + metricName + "' was rendered twice";
         metricData.wasPresent = true;
-        MetricsMBean mBean = mBeans.computeIfAbsent(metricData.objectName, objectName -> {
-            MetricsMBean bean = new MetricsMBean();
-            try {
-                platformMBeanServer.registerMBean(bean, objectName);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            return bean;
-        });
+        MetricsMBean mBean = mBeans.computeIfAbsent(metricData.objectName, createMBeanFunction);
         if (isShutdown) {
             unregisterMBeanIgnoreError(metricData.objectName);
         }

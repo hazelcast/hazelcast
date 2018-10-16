@@ -34,6 +34,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Preconditions;
+import com.hazelcast.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -108,6 +109,7 @@ public class ProcessorTasklet implements Tasklet {
     private final AtomicLongArray emittedCounts;
     private final AtomicLong queuesSize = new AtomicLong();
     private final AtomicLong queuesCapacity = new AtomicLong();
+    private final Predicate<Object> addToInboxFunction = inbox.queue()::add;
 
     public ProcessorTasklet(@Nonnull Processor.Context context,
                             @Nonnull SerializationService serializationService,
@@ -385,7 +387,7 @@ public class ProcessorTasklet implements Tasklet {
                 instreamCursor.advance();
                 continue;
             }
-            result = currInstream.drainTo(inbox.queue()::add);
+            result = currInstream.drainTo(addToInboxFunction);
             progTracker.madeProgress(result.isMadeProgress());
 
             // check if the last drained item is special

@@ -109,6 +109,10 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     private long minRestoredNextWinToEmit = Long.MAX_VALUE;
     private ProcessingGuarantee processingGuarantee;
 
+    // extracted lambdas to reduce GC litter
+    private Function<Long, Map<K, A>> createMapPerTsFunction;
+    private Function<K, A> createAccFunction;
+
     @SuppressWarnings("unchecked")
     public SlidingWindowP(
             @Nonnull List<? extends Function<?, ? extends K>> keyFns,
@@ -135,6 +139,15 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                         .onFirstNull(() -> nextWinToEmit = winPolicy.higherFrameTs(wm.timestamp()))
         );
         this.emptyAcc = aggrOp.createFn().get();
+
+        createMapPerTsFunction = x -> {
+            lazyIncrement(totalFrames);
+            return new HashMap<>();
+        };
+        createAccFunction = k -> {
+            lazyIncrement(totalKeysInFrames);
+            return aggrOp.createFn().get();
+        };
     }
 
     @Override
@@ -160,14 +173,8 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         }
         final K key = keyFns.get(ordinal).apply(item);
         A acc = tsToKeyToAcc
-                .computeIfAbsent(frameTs, x -> {
-                    lazyIncrement(totalFrames);
-                    return new HashMap<>();
-                })
-                .computeIfAbsent(key, k -> {
-                    lazyIncrement(totalKeysInFrames);
-                    return aggrOp.createFn().get();
-                });
+                .computeIfAbsent(frameTs, createMapPerTsFunction)
+                .computeIfAbsent(key, createAccFunction);
         aggrOp.accumulateFn(ordinal).accept(acc, item);
         topTs = max(topTs, frameTs);
         return true;
@@ -221,11 +228,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         }
         SnapshotKey k = (SnapshotKey) key;
         if (tsToKeyToAcc
-                .computeIfAbsent(k.timestamp,
-                        x -> {
-                            lazyIncrement(totalFrames);
-                            return new HashMap<>();
-                        })
+                .computeIfAbsent(k.timestamp, createMapPerTsFunction)
                 .put((K) k.key, (A) value) != null
         ) {
             throw new JetException("Duplicate key in snapshot: " + k);
@@ -299,10 +302,12 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
              ts <= frameTs;
              ts += winPolicy.frameSize()
         ) {
-            tsToKeyToAcc.getOrDefault(ts, emptyMap())
-                        .forEach((key, currAcc) -> combineFn.accept(
-                                window.computeIfAbsent(key, k -> aggrOp.createFn().get()),
-                                currAcc));
+            assert combineFn != null : "combineFn == null";
+            for (Entry<K, A> entry : tsToKeyToAcc.getOrDefault(ts, emptyMap()).entrySet()) {
+                combineFn.accept(
+                        window.computeIfAbsent(entry.getKey(), k -> aggrOp.createFn().get()),
+                        entry.getValue());
+            }
         }
         return window;
     }

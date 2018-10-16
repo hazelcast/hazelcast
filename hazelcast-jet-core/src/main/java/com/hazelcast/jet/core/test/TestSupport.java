@@ -131,8 +131,6 @@ import static java.util.stream.Collectors.toMap;
  * <h3>Non-covered cases</h3>
  * This class does not cover these cases:
  * <ul>
- *     <li>Testing of processors which distinguish input or output edges
- *     by ordinal
  *     <li>Checking that the state of a stateful processor is empty at the
  *     end (you can do that yourself afterwards with the last instance
  *     returned from your supplier).

@@ -23,6 +23,7 @@ import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.function.Predicate;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -48,6 +49,7 @@ public class StoreSnapshotTasklet implements Tasklet {
     private State state = DRAIN;
     private boolean hasReachedBarrier;
     private Entry<Data, Data> pendingEntry;
+    private Predicate<Object> addToInboxFunction;
 
     public StoreSnapshotTasklet(
             SnapshotContext snapshotContext,
@@ -69,6 +71,7 @@ public class StoreSnapshotTasklet implements Tasklet {
         this.pendingSnapshotId = snapshotContext.activeSnapshotId() + 1;
 
         resetCurrentMap();
+        addToInboxFunction = this::addToInbox;
     }
 
     @Nonnull @Override
@@ -89,20 +92,7 @@ public class StoreSnapshotTasklet implements Tasklet {
                     progTracker.madeProgress();
                 }
                 pendingEntry = null;
-                ProgressState result = inboundEdgeStream.drainTo(o -> {
-                    if (o instanceof SnapshotBarrier) {
-                        SnapshotBarrier barrier = (SnapshotBarrier) o;
-                        assert pendingSnapshotId == barrier.snapshotId() : "Unexpected barrier, expected was " +
-                                pendingSnapshotId + ", but barrier was " + barrier.snapshotId() + ", this=" + this;
-                        hasReachedBarrier = true;
-                    } else {
-                        if (!ssWriter.offer((Entry<Data, Data>) o)) {
-                            pendingEntry = (Entry<Data, Data>) o;
-                            return false;
-                        }
-                    }
-                    return true;
-                });
+                ProgressState result = inboundEdgeStream.drainTo(addToInboxFunction);
                 if (result.isDone()) {
                     assert ssWriter.isEmpty() : "input is done, but we had some entries and not the barrier";
                     snapshotContext.taskletDone(pendingSnapshotId - 1, isHigherPrioritySource);
@@ -157,6 +147,21 @@ public class StoreSnapshotTasklet implements Tasklet {
 
     private void resetCurrentMap() {
         ssWriter.setCurrentMap(currMapName());
+    }
+
+    private boolean addToInbox(Object o) {
+        if (o instanceof SnapshotBarrier) {
+            SnapshotBarrier barrier = (SnapshotBarrier) o;
+            assert pendingSnapshotId == barrier.snapshotId() : "Unexpected barrier, expected was " +
+                    pendingSnapshotId + ", but barrier was " + barrier.snapshotId() + ", this=" + this;
+            hasReachedBarrier = true;
+        } else {
+            if (!ssWriter.offer((Entry<Data, Data>) o)) {
+                pendingEntry = (Entry<Data, Data>) o;
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

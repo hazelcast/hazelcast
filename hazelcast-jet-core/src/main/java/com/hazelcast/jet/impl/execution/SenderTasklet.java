@@ -25,6 +25,7 @@ import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.function.Predicate;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -60,6 +61,7 @@ public class SenderTasklet implements Tasklet {
 
     // Written by HZ networking thread, read by Jet thread
     private volatile int sendSeqLimitCompressed;
+    private Predicate<Object> addToInboxFunction = inbox::add;
 
     public SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine nodeEngine, Address destinationAddress,
                          long executionId, int destinationVertexId, int packetSizeLimit) {
@@ -95,7 +97,7 @@ public class SenderTasklet implements Tasklet {
             return;
         }
         progTracker.notDone();
-        final ProgressState result = inboundEdgeStream.drainTo(inbox::add);
+        final ProgressState result = inboundEdgeStream.drainTo(addToInboxFunction);
         progTracker.madeProgress(result.isMadeProgress());
         instreamExhausted = result.isDone();
         if (instreamExhausted) {

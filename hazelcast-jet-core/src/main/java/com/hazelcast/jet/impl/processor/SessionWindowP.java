@@ -108,6 +108,12 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     private Traverser snapshotTraverser;
     private long minRestoredCurrentWatermark = Long.MAX_VALUE;
 
+    // extracted lambdas to reduce GC litter
+    private final Function<K, Windows<A>> newWindowsFunction = k -> {
+        lazyIncrement(totalKeys);
+        return new Windows<>();
+    };
+
     @SuppressWarnings("unchecked")
     public SessionWindowP(
             long sessionTimeout,
@@ -143,10 +149,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         }
         K key = keyFns.get(ordinal).apply(item);
         addItem(ordinal,
-                keyToWindows.computeIfAbsent(key, k -> {
-                    lazyIncrement(totalKeys);
-                    return new Windows<>();
-                }),
+                keyToWindows.computeIfAbsent(key, newWindowsFunction),
                 key, timestamp, item);
         return true;
     }
