@@ -20,20 +20,34 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.core.test.TestInbox;
+import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
+import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -41,6 +55,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -333,6 +348,57 @@ public class SinksTest extends PipelineTestSupport {
         IMap<Object, Object> actual = jet().getMap(srcName);
         assertEquals(1, actual.size());
         assertEquals(((itemCount - 1) * itemCount) / 2, actual.get("listSum"));
+    }
+
+    @Test
+    public void mapWithMerging_when_multipleValuesForSingleKeyInABatch() throws Exception {
+        ProcessorMetaSupplier metaSupplier = SinkProcessors.<Entry<String, Integer>, String, Integer>mergeMapP(
+                sinkName, Entry::getKey, Entry::getValue, Integer::sum);
+
+        TestProcessorSupplierContext psContext = new TestProcessorSupplierContext().setJetInstance(member);
+        Processor p = TestSupport.supplierFrom(metaSupplier, psContext).get();
+
+        TestOutbox outbox = new TestOutbox();
+        p.init(outbox, new TestProcessorContext().setJetInstance(member));
+        TestInbox inbox = new TestInbox();
+        inbox.add(entry("k", 1));
+        inbox.add(entry("k", 2));
+        p.process(0, inbox);
+        assertTrue(inbox.isEmpty());
+        assertTrue(p.complete());
+        p.close();
+
+        // assert the output map contents
+        IMapJet<Object, Object> actual = member.getMap(sinkName);
+        assertEquals(1, actual.size());
+        assertEquals(3, actual.get("k"));
+    }
+
+    @Test
+    public void mapWithMerging_when_targetHasPartitionStrategy() {
+        String targetMap = randomMapName();
+        member.getHazelcastInstance().getConfig().addMapConfig(new MapConfig(targetMap)
+                .setPartitioningStrategyConfig(
+                        new PartitioningStrategyConfig(StringPartitioningStrategy.class.getName())));
+
+        List<Integer> input = sequence(itemCount);
+        jet().getList(srcName).addAll(input);
+
+        p.drawFrom(Sources.<Integer>list(srcName))
+         .map(e -> {
+             e = e % 100;
+             return entry(e + "@" + e, e);
+         })
+         .drainTo(Sinks.mapWithMerging(targetMap, Integer::sum));
+        execute();
+        Map<String, Integer> actual = new HashMap<>(jet().getMap(targetMap));
+        Map<String, Integer> expected = input.stream()
+                .map(e -> {
+                    e = e % 100;
+                    return entry(e + "@" + e, e);
+                })
+                .collect(toMap(Entry::getKey, Entry::getValue, Integer::sum));
+        assertEquals(expected, actual);
     }
 
     @Test

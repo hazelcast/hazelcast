@@ -57,6 +57,9 @@ import static com.hazelcast.util.CollectionUtil.toIntArray;
 /**
  * Utility for cooperative writes to an IMap.
  * Not thread-safe.
+ *
+ * <p><b>Caution:</b> Bypasses IMDG logic, directly sends operations.
+ * For example, near cache on member might not be invalidated.
  */
 public class AsyncMapWriter {
 

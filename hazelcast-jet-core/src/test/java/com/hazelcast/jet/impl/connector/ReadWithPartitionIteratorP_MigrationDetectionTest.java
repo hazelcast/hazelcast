@@ -28,10 +28,12 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,9 +43,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.pipeline.Sources.map;
 import static com.hazelcast.jet.pipeline.Sources.remoteMap;
+import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSupport {
 
     private static CountDownLatch latch;
@@ -112,6 +117,7 @@ public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSu
         // start the job. The map reader will be blocked thanks to the backpressure from the mapping stage
         latch = new CountDownLatch(1);
         Job job = jobInstance.newJob(p, new JobConfig().setAutoScaling(false).setProcessingGuarantee(NONE));
+        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()));
 
         // create new member, migration will take place
         if (remote) {

@@ -255,6 +255,8 @@ public final class Sinks {
      * Returns a sink equivalent to {@link #mapWithMerging(String, DistributedBinaryOperator)},
      * but for a map in a remote Hazelcast cluster identified by the supplied
      * {@code ClientConfig}.
+     * <p>
+     * Due to the used API, the remote cluster must be at least 3.11.
      */
     @Nonnull
     public static <T, K, V> Sink<T> remoteMapWithMerging(
@@ -407,6 +409,8 @@ public final class Sinks {
      * Returns a sink equivalent to {@link #mapWithUpdating}, but for a map
      * in a remote Hazelcast cluster identified by the supplied {@code
      * ClientConfig}.
+     * <p>
+     * Due to the used API, the remote cluster must be at least 3.11.
      */
     @Nonnull
     public static <T, K, V> Sink<T> remoteMapWithUpdating(

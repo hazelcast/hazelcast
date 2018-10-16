@@ -16,23 +16,32 @@
 
 package com.hazelcast.jet.core.test;
 
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.TestProcessors.MockP;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import java.util.Collection;
-import javax.annotation.Nonnull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Function;
+
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
+import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class TestSupportTest {
@@ -74,5 +83,56 @@ public class TestSupportTest {
                 .expectOutput(emptyList());
 
         assertTrue("PS.complete not called when using PMS", completeCalled[0]);
+    }
+
+    @Test
+    public void test_processorMetaSupplierHasJetInstance() {
+        JetInstance jetInstance = mock(JetInstance.class);
+        boolean[] called = {false};
+
+        verifyProcessor(
+                new ProcessorMetaSupplier() {
+                    @Override
+                    public void init(@Nonnull Context context) {
+                        assertSame(context.jetInstance(), jetInstance);
+                        called[0] = true;
+                    }
+
+                    @Nonnull
+                    @Override
+                    public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+                        return a -> ProcessorSupplier.of(MockP::new);
+                    }
+                })
+                .jetInstance(jetInstance)
+                .expectOutput(emptyList());
+
+        assertTrue(called[0]);
+    }
+
+    @Test
+    public void test_processorSupplierHasJetInstance() {
+        JetInstance jetInstance = mock(JetInstance.class);
+        boolean[] called = {false};
+
+        verifyProcessor(
+                new ProcessorSupplier() {
+                    @Override
+                    public void init(@Nonnull Context context) {
+                        assertSame(context.jetInstance(), jetInstance);
+                        called[0] = true;
+                    }
+
+                    @Nonnull
+                    @Override
+                    public Collection<? extends Processor> get(int count) {
+                        assertEquals(1, count);
+                        return singletonList(new MockP());
+                    }
+                })
+                .jetInstance(jetInstance)
+                .expectOutput(emptyList());
+
+        assertTrue(called[0]);
     }
 }

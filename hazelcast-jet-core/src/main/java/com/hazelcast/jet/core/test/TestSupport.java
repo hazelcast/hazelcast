@@ -194,6 +194,7 @@ public final class TestSupport {
         }
     }
 
+    private ProcessorMetaSupplier metaSupplier;
     private ProcessorSupplier supplier;
     private List<List<?>> inputs = emptyList();
     private List<List<?>> expectedOutputs = emptyList();
@@ -208,30 +209,29 @@ public final class TestSupport {
 
     private BiPredicate<? super List<?>, ? super List<?>> outputChecker = Objects::equals;
 
-    private TestSupport(@Nonnull ProcessorSupplier supplier) {
-        this.supplier = supplier;
+    private TestSupport(@Nonnull ProcessorMetaSupplier metaSupplier) {
+        this.metaSupplier = metaSupplier;
     }
 
     /**
      * @param supplier a processor supplier create processor instances
      */
     public static TestSupport verifyProcessor(@Nonnull DistributedSupplier<Processor> supplier) {
-        return new TestSupport(ProcessorSupplier.of(supplier));
+        return new TestSupport(ProcessorMetaSupplier.of(supplier));
     }
 
     /**
      * @param supplier a processor supplier create processor instances
      */
     public static TestSupport verifyProcessor(@Nonnull ProcessorSupplier supplier) {
-        return new TestSupport(supplier);
+        return new TestSupport(ProcessorMetaSupplier.of(supplier));
     }
 
     /**
      * @param supplier a processor supplier create processor instances
      */
     public static TestSupport verifyProcessor(@Nonnull ProcessorMetaSupplier supplier) {
-        supplier.init(new TestProcessorMetaSupplierContext());
-        return new TestSupport(supplier.get(singletonList(LOCAL_ADDRESS)).apply(LOCAL_ADDRESS));
+        return new TestSupport(supplier);
     }
 
     /**
@@ -317,7 +317,17 @@ public final class TestSupport {
      */
     public void expectOutputs(@Nonnull List<List<?>> expectedOutputs) {
         try {
-            supplier.init(new TestProcessorSupplierContext());
+            TestProcessorMetaSupplierContext metaSupplierContext = new TestProcessorMetaSupplierContext();
+            if (jetInstance != null) {
+                metaSupplierContext.setJetInstance(jetInstance);
+            }
+            metaSupplier.init(metaSupplierContext);
+            supplier = metaSupplier.get(singletonList(LOCAL_ADDRESS)).apply(LOCAL_ADDRESS);
+            TestProcessorSupplierContext supplierContext = new TestProcessorSupplierContext();
+            if (jetInstance != null) {
+                supplierContext.setJetInstance(jetInstance);
+            }
+            supplier.init(supplierContext);
             this.expectedOutputs = expectedOutputs;
             runTest(false, 0, 1);
             if (inputs.stream().mapToInt(List::size).sum() > 0) {
@@ -760,7 +770,15 @@ public final class TestSupport {
      * Supplier<Processor>} that returns processors obtained from it.
      */
     public static Supplier<Processor> supplierFrom(ProcessorSupplier supplier) {
-        supplier.init(new TestProcessorSupplierContext());
+        return supplierFrom(supplier, new TestProcessorSupplierContext());
+    }
+
+    /**
+     * Wraps the provided {@code ProcessorSupplier} with a {@code
+     * Supplier<Processor>} that returns processors obtained from it.
+     */
+    public static Supplier<Processor> supplierFrom(ProcessorSupplier supplier, ProcessorSupplier.Context context) {
+        supplier.init(context);
         return () -> supplier.get(1).iterator().next();
     }
 
@@ -769,8 +787,17 @@ public final class TestSupport {
      * Supplier<Processor>} that returns processors obtained from it.
      */
     public static Supplier<Processor> supplierFrom(ProcessorMetaSupplier supplier) {
-        supplier.init(new TestProcessorMetaSupplierContext());
-        return supplierFrom(supplier.get(singletonList(LOCAL_ADDRESS)).apply(LOCAL_ADDRESS));
+        return supplierFrom(supplier, new TestProcessorSupplierContext());
+    }
+
+    /**
+     * Wraps the provided {@code ProcessorMetaSupplier} with a {@code
+     * Supplier<Processor>} that returns processors obtained from it.
+     */
+    public static Supplier<Processor> supplierFrom(ProcessorMetaSupplier supplier,
+                                                   ProcessorSupplier.Context context) {
+        supplier.init(context);
+        return supplierFrom(supplier.get(singletonList(LOCAL_ADDRESS)).apply(LOCAL_ADDRESS), context);
     }
 
     static ILogger getLogger(String name) {
