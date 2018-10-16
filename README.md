@@ -77,6 +77,23 @@ $ kubectl apply -f rbac.yaml
 
 *Note*: You can be even more strict with the permissions and create your own Role. For details, please check the implementation of [Hazelcast Helm Chart](https://github.com/helm/charts/tree/master/stable/hazelcast).
 
+#### Creating Service
+
+Hazelcast Kubernetes Discovery requires creating a service to PODs where Hazelcast is running. In case of using Kubernetes API mode, the service can be of any type.
+
+```yaml
+kind: Service
+metadata:
+  name: SERVICE-NAME
+spec:
+  type: LoadBalancer
+  selector:
+    app: APP-NAME
+  ports:
+  - name: hazelcast
+    port: 5701
+```
+
 #### Hazelcast Configuration
 
 The second step is to configure the discovery plugin inside of your Hazelcast configuration.
@@ -123,7 +140,7 @@ You should use either `service-name` or (`service-label-name` and `service-label
 
 ### DNS Lookup
 
-**DND Lookup** mode uses a feature of Kubernetes that **headless** (without cluster IP) services are assigned a DNS record which resolves to the set of IPs of related PODs.
+**DNS Lookup** mode uses a feature of Kubernetes that **headless** (without cluster IP) services are assigned a DNS record which resolves to the set of IPs of related PODs.
 
 #### Creating Headless Service
 
@@ -136,6 +153,11 @@ metadata:
 spec:
   type: ClusterIP
   clusterIP: None
+  selector:
+    app: APP-NAME
+  ports:
+  - name: hazelcast
+    port: 5701
 ```
 
 #### Hazelcast Configuration
