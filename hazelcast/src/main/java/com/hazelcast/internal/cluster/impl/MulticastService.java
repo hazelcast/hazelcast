@@ -283,7 +283,14 @@ public final class MulticastService implements Runnable {
                 multicastSocket.send(datagramPacketSend);
                 out.clear();
             } catch (IOException e) {
-                logger.warning("You probably have too long Hazelcast configuration!", e);
+                // usually catching EPERM errno
+                // see https://github.com/hazelcast/hazelcast/issues/7198
+                // For details about the causes look at the following discussion:
+                // https://groups.google.com/forum/#!msg/comp.protocols.tcp-ip/Qou9Sfgr77E/mVQAPaeI-VUJ
+                logger.warning("Sending multicast datagram failed. Exception message saying the operation is not permitted "
+                        + "usually means the underlying OS is not able to send packets at a given pace. "
+                        + "It can be caused by starting several hazelcast members in parallel when the members send "
+                        + "their join message nearly at the same time.", e);
             }
         }
     }
