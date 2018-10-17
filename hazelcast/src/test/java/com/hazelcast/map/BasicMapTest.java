@@ -34,16 +34,19 @@ import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.PerformanceMonitor;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Preconditions;
+import org.HdrHistogram.Histogram;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.openjdk.jmh.annotations.Threads;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -93,6 +96,40 @@ public class BasicMapTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
         Config config = getConfig();
         instances = factory.newInstances(config);
+    }
+
+
+    @Test
+    public void testPerformance() throws InterruptedException {
+        String mapName = randomMapName();
+        int threadCount = 2;
+        final IMap<Integer, Long> map = getInstance().getMap(mapName);
+        final PerformanceMonitor performanceMonitor = new PerformanceMonitor("put", 5000);
+
+        final AtomicBoolean stopRequested = new AtomicBoolean();
+        final CountDownLatch workersFinishedLatch = new CountDownLatch(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            Thread thread = new Thread() {
+                @Override
+                public void run() {
+                    for (long i = 0; !stopRequested.get(); i++) {
+                        int key = (int) (i % 10000);
+                        map.put(key, i);
+                        performanceMonitor.iterationFinished();
+                    }
+                    workersFinishedLatch.countDown();
+                }
+            };
+            thread.start();
+        }
+
+        sleepAtLeastSeconds(90);
+
+        stopRequested.set(true);
+        workersFinishedLatch.await();
+
+        Histogram histogram = performanceMonitor.closeAndGetHistogram();
+        histogram.outputPercentileDistribution(System.out, 1000.0);
     }
 
     protected Config getConfig() {
