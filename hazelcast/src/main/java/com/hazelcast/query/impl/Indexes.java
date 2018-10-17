@@ -202,6 +202,16 @@ public class Indexes {
     }
 
     /**
+     * Checks if index was created for a given attribute.
+     *
+     * @param attribute the attribute name for which index may exists.
+     * @return true if there is index created on given attribute.
+     */
+    public boolean hasIndex(String attribute) {
+        return mapIndexes.containsKey(attribute);
+    }
+
+    /**
      * Performs a query on this indexes instance using the given predicate.
      *
      * @param predicate the predicate to evaluate.

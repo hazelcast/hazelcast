@@ -56,17 +56,21 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
     @Override
     public void run() throws Exception {
         Indexes indexes = mapContainer.getIndexes(getPartitionId());
+        boolean indexNeedsToBeFilled = !indexes.hasIndex(attributeName);
         Index index = indexes.addOrGetIndex(attributeName, ordered);
 
-        final long now = getNow();
-        final Iterator<Record> iterator = recordStore.iterator(now, false);
-        SerializationService serializationService = getNodeEngine().getSerializationService();
-        while (iterator.hasNext()) {
-            final Record record = iterator.next();
-            Data key = record.getKey();
-            Object value = Records.getValueOrCachedValue(record, serializationService);
-            QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-            index.saveEntryIndex(queryEntry, null, Index.OperationSource.USER);
+        // if the index already exists, then there is no need to fill it again with the same data
+        if (indexNeedsToBeFilled) {
+            final long now = getNow();
+            final Iterator<Record> iterator = recordStore.iterator(now, false);
+            SerializationService serializationService = getNodeEngine().getSerializationService();
+            while (iterator.hasNext()) {
+                final Record record = iterator.next();
+                Data key = record.getKey();
+                Object value = Records.getValueOrCachedValue(record, serializationService);
+                QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
+                index.saveEntryIndex(queryEntry, null, Index.OperationSource.USER);
+            }
         }
     }
 
