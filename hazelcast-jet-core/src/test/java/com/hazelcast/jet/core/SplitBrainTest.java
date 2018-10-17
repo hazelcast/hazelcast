@@ -218,7 +218,12 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             });
 
             assertEquals(clusterSize, MockPS.receivedCloseErrors.size());
-            MockPS.receivedCloseErrors.forEach(t -> assertTrue(t instanceof TopologyChangedException));
+            MockPS.receivedCloseErrors.forEach(t -> {
+                if (!(t instanceof TopologyChangedException)) {
+                    t.printStackTrace();
+                    fail("t=" + t);
+                }
+            });
         };
 
         testSplitBrain(firstSubClusterSize, secondSubClusterSize, beforeSplit, onSplit, afterMerge);

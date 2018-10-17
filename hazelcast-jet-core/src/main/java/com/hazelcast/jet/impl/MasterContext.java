@@ -87,6 +87,7 @@ import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.callbackOf;
@@ -611,9 +612,10 @@ public class MasterContext {
      * <ul>
      * <li>Returns null if there is no failure.
      * <li>Returns a CancellationException if the job is cancelled.
-     * <li>Returns a JobRestartRequestedException if the current execution is cancelled
-     * <li>Returns a JobSuspendRequestedException if the current execution is stopped
-     * <li>If there is at least one non-restartable failure, such as an exception in user code, then returns that failure.
+     * <li>Returns a JobRestartRequestedException if the current execution is stopped to be restarted
+     * <li>Returns a JobSuspendRequestedException if the current execution is stopped to be suspended
+     * <li>If there is at least one user failure, such as an exception in user code (restartable or not), then
+     *   returns that failure.
      * <li>Otherwise, the failure is because a job participant has left the cluster.
      *   In that case, {@code TopologyChangeException} is returned so that the job will be restarted.
      * </ul>
@@ -631,7 +633,6 @@ public class MasterContext {
         if (!failures.isEmpty()) {
             logger.fine(opName + " of " + jobIdString() + " has failures: " + failures);
         }
-
 
         if (successfulMembers.size() == executionPlanMap.size()) {
             logger.fine(opName + " of " + jobIdString() + " was successful");
@@ -661,6 +662,7 @@ public class MasterContext {
                 })
                 .map(e -> (Throwable) e.getValue())
                 .filter(t -> !(t instanceof CancellationException) && !(t instanceof TerminatedWithSnapshotException))
+                .filter(t -> !isTopologyException(t))
                 .findFirst()
                 .map(ExceptionUtil::peel)
                 .orElseGet(TopologyChangedException::new);
