@@ -83,7 +83,7 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
         This test tests the issue that after a terminal barrier is processed, no other work should
         be done by the ProcessorTasklet or CIES after that (except for emitting the DONE_ITEM).
         Also, if at-least-once guarantee is used, the tasklet should not continue to drain
-        the queue that had the barrier.
+        the queue that had the barrier while waiting for other barriers.
 
         Specifically, the issue was that in at-least-once mode the DONE_ITEM was processed
         after the terminal barrier while waiting for the barrier on other queues/edges. The
@@ -113,11 +113,11 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
                 }).build());
 
         Job job = instance.newJob(p, new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE));
-        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()));
 
         List<Future> futures = new ArrayList<>();
         futures.add(spawn(() -> {
             for (;;) {
+                assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()));
                 System.out.println("============RESTARTING JOB=========");
                 job.restart();
                 Thread.sleep(2000);
