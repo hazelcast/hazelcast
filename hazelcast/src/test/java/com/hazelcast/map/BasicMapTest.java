@@ -46,6 +46,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.openjdk.jmh.annotations.Threads;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -99,27 +100,36 @@ public class BasicMapTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testThroughput() {
-        final IMap<Integer, Long> map = getInstance().getMap("testPrimitives");
+    public void testPerformance() throws InterruptedException {
+        String mapName = randomMapName();
+        int threadCount = 2;
+        final IMap<Integer, Long> map = getInstance().getMap(mapName);
         final PerformanceMonitor performanceMonitor = new PerformanceMonitor("put", 5000);
-        for (int i = 0; i < 2; i++) {
-            new Thread() {
+
+        final AtomicBoolean stopRequested = new AtomicBoolean();
+        final CountDownLatch workersFinishedLatch = new CountDownLatch(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            Thread thread = new Thread() {
                 @Override
                 public void run() {
-                    for (long i = 0; ; i++) {
+                    for (long i = 0; !stopRequested.get(); i++) {
                         int key = (int) (i % 10000);
                         map.put(key, i);
                         performanceMonitor.iterationFinished();
                     }
+                    workersFinishedLatch.countDown();
                 }
-            }.start();
+            };
+            thread.start();
         }
+
         sleepAtLeastSeconds(30);
+
+        stopRequested.set(true);
+        workersFinishedLatch.await();
+
         Histogram histogram = performanceMonitor.closeAndGetHistogram();
         histogram.outputPercentileDistribution(System.out, 1000.0);
-
-        int estimatedFootprintInBytes = histogram.getEstimatedFootprintInBytes();
-        System.out.println("Footprint: " + estimatedFootprintInBytes + " bytes");
     }
 
     protected Config getConfig() {
