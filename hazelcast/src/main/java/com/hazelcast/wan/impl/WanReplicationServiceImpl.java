@@ -166,17 +166,17 @@ public class WanReplicationServiceImpl implements WanReplicationService, Metrics
         Map<String, LocalWanStats> wanStats = getStats();
         if (wanStats != null && !wanStats.isEmpty()) {
             for (Entry<String, LocalWanStats> config : wanStats.entrySet()) {
-                Tags tags = cycle.openContext().tag(TAG_TYPE, "wan").tag(TAG_INSTANCE, config.getKey());
+                Tags tags = cycle.switchContext().namespace("wan").instance(config.getKey());
                 for (Map.Entry<String, LocalWanPublisherStats> stats : config.getValue()
                         .getLocalWanPublisherStats().entrySet()) {
                     tags.tag(TAG_TARGET, stats.getKey());
-                    cycle.probe(stats.getValue());
+                    cycle.collectAll(stats.getValue());
                     cycle.collect("state", stats.getValue().getPublisherState().getId());
                 }
             }
         }
-        cycle.openContext().tag(TAG_TYPE, "wan-sync");
-        cycle.probe(getWanSyncState());
+        cycle.switchContext().namespace("wan-sync");
+        cycle.collectAll(getWanSyncState());
     }
 
     private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {

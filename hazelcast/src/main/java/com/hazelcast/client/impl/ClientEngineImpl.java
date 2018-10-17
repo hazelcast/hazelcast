@@ -37,6 +37,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -127,6 +128,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     private final ConcurrentMap<String, AtomicLong> lastAuthenticationCorrelationIds
             = new ConcurrentHashMap<String, AtomicLong>();
 
+    @ProbeSource
     private final ClientEndpointManagerImpl endpointManager;
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
@@ -368,7 +370,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, getLogger(ClientHeartbeatMonitor.class), nodeEngine.getExecutionService(), node.getProperties());
         heartbeatMonitor.start();
-        node.nodeEngine.getMetricsRegistry().register(new ClientEngineMetrics(endpointManager));
     }
 
     @Override

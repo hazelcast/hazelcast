@@ -16,6 +16,9 @@
 
 package com.hazelcast.hotrestart;
 
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.util.ProbeEnumUtils;
+
 /**
  * The status of the hot restart backup task, including progress and state.
  */
@@ -35,10 +38,17 @@ public class BackupTaskStatus {
         return state;
     }
 
+    @Probe(name = "state")
+    private int getStateAsCode() {
+        return ProbeEnumUtils.codeOf(getState());
+    }
+
+    @Probe
     public int getCompleted() {
         return completed;
     }
 
+    @Probe
     public int getTotal() {
         return total;
     }

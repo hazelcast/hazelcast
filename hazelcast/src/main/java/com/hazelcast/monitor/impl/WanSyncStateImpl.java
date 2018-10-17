@@ -16,18 +16,17 @@
 
 package com.hazelcast.monitor.impl;
 
-import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
 import static com.hazelcast.internal.metrics.MetricsSource.TAG_TARGET;
 
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbingContext;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.Clock;
 import com.hazelcast.wan.WanSyncStatus;
 
-public class WanSyncStateImpl implements WanSyncState, ProbingContext {
+public class WanSyncStateImpl implements WanSyncState, ObjectMetricsContext {
 
     @Probe
     private long creationTime;
@@ -49,9 +48,8 @@ public class WanSyncStateImpl implements WanSyncState, ProbingContext {
     }
 
     @Override
-    public void tag(Tags context) {
-        context.tag(TAG_INSTANCE, getActiveWanConfigName());
-        context.tag(TAG_TARGET, getActivePublisherName());
+    public void switchToObjectContext(Tags context) {
+        context.instance(getActiveWanConfigName()).tag(TAG_TARGET, getActivePublisherName());
     }
 
     @Override

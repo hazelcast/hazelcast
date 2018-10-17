@@ -16,11 +16,15 @@
 
 package com.hazelcast.internal.metrics.sources;
 
+import static org.mockito.Mockito.when;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.AbstractMetricsTest;
 import com.hazelcast.memory.DefaultMemoryStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -32,37 +36,38 @@ public class GarbageCollectionMetricsTest extends AbstractMetricsTest {
 
     @Before
     public void setup() {
-        registry.register(new MemoryMetrics(new DefaultMemoryStats()));
+        NodeExtension nodeExtension = Mockito.mock(NodeExtension.class);
+        when(nodeExtension.getMemoryStats()).thenReturn(new DefaultMemoryStats());
+        register(new MemoryMetrics(nodeExtension));
     }
 
     @Test
     public void minorCount() {
-        assertCollected("gc.minorCount");
+        assertCollected("ns=gc minorCount");
     }
 
     @Test
     public void minorTime() {
-        assertCollected("gc.minorTime");
+        assertCollected("ns=gc minorTime");
     }
 
     @Test
     public void majorCount() {
-        assertCollected("gc.majorCount");
+        assertCollected("ns=gc majorCount");
     }
 
     @Test
     public void majorTime() {
-        assertCollected("gc.majorTime");
+        assertCollected("ns=gc majorTime");
     }
-
 
     @Test
     public void unknownCount() {
-        assertCollected("gc.unknownCount");
+        assertCollected("ns=gc unknownCount");
     }
 
     @Test
     public void unknownTime() {
-        assertCollected("gc.unknownTime");
+        assertCollected("ns=gc unknownTime");
     }
 }

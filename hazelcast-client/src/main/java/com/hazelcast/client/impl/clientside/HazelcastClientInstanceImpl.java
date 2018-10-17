@@ -122,9 +122,7 @@ import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.sources.MachineMetrics;
-import com.hazelcast.internal.metrics.sources.MemoryMetrics;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -169,6 +167,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
+import static com.hazelcast.internal.metrics.sources.MemoryMetrics.collectMemoryAndGc;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
@@ -276,22 +275,21 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private void initMetricsSources() {
         metricsRegistry.register(new MachineMetrics());
-        metricsRegistry.register(new MemoryMetrics(clientExtension.getMemoryStats()));
         metricsRegistry.register(this);
         metricsRegistry.register(statistics);
-        NioNetworking networking = connectionManager.getNetworking();
-        if (networking != null) {
-            // null when testing with mock
-            metricsRegistry.register(networking);
-        }
+        metricsRegistry.register(connectionManager.getNetworking());
         metricsRegistry.register(clientExtension);
     }
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        cycle.probe("invocations", invocationService);
-        cycle.probe("executionService", executionService);
-        cycle.probe("listeners", listenerService);
+        cycle.switchContext().namespace("invocations");
+        cycle.collectAll(invocationService);
+        cycle.switchContext().namespace("executionService");
+        cycle.collectAll(executionService);
+        cycle.switchContext().namespace("listeners");
+        cycle.collectAll(listenerService);
+        collectMemoryAndGc(cycle, clientExtension.getMemoryStats());
     }
 
     private Collection<AddressProvider> createAddressProviders(AddressProvider externalAddressProvider) {

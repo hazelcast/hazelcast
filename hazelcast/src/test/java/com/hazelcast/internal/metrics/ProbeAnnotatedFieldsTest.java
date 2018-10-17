@@ -27,23 +27,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeAnnotatedFieldsTest extends AbstractMetricsTest implements MetricsSource {
+public class ProbeAnnotatedFieldsTest extends AbstractMetricsTest {
 
     @Before
-    public void setUp() {
-        registry.register(this);
-    }
-
-    @Override
-    public void collectAll(CollectionCycle cycle) {
-        cycle.probe("foo", new ProbeAnnotatedFields());
-        cycle.probe("foo", new Subclass());
+    public void setupRoots() {
+        register(new Subclass());
     }
 
     private static final class ProbeAnnotatedFields {
@@ -72,42 +67,42 @@ public class ProbeAnnotatedFieldsTest extends AbstractMetricsTest implements Met
 
     @Test
     public void customName() {
-        assertCollected("foo.myfield", 10L);
+        assertCollected("ns=foo myfield", 10L);
     }
 
     @Test
     public void primitiveInteger() {
-        assertCollected("foo.intField", 10L);
+        assertCollected("ns=foo intField", 10L);
     }
 
     @Test
     public void primitiveLong() {
-        assertCollected("foo.longField", 10L);
+        assertCollected("ns=foo longField", 10L);
     }
 
     @Test
     public void primitiveDouble() {
-        assertCollected("foo.doubleField", ProbeUtils.toLong(10d));
+        assertCollected("ns=foo doubleField", ProbeUtils.toLong(10d));
     }
 
     @Test
     public void concurrentHashMap() {
-        assertCollected("foo.mapField", 1L);
+        assertCollected("ns=foo mapField", 1L);
     }
 
     @Test
     public void counterFields() {
-        assertCollected("foo.counterField", 10L);
+        assertCollected("ns=foo counterField", 10L);
     }
 
     @Test
     public void staticField() {
-        assertCollected("foo.staticfield", 10L);
+        assertCollected("ns=foo staticfield", 10L);
     }
 
     @Test
     public void superclassRegistration() {
-        assertCollected("foo.inheritedField", 10L);
+        assertCollected("ns=foo inheritedField", 10L);
     }
 
     private static class SuperClass {
@@ -115,7 +110,14 @@ public class ProbeAnnotatedFieldsTest extends AbstractMetricsTest implements Met
         int inheritedField = 10;
     }
 
-    private static class Subclass extends SuperClass {
+    private static class Subclass extends SuperClass implements ObjectMetricsContext {
 
+        @ProbeSource
+        ProbeAnnotatedFields nested = new ProbeAnnotatedFields();
+
+        @Override
+        public void switchToObjectContext(Tags context) {
+            context.namespace("foo");
+        }
     }
 }

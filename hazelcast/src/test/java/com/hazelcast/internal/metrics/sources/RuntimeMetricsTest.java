@@ -39,7 +39,7 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
 
     @Before
     public void setup() {
-        registry.register(new MachineMetrics());
+        register(new MachineMetrics());
         runtime = Runtime.getRuntime();
     }
 
@@ -48,7 +48,7 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertCollected("runtime.freeMemory", runtime.freeMemory(), TEN_MB);
+                assertCollected("ns=runtime freeMemory", runtime.freeMemory(), TEN_MB);
             }
         });
     }
@@ -58,7 +58,7 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertCollected("runtime.totalMemory", runtime.totalMemory(), TEN_MB);
+                assertCollected("ns=runtime totalMemory", runtime.totalMemory(), TEN_MB);
             }
         });
     }
@@ -68,7 +68,7 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertCollected("runtime.maxMemory", runtime.maxMemory(), TEN_MB);
+                assertCollected("ns=runtime maxMemory", runtime.maxMemory(), TEN_MB);
             }
         });
     }
@@ -79,14 +79,14 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
             @Override
             public void run() throws Exception {
                 long expected = runtime.totalMemory() - runtime.freeMemory();
-                assertCollected("runtime.usedMemory", expected, TEN_MB);
+                assertCollected("ns=runtime usedMemory", expected, TEN_MB);
             }
         });
     }
 
     @Test
     public void availableProcessors() {
-        assertCollected("runtime.availableProcessors", runtime.availableProcessors());
+        assertCollected("ns=runtime availableProcessors", runtime.availableProcessors());
     }
 
     @Test
@@ -95,7 +95,7 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
             @Override
             public void run() throws Exception {
                 long expected = ManagementFactory.getRuntimeMXBean().getUptime();
-                assertCollected("runtime.uptime", expected, TimeUnit.MINUTES.toMillis(1));
+                assertCollected("ns=runtime uptime", expected, TimeUnit.MINUTES.toMillis(1));
             }
         });
     }

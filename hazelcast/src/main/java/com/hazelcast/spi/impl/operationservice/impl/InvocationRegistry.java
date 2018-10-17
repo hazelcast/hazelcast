@@ -19,7 +19,9 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
@@ -52,7 +54,7 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.</li>
  * </ul>
  */
-public class InvocationRegistry implements Iterable<Invocation> {
+public class InvocationRegistry implements Iterable<Invocation>, ObjectMetricsContext {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -62,7 +64,7 @@ public class InvocationRegistry implements Iterable<Invocation> {
     private static final float LOAD_FACTOR = 0.75f;
     private static final double HUNDRED_PERCENT = 100d;
 
-    @Probe(name = "invocations.pending", level = MANDATORY)
+    @Probe(name = "pending", level = MANDATORY)
     private final ConcurrentMap<Long, Invocation> invocations;
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
@@ -80,7 +82,12 @@ public class InvocationRegistry implements Iterable<Invocation> {
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
     }
 
-    @Probe(name = "invocations.usedPercentage", level = MANDATORY)
+    @Override
+    public void switchToObjectContext(Tags context) {
+        context.namespace("operation.invocations");
+    }
+
+    @Probe(name = "usedPercentage", level = MANDATORY)
     private double invocationsUsedPercentage() {
         int maxConcurrentInvocations = callIdSequence.getMaxConcurrentInvocations();
         if (maxConcurrentInvocations == Integer.MAX_VALUE) {
@@ -90,7 +97,7 @@ public class InvocationRegistry implements Iterable<Invocation> {
         return (HUNDRED_PERCENT * invocations.size()) / maxConcurrentInvocations;
     }
 
-    @Probe(name = "invocations.lastCallId")
+    @Probe(name = "lastCallId")
     long getLastCallId() {
         return callIdSequence.getLastCallId();
     }

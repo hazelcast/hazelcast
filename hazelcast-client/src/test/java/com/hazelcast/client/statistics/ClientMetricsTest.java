@@ -97,7 +97,7 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
     @Test
     public void clientEndpointStats() {
         final HazelcastClientInstanceImpl client = createHazelcastClient();
-        assertHasStatsEventually(3, "client", getUuid(client));
+        assertEventuallyHasStats(3, "client", getUuid(client));
     }
 
     @Test
@@ -105,16 +105,16 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
         final HazelcastClientInstanceImpl client = createHazelcastClient();
 
         String prefix = "origin=" + getUuid(client) + " ";
-        assertHasStatsEventually(56, prefix);
-        assertHasStatsEventually(11, prefix + "os.");
-        assertHasStatsEventually(6,  prefix + "runtime.");
-        assertHasStatsEventually(12, prefix + "memory.");
-        assertHasStatsEventually(6,  prefix + "gc.");
-        assertHasStatsEventually(1,  prefix + "type=JAVA instance=");
-        assertHasAllStatsEventually(
-                prefix + "lastStatisticsCollectionTime",
-                prefix + "clusterConnectionTimestamp",
-                prefix + "enterprise");
+        assertEventuallyHasStatsWith(56, prefix);
+        assertEventuallyHasStatsWith(11, prefix + "ns=os ");
+        assertEventuallyHasStatsWith(6,  prefix + "ns=runtime ");
+        assertEventuallyHasStatsWith(12, prefix + "ns=memory ");
+        assertEventuallyHasStatsWith(6,  prefix + "ns=gc ");
+        assertEventuallyHasStatsWith(1,  prefix + "ns=client instance=");
+        assertEventuallyHasAllStats(
+                prefix + "ns=client lastStatisticsCollectionTime",
+                prefix + "ns=client clusterConnectionTimestamp",
+                prefix + "ns=client enterprise");
     }
 
     @Test
@@ -123,10 +123,10 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
         produceSomeStats(client);
 
         String prefix = "origin=" + getUuid(client) + " ";
-        assertHasStatsEventually(14,
-                prefix + "type=map instance=" + MAP_NAME + " nearcache.");
-        assertHasStatsEventually(14,
-                prefix + "type=cache instance=/hz/" + CACHE_NAME + " nearcache.");
+        assertEventuallyHasStatsWith(14,
+                prefix + "ns=map.nearcache instance=" + MAP_NAME + " ");
+        assertEventuallyHasStatsWith(14,
+                prefix + "ns=cache.nearcache instance=/hz/" + CACHE_NAME + " ");
     }
 
     @Test
@@ -136,8 +136,8 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
 
         String prefix1 = "origin=" + getUuid(client1) + " ";
         String prefix2 = "origin=" + getUuid(client2) + " ";
-        assertHasStatsEventually(56, prefix1);
-        assertHasStatsEventually(56, prefix2);
+        assertEventuallyHasStatsWith(56, prefix1);
+        assertEventuallyHasStatsWith(56, prefix2);
     }
 
     @Test
@@ -161,7 +161,7 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
         assertOpenEventually(latch);
 
         String prefix = "origin=" + getUuid(client) + " ";
-        assertHasStatsEventually(56, prefix);
+        assertEventuallyHasStatsWith(56, prefix);
     }
 
     private void produceSomeStats(HazelcastClientInstanceImpl client) {

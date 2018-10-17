@@ -20,8 +20,10 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -67,7 +69,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.shuffle;
 
 public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
-        MembershipAwareService, ClientAwareService {
+        MembershipAwareService, ClientAwareService, ObjectMetricsContext {
 
     public static final String SERVICE_NAME = "hz:core:txManagerService";
 
@@ -93,6 +95,11 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(TransactionManagerService.class);
         this.finalizeExceptionHandler = logAllExceptions(logger, "Error while rolling-back tx!", Level.WARNING);
+    }
+
+    @Override
+    public void switchToObjectContext(Tags context) {
+        context.namespace("transactions");
     }
 
     public String getGroupName() {

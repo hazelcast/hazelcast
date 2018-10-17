@@ -16,15 +16,14 @@
 
 package com.hazelcast.internal.metrics;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 /**
  * Annotation that can be placed on a field or a method of an object to indicate
@@ -67,18 +66,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * If the field or method points to a null reference, it is interpreted as 0.
  */
 @Retention(value = RUNTIME)
-@Target({FIELD, METHOD, TYPE })
+@Target({FIELD, METHOD })
 public @interface Probe {
-
-    /**
-     * A constant that can be used for {@link #name()} to blank out the name.
-     *
-     * This means neither the field name nor the annotated name becomes the name but
-     * the empty string {@code ""}. This is useful to probe nested fields as if they
-     * were not nested. To be distinguishable from the default this constant cannot
-     * be the empty string itself.
-     */
-    String BLANK_NAME = " ";
 
     /**
      * The name of the Probe. By default the name of the field or method is used.

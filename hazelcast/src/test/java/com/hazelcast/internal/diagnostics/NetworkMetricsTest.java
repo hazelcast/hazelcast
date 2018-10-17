@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -38,15 +39,16 @@ public class NetworkMetricsTest extends HazelcastInstanceMetricsIntegrationTest 
 
     @Test
     public void connectionManagerStats() {
-        assertHasStatsEventually(10, "tcp.connection.");
+        assertEventuallyHasStats(10, "tcp.connection");
     }
 
     @Test
     public void healthMonitorMetrics() {
-        assertHasAllStatsEventually(
-                "tcp.connection.activeCount",
-                "tcp.connection.count",
-                "tcp.connection.clientCount");
+        String ns = MetricsSource.TAG_NAMESPACE + "=";
+        assertEventuallyHasAllStats(
+                ns + "tcp.connection activeCount",
+                ns + "tcp.connection count",
+                ns + "tcp.connection clientCount");
     }
 
 }

@@ -29,16 +29,14 @@ public abstract class HazelcastInstanceMetricsIntegrationTest extends AbstractMe
     private MetricsRegistry registry;
 
     protected Config configure() {
-        return new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(),
-                ProbeLevel.INFO.name());
+        return new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
     }
 
     @Before
-    public void setup() {
+    public final void setup() {
         hz = createHazelcastInstance(configure());
         registry = getNode(hz).nodeEngine.getMetricsRegistry();
         setCollectionContext(registry.openContext(ProbeLevel.INFO));
-        warmUpPartitions(hz);
     }
 
     protected final void setProbeLevel(ProbeLevel level) {

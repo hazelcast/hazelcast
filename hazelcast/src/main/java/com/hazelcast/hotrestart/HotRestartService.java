@@ -16,6 +16,8 @@
 
 package com.hazelcast.hotrestart;
 
+import com.hazelcast.internal.metrics.Probe;
+
 /**
  * Service for interacting with Hot Restart. For example - starting cluster-wide hot restart data backups, determining the
  * local backup state and interrupting a currently running local hot restart backup.
@@ -66,6 +68,7 @@ public interface HotRestartService {
      *
      * @return {@code true} if hot backup is enabled, {@code false} otherwise
      */
+    @Probe(name = "enabled")
     boolean isHotBackupEnabled();
 
     /**

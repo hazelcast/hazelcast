@@ -25,8 +25,8 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 
-import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
 
 /**
  * A {@link MetricsSource} providing information on runtime, threads,
@@ -48,16 +48,16 @@ public final class MachineMetrics implements MetricsSource {
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        cycle.openContext().prefix("classloading");
+        cycle.switchContext().namespace("classloading");
         collectProperties(cycle, classLoadingMXBean);
-        cycle.openContext().prefix("os");
+        cycle.switchContext().namespace("os");
         collectProperties(cycle, osMXBean);
-        cycle.openContext().prefix("runtime");
+        cycle.switchContext().namespace("runtime");
         collectProperties(cycle, runtime);
         collectProperties(cycle, runtimeMXBean);
-        cycle.openContext().prefix("thread");
+        cycle.switchContext().namespace("thread");
         collectProperties(cycle, threadMXBean);
-        cycle.openContext().tag(TAG_TYPE, "file.partition").tag(TAG_INSTANCE, "user.home");
+        cycle.switchContext().namespace("file.partition").instance("user.home");
         collectProperties(cycle, userHome);
     }
 

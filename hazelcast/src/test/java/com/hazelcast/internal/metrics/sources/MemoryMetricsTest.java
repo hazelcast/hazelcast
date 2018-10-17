@@ -16,11 +16,15 @@
 
 package com.hazelcast.internal.metrics.sources;
 
+import static org.mockito.Mockito.when;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.AbstractMetricsTest;
 import com.hazelcast.memory.DefaultMemoryStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -32,56 +36,58 @@ public class MemoryMetricsTest extends AbstractMetricsTest {
 
     @Before
     public void setup() {
-        registry.register(new MemoryMetrics(new DefaultMemoryStats()));
+        NodeExtension nodeExtension = Mockito.mock(NodeExtension.class);
+        when(nodeExtension.getMemoryStats()).thenReturn(new DefaultMemoryStats());
+        register(new MemoryMetrics(nodeExtension));
     }
 
     @Test
     public void totalPhysical() {
-        assertCollected("memory.totalPhysical", -1L);
+        assertCollected("ns=memory totalPhysical", -1L);
     }
 
     @Test
     public void freePhysical() {
-        assertCollected("memory.freePhysical", -1L);
+        assertCollected("ns=memory freePhysical", -1L);
     }
 
     @Test
     public void maxHeap() {
-        assertCollected("memory.maxHeap");
+        assertCollected("ns=memory maxHeap");
     }
 
     @Test
     public void committedHeap() {
-        assertCollected("memory.committedHeap");
+        assertCollected("ns=memory committedHeap");
     }
 
     @Test
     public void usedHeap() {
-        assertCollected("memory.usedHeap");
+        assertCollected("ns=memory usedHeap");
     }
 
     @Test
     public void freeHeap() {
-        assertCollected("memory.freeHeap");
+        assertCollected("ns=memory freeHeap");
     }
 
     @Test
     public void maxNative() {
-        assertCollected("memory.maxNative");
+        assertCollected("ns=memory maxNative");
     }
 
     @Test
     public void committedNative() {
-        assertCollected("memory.committedNative");
+        assertCollected("ns=memory committedNative");
     }
 
     @Test
     public void usedNative() {
-        assertCollected("memory.usedNative");
+        assertCollected("ns=memory usedNative");
     }
 
     @Test
     public void freeNative() {
-        assertCollected("memory.freeNative");
+        assertCollected("ns=memory freeNative");
     }
 }

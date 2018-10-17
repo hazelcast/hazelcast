@@ -34,9 +34,40 @@ import com.hazelcast.spi.annotation.PrivateApi;
 public interface MetricsRegistry {
 
     /**
+     * Creates a {@link LongGauge} for a given metric name.
+     *
+     * If no gauge exists for the name, it will be created but no probe is set.
+     * The reason to do so is that you don't want to depend on the order of
+     * registration. Perhaps you want to read out e.g. operations.count gauge,
+     * but the OperationService has not started yet and the metric is not yet
+     * available. Another cause is that perhaps a probe is not registered, but
+     * the metric is created. For example when experimenting with a new
+     * implementation, e.g. a new OperationService implementation, that doesn't
+     * provide the operation.count probe.
+     *
+     * Multiple calls with the same name return different Gauge instances; so
+     * the Gauge instance is not cached. This is done to prevent memory leaks.
+     *
+     * @param name the name of the metric.
+     * @return the created LongGauge.
+     * @throws NullPointerException if name is null.
+     */
+    LongGauge newLongGauge(String name);
+
+    /**
+     * Creates a {@link DoubleGauge} for a given metric name.
+     *
+     * @param name name of the metric
+     * @return the create DoubleGauge
+     * @throws NullPointerException if name is null.
+     * @see #newLongGauge(String)
+     */
+    DoubleGauge newDoubleGauge(String name);
+
+    /**
      * Called once at startup, typically by a core service registering itself.
      *
-     * @param source Typically implementation of a {@link MetricsSource} that
+     * @param root Typically implementation of a {@link MetricsSource} that
      *        "knows" how to make metrics known to a {@link CollectionCycle} in
      *        their appropriate context. Each sources is assumed to be unique per
      *        class. That means a second registration of a source is considered
@@ -47,10 +78,10 @@ public interface MetricsRegistry {
      *
      *        If the source instance does not implement {@link MetricsSource} it is
      *        checked for {@link Probe} annotations and collected as if another
-     *        source passed it to {@link CollectionCycle#probe(Object)}. If there
+     *        source passed it to {@link CollectionCycle#collectAll(Object)}. If there
      *        also are no annotation the instance is ignored and has no effect.
      */
-    void register(Object source);
+    void register(Object root);
 
     /**
      * Creates a new "private "context that should be kept by the caller to collect
@@ -60,12 +91,9 @@ public interface MetricsRegistry {
      * create its own context instance.
      *
      * @param level the finest level that still should be collected
-     * @param selection the set of sources that is accepted (kept) if it was or will
-     *        be registered. A empty set or {@code null} results in usage of all
-     *        registered sources.
-     * @return a new private selective "context". The context is updated when
-     *         further {@link MetricsSource} are {@link #register(Object)}ed that
-     *         were selected.
+     * @return a new private "context". The context is updated when
+     *         further roots are {@link #register(Object)}ed.
      */
-    CollectionContext openContext(ProbeLevel level, Class<? extends MetricsSource>... selection);
+    CollectionContext openContext(ProbeLevel level);
+
 }

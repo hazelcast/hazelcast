@@ -16,31 +16,30 @@
 
 package com.hazelcast.internal.metrics.sources;
 
+import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.metrics.CollectionCycle;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.MetricsSource;
-import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.internal.metrics.CollectionCycle;
 
-public final class MemoryMetrics implements MetricsSource {
+public final class HotBackupMetrics implements MetricsSource {
 
     private final NodeExtension nodeExtension;
 
-    public MemoryMetrics(NodeExtension nodeExtension) {
+    public HotBackupMetrics(NodeExtension nodeExtension) {
         this.nodeExtension = nodeExtension;
     }
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        collectMemoryAndGc(cycle, nodeExtension.getMemoryStats());
-    }
-
-    public static void collectMemoryAndGc(CollectionCycle cycle, MemoryStats memoryStats) {
-        if (memoryStats != null) {
-            cycle.switchContext().namespace("memory");
-            cycle.collectAll(memoryStats);
-            cycle.switchContext().namespace("gc");
-            cycle.collectAll(memoryStats.getGCStats());
+        if (cycle.isCollected(ProbeLevel.INFO)) {
+            HotRestartService hotRestartService = nodeExtension.getHotRestartService();
+            boolean enabled = hotRestartService.isHotBackupEnabled();
+            cycle.switchContext().namespace("hot-backup");
+            cycle.collectAll(hotRestartService);
+            if (enabled) {
+                cycle.collectAll(hotRestartService.getBackupTaskStatus());
+            }
         }
     }
-
 }

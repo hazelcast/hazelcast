@@ -25,14 +25,14 @@ import com.hazelcast.spi.annotation.PrivateApi;
  *
  * This has two steps:
  * <ol>
- * <li>{@link #openContext()} and {@link Tags#tag(CharSequence, CharSequence)}
+ * <li>{@link #switchContext()} and {@link Tags#tag(CharSequence, CharSequence)}
  * is used to describe the general context of the probes. The context described
  * before acts as a "prefix" for all subsequent measurements.</li>
  *
  * <li>{@link #collect(CharSequence, long)} and its sibling methods are used to
  * state one measurement at a time with its name and value. Alternatively to
  * stating measurements directly an instance of a type annotated with
- * {@link Probe} can be passed to {@link #probe(Object)} to measure all
+ * {@link Probe} can be passed to {@link #collectAll(Object)} to measure all
  * annotated fields and methods.</li>
  * </ol>
  *
@@ -40,11 +40,11 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * repeating the two steps:
  *
  * <pre>
- * public void probeIn(CollectionCycle cycle) {
- *     cycle.openContext().tag(TAG_TYPE, "x").tag(TAG_INSTANCE, "foo");
- *     cycle.probe(foo);
- *     cycle.openContext().tag(TAG_INSTANCE, "bar");
- *     cycle.probe(bar);
+ * public void collectAll(CollectionCycle cycle) {
+ *     cycle.switchContext().tag(TAG_TYPE, "x").tag(TAG_INSTANCE, "foo");
+ *     cycle.collectAll(foo);
+ *     cycle.switchContext().tag(TAG_INSTANCE, "bar");
+ *     cycle.collectAll(bar);
  * }
  * </pre>
  */
@@ -67,7 +67,7 @@ public interface CollectionCycle {
      * @param level the level to check
      * @return true, if the level is relevant for this cycle, else false
      */
-    boolean isProbed(ProbeLevel level);
+    boolean isCollected(ProbeLevel level);
 
     /**
      * The main way of collecting metrics is to collect instances that have methods
@@ -75,54 +75,27 @@ public interface CollectionCycle {
      * field or method name or {@link Probe#name()} (if given). The metric type
      * (long or double) is derived from the field type or method return type. The
      * set of supported types with a known mapping is fix and implementation
-     * dependent.
+     * dependent. s This method is also used to dynamically collect a nested
+     * {@link MetricsSource}s that have not been registered as a root before.
      *
-     * The method exits with the same {@link Tags} context it is called with.
-     *
-     * @param instance a obj with fields or methods annotated with {@link Probe}
-     */
-    void probe(Object instance);
-
-    /**
-     * Default method to call {@link #probe(Object)} for an array of instances. This
-     * is mostly useful for types that implement {@link ProbingContext} and thereby provide
+     * This method can also be used with an array of instances. This is mostly
+     * useful for types that implement {@link ObjectMetricsContext} and thereby provide
      * their own context.
      *
      * The method exits with the same {@link Tags} context it is called with.
-     * Instances do not affect each others context.
      *
-     * @param instances may be null (no effect)
+     * @param obj a obj with fields or methods annotated with {@link Probe} or an
+     *        array of such objects or an instance implementing
+     *        {@link MetricsSource} and/or {@link ObjectMetricsContext}.
      */
-    void probe(Object[] instances);
+    void collectAll(Object obj);
 
     /**
-     * Similar to {@link #probe(Object)} just that all names become
-     * {@code <prefix>.<name>} instead of just {@code <name>}.
-     *
-     * The method exits with the same {@link Tags} context it is called with.
-     *
-     * @param prefix prefix to use for all names (provided without dot)
-     * @param instance a obj with fields or methods annotated with {@link Probe}
-     */
-    void probe(CharSequence prefix, Object instance);
-
-    /**
-     * Dynamically collect a nested {@link MetricsSource} that has not been registered
-     * as a root before.
-     *
-     * @param prefix use empty string or {@link Probe#BLANK_NAME} to not add a prefix
-     * @param source a dynamic source, null is a no-op with no consequences
-     */
-    void collectAll(CharSequence prefix, MetricsSource source);
-
-    /**
-     * Similar to {@link #probe(Object)} just that probed methods are not identified
+     * Similar to {@link #collectAll(Object)} just that probed methods are not identified
      * using annotations but given as a list. All methods use the specified level.
      * No fields will be probed.
      *
-     * This can be used to probe beans that cannot be annotated. To prefix this
-     * {@link Tags#prefix(CharSequence)} can be used. Remember though that the
-     * prefix will remain in the context.
+     * This can be used to probe beans that cannot be annotated.
      *
      * @param level the level to use for all probes created
      * @param instance the obj whose methods to probe.
@@ -147,7 +120,7 @@ public interface CollectionCycle {
     void collect(CharSequence name, boolean value);
 
     /**
-     * Collects the given key-value pair as long as {@link #isProbed(ProbeLevel)}.
+     * Collects the given key-value pair as long as {@link #isCollected(ProbeLevel)}.
      *
      * @param level the level for with the pair is gathered
      * @param name name relative to context (full key is {@code context+name})
@@ -166,12 +139,32 @@ public interface CollectionCycle {
     void collect(ProbeLevel level, CharSequence name, boolean value);
 
     /**
+     * Equal to {@link #collect(ProbeLevel, CharSequence, long)} except that value
+     * is provided by the passed {@link LongProbeFunction}.
+     *
+     * This is useful to allow to creation of gauges for the passed function.
+     */
+    void collect(ProbeLevel level, CharSequence name, LongProbeFunction value);
+
+    /**
+     * Equal to {@link #collect(ProbeLevel, CharSequence, double)} except that value
+     * is provided by the passed {@link DoubleProbeFunction}.
+     *
+     * This is useful to allow to creation of gauges for the passed function.
+     */
+    void collect(ProbeLevel level, CharSequence name, DoubleProbeFunction value);
+
+    /**
      * Used to forward metrics received from the client. This is only different from
      * {@link #collect(CharSequence, long)} except that it will not escape the name
      * but un-escaping escaped line-feeds.
      *
+     * Also forwarded metrics are not filtered by level as this already happend when
+     * they were collected originally.
+     *
      * @param name a properly escaped name (as written before)
-     * @param value value as written before (double/boolean already converted to long)
+     * @param value value as written before (double/boolean already converted to
+     *        long)
      */
     void collectForwarded(CharSequence name, long value);
 
@@ -180,18 +173,22 @@ public interface CollectionCycle {
      */
 
     /**
-     * Resets the tags used by this cycle (to empty). This provides a convenient and
-     * format independent way of tagging the probed metrics.
+     * Resets the tags used by this cycle to initial state for the nesting level.
+     *
+     * The {@link Tags} context API provides a convenient and format independent way
+     * of tagging the metrics.
      *
      * After context (previously the prefix) is completed using
-     * {@link Tags#tag(CharSequence, CharSequence)} the {@code probe} methods are
-     * used to add measurements in this context. Then context is changed to next one
-     * and so forth.
+     * {@link Tags#tag(CharSequence, CharSequence)} the
+     * {@link #collect(CharSequence, long)} and {@link #collectAll(Object)} methods
+     * are used to collect metrics within this context. Then context is changed to
+     * next one and so forth.
      *
-     * @return the {@link Tags} abstraction to use to build the context for this
-     *         cycle. This call does not create any new/litter objects.
+     * @return the {@link Tags} abstraction to use to build the current context for
+     *         this cycle that is usable until the context is switched again. This
+     *         call does not create any new/litter objects.
      */
-    Tags openContext();
+    Tags switchContext();
 
     /**
      * The reason for {@link Tags} API is to allow "describing" complex "assembled"
@@ -217,6 +214,8 @@ public interface CollectionCycle {
          */
         Tags tag(CharSequence name, CharSequence value);
 
+        Tags tag(CharSequence name, CharSequence major, CharSequence minor);
+
         /**
          * Similar to {@link #tag(CharSequence, CharSequence)} just that value is a number.
          * Sole purpose here is to avoid the need to wrap the number in a {@link CharSequence}.
@@ -228,40 +227,27 @@ public interface CollectionCycle {
         Tags tag(CharSequence name, long value);
 
         /**
-         * This method is meat as a legacy support where keys are not build in terms of
-         * tags. It should only be used in exceptional cases. At some point we hopefully
-         * can remove it.
-         *
-         * The given {@link CharSequence} will always be escaped.
-         *
-         * @param s not null, only guaranteed to be stable throughout the call
-         * @return this {@link Tags} context for chaining. This call does not create any
-         *         new/litter objects.
+         * Same as {@link #tag(CharSequence, CharSequence)} with tag name
+         * {@link MetricsSource#TAG_NAMESPACE}.
          */
-        Tags append(CharSequence s);
+        Tags namespace(CharSequence ns);
 
         /**
-         * Same as {@link #append(CharSequence)} + {@code append(".")} unless the prefix
-         * is empty in which case nothing is appended.
-         *
-         * The given {@link CharSequence} will always be escaped.
-         *
-         * @param prefix not null, only guaranteed to be stable throughout the call
-         * @return this {@link Tags} context for chaining. This call does not create any
-         *         new/litter objects.
+         * Same as {@link #tag(CharSequence, CharSequence, CharSequence)} with tag name
+         * {@link MetricsSource#TAG_NAMESPACE}.
          */
-        Tags prefix(CharSequence prefix);
+        Tags namespace(CharSequence ns, CharSequence subSpace);
 
         /**
-         * Similar to append but if the context ends with an un-escaped space the sequence s is inserted before that space.
-         * This is used to extend values of tags with further names.
-         *
-         * The given {@link CharSequence} will always be escaped.
-         *
-         * @param not null, only guaranteed to be stable throughout the call
-         * @return this {@link Tags} context for chaining. This call does not create any
-         *         new/litter objects.
+         * Same as {@link #tag(CharSequence, CharSequence)} with tag name
+         * {@link MetricsSource#TAG_INSTANCE}.
          */
-        Tags adjoin(CharSequence s);
+        Tags instance(CharSequence name);
+
+        /**
+         * Same as {@link #tag(CharSequence, CharSequence, CharSequence)} with tag name
+         * {@link MetricsSource#TAG_INSTANCE}.
+         */
+        Tags instance(CharSequence name, CharSequence subName);
     }
 }

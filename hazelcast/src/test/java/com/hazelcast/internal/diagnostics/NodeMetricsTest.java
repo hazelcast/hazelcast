@@ -31,80 +31,81 @@ public class NodeMetricsTest extends HazelcastInstanceMetricsIntegrationTest {
 
     @Test
     public void clusterServiceStats() {
-        assertHasStatsEventually(16, "cluster.");
-        assertHasStatsEventually(6, "cluster.clock");
+        assertHasStats(9, "cluster");
+        assertHasStats(6, "cluster.clock");
+        assertHasStats(1, "cluster.heartbeat");
     }
 
     @Test
     public void proxyServiceStats() {
-        assertHasStatsEventually(3, "proxy.");
+        assertHasStats(3, "proxy");
     }
 
     @Test
     public void memoryStats() {
-        assertHasStatsEventually(12, "memory.");
+        assertHasStats(12, "memory");
     }
 
     @Test
     public void gcStats() {
-        assertHasStatsEventually(6, "gc.");
+        assertHasStats(6, "gc");
     }
 
     @Test
     public void runtimeStats() {
-        assertHasStatsEventually(6, "runtime.");
+        assertHasStats(6, "runtime");
     }
 
     @Test
     public void classloadingStats() {
-        assertHasStatsEventually(3, "classloading.");
+        assertHasStats(3, "classloading");
     }
 
     @Test
     public void osStats() {
-        assertHasStatsEventually(11, "os.");
+        assertHasStats(11, "os");
     }
 
     @Test
     public void threadStats() {
-        assertHasStatsEventually(4, "thread.");
+        assertHasStats(4, "thread");
     }
 
     @Test
     public void userHomeStats() {
-        assertHasStatsEventually(4, "file.partition", "user.home");
+        assertHasStats(4, "file.partition", "user.home");
     }
 
     @Test
     public void partitionServiceStats() {
-        assertHasStatsEventually(10, "partitions.");
+        assertHasStats(10, "partitions");
     }
 
     @Test
     public void transactionServiceStats() {
-        assertHasStatsEventually(3, "transactions.");
+        assertHasStats(3, "transactions");
     }
 
     @Test
     public void clientServiceStats() {
-        assertHasStatsEventually(2, "client.endpoint.");
+        assertHasStats(2, "client.endpoint");
     }
 
     @Test
     public void operationsServiceStats() {
-        assertHasStatsEventually(32, "operation.");
-        assertHasStatsEventually(5, "operation.responses.");
-        assertHasStatsEventually(3, "operation.invocations.");
-        assertHasStatsEventually(2, "operation.parker.");
+        assertHasStats(23, "operation");
+        assertHasStats(6, "operation.invocations");
+        assertHasStats(2, "operation.parker");
+        assertHasStats(6, "operation.responses");
     }
 
     @Test
     public void executorServiceStats() {
-        assertHasStatsEventually(5, "internal-executor", ExecutionService.ASYNC_EXECUTOR);
-        assertHasStatsEventually(5, "internal-executor", ExecutionService.CLIENT_EXECUTOR);
-        assertHasStatsEventually(5, "internal-executor", ExecutionService.SCHEDULED_EXECUTOR);
-        assertHasStatsEventually(5, "internal-executor", ExecutionService.QUERY_EXECUTOR);
-        assertHasStatsEventually(5, "internal-executor", ExecutionService.SYSTEM_EXECUTOR);
+        assertHasStats(5, "internal-executor", ExecutionService.ASYNC_EXECUTOR);
+        assertHasStats(5, "internal-executor", ExecutionService.CLIENT_EXECUTOR);
+        assertHasStats(5, "internal-executor", ExecutionService.SCHEDULED_EXECUTOR);
+        assertHasStats(5, "internal-executor", ExecutionService.QUERY_EXECUTOR);
+        assertHasStats(5, "internal-executor", ExecutionService.SYSTEM_EXECUTOR);
     }
 
 }

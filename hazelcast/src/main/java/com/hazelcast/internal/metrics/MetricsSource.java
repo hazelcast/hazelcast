@@ -37,8 +37,8 @@ import com.hazelcast.spi.impl.servicemanager.ServiceManager;
  @PrivateApi
 public interface MetricsSource {
 
+    String TAG_NAMESPACE = "ns";
     String TAG_INSTANCE = "instance";
-    String TAG_TYPE = "type";
     String TAG_TARGET = "target";
 
     /**
@@ -46,7 +46,7 @@ public interface MetricsSource {
      * metrics using the provided cycle instance.
      *
      * Implementations can expect a clean context and do not have to start with
-     * {@link CollectionCycle#openContext()} if nothing should be appended to the
+     * {@link CollectionCycle#switchContext()} if nothing should be appended to the
      * root context.
      *
      * @param cycle collecting metrics data

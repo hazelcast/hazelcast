@@ -16,7 +16,9 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
@@ -68,7 +70,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * dealing with the response and especially notifying the invocation future can be
  * very expensive.
  */
-public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>> {
+public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>>, ObjectMetricsContext {
 
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
@@ -131,6 +133,11 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         }
     }
 
+    @Override
+    public void switchToObjectContext(Tags context) {
+        context.namespace("operation.responses");
+    }
+
     public InboundResponseHandler backupHandler() {
         return inboundResponseHandlers[0];
     }
@@ -144,7 +151,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         return result;
     }
 
-    @Probe(name = "responses.normal", level = MANDATORY)
+    @Probe(name = "normalCount", level = MANDATORY)
     long responsesNormal() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -153,7 +160,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         return result;
     }
 
-    @Probe(name = "responses.timeout", level = MANDATORY)
+    @Probe(name = "timeoutCount", level = MANDATORY)
     long responsesTimeout() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -162,7 +169,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         return result;
     }
 
-    @Probe(name = "responses.backup", level = MANDATORY)
+    @Probe(name = "backupCount", level = MANDATORY)
     long responsesBackup() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -171,7 +178,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         return result;
     }
 
-    @Probe(name = "responses.error", level = MANDATORY)
+    @Probe(name = "errorCount", level = MANDATORY)
     long responsesError() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -180,7 +187,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
         return result;
     }
 
-    @Probe(name = "responses.missing", level = MANDATORY)
+    @Probe(name = "missingCount", level = MANDATORY)
     long responsesMissing() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {

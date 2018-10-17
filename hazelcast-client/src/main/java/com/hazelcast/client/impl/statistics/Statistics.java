@@ -191,14 +191,16 @@ public class Statistics implements MetricsSource {
         if (conn == null) {
             return;
         }
+        cycle.switchContext().namespace("client");
         cycle.collect(MANDATORY, "enterprise", enterprise);
         cycle.collect(MANDATORY, "lastStatisticsCollectionTime", System.currentTimeMillis());
         cycle.collect(MANDATORY, "clusterConnectionTimestamp", conn.getStartTime());
         String address = ownerConnection.getLocalSocketAddress().getAddress().getHostAddress() + ":"
                 + ownerConnection.getLocalSocketAddress().getPort();
-        cycle.openContext()
-            .tag(TAG_TYPE, ClientType.JAVA.toString())
-            .tag(TAG_INSTANCE, client.getName())
+        cycle.switchContext()
+            .namespace("client")
+            .instance(client.getName())
+            .tag("type", ClientType.JAVA.toString())
             .tag(TAG_TARGET, address)
             .tag("version", BuildInfoProvider.getBuildInfo().getVersion());
         ClientConnectionManagerImpl cm = (ClientConnectionManagerImpl) client.getConnectionManager();
@@ -207,12 +209,11 @@ public class Statistics implements MetricsSource {
         if (caches.isEmpty()) {
             return;
         }
-        for (NearCache<?, ?> nearCache : caches) {
-            String name = nearCache.getName();
-            cycle.openContext()
-                .tag(TAG_TYPE, name.startsWith("/hz/") ? "cache" : "map")
-                .tag(TAG_INSTANCE, name);
-            cycle.probe("nearcache", nearCache.getNearCacheStats());
+        for (NearCache<?, ?> cache : caches) {
+            String name = cache.getName();
+            cycle.switchContext().namespace(name.startsWith("/hz/") ? "cache.nearcache" : "map.nearcache")
+                .instance(name);
+            cycle.collectAll(cache.getNearCacheStats());
         }
     }
 

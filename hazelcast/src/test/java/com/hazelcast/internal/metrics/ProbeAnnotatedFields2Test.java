@@ -37,17 +37,12 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ProbeAnnotatedFields2Test extends AbstractMetricsTest implements MetricsSource {
+public class ProbeAnnotatedFields2Test extends AbstractMetricsTest {
 
     @Before
-    public void setUp() {
-        registry.register(this);
-    }
-
-    @Override
-    public void collectAll(CollectionCycle cycle) {
-        cycle.probe(new UnknownFieldType());
-        cycle.probe(new SomeSource());
+    public void setupRoots() {
+        register(new UnknownFieldType());
+        register(new SomeSource());
     }
 
     @Test

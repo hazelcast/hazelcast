@@ -87,7 +87,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
             map.removeAsync(key);
         }
 
-        assertHasStatsEventually(18, "map", MAP_NAME);
+        assertEventuallyHasStats(18, "map", MAP_NAME);
     }
 
     @Test
@@ -101,7 +101,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
             map.remove(key);
         }
 
-        assertHasStatsEventually(18, "multiMap", MULTI_MAP_NAME);
+        assertEventuallyHasStats(18, "multiMap", MULTI_MAP_NAME);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
         }
         latch.await();
 
-        assertHasStatsEventually(6, "executor", EXECUTOR_NAME);
+        assertEventuallyHasStats(6, "executor", EXECUTOR_NAME);
     }
 
     @Test
@@ -136,7 +136,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
         }
         q.poll();
 
-        assertHasStatsEventually(12, "queue", QUEUE_NAME);
+        assertEventuallyHasStats(12, "queue", QUEUE_NAME);
     }
 
     @Test
@@ -148,7 +148,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
         }
         replicatedMap.remove(0);
 
-        assertHasStatsEventually(16, "replicatedMap", REPLICATED_MAP_NAME);
+        assertEventuallyHasStats(16, "replicatedMap", REPLICATED_MAP_NAME);
     }
 
     @Test
@@ -159,7 +159,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
             topic.publish(i);
         }
 
-        assertHasStatsEventually(3, "topic", TOPIC_NAME);
+        assertEventuallyHasStats(3, "topic", TOPIC_NAME);
     }
 
     @Test
@@ -170,7 +170,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
             topic.publish(i);
         }
 
-        assertHasStatsEventually(3, "reliableTopic", RELIABLE_TOPIC_NAME);
+        assertEventuallyHasStats(3, "reliableTopic", RELIABLE_TOPIC_NAME);
     }
 
     @Test
@@ -181,7 +181,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
             counter.incrementAndGet();
         }
 
-        assertHasStatsEventually(4, "pNCounter", PN_COUNTER_NAME);
+        assertEventuallyHasStats(4, "pNCounter", PN_COUNTER_NAME);
     }
 
     @Test
@@ -192,7 +192,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
             gen.newId();
         }
 
-        assertHasStatsEventually(3, "flakeIdGenerator", FLAKE_ID_GEN_NAME);
+        assertEventuallyHasStats(3, "flakeIdGenerator", FLAKE_ID_GEN_NAME);
     }
 
     @Test
@@ -203,7 +203,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
             cache.put(i, i);
         }
 
-        assertHasStatsEventually(12, "cache", "/hz/" + CACHE_NAME);
+        assertEventuallyHasStats(12, "cache", "/hz/" + CACHE_NAME);
     }
 
     @Test
@@ -215,7 +215,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
             map.get(i);
         }
 
-        assertHasStatsEventually(14, "map", NEAR_CACHE_MAP_NAME, "nearcache.");
+        assertEventuallyHasStats(14, "map.nearcache", NEAR_CACHE_MAP_NAME);
     }
 
     @Test
@@ -227,7 +227,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastInstanceMetri
             map.get(i);
         }
 
-        assertHasStatsEventually(12, "map", INDEX_MAP_NAME, "index=");
+        assertEventuallyHasStats(12, "map.index", INDEX_MAP_NAME, "index");
     }
 
     private static class Person implements Serializable {

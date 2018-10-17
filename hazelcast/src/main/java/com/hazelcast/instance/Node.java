@@ -48,6 +48,7 @@ import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -125,7 +126,9 @@ public class Node {
 
     public final DynamicConfigurationAwareConfig config;
 
+    @ProbeSource
     public final NodeEngineImpl nodeEngine;
+    @ProbeSource
     public final ClientEngineImpl clientEngine;
 
     public final InternalPartitionServiceImpl partitionService;
@@ -151,6 +154,7 @@ public class Node {
 
     private final ClassLoader configClassLoader;
 
+    @ProbeSource
     private final NodeExtension nodeExtension;
 
     private final HazelcastProperties properties;

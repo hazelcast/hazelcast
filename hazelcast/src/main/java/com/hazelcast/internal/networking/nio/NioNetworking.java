@@ -130,31 +130,32 @@ public final class NioNetworking implements Networking, MetricsSource {
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        Tags tags = cycle.openContext().tag(TAG_TYPE, "inputThread");
+        Tags tags = cycle.switchContext().namespace("tcp.input");
         for (int i = 0; i < inputThreads.length; i++) {
             NioThread thread = inputThreads[i];
             if (thread.isAlive()) {
-                tags.tag(TAG_INSTANCE, thread.getName());
-                cycle.probe("tcp", thread);
+                tags.instance(thread.getName());
+                cycle.collectAll(thread);
             }
         }
-        tags = cycle.openContext().tag(TAG_TYPE, "outputThread");
+        tags = cycle.switchContext().namespace("tcp.output");
         for (int i = 0; i < outputThreads.length; i++) {
             NioThread thread = outputThreads[i];
             if (thread.isAlive()) {
-                tags.tag(TAG_INSTANCE, thread.getName());
-                cycle.probe("tcp", thread);
+                tags.instance(thread.getName());
+                cycle.collectAll(thread);
             }
         }
         for (NioChannel c : channels) {
-            cycle.openContext().tag(TAG_TYPE, "channel")
-                .tag("from", c.localSocketAddress().toString())
-                .tag("to", c.remoteSocketAddress().toString());
-            cycle.probe("tcp.connection.out", c.outboundPipeline);
-            cycle.probe("tcp.connection.in", c.inboundPipeline);
+            String from = c.localSocketAddress().toString();
+            String to = c.remoteSocketAddress().toString();
+            cycle.switchContext().namespace("tcp.channel.in").tag("from", from).tag("to", to);
+            cycle.collectAll(c.inboundPipeline);
+            cycle.switchContext().namespace("tcp.channel.out").tag("from", from).tag("to", to);
+            cycle.collectAll(c.outboundPipeline);
         }
-        cycle.openContext();
-        cycle.probe("tcp.balancer", ioBalancer);
+        cycle.switchContext().namespace("tcp.balancer");
+        cycle.collectAll(ioBalancer);
     }
 
     @Override

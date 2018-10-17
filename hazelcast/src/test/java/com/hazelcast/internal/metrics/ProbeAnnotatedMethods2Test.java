@@ -37,16 +37,11 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ProbeAnnotatedMethods2Test extends AbstractMetricsTest implements MetricsSource {
+public class ProbeAnnotatedMethods2Test extends AbstractMetricsTest {
 
     @Before
-    public void setUp() {
-        registry.register(this);
-    }
-
-    @Override
-    public void collectAll(CollectionCycle cycle) {
-        cycle.probe(new SomeSource());
+    public void setupRoots() {
+        register(new SomeSource());
     }
 
     @Test
@@ -66,7 +61,10 @@ public class ProbeAnnotatedMethods2Test extends AbstractMetricsTest implements M
         assertLong("IntegerMethod", 10);
         assertLong("LongMethod", 10);
         assertLong("SemaphoreMethod", 10);
+    }
 
+    @Test
+    public void nullLongValueMethodProbes() {
         assertLong("nullAtomicLongMethod", -1);
         assertLong("nullAtomicIntegerMethod", -1);
         assertLong("nullCounterMethod", -1);
@@ -89,16 +87,20 @@ public class ProbeAnnotatedMethods2Test extends AbstractMetricsTest implements M
     }
 
     @Test
-    public void doubleValueMethodProbes() throws Exception {
+    public void doubleValueMethodProbes() {
         assertDouble("floatMethod", 10);
         assertDouble("doubleMethod", 10);
         assertDouble("DoubleMethod", 10);
         assertDouble("FloatMethod", 10);
+    }
+
+    @Test
+    public void nullDoubleValueMethodProbes() {
         assertDouble("nullDoubleMethod", -1d);
         assertDouble("nullFloatMethod", -1d);
     }
 
-    private void assertDouble(String fieldName, double expected) throws Exception {
+    private void assertDouble(String fieldName, double expected) {
         assertCollected(fieldName, expected == -1d ? -1L : ProbeUtils.toLong(expected));
     }
 

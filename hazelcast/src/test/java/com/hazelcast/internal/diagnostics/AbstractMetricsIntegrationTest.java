@@ -17,6 +17,8 @@
 package com.hazelcast.internal.diagnostics;
 
 import static com.hazelcast.internal.metrics.CharSequenceUtils.startsWith;
+import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
+import static com.hazelcast.internal.metrics.MetricsSource.TAG_NAMESPACE;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
@@ -30,7 +32,6 @@ import java.util.Set;
 
 import com.hazelcast.internal.metrics.CollectionContext;
 import com.hazelcast.internal.metrics.MetricsCollector;
-import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -42,25 +43,37 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
         this.context = context;
     }
 
-    protected final void assertHasStatsEventually(int minimumMetrics, String type, String name) {
-        assertHasStatsEventually(minimumMetrics, type, name, "");
+    protected final void assertEventuallyHasStats(int minimumMetrics, String ns) {
+        assertEventuallyHasStatsWith(minimumMetrics, prefix(ns, "", ""));
     }
 
-    protected final void assertHasStatsEventually(int minimumMetrics, String type, String name,
-            String additionalPrefix) {
-        assertHasStatsEventually(minimumMetrics,
-                MetricsSource.TAG_TYPE + "=" + type + " "
-                        + MetricsSource.TAG_INSTANCE + "=" + name + " "
-                        + additionalPrefix);
+    protected final void assertEventuallyHasStats(int minimumMetrics, String ns, String instance) {
+        assertEventuallyHasStatsWith(minimumMetrics, prefix(ns, instance, ""));
     }
 
-    protected final void assertHasStatsEventually(final int minimumMetrics, final String prefix) {
+    protected final void assertEventuallyHasStats(int minimumMetrics, String ns, String instance, String additionalTag) {
+        assertEventuallyHasStatsWith(minimumMetrics, prefix(ns, instance, additionalTag));
+    }
+
+    protected final void assertEventuallyHasStatsWith(final int minimumMetrics, final String prefix) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertHasStatsWith(minimumMetrics, prefix);
             }
         });
+    }
+
+    protected final void assertHasStats(int minimumMetrics, String ns) {
+        assertHasStatsWith(minimumMetrics, prefix(ns, "", ""));
+    }
+
+    protected final void assertHasStats(int minimumMetrics, String ns, String instance) {
+        assertHasStatsWith(minimumMetrics, prefix(ns, instance, ""));
+    }
+
+    protected final void assertHasStats(int minimumMetrics, String ns, String instance, String additionalTag) {
+        assertHasStatsWith(minimumMetrics, prefix(ns, instance, additionalTag));
     }
 
     protected final void assertHasStatsWith(int minimumMetrics, final String prefix) {
@@ -73,8 +86,8 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
     }
 
     private static void assertHasCreationTime(String prefix, StringMetricsCollector collector) {
-        boolean expectCreationTime = prefix.contains(MetricsSource.TAG_INSTANCE + "=")
-                && !prefix.contains("type=internal-");
+        boolean expectCreationTime = prefix.contains(TAG_INSTANCE + "=")
+                && !prefix.contains(TAG_NAMESPACE + "=internal-");
         if (expectCreationTime) {
             for (String key : collector.matches.keySet()) {
                 if (key.contains("creationTime")) {
@@ -86,7 +99,7 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
         }
     }
 
-    protected final void assertHasAllStatsEventually(String... expectedKeys) {
+    protected final void assertEventuallyHasAllStats(String... expectedKeys) {
         final Set<String> prefixes = new HashSet<String>(asList(expectedKeys));
         assertTrueEventually(new AssertTask() {
             @Override
@@ -100,6 +113,12 @@ public abstract class AbstractMetricsIntegrationTest extends HazelcastTestSuppor
                 }
             }
         });
+    }
+
+    private static String prefix(String ns, String instance, String additionalTag) {
+        return    TAG_NAMESPACE + "=" + ns + " "
+                + (instance.isEmpty() ? "" : TAG_INSTANCE + "=" + instance + " ")
+                + (additionalTag.isEmpty() ? "" : additionalTag + "=");
     }
 
     static class StringMetricsCollector implements MetricsCollector {

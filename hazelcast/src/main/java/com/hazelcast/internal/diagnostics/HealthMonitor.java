@@ -16,25 +16,16 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.client.impl.ClientEngineMetrics;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.CollectionContext;
 import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.internal.metrics.ProbeUtils;
-import com.hazelcast.internal.metrics.sources.MachineMetrics;
-import com.hazelcast.internal.metrics.sources.MemoryMetrics;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.spi.impl.NodeEngineMetrics;
-import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
-import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
-import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.OFF;
@@ -209,16 +200,9 @@ public class HealthMonitor {
         private final CollectionContext thresholdContext;
         private final CollectionContext printoutContext;
 
-        @SuppressWarnings("unchecked")
         public HealthMetrics(MetricsRegistry registry) {
-            thresholdContext = registry.openContext(ProbeLevel.MANDATORY,
-                    NodeEngineMetrics.class, MachineMetrics.class);
-            printoutContext = registry.openContext(ProbeLevel.MANDATORY,
-                    NodeEngineMetrics.class,
-                    ClientEngineMetrics.class, ClusterServiceImpl.class,
-                    ExecutionServiceImpl.class, EventServiceImpl.class,
-                    OperationExecutorImpl.class, TcpIpConnectionManager.class,
-                    MachineMetrics.class, MemoryMetrics.class);
+            thresholdContext = registry.openContext(ProbeLevel.MANDATORY);
+            printoutContext = registry.openContext(ProbeLevel.MANDATORY);
         }
 
         @Override

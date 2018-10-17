@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -79,7 +81,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class OperationExecutorImpl implements OperationExecutor, MetricsSource {
+public final class OperationExecutorImpl implements OperationExecutor, MetricsSource, ObjectMetricsContext {
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
 
@@ -219,14 +221,19 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsSo
     }
 
     @Override
+    public void switchToObjectContext(Tags context) {
+        context.namespace("operation");
+    }
+
+    @Override
     public void collectAll(CollectionCycle cycle) {
-        cycle.probe("operation", this);
-        if (cycle.isProbed(ProbeLevel.INFO)) {
-            probeAllThreads(cycle, "operation.thread", genericThreads);
-            probeAllThreads(cycle, "operation.thread", partitionThreads);
-            cycle.probe(genericOperationRunners);
-            cycle.probe(partitionOperationRunners);
-            cycle.probe(adHocOperationRunner);
+        if (cycle.isCollected(ProbeLevel.INFO)) {
+            probeAllThreads(cycle, cycle.switchContext().namespace("operation.generic"), genericThreads);
+            probeAllThreads(cycle, cycle.switchContext().namespace("operation.partition"), partitionThreads);
+            cycle.switchContext().namespace("operation.runner");
+            cycle.collectAll(genericOperationRunners);
+            cycle.collectAll(partitionOperationRunners);
+            cycle.collectAll(adHocOperationRunner);
         }
     }
 

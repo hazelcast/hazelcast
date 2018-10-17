@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.metrics;
 
-import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
-import static com.hazelcast.internal.metrics.MetricsSource.TAG_TYPE;
 import static com.hazelcast.util.StringUtil.getterIntoProperty;
 import static java.lang.Math.round;
 
@@ -115,6 +113,12 @@ public final class ProbeUtils {
         if (type == AtomicBoolean.class) {
             return ProbeUtils.toLong(((AtomicBoolean) value).get());
         }
+        if (value instanceof LongProbeFunction) {
+            return ((LongProbeFunction) value).getAsLong();
+        }
+        if (value instanceof DoubleProbeFunction) {
+            return toLong(((DoubleProbeFunction) value).getAsDouble());
+        }
         if (value instanceof Collection) {
             return ((Collection<?>) value).size();
         }
@@ -151,8 +155,7 @@ public final class ProbeUtils {
                 || Map.class.isAssignableFrom(type)
                 || Counter.class.isAssignableFrom(type)
                 || Semaphore.class.isAssignableFrom(type)
-                || MetricsSource.class.isAssignableFrom(type)
-                || type.isAnnotationPresent(Probe.class);
+                || type.isAnnotationPresent(ProbeSource.class);
     }
 
     public static long updateInterval(int value, TimeUnit unit) {
@@ -166,7 +169,7 @@ public final class ProbeUtils {
 
     public static String probeName(Probe probe, Field probed) {
         String name = probe == null ? "" : probe.name();
-        return name.isEmpty() ? probed.getName() : name.equals(Probe.BLANK_NAME) ? "" : name;
+        return name.isEmpty() ? probed.getName() : name;
     }
 
     public static List<Method> findProbedMethods(Class<?> type) {
@@ -183,15 +186,20 @@ public final class ProbeUtils {
 
     private static void collectProbeMethods(Class<?> type, List<Method> probes) {
         for (Method m : type.getDeclaredMethods()) {
-            if (m.isAnnotationPresent(Probe.class) && isSuitableProbeMethod(m, probes)) {
-                if (isSupportedProbeType(m.getReturnType())) {
-                    m.setAccessible(true);
-                    probes.add(m);
-                } else {
-                    LOGGER.warning("@Probe annotated method " + m.getName() + " in "
-                            + m.getDeclaringClass().getSimpleName()
-                            + " has an unsupported return type.");
+            if (m.isAnnotationPresent(Probe.class)) {
+                if (isSuitableProbeMethod(m, probes)) {
+                    if (isSupportedProbeType(m.getReturnType())) {
+                        m.setAccessible(true);
+                        probes.add(m);
+                    } else {
+                        LOGGER.warning("@Probe annotated method " + m.getName() + " in "
+                                + m.getDeclaringClass().getSimpleName()
+                                + " has an unsupported return type.");
+                    }
                 }
+            } else if (m.isAnnotationPresent(ProbeSource.class)) {
+                m.setAccessible(true);
+                probes.add(m);
             }
         }
         if (type.getSuperclass() != null) {
@@ -204,7 +212,7 @@ public final class ProbeUtils {
 
     public static boolean isSuitableProbeMethod(Method m, List<Method> probes) {
         if (m.getParameterTypes().length > 0) {
-            LOGGER.warning("Probe method must not have parameters: " + m.toGenericString());
+            LOGGER.warning("@Probe method must not have parameters: " + m.toGenericString());
             return false;
         }
         return !m.getDeclaringClass().isInterface() || !hasMethod(m, probes);
@@ -230,6 +238,9 @@ public final class ProbeUtils {
                             + f.getDeclaringClass().getSimpleName()
                             + " has an unsupported type!");
                 }
+            } else if (f.isAnnotationPresent(ProbeSource.class)) {
+                f.setAccessible(true);
+                probes.add(f);
             }
         }
         if (type.getSuperclass() != null) {
@@ -238,27 +249,26 @@ public final class ProbeUtils {
     }
 
 
-    public static void probeAllThreads(CollectionCycle cycle, String type, Thread[] threads) {
+    public static void probeAllThreads(CollectionCycle cycle, Tags tags, Thread[] threads) {
         if (threads.length == 0) {
             // avoid unnecessary context manipulation
             return;
         }
-        Tags tags = cycle.openContext().tag(TAG_TYPE, type);
         for (int i = 0; i < threads.length; i++) {
-            tags.tag(TAG_INSTANCE, threads[i].getName());
-            cycle.probe(threads[i]);
+            tags.instance(threads[i].getName());
+            cycle.collectAll(threads[i]);
         }
     }
 
-    public static <T> void probeAllInstances(CollectionCycle cycle, String type, Map<String, T> entries) {
+    public static <T> void probeAllInstances(CollectionCycle cycle, String ns, Map<String, T> entries) {
         if (entries.isEmpty()) {
             // avoid unnecessary context manipulation
             return;
         }
-        Tags tags = cycle.openContext().tag(TAG_TYPE, type);
+        Tags tags = cycle.switchContext().namespace(ns);
         for (Entry<String, T> e : entries.entrySet()) {
-            tags.tag(TAG_INSTANCE, e.getKey());
-            cycle.probe(e.getValue());
+            tags.instance(e.getKey());
+            cycle.collectAll(e.getValue());
         }
     }
 

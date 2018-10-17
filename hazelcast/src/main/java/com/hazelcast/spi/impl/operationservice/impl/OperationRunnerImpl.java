@@ -25,7 +25,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbingContext;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
@@ -66,7 +66,6 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
-import static com.hazelcast.internal.metrics.MetricsSource.TAG_TYPE;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.CallStatus.DONE_RESPONSE_ORDINAL;
@@ -88,7 +87,7 @@ import static java.util.logging.Level.WARNING;
  * Responsible for processing an Operation.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-class OperationRunnerImpl extends OperationRunner implements ProbingContext {
+class OperationRunnerImpl extends OperationRunner implements ObjectMetricsContext {
 
     static final int AD_HOC_PARTITION_ID = -2;
 
@@ -141,13 +140,13 @@ class OperationRunnerImpl extends OperationRunner implements ProbingContext {
     }
 
     @Override
-    public void tag(Tags context) {
+    public void switchToObjectContext(Tags context) {
         if (partitionId >= 0) {
-            context.tag(TAG_TYPE, "operation.partition").tag(TAG_INSTANCE, partitionId);
+            context.namespace("operation.partition").tag(TAG_INSTANCE, partitionId);
         } else if (partitionId == -1) {
-            context.tag(TAG_TYPE, "operation.generic").tag(TAG_INSTANCE, genericId);
+            context.namespace("operation.generic").tag(TAG_INSTANCE, genericId);
         } else {
-            context.tag(TAG_TYPE, "operation.generic");
+            context.namespace("operation.generic");
         }
     }
 

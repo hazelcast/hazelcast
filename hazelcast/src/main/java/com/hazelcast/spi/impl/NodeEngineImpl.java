@@ -27,8 +27,10 @@ import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.metrics.sources.HotBackupMetrics;
+import com.hazelcast.internal.metrics.sources.HotRestartMetrics;
 import com.hazelcast.internal.metrics.sources.MachineMetrics;
 import com.hazelcast.internal.metrics.sources.MemoryMetrics;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -97,11 +99,16 @@ public class NodeEngineImpl implements NodeEngine {
     private final LoggingServiceImpl loggingService;
     private final ILogger logger;
     private final MetricsRegistry metricsRegistry;
+    @ProbeSource
     private final ProxyServiceImpl proxyService;
     private final ServiceManagerImpl serviceManager;
+    @ProbeSource
     private final ExecutionServiceImpl executionService;
+    @ProbeSource
     private final OperationServiceImpl operationService;
+    @ProbeSource
     private final EventServiceImpl eventService;
+    @ProbeSource
     private final OperationParkerImpl operationParker;
     private final ClusterWideConfigurationService configurationService;
     private final TransactionManagerServiceImpl transactionManagerService;
@@ -179,18 +186,13 @@ public class NodeEngineImpl implements NodeEngine {
         return metricsRegistry;
     }
 
-    /**
-     * For convenience this method automatically registers services that are
-     * {@link MetricsSource}s.
-     */
     private void initMetricsSources() {
-        metricsRegistry.register(new NodeEngineMetrics(this, operationService, node.partitionService));
+        metricsRegistry.register(node);
         metricsRegistry.register(new MachineMetrics());
-        metricsRegistry.register(new MemoryMetrics(node.getNodeExtension().getMemoryStats()));
-        metricsRegistry.register(executionService);
-        metricsRegistry.register(operationService.getOperationExecutor());
-        metricsRegistry.register(node.getNodeExtension());
-        for (MetricsSource s : serviceManager.getServices(MetricsSource.class)) {
+        metricsRegistry.register(new HotRestartMetrics(node));
+        metricsRegistry.register(new HotBackupMetrics(node.getNodeExtension()));
+        metricsRegistry.register(new MemoryMetrics(node.getNodeExtension()));
+        for (Object s : serviceManager.getServices(Object.class)) {
             metricsRegistry.register(s);
         }
     }

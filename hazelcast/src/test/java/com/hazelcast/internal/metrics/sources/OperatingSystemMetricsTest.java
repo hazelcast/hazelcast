@@ -51,20 +51,20 @@ public class OperatingSystemMetricsTest extends AbstractMetricsTest {
 
     @Before
     public void setup() {
-        registry.register(new MachineMetrics());
-        registry.register(OS);
+        register(new MachineMetrics());
+        register(OS);
     }
 
     @Test
     public void testGenericSensors() {
-        assertContainsSensor("os.systemLoadAverage");
+        assertContainsSensor("ns=os systemLoadAverage");
     }
 
     @Test
     public void testComSunManagementUnixOperatingSystemMXBean() {
         assumeOperatingSystemMXBeanType("com.sun.management.UnixOperatingSystemMXBean");
-        assertContainsSensor("os.maxFileDescriptorCount");
-        assertContainsSensor("os.openFileDescriptorCount");
+        assertContainsSensor("ns=os maxFileDescriptorCount");
+        assertContainsSensor("ns=os openFileDescriptorCount");
 
     }
 
@@ -72,17 +72,17 @@ public class OperatingSystemMetricsTest extends AbstractMetricsTest {
     public void testComSunManagementOperatingSystemMXBean() {
         assumeOperatingSystemMXBeanType("com.sun.management.OperatingSystemMXBean");
 
-        assertContainsSensor("os.committedVirtualMemorySize");
-        assertContainsSensor("os.freePhysicalMemorySize");
-        assertContainsSensor("os.freeSwapSpaceSize");
-        assertContainsSensor("os.processCpuTime");
-        assertContainsSensor("os.totalPhysicalMemorySize");
-        assertContainsSensor("os.totalSwapSpaceSize");
+        assertContainsSensor("ns=os committedVirtualMemorySize");
+        assertContainsSensor("ns=os freePhysicalMemorySize");
+        assertContainsSensor("ns=os freeSwapSpaceSize");
+        assertContainsSensor("ns=os processCpuTime");
+        assertContainsSensor("ns=os totalPhysicalMemorySize");
+        assertContainsSensor("ns=os totalSwapSpaceSize");
 
         assumeThatNoJDK6();
         // only available in JDK 7+
-        assertContainsSensor("os.processCpuLoad");
-        assertContainsSensor("os.systemCpuLoad");
+        assertContainsSensor("ns=os processCpuLoad");
+        assertContainsSensor("ns=os systemCpuLoad");
     }
 
     private void assertContainsSensor(String expectedKey) {

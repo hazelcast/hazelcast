@@ -23,7 +23,10 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.Counter;
@@ -91,7 +94,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @see TargetInvocation
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public final class OperationServiceImpl implements InternalOperationService, LiveOperationsTracker {
+public final class OperationServiceImpl implements InternalOperationService, LiveOperationsTracker,
+    ObjectMetricsContext {
 
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 
@@ -100,7 +104,9 @@ public final class OperationServiceImpl implements InternalOperationService, Liv
     @Probe
     final Set<Operation> asyncOperations = newSetFromMap(new ConcurrentHashMap<Operation, Boolean>());
 
+    @ProbeSource
     final InvocationRegistry invocationRegistry;
+    @ProbeSource
     final OperationExecutor operationExecutor;
 
     @Probe(name = "operationTimeoutCount", level = MANDATORY)
@@ -124,8 +130,10 @@ public final class OperationServiceImpl implements InternalOperationService, Liv
     final OutboundOperationHandler outboundOperationHandler;
     volatile Invocation.Context invocationContext;
 
+    @ProbeSource
     private final InvocationMonitor invocationMonitor;
     private final SlowOperationDetector slowOperationDetector;
+    @ProbeSource
     private final InboundResponseHandlerSupplier inboundResponseHandlerSupplier;
     private final InternalSerializationService serializationService;
     private final int invocationMaxRetryCount;
@@ -172,6 +180,11 @@ public final class OperationServiceImpl implements InternalOperationService, Liv
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),
                 node.getProperties(), hzName);
+    }
+
+    @Override
+    public void switchToObjectContext(Tags context) {
+        context.namespace("operation");
     }
 
     public OutboundResponseHandler getOutboundResponseHandler() {

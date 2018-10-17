@@ -18,10 +18,10 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MetricsSource;
-import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
@@ -64,7 +64,7 @@ import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.newSetFromMap;
 
 public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet>,
-    MetricsSource {
+    ObjectMetricsContext {
 
     private static final int RETRY_NUMBER = 5;
     private static final long DELAY_FACTOR = 100L;
@@ -121,6 +121,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     private final ScheduledExecutorService scheduler;
 
     // accessed only in synchronized block
+    @ProbeSource
     private volatile TcpIpAcceptor acceptor;
 
     private volatile boolean live;
@@ -155,12 +156,8 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     }
 
     @Override
-    public void collectAll(CollectionCycle cycle) {
-        cycle.probe("tcp.connection", this);
-        if (acceptor != null && cycle.isProbed(ProbeLevel.INFO)) {
-            cycle.openContext().tag(TAG_TYPE, "acceptor").tag(TAG_INSTANCE, acceptor.getName());
-            cycle.probe("tcp.thread", acceptor);
-        }
+    public void switchToObjectContext(Tags context) {
+        context.namespace("tcp.connection");
     }
 
     public IOService getIoService() {

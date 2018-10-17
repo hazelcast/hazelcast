@@ -16,9 +16,6 @@
 
 package com.hazelcast.monitor.impl;
 
-import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
-import static com.hazelcast.internal.metrics.MetricsSource.TAG_TYPE;
-
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -43,32 +40,34 @@ public abstract class LocalDistributedObjectStats implements LocalInstanceStats 
     }
 
     public static <T extends LocalDistributedObjectStats> void probeStatistics(CollectionCycle cycle,
-            String type, Map<String, T> stats) {
+            String ns, Map<String, T> stats) {
         if (stats.isEmpty()) {
             // avoid unnecessary context manipulation
             return;
         }
-        CollectionCycle.Tags tags = cycle.openContext().tag(TAG_TYPE, type);
+        CollectionCycle.Tags tags = cycle.switchContext().namespace(ns);
         for (Entry<String, T> e : stats.entrySet()) {
             T val = e.getValue();
             if (val.isStatisticsEnabled()) {
-                tags.tag(TAG_INSTANCE, e.getKey());
-                cycle.probe(val);
+                tags.instance(e.getKey());
+                cycle.collectAll(val);
                 if (val instanceof LocalMapStatsImpl) {
                     LocalMapStatsImpl mapStats = (LocalMapStatsImpl) val;
                     NearCacheStats nearCacheStats = mapStats.getNearCacheStats();
                     if (nearCacheStats != null) {
-                        cycle.probe("nearcache", nearCacheStats);
+                        cycle.switchContext().namespace(ns, "nearcache").instance(e.getKey());
+                        cycle.collectAll(nearCacheStats);
                     }
                     Map<String, LocalIndexStats> indexStats = mapStats.getIndexStats();
                     if (indexStats != null && !indexStats.isEmpty()) {
+                        cycle.switchContext().namespace(ns, "index").instance(e.getKey());
                         for (Entry<String, LocalIndexStats> index : indexStats.entrySet()) {
                             tags.tag("index", index.getKey());
-                            cycle.probe(index.getValue());
+                            cycle.collectAll(index.getValue());
                         }
-                        // restore context after adding 2nd tag
-                        tags = cycle.openContext().tag(TAG_TYPE, type);
                     }
+                    // restore context after adding 2nd tag
+                    tags = cycle.switchContext().namespace(ns);
                 }
             }
         }

@@ -35,22 +35,22 @@ public class FileMetricsTest extends AbstractMetricsTest {
 
     @Before
     public void setup() {
-        registry.register(new MachineMetrics());
+        register(new MachineMetrics());
     }
 
     @Test
     public void freeSpace() {
-        assertCollected("type=file.partition instance=user.home freeSpace", userHome.getFreeSpace(), 0.1);
+        assertCollected("ns=file.partition instance=user.home freeSpace", userHome.getFreeSpace(), 0.1);
     }
 
     @Test
     public void totalSpace() {
-        assertCollected("type=file.partition instance=user.home totalSpace", userHome.getTotalSpace(),  0.1);
+        assertCollected("ns=file.partition instance=user.home totalSpace", userHome.getTotalSpace(),  0.1);
     }
 
     @Test
     public void usableSpace() {
-        assertCollected("type=file.partition instance=user.home usableSpace", userHome.getUsableSpace(), 0.1);
+        assertCollected("ns=file.partition instance=user.home usableSpace", userHome.getUsableSpace(), 0.1);
     }
 
 }

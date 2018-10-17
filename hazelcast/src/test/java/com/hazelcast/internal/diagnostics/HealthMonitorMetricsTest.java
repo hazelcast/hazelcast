@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,50 +41,51 @@ public class HealthMonitorMetricsTest extends HazelcastInstanceMetricsIntegratio
     @Test
     public void healthMonitorMetrics() {
         setProbeLevel(ProbeLevel.MANDATORY);
-        assertHasAllStatsEventually(
-                "client.endpoint.count",
-                "cluster.clock.clusterTimeDiff",
-                "type=internal-executor instance=hz:async queueSize",
-                "type=internal-executor instance=hz:client queueSize",
-                "type=internal-executor instance=hz:scheduled queueSize",
-                "type=internal-executor instance=hz:system queueSize",
-                "type=internal-executor instance=hz:query queueSize",
+        String ns = MetricsSource.TAG_NAMESPACE + "=";
+        assertEventuallyHasAllStats(
+                ns + "client.endpoint count",
+                ns + "cluster.clock clusterTimeDiff",
+                ns + "internal-executor instance=hz:async queueSize",
+                ns + "internal-executor instance=hz:client queueSize",
+                ns + "internal-executor instance=hz:scheduled queueSize",
+                ns + "internal-executor instance=hz:system queueSize",
+                ns + "internal-executor instance=hz:query queueSize",
 
-                "event.eventQueueSize",
+                ns + "event eventQueueSize",
 
-                "gc.minorCount",
-                "gc.minorTime",
-                "gc.majorCount",
-                "gc.majorTime",
-                "gc.unknownCount",
-                "gc.unknownTime",
+                ns + "gc minorCount",
+                ns + "gc minorTime",
+                ns + "gc majorCount",
+                ns + "gc majorTime",
+                ns + "gc unknownCount",
+                ns + "gc unknownTime",
 
-                "runtime.availableProcessors",
-                "runtime.maxMemory",
-                "runtime.freeMemory",
-                "runtime.totalMemory",
-                "runtime.usedMemory",
+                ns + "runtime availableProcessors",
+                ns + "runtime maxMemory",
+                ns + "runtime freeMemory",
+                ns + "runtime totalMemory",
+                ns + "runtime usedMemory",
 
-                "thread.peakThreadCount",
-                "thread.threadCount",
+                ns + "thread peakThreadCount",
+                ns + "thread threadCount",
 
-                "os.processCpuLoad",
-                "os.systemLoadAverage",
-                "os.systemCpuLoad",
-                "os.totalPhysicalMemorySize",
-                "os.freePhysicalMemorySize",
-                "os.totalSwapSpaceSize",
-                "os.freeSwapSpaceSize",
+                ns + "os processCpuLoad",
+                ns + "os systemLoadAverage",
+                ns + "os systemCpuLoad",
+                ns + "os totalPhysicalMemorySize",
+                ns + "os freePhysicalMemorySize",
+                ns + "os totalSwapSpaceSize",
+                ns + "os freeSwapSpaceSize",
 
-                "operation.queueSize",
-                "operation.priorityQueueSize",
-                "operation.responseQueueSize",
-                "operation.runningCount",
-                "operation.completedCount",
-                "operation.invocations.pending",
-                "operation.invocations.usedPercentage",
+                ns + "operation queueSize",
+                ns + "operation priorityQueueSize",
+                ns + "operation runningCount",
+                ns + "operation completedCount",
+                ns + "operation.responses responseQueueSize",
+                ns + "operation.invocations pending",
+                ns + "operation.invocations usedPercentage",
 
-                "proxy.proxyCount");
+                ns + "proxy proxyCount");
     }
 
 }

@@ -37,17 +37,11 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeAnnotatedMethodsTest extends AbstractMetricsTest implements MetricsSource {
+public class ProbeAnnotatedMethodsTest extends AbstractMetricsTest {
 
     @Before
-    public void setUp() {
-        registry.register(this);
-    }
-
-    @Override
-    public void collectAll(CollectionCycle cycle) {
-        cycle.probe("foo", new ProbeAnnotatedMethods());
-        cycle.probe("foo", new SubclassWithProbes());
+    public void setupRoots() {
+        register(new SubclassWithProbes());
     }
 
     interface SomeInterface {
@@ -167,104 +161,104 @@ public class ProbeAnnotatedMethodsTest extends AbstractMetricsTest implements Me
 
     @Test
     public void methodReturningNull() {
-        assertCollected("foo.nullMethod", -1L);
+        assertCollected("ns=foo nullMethod", -1L);
     }
 
     @Test
     public void methodThrowingAnException() {
-        assertNotCollected("foo.exceptionMethod");
+        assertCollected("ns=foo exceptionMethod", -1L);
     }
 
     @Test
     public void methodWithArguments() {
-        assertNotCollected("foo.argMethod");
+        assertNotCollected("ns=foo argMethod");
     }
 
     @Test
     public void withCustomName() {
-        assertCollected("foo.mymethod", 10);
+        assertCollected("ns=foo mymethod", 10);
     }
 
     @Test
     public void methodReturnsVoid() {
-        assertNotCollected("foo.voidMethod");
+        assertNotCollected("ns=foo voidMethod");
     }
 
     @Test
     public void primitiveByte() {
-        assertCollected("foo.byteMethod", 10);
+        assertCollected("ns=foo byteMethod", 10);
     }
 
     @Test
     public void primitiveShort() {
-        assertCollected("foo.shortMethod", 10);
+        assertCollected("ns=foo shortMethod", 10);
     }
 
     @Test
     public void primitiveInt() {
-        assertCollected("foo.intMethod", 10);
+        assertCollected("ns=foo intMethod", 10);
     }
 
     @Test
     public void primitiveLong() {
-        assertCollected("foo.longMethod", 10L);
+        assertCollected("ns=foo longMethod", 10L);
     }
 
 
     @Test
     public void primitiveFloat() {
-        assertCollected("foo.floatMethod", ProbeUtils.toLong(10d));
+        assertCollected("ns=foo floatMethod", ProbeUtils.toLong(10d));
     }
 
     @Test
     public void primitiveDouble() {
-        assertCollected("foo.doubleMethod", ProbeUtils.toLong(10d));
+        assertCollected("ns=foo doubleMethod", ProbeUtils.toLong(10d));
     }
 
     @Test
     public void atomicLong() {
-        assertCollected("foo.atomicLongMethod", 10L);
+        assertCollected("ns=foo atomicLongMethod", 10L);
     }
 
     @Test
     public void atomicInteger() {
-        assertCollected("foo.atomicIntegerMethod", 10L);
+        assertCollected("ns=foo atomicIntegerMethod", 10L);
     }
 
     @Test
     public void counter() {
-        assertCollected("foo.counterMethod", 10L);
+        assertCollected("ns=foo counterMethod", 10L);
     }
 
     @Test
     public void collection() {
-        assertCollected("foo.collectionMethod", 10L);
+        assertCollected("ns=foo collectionMethod", 10L);
     }
 
     @Test
     public void map() {
-        assertCollected("foo.mapMethod", 10L);
+        assertCollected("ns=foo mapMethod", 10L);
     }
 
     @Test
     public void subclass() {
-        assertCollected("foo.subclassMapMethod", 10L);
+        assertCollected("ns=foo subclassMapMethod", 10L);
     }
 
     @Test
     public void staticMethod() {
-        assertCollected("foo.staticMethod", 10L);
+        assertCollected("ns=foo staticMethod", 10L);
     }
 
     @Test
     public void interfaceMethod() {
-        assertCollected("foo.interfaceMethod", 10L);
+        assertCollected("ns=foo interfaceMethod", 10L);
     }
 
     @Test
-    public void superclassWithGaugeMethods() {
-        assertCollected("foo.inheritedMethod", 10L);
-        assertCollected("foo.inheritedField", 10L);
+    public void superclassWithFieldsAndMethods() {
+        assertCollected("inheritedMethod", 10L);
+        assertCollected("inheritedField", 10L);
     }
 
     abstract static class ClassWithProbes {
@@ -277,6 +271,14 @@ public class ProbeAnnotatedMethodsTest extends AbstractMetricsTest implements Me
         int inheritedField = 10;
     }
 
-    private static class SubclassWithProbes extends ClassWithProbes {
+    private static class SubclassWithProbes extends ClassWithProbes implements MetricsSource {
+
+        ProbeAnnotatedMethods nested = new ProbeAnnotatedMethods();
+
+        @Override
+        public void collectAll(CollectionCycle cycle) {
+            cycle.switchContext().namespace("foo");
+            cycle.collectAll(nested);
+        }
     }
 }

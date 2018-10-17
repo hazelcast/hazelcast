@@ -28,7 +28,10 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeSource;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -107,7 +110,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class InternalPartitionServiceImpl implements InternalPartitionService, ManagedService,
         EventPublishingService<PartitionEvent, PartitionEventListener<PartitionEvent>>,
-        PartitionAwareService, ClusterStateListener, ClusterVersionListener {
+        PartitionAwareService, ClusterStateListener, ClusterVersionListener, ObjectMetricsContext {
 
     private static final int PARTITION_OWNERSHIP_WAIT_MILLIS = 10;
     private static final String EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT = "Partition state sync invocation timed out";
@@ -127,9 +130,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final PartitionServiceProxy proxy;
     private final Lock lock = new ReentrantLock();
     private final InternalPartitionListener partitionListener;
-
+    @ProbeSource
     private final PartitionStateManager partitionStateManager;
+    @ProbeSource
     private final MigrationManager migrationManager;
+    @ProbeSource
     private final PartitionReplicaManager replicaManager;
     private final PartitionReplicaStateChecker partitionReplicaStateChecker;
     private final PartitionEventManager partitionEventManager;
@@ -177,6 +182,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         partitionMigrationTimeout = properties.getMillis(GroupProperty.PARTITION_MIGRATION_TIMEOUT);
 
         proxy = new PartitionServiceProxy(nodeEngine, this);
+    }
+
+    @Override
+    public void switchToObjectContext(Tags context) {
+        context.namespace("partitions");
     }
 
     @Override

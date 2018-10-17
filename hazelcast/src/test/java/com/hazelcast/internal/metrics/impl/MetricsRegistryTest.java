@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,10 +31,11 @@ import com.hazelcast.internal.metrics.AbstractMetricsTest;
 import com.hazelcast.internal.metrics.BeforeCollectionCycle;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
-import com.hazelcast.internal.metrics.ProbingContext;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -45,39 +45,34 @@ import com.hazelcast.test.annotation.QuickTest;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class MetricsRegistryTest extends AbstractMetricsTest implements MetricsSource {
+public class MetricsRegistryTest extends AbstractMetricsTest {
 
-    @Before
-    public void setUp() {
-        registry.register(this);
+    private static class LevelDependentMetrics implements MetricsSource {
+
+        @Override
+        public void collectAll(CollectionCycle cycle) {
+            LevelBean a = new LevelBean("a");
+            LevelBean b = new LevelBean("b");
+            LevelBean c = new LevelBean("");
+            LevelBean d = new LevelBean("special");
+            // context should be clean - no openContext required
+            cycle.collectAll(a); // should be context neutral
+            // context should still be clean, again no openContext
+            cycle.collectAll(d); // should be context neutral
+            // context should still be clean, again no openContext
+            cycle.collectAll(b);
+            // and again
+            cycle.collectAll(c);
+            Map<String, LevelBean> map = new HashMap<String, LevelBean>();
+            map.put("x", a);
+            map.put("y", b);
+            map.put("z", c);
+            map.put("s", d);
+            probeAllInstances(cycle, "map", map);
+        }
     }
 
-    @Override
-    public void collectAll(CollectionCycle cycle) {
-        LevelBean a = new LevelBean("a");
-        LevelBean b = new LevelBean("b");
-        LevelBean c = new LevelBean("");
-        LevelBean d = new LevelBean("special");
-        // context should be clean - no openContext required
-        cycle.probe("foo", a); // should be context neutral
-        // context should still be clean, again no openContext
-        cycle.probe(d); // should be context neutral
-        // context should still be clean, again no openContext
-        cycle.probe("bar", b);
-        // and again
-        cycle.probe("baz", c);
-        Map<String, LevelBean> map = new HashMap<String, LevelBean>();
-        map.put("x", a);
-        map.put("y", b);
-        map.put("z", c);
-        map.put("s", d);
-        probeAllInstances(cycle, "map", map);
-        cycle.openContext(); // needed to reset context
-        cycle.probe(this);
-        cycle.collectAll("", new AdjoinSource());
-    }
-
-    private static final class LevelBean implements ProbingContext {
+    private static final class LevelBean implements ObjectMetricsContext {
 
         private final String name;
 
@@ -95,134 +90,60 @@ public class MetricsRegistryTest extends AbstractMetricsTest implements MetricsS
         long debug = 3;
 
         @Override
-        public void tag(Tags context) {
+        public void switchToObjectContext(Tags context) {
             if (name.equals("special")) {
-                context.tag(TAG_TARGET, name);
+                context.tag(MetricsSource.TAG_TARGET, name);
             } else if (!name.isEmpty()) {
-                context.tag(TAG_INSTANCE, name);
+                context.instance(name);
             }
         }
     }
 
-    /**
-     * Illustrates a nested bean with a prefix in the type level annotation
-     */
-    @Probe(name = "path")
-    private static final class NestedA {
-
-        @Probe
-        long val;
-
-        @Probe
-        NestedA sub;
-
-        public NestedA(long val, NestedA sub) {
-            this.val = val;
-            this.sub = sub;
-        }
-    }
-
-    /**
-     * Illustrates a nested bean with no prefix in the type level annotation
-     */
-    @Probe
-    private static final class NestedB {
-        @Probe
-        long x;
-        @Probe
-        NestedB sub;
-
-        public NestedB(long x, NestedB sub) {
-            this.x = x;
-            this.sub = sub;
-        }
-    }
-
-    private static final class NestedSource implements MetricsSource {
-
-        @Probe
-        long y;
-
-        @Probe
-        NestedSource sub;
-
-        @Probe
-        long z = 42;
-
-        NestedSource(long y, NestedSource sub) {
-            this.y = y;
-            this.sub = sub;
-        }
-
-        @Override
-        public void collectAll(CollectionCycle cycle) {
-            cycle.openContext(); // just to test relative nesting
-            cycle.probe(this);
-            cycle.probe("my", this);
-        }
-    }
-
-    private static final class AdjoinSource implements MetricsSource {
-
-        @Probe
-        long age = 13;
-
-        @Override
-        public void collectAll(CollectionCycle cycle) {
-            cycle.openContext().tag("foo", "bar").adjoin("tender");
-            cycle.probe(this);
-        }
-
-    }
-
     @Test
     public void onlyProbesOfEnabledLevelsAreCollected() {
+        register(new LevelDependentMetrics());
         setLevel(ProbeLevel.MANDATORY);
-        assertCollectedCount(8);
+        assertCollectedCount(8); // 8 x mandatory
         assertMetric("mandatory", 1);
         setLevel(ProbeLevel.INFO);
-        assertCollectedCount(34); // 2x8 + 1 + 4 + 12 + 1
+        assertCollectedCount(16); // 8 x mandatory + info
         assertMetric("mandatory", 1);
         assertMetric("info", 2);
         setLevel(ProbeLevel.DEBUG);
-        assertCollectedCount(42); // 3x8 + 1 + 4 + 12 + 1
+        assertCollectedCount(24); // 8 x mandatory + info + debug
         assertMetric("mandatory", 1);
         assertMetric("info", 2);
         assertMetric("debug", 3);
     }
 
     private void assertMetric(String name, long value) {
-        String i = TAG_INSTANCE;
-        String t = TAG_TYPE;
-        assertCollected(i + "=a foo." + name, value);
-        assertCollected(i + "=b bar." + name, value);
-        assertCollected("baz." + name, value);
+        String i = MetricsSource.TAG_INSTANCE;
+        String ns = MetricsSource.TAG_NAMESPACE;
+        assertCollected(i + "=a " + name, value);
+        assertCollected(i + "=b " + name, value);
+        assertCollected(name, value);
         assertCollected("target=special " + name, value);
-        assertCollected(t + "=map " + i + "=a " + name, value);
-        assertCollected(t + "=map " + i + "=b " + name, value);
-        assertCollected(t + "=map " + i + "=z " + name, value);
-        assertCollected(t + "=map " + i + "=s target=special " + name, value);
+        assertCollected(ns + "=map " + i + "=a " + name, value);
+        assertCollected(ns + "=map " + i + "=b " + name, value);
+        assertCollected(ns + "=map " + i + "=z " + name, value);
+        assertCollected(ns + "=map " + i + "=s target=special " + name, value);
     }
 
-    @Probe
-    private int updates = 0;
+    private static class UpdatedMetrics {
 
-    @Probe(name = "a")
-    private NestedA nestedA = new NestedA(1, new NestedA(2, null));
+        @Probe
+        private int updates = 0;
 
-    @Probe(name = "b")
-    private NestedB nestedB = new NestedB(1, new NestedB(2, null));
+        @BeforeCollectionCycle(value = 500, unit = TimeUnit.MILLISECONDS)
+        private void update() {
+            updates++;
+        }
 
-    @Probe(name = "c")
-    private NestedSource nestedSource = new NestedSource(1, new NestedSource(2, null));
-
-    @BeforeCollectionCycle(value = 500, unit = TimeUnit.MILLISECONDS)
-    private void update() {
-        updates++;
     }
 
     @Test
-    public void reprobingOccursInSpecifiedCycleTime() {
+    public void updateOccursInSpecifiedCycleTime() {
+        register(new UpdatedMetrics());
         assertCollected("updates", 1);
         assertCollected("updates", 1);
         sleepAtLeastMillis(501L);
@@ -230,33 +151,111 @@ public class MetricsRegistryTest extends AbstractMetricsTest implements MetricsS
         assertCollected("updates", 2);
     }
 
-    @Test
-    public void nestedProbing() {
-        assertCollected("a.path.val", 1L);
-        assertCollected("a.path.sub.path.val", 2L);
-        assertCollected("b.x", 1L);
-        assertCollected("b.sub.x", 2L);
+    private static final class RootService {
+
+        @Probe
+        long a;
+
+        @ProbeSource
+        SubService sub1;
+
+        @ProbeSource
+        SubService sub2;
+
+        RootService(long a, SubService sub1, SubService sub2) {
+            this.a = a;
+            this.sub1 = sub1;
+            this.sub2 = sub2;
+        }
+    }
+
+    private static final class SubService implements MetricsSource, ObjectMetricsContext {
+
+        static int n = 0;
+
+        @Probe
+        long b;
+
+        @ProbeSource
+        Worker defaultWorker;
+
+        Worker alternativeDefaultWorker;
+
+        Worker[] workers;
+
+        String name;
+
+        public SubService(long b, Worker... workers) {
+            this.b = b;
+            this.workers = workers;
+            this.name = "sub" + (n++);
+            this.defaultWorker = new Worker(10 + n, "worker.default");
+            this.alternativeDefaultWorker = new Worker(10 + n, "no");
+        }
+
+        @Override
+        public void switchToObjectContext(Tags context) {
+            context.namespace(name);
+        }
+
+        @Override
+        public void collectAll(CollectionCycle cycle) {
+            cycle.switchContext().namespace("worker.extra");
+            cycle.collectAll(workers);
+            cycle.switchContext().namespace("worker.default");
+            cycle.collectAll(alternativeDefaultWorker);
+        }
+    }
+
+    private static final class Worker implements ObjectMetricsContext {
+
+        @Probe
+        long c;
+        @Probe
+        long cFix = 42;
+
+        private String name;
+
+        Worker(long c, String name) {
+            this.c = c;
+            this.name = name + c;
+        }
+
+        @Override
+        public void switchToObjectContext(Tags context) {
+            if (name.startsWith("worker.default11")) {
+                // this shows that ns of the parent can be replaced as long as no other tag was used
+                context.namespace(name);
+            } else {
+                context.instance(name);
+            }
+        }
+
     }
 
     @Test
-    public void nestedSourceCollection() {
-        assertCollected("c.y", 1L);
-        assertCollected("c.z", 42L);
-        assertCollected("c.sub.y", 2L);
-        assertCollected("c.sub.z", 42L);
-        assertCollected("c.sub.my.y", 2L);
-        assertCollected("c.sub.my.z", 42L);
-        assertCollected("c.my.y", 1L);
-        assertCollected("c.my.z", 42L);
-        assertCollected("c.my.sub.y", 2L);
-        assertCollected("c.my.sub.z", 42L);
-        assertCollected("c.my.sub.my.y", 2L);
-        assertCollected("c.my.sub.my.z", 42L);
-    }
-
-    @Test
-    public void adjoinTagCollection() {
-        assertCollected("foo=bartender age", 13L);
+    public void nestedCollection() {
+        register(new RootService(1,
+                new SubService(2, new Worker(3, "no"), new Worker(4, "no")),
+                new SubService(5, new Worker(6, "no"))));
+        assertCollectedCount(17);
+        assertCollected("a", 1);
+        assertCollected("ns=sub0 b", 2);
+        assertCollected("ns=sub1 b", 5);
+        assertCollected("ns=worker.default11 c", 11);
+        assertCollected("ns=worker.default11 cFix", 42);
+        assertCollected("ns=sub1 instance=worker.default12 c", 12);
+        assertCollected("ns=sub1 instance=worker.default12 cFix", 42);
+        assertCollected("ns=worker.extra instance=no3 c", 3);
+        assertCollected("ns=worker.extra instance=no3 cFix", 42);
+        assertCollected("ns=worker.extra instance=no4 c", 4);
+        assertCollected("ns=worker.extra instance=no4 cFix", 42);
+        assertCollected("ns=worker.extra instance=no6 c", 6);
+        assertCollected("ns=worker.extra instance=no6 cFix", 42);
+        assertCollected("ns=worker.default instance=no11 c", 11);
+        assertCollected("ns=worker.default instance=no11 cFix", 42);
+        assertCollected("ns=worker.default instance=no12 c", 12);
+        assertCollected("ns=worker.default instance=no12 cFix", 42);
     }
 
     @Test

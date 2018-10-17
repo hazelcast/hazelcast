@@ -33,16 +33,24 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 public abstract class AbstractMetricsTest extends HazelcastTestSupport {
 
-    protected final MetricsRegistry registry = new MetricsRegistryImpl();
-    protected CollectionContext context = registry.openContext(ProbeLevel.DEBUG);
+    private MetricsRegistry registry;
+    private CollectionContext context;
 
+    /**
+     * Reset {@link #registry} to new empty {@link MetricsRegistryImpl} with
+     * {@link ProbeLevel#DEBUG} for all tests
+     */
     @Before
-    public void setUp() {
-        // reset level to debug as default for all tests
+    public final void setUp() {
+        this.registry = new MetricsRegistryImpl();
         setLevel(ProbeLevel.DEBUG);
     }
 
-    public void setLevel(ProbeLevel level) {
+    protected final void register(Object root) {
+        registry.register(root);
+    }
+
+    protected final void setLevel(ProbeLevel level) {
         this.context = registry.openContext(level);
     }
 

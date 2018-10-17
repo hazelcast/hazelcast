@@ -63,13 +63,13 @@ public class HotRestartMetricsTest extends AbstractMetricsIntegrationTest {
 
     @Test
     public void hotRestartStatus() {
-        assertHasStatsEventually(4, "hotRestart.");
-        assertHasStatsEventually(1, "instance=foo hotRestart.");
+        assertEventuallyHasStats(4, "hot-restart");
+        assertEventuallyHasStats(1, "hot-restart", "foo");
     }
 
     @Test
     public void hotBackupStatus() {
-        assertHasStatsEventually(4, "hotBackup.");
+        assertEventuallyHasStats(4, "hot-backup");
     }
 
     private static class HotRestartMockingNodeContext extends DefaultNodeContext {

@@ -18,12 +18,19 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
+import com.hazelcast.internal.metrics.CollectionCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.util.ProbeEnumUtils;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -32,7 +39,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * A DTO for Hot Restart status of cluster and all members.
  */
-public class ClusterHotRestartStatusDTO implements JsonSerializable {
+public class ClusterHotRestartStatusDTO implements JsonSerializable, ObjectMetricsContext, MetricsSource {
 
     public enum ClusterHotRestartStatus {
         UNKNOWN, IN_PROGRESS, FAILED, SUCCEEDED
@@ -68,18 +75,43 @@ public class ClusterHotRestartStatusDTO implements JsonSerializable {
         this.memberHotRestartStatusMap = memberHotRestartStatusMap;
     }
 
+    @Override
+    public void switchToObjectContext(Tags context) {
+        context.namespace("hot-restart");
+    }
+
+    @Override
+    public void collectAll(CollectionCycle cycle) {
+        for (Entry<String, MemberHotRestartStatus> memberStatus : memberHotRestartStatusMap.entrySet()) {
+            cycle.switchContext().namespace("hot-restart").instance(memberStatus.getKey());
+            cycle.collect("memberStatus", ProbeEnumUtils.codeOf(memberStatus.getValue()));
+        }
+    }
+
     public HotRestartClusterDataRecoveryPolicy getDataRecoveryPolicy() {
         return dataRecoveryPolicy;
+    }
+
+    @Probe(name = "dataRecoveryPolicy")
+    private int getDataRecoveryPolicyAsCode() {
+        return ProbeEnumUtils.codeOf(dataRecoveryPolicy);
     }
 
     public ClusterHotRestartStatus getHotRestartStatus() {
         return hotRestartStatus;
     }
 
+    @Probe(name = "status")
+    private int getHotRestartStatusAsCode() {
+        return ProbeEnumUtils.codeOf(hotRestartStatus);
+    }
+
+    @Probe(name = "remainingValidationTime")
     public long getRemainingValidationTimeMillis() {
         return remainingValidationTimeMillis;
     }
 
+    @Probe(name = "remainingDataLoadTime")
     public long getRemainingDataLoadTimeMillis() {
         return remainingDataLoadTimeMillis;
     }

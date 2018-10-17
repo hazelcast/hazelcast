@@ -67,15 +67,15 @@ public class WanReplicationMetricsTest extends AbstractMetricsIntegrationTest {
 
     @Test
     public void wanReplicationPublisherStats() {
-        assertHasStatsEventually(6, "type=wan instance=config target=publisher");
+        assertEventuallyHasStatsWith(6, "ns=wan instance=config target=publisher");
     }
 
     @Test
     public void wanReplicationSyncStatus() {
-        assertHasAllStatsEventually(
-                "type=wan-sync instance=config2 target=publisher2 syncedPartitionCount",
-                "type=wan-sync instance=config2 target=publisher2 status",
-                "type=wan-sync instance=config2 target=publisher2 creationTime");
+        assertEventuallyHasAllStats(
+                "ns=wan-sync instance=config2 target=publisher2 syncedPartitionCount",
+                "ns=wan-sync instance=config2 target=publisher2 status",
+                "ns=wan-sync instance=config2 target=publisher2 creationTime");
     }
 
     private static class FakeWanReplicationService extends WanReplicationServiceImpl {

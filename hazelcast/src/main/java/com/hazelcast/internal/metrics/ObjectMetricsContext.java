@@ -21,16 +21,16 @@ import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * Can be implemented by instances passed to
- * {@link CollectionCycle#probe(Object)} (and its sibling methods) to provided
- * the {@link Tags} context through the probed object itself instead building it
- * on the level above.
+ * {@link CollectionCycle#collectAll(Object)} to provide the {@link Tags}
+ * context through the probed object itself instead building it on the level
+ * above.
  */
 @PrivateApi
-public interface ProbingContext {
+public interface ObjectMetricsContext {
 
     /**
-     * The implementing object (with probed fields or methods) is asked to provide
-     * the {@link Tags} context for the object.
+     * The implementing object (with {@link Probe} annotated fields or methods) is
+     * asked to provide the {@link Tags} context for the object.
      *
      * The performed tagging is relative to potential parent context {@link Tags}
      * that were added before probing the implementing instance.
@@ -44,5 +44,5 @@ public interface ProbingContext {
      * @param context to use to build the objects context using the {@link Tags}
      *        methods.
      */
-    void tag(Tags context);
+    void switchToObjectContext(Tags context);
 }
