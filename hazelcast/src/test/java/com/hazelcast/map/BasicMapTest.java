@@ -34,11 +34,13 @@ import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.PerformanceMonitor;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Preconditions;
+import org.HdrHistogram.Histogram;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -93,6 +95,31 @@ public class BasicMapTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
         Config config = getConfig();
         instances = factory.newInstances(config);
+    }
+
+
+    @Test
+    public void testThroughput() {
+        final IMap<Integer, Long> map = getInstance().getMap("testPrimitives");
+        final PerformanceMonitor performanceMonitor = new PerformanceMonitor("put", 5000);
+        for (int i = 0; i < 2; i++) {
+            new Thread() {
+                @Override
+                public void run() {
+                    for (long i = 0; ; i++) {
+                        int key = (int) (i % 10000);
+                        map.put(key, i);
+                        performanceMonitor.iterationFinished();
+                    }
+                }
+            }.start();
+        }
+        sleepAtLeastSeconds(30);
+        Histogram histogram = performanceMonitor.closeAndGetHistogram();
+        histogram.outputPercentileDistribution(System.out, 1000.0);
+
+        int estimatedFootprintInBytes = histogram.getEstimatedFootprintInBytes();
+        System.out.println("Footprint: " + estimatedFootprintInBytes + " bytes");
     }
 
     protected Config getConfig() {
