@@ -144,13 +144,20 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
             PublicIPAddress publicIPAddress = ipConfiguration.getPublicIPAddress();
             String privateIP = ipConfiguration.privateIPAddress();
             Address privateAddress = new Address(privateIP, port);
-            updateVirtualMachineMetaData(faultDomainId);
+            String localHostAddress = getLocalHostAddress();
             if (publicIPAddress != null) {
                 String publicIP = publicIPAddress.ipAddress();
                 Address publicAddress = new Address(publicIP, port);
+
+                if (localHostAddress != null && publicIP.equals(localHostAddress)) {
+                    updateVirtualMachineMetaData(faultDomainId);
+                }
                 return new SimpleDiscoveryNode(privateAddress, publicAddress);
             }
-            
+            if (localHostAddress != null && privateIP.equals(localHostAddress)) {
+                //In private address there is no host name so we are passing null.
+                updateVirtualMachineMetaData(faultDomainId);
+            }
             return new SimpleDiscoveryNode(privateAddress);
         }
 
