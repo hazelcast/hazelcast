@@ -41,14 +41,15 @@ import static com.hazelcast.util.Preconditions.checkHasText;
  */
 public final class PerformanceMonitor implements Closeable {
     private final static long MONITORING_DISABLED = -1;
+    private final static int HISTOGRAM_NUMBER_OF_SIGNIFICANT_DIGITS = 5;
 
     private final Thread monitoringThread;
-    private final Histogram deltaHistogram = new Histogram(5);
-    private final Histogram totalHistogram = new Histogram(5);
+    private final Histogram deltaHistogram = new Histogram(HISTOGRAM_NUMBER_OF_SIGNIFICANT_DIGITS);
+    private final Histogram totalHistogram = new Histogram(HISTOGRAM_NUMBER_OF_SIGNIFICANT_DIGITS);
     private final String name;
     private final long monitoringIntervalMillis;
 
-    private Recorder recorder = new Recorder(5);
+    private Recorder recorder = new Recorder(HISTOGRAM_NUMBER_OF_SIGNIFICANT_DIGITS);
     private ThreadLocal<Long> lastIteration = new ThreadLocal<Long>();
 
     private volatile boolean stopRequested;
@@ -151,7 +152,7 @@ public final class PerformanceMonitor implements Closeable {
                 long deltaElapsedNanos = now - lastTimestamp;
                 lastTimestamp = now;
                 updateHistograms();
-                printHistograms(totalElapsedNanos, deltaElapsedNanos);
+                printPerfData(totalElapsedNanos, deltaElapsedNanos);
             }
         }
 
@@ -164,15 +165,23 @@ public final class PerformanceMonitor implements Closeable {
         }
     }
 
-    private void printHistograms(double totalElapsedNanos, double deltaElapsedNanos) {
+    private void printPerfData(double totalElapsedNanos, double deltaElapsedNanos) {
         long totalCount = totalHistogram.getTotalCount();
         long deltaCount = deltaHistogram.getTotalCount();
         double totalThroughput = ((double)totalCount) / (totalElapsedNanos / 1000000000);
         double deltaThroughput = ((double)deltaCount) / (deltaElapsedNanos / 1000000000);
 
-        System.out.printf(name + ": Total throughput: %10.1f ops/s, Delta throughput: %10.1f ops/s, "
+        long percentile0_5 = deltaHistogram.getValueAtPercentile(.5);
+        long percentile0_8 = deltaHistogram.getValueAtPercentile(.8);
+        long percentile0_9 = deltaHistogram.getValueAtPercentile(.9);
+        long percentile0_99 = deltaHistogram.getValueAtPercentile(.99);
+        long maxValue = deltaHistogram.getMaxValue();
+
+        System.out.printf(name + ": Total throughput: %,10.1f ops/s, Delta throughput: %,10.1f ops/s, "
                 + "Total count: %8s ops, Delta count: %8s ops %n",
                 totalThroughput, deltaThroughput, totalCount, deltaCount);
+        System.out.printf(name + ": Delta percentiles: 0.5: %,d ns, 0.8: %,d ns, 0.9: %,d ns, 0.99: %,d ns, max: %,d ns %n",
+                percentile0_5, percentile0_8, percentile0_9, percentile0_99, maxValue);
     }
 
     private void updateHistograms() {

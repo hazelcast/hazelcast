@@ -123,7 +123,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             thread.start();
         }
 
-        sleepAtLeastSeconds(30);
+        sleepAtLeastSeconds(90);
 
         stopRequested.set(true);
         workersFinishedLatch.await();
