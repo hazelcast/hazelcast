@@ -52,6 +52,8 @@ import static junit.framework.TestCase.assertTrue;
 @Category(SlowTest.class)
 public class CacheExpirationBouncingMemberTest extends HazelcastTestSupport {
 
+    private static final long FIVE_MINUNTES = 5 * 60 * 1000;
+
     private String cacheName = "test";
     private int backupCount = 3;
     private int keySpace = 1000;
@@ -71,7 +73,7 @@ public class CacheExpirationBouncingMemberTest extends HazelcastTestSupport {
         return cacheConfig;
     }
 
-    @Test
+    @Test(timeout = FIVE_MINUNTES)
     public void backups_should_be_empty_after_expiration() {
         Runnable[] methods = new Runnable[2];
         HazelcastInstance testDriver = bounceMemberRule.getNextTestDriver();

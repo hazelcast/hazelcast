@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -164,6 +165,19 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     builder.addPropertyValue(name, value);
                 }
             }
+        }
+
+        protected void fillAttributesForAliasedDiscoveryStrategy(AliasedDiscoveryConfig config, Node node,
+                                                                 BeanDefinitionBuilder builder, String name) {
+            NamedNodeMap attributes = node.getAttributes();
+            if (attributes != null) {
+                for (int i = 0; i < attributes.getLength(); i++) {
+                    Node attribute = attributes.item(i);
+                    config.setProperty(attribute.getNodeName(), attribute.getNodeValue());
+                }
+            }
+            String propertyName = String.format("%sConfig", name);
+            builder.addPropertyValue(propertyName, config);
         }
 
         protected ManagedList parseListeners(Node node, Class listenerConfigClass) {

@@ -206,7 +206,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         private final int firstSegmentIndex;
         private int currentSegmentIndex;
         private int currentBucketIndex;
-        private HashEntry<K, V> currentEntry;
+        private HashEntry<K, V> mostRecentlyReturnedEntry;
         private int returnedEntryCount;
         private boolean reachedToEnd;
         private E currentSample;
@@ -247,28 +247,26 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
                     }
                     do {
                         // If current entry is not initialized yet, initialize it
-                        if (currentEntry == null) {
-                            currentEntry = table[currentBucketIndex];
+                        if (mostRecentlyReturnedEntry == null) {
+                            mostRecentlyReturnedEntry = table[currentBucketIndex];
+                        } else {
+                            mostRecentlyReturnedEntry = mostRecentlyReturnedEntry.next;
                         }
-                        while (currentEntry != null) {
-                            V value = currentEntry.value();
-                            K key = currentEntry.key();
-                            // Advance to next entry
-                            currentEntry = currentEntry.next;
+
+                        while (mostRecentlyReturnedEntry != null) {
+                            V value = mostRecentlyReturnedEntry.value();
+                            K key = mostRecentlyReturnedEntry.key();
+
                             if (isValidForSampling(value)) {
                                 currentSample = createSamplingEntry(key, value);
                                 // If we reached end of entries, advance current bucket index
-                                if (currentEntry == null) {
-                                    currentBucketIndex = ++currentBucketIndex < table.length ? currentBucketIndex : 0;
-                                }
                                 returnedEntryCount++;
                                 return;
                             }
+                            mostRecentlyReturnedEntry = mostRecentlyReturnedEntry.next;
                         }
                         // Advance current bucket index
                         currentBucketIndex = ++currentBucketIndex < table.length ? currentBucketIndex : 0;
-                        // Clear current entry index to initialize at next bucket
-                        currentEntry = null;
                     } while (currentBucketIndex != firstBucketIndex);
                 }
                 // Advance current segment index
@@ -276,7 +274,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
                 // Clear current bucket index to initialize at next segment
                 currentBucketIndex = -1;
                 // Clear current entry index to initialize at next segment
-                currentEntry = null;
+                mostRecentlyReturnedEntry = null;
             } while (currentSegmentIndex != firstSegmentIndex);
 
             reachedToEnd = true;
@@ -285,14 +283,18 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
 
         @Override
         public boolean hasNext() {
-            iterate();
+            if (currentSample == null) {
+                iterate();
+            }
             return currentSample != null;
         }
 
         @Override
         public E next() {
-            if (currentSample != null) {
-                return currentSample;
+            if (hasNext()) {
+                E returnValue = currentSample;
+                currentSample = null;
+                return returnValue;
             } else {
                 throw new NoSuchElementException();
             }

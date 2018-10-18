@@ -49,7 +49,6 @@ import static java.lang.String.format;
 public final class ClientContext {
 
     private String localUuid;
-    private final HazelcastClientInstanceImpl client;
     private final SerializationService serializationService;
     private final ClientClusterService clusterService;
     private final ClientPartitionService partitionService;
@@ -78,7 +77,6 @@ public final class ClientContext {
 
     public ClientContext(HazelcastClientInstanceImpl client) {
         this.name = client.getName();
-        this.client = client;
         this.serializationService = client.getSerializationService();
         this.clusterService = client.getClientClusterService();
         this.partitionService = client.getClientPartitionService();
@@ -159,7 +157,7 @@ public final class ClientContext {
     }
 
     public HazelcastInstance getHazelcastInstance() {
-        return client;
+        return proxyManager.getHazelcastInstance();
     }
 
     public SerializationService getSerializationService() {

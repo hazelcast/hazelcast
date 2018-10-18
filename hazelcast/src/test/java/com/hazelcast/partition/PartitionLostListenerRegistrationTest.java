@@ -61,8 +61,9 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
         final String id = instance.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
         assertNotNull(id);
 
-        // Expected = 2 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        assertRegistrationsSizeEventually(instance, 2);
+        // Expected = 4 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers
+        assertRegistrationsSizeEventually(instance, 4);
     }
 
     @Test
@@ -71,8 +72,9 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
         config.addListenerConfig(new ListenerConfig(mock(PartitionLostListener.class)));
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        // Expected = 2 -> 1 from config + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        assertRegistrationsSizeEventually(instance, 2);
+        // Expected = 4 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers
+        assertRegistrationsSizeEventually(instance, 4);
     }
 
     @Test
@@ -86,12 +88,13 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
         String id2 = partitionService.addPartitionLostListener(listener);
 
         assertNotEquals(id1, id2);
-        // Expected = 3 -> 2 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        assertRegistrationsSizeEventually(instance, 3);
+        // Expected = 5 -> 2 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers
+        assertRegistrationsSizeEventually(instance, 5);
     }
 
     @Test
-    public void test_removeMigrationListener_whenRegisteredListenerRemovedSuccessfully() {
+    public void test_removePartitionLostListener_whenRegisteredListenerRemovedSuccessfully() {
         HazelcastInstance instance = createHazelcastInstance();
         PartitionService partitionService = instance.getPartitionService();
 
@@ -102,11 +105,12 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
 
         assertTrue(result);
         // Expected = 1 -> see {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        assertRegistrationsSizeEventually(instance, 1);
+        // + 2 from map and cache ExpirationManagers
+        assertRegistrationsSizeEventually(instance, 3);
     }
 
     @Test
-    public void test_removeMigrationListener_whenNonExistingRegistrationIdRemoved() {
+    public void test_removePartitionLostListener_whenNonExistingRegistrationIdRemoved() {
         HazelcastInstance instance = createHazelcastInstance();
         PartitionService partitionService = instance.getPartitionService();
 
@@ -115,7 +119,7 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
     }
 
     @Test(expected = NullPointerException.class)
-    public void test_removeMigrationListener_whenNullRegistrationIdRemoved() {
+    public void test_removePartitionLostListener_whenNullRegistrationIdRemoved() {
         HazelcastInstance instance = createHazelcastInstance();
         PartitionService partitionService = instance.getPartitionService();
 

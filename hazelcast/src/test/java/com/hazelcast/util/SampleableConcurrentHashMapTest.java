@@ -25,8 +25,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -135,6 +137,36 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
         map = new SampleableConcurrentHashMap<Integer, Integer>(10);
 
         map.getRandomSamples(-1);
+    }
+
+    @Test
+    public void testIteratorContract() {
+        final int entryCount = 100;
+        final int sampleCount = 30;
+
+        map = new SampleableConcurrentHashMap<Integer, Integer>(100);
+
+        for (int i = 0; i < entryCount; i++) {
+            map.put(i, i);
+        }
+
+        Iterable<SampleableConcurrentHashMap.SamplingEntry<Integer, Integer>> samples = map.getRandomSamples(sampleCount);
+
+        Iterator<SampleableConcurrentHashMap.SamplingEntry<Integer, Integer>> iterator = samples.iterator();
+
+        // hasNext should not consume the items
+        for (int i = 0; i < entryCount * 2; i++) {
+            assertTrue(iterator.hasNext());
+        }
+
+        Set<Integer> set = new HashSet<Integer>();
+        // should return unique samples
+        for (int i = 0; i < sampleCount; i++) {
+            set.add(iterator.next().key);
+        }
+        assertEquals(30, set.size());
+
+        assertFalse(iterator.hasNext());
     }
 
     private void testSampling(int capacity, int entryCount, int sampleCount) {

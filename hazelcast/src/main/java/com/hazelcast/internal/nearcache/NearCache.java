@@ -92,19 +92,12 @@ public interface NearCache<K, V> extends InitializingObject {
     void put(K key, Data keyData, V value);
 
     /**
-     * Removes the value associated with the given {@code key}.
-     *
-     * @param key the key of the value will be removed
-     */
-    boolean remove(K key);
-
-    /**
      * Removes the value associated with the given {@code key}
      * and increases the invalidation statistics.
      *
      * @param key the key of the value will be invalidated
      */
-    boolean invalidate(K key);
+    void invalidate(K key);
 
     /**
      * Removes all stored values.
@@ -115,6 +108,16 @@ public interface NearCache<K, V> extends InitializingObject {
      * Clears the record store and destroys it.
      */
     void destroy();
+
+    /**
+     * Gets the count of stored records.
+     *
+     * @return the count of stored records
+     */
+    int size();
+
+
+    boolean isAvailable();
 
     /**
      * Gets the {@link com.hazelcast.config.InMemoryFormat} of the storage for internal records.
@@ -151,13 +154,6 @@ public interface NearCache<K, V> extends InitializingObject {
      * @return the best candidate object to store, selected from the given {@code candidates}.
      */
     Object selectToSave(Object... candidates);
-
-    /**
-     * Gets the count of stored records.
-     *
-     * @return the count of stored records
-     */
-    int size();
 
     /**
      * Executes the Near Cache pre-loader on the given {@link DataStructureAdapter}.

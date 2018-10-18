@@ -72,8 +72,8 @@ public interface MapLoader<K, V> {
      * to obtain the value. Implementation can use any means of loading the given key;
      * such as an O/R mapping tool, simple SQL or reading a file etc.
      *
-     * @param key, cannot be null
-     * @return value of the key, value cannot be null
+     * @param key, cannot be {@code null}
+     * @return value of the key; returning {@code null} value signals value missing in the underlying store
      */
     V load(K key);
 
@@ -84,8 +84,8 @@ public interface MapLoader<K, V> {
      * For any key in the input keys, there should be a single mapping in the resulting map. Also the resulting
      * map should not have any keys that are not part of the input keys.
      * <p>
-     * The given collection should not contain any <code>null</code> keys.
-     * The returned Map should not contain any <code>null</code> keys or values.
+     * The given collection should not contain any {@code null} keys.
+     * The returned Map should not contain any {@code null} keys or values.
      * <p>
      * Loading other items than what provided in <code>keys</code>
      * prevents the map from being filled from the map store.
@@ -101,9 +101,9 @@ public interface MapLoader<K, V> {
      * {@link Closeable} interface in which case it will be closed once iteration is over.
      * This is intended for releasing resources such as closing a JDBC result set.
      * <p>
-     * The returned Iterable should not contain any <code>null</code> keys.
+     * The returned Iterable should not contain any {@code null} keys.
      *
-     * @return all the keys. Keys inside the Iterable cannot be null.
+     * @return all the keys. Keys inside the Iterable cannot be {@code null}.
      */
     Iterable<K> loadAllKeys();
 }

@@ -127,7 +127,7 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
         public void run() {
             while (!stop.get()) {
                 Object key = getInt(KEY_SPACE);
-                nearCache.remove(key);
+                nearCache.invalidate(key);
             }
         }
     }

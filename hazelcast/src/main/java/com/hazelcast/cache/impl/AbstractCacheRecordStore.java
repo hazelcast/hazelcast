@@ -81,6 +81,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import static com.hazelcast.cache.impl.CacheEventContextUtil.createBaseEventContext;
@@ -362,13 +363,24 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void sampleAndHardRemoveEntries(int entryCountToRemove) {
+    public void sampleAndForceRemoveEntries(int entryCountToRemove) {
         assertRunningOnPartitionThread();
 
+        Queue<Data> keysToRemove = new LinkedList<Data>();
         Iterable<EvictionCandidate<Data, R>> entries = records.sample(entryCountToRemove);
         for (EvictionCandidate<Data, R> entry : entries) {
-            removeRecord(entry.getAccessor());
+            keysToRemove.add(entry.getAccessor());
         }
+
+        Data dataKey;
+        while ((dataKey = keysToRemove.poll()) != null) {
+            forceRemoveRecord(dataKey);
+        }
+    }
+
+    protected void forceRemoveRecord(Data key) {
+        // overridden in other context
+        removeRecord(key);
     }
 
     protected Data toData(Object obj) {

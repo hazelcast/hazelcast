@@ -32,6 +32,8 @@ import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
+import com.hazelcast.test.annotation.HeavilyMultiThreadedTestLimiter;
 import org.junit.Test;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -85,6 +87,7 @@ import static org.junit.Assert.assertTrue;
  * @param <NK> key type of the tested Near Cache
  * @param <NV> value type of the tested Near Cache
  */
+@ConfigureParallelRunnerWith(HeavilyMultiThreadedTestLimiter.class)
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSupport {
 

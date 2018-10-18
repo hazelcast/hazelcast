@@ -56,7 +56,11 @@ import com.hazelcast.client.impl.protocol.task.map.MapEventJournalReadTask;
 import com.hazelcast.client.impl.protocol.task.map.MapEventJournalSubscribeTask;
 import com.hazelcast.client.impl.protocol.task.map.MapProjectionMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapProjectionWithPredicateMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapPutIfAbsentWithMaxIdleMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapPutTransientWithMaxIdleMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapPutWithMaxIdleMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapSetTtlMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapSetWithMaxIdleMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.Pre38MapAddNearCacheEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorGetAllScheduledMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorShutdownMessageTask;
@@ -1671,6 +1675,30 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new MapSetTtlMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapSetWithMaxIdleCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new MapSetWithMaxIdleMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapPutWithMaxIdleCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new MapPutWithMaxIdleMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentWithMaxIdleCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new MapPutIfAbsentWithMaxIdleMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapPutTransientWithMaxIdleCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new MapPutTransientWithMaxIdleMessageTask(clientMessage, node, connection);
             }
         };
 //endregion

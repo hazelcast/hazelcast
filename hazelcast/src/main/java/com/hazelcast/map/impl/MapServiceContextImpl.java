@@ -446,6 +446,7 @@ class MapServiceContextImpl implements MapServiceContext {
         removeAllRecordStoresOfAllMaps(true, false);
         mapNearCacheManager.shutdown();
         mapContainers.clear();
+        expirationManager.onShutdown();
     }
 
     @Override

@@ -87,6 +87,18 @@ public interface MerkleTree extends MerkleTreeView {
     void forEachKeyOfNode(int nodeOrder, Consumer<Object> consumer);
 
     /**
+     * Returns the number of the keys under the specified node.
+     * <p>
+     * The node referenced by {@code nodeOrder} can be either a leaf or a
+     * non-leaf node. In the latter case the method returns with the sum
+     * of the key counts of the subtree under the specified node
+     *
+     * @param nodeOrder The node for which the key count is queried
+     * @return the number of the keys under the specified node
+     */
+    int getNodeKeyCount(int nodeOrder);
+
+    /**
      * Returns the memory footprint of Merkle Tree in bytes
      *
      * @return the memory footprint of the Merkle Tree in bytes

@@ -130,6 +130,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     @Override
     public StaleReadDetector getStaleReadDetector() {
+        checkAvailable();
         return staleReadDetector;
     }
 
@@ -167,7 +168,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
-    protected boolean isAvailable() {
+    @Override
+    public boolean isAvailable() {
         return records != null;
     }
 
@@ -279,7 +281,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                     return null;
                 }
                 if (isRecordExpired(record)) {
-                    remove(key);
+                    invalidate(key);
                     onExpire(key, record);
                     return null;
                 }
@@ -324,37 +326,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
-    @Override
-    public boolean remove(K key) {
-        checkAvailable();
-
-        R record = null;
-        boolean removed = false;
-        try {
-            record = removeRecord(key);
-            if (record != null && record.getRecordState() == READ_PERMITTED) {
-                removed = true;
-                nearCacheStats.decrementOwnedEntryCount();
-            }
-            onRemove(key, record, removed);
-            return record != null;
-        } catch (Throwable error) {
-            onRemoveError(key, record, removed, error);
-            throw rethrow(error);
-        }
-    }
-
-    @Override
-    public boolean invalidate(K key) {
-        try {
-            boolean removed = remove(key);
-            if (removed) {
-                nearCacheStats.incrementInvalidations();
-            }
-            return removed;
-        } finally {
-            nearCacheStats.incrementInvalidationRequests();
-        }
+    protected boolean canUpdateStats(R record) {
+        return record != null && record.getRecordState() == READ_PERMITTED;
     }
 
     @Override
@@ -426,6 +399,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     @Override
     public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
+        checkAvailable();
         return updateAndGetReserved(key, value, reservationId, deserialize);
     }
 

@@ -31,7 +31,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Map;
 
-import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static java.lang.String.format;
 
 /**
@@ -47,6 +46,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     private static final int DEFAULT_INITIAL_CAPACITY = 1000;
 
     private final NearCachePreloader<K> nearCachePreloader;
+    private final IBiFunction<? super K, ? super R, ? extends R> invalidatorFunction = createInvalidatorFunction();
 
     BaseHeapNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig, SerializationService serializationService,
                                  ClassLoader classLoader) {
@@ -90,7 +90,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     @Override
     protected R removeRecord(K key) {
         R removedRecord = records.remove(key);
-        if (removedRecord != null && removedRecord.getRecordState() == READ_PERMITTED) {
+        if (canUpdateStats(removedRecord)) {
             nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, removedRecord));
         }
         return removedRecord;
@@ -113,7 +113,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
             K key = entry.getKey();
             R value = entry.getValue();
             if (isRecordExpired(value)) {
-                remove(key);
+                invalidate(key);
                 onExpire(key, value);
             }
         }
@@ -163,4 +163,26 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
         Object cachedValue = existingRecord.getValue();
         return cachedValue instanceof Data ? toValue(cachedValue) : (V) cachedValue;
     }
+
+    @Override
+    public void invalidate(K key) {
+        records.applyIfPresent(key, invalidatorFunction);
+
+        nearCacheStats.incrementInvalidationRequests();
+    }
+
+    private IBiFunction<K, R, R> createInvalidatorFunction() {
+        return new IBiFunction<K, R, R>() {
+            @Override
+            public R apply(K key, R record) {
+                if (canUpdateStats(record)) {
+                    nearCacheStats.decrementOwnedEntryCount();
+                    nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
+                    nearCacheStats.incrementInvalidations();
+                }
+                return null;
+            }
+        };
+    }
+
 }

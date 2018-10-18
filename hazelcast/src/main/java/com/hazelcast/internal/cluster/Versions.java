@@ -40,8 +40,13 @@ public final class Versions {
      */
     public static final Version V3_11 = Version.of(3, 11);
 
-    public static final Version PREVIOUS_CLUSTER_VERSION = V3_10;
-    public static final Version CURRENT_CLUSTER_VERSION = V3_11;
+    /**
+     * Represents cluster version 3.12
+     */
+    public static final Version V3_12 = Version.of(3, 12);
+
+    public static final Version PREVIOUS_CLUSTER_VERSION = V3_11;
+    public static final Version CURRENT_CLUSTER_VERSION = V3_12;
 
     private Versions() {
     }

@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.hazelcast.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static java.text.MessageFormat.format;
 import static java.util.Collections.singletonMap;
@@ -933,7 +934,8 @@ class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && isCompatible(c1.getMulticastConfig(), c2.getMulticastConfig())
                     && isCompatible(c1.getTcpIpConfig(), c2.getTcpIpConfig())
-                    && new AwsConfigChecker().check(c1.getAwsConfig(), c2.getAwsConfig())
+                    && new AliasedDiscoveryConfigsChecker().check(AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(c1), AliasedDiscoveryConfigUtils
+                    .aliasedDiscoveryConfigsFrom(c2))
                     && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig());
         }
 
@@ -1007,21 +1009,45 @@ class ConfigCompatibilityChecker {
         }
     }
 
-    private static class AwsConfigChecker extends ConfigChecker<AwsConfig> {
+    private static class AliasedDiscoveryConfigsChecker extends ConfigChecker<List<AliasedDiscoveryConfig<?>>> {
+
         @Override
-        boolean check(AwsConfig c1, AwsConfig c2) {
+        boolean check(List<AliasedDiscoveryConfig<?>> t1, List<AliasedDiscoveryConfig<?>> t2) {
+            Map<String, AliasedDiscoveryConfig> m1 = mapByTag(t1);
+            Map<String, AliasedDiscoveryConfig> m2 = mapByTag(t2);
+
+            if (m1.size() != m2.size()) {
+                return false;
+            }
+
+            for (String tag : m1.keySet()) {
+                AliasedDiscoveryConfig c1 = m1.get(tag);
+                AliasedDiscoveryConfig c2 = m2.get(tag);
+                if (!check(c1, c2)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static Map<String, AliasedDiscoveryConfig> mapByTag(List<AliasedDiscoveryConfig<?>> configs) {
+            Map<String, AliasedDiscoveryConfig> result = new HashMap<String, AliasedDiscoveryConfig>();
+            for (AliasedDiscoveryConfig c : configs) {
+                if (c.isEnabled()) {
+                    result.put(c.getTag(), c);
+                }
+            }
+            return result;
+        }
+
+        private static boolean check(AliasedDiscoveryConfig c1, AliasedDiscoveryConfig c2) {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getAccessKey(), c2.getAccessKey())
-                    && nullSafeEqual(c1.getSecretKey(), c2.getSecretKey())
-                    && nullSafeEqual(c1.getRegion(), c2.getRegion())
-                    && nullSafeEqual(c1.getSecurityGroupName(), c2.getSecurityGroupName())
-                    && nullSafeEqual(c1.getTagKey(), c2.getTagKey())
-                    && nullSafeEqual(c1.getTagValue(), c2.getTagValue())
-                    && nullSafeEqual(c1.getHostHeader(), c2.getHostHeader())
-                    && nullSafeEqual(c1.getIamRole(), c2.getIamRole())
-                    && nullSafeEqual(c1.getConnectionTimeoutSeconds(), c2.getConnectionTimeoutSeconds()));
+                    && nullSafeEqual(c1.getTag(), c2.getTag())
+                    && nullSafeEqual(c1.isUsePublicIp(), c2.isUsePublicIp())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
     }
 
@@ -1053,7 +1079,7 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getQueueCapacity(), c2.getQueueCapacity())
                     && nullSafeEqual(c1.getQueueFullBehavior(), c2.getQueueFullBehavior())
                     && nullSafeEqual(c1.getInitialPublisherState(), c2.getInitialPublisherState())
-                    && new AwsConfigChecker().check(c1.getAwsConfig(), c2.getAwsConfig())
+                    && new AliasedDiscoveryConfigsChecker().check(aliasedDiscoveryConfigsFrom(c1), aliasedDiscoveryConfigsFrom(c2))
                     && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig())
                     && new WanSyncConfigChecker().check(c1.getWanSyncConfig(), c2.getWanSyncConfig())
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())

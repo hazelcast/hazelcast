@@ -23,8 +23,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.fail;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class JoinConfigTest {
@@ -37,12 +35,7 @@ public class JoinConfigTest {
         assertOk(false, false, true);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void joinConfigTestWhenTwoJoinMethodEnabled() {
-        assertOk(true, true, false);
-    }
-
-    public void assertOk(boolean tcp, boolean multicast, boolean aws) {
+    private static void assertOk(boolean tcp, boolean multicast, boolean aws) {
         JoinConfig config = new JoinConfig();
         config.getMulticastConfig().setEnabled(multicast);
         config.getTcpIpConfig().setEnabled(tcp);
@@ -51,17 +44,21 @@ public class JoinConfigTest {
         config.verify();
     }
 
-    public void assertNotOk(boolean tcp, boolean multicast, boolean aws) {
+    @Test(expected = InvalidConfigurationException.class)
+    public void joinConfigTestWhenTwoJoinMethodEnabled() {
         JoinConfig config = new JoinConfig();
-        config.getMulticastConfig().setEnabled(multicast);
-        config.getTcpIpConfig().setEnabled(tcp);
-        config.getAwsConfig().setEnabled(aws);
+        config.getMulticastConfig().setEnabled(true);
+        config.getTcpIpConfig().setEnabled(true);
 
-        try {
-            config.verify();
-            fail();
-        } catch (IllegalStateException e) {
+        config.verify();
+    }
 
-        }
+    @Test(expected = InvalidConfigurationException.class)
+    public void joinConfigTestWhenGcpAndAwsEnabled() {
+        JoinConfig config = new JoinConfig();
+        config.getAwsConfig().setEnabled(true);
+        config.getGcpConfig().setEnabled(true);
+
+        config.verify();
     }
 }

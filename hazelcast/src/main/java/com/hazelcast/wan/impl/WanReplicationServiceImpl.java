@@ -24,6 +24,9 @@ import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.monitor.LocalWanPublisherStats;
+import com.hazelcast.internal.management.events.AddWanConfigIgnoredEvent;
+import com.hazelcast.internal.management.events.WanConsistencyCheckIgnoredEvent;
+import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.ConstructorFunction;
@@ -133,16 +136,26 @@ public class WanReplicationServiceImpl implements WanReplicationService, Metrics
 
     @Override
     public void syncMap(String wanReplicationName, String targetGroupName, String mapName) {
+        node.getManagementCenterService().log(
+                WanSyncIgnoredEvent.enterpriseOnly(wanReplicationName, targetGroupName, mapName));
+
         throw new UnsupportedOperationException("WAN sync for map is not supported.");
     }
 
     @Override
     public void syncAllMaps(String wanReplicationName, String targetGroupName) {
+        node.getManagementCenterService().log(
+                WanSyncIgnoredEvent.enterpriseOnly(wanReplicationName, targetGroupName, null));
+
         throw new UnsupportedOperationException("WAN sync is not supported.");
     }
 
     @Override
     public void consistencyCheck(String wanReplicationName, String targetGroupName, String mapName) {
+        node.getManagementCenterService().log(
+                new WanConsistencyCheckIgnoredEvent(wanReplicationName, targetGroupName, mapName,
+                        "Consistency check is supported for enterprise clusters only."));
+
         throw new UnsupportedOperationException("Consistency check is not supported.");
     }
 
@@ -153,6 +166,8 @@ public class WanReplicationServiceImpl implements WanReplicationService, Metrics
 
     @Override
     public void addWanReplicationConfig(WanReplicationConfig wanConfig) {
+        node.getManagementCenterService().log(AddWanConfigIgnoredEvent.enterpriseOnly(wanConfig.getName()));
+
         throw new UnsupportedOperationException("Adding new WAN config is not supported.");
     }
 

@@ -36,10 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class DefaultNearCache<K, V> implements NearCache<K, V> {
-
     protected final String name;
     protected final TaskScheduler scheduler;
     protected final ClassLoader classLoader;
@@ -115,7 +113,6 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     @Override
     public V get(K key) {
-        checkNotNull(key, "key cannot be null on get!");
         checkKeyFormat(key);
 
         return nearCacheRecordStore.get(key);
@@ -123,7 +120,6 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     @Override
     public void put(K key, Data keyData, V value) {
-        checkNotNull(key, "key cannot be null on put!");
         checkKeyFormat(key);
 
         nearCacheRecordStore.doEvictionIfRequired();
@@ -132,19 +128,10 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public boolean remove(K key) {
-        checkNotNull(key, "key cannot be null on remove!");
+    public void invalidate(K key) {
         checkKeyFormat(key);
 
-        return nearCacheRecordStore.remove(key);
-    }
-
-    @Override
-    public boolean invalidate(K key) {
-        checkNotNull(key, "key cannot be null on invalidate!");
-        checkKeyFormat(key);
-
-        return nearCacheRecordStore.invalidate(key);
+        nearCacheRecordStore.invalidate(key);
     }
 
     @Override
@@ -188,6 +175,11 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     @Override
     public int size() {
         return nearCacheRecordStore.size();
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return nearCacheRecordStore.isAvailable();
     }
 
     @Override

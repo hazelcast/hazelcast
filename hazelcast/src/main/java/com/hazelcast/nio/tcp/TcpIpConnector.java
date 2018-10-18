@@ -163,42 +163,45 @@ public class TcpIpConnector {
             SocketChannel socketChannel = SocketChannel.open();
 
             Channel channel = connectionManager.createChannel(socketChannel, true);
-
-            if (ioService.isSocketBind()) {
-                bindSocket(socketChannel);
-            }
-
-            Level level = silent ? Level.FINEST : Level.INFO;
-            if (logger.isLoggable(level)) {
-                logger.log(level, "Connecting to " + socketAddress + ", timeout: " + timeout
-                        + ", bind-any: " + ioService.isSocketBindAny());
-            }
-
             try {
-                channel.connect(socketAddress, timeout);
 
-                ioService.interceptSocket(socketChannel.socket(), false);
+                if (ioService.isSocketBind()) {
+                    bindSocket(socketChannel);
+                }
 
-                TcpIpConnection connection = connectionManager.newConnection(channel, address);
-                connectionManager.sendBindRequest(connection, address, true);
-            } catch (NullPointerException e) {
-                // Helper piece of code, which will allow to identify rare NPEs in TLS connections
-                // https://github.com/hazelcast/hazelcast-enterprise/issues/2104
-                //TODO remove this catch block once the TLS NPE problem is successfully resolved
-                closeSocket(socketChannel);
-                logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
-                        + "[" + e.getMessage() + "]");
-                logger.log(Level.INFO,
-                        "Add this stacktrace to https://github.com/hazelcast/hazelcast-enterprise/issues/2104 please!", e);
-                throw e;
-            } catch (Exception e) {
-                closeSocket(socketChannel);
-                logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
-                        + "[" + e.getMessage() + "]");
-                throw e;
+                Level level = silent ? Level.FINEST : Level.INFO;
+                if (logger.isLoggable(level)) {
+                    logger.log(level, "Connecting to " + socketAddress + ", timeout: " + timeout
+                            + ", bind-any: " + ioService.isSocketBindAny());
+                }
+
+                try {
+                    channel.connect(socketAddress, timeout);
+
+                    ioService.interceptSocket(socketChannel.socket(), false);
+
+                    TcpIpConnection connection = connectionManager.newConnection(channel, address);
+                    connectionManager.sendBindRequest(connection, address, true);
+                } catch (NullPointerException e) {
+                    // Helper piece of code, which will allow to identify rare NPEs in TLS connections
+                    // https://github.com/hazelcast/hazelcast-enterprise/issues/2104
+                    //TODO remove this catch block once the TLS NPE problem is successfully resolved
+                    closeSocket(socketChannel);
+                    logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
+                            + "[" + e.getMessage() + "]");
+                    logger.log(Level.INFO,
+                            "Add this stacktrace to https://github.com/hazelcast/hazelcast-enterprise/issues/2104 please!", e);
+                    throw e;
+                } catch (Exception e) {
+                    closeSocket(socketChannel);
+                    logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
+                            + "[" + e.getMessage() + "]");
+                    throw e;
+                }
+            } finally {
+                connectionManager.removeAcceptedChannel(channel);
             }
         }
-
 
         private void bindSocket(SocketChannel socketChannel) throws IOException {
             InetAddress inetAddress = getInetAddress();

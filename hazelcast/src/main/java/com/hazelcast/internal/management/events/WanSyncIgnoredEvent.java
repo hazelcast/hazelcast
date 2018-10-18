@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.internal.management.events;
+
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.management.events.EventMetadata.EventType;
+
+import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_IGNORED;
+
+public final class WanSyncIgnoredEvent extends AbstractWanEventBase {
+    private final String reason;
+
+    private WanSyncIgnoredEvent(String wanReplicationName, String targetGroupName, String mapName, String reason) {
+        super(wanReplicationName, targetGroupName, mapName);
+
+        this.reason = reason;
+    }
+
+    public static WanSyncIgnoredEvent enterpriseOnly(String wanReplicationName, String targetGroupName, String mapName) {
+        return new WanSyncIgnoredEvent(wanReplicationName, targetGroupName, mapName,
+                "WAN sync is supported for enterprise clusters only.");
+    }
+
+    @Override
+    public EventType getType() {
+        return WAN_SYNC_IGNORED;
+    }
+
+    @Override
+    public JsonObject toJson() {
+        JsonObject json = super.toJson();
+        json.add("reason", reason);
+        return json;
+    }
+}

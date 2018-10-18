@@ -127,7 +127,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         assertEquals(nearCache.size(), managedNearCacheRecordStore.latestSize);
 
         for (int i = 0; i < 2 * DEFAULT_RECORD_COUNT; i++) {
-            nearCache.remove(i);
+            nearCache.invalidate(i);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnRemove);
             assertEquals(i < DEFAULT_RECORD_COUNT, managedNearCacheRecordStore.latestResultOnRemove);
         }
@@ -302,19 +302,13 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public boolean remove(Integer key) {
+        public void invalidate(Integer key) {
             if (expectedKeyValueMappings == null) {
                 throw new IllegalStateException("Near Cache is already destroyed");
             }
             boolean result = expectedKeyValueMappings.remove(key) != null;
             latestKeyOnRemove = key;
             latestResultOnRemove = result;
-            return result;
-        }
-
-        @Override
-        public boolean invalidate(Integer key) {
-            return remove(key);
         }
 
         @Override
@@ -405,6 +399,11 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public String tryPublishReserved(Integer key, String value, long reservationId, boolean deserialize) {
             return null;
+        }
+
+        @Override
+        public boolean isAvailable() {
+            return true;
         }
     }
 }
