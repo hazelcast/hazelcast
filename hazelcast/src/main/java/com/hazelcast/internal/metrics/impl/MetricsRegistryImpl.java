@@ -19,8 +19,8 @@ package com.hazelcast.internal.metrics.impl;
 import static com.hazelcast.internal.metrics.CharSequenceUtils.appendUnescaped;
 import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
 import static com.hazelcast.internal.metrics.MetricsSource.TAG_NAMESPACE;
-import static com.hazelcast.internal.metrics.ProbeUtils.findProbedFields;
-import static com.hazelcast.internal.metrics.ProbeUtils.findProbedMethods;
+import static com.hazelcast.internal.metrics.ProbeUtils.extractAnnotatedFields;
+import static com.hazelcast.internal.metrics.ProbeUtils.extractAnnotatedMethods;
 import static com.hazelcast.internal.metrics.ProbeUtils.isSuitableProbeMethod;
 import static com.hazelcast.internal.metrics.ProbeUtils.isSupportedProbeType;
 import static com.hazelcast.internal.metrics.ProbeUtils.probeName;
@@ -781,8 +781,8 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         }
 
         private static ProbeAnnotatedTypeLevel[] initByAnnotations(Class<?> type) {
-            List<Field> probedFields = findProbedFields(type);
-            List<Method> probedMethods = findProbedMethods(type);
+            List<Field> probedFields = extractAnnotatedFields(type);
+            List<Method> probedMethods = extractAnnotatedMethods(type);
             removeMethodProbesOverridenByFieldProbes(probedFields, probedMethods);
             ProbeLevel[] levels = ProbeLevel.values();
             ProbeAnnotatedTypeLevel[] res = new ProbeAnnotatedTypeLevel[levels.length];

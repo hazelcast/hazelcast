@@ -78,7 +78,7 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
-import static com.hazelcast.internal.metrics.ProbeUtils.probeAllInstances;
+import static com.hazelcast.internal.metrics.ProbeUtils.collectAllEntries;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static java.util.Collections.singleton;
 
@@ -167,7 +167,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        probeAllInstances(cycle, "cache", statistics);
+        collectAllEntries(cycle, "cache", statistics);
     }
 
     public CacheMergePolicyProvider getMergePolicyProvider() {

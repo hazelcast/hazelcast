@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import static com.hazelcast.internal.metrics.ProbeUtils.probeAllInstances;
+import static com.hazelcast.internal.metrics.ProbeUtils.collectAllEntries;
 import static org.junit.Assert.assertArrayEquals;
 
 import java.util.HashMap;
@@ -68,7 +68,7 @@ public class MetricsRegistryTest extends AbstractMetricsTest {
             map.put("y", b);
             map.put("z", c);
             map.put("s", d);
-            probeAllInstances(cycle, "map", map);
+            collectAllEntries(cycle, "map", map);
         }
     }
 

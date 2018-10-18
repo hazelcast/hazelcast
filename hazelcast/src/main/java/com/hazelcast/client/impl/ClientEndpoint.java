@@ -118,11 +118,4 @@ public interface ClientEndpoint extends Client {
      * @return statistics string for the client
      */
     String getClientStatistics();
-
-    String getClientVersionString();
-
-    /**
-     * @return the clients address in format {@code ip:port} or null if unknown
-     */
-    String getAddress();
 }

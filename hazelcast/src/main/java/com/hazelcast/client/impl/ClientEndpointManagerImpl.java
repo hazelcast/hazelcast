@@ -20,8 +20,6 @@ import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.CharSequenceUtils.Lines;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -38,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.client.impl.ClientEngineImpl.SERVICE_NAME;
-import static com.hazelcast.internal.metrics.CharSequenceUtils.startsWith;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -155,45 +152,11 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager, Metrics
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        if (!cycle.isCollected(ProbeLevel.INFO)) {
-            return;
-        }
-        if (size() > 0) {
-            for (ClientEndpoint endpoint : getEndpoints()) {
-                if (endpoint.isAlive()) {
-                    Tags tags = cycle.switchContext().namespace("client");
-                    tags.instance(endpoint.getUuid());
-                    cycle.collectAll(endpoint);
-                    String version = endpoint.getClientVersionString();
-                    String address = endpoint.getAddress();
-                    tags.tag(TAG_TARGET, endpoint.getClientType().name())
-                    .tag("version", version == null ? "?" : version)
-                    .tag("address", address == null ? "?" : address);
-                    // this particular metric is used to convey details of the endpoint via tags
-                    boolean isOwnerConnection = endpoint.isOwnerConnection();
-                    cycle.collect("ownerConnection", isOwnerConnection);
-                    if (isOwnerConnection) {
-                        collectAllClientStatistics(cycle, endpoint.getUuid(), endpoint.getClientStatistics());
-                    }
-                }
+        for (ClientEndpoint endpoint : getEndpoints()) {
+            if (endpoint.isAlive()) {
+                cycle.collectAll(endpoint);
             }
         }
     }
 
-    private static void collectAllClientStatistics(CollectionCycle cycle, CharSequence origin, CharSequence stats) {
-        if (stats == null) {
-            return;
-        }
-        // protocol version 1 (since 3.12)
-        if (startsWith("1\n", stats)) {
-            Lines lines = new Lines(stats);
-            lines.next().next();
-            cycle.switchContext().tag("origin", origin);
-            while (lines.length() > 0) {
-                cycle.collectForwarded(lines.key(), lines.value());
-                // first to end of current line as key goes back
-                lines.next().next();
-            }
-        }
-    }
 }

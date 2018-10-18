@@ -20,7 +20,12 @@ import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.internal.metrics.CollectionCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.CharSequenceUtils.Lines;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -34,6 +39,9 @@ import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+
+import static com.hazelcast.internal.metrics.CharSequenceUtils.startsWith;
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.Callable;
@@ -43,7 +51,8 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
  */
-public final class ClientEndpointImpl implements ClientEndpoint {
+@SuppressWarnings("checkstyle:methodcount")
+public final class ClientEndpointImpl implements ClientEndpoint, MetricsSource, ObjectMetricsContext {
 
     private final ClientEngineImpl clientEngine;
     private final NodeEngineImpl nodeEngine;
@@ -95,6 +104,24 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         return principal != null ? principal.getUuid() : null;
     }
 
+    @Override
+    public void switchToObjectContext(Tags context) {
+        context.namespace("client").instance(getUuid());
+    }
+
+    @Override
+    public void collectAll(CollectionCycle cycle) {
+        cycle.switchContext().namespace("client").instance(getUuid())
+                .tag(TAG_TARGET, getClientType().name())
+                .tag("version", clientVersionString == null ? "?" : clientVersionString)
+                .tag("address", address == null ? "?" : address);
+        // this particular metric is used to convey details of the endpoint via tags
+        cycle.collect("ownerConnection", ownerConnection);
+        if (ownerConnection) {
+            collectAllClientStatistics(cycle, getUuid(), getClientStatistics());
+        }
+    }
+
     @Probe
     @Override
     public boolean isAlive() {
@@ -140,16 +167,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public int getClientVersion() {
         return clientVersion;
-    }
-
-    @Override
-    public String getClientVersionString() {
-        return clientVersionString;
-    }
-
-    @Override
-    public String getAddress() {
-        return address;
     }
 
     @Override
@@ -306,5 +323,22 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     public long getAuthenticationCorrelationId() {
         return authenticationCorrelationId;
+    }
+
+    private static void collectAllClientStatistics(CollectionCycle cycle, CharSequence origin, CharSequence stats) {
+        if (stats == null) {
+            return;
+        }
+        // protocol version 1 (since 3.12)
+        if (startsWith("1\n", stats)) {
+            Lines lines = new Lines(stats);
+            lines.next().next();
+            cycle.switchContext().tag("origin", origin);
+            while (lines.length() > 0) {
+                cycle.collectForwarded(lines.key(), lines.value());
+                // first to end of current line as key goes back
+                lines.next().next();
+            }
+        }
     }
 }

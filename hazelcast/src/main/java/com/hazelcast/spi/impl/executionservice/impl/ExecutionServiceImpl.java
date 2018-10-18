@@ -53,7 +53,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.metrics.ProbeUtils.probeAllInstances;
+import static com.hazelcast.internal.metrics.ProbeUtils.collectAllEntries;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 
@@ -163,7 +163,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService, Met
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        probeAllInstances(cycle, "internal-executor", executors);
+        collectAllEntries(cycle, "internal-executor", executors);
     }
 
     @Override

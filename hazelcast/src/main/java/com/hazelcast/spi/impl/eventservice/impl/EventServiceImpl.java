@@ -60,7 +60,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.metrics.ProbeUtils.probeAllInstances;
+import static com.hazelcast.internal.metrics.ProbeUtils.collectAllEntries;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
@@ -555,7 +555,7 @@ public class EventServiceImpl implements InternalEventService, MetricsSource, Ob
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        probeAllInstances(cycle, "event", segments);
+        collectAllEntries(cycle, "event", segments);
     }
 
     /** Returns {@code true} if the subscriber of the registration is this node */

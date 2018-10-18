@@ -49,7 +49,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.metrics.ProbeUtils.probeAllThreads;
+import static com.hazelcast.internal.metrics.ProbeUtils.collectAllThreads;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
 import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
@@ -228,8 +228,8 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsSo
     @Override
     public void collectAll(CollectionCycle cycle) {
         if (cycle.isCollected(ProbeLevel.INFO)) {
-            probeAllThreads(cycle, cycle.switchContext().namespace("operation.generic"), genericThreads);
-            probeAllThreads(cycle, cycle.switchContext().namespace("operation.partition"), partitionThreads);
+            collectAllThreads(cycle, cycle.switchContext().namespace("operation.generic"), genericThreads);
+            collectAllThreads(cycle, cycle.switchContext().namespace("operation.partition"), partitionThreads);
             cycle.switchContext().namespace("operation.runner");
             cycle.collectAll(genericOperationRunners);
             cycle.collectAll(partitionOperationRunners);

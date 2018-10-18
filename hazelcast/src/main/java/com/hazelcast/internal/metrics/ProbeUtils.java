@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.RandomAccess;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -174,19 +175,19 @@ public final class ProbeUtils {
         return name.isEmpty() ? probed.getName() : name;
     }
 
-    public static List<Method> findProbedMethods(Class<?> type) {
+    public static List<Method> extractAnnotatedMethods(Class<?> type) {
         List<Method> probedMethods = new ArrayList<Method>();
-        collectProbeMethods(type, probedMethods);
+        addAnnotatedMethods(type, probedMethods);
         return probedMethods;
     }
 
-    public static List<Field> findProbedFields(Class<?> type) {
+    public static List<Field> extractAnnotatedFields(Class<?> type) {
         List<Field> probedFields = new ArrayList<Field>();
-        collectProbeFields(type, probedFields);
+        addAnnotatedFields(type, probedFields);
         return probedFields;
     }
 
-    private static void collectProbeMethods(Class<?> type, List<Method> probes) {
+    private static void addAnnotatedMethods(Class<?> type, List<Method> probes) {
         for (Method m : type.getDeclaredMethods()) {
             if (m.isAnnotationPresent(Probe.class)) {
                 if (isSuitableProbeMethod(m, probes)) {
@@ -205,10 +206,10 @@ public final class ProbeUtils {
             }
         }
         if (type.getSuperclass() != null) {
-            collectProbeMethods(type.getSuperclass(), probes);
+            addAnnotatedMethods(type.getSuperclass(), probes);
         }
         for (Class<?> t : type.getInterfaces()) {
-            collectProbeMethods(t, probes);
+            addAnnotatedMethods(t, probes);
         }
     }
 
@@ -229,7 +230,7 @@ public final class ProbeUtils {
         return false;
     }
 
-    private static void collectProbeFields(Class<?> type, List<Field> probes) {
+    private static void addAnnotatedFields(Class<?> type, List<Field> probes) {
         for (Field f : type.getDeclaredFields()) {
             if (f.isAnnotationPresent(Probe.class)) {
                 if (isSupportedProbeType(f.getType())) {
@@ -246,12 +247,12 @@ public final class ProbeUtils {
             }
         }
         if (type.getSuperclass() != null) {
-            collectProbeFields(type.getSuperclass(), probes);
+            addAnnotatedFields(type.getSuperclass(), probes);
         }
     }
 
 
-    public static void probeAllThreads(CollectionCycle cycle, Tags tags, Thread[] threads) {
+    public static void collectAllThreads(CollectionCycle cycle, Tags tags, Thread[] threads) {
         if (threads.length == 0) {
             // avoid unnecessary context manipulation
             return;
@@ -262,7 +263,7 @@ public final class ProbeUtils {
         }
     }
 
-    public static <T> void probeAllInstances(CollectionCycle cycle, String ns, Map<String, T> entries) {
+    public static <T> void collectAllEntries(CollectionCycle cycle, String ns, Map<String, T> entries) {
         if (entries.isEmpty()) {
             // avoid unnecessary context manipulation
             return;
@@ -271,6 +272,23 @@ public final class ProbeUtils {
         for (Entry<String, T> e : entries.entrySet()) {
             tags.instance(e.getKey());
             cycle.collectAll(e.getValue());
+        }
+    }
+
+    public static <T> void collectAllEntries(CollectionCycle cycle, Collection<T> entries) {
+        if (entries.isEmpty()) {
+            return;
+        }
+        Class<?> type = entries.getClass();
+        if (List.class.isAssignableFrom(type) && RandomAccess.class.isAssignableFrom(type)) {
+            List<T> list = (List<T>) entries;
+            for (int i = 0; i < list.size(); i++) {
+                cycle.collectAll(list.get(i));
+            }
+        } else  {
+            for (T e : entries) {
+                cycle.collectAll(e);
+            }
         }
     }
 

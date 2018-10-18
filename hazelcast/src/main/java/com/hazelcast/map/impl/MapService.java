@@ -57,7 +57,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
-import static com.hazelcast.internal.metrics.ProbeUtils.probeAllInstances;
+import static com.hazelcast.internal.metrics.ProbeUtils.collectAllEntries;
 import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
 
 /**
@@ -204,7 +204,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public void collectAll(CollectionCycle cycle) {
         probeStatistics(cycle, "map", mapServiceContext.getLocalMapStatsProvider().createAllLocalMapStats());
-        probeAllInstances(cycle, "map", mapServiceContext.getMapContainers());
+        collectAllEntries(cycle, "map", mapServiceContext.getMapContainers());
     }
 
     public Map<String, ? extends LocalMapStats> getStats() {
