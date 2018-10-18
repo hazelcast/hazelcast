@@ -97,13 +97,23 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
     @Override
     public LongGauge newLongGauge(String name) {
         LongGauge gauge = longGauges.get(name);
-        return gauge != null ? gauge : longGauges.put(name, Gauges.longGauge());
+        if (gauge != null) {
+            return gauge;
+        }
+        gauge = Gauges.longGauge();
+        longGauges.put(name, gauge);
+        return gauge;
     }
 
     @Override
     public DoubleGauge newDoubleGauge(String name) {
         DoubleGauge gauge = doubleGauges.get(name);
-        return gauge != null ? gauge : doubleGauges.put(name, Gauges.doubleGauge());
+        if (gauge != null) {
+            return gauge;
+        }
+        gauge = Gauges.doubleGauge();
+        doubleGauges.put(name, gauge);
+        return gauge;
     }
 
     @Override
