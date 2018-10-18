@@ -74,7 +74,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.config.ConfigValidator.checkReplicatedMapConfig;
-import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.collectAllStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -364,7 +364,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        probeStatistics(cycle, "replicatedMap", getStats());
+        collectAllStatistics(cycle, "replicatedMap", getStats());
     }
 
     // visible for testing only

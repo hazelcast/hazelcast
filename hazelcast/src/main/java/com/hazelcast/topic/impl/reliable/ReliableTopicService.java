@@ -32,7 +32,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.collectAllStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class ReliableTopicService
@@ -78,7 +78,7 @@ public class ReliableTopicService
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        probeStatistics(cycle, "reliableTopic", statsMap);
+        collectAllStatistics(cycle, "reliableTopic", statsMap);
     }
 
     // for tests only

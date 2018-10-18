@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.collectAllStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
@@ -81,7 +81,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        probeStatistics(cycle, "topic", statsMap);
+        collectAllStatistics(cycle, "topic", statsMap);
     }
 
     // only for testing

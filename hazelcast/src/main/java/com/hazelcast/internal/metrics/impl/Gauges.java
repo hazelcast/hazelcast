@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import static com.hazelcast.internal.metrics.ProbeUtils.doubleValue;
 import static com.hazelcast.internal.metrics.ProbeUtils.toLong;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -54,10 +55,28 @@ public final class Gauges {
 
     public static LongGauge longGauge(Object supplier, Object source) {
         if (supplier instanceof Method) {
-            return new LongMethodGauge((Method) supplier, source);
+            Method method = (Method) supplier;
+            if (LongProbeFunction.class.isAssignableFrom(method.getReturnType())) {
+                try {
+                    return new LongProbeFunctionGauge((LongProbeFunction) method.invoke(source, EMPTY_ARGS));
+                } catch (Exception e) {
+                    ignore(e);
+                    // use method gauge instead...
+                }
+            }
+            return new LongMethodGauge(method, source);
         }
         if (supplier instanceof Field) {
-            return new LongFieldGauge((Field) supplier, source);
+            Field field = (Field) supplier;
+            if (LongProbeFunction.class.isAssignableFrom(field.getType())) {
+                try {
+                    return new LongProbeFunctionGauge((LongProbeFunction) field.get(source));
+                } catch (Exception e) {
+                    ignore(e);
+                    // use field gauge instead...
+                }
+            }
+            return new LongFieldGauge(field, source);
         }
         if (supplier instanceof LongProbeFunction) {
             return new LongProbeFunctionGauge((LongProbeFunction) supplier);
@@ -71,10 +90,28 @@ public final class Gauges {
 
     public static DoubleGauge doubleGauge(Object supplier, Object source) {
         if (supplier instanceof Method) {
-            return new DoubleMethodGauge((Method) supplier, source);
+            Method method = (Method) supplier;
+            if (DoubleProbeFunction.class.isAssignableFrom(method.getReturnType())) {
+                try {
+                    return new DoubleProbeFunctionGauge((DoubleProbeFunction) method.invoke(source, EMPTY_ARGS));
+                } catch (Exception e) {
+                    ignore(e);
+                    // use method gauge instead...
+                }
+            }
+            return new DoubleMethodGauge(method, source);
         }
         if (supplier instanceof Field) {
-            return new DoubleFieldGauge((Field) supplier, source);
+            Field field = (Field) supplier;
+            if (DoubleProbeFunction.class.isAssignableFrom(field.getType())) {
+                try {
+                    return new DoubleProbeFunctionGauge((DoubleProbeFunction) field.get(source));
+                } catch (Exception e) {
+                    ignore(e);
+                    // use field gauge instead...
+                }
+            }
+            return new DoubleFieldGauge(field, source);
         }
         if (supplier instanceof DoubleProbeFunction) {
             return new DoubleProbeFunctionGauge((DoubleProbeFunction) supplier);

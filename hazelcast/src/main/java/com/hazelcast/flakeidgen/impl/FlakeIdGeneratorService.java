@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.collectAllStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class FlakeIdGeneratorService implements ManagedService, RemoteService,
@@ -81,7 +81,7 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        probeStatistics(cycle, "flakeIdGenerator", statsMap);
+        collectAllStatistics(cycle, "flakeIdGenerator", statsMap);
     }
 
     // for testing only

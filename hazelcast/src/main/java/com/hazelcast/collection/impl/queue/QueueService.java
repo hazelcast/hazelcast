@@ -75,7 +75,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
-import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.collectAllStatistics;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
@@ -368,7 +368,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        probeStatistics(cycle, "queue", statsMap);
+        collectAllStatistics(cycle, "queue", statsMap);
     }
 
     @Override

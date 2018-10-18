@@ -76,7 +76,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMultiMapConfig;
-import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.collectAllStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
@@ -455,7 +455,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        probeStatistics(cycle, "multiMap", getStats());
+        collectAllStatistics(cycle, "multiMap", getStats());
     }
 
     // visible for testing only

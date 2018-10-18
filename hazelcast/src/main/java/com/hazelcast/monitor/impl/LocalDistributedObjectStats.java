@@ -39,7 +39,7 @@ public abstract class LocalDistributedObjectStats implements LocalInstanceStats 
         return statisticsEnabled;
     }
 
-    public static <T extends LocalDistributedObjectStats> void probeStatistics(CollectionCycle cycle,
+    public static <T extends LocalDistributedObjectStats> void collectAllStatistics(CollectionCycle cycle,
             String ns, Map<String, T> stats) {
         if (stats.isEmpty()) {
             // avoid unnecessary context manipulation

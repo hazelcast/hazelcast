@@ -45,7 +45,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.probeStatistics;
+import static com.hazelcast.monitor.impl.LocalDistributedObjectStats.collectAllStatistics;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class DistributedExecutorService implements ManagedService, RemoteService,
@@ -203,7 +203,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        probeStatistics(cycle, "executor", statsMap);
+        collectAllStatistics(cycle, "executor", statsMap);
     }
 
     /**

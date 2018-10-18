@@ -20,6 +20,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.lang.reflect.Field;
@@ -131,68 +132,74 @@ public class GaugesTest {
 
     @Test
     public void longFieldGauge() {
-        assertLongGauge("longFieldGauge", 1L);
+        assertLongGauge("longFieldGauge", 1L, false);
     }
 
     @Test
     public void doubleFieldGauge() {
-        assertDoubleGauge("doubleFieldGauge", 2d);
+        assertDoubleGauge("doubleFieldGauge", 2d, false);
     }
 
     @Test
     public void longProbeFunctionFieldGauge() {
-        assertLongGauge("longProbeFunctionFieldGauge", 3L);
+        assertLongGauge("longProbeFunctionFieldGauge", 3L, true);
     }
 
     @Test
     public void doubleProbeFunctionFieldGauge() {
-        assertDoubleGauge("doubleProbeFunctionFieldGauge", 4d);
+        assertDoubleGauge("doubleProbeFunctionFieldGauge", 4d, true);
     }
 
     @Test
     public void longMethodGauge() {
-        assertLongGauge("longMethodGauge", 5L);
+        assertLongGauge("longMethodGauge", 5L, false);
     }
 
     @Test
     public void doubleMethodGauge() {
-        assertDoubleGauge("doubleMethodGauge", 6d);
+        assertDoubleGauge("doubleMethodGauge", 6d, false);
     }
 
     @Test
     public void longProbeFunctionMethodGauge() {
-        assertLongGauge("longProbeFunctionMethodGauge", 7L);
+        assertLongGauge("longProbeFunctionMethodGauge", 7L, true);
     }
 
     @Test
     public void doubleProbeFunctionMethodGauge() {
-        assertDoubleGauge("doubleProbeFunctionMethodGauge", 8d);
+        assertDoubleGauge("doubleProbeFunctionMethodGauge", 8d, true);
     }
 
     @Test
     public void directLongProbeFunctionGauge() {
-        assertLongGauge("directLongProbeFunctionGauge", 9L);
+        assertLongGauge("directLongProbeFunctionGauge", 9L, true);
     }
 
     @Test
     public void directDoubleProbeFunctionGauge() {
-        assertDoubleGauge("directDoubleProbeFunctionGauge", 10d);
+        assertDoubleGauge("directDoubleProbeFunctionGauge", 10d, true);
     }
 
-    private void assertLongGauge(String name, long expectedValue) {
+    private void assertLongGauge(String name, long expectedValue, boolean function) {
         LongGauge gauge = registry.newLongGauge(name);
         assertUnconnected(gauge);
         collectMetrics();
         assertConnected(gauge);
         assertEquals(expectedValue, gauge.read());
+        if (function) {
+            assertFunctionGauge(gauge);
+        }
     }
 
-    private void assertDoubleGauge(String name, double expectedValue) {
+    private void assertDoubleGauge(String name, double expectedValue, boolean function) {
         DoubleGauge gauge = registry.newDoubleGauge(name);
         assertUnconnected(gauge);
         collectMetrics();
         assertConnected(gauge);
         assertEquals(expectedValue, gauge.read(), 0.01d);
+        if (function) {
+            assertFunctionGauge(gauge);
+        }
     }
 
     private static void assertUnconnected(LongGauge gauge) {
@@ -209,6 +216,11 @@ public class GaugesTest {
 
     private static void assertConnected(Object gauge) {
         assertNotNull("Gauge was not connected", readGaugeField(gauge));
+    }
+
+    private static void assertFunctionGauge(Object gauge) {
+        Object connectedGauge = readGaugeField(gauge);
+        assertTrue(connectedGauge.getClass().getSimpleName().contains("ProbeFunction"));
     }
 
     private static Object readGaugeField(Object gauge) {
