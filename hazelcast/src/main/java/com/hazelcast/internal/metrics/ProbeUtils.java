@@ -36,6 +36,8 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Provides utilities around probing.
  *
@@ -275,6 +277,7 @@ public final class ProbeUtils {
         }
     }
 
+    @SuppressFBWarnings(value = "BC_BAD_CAST_TO_ABSTRACT_COLLECTION", justification = "false positive")
     public static <T> void collectAllEntries(CollectionCycle cycle, Collection<T> entries) {
         if (entries.isEmpty()) {
             return;

@@ -26,6 +26,9 @@ import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+@SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used for metrics via reflection")
 public final class ClassLoadingMetrics implements ObjectMetricsContext {
 
     private final ClassLoadingMXBean classLoading = ManagementFactory.getClassLoadingMXBean();

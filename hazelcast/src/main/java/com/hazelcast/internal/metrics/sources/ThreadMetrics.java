@@ -23,9 +23,13 @@ import java.lang.management.ThreadMXBean;
 
 import com.hazelcast.internal.metrics.BeforeCollectionCycle;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
 
+@SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used for metrics via reflection")
 public final class ThreadMetrics implements ObjectMetricsContext {
 
     private final ThreadMXBean threads = ManagementFactory.getThreadMXBean();

@@ -24,10 +24,14 @@ import java.lang.management.OperatingSystemMXBean;
 import com.hazelcast.internal.metrics.BeforeCollectionCycle;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
 
+@SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used for metrics via reflection")
 public final class OperatingSystemMetrics implements ObjectMetricsContext, MetricsSource {
 
     private static final String[] PROBED_OS_METHODS = { "getCommittedVirtualMemorySize",
