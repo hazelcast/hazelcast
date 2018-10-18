@@ -18,9 +18,9 @@ package com.hazelcast.internal.metrics.sources;
 
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.ProbeLevel;
 
 public final class HotBackupMetrics implements MetricsSource {
 

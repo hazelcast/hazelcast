@@ -20,9 +20,9 @@ import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO.ClusterHotRestartStatus;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
+import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.ProbeLevel;
 
 public final class HotRestartMetrics implements MetricsSource {
 

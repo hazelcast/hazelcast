@@ -51,7 +51,7 @@ public class OperatingSystemMetricsTest extends AbstractMetricsTest {
 
     @Before
     public void setup() {
-        register(new MachineMetrics());
+        register(new OperatingSystemMetrics());
         register(OS);
     }
 

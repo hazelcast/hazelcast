@@ -29,13 +29,13 @@ import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class FileMetricsTest extends AbstractMetricsTest {
+public class UserHomeMetricsTest extends AbstractMetricsTest {
 
     final File userHome = new File(System.getProperty("user.home"));
 
     @Before
     public void setup() {
-        register(new MachineMetrics());
+        register(new UserHomeMetrics());
     }
 
     @Test

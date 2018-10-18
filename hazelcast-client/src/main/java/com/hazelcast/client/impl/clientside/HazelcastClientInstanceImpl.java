@@ -121,7 +121,10 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.metrics.sources.MachineMetrics;
+import com.hazelcast.internal.metrics.sources.ClassLoadingMetrics;
+import com.hazelcast.internal.metrics.sources.OperatingSystemMetrics;
+import com.hazelcast.internal.metrics.sources.RuntimeMetrics;
+import com.hazelcast.internal.metrics.sources.ThreadMetrics;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -274,7 +277,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private void initMetricsSources() {
-        metricsRegistry.register(new MachineMetrics());
+        metricsRegistry.register(new RuntimeMetrics());
+        metricsRegistry.register(new ThreadMetrics());
+        metricsRegistry.register(new ClassLoadingMetrics());
+        metricsRegistry.register(new OperatingSystemMetrics());
         metricsRegistry.register(this);
         metricsRegistry.register(statistics);
         metricsRegistry.register(connectionManager.getNetworking());

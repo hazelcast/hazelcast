@@ -37,7 +37,7 @@ public class ThreadMetricsTest extends AbstractMetricsTest {
 
     @Before
     public void setup() {
-        register(new MachineMetrics());
+        register(new ThreadMetrics());
     }
 
     @Test

@@ -39,7 +39,7 @@ public class RuntimeMetricsTest extends AbstractMetricsTest {
 
     @Before
     public void setup() {
-        register(new MachineMetrics());
+        register(new RuntimeMetrics());
         runtime = Runtime.getRuntime();
     }
 

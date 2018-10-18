@@ -37,7 +37,7 @@ public class ClassLoadingMetricsTest extends AbstractMetricsTest {
 
     @Before
     public void setup() {
-        register(new MachineMetrics());
+        register(new ClassLoadingMetrics());
     }
 
     @Test

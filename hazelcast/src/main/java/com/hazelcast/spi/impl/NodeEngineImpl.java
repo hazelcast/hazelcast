@@ -29,10 +29,14 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.metrics.sources.ClassLoadingMetrics;
 import com.hazelcast.internal.metrics.sources.HotBackupMetrics;
 import com.hazelcast.internal.metrics.sources.HotRestartMetrics;
-import com.hazelcast.internal.metrics.sources.MachineMetrics;
+import com.hazelcast.internal.metrics.sources.UserHomeMetrics;
 import com.hazelcast.internal.metrics.sources.MemoryMetrics;
+import com.hazelcast.internal.metrics.sources.OperatingSystemMetrics;
+import com.hazelcast.internal.metrics.sources.RuntimeMetrics;
+import com.hazelcast.internal.metrics.sources.ThreadMetrics;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
@@ -188,7 +192,11 @@ public class NodeEngineImpl implements NodeEngine {
 
     private void initMetricsSources() {
         metricsRegistry.register(node);
-        metricsRegistry.register(new MachineMetrics());
+        metricsRegistry.register(new UserHomeMetrics());
+        metricsRegistry.register(new RuntimeMetrics());
+        metricsRegistry.register(new ThreadMetrics());
+        metricsRegistry.register(new OperatingSystemMetrics());
+        metricsRegistry.register(new ClassLoadingMetrics());
         metricsRegistry.register(new HotRestartMetrics(node));
         metricsRegistry.register(new HotBackupMetrics(node.getNodeExtension()));
         metricsRegistry.register(new MemoryMetrics(node.getNodeExtension()));

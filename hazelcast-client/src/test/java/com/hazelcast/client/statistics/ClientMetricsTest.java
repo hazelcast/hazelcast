@@ -105,7 +105,7 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
         final HazelcastClientInstanceImpl client = createHazelcastClient();
 
         String prefix = "origin=" + getUuid(client) + " ";
-        assertEventuallyHasStatsWith(56, prefix);
+        assertEventuallyHasStatsWith(54, prefix);
         assertEventuallyHasStatsWith(11, prefix + "ns=os ");
         assertEventuallyHasStatsWith(6,  prefix + "ns=runtime ");
         assertEventuallyHasStatsWith(12, prefix + "ns=memory ");
@@ -136,8 +136,8 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
 
         String prefix1 = "origin=" + getUuid(client1) + " ";
         String prefix2 = "origin=" + getUuid(client2) + " ";
-        assertEventuallyHasStatsWith(56, prefix1);
-        assertEventuallyHasStatsWith(56, prefix2);
+        assertEventuallyHasStatsWith(54, prefix1);
+        assertEventuallyHasStatsWith(54, prefix2);
     }
 
     @Test
@@ -161,7 +161,7 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
         assertOpenEventually(latch);
 
         String prefix = "origin=" + getUuid(client) + " ";
-        assertEventuallyHasStatsWith(56, prefix);
+        assertEventuallyHasStatsWith(54, prefix);
     }
 
     private void produceSomeStats(HazelcastClientInstanceImpl client) {

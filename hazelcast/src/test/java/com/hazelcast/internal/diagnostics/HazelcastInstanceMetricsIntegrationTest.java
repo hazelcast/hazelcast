@@ -26,7 +26,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 public abstract class HazelcastInstanceMetricsIntegrationTest extends AbstractMetricsIntegrationTest {
 
     protected HazelcastInstance hz;
-    private MetricsRegistry registry;
+    protected MetricsRegistry registry;
 
     protected Config configure() {
         return new Config().setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
