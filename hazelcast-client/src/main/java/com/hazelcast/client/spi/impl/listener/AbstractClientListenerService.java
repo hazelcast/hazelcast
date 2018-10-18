@@ -28,7 +28,9 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -56,7 +58,8 @@ import java.util.concurrent.ThreadFactory;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
-public abstract class AbstractClientListenerService implements ClientListenerService, ConnectionListener {
+public abstract class AbstractClientListenerService implements ClientListenerService, ConnectionListener,
+    ObjectMetricsContext {
 
     protected final HazelcastClientInstanceImpl client;
     protected final SerializationService serializationService;
@@ -90,6 +93,11 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
         invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
         invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
+    }
+
+    @Override
+    public void switchToObjectContext(Tags context) {
+        context.namespace("listeners");
     }
 
     @Override

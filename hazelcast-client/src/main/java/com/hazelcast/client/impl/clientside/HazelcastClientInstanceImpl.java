@@ -121,6 +121,7 @@ import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.sources.ClassLoadingMetrics;
@@ -197,8 +198,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientConnectionManagerImpl connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
+    @ProbeSource
     private final AbstractClientInvocationService invocationService;
+    @ProbeSource
     private final ClientExecutionServiceImpl executionService;
+    @ProbeSource
     private final AbstractClientListenerService listenerService;
     private final ClientTransactionManagerServiceImpl transactionManager;
     private final NearCacheManager nearCacheManager;
@@ -296,12 +300,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        cycle.switchContext().namespace("invocations");
-        cycle.collectAll(invocationService);
-        cycle.switchContext().namespace("executionService");
-        cycle.collectAll(executionService);
-        cycle.switchContext().namespace("listeners");
-        cycle.collectAll(listenerService);
         collectMemoryAndGc(cycle, clientExtension.getMemoryStats());
     }
 

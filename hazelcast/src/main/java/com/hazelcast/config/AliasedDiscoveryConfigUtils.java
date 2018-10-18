@@ -71,7 +71,7 @@ public final class AliasedDiscoveryConfigUtils {
     /**
      * Maps aliased discovery strategy configs into discovery strategy configs.
      */
-    public static List<DiscoveryStrategyConfig> map(List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigs) {
+    public static List<DiscoveryStrategyConfig> map(List<? extends AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigs) {
         List<DiscoveryStrategyConfig> result = new ArrayList<DiscoveryStrategyConfig>();
         for (AliasedDiscoveryConfig config : aliasedDiscoveryConfigs) {
             if (config.isEnabled()) {
@@ -168,7 +168,7 @@ public final class AliasedDiscoveryConfigUtils {
      * <p>
      * Note that if no config is enabled, then the method returns {@literal false}.
      */
-    public static boolean allUsePublicAddress(List<AliasedDiscoveryConfig<?>> configs) {
+    public static boolean allUsePublicAddress(List<? extends AliasedDiscoveryConfig<?>> configs) {
         boolean atLeastOneEnabled = false;
         for (AliasedDiscoveryConfig config : configs) {
             if (config.isEnabled()) {

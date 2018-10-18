@@ -17,7 +17,9 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.internal.metrics.ObjectMetricsContext;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -41,7 +43,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.properties.GroupProperty.TASK_SCHEDULER_REMOVE_ON_CANCEL;
 import static java.lang.Thread.currentThread;
 
-public final class ClientExecutionServiceImpl implements ClientExecutionService {
+public final class ClientExecutionServiceImpl implements ClientExecutionService, ObjectMetricsContext {
 
     public static final HazelcastProperty INTERNAL_EXECUTOR_POOL_SIZE
             = new HazelcastProperty("hazelcast.client.internal.executor.pool.size", 3);
@@ -83,6 +85,11 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                         throw new RejectedExecutionException(message);
                     }
                 });
+    }
+
+    @Override
+    public void switchToObjectContext(Tags context) {
+        context.namespace("executionService");
     }
 
     @Override
