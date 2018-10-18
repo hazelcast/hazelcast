@@ -19,11 +19,9 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.DoubleGauge;
+import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.CollectionContext;
-import com.hazelcast.internal.metrics.MetricsCollector;
-import com.hazelcast.internal.metrics.ProbeUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -37,9 +35,6 @@ import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry}
@@ -65,9 +60,9 @@ import java.util.Map;
 public class HealthMonitor {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
-    private static final long PERCENTAGE_MULTIPLIER = 100L;
-    private static final long THRESHOLD_PERCENTAGE_INVOCATIONS = ProbeUtils.toLong(70d);
-    private static final long THRESHOLD_INVOCATIONS = 1000;
+    private static final double PERCENTAGE_MULTIPLIER = 100d;
+    private static final double THRESHOLD_PERCENTAGE_INVOCATIONS = 70;
+    private static final double THRESHOLD_INVOCATIONS = 1000;
 
     final HealthMetrics healthMetrics;
 
@@ -76,16 +71,22 @@ public class HealthMonitor {
     private final HealthMonitorLevel monitorLevel;
     private final int thresholdMemoryPercentage;
     private final int thresholdCPUPercentage;
+    private final MetricsRegistry metricRegistry;
     private final HealthMonitorThread monitorThread;
 
     public HealthMonitor(Node node) {
+        this(node, node.nodeEngine.getMetricsRegistry());
+    }
+
+    public HealthMonitor(Node node, MetricsRegistry metricsRegistry) {
         this.node = node;
         this.logger = node.getLogger(HealthMonitor.class);
+        this.metricRegistry = metricsRegistry;
         this.monitorLevel = getHealthMonitorLevel();
         this.thresholdMemoryPercentage = node.getProperties().getInteger(HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
         this.thresholdCPUPercentage = node.getProperties().getInteger(HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
         this.monitorThread = initMonitorThread();
-        this.healthMetrics = new HealthMetrics(node.nodeEngine.getMetricsRegistry());
+        this.healthMetrics = new HealthMetrics();
     }
 
     private HealthMonitorThread initMonitorThread() {
@@ -143,21 +144,23 @@ public class HealthMonitor {
         public void run() {
             try {
                 while (node.getState() == NodeState.ACTIVE) {
+                    healthMetrics.update();
+
                     switch (monitorLevel) {
-                    case NOISY:
-                        if (healthMetrics.checkThreshold()) {
-                            logDiagnosticsHint();
-                        }
-                        logger.info(healthMetrics.render());
-                        break;
-                    case SILENT:
-                        if (healthMetrics.checkThreshold()) {
-                            logDiagnosticsHint();
+                        case NOISY:
+                            if (healthMetrics.exceedsThreshold()) {
+                                logDiagnosticsHint();
+                            }
                             logger.info(healthMetrics.render());
-                        }
-                        break;
-                    default:
-                        throw new IllegalStateException("Unrecognized HealthMonitorLevel: " + monitorLevel);
+                            break;
+                        case SILENT:
+                            if (healthMetrics.exceedsThreshold()) {
+                                logDiagnosticsHint();
+                                logger.info(healthMetrics.render());
+                            }
+                            break;
+                        default:
+                            throw new IllegalStateException("Unrecognized HealthMonitorLevel: " + monitorLevel);
                     }
 
                     try {
@@ -187,64 +190,133 @@ public class HealthMonitor {
         }
     }
 
-    class HealthMetrics implements MetricsCollector {
+    class HealthMetrics {
+        final LongGauge clientEndpointCount
+                = metricRegistry.newLongGauge("ns=client.endpoint count");
+        final LongGauge clusterTimeDiff
+                = metricRegistry.newLongGauge("ns=cluster.clock clusterTimeDiff");
 
-        /**
-         * Values originally being a double are multiplied by 10k. The original value
-         * was in range 0-1. To get this as percent we divided by "just" 100.
-         */
-        private static final int DOUBLE_TO_PERCENT = 100;
+        final LongGauge executorAsyncQueueSize
+                = metricRegistry.newLongGauge("ns=internal-executor instance=hz:async queueSize");
+        final LongGauge executorClientQueueSize
+                = metricRegistry.newLongGauge("ns=internal-executor instance=hz:client queueSize");
+        final LongGauge executorClusterQueueSize
+                = metricRegistry.newLongGauge("ns=internal-executor instance=hz:cluster queueSize");
+        final LongGauge executorScheduledQueueSize
+                = metricRegistry.newLongGauge("ns=internal-executor instance=hz:scheduled queueSize");
+        final LongGauge executorSystemQueueSize
+                = metricRegistry.newLongGauge("ns=internal-executor instance=hz:system queueSize");
+        final LongGauge executorIoQueueSize
+                = metricRegistry.newLongGauge("ns=internal-executor instance=hz:io queueSize");
+        final LongGauge executorQueryQueueSize
+                = metricRegistry.newLongGauge("ns=internal-executor instance=hz:query queueSize");
+        final LongGauge executorMapLoadQueueSize
+                = metricRegistry.newLongGauge("ns=internal-executor instance=hz:map-load queueSize");
+        final LongGauge executorMapLoadAllKeysQueueSize
+                = metricRegistry.newLongGauge("ns=internal-executor instance=hz:map-loadAllKeys queueSize");
+
+        final LongGauge eventQueueSize
+                = metricRegistry.newLongGauge("ns=event eventQueueSize");
+
+        final LongGauge gcMinorCount
+                = metricRegistry.newLongGauge("ns=gc minorCount");
+        final LongGauge gcMinorTime
+                = metricRegistry.newLongGauge("ns=gc minorTime");
+        final LongGauge gcMajorCount
+                = metricRegistry.newLongGauge("ns=gc majorCount");
+        final LongGauge gcMajorTime
+                = metricRegistry.newLongGauge("ns=gc majorTime");
+        final LongGauge gcUnknownCount
+                = metricRegistry.newLongGauge("ns=gc unknownCount");
+        final LongGauge gcUnknownTime
+                = metricRegistry.newLongGauge("ns=gc unknownTime");
+
+        final LongGauge runtimeAvailableProcessors
+                = metricRegistry.newLongGauge("ns=runtime availableProcessors");
+        final LongGauge runtimeMaxMemory
+                = metricRegistry.newLongGauge("ns=runtime maxMemory");
+        final LongGauge runtimeFreeMemory
+                = metricRegistry.newLongGauge("ns=runtime freeMemory");
+        final LongGauge runtimeTotalMemory
+                = metricRegistry.newLongGauge("ns=runtime totalMemory");
+        final LongGauge runtimeUsedMemory
+                = metricRegistry.newLongGauge("ns=runtime usedMemory");
+
+        final LongGauge threadPeakThreadCount
+                = metricRegistry.newLongGauge("ns=thread peakThreadCount");
+        final LongGauge threadThreadCount
+                = metricRegistry.newLongGauge("ns=thread threadCount");
+
+        final DoubleGauge osProcessCpuLoad
+                = metricRegistry.newDoubleGauge("ns=os processCpuLoad");
+        final DoubleGauge osSystemLoadAverage
+                = metricRegistry.newDoubleGauge("ns=os systemLoadAverage");
+        final DoubleGauge osSystemCpuLoad
+                = metricRegistry.newDoubleGauge("ns=os systemCpuLoad");
+        final LongGauge osTotalPhysicalMemorySize
+                = metricRegistry.newLongGauge("ns=os totalPhysicalMemorySize");
+        final LongGauge osFreePhysicalMemorySize
+                = metricRegistry.newLongGauge("ns=os freePhysicalMemorySize");
+        final LongGauge osTotalSwapSpaceSize
+                = metricRegistry.newLongGauge("ns=os totalSwapSpaceSize");
+        final LongGauge osFreeSwapSpaceSize
+                = metricRegistry.newLongGauge("ns=os freeSwapSpaceSize");
+
+        final LongGauge operationServiceExecutorQueueSize
+                = metricRegistry.newLongGauge("ns=operation queueSize");
+        final LongGauge operationServiceExecutorPriorityQueueSize
+                = metricRegistry.newLongGauge("ns=operation priorityQueueSize");
+        final LongGauge operationServiceResponseQueueSize
+                = metricRegistry.newLongGauge("ns=operation.responses responseQueueSize");
+        final LongGauge operationServiceRunningOperationsCount
+                = metricRegistry.newLongGauge("ns=operation runningCount");
+        final LongGauge operationServiceCompletedOperationsCount
+                = metricRegistry.newLongGauge("ns=operation completedCount");
+        final LongGauge operationServicePendingInvocationsCount
+                = metricRegistry.newLongGauge("ns=operation.invocations pending");
+        final DoubleGauge operationServicePendingInvocationsPercentage
+                = metricRegistry.newDoubleGauge("ns=operation.invocations usedPercentage");
+
+        final LongGauge proxyCount
+                = metricRegistry.newLongGauge("ns=proxy proxyCount");
+
+        final LongGauge tcpConnectionActiveCount
+                = metricRegistry.newLongGauge("ns=tcp.connection activeCount");
+        final LongGauge tcpConnectionCount
+                = metricRegistry.newLongGauge("ns=tcp.connection count");
+        final LongGauge tcpConnectionClientCount
+                = metricRegistry.newLongGauge("ns=tcp.connection clientCount");
 
         private final StringBuilder sb = new StringBuilder();
-        private final Map<String, Long> metrics = new HashMap<String, Long>();
-        private final CollectionContext thresholdContext;
-        private final CollectionContext printoutContext;
+        private double memoryUsedOfTotalPercentage;
+        private double memoryUsedOfMaxPercentage;
 
-        public HealthMetrics(MetricsRegistry registry) {
-            thresholdContext = registry.openContext(ProbeLevel.MANDATORY);
-            printoutContext = registry.openContext(ProbeLevel.MANDATORY);
-        }
-
-        @Override
-        public void collect(CharSequence key, long value) {
-            metrics.put(key.toString(), value);
-        }
-
-        /**
-         * We use a default of zero (not -1) for unknown values as this has been the
-         * behavior of the health monitor before.
-         */
-        private long read(String name) {
-            Long val = metrics.get(name);
-            return val == null || val.longValue() == -1L ? 0L : val.longValue();
-        }
-
-        boolean checkThreshold() {
-            // to allow tests to setup data there is this check
-            if (metrics.isEmpty()) {
-                updateThreshHoldMetrics();
-            }
-            boolean exceeds = exceedsThreshold();
-            metrics.clear();
-            return exceeds;
-        }
-
-        void updateThreshHoldMetrics() {
-            thresholdContext.collectAll(this);
+        public void update() {
+            memoryUsedOfTotalPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read()) / runtimeTotalMemory.read();
+            memoryUsedOfMaxPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read()) / runtimeMaxMemory.read();
         }
 
         boolean exceedsThreshold() {
-            double memoryUsedOfMaxPercentage = (PERCENTAGE_MULTIPLIER * read("runtime.usedMemory"))
-                    / (double) read("runtime.maxMemory");
-            return memoryUsedOfMaxPercentage > thresholdMemoryPercentage
-                    || (read("os.processCpuLoad") / DOUBLE_TO_PERCENT) > thresholdCPUPercentage
-                    || (read("os.systemCpuLoad") / DOUBLE_TO_PERCENT) > thresholdCPUPercentage
-                    || read("operation.invocations.usedPercentage") > THRESHOLD_PERCENTAGE_INVOCATIONS
-                    || read("operation.invocations.pending") > THRESHOLD_INVOCATIONS;
+            if (memoryUsedOfMaxPercentage > thresholdMemoryPercentage) {
+                return true;
+            }
+            if (osProcessCpuLoad.read() * PERCENTAGE_MULTIPLIER > thresholdCPUPercentage) {
+                return true;
+            }
+            if (osSystemCpuLoad.read() * PERCENTAGE_MULTIPLIER > thresholdCPUPercentage) {
+                return true;
+            }
+            if (operationServicePendingInvocationsPercentage.read() > THRESHOLD_PERCENTAGE_INVOCATIONS) {
+                return true;
+            }
+            if (operationServicePendingInvocationsCount.read() > THRESHOLD_INVOCATIONS) {
+                return true;
+            }
+            return false;
         }
 
         public String render() {
-            printoutContext.collectAll(this);
+            update();
             sb.setLength(0);
             renderProcessors();
             renderPhysicalMemory();
@@ -261,118 +333,109 @@ public class HealthMonitor {
             renderProxy();
             renderClient();
             renderConnection();
-            metrics.clear();
             return sb.toString();
         }
 
         private void renderConnection() {
             sb.append("connection.active.count=")
-            .append(read("tcp.connection.activeCount")).append(", ");
+                    .append(tcpConnectionActiveCount.read()).append(", ");
             sb.append("client.connection.count=")
-            .append(read("tcp.connection.clientCount")).append(", ");
+                    .append(tcpConnectionClientCount.read()).append(", ");
             sb.append("connection.count=")
-            .append(read("tcp.connection.count"));
+                    .append(tcpConnectionCount.read());
         }
 
         private void renderClient() {
             sb.append("clientEndpoint.count=")
-            .append(read("client.endpoint.count")).append(", ");
+                    .append(clientEndpointCount.read()).append(", ");
         }
 
         private void renderProxy() {
             sb.append("proxy.count=")
-            .append(read("proxy.proxyCount")).append(", ");
+                    .append(proxyCount.read()).append(", ");
         }
 
         private void renderLoad() {
-            double processCpuLoad = ProbeUtils.doubleValue(read("os.processCpuLoad") * PERCENTAGE_MULTIPLIER);
             sb.append("load.process").append('=')
-            .append(format("%.2f", processCpuLoad)).append("%, ");
-            double systemCpuLoad = ProbeUtils.doubleValue(read("os.systemCpuLoad") * PERCENTAGE_MULTIPLIER);
+                    .append(format("%.2f", osProcessCpuLoad.read() * PERCENTAGE_MULTIPLIER)).append("%, ");
             sb.append("load.system").append('=')
-            .append(format("%.2f", systemCpuLoad)).append("%, ");
+                    .append(format("%.2f", osSystemCpuLoad.read() * PERCENTAGE_MULTIPLIER)).append("%, ");
 
-            long systemLoadAverage = read("os.systemLoadAverage");
-            if (systemLoadAverage < 0) {
+            double value = osSystemLoadAverage.read();
+            if (value < 0) {
                 sb.append("load.systemAverage").append("=n/a ");
             } else {
                 sb.append("load.systemAverage").append('=')
-                .append(format("%.2f", ProbeUtils.doubleValue(systemLoadAverage))).append(", ");
+                        .append(format("%.2f", osSystemLoadAverage.read())).append(", ");
             }
         }
 
         private void renderProcessors() {
             sb.append("processors=")
-            .append(read("runtime.availableProcessors")).append(", ");
+                    .append(runtimeAvailableProcessors.read()).append(", ");
         }
 
         private void renderPhysicalMemory() {
             sb.append("physical.memory.total=")
-            .append(numberToUnit(read("os.totalPhysicalMemorySize"))).append(", ");
+                    .append(numberToUnit(osTotalPhysicalMemorySize.read())).append(", ");
             sb.append("physical.memory.free=")
-            .append(numberToUnit(read("os.freePhysicalMemorySize"))).append(", ");
+                    .append(numberToUnit(osFreePhysicalMemorySize.read())).append(", ");
         }
 
         private void renderSwap() {
             sb.append("swap.space.total=")
-            .append(numberToUnit(read("os.totalSwapSpaceSize"))).append(", ");
+                    .append(numberToUnit(osTotalSwapSpaceSize.read())).append(", ");
             sb.append("swap.space.free=")
-            .append(numberToUnit(read("os.freeSwapSpaceSize"))).append(", ");
+                    .append(numberToUnit(osFreeSwapSpaceSize.read())).append(", ");
         }
 
         private void renderHeap() {
             sb.append("heap.memory.used=")
-            .append(numberToUnit(read("runtime.usedMemory"))).append(", ");
+                    .append(numberToUnit(runtimeUsedMemory.read())).append(", ");
             sb.append("heap.memory.free=")
-            .append(numberToUnit(read("runtime.freeMemory"))).append(", ");
+                    .append(numberToUnit(runtimeFreeMemory.read())).append(", ");
             sb.append("heap.memory.total=")
-            .append(numberToUnit(read("runtime.totalMemory"))).append(", ");
+                    .append(numberToUnit(runtimeTotalMemory.read())).append(", ");
             sb.append("heap.memory.max=")
-            .append(numberToUnit(read("runtime.maxMemory"))).append(", ");
-            long usedMemory = read("runtime.usedMemory");
-            double memoryUsedOfTotalPercentage = (PERCENTAGE_MULTIPLIER * usedMemory)
-                    / (double) read("runtime.totalMemory");
+                    .append(numberToUnit(runtimeMaxMemory.read())).append(", ");
             sb.append("heap.memory.used/total=")
-            .append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
-            double memoryUsedOfMaxPercentage = (PERCENTAGE_MULTIPLIER * usedMemory)
-                    / (double) read("runtime.maxMemory");
+                    .append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
             sb.append("heap.memory.used/max=")
-            .append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
+                    .append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
         }
 
         private void renderEvents() {
             sb.append("event.q.size=")
-            .append(read("event.eventQueueSize")).append(", ");
+                    .append(eventQueueSize.read()).append(", ");
         }
 
         private void renderCluster() {
             sb.append("cluster.timeDiff=")
-            .append(read("cluster.clock.clusterTimeDiff")).append(", ");
+                    .append(clusterTimeDiff.read()).append(", ");
         }
 
         private void renderThread() {
             sb.append("thread.count=")
-            .append(read("thread.threadCount")).append(", ");
+                    .append(threadThreadCount.read()).append(", ");
             sb.append("thread.peakCount=")
-            .append(read("thread.peakThreadCount")).append(", ");
+                    .append(threadPeakThreadCount.read()).append(", ");
         }
 
         private void renderGc() {
             sb.append("minor.gc.count=")
-            .append(read("gc.minorCount")).append(", ");
+                    .append(gcMinorCount.read()).append(", ");
             sb.append("minor.gc.time=")
-            .append(read("gc.minorTime")).append("ms, ");
+                    .append(gcMinorTime.read()).append("ms, ");
             sb.append("major.gc.count=")
-            .append(read("gc.majorCount")).append(", ");
+                    .append(gcMajorCount.read()).append(", ");
             sb.append("major.gc.time=")
-            .append(read("gc.majorTime")).append("ms, ");
+                    .append(gcMajorTime.read()).append("ms, ");
 
-            long gcUnknownCount = read("gc.unknownCount");
-            if (gcUnknownCount > 0) {
+            if (gcUnknownCount.read() > 0) {
                 sb.append("unknown.gc.count=")
-                .append(gcUnknownCount).append(", ");
+                        .append(gcUnknownCount.read()).append(", ");
                 sb.append("unknown.gc.time=")
-                .append(read("gc.unknownTime")).append("ms, ");
+                        .append(gcUnknownTime.read()).append("ms, ");
             }
         }
 
@@ -384,63 +447,61 @@ public class HealthMonitor {
 
             final long usedNative = memoryStats.getUsedNative();
             sb.append("native.memory.used=")
-            .append(numberToUnit(usedNative)).append(", ");
+                    .append(numberToUnit(usedNative)).append(", ");
             sb.append("native.memory.free=")
-            .append(numberToUnit(memoryStats.getFreeNative())).append(", ");
+                    .append(numberToUnit(memoryStats.getFreeNative())).append(", ");
             sb.append("native.memory.total=")
-            .append(numberToUnit(memoryStats.getCommittedNative())).append(", ");
+                    .append(numberToUnit(memoryStats.getCommittedNative())).append(", ");
             sb.append("native.memory.max=")
-            .append(numberToUnit(memoryStats.getMaxNative())).append(", ");
+                    .append(numberToUnit(memoryStats.getMaxNative())).append(", ");
             final long maxMeta = memoryStats.getMaxMetadata();
             if (maxMeta > 0) {
                 final long usedMeta = memoryStats.getUsedMetadata();
                 sb.append("native.meta.memory.used=")
-                .append(numberToUnit(usedMeta)).append(", ");
-                sb.append("native.meta.memory.free=").append(numberToUnit(maxMeta - usedMeta))
-                        .append(", ");
-                sb.append("native.meta.memory.percentage=").append(percentageString(
-                        PERCENTAGE_MULTIPLIER * usedMeta / (double) (usedNative + usedMeta)))
-                        .append(", ");
+                        .append(numberToUnit(usedMeta)).append(", ");
+                sb.append("native.meta.memory.free=")
+                        .append(numberToUnit(maxMeta - usedMeta)).append(", ");
+                sb.append("native.meta.memory.percentage=")
+                        .append(percentageString(PERCENTAGE_MULTIPLIER * usedMeta / (usedNative + usedMeta))).append(", ");
             }
         }
 
         private void renderExecutors() {
             sb.append("executor.q.async.size=")
-            .append(read("type=internal-executor instance=hz:async queueSize")).append(", ");
+                    .append(executorAsyncQueueSize.read()).append(", ");
             sb.append("executor.q.client.size=")
-            .append(read("type=internal-executor instance=hz:client queueSize")).append(", ");
+                    .append(executorClientQueueSize.read()).append(", ");
             sb.append("executor.q.query.size=")
-            .append(read("type=internal-executor instance=hz:query queueSize")).append(", ");
+                    .append(executorQueryQueueSize.read()).append(", ");
             sb.append("executor.q.scheduled.size=")
-            .append(read("type=internal-executor instance=hz:scheduled queueSize")).append(", ");
+                    .append(executorScheduledQueueSize.read()).append(", ");
             sb.append("executor.q.io.size=")
-            .append(read("type=internal-executor instance=hz:io queueSize")).append(", ");
+                    .append(executorIoQueueSize.read()).append(", ");
             sb.append("executor.q.system.size=")
-            .append(read("type=internal-executor instance=hz:system queueSize")).append(", ");
+                    .append(executorSystemQueueSize.read()).append(", ");
             sb.append("executor.q.operations.size=")
-            .append(read("operation.queueSize")).append(", ");
+                    .append(operationServiceExecutorQueueSize.read()).append(", ");
             sb.append("executor.q.priorityOperation.size=").
-            append(read("operation.priorityQueueSize")).append(", ");
+                    append(operationServiceExecutorPriorityQueueSize.read()).append(", ");
             sb.append("operations.completed.count=")
-            .append(read("operation.completedCount")).append(", ");
-
+                    .append(operationServiceCompletedOperationsCount.read()).append(", ");
             sb.append("executor.q.mapLoad.size=")
-            .append(read("type=internal-executor instance=hz:map-load queueSize")).append(", ");
+                    .append(executorMapLoadQueueSize.read()).append(", ");
             sb.append("executor.q.mapLoadAllKeys.size=")
-            .append(read("type=internal-executor instance=hz:map-loadAllKeys queueSize")).append(", ");
+                    .append(executorMapLoadAllKeysQueueSize.read()).append(", ");
             sb.append("executor.q.cluster.size=")
-            .append(read("type=internal-executor instance=hz:cluster queueSize")).append(", ");
+                    .append(executorClusterQueueSize.read()).append(", ");
         }
 
         private void renderOperationService() {
             sb.append("executor.q.response.size=")
-            .append(read("operation.responseQueueSize")).append(", ");
+                    .append(operationServiceResponseQueueSize.read()).append(", ");
             sb.append("operations.running.count=")
-            .append(read("operation.runningCount")).append(", ");
+                    .append(operationServiceRunningOperationsCount.read()).append(", ");
             sb.append("operations.pending.invocations.percentage=")
-            .append(format("%.2f", ProbeUtils.doubleValue(read("operation.invocations.usedPercentage")))).append("%, ");
+                    .append(format("%.2f", operationServicePendingInvocationsPercentage.read())).append("%, ");
             sb.append("operations.pending.invocations.count=")
-            .append(read("operation.invocations.pending")).append(", ");
+                    .append(operationServicePendingInvocationsCount.read()).append(", ");
         }
     }
 

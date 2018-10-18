@@ -18,7 +18,8 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.metrics.ProbeUtils;
+import com.hazelcast.instance.Node;
+import com.hazelcast.internal.metrics.impl.MockMetricsRegistry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,6 +40,7 @@ import static org.junit.Assert.assertTrue;
 public class HealthMonitorTest extends HazelcastTestSupport {
 
     private HealthMonitor.HealthMetrics metrics;
+    private MockMetricsRegistry metricsRegistry;
 
     @Before
     public void setup() {
@@ -49,49 +51,60 @@ public class HealthMonitorTest extends HazelcastTestSupport {
                 .setProperty(HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE.getName(), "70");
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        HealthMonitor healthMonitor = new HealthMonitor(getNode(hz));
+        Node node = getNode(hz);
+        metricsRegistry = new MockMetricsRegistry(node.nodeEngine.getMetricsRegistry());
+        HealthMonitor healthMonitor = new HealthMonitor(node, metricsRegistry);
         metrics = healthMonitor.healthMetrics;
+    }
+
+    private void registerMetric(String metric, long value) {
+        metricsRegistry.mockLong(metric, value);
+    }
+
+    private void registerMetric(String metric, double value) {
+        metricsRegistry.mockDouble(metric, value);
     }
 
     @Test
     public void exceedsThreshold_when_notTooHigh() {
-        metrics.updateThreshHoldMetrics();
-        metrics.collect("os.processCpuLoad", 0);
-        metrics.collect("operation.invocations.pending", 0);
-        metrics.collect("os.systemCpuLoad", 0);
-        metrics.collect("runtime.usedMemory", 0);
-        metrics.collect("runtime.maxMemory", 100);
+        registerMetric("ns=os processCpuLoad", 0d);
+        registerMetric("ns=operation.invocations usedPercentage", 0d);
+        registerMetric("ns=os systemCpuLoad", 0d);
+        registerMetric("ns=runtime usedMemory", 0L);
+        registerMetric("ns=runtime maxMemory", 100L);
 
-        assertFalse(metrics.exceedsThreshold());
+        boolean result = metrics.exceedsThreshold();
+        assertFalse(result);
     }
 
     @Test
     public void exceedsThreshold_when_osProcessCpuLoad_tooHigh() {
-        metrics.updateThreshHoldMetrics();
-        metrics.collect("os.processCpuLoad", ProbeUtils.toLong(90d));
-        assertTrue(metrics.exceedsThreshold());
+        registerMetric("ns=os processCpuLoad", 0.9d);
+        boolean result = metrics.exceedsThreshold();
+        assertTrue(result);
     }
 
     @Test
     public void exceedsThreshold_when_osSystemCpuLoad_TooHigh() {
-        metrics.updateThreshHoldMetrics();
-        metrics.collect("os.systemCpuLoad", ProbeUtils.toLong(90d));
-        assertTrue(metrics.exceedsThreshold());
+        registerMetric("ns=os systemCpuLoad", 0.9d);
+        boolean result = metrics.exceedsThreshold();
+        assertTrue(result);
     }
 
     @Test
     public void exceedsThreshold_operationServicePendingInvocationsPercentage() {
-        metrics.updateThreshHoldMetrics();
-        metrics.collect("operation.invocations.usedPercentage", ProbeUtils.toLong(90d));
-        assertTrue(metrics.exceedsThreshold());
+        registerMetric("ns=operation.invocations usedPercentage", 90d);
+        boolean result = metrics.exceedsThreshold();
+        assertTrue(result);
     }
 
     @Test
     public void exceedsThreshold_memoryUsedOfMaxPercentage() {
-        metrics.updateThreshHoldMetrics();
-        metrics.collect("runtime.usedMemory", 90);
-        metrics.collect("runtime.maxMemory", 100);
-        assertTrue(metrics.exceedsThreshold());
+        registerMetric("ns=runtime usedMemory", 90L);
+        registerMetric("ns=runtime maxMemory", 100L);
+        metrics.update();
+        boolean result = metrics.exceedsThreshold();
+        assertTrue(result);
     }
 
     @Test
