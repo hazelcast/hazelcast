@@ -57,7 +57,7 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
         plugin.run(logWriter);
 
         // we just test a few to make sure the metrics are written
-        assertContains("client.endpoint.count=0");
-        assertContains("operation.responseQueueSize=0");
+        assertContains("ns=client.endpoint count=0");
+        assertContains("ns=operation.responses responseQueueSize=0");
     }
 }
