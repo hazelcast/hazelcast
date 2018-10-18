@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.metrics;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
 
 /**
  * Annotation that can be placed on a field or a method of an object to indicate
