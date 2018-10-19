@@ -23,7 +23,7 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 	set JAVA_OPTS=%JAVA_OPTS% -Xmx%MAX_HEAP_SIZE%
 )
 
-set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar"
+set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar;%~dp0..\user-lib;%~dp0..\user-lib\*"
 
 FOR /F "tokens=2 delims=," %%F in ('tasklist /NH /FI "WINDOWTITLE eq hazelcast %CLASSPATH%" /fo csv') DO (
 SET PID=%%F
