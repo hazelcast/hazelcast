@@ -46,7 +46,7 @@ public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadComma
         } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
             command.send200();
         } else {
-            command.send400();
+            command.send404();
         }
         textCommandService.sendResponse(command);
     }

@@ -102,10 +102,12 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             } else if (uri.startsWith(URI_UPDATE_PERMISSIONS)) {
                 handleUpdatePermissions(command);
             } else {
-                command.setResponse(HttpCommand.RES_400);
+                command.send404();
             }
+        } catch (IndexOutOfBoundsException e) {
+            command.send400();
         } catch (Exception e) {
-            command.setResponse(HttpCommand.RES_500);
+            command.send500();
         }
         textCommandService.sendResponse(command);
     }

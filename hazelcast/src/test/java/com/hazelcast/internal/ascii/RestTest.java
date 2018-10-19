@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -305,6 +306,43 @@ public class RestTest extends HazelcastTestSupport {
     @Test
     public void testUndefined_HeadRequest() throws IOException {
         int response = communicator.headRequestToUndefinedURI().responseCode;
+        assertEquals(HTTP_NOT_FOUND, response);
+    }
+
+    @Test
+    public void testUndefined_GetRequest() throws IOException {
+        int response = communicator.getRequestToUndefinedURI().responseCode;
+        assertEquals(HTTP_NOT_FOUND, response);
+    }
+
+    @Test
+    public void testUndefined_PostRequest() throws IOException {
+        int response = communicator.postRequestToUndefinedURI().responseCode;
+        assertEquals(HTTP_NOT_FOUND, response);
+    }
+
+    @Test
+    public void testUndefined_DeleteRequest() throws IOException {
+        int response = communicator.deleteRequestToUndefinedURI().responseCode;
+        assertEquals(HTTP_NOT_FOUND, response);
+    }
+
+    @Test
+    public void testBad_GetRequest() throws IOException {
+        int response = communicator.getBadRequestURI().responseCode;
         assertEquals(HTTP_BAD_REQUEST, response);
     }
+
+    @Test
+    public void testBad_PostRequest() throws IOException {
+        int response = communicator.postBadRequestURI().responseCode;
+        assertEquals(HTTP_BAD_REQUEST, response);
+    }
+
+    @Test
+    public void testBad_DeleteRequest() throws IOException {
+        int response = communicator.deleteBadRequestURI().responseCode;
+        assertEquals(HTTP_BAD_REQUEST, response);
+    }
+
 }
