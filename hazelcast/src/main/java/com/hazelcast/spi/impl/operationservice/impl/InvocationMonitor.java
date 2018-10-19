@@ -20,7 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -70,7 +70,7 @@ import static java.util.logging.Level.INFO;
  * alive. Also if no operations are running, it will still send a period packet to each member. This is a different system than
  * the regular heartbeats, but it has similar characteristics. The reason the packet is always send is for debugging purposes.
  */
-public class InvocationMonitor implements Consumer<Packet>, ObjectMetricsContext {
+public class InvocationMonitor implements Consumer<Packet>, MetricsNs {
 
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
     private static final long MAX_DELAY_MILLIS = SECONDS.toMillis(10);
@@ -124,7 +124,7 @@ public class InvocationMonitor implements Consumer<Packet>, ObjectMetricsContext
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("operation.invocations");
     }
 

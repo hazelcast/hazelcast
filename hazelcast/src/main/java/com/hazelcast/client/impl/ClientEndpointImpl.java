@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.MetricsSource;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.CharSequenceUtils.Lines;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
@@ -52,7 +52,7 @@ import java.util.concurrent.ConcurrentMap;
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class ClientEndpointImpl implements ClientEndpoint, MetricsSource, ObjectMetricsContext {
+public final class ClientEndpointImpl implements ClientEndpoint, MetricsSource, MetricsNs {
 
     private final ClientEngineImpl clientEngine;
     private final NodeEngineImpl nodeEngine;
@@ -105,7 +105,7 @@ public final class ClientEndpointImpl implements ClientEndpoint, MetricsSource, 
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("client").instance(getUuid());
     }
 

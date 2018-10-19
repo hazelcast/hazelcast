@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -54,7 +54,7 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.</li>
  * </ul>
  */
-public class InvocationRegistry implements Iterable<Invocation>, ObjectMetricsContext {
+public class InvocationRegistry implements Iterable<Invocation>, MetricsNs {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -83,7 +83,7 @@ public class InvocationRegistry implements Iterable<Invocation>, ObjectMetricsCo
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("operation.invocations");
     }
 

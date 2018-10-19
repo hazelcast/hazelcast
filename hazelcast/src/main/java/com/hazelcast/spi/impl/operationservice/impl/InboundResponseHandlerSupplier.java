@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -70,7 +70,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * dealing with the response and especially notifying the invocation future can be
  * very expensive.
  */
-public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>>, ObjectMetricsContext {
+public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>>, MetricsNs {
 
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
@@ -134,7 +134,7 @@ public class InboundResponseHandlerSupplier implements Supplier<Consumer<Packet>
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("operation.responses");
     }
 

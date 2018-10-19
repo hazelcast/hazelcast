@@ -29,7 +29,7 @@ import com.hazelcast.internal.cluster.fd.PingFailureDetector;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.logging.ILogger;
@@ -70,7 +70,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p/>
  * If it detects a member is not live anymore, that member is kicked out of cluster.
  */
-public class ClusterHeartbeatManager implements ObjectMetricsContext {
+public class ClusterHeartbeatManager implements MetricsNs {
 
     private static final long CLOCK_JUMP_THRESHOLD = MINUTES.toMillis(2);
     private static final int HEART_BEAT_INTERVAL_FACTOR = 10;
@@ -152,7 +152,7 @@ public class ClusterHeartbeatManager implements ObjectMetricsContext {
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("cluster.heartbeat");
     }
 

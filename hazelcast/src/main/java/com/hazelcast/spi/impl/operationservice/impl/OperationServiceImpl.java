@@ -23,7 +23,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
@@ -95,7 +95,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class OperationServiceImpl implements InternalOperationService, LiveOperationsTracker,
-    ObjectMetricsContext {
+    MetricsNs {
 
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 
@@ -183,7 +183,7 @@ public final class OperationServiceImpl implements InternalOperationService, Liv
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("operation");
     }
 

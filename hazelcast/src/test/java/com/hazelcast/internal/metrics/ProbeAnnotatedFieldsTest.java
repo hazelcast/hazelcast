@@ -110,13 +110,13 @@ public class ProbeAnnotatedFieldsTest extends AbstractMetricsTest {
         int inheritedField = 10;
     }
 
-    private static class Subclass extends SuperClass implements ObjectMetricsContext {
+    private static class Subclass extends SuperClass implements MetricsNs {
 
         @ProbeSource
         ProbeAnnotatedFields nested = new ProbeAnnotatedFields();
 
         @Override
-        public void switchToObjectContext(Tags context) {
+        public void switchContext(Tags context) {
             context.namespace("foo");
         }
     }

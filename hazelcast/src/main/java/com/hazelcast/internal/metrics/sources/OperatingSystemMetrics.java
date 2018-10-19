@@ -28,11 +28,11 @@ import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import com.hazelcast.internal.metrics.MetricsSource;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 
 @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used for metrics via reflection")
-public final class OperatingSystemMetrics implements ObjectMetricsContext, MetricsSource {
+public final class OperatingSystemMetrics implements MetricsNs, MetricsSource {
 
     private static final String[] PROBED_OS_METHODS = { "getCommittedVirtualMemorySize",
             "getFreePhysicalMemorySize", "getFreeSwapSpaceSize", "getProcessCpuTime",
@@ -45,7 +45,7 @@ public final class OperatingSystemMetrics implements ObjectMetricsContext, Metri
     private double systemLoadAverage;
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("os");
     }
 
@@ -56,7 +56,7 @@ public final class OperatingSystemMetrics implements ObjectMetricsContext, Metri
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        switchToObjectContext(cycle.switchContext());
+        switchContext(cycle.switchContext());
         cycle.collect(MANDATORY, os, PROBED_OS_METHODS);
     }
 }

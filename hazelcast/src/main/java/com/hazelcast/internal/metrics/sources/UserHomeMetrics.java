@@ -25,11 +25,11 @@ import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 
 @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used for metrics via reflection")
-public final class UserHomeMetrics implements ObjectMetricsContext {
+public final class UserHomeMetrics implements MetricsNs {
 
     private final File userHome = new File(System.getProperty("user.home"));
 
@@ -43,7 +43,7 @@ public final class UserHomeMetrics implements ObjectMetricsContext {
     private long usableSpace;
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("file.partition").instance("user.home");
     }
 

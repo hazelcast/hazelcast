@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -47,7 +47,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class OperationParkerImpl implements OperationParker, LiveOperationsTracker, ObjectMetricsContext {
+public class OperationParkerImpl implements OperationParker, LiveOperationsTracker, MetricsNs {
 
     private static final long FIRST_WAIT_TIME = 1000;
 
@@ -76,7 +76,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("operation.parker");
     }
 

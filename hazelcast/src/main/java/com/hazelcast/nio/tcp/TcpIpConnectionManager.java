@@ -19,7 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.Channel;
@@ -64,7 +64,7 @@ import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.newSetFromMap;
 
 public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet>,
-    ObjectMetricsContext {
+    MetricsNs {
 
     private static final int RETRY_NUMBER = 5;
     private static final long DELAY_FACTOR = 100L;
@@ -156,7 +156,7 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("tcp.connection");
     }
 

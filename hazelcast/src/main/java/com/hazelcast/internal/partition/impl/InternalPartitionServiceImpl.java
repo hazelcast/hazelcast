@@ -28,7 +28,7 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
@@ -110,7 +110,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class InternalPartitionServiceImpl implements InternalPartitionService, ManagedService,
         EventPublishingService<PartitionEvent, PartitionEventListener<PartitionEvent>>,
-        PartitionAwareService, ClusterStateListener, ClusterVersionListener, ObjectMetricsContext {
+        PartitionAwareService, ClusterStateListener, ClusterVersionListener, MetricsNs {
 
     private static final int PARTITION_OWNERSHIP_WAIT_MILLIS = 10;
     private static final String EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT = "Partition state sync invocation timed out";
@@ -185,7 +185,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("partitions");
     }
 

@@ -25,7 +25,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
@@ -87,7 +87,7 @@ import static java.util.logging.Level.WARNING;
  * Responsible for processing an Operation.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-class OperationRunnerImpl extends OperationRunner implements ObjectMetricsContext {
+class OperationRunnerImpl extends OperationRunner implements MetricsNs {
 
     static final int AD_HOC_PARTITION_ID = -2;
 
@@ -140,7 +140,7 @@ class OperationRunnerImpl extends OperationRunner implements ObjectMetricsContex
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         if (partitionId >= 0) {
             context.namespace("operation.partition").tag(TAG_INSTANCE, partitionId);
         } else if (partitionId == -1) {

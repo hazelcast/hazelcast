@@ -20,7 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
@@ -69,7 +69,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.shuffle;
 
 public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
-        MembershipAwareService, ClientAwareService, ObjectMetricsContext {
+        MembershipAwareService, ClientAwareService, MetricsNs {
 
     public static final String SERVICE_NAME = "hz:core:txManagerService";
 
@@ -98,7 +98,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("transactions");
     }
 

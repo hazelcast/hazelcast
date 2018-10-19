@@ -23,13 +23,13 @@ import java.lang.management.ManagementFactory;
 
 import com.hazelcast.internal.metrics.BeforeCollectionCycle;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used for metrics via reflection")
-public final class ClassLoadingMetrics implements ObjectMetricsContext {
+public final class ClassLoadingMetrics implements MetricsNs {
 
     private final ClassLoadingMXBean classLoading = ManagementFactory.getClassLoadingMXBean();
 
@@ -41,7 +41,7 @@ public final class ClassLoadingMetrics implements ObjectMetricsContext {
     private long unloadedClassCount;
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("classloading");
     }
 

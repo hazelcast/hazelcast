@@ -53,7 +53,7 @@ import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MetricsSource;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeSource;
@@ -709,7 +709,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             this.type = type;
             this.levels = levels;
             this.isAnnotated = isAnnotated();
-            this.isContext = ObjectMetricsContext.class.isAssignableFrom(type);
+            this.isContext = MetricsNs.class.isAssignableFrom(type);
             this.isSource = MetricsSource.class.isAssignableFrom(type);
 
             this.update = reprobeFor(type);
@@ -863,7 +863,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         private void collectAllInternal(CollectionCycleImpl cycle, Object instance) {
             int len0 = cycle.tags.length();
             if (isContext) {
-                ((ObjectMetricsContext) instance).switchToObjectContext(cycle);
+                ((MetricsNs) instance).switchContext(cycle);
             }
             for (int i = 0; i < levels.length; i++) {
                 ProbeAnnotatedTypeLevel l = levels[i];

@@ -41,7 +41,7 @@ import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
@@ -93,7 +93,7 @@ import static java.lang.String.format;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
         EventPublishingService<MembershipEvent, MembershipListener>, TransactionalService,
-        ObjectMetricsContext {
+        MetricsNs {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 
@@ -167,7 +167,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("cluster");
     }
 

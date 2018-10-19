@@ -26,7 +26,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * above.
  */
 @PrivateApi
-public interface ObjectMetricsContext {
+public interface MetricsNs {
 
     /**
      * The implementing object (with {@link Probe} annotated fields or methods) is
@@ -44,5 +44,5 @@ public interface ObjectMetricsContext {
      * @param context to use to build the objects context using the {@link Tags}
      *        methods.
      */
-    void switchToObjectContext(Tags context);
+    void switchContext(Tags context);
 }

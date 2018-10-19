@@ -79,14 +79,14 @@ public interface CollectionCycle {
      * {@link MetricsSource}s that have not been registered as a root before.
      *
      * This method can also be used with an array of instances. This is mostly
-     * useful for types that implement {@link ObjectMetricsContext} and thereby provide
+     * useful for types that implement {@link MetricsNs} and thereby provide
      * their own context.
      *
      * The method exits with the same {@link Tags} context it is called with.
      *
      * @param obj a obj with fields or methods annotated with {@link Probe} or an
      *        array of such objects or an instance implementing
-     *        {@link MetricsSource} and/or {@link ObjectMetricsContext}.
+     *        {@link MetricsSource} and/or {@link MetricsNs}.
      */
     void collectAll(Object obj);
 

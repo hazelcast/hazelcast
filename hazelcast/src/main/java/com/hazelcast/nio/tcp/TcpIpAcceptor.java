@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.nio.SelectorMode;
@@ -51,7 +51,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * of the 'client' side of a connection and the {@link TcpIpAcceptor} is the 'server' side of a connection (each connection
  * has a client and server-side
  */
-public class TcpIpAcceptor implements ObjectMetricsContext {
+public class TcpIpAcceptor implements MetricsNs {
     private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
     private static final long SELECT_TIMEOUT_MILLIS = SECONDS.toMillis(60);
     private static final int SELECT_IDLE_COUNT_THRESHOLD = 10;
@@ -93,7 +93,7 @@ public class TcpIpAcceptor implements ObjectMetricsContext {
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("tcp.thread.acceptor").instance(getName());
     }
 

@@ -26,7 +26,7 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.logging.ILogger;
@@ -49,7 +49,7 @@ import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public abstract class AbstractClientInvocationService implements ClientInvocationService, ObjectMetricsContext {
+public abstract class AbstractClientInvocationService implements ClientInvocationService, MetricsNs {
 
     private static final HazelcastProperty CLEAN_RESOURCES_MILLIS
             = new HazelcastProperty("hazelcast.client.internal.clean.resources.millis", 100, MILLISECONDS);
@@ -87,7 +87,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("invocations");
     }
 

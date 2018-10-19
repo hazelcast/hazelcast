@@ -35,7 +35,7 @@ import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -72,7 +72,7 @@ public class MetricsRegistryTest extends AbstractMetricsTest {
         }
     }
 
-    private static final class LevelBean implements ObjectMetricsContext {
+    private static final class LevelBean implements MetricsNs {
 
         private final String name;
 
@@ -90,7 +90,7 @@ public class MetricsRegistryTest extends AbstractMetricsTest {
         long debug = 3;
 
         @Override
-        public void switchToObjectContext(Tags context) {
+        public void switchContext(Tags context) {
             if (name.equals("special")) {
                 context.tag(MetricsSource.TAG_TARGET, name);
             } else if (!name.isEmpty()) {
@@ -169,7 +169,7 @@ public class MetricsRegistryTest extends AbstractMetricsTest {
         }
     }
 
-    private static final class SubService implements MetricsSource, ObjectMetricsContext {
+    private static final class SubService implements MetricsSource, MetricsNs {
 
         static int n = 0;
 
@@ -194,7 +194,7 @@ public class MetricsRegistryTest extends AbstractMetricsTest {
         }
 
         @Override
-        public void switchToObjectContext(Tags context) {
+        public void switchContext(Tags context) {
             context.namespace(name);
         }
 
@@ -207,7 +207,7 @@ public class MetricsRegistryTest extends AbstractMetricsTest {
         }
     }
 
-    private static final class Worker implements ObjectMetricsContext {
+    private static final class Worker implements MetricsNs {
 
         @Probe
         long c;
@@ -222,7 +222,7 @@ public class MetricsRegistryTest extends AbstractMetricsTest {
         }
 
         @Override
-        public void switchToObjectContext(Tags context) {
+        public void switchContext(Tags context) {
             if (name.startsWith("worker.default11")) {
                 // this shows that ns of the parent can be replaced as long as no other tag was used
                 context.namespace(name);

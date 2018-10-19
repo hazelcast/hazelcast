@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.metrics.MetricsSource;
 import com.hazelcast.internal.metrics.CollectionCycle;
@@ -81,7 +81,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class OperationExecutorImpl implements OperationExecutor, MetricsSource, ObjectMetricsContext {
+public final class OperationExecutorImpl implements OperationExecutor, MetricsSource, MetricsNs {
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
 
@@ -221,7 +221,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsSo
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("operation");
     }
 

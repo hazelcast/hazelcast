@@ -17,7 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.internal.cluster.ClusterClock;
-import com.hazelcast.internal.metrics.ObjectMetricsContext;
+import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.logging.ILogger;
@@ -27,7 +27,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.lang.Math.abs;
 
 
-public class ClusterClockImpl implements ClusterClock, ObjectMetricsContext {
+public class ClusterClockImpl implements ClusterClock, MetricsNs {
 
     private final ILogger logger;
 
@@ -41,7 +41,7 @@ public class ClusterClockImpl implements ClusterClock, ObjectMetricsContext {
     }
 
     @Override
-    public void switchToObjectContext(Tags context) {
+    public void switchContext(Tags context) {
         context.namespace("cluster.clock");
     }
 
