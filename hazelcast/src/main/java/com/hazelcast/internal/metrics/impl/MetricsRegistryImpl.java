@@ -55,6 +55,7 @@ import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -702,9 +703,11 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         final ProbeLevel updateLevel;
         final boolean isUpdated;
         final boolean isSource;
-        final boolean isContext;
+        final boolean isDynamicTagAware;
+        final boolean isStaticTagAware;
         final boolean isAnnotated;
         final boolean isContributing;
+        final String staticNs;
         final ProbeAnnotatedTypeLevel[] levels;
 
         ProbeAnnotatedType(Class<?> type) {
@@ -719,7 +722,9 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             this.type = type;
             this.levels = levels;
             this.isAnnotated = isAnnotated();
-            this.isContext = MetricsNs.class.isAssignableFrom(type);
+            this.isDynamicTagAware = MetricsNs.class.isAssignableFrom(type);
+            this.isStaticTagAware = !isDynamicTagAware && type.isAnnotationPresent(Namespace.class);
+            this.staticNs = isStaticTagAware ? type.getAnnotation(Namespace.class).value() : "";
             this.isSource = MetricsSource.class.isAssignableFrom(type);
 
             this.update = reprobeFor(type);
@@ -830,7 +835,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                     updateIfNeeded(instance);
                 }
                 if (isAnnotated) {
-                    if (isContext) {
+                    if (isDynamicTagAware || isStaticTagAware) {
                         collectAllInContext(cycle, instance);
                     } else {
                         collectAllInternal(cycle, instance);
@@ -872,8 +877,10 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
 
         private void collectAllInternal(CollectionCycleImpl cycle, Object instance) {
             int len0 = cycle.tags.length();
-            if (isContext) {
+            if (isDynamicTagAware) {
                 ((MetricsNs) instance).switchContext(cycle);
+            } else if (isStaticTagAware) {
+                cycle.namespace(staticNs);
             }
             for (int i = 0; i < levels.length; i++) {
                 ProbeAnnotatedTypeLevel l = levels[i];

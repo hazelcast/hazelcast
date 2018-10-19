@@ -18,9 +18,8 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.MetricsSource;
-import com.hazelcast.internal.metrics.MetricsNs;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
@@ -44,7 +43,8 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 /**
  * Manages and stores {@link com.hazelcast.client.impl.ClientEndpointImpl}s.
  */
-public class ClientEndpointManagerImpl implements ClientEndpointManager, MetricsSource, MetricsNs {
+@Namespace("client.endpoint")
+public class ClientEndpointManagerImpl implements ClientEndpointManager, MetricsSource {
 
     private final ILogger logger;
     private final EventService eventService;
@@ -143,11 +143,6 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager, Metrics
     @Override
     public int size() {
         return endpoints.size();
-    }
-
-    @Override
-    public void switchContext(Tags context) {
-        context.namespace("client.endpoint");
     }
 
     @Override

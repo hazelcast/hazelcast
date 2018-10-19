@@ -41,8 +41,7 @@ import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.MetricsNs;
-import com.hazelcast.internal.metrics.CollectionCycle.Tags;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -91,9 +90,9 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.String.format;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
+@Namespace("cluster")
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
-        EventPublishingService<MembershipEvent, MembershipListener>, TransactionalService,
-        MetricsNs {
+        EventPublishingService<MembershipEvent, MembershipListener>, TransactionalService {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 
@@ -164,11 +163,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         node.connectionManager.addConnectionListener(this);
         //MEMBERSHIP_EVENT_EXECUTOR is a single threaded executor to ensure that events are executed in correct order.
         nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
-    }
-
-    @Override
-    public void switchContext(Tags context) {
-        context.namespace("cluster");
     }
 
     @Probe(name = "state", level = MANDATORY)

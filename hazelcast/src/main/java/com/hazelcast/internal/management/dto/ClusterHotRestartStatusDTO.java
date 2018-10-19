@@ -18,11 +18,10 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.metrics.MetricsNs;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.util.ProbeEnumUtils;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
@@ -39,7 +38,8 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * A DTO for Hot Restart status of cluster and all members.
  */
-public class ClusterHotRestartStatusDTO implements JsonSerializable, MetricsNs, MetricsSource {
+@Namespace("hot-restart")
+public class ClusterHotRestartStatusDTO implements JsonSerializable, MetricsSource {
 
     public enum ClusterHotRestartStatus {
         UNKNOWN, IN_PROGRESS, FAILED, SUCCEEDED
@@ -73,11 +73,6 @@ public class ClusterHotRestartStatusDTO implements JsonSerializable, MetricsNs, 
         this.remainingValidationTimeMillis = remainingValidationTimeMillis;
         this.remainingDataLoadTimeMillis = remainingDataLoadTimeMillis;
         this.memberHotRestartStatusMap = memberHotRestartStatusMap;
-    }
-
-    @Override
-    public void switchContext(Tags context) {
-        context.namespace("hot-restart");
     }
 
     @Override

@@ -20,9 +20,8 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.MetricsNs;
-import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -97,7 +96,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * event can be retransmitted causing it to be received by the target node at a later time.
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class EventServiceImpl implements InternalEventService, MetricsSource, MetricsNs {
+@Namespace("event")
+public class EventServiceImpl implements InternalEventService, MetricsSource {
 
     public static final String SERVICE_NAME = "hz:core:eventService";
 
@@ -546,11 +546,6 @@ public class EventServiceImpl implements InternalEventService, MetricsSource, Me
         return forceCreate
                 ? getOrPutIfAbsent(segments, service, segmentConstructor)
                 : segments.get(service);
-    }
-
-    @Override
-    public void switchContext(Tags context) {
-        context.namespace("event");
     }
 
     @Override

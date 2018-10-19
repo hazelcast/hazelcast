@@ -22,15 +22,15 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
 import com.hazelcast.internal.metrics.BeforeCollectionCycle;
-import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import com.hazelcast.internal.metrics.MetricsNs;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.metrics.Probe;
 
 @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used for metrics via reflection")
-public final class ThreadMetrics implements MetricsNs {
+@Namespace("thread")
+public final class ThreadMetrics {
 
     private final ThreadMXBean threads = ManagementFactory.getThreadMXBean();
 
@@ -42,11 +42,6 @@ public final class ThreadMetrics implements MetricsNs {
     private long threadCount;
     @Probe(level = MANDATORY)
     private long totalStartedThreadCount;
-
-    @Override
-    public void switchContext(Tags context) {
-        context.namespace("thread");
-    }
 
     @BeforeCollectionCycle
     private void update() {

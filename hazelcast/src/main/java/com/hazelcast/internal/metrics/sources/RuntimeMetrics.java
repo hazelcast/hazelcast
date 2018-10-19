@@ -22,15 +22,15 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 
 import com.hazelcast.internal.metrics.BeforeCollectionCycle;
-import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import com.hazelcast.internal.metrics.MetricsNs;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.metrics.Probe;
 
 @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used for metrics via reflection")
-public final class RuntimeMetrics implements MetricsNs {
+@Namespace("runtime")
+public final class RuntimeMetrics {
 
     private final Runtime runtime = Runtime.getRuntime();
     private final RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
@@ -49,11 +49,6 @@ public final class RuntimeMetrics implements MetricsNs {
     private long uptime;
     @Probe
     private long startTime;
-
-    @Override
-    public void switchContext(Tags context) {
-        context.namespace("runtime");
-    }
 
     @BeforeCollectionCycle
     private void update() {

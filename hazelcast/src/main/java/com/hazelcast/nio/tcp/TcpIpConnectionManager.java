@@ -19,9 +19,8 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.MetricsNs;
-import com.hazelcast.internal.metrics.CollectionCycle.Tags;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
@@ -63,8 +62,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.newSetFromMap;
 
-public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet>,
-    MetricsNs {
+@Namespace("tcp.connection")
+public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet> {
 
     private static final int RETRY_NUMBER = 5;
     private static final long DELAY_FACTOR = 100L;
@@ -153,11 +152,6 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         this.spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
         // the problem is that this is behind a delegate and therefore not automatically recognized as probe source
         metricsRegistry.register(this);
-    }
-
-    @Override
-    public void switchContext(Tags context) {
-        context.namespace("tcp.connection");
     }
 
     public IOService getIoService() {
