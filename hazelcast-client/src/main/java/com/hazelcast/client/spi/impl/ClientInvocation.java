@@ -242,7 +242,7 @@ public class ClientInvocation implements Runnable {
         try {
             execute();
         } catch (RejectedExecutionException e) {
-            clientInvocationFuture.complete(exception);
+            clientInvocationFuture.complete(new HazelcastClientNotActiveException("Client is shutting down", exception));
         }
 
     }
