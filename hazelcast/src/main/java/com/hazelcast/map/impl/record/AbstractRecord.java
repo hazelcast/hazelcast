@@ -35,8 +35,14 @@ public abstract class AbstractRecord<V> implements Record<V> {
     /**
      * Base time to be used for storing time values as diffs (int) rather than full blown epoch based vals (long)
      * This allows for a space in seconds, of roughly 68 years.
+     *
+     * Reference value (1514764800000) - Monday, January 1, 2018 12:00:00 AM
+     *
+     * The fixed time in the past (instead of {@link System#currentTimeMillis()} prevents any
+     * time discrepancies among nodes, mis-translated as diffs of -1 ie. {@link Record#NOT_AVAILABLE} values.
+     * (see. https://github.com/hazelcast/hazelcast-enterprise/issues/2527)
      */
-    public static final long EPOCH_TIME = zeroOutMs(System.currentTimeMillis());
+    public static final long EPOCH_TIME = zeroOutMs(1514764800000L);
 
     private static final int NUMBER_OF_LONGS = 2;
     private static final int NUMBER_OF_INTS = 5;
