@@ -93,10 +93,12 @@ public class NodeMetricsTest extends HazelcastInstanceMetricsIntegrationTest {
 
     @Test
     public void operationsServiceStats() {
-        assertHasStats(23, "operation");
+        assertHasStats(15, "operation");
         assertHasStats(6, "operation.invocations");
         assertHasStats(2, "operation.parker");
         assertHasStats(6, "operation.responses");
+        assertHasStats(36, "operation.partition");
+        assertHasStats(21, "operation.generic");
     }
 
     @Test

@@ -105,7 +105,6 @@ public final class OperationServiceImpl implements InternalOperationService, Liv
 
     @ProbeSource
     final InvocationRegistry invocationRegistry;
-    @ProbeSource
     final OperationExecutor operationExecutor;
 
     @Probe(name = "operationTimeoutCount", level = MANDATORY)

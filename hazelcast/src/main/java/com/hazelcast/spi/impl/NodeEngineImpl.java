@@ -192,6 +192,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     private void initMetricsSources() {
         metricsRegistry.register(node);
+        metricsRegistry.register(operationService.getOperationExecutor());
         metricsRegistry.register(new UserHomeMetrics());
         metricsRegistry.register(new RuntimeMetrics());
         metricsRegistry.register(new ThreadMetrics());
