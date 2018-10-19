@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -125,7 +124,9 @@ class ClusterConnector {
     }
 
     void setOwnerConnectionAddress(Address ownerConnectionAddress) {
-        this.previousOwnerConnectionAddress = this.ownerConnectionAddress;
+        if (this.ownerConnectionAddress != null) {
+            this.previousOwnerConnectionAddress = this.ownerConnectionAddress;
+        }
         this.ownerConnectionAddress = ownerConnectionAddress;
     }
 
@@ -235,16 +236,6 @@ class ClusterConnector {
     }
 
     Collection<Address> getPossibleMemberAddresses() {
-        LinkedHashSet<Address> addresses = new LinkedHashSet<Address>();
-
-        Collection<Member> memberList = client.getClientClusterService().getMemberList();
-        for (Member member : memberList) {
-            addresses.add(member.getAddress());
-        }
-
-        if (shuffleMemberList) {
-            addresses = (LinkedHashSet<Address>) shuffle(addresses);
-        }
 
         LinkedHashSet<Address> providerAddresses = new LinkedHashSet<Address>();
         for (AddressProvider addressProvider : addressProviders) {
@@ -261,7 +252,7 @@ class ClusterConnector {
             providerAddresses = (LinkedHashSet<Address>) shuffle(providerAddresses);
         }
 
-        addresses.addAll(providerAddresses);
+        LinkedHashSet<Address> addresses = new LinkedHashSet<Address>(providerAddresses);
 
         if (previousOwnerConnectionAddress != null) {
             /*
