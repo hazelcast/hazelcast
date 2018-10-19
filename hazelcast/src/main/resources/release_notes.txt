@@ -22,6 +22,7 @@ Hazelcast IMDG Open Source Enhancements:
 * JCache Expired Entries Disposal: Improved JCache's lazy eviction with a periodic cleanup that eventually removes all expired entries and frees up the occupied space.
 * Improved Network I/O: Enhanced network I/O to allow TLS handshake in a block-free manner and to support offloadable tasks, improving the latency and security.
 * Now, Hazelcast supports discovering members in the GCP Compute Engine environment.
+* Introduced the ability which allows adding the user libraries to the classpath. See Adding User Library to CLASSPATH section.
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
