@@ -39,8 +39,8 @@ import com.hazelcast.util.Clock;
 final class MetricsUrlSender implements Runnable, Closeable {
 
     private static final int RECONNECT_SLOWDOWN_FACTOR = 5;
-    private static final int CONNECTION_TIMEOUT_MILLIS = 3000;
     private static final int STANDED_INTERVAL_MILLIS = 1000;
+    private static final int CONNECTION_TIMEOUT_MILLIS = 500;
 
     private static final ILogger LOGGER = Logger.getLogger(MetricsUrlSender.class);
 
@@ -49,6 +49,7 @@ final class MetricsUrlSender implements Runnable, Closeable {
 
     private final CollectionContext context;
     private final long intervalMs;
+    private final int timeoutMs;
     private final String timeKey;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final String member;
@@ -65,6 +66,7 @@ final class MetricsUrlSender implements Runnable, Closeable {
         this.member = member;
         this.context = context;
         this.intervalMs = intervalMs;
+        this.timeoutMs = (int) Math.max(CONNECTION_TIMEOUT_MILLIS, intervalMs / 2);
         this.timeKey = "group=" + group + " member=" + member + " time";
     }
 
@@ -154,8 +156,8 @@ final class MetricsUrlSender implements Runnable, Closeable {
                 ? connectionFactory.openConnection(url)
                         : url.openConnection());
         conn.setDoOutput(true);
-        conn.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
-        conn.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
+        conn.setConnectTimeout(timeoutMs);
+        conn.setReadTimeout(timeoutMs);
         conn.setRequestProperty("Accept", "application/octet-stream");
         conn.setRequestProperty("Content-Type", "application/octet-stream");
         conn.setRequestMethod("POST");
