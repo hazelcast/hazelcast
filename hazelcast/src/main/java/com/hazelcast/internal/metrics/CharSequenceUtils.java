@@ -16,12 +16,34 @@
 
 package com.hazelcast.internal.metrics;
 
+import java.util.Comparator;
+
 /**
  * Contains utilities to work with {@link CharSequence} instead of
  * {@link String} mainly to avoid creating intermediate representations that
  * would lead to garbage objects.
  */
 public final class CharSequenceUtils {
+
+    public static final Comparator<CharSequence> SAME_SEQUENCE = new Comparator<CharSequence>() {
+
+        @Override
+        public int compare(CharSequence s1, CharSequence s2) {
+            int len1 = s1.length();
+            int len2 = s2.length();
+            int res = len1 - len2;
+            if (res != 0) {
+                return res;
+            }
+            for (int i = 0; i < len1; i++) {
+                res = s1.charAt(i) - s2.charAt(i);
+                if (res != 0) {
+                    return res;
+                }
+            }
+            return 0;
+        }
+    };
 
     private CharSequenceUtils() {
         // utility

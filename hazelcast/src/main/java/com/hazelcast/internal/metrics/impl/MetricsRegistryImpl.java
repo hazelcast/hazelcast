@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import static com.hazelcast.internal.metrics.CharSequenceUtils.SAME_SEQUENCE;
 import static com.hazelcast.internal.metrics.CharSequenceUtils.appendUnescaped;
 import static com.hazelcast.internal.metrics.MetricsSource.TAG_INSTANCE;
 import static com.hazelcast.internal.metrics.MetricsSource.TAG_NAMESPACE;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.hazelcast.internal.metrics.BeforeCollectionCycle;
@@ -77,11 +79,11 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
     private final ConcurrentMap<Integer, Object> roots =
             new ConcurrentHashMap<Integer, Object>();
 
-    private final ConcurrentMap<String, LongGauge> longGauges =
-            new ConcurrentHashMap<String, LongGauge>();
+    private final ConcurrentMap<CharSequence, LongGauge> longGauges =
+            new ConcurrentSkipListMap<CharSequence, LongGauge>(SAME_SEQUENCE);
 
-    private final ConcurrentMap<String, DoubleGauge> doubleGauges =
-            new ConcurrentHashMap<String, DoubleGauge>();
+    private final ConcurrentMap<CharSequence, DoubleGauge> doubleGauges =
+            new ConcurrentSkipListMap<CharSequence, DoubleGauge>(SAME_SEQUENCE);
 
     static ProbeAnnotatedType register(ConcurrentMap<Class<?>, ProbeAnnotatedType> cache, ProbeAnnotatedType typeMetaData) {
         ProbeAnnotatedType existing = cache.putIfAbsent(typeMetaData.type, typeMetaData);
@@ -143,27 +145,34 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
     private static final class CollectionCycleImpl
     implements CollectionCycle, CollectionCycle.Tags, CollectionContext {
 
+        /**
+         * Number of cycles before gauges that could not be connected on initial try are
+         * tried to connect again.
+         */
+        private static final int GAUGE_RECONNECT_EVERY = 20;
+
         // shared state
         private final ConcurrentMap<Class<?>, ProbeAnnotatedType> mataDataCache;
-        private final ConcurrentMap<String, LongGauge> longGauges;
-        private final ConcurrentMap<String, DoubleGauge> doubleGauges;
+        private final ConcurrentMap<CharSequence, LongGauge> longGauges;
+        private final ConcurrentMap<CharSequence, DoubleGauge> doubleGauges;
 
         // collection context state
         private final Collection<Object> roots;
         private final ProbeLevel level;
 
         // collection cycle state
+        private int cycleCount;
         private final StringBuilder tags = new StringBuilder(128);
         private int tagBaseIndex;
         private MetricsCollector collector;
         private CharSequence lastTagName;
         private int lastTagValuePosition;
-        private boolean unconnectedGauges;
+        private boolean connectGauges;
         private Object source;
         private Object gauge;
 
         CollectionCycleImpl(ProbeLevel level, ConcurrentMap<Class<?>, ProbeAnnotatedType> mataDataCache,
-                ConcurrentMap<String, LongGauge> longGauges, ConcurrentMap<String, DoubleGauge> doubleGauges,
+                ConcurrentMap<CharSequence, LongGauge> longGauges, ConcurrentMap<CharSequence, DoubleGauge> doubleGauges,
                 Collection<Object> roots) {
             this.level = level;
             this.mataDataCache = mataDataCache;
@@ -175,12 +184,14 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         @Override
         public void collectAll(MetricsCollector collector) {
             this.collector = collector;
-            this.unconnectedGauges = !longGauges.isEmpty() || !doubleGauges.isEmpty();
+            this.connectGauges = (!longGauges.isEmpty() || !doubleGauges.isEmpty())
+                    && cycleCount % GAUGE_RECONNECT_EVERY == 0;
             for (Object root : roots) {
                 tagBaseIndex = 0;
                 switchContext();
                 collectAll(root);
             }
+            this.cycleCount++;
         }
 
         @Override
@@ -243,20 +254,19 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                 int len0 = tags.length();
                 CharSequenceUtils.appendEscaped(tags, name);
                 collector.collect(tags, value);
-                if (unconnectedGauges) {
-                    connectGauge();
+                if (connectGauges) {
+                    connectToGauge();
                 }
                 tags.setLength(len0);
             }
         }
 
-        private void connectGauge() {
+        private void connectToGauge() {
             try {
-                String key = tags.toString();
-                if (longGauges.containsKey(key)) {
-                    Gauges.connect(longGauges.remove(key), Gauges.longGauge(gauge, source));
-                } else if (doubleGauges.containsKey(key)) {
-                    Gauges.connect(doubleGauges.remove(key), Gauges.doubleGauge(gauge, source));
+                if (longGauges.containsKey(tags)) {
+                    Gauges.connect(longGauges.remove(tags), Gauges.longGauge(gauge, source));
+                } else if (doubleGauges.containsKey(tags)) {
+                    Gauges.connect(doubleGauges.remove(tags), Gauges.doubleGauge(gauge, source));
                 }
             } catch (RuntimeException e) {
                 LOGGER.warning("Failed to connect gauge: ", e);
@@ -904,4 +914,5 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         }
         return -1;
     }
+
 }
