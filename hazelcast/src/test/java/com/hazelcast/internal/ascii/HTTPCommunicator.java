@@ -160,12 +160,12 @@ public class HTTPCommunicator {
 
     public int mapDeleteAll(String mapName) throws IOException {
         String url = address + "maps/" + mapName;
-        return doDelete(url);
+        return doDelete(url).responseCode;
     }
 
     public int mapDelete(String mapName, String key) throws IOException {
         String url = address + "maps/" + mapName + "/" + key;
-        return doDelete(url);
+        return doDelete(url).responseCode;
     }
 
     public int shutdownCluster(String groupName, String groupPassword) throws IOException {
@@ -373,14 +373,17 @@ public class HTTPCommunicator {
         }
     }
 
-    private int doDelete(String url) throws IOException {
+    private ConnectionResponse doDelete(String url) throws IOException {
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {
             HttpDelete request = new HttpDelete(url);
             request.setHeader("Content-type", "text/xml; charset=" + "UTF-8");
             response = client.execute(request);
-            return response.getStatusLine().getStatusCode();
+            int responseCode = response.getStatusLine().getStatusCode();
+            HttpEntity entity = response.getEntity();
+            String responseStr = entity != null ? EntityUtils.toString(entity, "UTF-8") : "";
+            return new ConnectionResponse(responseStr, responseCode);
         } finally {
             IOUtil.closeResource(response);
             IOUtil.closeResource(client);
@@ -426,9 +429,38 @@ public class HTTPCommunicator {
         return doHead(url);
     }
 
+    public ConnectionResponse getRequestToUndefinedURI() throws IOException {
+        String url = address + "undefined";
+        return doGet(url);
+    }
+
+    public ConnectionResponse postRequestToUndefinedURI() throws IOException {
+        String url = address + "undefined";
+        return doPost(url);
+    }
+    public ConnectionResponse deleteRequestToUndefinedURI() throws IOException {
+        String url = address + "undefined";
+        return doDelete(url);
+    }
+
     public ConnectionResponse headRequestToClusterInfoURI() throws IOException {
         String url = address + "cluster";
         return doHead(url);
+    }
+
+    public ConnectionResponse getBadRequestURI() throws IOException {
+        String url = address + "maps/name";
+        return doGet(url);
+    }
+
+    public ConnectionResponse postBadRequestURI() throws IOException {
+        String url = address + "maps/name";
+        return doPost(url);
+    }
+
+    public ConnectionResponse deleteBadRequestURI() throws IOException {
+        String url = address + "queues/name";
+        return doDelete(url);
     }
 
     public ConnectionResponse headRequestToClusterHealthURI() throws IOException {
