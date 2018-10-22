@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ObjectNamespace;
@@ -134,6 +135,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     void applyState() {
         ThreadUtil.assertRunningOnPartitionThread();
 
@@ -164,6 +166,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                     indexes.clearAll();
                 }
 
+                final InternalIndex[] indexesSnapshot = indexes.getIndexes();
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
                     final Data value = recordReplicationInfo.getValue();
@@ -186,6 +189,10 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                         break;
                     }
                     recordStore.disposeDeferredBlocks();
+                }
+
+                if (indexesMustBePopulated) {
+                    Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
                 }
             }
         }

@@ -23,6 +23,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
@@ -41,12 +42,17 @@ import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -54,6 +60,7 @@ import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -73,6 +80,7 @@ import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -1606,4 +1614,48 @@ public abstract class HazelcastTestSupport {
         assumeTrue(format("Assumed configured byte order %s, but was %s", assumedByteOrder, configuredByteOrder),
                 configuredByteOrder.equals(assumedByteOrder));
     }
+
+    /**
+     * Obtains a list of {@link Indexes} for the given map local to the node
+     * associated with it.
+     * <p>
+     * There may be more than one indexes instance associated with a map if its
+     * indexes are partitioned.
+     *
+     * @param map the map to obtain the indexes for.
+     * @return the obtained indexes list.
+     */
+    public static List<Indexes> getAllIndexes(IMap map) {
+        MapProxyImpl mapProxy = (MapProxyImpl) map;
+        String mapName = mapProxy.getName();
+        NodeEngine nodeEngine = mapProxy.getNodeEngine();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+
+        Indexes maybeGlobalIndexes = mapContainer.getIndexes();
+        if (maybeGlobalIndexes != null) {
+            return Collections.singletonList(maybeGlobalIndexes);
+        }
+
+        PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
+        List<Indexes> allIndexes = new ArrayList<Indexes>();
+        for (PartitionContainer partitionContainer : partitionContainers) {
+            IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
+            if (!partition.isLocal()) {
+                continue;
+            }
+
+            Indexes partitionIndexes = partitionContainer.getIndexes().get(mapName);
+            if (partitionIndexes == null) {
+                continue;
+            }
+            assert !partitionIndexes.isGlobal();
+            allIndexes.add(partitionIndexes);
+        }
+
+        return allIndexes;
+    }
+
 }
