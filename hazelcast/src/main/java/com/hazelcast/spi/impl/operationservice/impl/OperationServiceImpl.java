@@ -384,9 +384,26 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     @Override
-    public <T> Map<Integer, T> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
-                                                   Collection<Integer> partitions) throws Exception {
+    public <T> ICompletableFuture<Map<Integer, T>> invokeOnAllPartitionsAsync(String serviceName,
+                                                                              OperationFactory operationFactory,
+                                                                              ExecutionCallback<Map<Integer, T>> callback) {
 
+        Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
+        InvokeOnPartitionsAsync invokeOnPartitions =
+                new InvokeOnPartitionsAsync(this, serviceName, operationFactory, memberPartitions);
+        return invokeOnPartitions.invokeAsync(callback);
+    }
+
+    @Override
+    public <T> Map<Integer, T> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
+                                                  Collection<Integer> partitions) throws Exception {
+
+        Map<Address, List<Integer>> memberPartitions = getMemberPartitions(partitions);
+        InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
+        return invokeOnPartitions.invoke();
+    }
+
+    private Map<Address, List<Integer>> getMemberPartitions(Collection<Integer> partitions) {
         Map<Address, List<Integer>> memberPartitions = createHashMap(3);
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
@@ -398,8 +415,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
             memberPartitions.get(owner).add(partition);
         }
-        InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
-        return invokeOnPartitions.invoke();
+        return memberPartitions;
     }
 
     @Override
@@ -407,17 +423,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
             String serviceName, OperationFactory operationFactory, Collection<Integer> partitions,
             ExecutionCallback<Map<Integer, T>> callback) {
 
-        Map<Address, List<Integer>> memberPartitions = createHashMap(3);
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        for (int partition : partitions) {
-            Address owner = partitionService.getPartitionOwnerOrWait(partition);
-
-            if (!memberPartitions.containsKey(owner)) {
-                memberPartitions.put(owner, new ArrayList<Integer>());
-            }
-
-            memberPartitions.get(owner).add(partition);
-        }
+        Map<Address, List<Integer>> memberPartitions = getMemberPartitions(partitions);
         InvokeOnPartitionsAsync invokeOnPartitions =
                 new InvokeOnPartitionsAsync(this, serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invokeAsync(callback);
