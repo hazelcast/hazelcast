@@ -16,10 +16,9 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.config.ConfigCompatibilityChecker.WanReplicationConfigChecker;
-import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanPublisherConfig;
-import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.ConfigCompatibilityChecker.DiscoveryConfigChecker;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -32,33 +31,39 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class WanReplicationConfigDTOTest {
+public class DiscoveryConfigDTOTest {
 
-    private static final WanReplicationConfigChecker WAN_REPLICATION_CONFIG_CHECKER = new WanReplicationConfigChecker();
+    private static final DiscoveryConfigChecker DISCOVERY_CONFIG_CHECKER = new DiscoveryConfigChecker();
 
     @Test
     public void testSerialization() {
-        WanReplicationConfig expected = new WanReplicationConfig()
-                .setName("myName")
-                .setWanConsumerConfig(new WanConsumerConfig())
-                .addWanPublisherConfig(new WanPublisherConfig()
-                        .setGroupName("group1"))
-                .addWanPublisherConfig(new WanPublisherConfig()
-                        .setGroupName("group2"));
+        DiscoveryConfig expected = new DiscoveryConfig();
+        expected.setNodeFilterClass("myClassName");
+        expected.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig("className1"));
+        expected.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig("className2"));
 
-        WanReplicationConfig actual = cloneThroughJson(expected);
-
+        DiscoveryConfig actual = cloneThroughJson(expected);
         assertTrue("Expected: " + expected + ", got:" + actual,
-                WAN_REPLICATION_CONFIG_CHECKER.check(expected, actual));
+                DISCOVERY_CONFIG_CHECKER.check(expected, actual));
     }
 
-    private WanReplicationConfig cloneThroughJson(WanReplicationConfig expectedConfig) {
-        WanReplicationConfigDTO dto = new WanReplicationConfigDTO(expectedConfig);
+    @Test
+    public void testDefault() {
+        DiscoveryConfig expected = new DiscoveryConfig();
+
+        DiscoveryConfig actual = cloneThroughJson(expected);
+        assertTrue("Expected: " + expected + ", got:" + actual,
+                DISCOVERY_CONFIG_CHECKER.check(expected, actual));
+    }
+
+    private DiscoveryConfig cloneThroughJson(DiscoveryConfig expected) {
+        DiscoveryConfigDTO dto = new DiscoveryConfigDTO(expected);
 
         JsonObject json = dto.toJson();
-        WanReplicationConfigDTO deserialized = new WanReplicationConfigDTO(null);
+        DiscoveryConfigDTO deserialized = new DiscoveryConfigDTO(null);
         deserialized.fromJson(json);
 
         return deserialized.getConfig();
     }
+
 }

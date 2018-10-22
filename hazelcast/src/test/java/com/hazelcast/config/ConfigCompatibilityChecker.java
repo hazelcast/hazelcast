@@ -40,7 +40,7 @@ import static java.text.MessageFormat.format;
 import static java.util.Collections.singletonMap;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
-class ConfigCompatibilityChecker {
+public class ConfigCompatibilityChecker {
 
     /**
      * Checks if two {@link Config} instances are compatible.
@@ -48,7 +48,7 @@ class ConfigCompatibilityChecker {
      * This mostly means that the config values will have the same impact on the behaviour of the system,
      * but are not necessarily the same (e.g. a {@code null} value is sometimes the same as an empty
      * collection or a disabled config).
-     * <p>
+     *
      * <b>Note:</b> This method checks MOST but NOT ALL configuration. As such it is best used in test
      * scenarios to cover as much config checks as possible automatically.
      *
@@ -868,9 +868,9 @@ class ConfigCompatibilityChecker {
         }
     }
 
-    private static class DiscoveryStrategyConfigChecker extends ConfigChecker<DiscoveryStrategyConfig> {
+    public static class DiscoveryStrategyConfigChecker extends ConfigChecker<DiscoveryStrategyConfig> {
         @Override
-        boolean check(DiscoveryStrategyConfig c1, DiscoveryStrategyConfig c2) {
+        public boolean check(DiscoveryStrategyConfig c1, DiscoveryStrategyConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())
                     && nullSafeEqual(c1.getProperties(), c2.getProperties());
@@ -895,9 +895,9 @@ class ConfigCompatibilityChecker {
         }
     }
 
-    private static class WanSyncConfigChecker extends ConfigChecker<WanSyncConfig> {
+    public static class WanSyncConfigChecker extends ConfigChecker<WanSyncConfig> {
         @Override
-        boolean check(WanSyncConfig c1, WanSyncConfig c2) {
+        public boolean check(WanSyncConfig c1, WanSyncConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getConsistencyCheckStrategy(), c2.getConsistencyCheckStrategy());
         }
@@ -996,9 +996,9 @@ class ConfigCompatibilityChecker {
         }
     }
 
-    private static class DiscoveryConfigChecker extends ConfigChecker<DiscoveryConfig> {
+    public static class DiscoveryConfigChecker extends ConfigChecker<DiscoveryConfig> {
         @Override
-        boolean check(DiscoveryConfig c1, DiscoveryConfig c2) {
+        public boolean check(DiscoveryConfig c1, DiscoveryConfig c2) {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
@@ -1009,7 +1009,7 @@ class ConfigCompatibilityChecker {
         }
     }
 
-    private static class AliasedDiscoveryConfigsChecker extends ConfigChecker<List<AliasedDiscoveryConfig<?>>> {
+    public static class AliasedDiscoveryConfigsChecker extends ConfigChecker<List<AliasedDiscoveryConfig<?>>> {
 
         @Override
         boolean check(List<AliasedDiscoveryConfig<?>> t1, List<AliasedDiscoveryConfig<?>> t2) {
@@ -1041,7 +1041,7 @@ class ConfigCompatibilityChecker {
             return result;
         }
 
-        private static boolean check(AliasedDiscoveryConfig c1, AliasedDiscoveryConfig c2) {
+        public static boolean check(AliasedDiscoveryConfig c1, AliasedDiscoveryConfig c2) {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
@@ -1051,17 +1051,22 @@ class ConfigCompatibilityChecker {
         }
     }
 
-    private static class WanReplicationConfigChecker extends ConfigChecker<WanReplicationConfig> {
+    public static class WanReplicationConfigChecker extends ConfigChecker<WanReplicationConfig> {
+        private static final WanConsumerConfigChecker WAN_CONSUMER_CONFIG_CHECKER = new WanConsumerConfigChecker();
+
         @Override
-        boolean check(WanReplicationConfig c1, WanReplicationConfig c2) {
+        public boolean check(WanReplicationConfig c1, WanReplicationConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && isCompatible(c1.getWanConsumerConfig(), c2.getWanConsumerConfig())
+                    && WAN_CONSUMER_CONFIG_CHECKER.check(c1.getWanConsumerConfig(), c2.getWanConsumerConfig())
                     && isCollectionCompatible(c1.getWanPublisherConfigs(), c2.getWanPublisherConfigs(),
                     new WanPublisherConfigChecker());
         }
+    }
 
-        private boolean isCompatible(WanConsumerConfig c1, WanConsumerConfig c2) {
+    public static class WanConsumerConfigChecker extends ConfigChecker<WanConsumerConfig> {
+        @Override
+        public boolean check(WanConsumerConfig c1, WanConsumerConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())
                     && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
@@ -1070,9 +1075,9 @@ class ConfigCompatibilityChecker {
         }
     }
 
-    private static class WanPublisherConfigChecker extends ConfigChecker<WanPublisherConfig> {
+    public static class WanPublisherConfigChecker extends ConfigChecker<WanPublisherConfig> {
         @Override
-        boolean check(WanPublisherConfig c1, WanPublisherConfig c2) {
+        public boolean check(WanPublisherConfig c1, WanPublisherConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getGroupName(), c2.getGroupName())
                     && nullSafeEqual(c1.getPublisherId(), c2.getPublisherId())

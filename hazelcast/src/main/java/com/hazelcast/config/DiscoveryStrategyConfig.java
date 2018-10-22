@@ -27,19 +27,22 @@ import java.util.Map;
  * based on a parsed XML or configured manually using the config API
  */
 public class DiscoveryStrategyConfig {
+    private String className;
+    private DiscoveryStrategyFactory discoveryStrategyFactory;
+    private Map<String, Comparable> properties;
 
-    private final Map<String, Comparable> properties = new HashMap<String, Comparable>();
-
-    private final String className;
-    private final DiscoveryStrategyFactory discoveryStrategyFactory;
+    public DiscoveryStrategyConfig() {
+        properties = new HashMap<String, Comparable>();
+    }
 
     public DiscoveryStrategyConfig(String className) {
         this(className, Collections.<String, Comparable>emptyMap());
     }
 
-    public DiscoveryStrategyConfig(String className, Map<String, Comparable> properties) {
+    public DiscoveryStrategyConfig(String className,
+                                   Map<String, Comparable> properties) {
         this.className = className;
-        this.properties.putAll(properties);
+        this.properties = new HashMap<String, Comparable>(properties);
         this.discoveryStrategyFactory = null;
     }
 
@@ -50,12 +53,22 @@ public class DiscoveryStrategyConfig {
 
     public DiscoveryStrategyConfig(DiscoveryStrategyFactory discoveryStrategyFactory, Map<String, Comparable> properties) {
         this.className = null;
-        this.properties.putAll(properties);
+        this.properties = new HashMap<String, Comparable>(properties);
         this.discoveryStrategyFactory = discoveryStrategyFactory;
     }
 
     public String getClassName() {
         return className;
+    }
+
+    public DiscoveryStrategyConfig setClassName(String className) {
+        this.className = className;
+        return this;
+    }
+
+    public DiscoveryStrategyConfig setDiscoveryStrategyFactory(DiscoveryStrategyFactory discoveryStrategyFactory) {
+        this.discoveryStrategyFactory = discoveryStrategyFactory;
+        return this;
     }
 
     public DiscoveryStrategyFactory getDiscoveryStrategyFactory() {
@@ -70,8 +83,13 @@ public class DiscoveryStrategyConfig {
         properties.remove(key);
     }
 
+    public DiscoveryStrategyConfig setProperties(Map<String, Comparable> properties) {
+        this.properties = properties;
+        return this;
+    }
+
     public Map<String, Comparable> getProperties() {
-        return Collections.unmodifiableMap(properties);
+        return properties;
     }
 
     @Override

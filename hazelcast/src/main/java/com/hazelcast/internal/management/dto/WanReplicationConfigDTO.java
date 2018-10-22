@@ -16,17 +16,18 @@
 
 package com.hazelcast.internal.management.dto;
 
+import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.management.JsonSerializable;
 
 import java.util.List;
 
 /**
- * A {@link JsonSerializable} DTO to add new {@link com.hazelcast.config.WanReplicationConfig} objects from
- * management center
+ * A JSON representation of {@link WanReplicationConfig}.
  */
 public class WanReplicationConfigDTO implements JsonSerializable {
 
@@ -39,27 +40,48 @@ public class WanReplicationConfigDTO implements JsonSerializable {
     @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
-        root.add("name", config.getName());
-        JsonArray publisherList = new JsonArray();
+        if (config.getName() != null) {
+            root.add("name", config.getName());
+        }
+
+        JsonArray publishers = new JsonArray();
         for (WanPublisherConfig publisherConfig : config.getWanPublisherConfigs()) {
             WanPublisherConfigDTO dto = new WanPublisherConfigDTO(publisherConfig);
-            publisherList.add(dto.toJson());
+            publishers.add(dto.toJson());
         }
-        root.add("publishers", publisherList);
+        root.add("publishers", publishers);
+
+        WanConsumerConfig consumerConfig = config.getWanConsumerConfig();
+        if (consumerConfig != null) {
+            root.add("consumer", new WanConsumerConfigDTO(consumerConfig).toJson());
+        }
         return root;
     }
 
     @Override
     public void fromJson(JsonObject json) {
         config = new WanReplicationConfig();
-        config.setName(json.get("name").asString());
-        List<WanPublisherConfig> publisherConfigs = config.getWanPublisherConfigs();
-        JsonArray publishers = json.get("publishers").asArray();
-        int size = publishers.size();
-        for (int i = 0; i < size; i++) {
-            WanPublisherConfigDTO dto = new WanPublisherConfigDTO(new WanPublisherConfig());
-            dto.fromJson(publishers.get(0).asObject());
-            publisherConfigs.add(dto.getConfig());
+
+        JsonValue name = json.get("name");
+        if (name != null) {
+            config.setName(name.asString());
+        }
+
+        JsonValue publishers = json.get("publishers");
+        if (publishers != null && !publishers.isNull()) {
+            List<WanPublisherConfig> publisherConfigs = config.getWanPublisherConfigs();
+            for (JsonValue publisher : publishers.asArray()) {
+                WanPublisherConfigDTO publisherDTO = new WanPublisherConfigDTO();
+                publisherDTO.fromJson(publisher.asObject());
+                publisherConfigs.add(publisherDTO.getConfig());
+            }
+        }
+
+        JsonValue consumer = json.get("consumer");
+        if (consumer != null && !consumer.isNull()) {
+            WanConsumerConfigDTO consumerDTO = new WanConsumerConfigDTO();
+            consumerDTO.fromJson(consumer.asObject());
+            config.setWanConsumerConfig(consumerDTO.getConfig());
         }
     }
 

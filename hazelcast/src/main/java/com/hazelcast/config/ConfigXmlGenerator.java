@@ -1498,10 +1498,10 @@ public class ConfigXmlGenerator {
             return this;
         }
 
-        XmlGenerator appendProperties(Map<String, Comparable> props) {
+        XmlGenerator appendProperties(Map<String, ? extends Comparable> props) {
             if (!MapUtil.isNullOrEmpty(props)) {
                 open("properties");
-                for (Entry<String, Comparable> entry : props.entrySet()) {
+                for (Entry<String, ? extends Comparable> entry : props.entrySet()) {
                     node("property", entry.getValue(), "name", entry.getKey());
                 }
                 close();
