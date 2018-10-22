@@ -17,17 +17,25 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.io.IOException;
 
 /**
  * Operation to add a new {@link WanReplicationConfig} at runtime.
+ * <p>
+ * NOTE: needs to be {@link Versioned} since some classes in the
+ * WanReplicationConfig hierarchy are Versioned. Unfortunately, this class
+ * has until now serialized by invoking
+ * {@link ObjectDataOutput#writeData(Data)} directly, which circumvents
  */
-public class AddWanConfigOperation extends AbstractManagementOperation {
+public class AddWanConfigOperation extends AbstractManagementOperation implements Versioned {
 
     private WanReplicationConfig wanReplicationConfig;
 
@@ -47,13 +55,30 @@ public class AddWanConfigOperation extends AbstractManagementOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        wanReplicationConfig.writeData(out);
+        // RU_COMPAT_3_11
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+            // using this method is nicer since the object
+            // can implement Versioned and have a version injected
+            out.writeObject(wanReplicationConfig);
+        } else {
+            wanReplicationConfig.writeData(out);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        wanReplicationConfig = new WanReplicationConfig();
-        wanReplicationConfig.readData(in);
+        // RU_COMPAT_3_11
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+            wanReplicationConfig = in.readObject();
+        } else {
+            wanReplicationConfig = new WanReplicationConfig();
+            wanReplicationConfig.readData(in);
+        }
+    }
+
+    @Override
+    public String getServiceName() {
+        return WanReplicationService.SERVICE_NAME;
     }
 
     @Override

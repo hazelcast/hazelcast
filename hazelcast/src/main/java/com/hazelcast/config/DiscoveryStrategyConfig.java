@@ -16,8 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +30,7 @@ import java.util.Map;
  * This configuration class describes a {@link com.hazelcast.spi.discovery.DiscoveryStrategy}
  * based on a parsed XML or configured manually using the config API
  */
-public class DiscoveryStrategyConfig {
+public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     private String className;
     private DiscoveryStrategyFactory discoveryStrategyFactory;
     private Map<String, Comparable> properties;
@@ -99,5 +103,37 @@ public class DiscoveryStrategyConfig {
                 + ", className='" + className + '\''
                 + ", discoveryStrategyFactory=" + discoveryStrategyFactory
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.DISCOVERY_STRATEGY_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(className);
+        out.writeObject(discoveryStrategyFactory);
+
+        out.writeInt(properties.size());
+        for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        className = in.readUTF();
+        discoveryStrategyFactory = in.readObject();
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            properties.put(in.readUTF(), (Comparable) in.readObject());
+        }
     }
 }

@@ -459,6 +459,15 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
             out.writeObject(wanSyncConfig);
             out.writeUTF(publisherId);
         }
+        // RU_COMPAT_3_11
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+            out.writeObject(awsConfig);
+            out.writeObject(gcpConfig);
+            out.writeObject(azureConfig);
+            out.writeObject(kubernetesConfig);
+            out.writeObject(eurekaConfig);
+            out.writeObject(discoveryConfig);
+        }
     }
 
     @Override
@@ -478,6 +487,15 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
             initialPublisherState = WanPublisherState.getByType(in.readByte());
             wanSyncConfig = in.readObject();
             publisherId = in.readUTF();
+        }
+        // RU_COMPAT_3_11
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+            awsConfig = in.readObject();
+            gcpConfig = in.readObject();
+            azureConfig = in.readObject();
+            kubernetesConfig = in.readObject();
+            eurekaConfig = in.readObject();
+            discoveryConfig = in.readObject();
         }
     }
 }
