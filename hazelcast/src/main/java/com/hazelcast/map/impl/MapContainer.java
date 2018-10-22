@@ -43,7 +43,6 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -61,8 +60,6 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -102,16 +99,6 @@ public class MapContainer {
      * Holds number of registered {@link InvalidationListener} from clients.
      */
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
-    // RU_COMPAT_3_9
-    /**
-     * Definitions of indexes that need to be added on partition threads
-     *
-     * @see MapIndexSynchronizer
-     * @see com.hazelcast.map.impl.operation.SynchronizeIndexesForPartitionTask
-     * @see com.hazelcast.map.impl.operation.PostJoinMapOperation
-     * @see com.hazelcast.map.impl.operation.MapReplicationStateHolder
-     */
-    protected final Set<IndexInfo> partitionIndexesToAdd = new ConcurrentSkipListSet<IndexInfo>();
 
     protected Object wanMergePolicy;
     protected WanReplicationPublisher wanReplicationPublisher;
@@ -418,7 +405,6 @@ public class MapContainer {
 
     // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
     public void onDestroy() {
-        partitionIndexesToAdd.clear();
     }
 
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
@@ -443,18 +429,6 @@ public class MapContainer {
             }
         }
         return definitions;
-    }
-
-    public void addPartitionIndexToAdd(IndexInfo indexInfo) {
-        partitionIndexesToAdd.add(indexInfo);
-    }
-
-    public Set<IndexInfo> getPartitionIndexesToAdd() {
-        return partitionIndexesToAdd;
-    }
-
-    public void clearPartitionIndexesToAdd() {
-        partitionIndexesToAdd.clear();
     }
 
     public boolean isPersistWanReplicatedData() {
