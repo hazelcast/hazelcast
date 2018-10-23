@@ -31,8 +31,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
 import static com.hazelcast.util.IterationType.ENTRY;
 import static com.hazelcast.util.IterationType.KEY;
 import static com.hazelcast.util.IterationType.VALUE;
@@ -72,7 +72,7 @@ public class QueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(KEY).build();
 
@@ -83,7 +83,7 @@ public class QueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnLocalPartitions() throws ExecutionException, InterruptedException {
+    public void runQueryOnLocalPartitions() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(KEY).build();
 
@@ -94,7 +94,7 @@ public class QueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions_key() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions_key() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(KEY).build();
 
@@ -105,7 +105,7 @@ public class QueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions_value() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions_value() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(VALUE).build();
 
@@ -116,11 +116,11 @@ public class QueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnGivenPartition() throws ExecutionException, InterruptedException {
+    public void runQueryOnGivenPartition() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(ENTRY).build();
 
-        QueryResult result = queryEngine.execute(query, Target.of().partitionOwner(partitionId).build());
+        QueryResult result = queryEngine.execute(query, createPartitionTarget(partitionId));
 
         assertEquals(1, result.size());
         assertEquals(key, toObject(((Map.Entry) result.iterator().next()).getKey()));

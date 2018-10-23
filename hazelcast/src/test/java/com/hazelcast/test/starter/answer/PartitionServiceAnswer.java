@@ -32,7 +32,7 @@ class PartitionServiceAnswer extends AbstractAnswer {
 
     @Override
     Object answer(InvocationOnMock invocation, String methodName, Object[] arguments) throws Exception {
-        if (arguments.length == 1 && methodName.equals("partitionId")) {
+        if (arguments.length == 1 && methodName.equals("getPartitionId")) {
             Method delegateMethod = getDelegateMethod(methodName, Object.class);
             return invoke(delegateMethod, arguments);
         } else if (arguments.length == 1 && methodName.equals("getPartition")) {
