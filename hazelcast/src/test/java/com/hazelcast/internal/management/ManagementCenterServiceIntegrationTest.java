@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.ParseException;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.SlowTest;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static java.lang.String.format;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -32,49 +32,41 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.ServerSocket;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.ParseException;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 
-import static java.lang.String.format;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
-public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport {
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
+public class ManagementCenterServiceIntegrationTest {
 
     private static final String clusterName = "Session Integration (AWS discovery)";
-    private int portNum;
-    private Server jettyServer;
-    private CloseableHttpClient client;
 
-    @Before
-    public void setUp() throws Exception {
-        client = HttpClientBuilder.create().disableRedirectHandling().build();
+    private static MancenterMock mancenterMock;
 
-        portNum = availablePort();
-        jettyServer = new Server(portNum);
-        ServletHandler handler = new ServletHandler();
-        handler.addServletWithMapping(MancenterServlet.class, "/mancen/*");
-        jettyServer.setHandler(handler);
-        jettyServer.start();
-
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        HazelcastInstanceFactory.terminateAll();
+        mancenterMock = new MancenterMock(availablePort());
         Hazelcast.newHazelcastInstance(getManagementCenterConfig());
     }
 
-    @After
-    public void tearDown() throws Exception {
-        Hazelcast.shutdownAll();
-        jettyServer.stop();
-        client.close();
+    @AfterClass
+    public static void tearDown() throws Exception {
+        HazelcastInstanceFactory.terminateAll();
+        mancenterMock.stop();
     }
 
     @Test
@@ -82,10 +74,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                HttpUriRequest request = new HttpGet("http://localhost:" + portNum + "/mancen/memberStateCheck");
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-                String responseString = EntityUtils.toString(entity);
+                String responseString = doHttpGet("/mancen/memberStateCheck");
                 assertNotNull(responseString);
                 assertNotEquals("", responseString);
 
@@ -107,18 +96,15 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                HttpUriRequest request = new HttpGet("http://localhost:" + portNum + "/mancen/getClusterName");
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-                String responseString = EntityUtils.toString(entity);
+                String responseString = doHttpGet("/mancen/getClusterName");
                 assertEquals(clusterName, responseString);
             }
         });
     }
 
-    private int availablePort() {
+    private static int availablePort() {
         while (true) {
-            int port = (int) (65536 * Math.random());
+            int port = 8000 + (int) (1000 * Math.random());
             try {
                 ServerSocket socket = new ServerSocket(port);
                 socket.close();
@@ -129,11 +115,23 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         }
     }
 
-    private Config getManagementCenterConfig() {
+    private String doHttpGet(String path) throws IOException {
+        CloseableHttpClient client = HttpClientBuilder.create().disableRedirectHandling().build();
+        try {
+            HttpUriRequest request = new HttpGet("http://localhost:" + mancenterMock.getListeningPort() + path);
+            HttpResponse response = client.execute(request);
+            HttpEntity entity = response.getEntity();
+            return EntityUtils.toString(entity);
+        } finally {
+            client.close();
+        }
+    }
+
+    private static Config getManagementCenterConfig() {
         Config config = new Config();
-        config.getGroupConfig().setName(clusterName).setPassword("1234");
+        config.getGroupConfig().setName(clusterName);
         config.getManagementCenterConfig().setEnabled(true);
-        config.getManagementCenterConfig().setUrl(format("http://localhost:%d%s/", portNum, "/mancen"));
+        config.getManagementCenterConfig().setUrl(format("http://localhost:%d%s/", mancenterMock.getListeningPort(), "/mancen"));
         return config;
     }
 }
