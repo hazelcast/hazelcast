@@ -62,20 +62,19 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     }
 
     @Override
+    public int getId() {
+        return MapDataSerializerHook.QUERY_OPERATION;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(query);
-
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         query = in.readObject();
-    }
-
-    @Override
-    public int getId() {
-        return MapDataSerializerHook.QUERY_OPERATION;
     }
 }
