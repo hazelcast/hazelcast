@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.eviction;
 
-import com.hazelcast.cache.HazelcastExpiryPolicy;
-import com.hazelcast.cache.impl.CachePartitionSegment;
-import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.cache.impl.ICacheRecordStore;
-import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.core.IMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -33,24 +33,16 @@ import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.cache.Cache;
-import javax.cache.configuration.FactoryBuilder;
-import javax.cache.spi.CachingProvider;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
+import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.test.OverridePropertyRule.set;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class CacheExpirationBouncingMemberTest extends AbstractExpirationBouncingMemberTest {
-
-    private static final long EXPIRY_MILLIS = TimeUnit.SECONDS.toMillis(ONE_SECOND);
-    private static final HazelcastExpiryPolicy EXPIRY_POLICY
-            = new HazelcastExpiryPolicy(EXPIRY_MILLIS, EXPIRY_MILLIS, EXPIRY_MILLIS);
+public class MapExpirationBouncingMemberTest extends AbstractExpirationBouncingMemberTest {
 
     @Rule
     public final OverridePropertyRule overrideTaskSecondsRule
@@ -58,8 +50,8 @@ public class CacheExpirationBouncingMemberTest extends AbstractExpirationBouncin
 
     @Override
     protected Runnable[] getTasks() {
-        Cache cache = createCache();
-        return new Runnable[]{new Get(cache), new Set(cache)};
+        IMap map = createMap();
+        return new Runnable[]{new Get(map), new Set(map)};
     }
 
     @Override
@@ -73,14 +65,16 @@ public class CacheExpirationBouncingMemberTest extends AbstractExpirationBouncin
             List unexpiredMsg = new ArrayList();
 
             NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
-            CacheService service = nodeEngineImpl.getService(CacheService.SERVICE_NAME);
+            MapService service = nodeEngineImpl.getService(MapService.SERVICE_NAME);
+            MapServiceContext mapServiceContext = service.getMapServiceContext();
+            PartitionContainer[] containers = mapServiceContext.getPartitionContainers();
             InternalPartitionService partitionService = nodeEngineImpl.getPartitionService();
-            for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
-                CachePartitionSegment container = service.getSegment(partitionId);
-                boolean local = partitionService.getPartition(partitionId).isLocal();
-                Iterator<ICacheRecordStore> iterator = container.recordStoreIterator();
+
+            for (PartitionContainer container : containers) {
+                boolean local = partitionService.getPartition(container.getPartitionId()).isLocal();
+                Iterator<RecordStore> iterator = container.getMaps().values().iterator();
                 while (iterator.hasNext()) {
-                    ICacheRecordStore recordStore = iterator.next();
+                    RecordStore recordStore = iterator.next();
                     boolean expirable = recordStore.isExpirable();
 
                     if (recordStore.size() > 0 || recordStore.getExpiredKeysQueue().size() > 0) {
@@ -97,48 +91,48 @@ public class CacheExpirationBouncingMemberTest extends AbstractExpirationBouncin
         }
     }
 
-    private CacheConfig getCacheConfig() {
-        CacheConfig cacheConfig = new CacheConfig();
-        cacheConfig.setName(name);
-        cacheConfig.setBackupCount(backupCount);
-        cacheConfig.setExpiryPolicyFactory(FactoryBuilder.factoryOf(EXPIRY_POLICY));
-        return cacheConfig;
+    @Override
+    protected Config getConfig() {
+        Config config = super.getConfig();
+        config.getMapConfig(name)
+                .setMaxIdleSeconds(ONE_SECOND)
+                .setBackupCount(backupCount);
+        return config;
     }
 
-    private Cache createCache() {
+    private IMap createMap() {
         HazelcastInstance testDriver = bounceMemberRule.getNextTestDriver();
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(testDriver);
-        return provider.getCacheManager().createCache(name, getCacheConfig());
+        return testDriver.getMap(name);
     }
 
     private class Get implements Runnable {
 
-        private final Cache<Integer, Integer> cache;
+        private final IMap map;
 
-        public Get(Cache cache) {
-            this.cache = cache;
+        public Get(IMap map) {
+            this.map = map;
         }
 
         @Override
         public void run() {
             for (int i = 0; i < keySpace; i++) {
-                cache.get(i);
+                map.get(i);
             }
         }
     }
 
     private class Set implements Runnable {
 
-        private final Cache<Integer, Integer> cache;
+        private final IMap map;
 
-        public Set(Cache cache) {
-            this.cache = cache;
+        public Set(IMap map) {
+            this.map = map;
         }
 
         @Override
         public void run() {
             for (int i = 0; i < keySpace; i++) {
-                cache.put(i, i);
+                map.set(i, i);
             }
         }
     }

@@ -29,7 +29,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -80,7 +79,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </p>
  */
 public class CacheClearExpiredRecordsTask
-        extends ClearExpiredRecordsTask<CachePartitionSegment, ICacheRecordStore> implements OperationResponseHandler {
+        extends ClearExpiredRecordsTask<CachePartitionSegment, ICacheRecordStore> {
 
     public static final String PROP_CLEANUP_PERCENTAGE = "hazelcast.internal.cache.expiration.cleanup.percentage";
     public static final String PROP_TASK_PERIOD_SECONDS = "hazelcast.internal.cache.expiration.task.period.seconds";
@@ -108,12 +107,13 @@ public class CacheClearExpiredRecordsTask
     }
 
     @Override
-    public void tryToSendBackupExpiryOp(ICacheRecordStore store, boolean checkIfReachedBatch) {
+    public void tryToSendBackupExpiryOp(ICacheRecordStore store, boolean sendIfAtBatchSize) {
         InvalidationQueue<ExpiredKey> expiredKeys = store.getExpiredKeysQueue();
         int totalBackupCount = store.getConfig().getTotalBackupCount();
         int partitionId = store.getPartitionId();
 
-        toBackupSender.trySendExpiryOp(store, expiredKeys, totalBackupCount, partitionId, checkIfReachedBatch);
+        toBackupSender.trySendExpiryOp(store, expiredKeys,
+                totalBackupCount, partitionId, sendIfAtBatchSize);
     }
 
     @Override
@@ -128,8 +128,7 @@ public class CacheClearExpiredRecordsTask
                 .setCallerUuid(nodeEngine.getLocalMember().getUuid())
                 .setPartitionId(container.getPartitionId())
                 .setValidateTarget(false)
-                .setServiceName(SERVICE_NAME)
-                .setOperationResponseHandler(this);
+                .setServiceName(SERVICE_NAME);
     }
 
     @Override
