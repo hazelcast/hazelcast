@@ -146,8 +146,6 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
-        mapServiceContext.getExpirationManager().onCommitMigration(event);
-
         if (event.getMigrationEndpoint() == DESTINATION) {
             populateIndexes(event, TargetIndexes.GLOBAL);
         } else {

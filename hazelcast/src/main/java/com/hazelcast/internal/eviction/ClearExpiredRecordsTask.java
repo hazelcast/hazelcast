@@ -63,6 +63,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     private final InternalOperationService operationService;
     private final AtomicBoolean singleRunPermit = new AtomicBoolean(false);
     private final AtomicInteger lostPartitionCounter = new AtomicInteger();
+    private final AtomicInteger nextExpiryQueueToScanIndex = new AtomicInteger();
 
     private volatile int lastKnownLostPartitionCount;
 
@@ -133,8 +134,6 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
                 if (lostPartitionDetected) {
                     equalizeBackupSizeWithPrimary(container);
                 }
-            } else {
-                clearLeftoverExpiredKeyQueues(container);
             }
 
             if (canProcessContainer(container, partition, nowInMillis)) {
@@ -145,6 +144,24 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         if (!isEmpty(containersToProcess)) {
             sortPartitionContainers(containersToProcess);
             sendCleanupOperations(containersToProcess);
+        }
+
+        sendExpiryQueuesToBackupIncrementally();
+    }
+
+    private void sendExpiryQueuesToBackupIncrementally() {
+        int scanned = 0;
+        for (int partitionId = nextExpiryQueueToScanIndex.get(); partitionId < partitionCount; partitionId++) {
+            sendQueuedExpiredKeys(containers[partitionId]);
+
+            nextExpiryQueueToScanIndex.incrementAndGet();
+            if (++scanned % cleanupOperationCount == 0) {
+                break;
+            }
+        }
+
+        if (nextExpiryQueueToScanIndex.get() == partitionCount) {
+            nextExpiryQueueToScanIndex.set(0);
         }
     }
 
@@ -263,10 +280,6 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         };
     }
 
-    public final void sendResponse(Operation op, Object response) {
-        sendQueuedExpiredKeys(containers[op.getPartitionId()]);
-    }
-
     public final void sendQueuedExpiredKeys(T container) {
         Iterator<S> storeIterator = storeIterator(container);
         while (storeIterator.hasNext()) {
@@ -311,7 +324,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     protected abstract Operation newBackupExpiryOp(S store, Collection<ExpiredKey> expiredKeys);
 
-    public abstract void tryToSendBackupExpiryOp(S store, boolean checkIfReachedBatch);
+    public abstract void tryToSendBackupExpiryOp(S store, boolean sendIfAtBatchSize);
 
     public abstract Iterator<S> storeIterator(T container);
 
@@ -336,6 +349,5 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         };
 
         abstract boolean isProcessable(IPartition partition, Address address);
-
     }
 }
