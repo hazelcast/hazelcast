@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
@@ -61,20 +60,18 @@ import static java.util.Collections.singletonList;
  */
 public class QueryEngineImpl implements QueryEngine {
 
-    protected final MapServiceContext mapServiceContext;
-    protected final NodeEngine nodeEngine;
-    protected final ILogger logger;
-    protected final QueryResultSizeLimiter queryResultSizeLimiter;
-    protected final InternalSerializationService serializationService;
-    protected final IPartitionService partitionService;
-    protected final OperationService operationService;
-    protected final ClusterService clusterService;
-    protected final ResultProcessorRegistry resultProcessorRegistry;
+    private final MapServiceContext mapServiceContext;
+    private final NodeEngine nodeEngine;
+    private final ILogger logger;
+    private final QueryResultSizeLimiter queryResultSizeLimiter;
+    private final IPartitionService partitionService;
+    private final OperationService operationService;
+    private final ClusterService clusterService;
+    private final ResultProcessorRegistry resultProcessorRegistry;
 
     public QueryEngineImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
-        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.partitionService = nodeEngine.getPartitionService();
         this.logger = nodeEngine.getLogger(getClass());
         this.queryResultSizeLimiter = new QueryResultSizeLimiter(mapServiceContext, logger);
