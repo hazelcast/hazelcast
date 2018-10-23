@@ -21,6 +21,11 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -43,6 +48,63 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
+
+    @Test
+    public void failed_store_operations_does_not_change_item_count_in_write_behind_queue_when_batching_enabled() {
+        failed_stores_does_not_change_item_count_in_write_behind_queue_without_coalescing(true);
+    }
+
+    @Test
+    public void failed_store_operations_does_not_change_item_count_in_write_behind_queue_when_batching_disabled() {
+        failed_stores_does_not_change_item_count_in_write_behind_queue_without_coalescing(false);
+    }
+
+    private void failed_stores_does_not_change_item_count_in_write_behind_queue_without_coalescing(boolean batchingEnabled) {
+        ExceptionThrowerMapStore mapStore = new ExceptionThrowerMapStore();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withWriteDelaySeconds(1)
+                .withPartitionCount(1)
+                .withWriteCoalescing(false)
+                .withWriteBatchSize(batchingEnabled ? 1000 : 1)
+                .build();
+
+        int entryCountToStore = 1;
+        for (int i = 0; i < entryCountToStore; i++) {
+            map.put(i, i);
+        }
+
+        sleepAtLeastSeconds(5);
+
+        assertEquals(entryCountToStore, totalItemCountInWriteBehindQueues(map));
+        assertEquals(entryCountToStore, sizeOfWriteBehindQueueInPartition(0, map));
+    }
+
+    /**
+     * Returns total item count in all write behind queues of a node.
+     */
+    private static int totalItemCountInWriteBehindQueues(IMap map) {
+        MapService mapService = (MapService) ((MapProxyImpl) map).getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getWriteBehindQueueItemCounter().get();
+    }
+
+    private static int sizeOfWriteBehindQueueInPartition(int partitionId, IMap map) {
+        MapService mapService = (MapService) ((MapProxyImpl) map).getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
+        RecordStore recordStore = container.getRecordStore(map.getName());
+        return ((WriteBehindStore) recordStore.getMapDataStore()).getWriteBehindQueue().size();
+    }
+
+    private class ExceptionThrowerMapStore extends MapStoreAdapter {
+        @Override
+        public void store(Object key, Object value) {
+            throw new RuntimeException("Failed to store DB");
+        }
+    }
 
     @Test
     public void testStoreOperationDone_afterTemporaryMapStoreFailure() throws Exception {

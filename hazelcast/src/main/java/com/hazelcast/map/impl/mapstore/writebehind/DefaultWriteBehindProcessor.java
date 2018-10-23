@@ -77,7 +77,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         if (delayedEntries == null || delayedEntries.isEmpty()) {
             return Collections.emptyMap();
         }
-        final Map<Integer, List<DelayedEntry>> failsPerPartition = new HashMap<Integer, List<DelayedEntry>>();
+        final Map<Integer, List<DelayedEntry>> failuresByPartition = new HashMap<Integer, List<DelayedEntry>>();
         final List<DelayedEntry> entriesToProcess = new ArrayList<DelayedEntry>();
         StoreOperationType operationType = null;
         StoreOperationType previousOperationType;
@@ -91,18 +91,18 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             }
             if (previousOperationType != null && !previousOperationType.equals(operationType)) {
                 final List<DelayedEntry> failures = callHandler(entriesToProcess, previousOperationType);
-                addToFails(failures, failsPerPartition);
+                addFailsTo(failuresByPartition, failures);
                 entriesToProcess.clear();
             }
             entriesToProcess.add(entry);
         }
         final List<DelayedEntry> failures = callHandler(entriesToProcess, operationType);
-        addToFails(failures, failsPerPartition);
+        addFailsTo(failuresByPartition, failures);
         entriesToProcess.clear();
-        return failsPerPartition;
+        return failuresByPartition;
     }
 
-    private void addToFails(List<DelayedEntry> fails, Map<Integer, List<DelayedEntry>> failsPerPartition) {
+    private void addFailsTo(Map<Integer, List<DelayedEntry>> failsPerPartition, List<DelayedEntry> fails) {
         if (fails == null || fails.isEmpty()) {
             return;
         }
@@ -346,21 +346,14 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
      * @return not-stored entries per partition.
      */
     private Map<Integer, List<DelayedEntry>> doStoreUsingBatchSize(List<DelayedEntry> sortedDelayedEntries) {
-        final Map<Integer, List<DelayedEntry>> failsPerPartition = new HashMap<Integer, List<DelayedEntry>>();
+        Map<Integer, List<DelayedEntry>> failsPerPartition = new HashMap<Integer, List<DelayedEntry>>();
         int page = 0;
         List<DelayedEntry> delayedEntryList;
         while ((delayedEntryList = getBatchChunk(sortedDelayedEntries, writeBatchSize, page++)) != null) {
-            final Map<Integer, List<DelayedEntry>> fails = processInternal(delayedEntryList);
-            final Set<Map.Entry<Integer, List<DelayedEntry>>> entries = fails.entrySet();
+            Map<Integer, List<DelayedEntry>> fails = processInternal(delayedEntryList);
+            Set<Map.Entry<Integer, List<DelayedEntry>>> entries = fails.entrySet();
             for (Map.Entry<Integer, List<DelayedEntry>> entry : entries) {
-                final Integer partitionId = entry.getKey();
-                final List<DelayedEntry> tmpFailList = entry.getValue();
-                List<DelayedEntry> failList = failsPerPartition.get(partitionId);
-                if (failList == null || failList.isEmpty()) {
-                    failsPerPartition.put(partitionId, tmpFailList);
-                    failList = failsPerPartition.get(partitionId);
-                }
-                failList.addAll(tmpFailList);
+                addFailsTo(failsPerPartition, entry.getValue());
             }
         }
         return failsPerPartition;
