@@ -44,7 +44,8 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
     private final ManagedExecutorService executor;
     private final int timeoutInMillis;
 
-    public ParallelPartitionScanExecutor(PartitionScanRunner partitionScanRunner, ManagedExecutorService executor,
+    public ParallelPartitionScanExecutor(PartitionScanRunner partitionScanRunner,
+                                         ManagedExecutorService executor,
                                          int timeoutInMillis) {
         this.partitionScanRunner = partitionScanRunner;
         this.executor = executor;
