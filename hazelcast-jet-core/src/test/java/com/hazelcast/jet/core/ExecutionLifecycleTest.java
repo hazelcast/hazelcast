@@ -60,7 +60,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
-import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
+import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;

@@ -24,7 +24,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.JobRecord;
+import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -279,10 +279,10 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         assertTrueEventually(() -> {
             JetService service = getJetService(instances[0]);
             JobRepository jobRepository = service.getJobRepository();
-            JobRecord jobRecord = jobRepository.getJobRecord(job.getId());
-            assertEquals(3, jobRecord.getQuorumSize());
+            JobExecutionRecord record = jobRepository.getJobExecutionRecord(job.getId());
+            assertEquals(3, record.getQuorumSize());
             MasterContext masterContext = service.getJobCoordinationService().getMasterContext(job.getId());
-            assertEquals(3, masterContext.jobRecord().getQuorumSize());
+            assertEquals(3, masterContext.jobExecutionRecord().getQuorumSize());
         });
 
         StuckProcessor.proceedLatch.countDown();

@@ -51,7 +51,9 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +67,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
@@ -78,12 +79,10 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.impl.SnapshotRepository.snapshotDataMapName;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
-import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
@@ -120,8 +119,9 @@ public class MasterContext {
     private final ILogger logger;
     private final long jobId;
     private final String jobName;
-    private final SnapshotRepository snapshotRepository;
-    private volatile JobRecord jobRecord;
+    private final JobRepository jobRepository;
+    private final JobRecord jobRecord;
+    private final JobExecutionRecord jobExecutionRecord;
     private volatile JobStatus jobStatus = NOT_RUNNING;
     private volatile Set<Vertex> vertices;
 
@@ -167,15 +167,17 @@ public class MasterContext {
      */
     private CompletableFuture<Void> terminalSnapshotFuture;
 
-    MasterContext(NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, JobRecord jobRecord) {
+    MasterContext(NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, @Nonnull JobRecord jobRecord,
+                  @Nonnull JobExecutionRecord jobExecutionRecord) {
         this.nodeEngine = nodeEngine;
         this.coordinationService = coordinationService;
-        this.snapshotRepository = coordinationService.snapshotRepository();
+        this.jobRepository = coordinationService.jobRepository();
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRecord = jobRecord;
+        this.jobExecutionRecord = jobExecutionRecord;
         this.jobId = jobRecord.getJobId();
         this.jobName = jobRecord.getJobNameOrId();
-        if (jobRecord.isSuspended()) {
+        if (jobExecutionRecord.isSuspended()) {
             jobStatus = SUSPENDED;
         }
     }
@@ -198,6 +200,10 @@ public class MasterContext {
 
     public JobRecord jobRecord() {
         return jobRecord;
+    }
+
+    public JobExecutionRecord jobExecutionRecord() {
+        return jobExecutionRecord;
     }
 
     public CompletableFuture<Void> completionFuture() {
@@ -279,6 +285,9 @@ public class MasterContext {
                 return;
             }
 
+            // ensure JobExecutionRecord exists
+            writeJobExecutionRecord(true);
+
             if (requestedTerminationMode != null) {
                 if (requestedTerminationMode.actionAfterTerminate() == RESTART) {
                     // ignore restart, we are just starting
@@ -315,25 +324,17 @@ public class MasterContext {
             return;
         }
 
-        // last started snapshot, completed or not. The next started snapshot must be greater than this number
-        long lastSnapshotId = NO_SNAPSHOT;
         if (isSnapshottingEnabled()) {
-            Long snapshotIdToRestore = snapshotRepository.latestCompleteSnapshot(jobId);
+            long snapshotToRestore = jobExecutionRecord.snapshotId();
             try {
-                snapshotRepository.deleteAllSnapshotsExceptOne(jobId, snapshotIdToRestore);
+                jobRepository.clearSnapshotData(jobId, jobExecutionRecord.ongoingDataMapIndex());
             } catch (Exception e) {
                 logger.warning("Cannot delete old snapshots for " + jobName, e);
             }
-            Long lastStartedSnapshot = snapshotRepository.latestStartedSnapshot(jobId);
-            if (snapshotIdToRestore != null) {
-                logger.info("State of " + jobIdString() + " will be restored from snapshot "
-                        + snapshotIdToRestore);
-                rewriteDagWithSnapshotRestore(dag, snapshotIdToRestore);
+            if (snapshotToRestore >= 0) {
+                rewriteDagWithSnapshotRestore(dag, snapshotToRestore);
             } else {
                 logger.info("No previous snapshot for " + jobIdString() + " found.");
-            }
-            if (lastStartedSnapshot != null) {
-                lastSnapshotId = lastStartedSnapshot;
             }
         }
 
@@ -344,8 +345,8 @@ public class MasterContext {
                     + ", execution graph in DOT format:\n" + dotString
                     + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
             logger.fine("Building execution plan for " + jobIdString());
-            executionPlanMap = createExecutionPlans(nodeEngine, membersView,
-                    dag, jobId, executionId, jobConfig(), lastSnapshotId);
+            executionPlanMap = createExecutionPlans(nodeEngine, membersView, dag, jobId, executionId,
+                    jobConfig(), jobExecutionRecord.ongoingSnapshotId());
         } catch (Exception e) {
             logger.severe("Exception creating execution plan for " + jobIdString(), e);
             finalizeJob(e);
@@ -363,25 +364,26 @@ public class MasterContext {
     }
 
     private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId) {
-        logger.info(jobIdString() + ": restoring state from snapshotId=" + snapshotId);
-        for (Vertex vertex : dag) {
-            // We add the vertex even in case when the map is empty: this ensures, that
-            // Processor.finishSnapshotRestore() method is always called on all vertices in
-            // a job which is restored from a snapshot.
-            String mapName = snapshotDataMapName(jobId, snapshotId, vertex.getName());
-            Vertex readSnapshotVertex = dag.newVertex(
-                    SNAPSHOT_VERTEX_PREFIX + "read." + vertex.getName(), readMapP(mapName)
-            );
-            Vertex explodeVertex = dag.newVertex(
-                    SNAPSHOT_VERTEX_PREFIX + "explode." + vertex.getName(), ExplodeSnapshotP::new
-            );
+        String mapName = jobExecutionRecord.successfulSnapshotDataMapName(jobId);
+        logger.info("State of " + jobIdString() + " will be restored from snapshot " + snapshotId + ", map=" + mapName);
 
-            readSnapshotVertex.localParallelism(vertex.getLocalParallelism());
-            explodeVertex.localParallelism(vertex.getLocalParallelism());
+        List<Vertex> originalVertices = new ArrayList<>();
+        dag.iterator().forEachRemaining(originalVertices::add);
 
-            int destOrdinal = dag.getInboundEdges(vertex.getName()).size();
-            dag.edge(between(readSnapshotVertex, explodeVertex).isolated())
-               .edge(new SnapshotRestoreEdge(explodeVertex, vertex, destOrdinal));
+        Map<String, Integer> vertexToOrdinal = new HashMap<>();
+        Vertex readSnapshotVertex = dag.newVertex(SNAPSHOT_VERTEX_PREFIX + "read",
+                readMapP(mapName));
+        Vertex explodeVertex = dag.newVertex(SNAPSHOT_VERTEX_PREFIX + "explode",
+                () -> new ExplodeSnapshotP(vertexToOrdinal, snapshotId));
+        dag.edge(between(readSnapshotVertex, explodeVertex).isolated());
+
+        int index = 0;
+        // add the edges
+        for (Vertex userVertex : originalVertices) {
+            vertexToOrdinal.put(userVertex.getName(), index);
+            int destOrdinal = dag.getInboundEdges(userVertex.getName()).size();
+            dag.edge(new SnapshotRestoreEdge(explodeVertex, index, userVertex, destOrdinal));
+            index++;
         }
     }
 
@@ -400,14 +402,16 @@ public class MasterContext {
         assert jobStatus == NOT_RUNNING : "cannot start job " + idToString(jobId) + " with status: " + jobStatus;
         jobStatus = STARTING;
         executionStartTime = System.nanoTime();
-        //noinspection NonAtomicOperationOnVolatileField - lock is held
-        jobRecord = jobRecord.withSuspended(false);
+        if (jobExecutionRecord.isSuspended()) {
+            jobExecutionRecord.setSuspended(false);
+            writeJobExecutionRecord(false);
+        }
 
         return true;
     }
 
     private boolean scheduleRestartIfQuorumAbsent() {
-        int quorumSize = jobRecord.getQuorumSize();
+        int quorumSize = jobExecutionRecord.getQuorumSize();
         if (coordinationService.isQuorumPresent(quorumSize)) {
             return false;
         }
@@ -542,15 +546,17 @@ public class MasterContext {
             }
             snapshotInProgress = true;
             isTerminal = nextSnapshotIsTerminal;
+            jobExecutionRecord.startNewSnapshot();
         }
 
-        List<String> vertexNames = vertices.stream().map(Vertex::getName).collect(Collectors.toList());
-        long newSnapshotId = snapshotRepository.registerSnapshot(jobId, vertexNames);
+        writeJobExecutionRecord(false);
+        long newSnapshotId = jobExecutionRecord.ongoingSnapshotId();
 
-        logger.info(String.format("Starting%s snapshot %s for %s",
-                isTerminal ? " terminal" : "", newSnapshotId, jobIdString()));
+        logger.info(String.format("Starting%s snapshot %s for %s", isTerminal ? " terminal" : "", newSnapshotId,
+                jobIdString()));
         Function<ExecutionPlan, Operation> factory =
-                plan -> new SnapshotOperation(jobId, executionId, newSnapshotId, isTerminal);
+                plan -> new SnapshotOperation(jobId, executionId, newSnapshotId,
+                        jobExecutionRecord.ongoingDataMapIndex(), isTerminal);
 
         invokeOnParticipants(factory,
                 responses -> onSnapshotCompleted(responses, executionId, newSnapshotId, isTerminal), null);
@@ -575,8 +581,17 @@ public class MasterContext {
             logger.warning(jobIdString() + " snapshot " + snapshotId + " failed on some member(s), " +
                     "one of the failures: " + mergedResult.getError());
         }
-        coordinationService.completeSnapshot(jobId, snapshotId, isSuccess,
-                mergedResult.getNumBytes(), mergedResult.getNumKeys(), mergedResult.getNumChunks());
+        jobExecutionRecord.ongoingSnapshotDone(
+                mergedResult.getNumBytes(), mergedResult.getNumKeys(), mergedResult.getNumChunks(),
+                mergedResult.getError());
+        writeJobExecutionRecord(false);
+        logger.info(String.format("Snapshot %d for %s completed with status %s in %dms, " +
+                        "%,d bytes, %,d keys in %,d chunks, stored in data map %d",
+                snapshotId, jobIdString(), isSuccess ? "SUCCESS" : "FAILURE",
+                jobExecutionRecord.duration(), jobExecutionRecord.numBytes(),
+                jobExecutionRecord.numKeys(), jobExecutionRecord.numChunks(),
+                jobExecutionRecord.dataMapIndex()));
+        jobRepository.clearSnapshotData(jobId, jobExecutionRecord.ongoingDataMapIndex());
 
         Runnable nonSynchronizedAction = () -> { };
         synchronized (lock) {
@@ -745,8 +760,8 @@ public class MasterContext {
                             && !jobRecord.getConfig().isAutoScaling()
                             && jobRecord.getConfig().getProcessingGuarantee() != NONE) {
                 jobStatus = SUSPENDED;
-                jobRecord = jobRecord.withSuspended(true);
-                nonSynchronizedAction = () -> coordinationService.suspendJob(this);
+                jobExecutionRecord.setSuspended(true);
+                nonSynchronizedAction = () -> writeJobExecutionRecord(false);
             } else {
                 jobStatus = (isSuccess ? COMPLETED : FAILED);
 
@@ -810,8 +825,25 @@ public class MasterContext {
     }
 
     void updateQuorumSize(int newQuorumSize) {
-        synchronized (lock) {
-            jobRecord = jobRecord.withQuorumSize(newQuorumSize);
+        // This method can be called in parallel if multiple members are added. We don't synchronize here,
+        // but the worst that can happen is that we write the JobRecord out unnecessarily.
+        if (jobExecutionRecord.getQuorumSize() < newQuorumSize) {
+            jobExecutionRecord.setLargerQuorumSize(newQuorumSize);
+            writeJobExecutionRecord(false);
+            logger.info("Current quorum size: " + jobExecutionRecord.getQuorumSize() + " of job "
+                    + idToString(jobRecord.getJobId()) + " is updated to: " + newQuorumSize);
+        }
+    }
+
+    private void writeJobExecutionRecord(boolean canCreate) {
+        try {
+            coordinationService.jobRepository().writeJobExecutionRecord(jobRecord.getJobId(), jobExecutionRecord,
+                    canCreate);
+        } catch (RuntimeException e) {
+            // We don't bubble up the exceptions, if we can't write the record out, the universe is
+            // probably crumbling apart anyway. And we don't depend on it, we only write out for
+            // others to know or for the case should the master we fail.
+            logger.warning("Failed to update JobRecord", e);
         }
     }
 
@@ -964,8 +996,8 @@ public class MasterContext {
      */
     private static class SnapshotRestoreEdge extends Edge {
 
-        SnapshotRestoreEdge(Vertex source, Vertex destination, int destOrdinal) {
-            super(source, 0, destination, destOrdinal);
+        SnapshotRestoreEdge(Vertex source, int sourceOrdinal, Vertex destination, int destOrdinal) {
+            super(source, sourceOrdinal, destination, destOrdinal);
             distributed();
             partitioned(entryKey());
         }

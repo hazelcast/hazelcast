@@ -70,7 +70,6 @@ import static java.util.stream.Collectors.toList;
 public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
     private static final boolean PREFETCH_VALUES = true;
-
     private static final int FETCH_SIZE = 16384;
 
     private final Traverser<T> outputTraverser;
@@ -90,6 +89,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                 final Iterator<T> currIterator = iteratorCursor.value();
                 while (currIterator.hasNext()) {
                     T next = currIterator.next();
+                    // iterator can return null element (entry projected to null), we ignore these
                     if (next != null) {
                         iteratorCursor.advance();
                         return next;

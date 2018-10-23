@@ -35,7 +35,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
+import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

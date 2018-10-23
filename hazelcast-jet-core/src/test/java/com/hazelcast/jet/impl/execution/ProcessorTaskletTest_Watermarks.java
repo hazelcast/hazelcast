@@ -284,7 +284,7 @@ public class ProcessorTaskletTest_Watermarks {
         for (int i = 0; i < instreams.size(); i++) {
             instreams.get(i).setOrdinal(i);
         }
-        SnapshotContext snapshotContext = new SnapshotContext(mock(ILogger.class), "test job", -1, EXACTLY_ONCE);
+        SnapshotContext snapshotContext = new SnapshotContext(mock(ILogger.class), 1, "test job", -1, EXACTLY_ONCE);
         snapshotContext.initTaskletCount(1, 0);
         final ProcessorTasklet t = new ProcessorTasklet(context, new DefaultSerializationServiceBuilder().build(),
                 processor, instreams, outstreams, snapshotContext, snapshotCollector, maxWatermarkRetainMillis);

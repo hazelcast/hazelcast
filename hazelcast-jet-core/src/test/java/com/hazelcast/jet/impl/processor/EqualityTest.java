@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.jet.impl.processor.SlidingWindowP.SnapshotKey;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -32,5 +33,4 @@ public class EqualityTest {
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
     }
-
 }

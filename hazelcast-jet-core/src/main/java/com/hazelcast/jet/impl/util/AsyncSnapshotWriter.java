@@ -22,13 +22,11 @@ import javax.annotation.CheckReturnValue;
 import java.util.Map.Entry;
 
 public interface AsyncSnapshotWriter {
-    void setCurrentMap(String mapName);
-
     @CheckReturnValue
     boolean offer(Entry<? extends Data, ? extends Data> entry);
 
     @CheckReturnValue
-    boolean flush();
+    boolean flushAndReset();
 
     boolean hasPendingAsyncOps();
 

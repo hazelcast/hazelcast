@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.JobResult;
-import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
@@ -147,7 +146,19 @@ public class SuspendResumeTest extends JetTestSupport {
         job.suspend();
         assertEqualsEventually(job::getStatus, SUSPENDED);
         instances[0].getHazelcastInstance().getLifecycleService().terminate();
-        job.resume();
+        for (int i = 0; ; i++) {
+            try {
+                // resume() can fail with JobNotFoundException if the new master didn't yet scan the jobs
+                // and created MasterContext for the JobRecords. It should do so in few seconds.
+                job.resume();
+                break;
+            } catch (JobNotFoundException e) {
+                if (i == 20) {
+                    throw e;
+                }
+                sleepSeconds(1);
+            }
+        }
         assertEqualsEventually(job::getStatus, RUNNING);
         StuckProcessor.proceedLatch.countDown();
         job.join();
@@ -219,8 +230,7 @@ public class SuspendResumeTest extends JetTestSupport {
         assertEqualsEventually(job::getStatus, COMPLETED);
 
         // check that job resources are deleted
-        SnapshotRepository snapshotRepository = new SnapshotRepository(instances[0]);
-        JobRepository jobRepository = new JobRepository(instances[0], snapshotRepository);
+        JobRepository jobRepository = new JobRepository(instances[0]);
         assertTrueEventually(() -> {
             assertNull("JobRecord", jobRepository.getJobRecord(job.getId()));
             JobResult jobResult = jobRepository.getJobResult(job.getId());

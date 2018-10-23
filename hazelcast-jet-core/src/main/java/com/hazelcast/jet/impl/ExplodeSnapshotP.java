@@ -22,10 +22,13 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.impl.execution.BroadcastEntry;
+import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataKey;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataValueTerminator;
 import com.hazelcast.nio.BufferObjectDataInput;
 
 import javax.annotation.Nonnull;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
@@ -33,8 +36,17 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 public class ExplodeSnapshotP extends AbstractProcessor {
 
-    private FlatMapper<byte[], Object> flatMapper = flatMapper(this::traverser);
+    private final Map<String, FlatMapper<byte[], Object>> vertexToFlatMapper = new HashMap<>();
+    private final long expectedSnapshotId;
     private InternalSerializationService serializationService;
+
+    ExplodeSnapshotP(Map<String, Integer> vertexToOrdinal, long expectedSnapshotId) {
+        this.expectedSnapshotId = expectedSnapshotId;
+        for (Entry<String, Integer> en : vertexToOrdinal.entrySet()) {
+            Object oldValue = vertexToFlatMapper.put(en.getKey(), flatMapper(en.getValue(), this::traverser));
+            assert oldValue == null : "Duplicate ordinal: " + en.getValue();
+        }
+    }
 
     @Override
     protected void init(@Nonnull Context context) {
@@ -60,6 +72,23 @@ public class ExplodeSnapshotP extends AbstractProcessor {
 
     @Override
     protected boolean tryProcess0(@Nonnull Object item) {
-        return flatMapper.tryProcess(((Entry<Integer, byte[]>) item).getValue());
+        Entry<SnapshotDataKey, byte[]> casted = (Entry<SnapshotDataKey, byte[]>) item;
+        String vertexName = casted.getKey().vertexName();
+        FlatMapper<byte[], Object> flatMapper = vertexToFlatMapper.get(vertexName);
+        if (flatMapper == null) {
+            if (!vertexToFlatMapper.containsKey(vertexName)) {
+                // log only once
+                vertexToFlatMapper.put(vertexName, null);
+                getLogger().warning("Data for unknown vertex found in the snapshot, ignoring. Vertex=" + vertexName);
+            }
+            return true;
+        }
+        long snapshotId = casted.getKey().snapshotId();
+        if (snapshotId != expectedSnapshotId) {
+            getLogger().warning("Data for unexpected snapshot ID encountered, ignoring. Expected="
+                    + expectedSnapshotId + ", found=" + snapshotId);
+            return true;
+        }
+        return flatMapper.tryProcess(casted.getValue());
     }
 }

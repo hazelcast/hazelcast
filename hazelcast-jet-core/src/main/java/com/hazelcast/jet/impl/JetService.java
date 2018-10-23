@@ -107,12 +107,10 @@ public class JetService
         taskletExecutionService = new TaskletExecutionService(nodeEngine,
                 config.getInstanceConfig().getCooperativeThreadCount());
 
-        SnapshotRepository snapshotRepository = new SnapshotRepository(jetInstance);
-        jobRepository = new JobRepository(jetInstance, snapshotRepository);
+        jobRepository = new JobRepository(jetInstance);
 
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
-        jobCoordinationService = new JobCoordinationService(nodeEngine, this, config, jobRepository,
-                snapshotRepository);
+        jobCoordinationService = new JobCoordinationService(nodeEngine, this, config, jobRepository);
         networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
 
         ClientEngineImpl clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);

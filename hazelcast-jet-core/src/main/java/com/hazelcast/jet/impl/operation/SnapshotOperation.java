@@ -39,16 +39,18 @@ public class SnapshotOperation extends AsyncJobOperation {
 
     private long executionId;
     private long snapshotId;
+    private int ongoingDataMapIndex;
     private boolean isTerminal;
 
     // for deserialization
     public SnapshotOperation() {
     }
 
-    public SnapshotOperation(long jobId, long executionId, long snapshotId, boolean isTerminal) {
+    public SnapshotOperation(long jobId, long executionId, long snapshotId, int ongoingDataMapIndex, boolean isTerminal) {
         super(jobId);
         this.executionId = executionId;
         this.snapshotId = snapshotId;
+        this.ongoingDataMapIndex = ongoingDataMapIndex;
         this.isTerminal = isTerminal;
     }
 
@@ -58,20 +60,21 @@ public class SnapshotOperation extends AsyncJobOperation {
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, getClass().getSimpleName()
         );
-        ctx.beginSnapshot(snapshotId, isTerminal).whenComplete(withTryCatch(getLogger(), (result, exc) -> {
-            if (exc != null) {
-                result = new SnapshotOperationResult(0, 0, 0, exc);
-            }
-            if (result.getError() == null) {
-                logFine(getLogger(),
-                        "Snapshot %s for %s finished successfully on member",
-                        snapshotId, ctx.jobNameAndExecutionId());
-            } else {
-                getLogger().warning(String.format("Snapshot %d for %s finished with an error on member: %s",
-                        snapshotId, ctx.jobNameAndExecutionId(), result.getError()));
-            }
-            maybeSendResponse(result);
-        }));
+        ctx.beginSnapshot(snapshotId, ongoingDataMapIndex, isTerminal).whenComplete(withTryCatch(getLogger(),
+                (result, exc) -> {
+                    if (exc != null) {
+                        result = new SnapshotOperationResult(0, 0, 0, exc);
+                    }
+                    if (result.getError() == null) {
+                        logFine(getLogger(),
+                                "Snapshot %s for %s finished successfully on member",
+                                snapshotId, ctx.jobNameAndExecutionId());
+                    } else {
+                        getLogger().warning(String.format("Snapshot %d for %s finished with an error on member: %s",
+                                snapshotId, ctx.jobNameAndExecutionId(), result.getError()));
+                    }
+                    maybeSendResponse(result);
+                }));
     }
 
     private void maybeSendResponse(SnapshotOperationResult result) {
@@ -95,6 +98,7 @@ public class SnapshotOperation extends AsyncJobOperation {
         out.writeLong(executionId);
         out.writeLong(snapshotId);
         out.writeBoolean(isTerminal);
+        out.writeInt(ongoingDataMapIndex);
     }
 
     @Override
@@ -103,6 +107,7 @@ public class SnapshotOperation extends AsyncJobOperation {
         executionId = in.readLong();
         snapshotId = in.readLong();
         isTerminal = in.readBoolean();
+        ongoingDataMapIndex = in.readInt();
     }
 
     /**

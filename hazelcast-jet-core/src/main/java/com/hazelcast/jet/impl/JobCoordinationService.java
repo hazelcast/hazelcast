@@ -30,7 +30,6 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
-import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
@@ -64,8 +63,6 @@ import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL;
-import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.FAILED;
-import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.SUCCESSFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
@@ -94,7 +91,6 @@ public class JobCoordinationService {
     private final JetConfig config;
     private final ILogger logger;
     private final JobRepository jobRepository;
-    private final SnapshotRepository snapshotRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
     private final Set<String> membersShuttingDown = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Object lock = new Object();
@@ -105,13 +101,12 @@ public class JobCoordinationService {
     private final AtomicInteger scaleUpScheduledCount = new AtomicInteger();
 
     JobCoordinationService(NodeEngineImpl nodeEngine, JetService jetService, JetConfig config,
-                           JobRepository jobRepository, SnapshotRepository snapshotRepository) {
+                           JobRepository jobRepository) {
         this.nodeEngine = nodeEngine;
         this.jetService = jetService;
         this.config = config;
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
-        this.snapshotRepository = snapshotRepository;
     }
 
     public void init() {
@@ -191,26 +186,24 @@ public class JobCoordinationService {
         try {
             int currentQuorumSize = getQuorumSize();
             for (JobRecord jobRecord : jobRepository.getJobRecords()) {
-                if (!jobRecord.getConfig().isSplitBrainProtectionEnabled()
-                        || currentQuorumSize <= jobRecord.getQuorumSize()) {
-                    continue;
-                }
-
-                boolean updated = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobRecord.getJobId(),
-                        currentQuorumSize);
-                if (updated) {
-                    try {
-                        MasterContext masterContext = masterContexts.get(jobRecord.getJobId());
-                        if (masterContext != null) {
-                            masterContext.updateQuorumSize(currentQuorumSize);
-                        }
-                        logger.info("Current quorum size: " + jobRecord.getQuorumSize() + " of job "
-                                + idToString(jobRecord.getJobId()) + " is updated to: " + currentQuorumSize);
-                    } catch (Exception e) {
-                        logger.severe("Quorum of job " + idToString(jobRecord.getJobId())
-                                + " could not be updated to " + currentQuorumSize
-                                + " in its MasterContext object", e);
+                try {
+                    if (!jobRecord.getConfig().isSplitBrainProtectionEnabled()) {
+                        continue;
                     }
+                    MasterContext masterContext = masterContexts.get(jobRecord.getJobId());
+                    // if MasterContext doesn't exist, update in the IMap directly, using a sync method
+                    if (masterContext == null) {
+                        jobRepository.updateJobQuorumSizeIfSmaller(jobRecord.getJobId(), currentQuorumSize);
+                        // check the master context again, it might have been just created and have picked
+                        // up the JobRecord before being updated
+                        masterContext = masterContexts.get(jobRecord.getJobId());
+                    }
+                    if (masterContext != null) {
+                        masterContext.updateQuorumSize(currentQuorumSize);
+                    }
+                } catch (Exception e) {
+                    logger.severe("Quorum of job " + idToString(jobRecord.getJobId())
+                            + " could not be updated to " + currentQuorumSize, e);
                 }
             }
         } catch (Exception e) {
@@ -246,8 +239,9 @@ public class JobCoordinationService {
 
         int quorumSize = config.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
         String dagJson = dagToJson(jobId, config, dag);
-        JobRecord jobRecord = new JobRecord(jobId, Clock.currentTimeMillis(), dag, dagJson, config, quorumSize, false);
-        MasterContext masterContext = new MasterContext(nodeEngine, this, jobRecord);
+        JobRecord jobRecord = new JobRecord(jobId, Clock.currentTimeMillis(), dag, dagJson, config);
+        JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize, false);
+        MasterContext masterContext = new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
 
         synchronized (lock) {
             if (isShutdown) {
@@ -290,7 +284,9 @@ public class JobCoordinationService {
 
         JobRecord jobRecord = jobRepository.getJobRecord(jobId);
         if (jobRecord != null) {
-            return startJobIfNotStartedOrCompleted(jobRecord, "join request from client", false);
+            JobExecutionRecord jobExecutionRecord = ensureExecutionRecord(jobId,
+                    jobRepository.getJobExecutionRecord(jobId));
+            return startJobIfNotStartedOrCompleted(jobRecord, jobExecutionRecord, "join request from client");
         }
 
         JobResult jobResult = jobRepository.getJobResult(jobId);
@@ -302,7 +298,8 @@ public class JobCoordinationService {
     }
 
     // Tries to start a job if it is not already running or completed
-    private CompletableFuture<Void> startJobIfNotStartedOrCompleted(JobRecord jobRecord, String reason, boolean resume) {
+    private CompletableFuture<Void> startJobIfNotStartedOrCompleted(@Nonnull JobRecord jobRecord,
+                @Nonnull JobExecutionRecord jobExecutionRecord, String reason) {
         // the order of operations is important.
         long jobId = jobRecord.getJobId();
         JobResult jobResult = jobRepository.getJobResult(jobId);
@@ -318,14 +315,11 @@ public class JobCoordinationService {
                 throw new ShutdownInProgressException();
             }
 
-            masterContext = new MasterContext(nodeEngine, this, jobRecord);
+            masterContext = new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
             oldMasterContext = masterContexts.putIfAbsent(jobId, masterContext);
         }
 
         if (oldMasterContext != null) {
-            if (resume && oldMasterContext.jobStatus() == SUSPENDED) {
-                oldMasterContext.resumeJob(jobRepository::newExecutionId);
-            }
             return oldMasterContext.completionFuture();
         }
 
@@ -461,9 +455,9 @@ public class JobCoordinationService {
         }
 
         // no master context found, job might be just submitted
-        JobRecord jobRecord = jobRepository.getJobRecord(jobId);
-        if (jobRecord != null) {
-            return jobRecord.isSuspended() ? SUSPENDED : NOT_RUNNING;
+        JobExecutionRecord jobExecutionRecord = jobRepository.getJobExecutionRecord(jobId);
+        if (jobExecutionRecord != null) {
+            return jobExecutionRecord.isSuspended() ? SUSPENDED : NOT_RUNNING;
         } else {
             // no job record found, but check job results again
             // since job might have been completed meanwhile.
@@ -495,8 +489,8 @@ public class JobCoordinationService {
         throw new JobNotFoundException(jobId);
     }
 
-    public SnapshotRepository snapshotRepository() {
-        return snapshotRepository;
+    public JobRepository jobRepository() {
+        return jobRepository;
     }
 
     /**
@@ -521,19 +515,14 @@ public class JobCoordinationService {
         }
     }
 
-    void suspendJob(MasterContext masterContext) {
-        jobRepository.updateJobSuspendedStatus(masterContext.jobId(), true);
-    }
-
     public void resumeJob(long jobId) {
         assertIsMaster("Cannot resume job " + idToString(jobId) + " from non-master node");
 
-        if (jobRepository.updateJobSuspendedStatus(jobId, false)) {
-            JobRecord jobRecord = jobRepository.getJobRecord(jobId);
-            if (jobRecord != null) {
-                startJobIfNotStartedOrCompleted(jobRecord, "resume request", true);
-            }
+        MasterContext masterContext = masterContexts.get(jobId);
+        if (masterContext == null) {
+            throw new JobNotFoundException("MasterContext not found to resume job " + idToString(jobId));
         }
+        masterContext.resumeJob(jobRepository::newExecutionId);
     }
 
     /**
@@ -588,36 +577,6 @@ public class JobCoordinationService {
         }
 
         masterContext.beginSnapshot(executionId);
-    }
-
-    void completeSnapshot(long jobId, long snapshotId, boolean isSuccess, long numBytes, long numKeys, long numChunks) {
-        MasterContext masterContext = masterContexts.get(jobId);
-        if (masterContext == null) {
-            logger.warning("MasterContext not found to finalize snapshot of " + idToString(jobId)
-                    + " with result: " + isSuccess);
-            return;
-        }
-        try {
-            SnapshotStatus status = isSuccess ? SUCCESSFUL : FAILED;
-            long elapsed = snapshotRepository.setSnapshotComplete(jobId, snapshotId, status, numBytes, numKeys,
-                    numChunks);
-            logger.info(String.format("Snapshot %d for %s completed with status %s in %dms, " +
-                            "%,d bytes, %,d keys in %,d chunks", snapshotId, masterContext.jobIdString(), status, elapsed,
-                    numBytes, numKeys, numChunks));
-        } catch (Exception e) {
-            logger.warning("Cannot update snapshot status for " + masterContext.jobIdString() + " snapshot "
-                    + snapshotId + " isSuccess: " + isSuccess, e);
-            return;
-        }
-        try {
-            if (isSuccess) {
-                snapshotRepository.deleteAllSnapshotsExceptOne(jobId, snapshotId);
-            } else {
-                snapshotRepository.deleteSingleSnapshot(jobId, snapshotId);
-            }
-        } catch (Exception e) {
-            logger.warning("Cannot delete old snapshots for " + masterContext.jobIdString(), e);
-        }
     }
 
     boolean shouldStartJobs() {
@@ -678,10 +637,14 @@ public class JobCoordinationService {
     private JobSummary getJobSummary(JobRecord record) {
         MasterContext ctx = masterContexts.get(record.getJobId());
         long execId = ctx == null ? 0 : ctx.executionId();
-        JobStatus status = ctx == null ?
-                record.isSuspended() ? JobStatus.SUSPENDED : JobStatus.NOT_RUNNING
-                :
-                ctx.jobStatus();
+        JobStatus status;
+        if (ctx == null) {
+            JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
+            status = executionRecord != null && executionRecord.isSuspended()
+                    ? JobStatus.SUSPENDED : JobStatus.NOT_RUNNING;
+        } else {
+            status = ctx.jobStatus();
+        }
         return new JobSummary(record.getJobId(), execId, record.getJobNameOrId(), status, record.getCreationTime());
     }
 
@@ -711,10 +674,13 @@ public class JobCoordinationService {
 
         try {
             Collection<JobRecord> jobs = jobRepository.getJobRecords();
-            jobs.stream()
-                    .filter(jobRecord -> !jobRecord.isSuspended())
-                    .forEach(jobRecord ->
-                            startJobIfNotStartedOrCompleted(jobRecord, "discovered by scanning of JobRecords", false));
+            for (JobRecord jobRecord : jobs) {
+                JobExecutionRecord jobExecutionRecord = ensureExecutionRecord(jobRecord.getJobId(),
+                        jobRepository.getJobExecutionRecord(jobRecord.getJobId()));
+                if (!jobExecutionRecord.isSuspended()) {
+                    startJobIfNotStartedOrCompleted(jobRecord, jobExecutionRecord, "discovered by scanning of JobRecords");
+                }
+            }
 
             performCleanup();
         } catch (Exception e) {
@@ -724,6 +690,10 @@ public class JobCoordinationService {
 
             logger.severe("Scanning jobs failed", e);
         }
+    }
+
+    private JobExecutionRecord ensureExecutionRecord(long jobId, JobExecutionRecord record) {
+        return record != null ? record : new JobExecutionRecord(jobId, getQuorumSize(), false);
     }
 
     private void performCleanup() {

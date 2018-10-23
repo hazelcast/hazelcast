@@ -114,7 +114,7 @@ public class JobConfig implements Serializable {
 
     /**
      * Sets whether Jet will scale the job up or down when a member is added or
-     * removed from the cluster.
+     * removed from the cluster. Enabled by default.
      *
      * <pre>
      * +--------------------------+-----------------------+----------------+

@@ -27,8 +27,7 @@ import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.SnapshotRepository;
-import com.hazelcast.jet.impl.execution.SnapshotRecord;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -243,7 +242,7 @@ public class GracefulShutdownTest extends JetTestSupport {
 
     @Test
     public void when_shutdownGracefulWhileRestartGraceful_then_restartsFromTerminalSnapshot() throws Exception {
-        MapConfig mapConfig = new MapConfig(SnapshotRepository.SNAPSHOT_DATA_NAME_PREFIX + "*");
+        MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + "*");
         mapConfig.getMapStoreConfig()
                  .setClassName(BlockingMapStore.class.getName())
                  .setEnabled(true);
@@ -263,9 +262,9 @@ public class GracefulShutdownTest extends JetTestSupport {
 
         // wait for the first snapshot
         JetService jetService = getNode(instances[0]).nodeEngine.getService(JetService.SERVICE_NAME);
-        SnapshotRepository snapshotRepository = jetService.getJobCoordinationService().snapshotRepository();
+        JobRepository jobRepository = jetService.getJobCoordinationService().jobRepository();
         assertTrueEventually(() -> assertTrue(
-                snapshotRepository.getAllSnapshotRecords(job.getId()).stream().anyMatch(SnapshotRecord::isSuccessful)));
+                jobRepository.getJobExecutionRecord(job.getId()).dataMapIndex() >= 0));
 
         // When
         BlockingMapStore.shouldBlock = true;

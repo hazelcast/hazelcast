@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
@@ -27,6 +26,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.CustomByteArrayOutputStream;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataKey;
 import com.hazelcast.nio.BufferObjectDataInput;
@@ -45,7 +45,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
-import java.io.Serializable;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
@@ -57,6 +56,8 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -71,6 +72,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     private IMap<SnapshotDataKey, byte[]> map;
     private InternalSerializationService serializationService;
     private InternalPartitionService partitionService;
+    private SnapshotContext snapshotContext;
 
     @Before
     public void before() {
@@ -85,15 +87,18 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
         serializationService = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).getSerializationService();
         partitionService = nodeEngine.getPartitionService();
-        writer = new AsyncSnapshotWriterImpl(128, nodeEngine, 0, 1);
-        writer.setCurrentMap("map1");
+        snapshotContext = mock(SnapshotContext.class);
+        when(snapshotContext.currentMapName()).thenReturn("map1");
+        when(snapshotContext.currentSnapshotId()).thenReturn(0L);
+        writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1);
+        when(snapshotContext.currentSnapshotId()).thenReturn(1L); // simulates starting new snapshot
         map = instance.getHazelcastInstance().getMap("map1");
         assertTrue(writer.usableChunkSize > 0);
     }
 
     @After
     public void after() {
-        assertTrue(writer.flush());
+        assertTrue(writer.flushAndReset());
         assertTrueEventually(() -> assertFalse(uncheckCall(() -> writer.hasPendingAsyncOps())));
         assertTrue(writer.isEmpty());
 
@@ -107,7 +112,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         assertTrue(writer.offer(entry));
         assertTrueAllTheTime(() -> assertTrue(map.isEmpty()), 1);
         assertFalse(writer.isEmpty());
-        assertTrue(writer.flush());
+        assertTrue(writer.flushAndReset());
 
         // Then
         assertTargetMapEntry("k", 0, serializedLength(entry));
@@ -156,7 +161,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         Entry<Data, Data> entry2 = entry(serialize("kk"), serialize("vv"));
         assertTrue(writer.offer(entry1));
         assertTrue(writer.offer(entry2));
-        assertTrue(writer.flush());
+        assertTrue(writer.flushAndReset());
 
         // Then
         assertTargetMapEntry("k", 0, serializedLength(entry1));
@@ -206,7 +211,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
         // Then
         assertTrueAllTheTime(() -> {
-            assertFalse(writer.flush());
+            assertFalse(writer.flushAndReset());
             assertTrue(map.isEmpty());
         }, 3);
 
@@ -214,7 +219,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         writer.numConcurrentAsyncOps.decrementAndGet();
 
         // Then
-        assertTrueEventually(() -> assertTrue(writer.flush()));
+        assertTrueEventually(() -> assertTrue(writer.flushAndReset()));
         assertTargetMapEntry("k", 0, serializedLength(entry1));
         assertTargetMapEntry("kk", 1, serializedLength(entry2));
     }
@@ -222,10 +227,10 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     @Test
     public void when_error_then_reported() {
         // When
-        writer.setCurrentMap(ALWAYS_FAILING_MAP);
+        when(snapshotContext.currentMapName()).thenReturn(ALWAYS_FAILING_MAP);
         Entry<Data, Data> entry = entry(serialize("k"), serialize("v"));
         assertTrue(writer.offer(entry));
-        assertTrue(writer.flush());
+        assertTrue(writer.flushAndReset());
 
         // Then
         assertTrueEventually(() ->
@@ -254,9 +259,16 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         Assert.assertEquals("bar", in.readObject());
     }
 
+    @Test
+    public void when_noItemsAndNoCurrentMap_then_flushAndResetReturnsFalse() {
+        when(snapshotContext.currentMapName()).thenReturn(null);
+        assertFalse(writer.flushAndReset());
+        when(snapshotContext.currentMapName()).thenReturn("map1");
+    }
+
     private void assertTargetMapEntry(String key, int sequence, int entryLength) {
         int partitionKey = writer.partitionKey(partitionService.getPartitionId(key));
-        SnapshotDataKey mapKey = new SnapshotDataKey(partitionKey, sequence);
+        SnapshotDataKey mapKey = new SnapshotDataKey(partitionKey, 1, "vertex", sequence);
         int entryLengthWithTerminator = entryLength + writer.valueTerminator.length;
         assertTrueEventually(() ->
                 assertEquals(entryLengthWithTerminator, map.get(mapKey).length), 3);
@@ -269,14 +281,6 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     private Data serialize(String str) {
         return serializationService.toData(str);
     }
-
-    public static class AlwaysFailingMapStore extends AMapStore implements Serializable {
-        @Override
-        public void store(Object o, Object o2) {
-            throw new RuntimeException("Always failing store");
-        }
-    }
-
 
     /* ***********************************/
     /* CustomByteArrayOutputStream tests */

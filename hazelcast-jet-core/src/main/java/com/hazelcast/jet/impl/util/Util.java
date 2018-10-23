@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
@@ -388,18 +387,6 @@ public final class Util {
                 return newValue;
             }
         };
-    }
-
-    /**
-     * @param remappingFunction A function that takes the key and
-     *                         current value (which can be null) and
-     *                         should return new value. If it returns
-     *                         null, the entry for the key will be
-     *                         deleted.
-     */
-    public static <K, V> V compute(IMap<K, V> map, K key,
-                                  DistributedBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return (V) map.executeOnKey(key, entryProcessor(remappingFunction));
     }
 
     /**

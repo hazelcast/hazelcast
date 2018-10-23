@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
@@ -32,13 +31,9 @@ import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
-import com.hazelcast.jet.impl.SnapshotRepository;
-import com.hazelcast.jet.impl.execution.ExecutionContext;
-import com.hazelcast.jet.impl.execution.SnapshotContext;
-import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Rule;
@@ -57,7 +52,6 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -65,21 +59,20 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
-import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
-import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
@@ -208,11 +201,11 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         config.setSnapshotIntervalMillis(1200);
         Job job = instance1.newJob(dag, config);
 
-        SnapshotRepository snapshotRepository = new SnapshotRepository(instance1);
+        JobRepository jobRepository = new JobRepository(instance1);
         int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 2);
 
-        waitForFirstSnapshot(snapshotRepository, job.getId(), timeout);
-        waitForNextSnapshot(snapshotRepository, job.getId(), timeout);
+        waitForFirstSnapshot(jobRepository, job.getId(), timeout);
+        waitForNextSnapshot(jobRepository, job.getId(), timeout);
         // wait a little more to emit something, so that it will be overwritten in the sink map
         Thread.sleep(300);
 
@@ -220,9 +213,9 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         // Now the job should detect member shutdown and restart from snapshot.
         // Let's wait until the next snapshot appears.
-        waitForNextSnapshot(snapshotRepository, job.getId(),
+        waitForNextSnapshot(jobRepository, job.getId(),
                 (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 10));
-        waitForNextSnapshot(snapshotRepository, job.getId(), timeout);
+        waitForNextSnapshot(jobRepository, job.getId(), timeout);
 
         job.join();
 
@@ -270,45 +263,10 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             assertEquals(expectedMap, new HashMap<>(result));
         }
 
-        assertTrue("Snapshots map not empty after job finished", snapshotRepository.getSnapshotMap(job.getId()).isEmpty());
-    }
-
-    @Test
-    public void when_snapshotDoneBeforeStarted_then_snapshotSuccessful() {
-        /*
-        Design of this test
-
-        The DAG is "source -> sink". Source completes immediately on
-        non-coordinator (worker) and is infinite on coordinator. Edge between
-        source and sink is distributed. This situation will cause that after the
-        source completes on member, the sink on worker will only have the remote
-        source. This will allow that we can receive the barrier from remote
-        coordinator before worker even starts the snapshot. This is the purpose
-        of this test. To ensure that this happens, we postpone handling of
-        SnapshotOperation on the worker.
-        */
-
-        // instance1 is always coordinator
-        delayOperationsFrom(
-                hz(instance1),
-                JetInitDataSerializerHook.FACTORY_ID,
-                singletonList(JetInitDataSerializerHook.SNAPSHOT_OPERATION)
-        );
-
-        DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", new NonBalancedSource(getAddress(instance2).toString()));
-        Vertex sink = dag.newVertex("sink", writeListP("sink"));
-        dag.edge(between(source, sink).distributed());
-
-        JobConfig config = new JobConfig();
-        config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        config.setSnapshotIntervalMillis(500);
-        Job job = instance1.newJob(dag, config);
-
-        assertTrueEventually(() -> assertNotNull(getSnapshotContext(job)));
-        SnapshotContext ssContext = getSnapshotContext(job);
-        assertTrueEventually(() -> assertTrue("numRemainingTasklets was not negative, the tested scenario did not happen",
-                ssContext.getNumRemainingTasklets().get() < 0), 3);
+        for (int i = 0; i <= 1; i++) {
+            assertTrue("Snapshots map " + i + " not empty after job finished",
+                    instance1.getMap(snapshotDataMapName(job.getId(), i)).isEmpty());
+        }
     }
 
     @Test
@@ -326,56 +284,41 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(0);
         Job job = instance1.newJob(dag, config);
-        SnapshotRepository repository = new SnapshotRepository(instance1);
+        JobRepository repository = new JobRepository(instance1);
 
         // the first snapshot should succeed
         assertTrueEventually(() -> {
-            IMap<Long, SnapshotRecord> records = repository.getSnapshotMap(job.getId());
-            SnapshotRecord record = records.get(0L);
-            assertNotNull("no record found for snapshot 0", record);
-            assertTrue("snapshot was not successful", record.isSuccessful());
+            JobExecutionRecord record = repository.getJobExecutionRecord(job.getId());
+            assertNotNull("null JobRecord", record);
+            assertEquals(0, record.snapshotId());
         }, 30);
     }
 
-    private SnapshotContext getSnapshotContext(Job job) {
-        IMapJet<Long, Long> randomIdsMap = instance1.getMap(JobRepository.RANDOM_IDS_MAP_NAME);
-        long executionId = randomIdsMap.entrySet().stream()
-                                       .filter(e -> e.getValue().equals(job.getId())
-                                               && !e.getValue().equals(e.getKey()))
-                                       .mapToLong(Entry::getKey)
-                                       .findAny()
-                                       .orElseThrow(() -> new AssertionError("ExecutionId not found"));
-        ExecutionContext executionContext = null;
-        // spin until the executionContext is available on the worker
-        while (executionContext == null) {
-            executionContext = getJetService(instance2).getJobExecutionService().getExecutionContext(executionId);
-        }
-        return executionContext.snapshotContext();
-    }
-
-    private void waitForFirstSnapshot(SnapshotRepository sr, long jobId, int timeout) {
-        assertTrueEventually(() -> assertTrue("No snapshot produced",
-                sr.getAllSnapshotRecords(jobId)
-                  .stream().anyMatch(SnapshotRecord::isSuccessful)), timeout);
-    }
-
-    private void waitForNextSnapshot(SnapshotRepository sr, long jobId, int timeoutSeconds) {
-        SnapshotRecord maxRecord = findMaxSuccessfulRecord(sr, jobId);
-        assertNotNull("no snapshot found", maxRecord);
-        // wait until there is at least one more snapshot
+    private void waitForFirstSnapshot(JobRepository jr, long jobId, int timeout) {
+        long[] snapshotId = {-1};
         assertTrueEventually(() -> {
-            SnapshotRecord currentMaxRecord = findMaxSuccessfulRecord(sr, jobId);
-            assertNotNull("No snapshot record found - job likely finished", currentMaxRecord);
-            assertTrue("No more snapshots produced after restart",
-                    currentMaxRecord.snapshotId() > maxRecord.snapshotId());
-        }, timeoutSeconds);
+            JobExecutionRecord record = jr.getJobExecutionRecord(jobId);
+            assertNotNull("null JobExecutionRecord", record);
+            assertTrue("No snapshot produced",
+                    record.dataMapIndex() >= 0 && record.snapshotId() >= 0);
+            snapshotId[0] = record.snapshotId();
+        }, timeout);
+        logger.info("First snapshot found (id=" + snapshotId[0] + ")");
     }
 
-    private SnapshotRecord findMaxSuccessfulRecord(SnapshotRepository sr, long jobId) {
-        return sr.getAllSnapshotRecords(jobId).stream()
-                 .filter(SnapshotRecord::isSuccessful)
-                 .max(comparing(SnapshotRecord::snapshotId))
-                 .orElse(null);
+    private void waitForNextSnapshot(JobRepository jr, long jobId, int timeoutSeconds) {
+        long originalSnapshotId = jr.getJobExecutionRecord(jobId).snapshotId();
+        assertTrue("no snapshot found", originalSnapshotId >= 0);
+        // wait until there is at least one more snapshot
+        long[] snapshotId = {-1};
+        assertTrueEventually(() -> {
+            JobExecutionRecord record = jr.getJobExecutionRecord(jobId);
+            assertNotNull("jobExecutionRecord is null", record);
+            snapshotId[0] = record.snapshotId();
+            assertTrue("No more snapshots produced after restart in " + timeoutSeconds + " seconds",
+                    snapshotId[0] > originalSnapshotId);
+        }, timeoutSeconds);
+        logger.info("Next snapshot found (id=" + snapshotId[0] + ", previous id=" + originalSnapshotId + ")");
     }
 
     @Test
@@ -413,7 +356,9 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     @Test
     public void stressTest_restart() throws Exception {
         stressTest(job -> {
+            logger.info("restarting");
             job.restart();
+            logger.info("restarted");
             // Sleep a little in order to not observe the RUNNING status from the execution
             // before the restart.
             LockSupport.parkNanos(MILLISECONDS.toNanos(500));
@@ -424,19 +369,23 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     @Test
     public void stressTest_suspendAndResume() throws Exception {
         stressTest(job -> {
+            logger.info("Suspending the job...");
             job.suspend();
+            logger.info("suspend() returned");
             assertTrueEventually(() -> assertEquals(JobStatus.SUSPENDED, job.getStatus()), 15);
             // The Job.resume() call might overtake the suspension.
             // resume() does nothing when job is not suspended. Without
             // the sleep, the job might remain suspended.
             sleepSeconds(1);
+            logger.info("Resuming the job...");
             job.resume();
+            logger.info("resume() returned");
             assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()), 15);
         });
     }
 
     private void stressTest(Consumer<Job> action) throws Exception {
-        SnapshotRepository snapshotRepository = new SnapshotRepository(instance1);
+        JobRepository jobRepository = new JobRepository(instance1);
 
         DAG dag = new DAG();
         dag.newVertex("generator", SnapshotStressSourceP::new)
@@ -446,11 +395,13 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                 new JobConfig().setSnapshotIntervalMillis(10)
                                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
-        waitForFirstSnapshot(snapshotRepository, job.getId(), 5);
+        logger.info("waiting for 1st snapshot");
+        waitForFirstSnapshot(jobRepository, job.getId(), 5);
+        logger.info("first snapshot found");
         spawn(() -> {
             for (int i = 0; i < 10; i++) {
                 action.accept(job);
-                waitForNextSnapshot(snapshotRepository, job.getId(), 5);
+                waitForNextSnapshot(jobRepository, job.getId(), 5);
             }
             return null;
         }).get();
@@ -629,38 +580,6 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                     advanceCursor();
                 }
             }
-        }
-    }
-
-    /**
-     * Supplier of processors that emit nothing and complete immediately
-     * on designated member and never on others.
-     */
-    private static final class NonBalancedSource implements ProcessorMetaSupplier {
-        private final String finishingMemberAddress;
-
-        private NonBalancedSource(String finishingMemberAddress) {
-            this.finishingMemberAddress = finishingMemberAddress;
-        }
-
-        @Nonnull
-        @Override
-        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> {
-                String sAddress = address.toString();
-                return ProcessorSupplier.of(() -> sAddress.equals(finishingMemberAddress)
-                        ? noopP().get() : new StreamingNoopSourceP());
-            };
-        }
-    }
-
-    /**
-     * A source processor that emits nothing and never completes
-     */
-    private static final class StreamingNoopSourceP implements Processor {
-        @Override
-        public boolean complete() {
-            return false;
         }
     }
 

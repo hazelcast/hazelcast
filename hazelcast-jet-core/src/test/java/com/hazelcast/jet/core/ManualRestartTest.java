@@ -26,8 +26,7 @@ import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsGe
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.StuckForeverSourceP;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.SnapshotRepository;
-import com.hazelcast.jet.impl.execution.SnapshotRecord;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
@@ -147,7 +146,7 @@ public class ManualRestartTest extends JetTestSupport {
 
     @Test
     public void when_terminalSnapshotFails_then_previousSnapshotUsed() {
-        MapConfig mapConfig = new MapConfig(SnapshotRepository.SNAPSHOT_DATA_NAME_PREFIX + "*");
+        MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + "*");
         mapConfig.getMapStoreConfig()
                  .setClassName(FailingMapStore.class.getName())
                  .setEnabled(true);
@@ -167,9 +166,9 @@ public class ManualRestartTest extends JetTestSupport {
 
         // wait for the first snapshot
         JetService jetService = getNode(instances[0]).nodeEngine.getService(JetService.SERVICE_NAME);
-        SnapshotRepository snapshotRepository = jetService.getJobCoordinationService().snapshotRepository();
+        JobRepository jobRepository = jetService.getJobCoordinationService().jobRepository();
         assertTrueEventually(() -> assertTrue(
-                snapshotRepository.getAllSnapshotRecords(job.getId()).stream().anyMatch(SnapshotRecord::isSuccessful)));
+                jobRepository.getJobExecutionRecord(job.getId()).dataMapIndex() >= 0));
 
         // When
         sleepMillis(100);

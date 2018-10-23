@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
@@ -28,13 +29,19 @@ import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -365,5 +372,66 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     // package-visible for test
     enum Keys {
         NEXT_WIN_TO_EMIT
+    }
+
+    public static final class SnapshotKey implements PartitionAware<Object>, IdentifiedDataSerializable {
+        long timestamp;
+        Object key;
+
+        public SnapshotKey() {
+        }
+
+        SnapshotKey(long timestamp, @Nonnull Object key) {
+            this.timestamp = timestamp;
+            this.key = key;
+        }
+
+        @Override
+        public Object getPartitionKey() {
+            return key;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetInitDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getId() {
+            return JetInitDataSerializerHook.SLIDING_WINDOW_P_SNAPSHOT_KEY;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeLong(timestamp);
+            out.writeObject(key);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            timestamp = in.readLong();
+            key = in.readObject();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            SnapshotKey that;
+            return this == o
+                    || o instanceof SnapshotKey
+                    && this.timestamp == (that = (SnapshotKey) o).timestamp
+                    && Objects.equals(this.key, that.key);
+        }
+
+        @Override
+        public int hashCode() {
+            int hc = (int) (timestamp ^ (timestamp >>> 32));
+            hc = 73 * hc + Objects.hashCode(key);
+            return hc;
+        }
+
+        @Override
+        public String toString() {
+            return "SnapshotKey{timestamp=" + timestamp + ", key=" + key + '}';
+        }
     }
 }

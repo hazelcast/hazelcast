@@ -37,7 +37,7 @@ abstract class AbstractJetInstance implements JetInstance {
     AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
         this.cacheManager = new JetCacheManagerImpl(this);
-        this.jobRepository = Util.memoizeConcurrent(() -> new JobRepository(this, null));
+        this.jobRepository = Util.memoizeConcurrent(() -> new JobRepository(this));
     }
 
     @Nonnull @Override

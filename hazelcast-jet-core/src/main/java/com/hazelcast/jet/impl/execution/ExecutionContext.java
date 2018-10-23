@@ -106,7 +106,7 @@ public class ExecutionContext {
         // available to be completed in the case of init failure
         procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
         processors = plan.getProcessors();
-        snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
+        snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobId, jobNameAndExecutionId(),
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
         plan.initialize(nodeEngine, jobId, executionId, snapshotContext);
         snapshotContext.initTaskletCount(plan.getStoreSnapshotTaskletCount(), plan.getHigherPriorityVertexCount());
@@ -207,12 +207,13 @@ public class ExecutionContext {
     /**
      * Starts a new snapshot by incrementing the current snapshot id
      */
-    public CompletionStage<SnapshotOperationResult> beginSnapshot(long snapshotId, boolean isTerminal) {
+    public CompletionStage<SnapshotOperationResult> beginSnapshot(long snapshotId, int ongoingDataMapIndex,
+                                                                  boolean isTerminal) {
         synchronized (executionLock) {
             if (cancellationFuture.isDone() || executionFuture != null && executionFuture.isDone()) {
                 throw new CancellationException();
             }
-            return snapshotContext.startNewSnapshot(snapshotId, isTerminal);
+            return snapshotContext.startNewSnapshot(snapshotId, ongoingDataMapIndex, isTerminal);
         }
     }
 

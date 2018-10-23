@@ -40,7 +40,7 @@ public class SnapshotContextSimpleTest {
     public ExpectedException exception = ExpectedException.none();
 
     private SnapshotContext ssContext =
-            new SnapshotContext(mock(ILogger.class), "test job", 9, ProcessingGuarantee.EXACTLY_ONCE);
+            new SnapshotContext(mock(ILogger.class), 1, "test job", 9, ProcessingGuarantee.EXACTLY_ONCE);
 
     @Test
     public void when_cancelledInitially_then_cannotStartNewSnapshot() {
@@ -50,13 +50,13 @@ public class SnapshotContextSimpleTest {
 
         // Then
         exception.expect(CancellationException.class);
-        ssContext.startNewSnapshot(10, false);
+        ssContext.startNewSnapshot(10, 0, false);
     }
 
     @Test
     public void when_cancelledAfterSnapshotDone_then_cannotStartNewSnapshot() {
         ssContext.initTaskletCount(1, 0);
-        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, false);
+        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, 0, false);
 
         /// When
         ssContext.snapshotDoneForTasklet(1, 1, 1);
@@ -65,13 +65,13 @@ public class SnapshotContextSimpleTest {
 
         // Then
         exception.expect(CancellationException.class);
-        ssContext.startNewSnapshot(11, false);
+        ssContext.startNewSnapshot(11, 0, false);
     }
 
     @Test
     public void when_cancelledMidSnapshot_then_futureCompleted_and_taskletDoneSucceeds() {
         ssContext.initTaskletCount(3, 0);
-        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, false);
+        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, 0, false);
 
         // When
         ssContext.snapshotDoneForTasklet(1, 1, 1);
@@ -88,7 +88,7 @@ public class SnapshotContextSimpleTest {
     @Test
     public void when_cancelledMidSnapshot_then_snapshotDoneForTaskletSucceeds() {
         ssContext.initTaskletCount(2, 0);
-        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, false);
+        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, 0, false);
 
         // When
         ssContext.snapshotDoneForTasklet(1, 1, 1);
@@ -102,7 +102,7 @@ public class SnapshotContextSimpleTest {
     @Test
     public void test_taskletDoneWhilePostponed() {
         ssContext.initTaskletCount(2, 2);
-        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, false);
+        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, 0, false);
         assertEquals(9, ssContext.activeSnapshotId());
         ssContext.taskletDone(9, true);
         assertEquals(9, ssContext.activeSnapshotId());

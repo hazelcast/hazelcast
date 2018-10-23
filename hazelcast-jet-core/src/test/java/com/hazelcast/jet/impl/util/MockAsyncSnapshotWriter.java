@@ -33,10 +33,6 @@ public class MockAsyncSnapshotWriter implements AsyncSnapshotWriter {
     private boolean isFlushed = true;
 
     @Override
-    public void setCurrentMap(String mapName) {
-    }
-
-    @Override
     public boolean offer(Entry<? extends Data, ? extends Data> entry) {
         if (!ableToOffer) {
             return false;
@@ -47,7 +43,7 @@ public class MockAsyncSnapshotWriter implements AsyncSnapshotWriter {
     }
 
     @Override
-    public boolean flush() {
+    public boolean flushAndReset() {
         if (ableToFlushRemaining) {
             hasPendingFlushes = !isFlushed;
             isFlushed = true;

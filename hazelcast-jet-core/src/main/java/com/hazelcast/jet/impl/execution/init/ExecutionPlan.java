@@ -147,10 +147,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             QueuedPipe<Object>[] snapshotQueues = new QueuedPipe[vertex.localParallelism()];
             Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
             ConcurrentConveyor<Object> ssConveyor = ConcurrentConveyor.concurrentConveyor(null, snapshotQueues);
-            StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext, jobId,
+            StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext,
                     new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, true, -1,
                             "ssFrom:" + vertex.name()),
-                    new AsyncSnapshotWriterImpl(nodeEngine, memberIndex, memberCount),
+                    new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount),
                     nodeEngine.getLogger(StoreSnapshotTasklet.class.getName() + "." + vertex.name()),
                     vertex.name(), vertex.isHigherPriorityUpstream());
             tasklets.add(ssTasklet);
