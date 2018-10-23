@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapContainer;
@@ -54,15 +55,17 @@ import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     protected final long expiryDelayMillis;
+    protected final Address thisAddress;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
-    protected final Address thisAddress;
+    protected final ClearExpiredRecordsTask clearExpiredRecordsTask;
     protected final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<ExpiredKey>();
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
      */
     protected Iterator<Record> expirationIterator;
+
     protected volatile boolean hasEntryWithCustomExpiration;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
@@ -73,6 +76,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         eventService = nodeEngine.getEventService();
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
         thisAddress = nodeEngine.getThisAddress();
+        clearExpiredRecordsTask = mapServiceContext.getExpirationManager().getTask();
     }
 
     /**
@@ -324,7 +328,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             expiredKeys.offer(new ExpiredKey(toHeapData(record.getKey()), record.getCreationTime()));
         }
 
-        mapServiceContext.getExpirationManager().getTask().tryToSendBackupExpiryOp(this, true);
+        clearExpiredRecordsTask.tryToSendBackupExpiryOp(this, true);
     }
 
     protected void accessRecord(Record record, long now) {

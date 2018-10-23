@@ -20,13 +20,12 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.TaskScheduler;
-import com.hazelcast.spi.partition.MigrationEndpoint;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.ScheduledFuture;
@@ -45,11 +44,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class ExpirationManager implements LifecycleListener, PartitionLostListener {
 
     private final int taskPeriodSeconds;
+    private final String lifecycleListenerId;
+    private final String partitionLostListenerId;
     private final NodeEngine nodeEngine;
     private final ClearExpiredRecordsTask task;
     private final TaskScheduler globalTaskScheduler;
+    private final LifecycleService lifecycleService;
     private final PartitionService partitionService;
-    private final String regIdOfPartitionLostListener;
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     /**
      * @see #rescheduleIfScheduledBefore()
@@ -67,9 +68,10 @@ public final class ExpirationManager implements LifecycleListener, PartitionLost
         this.taskPeriodSeconds = checkPositive(task.getTaskPeriodSeconds(),
                 "taskPeriodSeconds should be a positive number");
 
-        getHazelcastInstance().getLifecycleService().addLifecycleListener(this);
+        this.lifecycleService = getHazelcastInstance().getLifecycleService();
+        this.lifecycleListenerId = lifecycleService.addLifecycleListener(this);
         this.partitionService = getHazelcastInstance().getPartitionService();
-        this.regIdOfPartitionLostListener = partitionService.addPartitionLostListener(this);
+        this.partitionLostListenerId = partitionService.addPartitionLostListener(this);
     }
 
     protected HazelcastInstance getHazelcastInstance() {
@@ -101,7 +103,7 @@ public final class ExpirationManager implements LifecycleListener, PartitionLost
         scheduled.set(false);
         ScheduledFuture<?> scheduledFuture = this.scheduledExpirationTask;
         if (scheduledFuture != null) {
-            scheduledFuture.cancel(true);
+            scheduledFuture.cancel(false);
         }
     }
 
@@ -111,12 +113,19 @@ public final class ExpirationManager implements LifecycleListener, PartitionLost
             case SHUTTING_DOWN:
             case MERGING:
                 unscheduleExpirationTask();
+                sendQueuedExpiredKeys();
                 break;
             case MERGED:
                 rescheduleIfScheduledBefore();
                 break;
             default:
                 return;
+        }
+    }
+
+    private void sendQueuedExpiredKeys() {
+        for (Object container : task.containers) {
+            task.sendQueuedExpiredKeys(container);
         }
     }
 
@@ -134,23 +143,11 @@ public final class ExpirationManager implements LifecycleListener, PartitionLost
     }
 
     /**
-     * On commit migration step, we need to send already queued expired keys if
-     * migration source end point is a primary replica.
-     *
-     * @param event partition migration event
-     */
-    public void onCommitMigration(PartitionMigrationEvent event) {
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE
-                && event.getCurrentReplicaIndex() == 0) {
-            task.sendQueuedExpiredKeys(task.containers[event.getPartitionId()]);
-        }
-    }
-
-    /**
      * Called upon shutdown of {@link com.hazelcast.map.impl.MapService}
      */
     public void onShutdown() {
-        partitionService.removePartitionLostListener(regIdOfPartitionLostListener);
+        lifecycleService.removeLifecycleListener(lifecycleListenerId);
+        partitionService.removePartitionLostListener(partitionLostListenerId);
     }
 
     public ClearExpiredRecordsTask getTask() {
