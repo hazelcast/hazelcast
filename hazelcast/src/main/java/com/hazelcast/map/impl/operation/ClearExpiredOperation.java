@@ -32,7 +32,8 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Clears expired records.
  */
-public class ClearExpiredOperation extends AbstractLocalOperation implements PartitionAwareOperation, MutatingOperation {
+public class ClearExpiredOperation extends AbstractLocalOperation
+        implements PartitionAwareOperation, MutatingOperation {
 
     private int expirationPercentage;
 
@@ -96,7 +97,7 @@ public class ClearExpiredOperation extends AbstractLocalOperation implements Par
 
     @Override
     public boolean returnsResponse() {
-        return true;
+        return false;
     }
 
     @Override

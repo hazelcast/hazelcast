@@ -37,12 +37,14 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -66,6 +68,7 @@ import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryInfoAccessor;
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
+import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -81,6 +84,10 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 @SuppressWarnings("deprecation")
 public class EvictionTest extends HazelcastTestSupport {
+
+    @Rule
+    public final OverridePropertyRule overrideTaskSecondsRule
+            = set(PROP_TASK_PERIOD_SECONDS, "1");
 
     @Test
     public void testTTL_entryShouldNotBeReachableAfterTTL() {
@@ -103,7 +110,6 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SlowTest.class)
     public void testMaxIdle_backupEntryShouldNotBeReachableAfterMaxIdle() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
@@ -118,11 +124,16 @@ public class EvictionTest extends HazelcastTestSupport {
 
         Partition partition = instanceB.getPartitionService().getPartition(keyOwnedByInstanceA);
         MapService service = getNodeEngineImpl(instanceB).getService(MapService.SERVICE_NAME);
-        RecordStore store = service.getMapServiceContext()
-                                   .getPartitionContainer(partition.getPartitionId())
-                                   .getExistingRecordStore("Test");
+        final RecordStore store = service.getMapServiceContext()
+                .getPartitionContainer(partition.getPartitionId())
+                .getExistingRecordStore("Test");
 
-        assertEquals(0, store.size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, store.size());
+            }
+        });
     }
 
     @Test
@@ -141,8 +152,8 @@ public class EvictionTest extends HazelcastTestSupport {
         Partition partition = instanceB.getPartitionService().getPartition(keyOwnedByInstanceA);
         MapService service = getNodeEngineImpl(instanceB).getService(MapService.SERVICE_NAME);
         RecordStore store = service.getMapServiceContext()
-                                   .getPartitionContainer(partition.getPartitionId())
-                                   .getExistingRecordStore("Test");
+                .getPartitionContainer(partition.getPartitionId())
+                .getExistingRecordStore("Test");
 
         assertEquals(1, store.size());
         assertEquals(true, store.isExpirable());

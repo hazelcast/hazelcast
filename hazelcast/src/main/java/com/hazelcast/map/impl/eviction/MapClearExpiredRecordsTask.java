@@ -25,7 +25,6 @@ import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Collection;
@@ -80,7 +79,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </p>
  */
 public class MapClearExpiredRecordsTask
-        extends ClearExpiredRecordsTask<PartitionContainer, RecordStore> implements OperationResponseHandler {
+        extends ClearExpiredRecordsTask<PartitionContainer, RecordStore> {
 
     public static final String PROP_PRIMARY_DRIVES_BACKUP = "hazelcast.internal.map.expiration.primary.drives_backup";
     public static final String PROP_CLEANUP_PERCENTAGE = "hazelcast.internal.map.expiration.cleanup.percentage";
@@ -120,7 +119,7 @@ public class MapClearExpiredRecordsTask
     }
 
     @Override
-    public void tryToSendBackupExpiryOp(RecordStore store, boolean checkIfReachedBatch) {
+    public void tryToSendBackupExpiryOp(RecordStore store, boolean sendIfAtBatchSize) {
         if (!canPrimaryDriveExpiration()) {
             return;
         }
@@ -129,7 +128,8 @@ public class MapClearExpiredRecordsTask
         int totalBackupCount = store.getMapContainer().getTotalBackupCount();
         int partitionId = store.getPartitionId();
 
-        toBackupSender.trySendExpiryOp(store, expiredKeys, totalBackupCount, partitionId, checkIfReachedBatch);
+        toBackupSender.trySendExpiryOp(store, expiredKeys,
+                totalBackupCount, partitionId, sendIfAtBatchSize);
     }
 
     @Override
@@ -145,8 +145,7 @@ public class MapClearExpiredRecordsTask
                 .setCallerUuid(nodeEngine.getLocalMember().getUuid())
                 .setPartitionId(partitionId)
                 .setValidateTarget(false)
-                .setServiceName(SERVICE_NAME)
-                .setOperationResponseHandler(this);
+                .setServiceName(SERVICE_NAME);
     }
 
     @Override
