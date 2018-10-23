@@ -42,7 +42,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IMap}.
  */
-public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned {
+public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned, NamedConfig {
 
     /**
      * The minimum number of backups

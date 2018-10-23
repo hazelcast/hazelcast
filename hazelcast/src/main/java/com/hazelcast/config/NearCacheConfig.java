@@ -32,7 +32,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * Contains the configuration for a Near Cache.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class NearCacheConfig implements IdentifiedDataSerializable, Serializable {
+public class NearCacheConfig implements IdentifiedDataSerializable, Serializable, NamedConfig {
 
     /**
      * Default value for the in-memory format.

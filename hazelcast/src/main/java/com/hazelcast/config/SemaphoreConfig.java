@@ -31,7 +31,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ISemaphore}.
  */
-public class SemaphoreConfig implements IdentifiedDataSerializable, Versioned {
+public class SemaphoreConfig implements IdentifiedDataSerializable, Versioned, NamedConfig {
 
     /**
      * Default synchronous backup count.
