@@ -34,10 +34,10 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MapQueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest extends HazelcastTestSupport {
+public class QueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest extends HazelcastTestSupport {
 
     private IMap<Object, Object> map;
-    private MapQueryEngineImpl queryEngine;
+    private QueryEngineImpl queryEngine;
 
     @Before
     public void setup() {
@@ -45,7 +45,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest exten
         map = hz.getMap(randomName());
 
         MapService mapService = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
-        queryEngine = new MapQueryEngineImpl(mapService.getMapServiceContext());
+        queryEngine = new QueryEngineImpl(mapService.getMapServiceContext());
     }
 
     @Test

@@ -48,8 +48,8 @@ import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
 import com.hazelcast.map.impl.query.CallerRunsAccumulationExecutor;
 import com.hazelcast.map.impl.query.CallerRunsPartitionScanExecutor;
-import com.hazelcast.map.impl.query.MapQueryEngine;
-import com.hazelcast.map.impl.query.MapQueryEngineImpl;
+import com.hazelcast.map.impl.query.QueryEngine;
+import com.hazelcast.map.impl.query.QueryEngineImpl;
 import com.hazelcast.map.impl.query.ParallelAccumulationExecutor;
 import com.hazelcast.map.impl.query.ParallelPartitionScanExecutor;
 import com.hazelcast.map.impl.query.PartitionScanExecutor;
@@ -146,7 +146,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final MapNearCacheManager mapNearCacheManager;
     protected final LocalMapStatsProvider localMapStatsProvider;
     protected final MergePolicyProvider mergePolicyProvider;
-    protected final MapQueryEngine mapQueryEngine;
+    protected final QueryEngine queryEngine;
     protected final QueryRunner mapQueryRunner;
     protected final PartitionScanRunner partitionScanRunner;
     protected final QueryOptimizer queryOptimizer;
@@ -178,7 +178,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.queryOptimizer = newOptimizer(nodeEngine.getProperties());
         this.resultProcessorRegistry = createResultProcessorRegistry(serializationService);
         this.partitionScanRunner = createPartitionScanRunner();
-        this.mapQueryEngine = createMapQueryEngine();
+        this.queryEngine = createMapQueryEngine();
         this.mapQueryRunner = createMapQueryRunner(nodeEngine, queryOptimizer, resultProcessorRegistry, partitionScanRunner);
         this.eventService = nodeEngine.getEventService();
         this.operationProviders = createOperationProviders();
@@ -219,8 +219,8 @@ class MapServiceContextImpl implements MapServiceContext {
         return new LocalMapStatsProvider(this);
     }
 
-    private MapQueryEngineImpl createMapQueryEngine() {
-        return new MapQueryEngineImpl(this);
+    private QueryEngineImpl createMapQueryEngine() {
+        return new QueryEngineImpl(this);
     }
 
     private PartitionScanRunner createPartitionScanRunner() {
@@ -531,8 +531,8 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public MapQueryEngine getMapQueryEngine(String mapName) {
-        return mapQueryEngine;
+    public QueryEngine getQueryEngine(String mapName) {
+        return queryEngine;
     }
 
     @Override
