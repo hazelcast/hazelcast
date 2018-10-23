@@ -83,14 +83,16 @@ public class QueryEngineImpl implements QueryEngine {
     @Override
     public Result execute(Query query, Target target) {
         Query adjustedQuery = adjustQuery(query);
-        if (target.isTargetAllNodes()) {
-            return runOnAllPartitions(adjustedQuery);
-        } else if (target.isTargetLocalNode()) {
-            return runOnLocalPartitions(adjustedQuery);
-        } else if (target.isTargetPartitionOwner()) {
-            return runOnGivenPartition(adjustedQuery, target);
+        switch (target.mode()) {
+            case ALL_NODES:
+                return runOnAllPartitions(adjustedQuery);
+            case LOCAL_NODE:
+                return runOnLocalPartitions(adjustedQuery);
+            case PARTITION_OWNER:
+                return runOnGivenPartition(adjustedQuery, target);
+            default:
+                throw new IllegalArgumentException("Illegal target " + query);
         }
-        throw new IllegalArgumentException("Illegal target " + query);
     }
 
     private Query adjustQuery(Query query) {
@@ -136,7 +138,7 @@ public class QueryEngineImpl implements QueryEngine {
     private Result runOnGivenPartition(Query query, Target target) {
         try {
             return dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-                    query, target.getPartitionId()).get();
+                    query, target.partitionId()).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -255,14 +257,15 @@ public class QueryEngineImpl implements QueryEngine {
         return queryResultSizeLimiter;
     }
 
-    protected List<Future<Result>> dispatchFullQueryOnQueryThread(
-            Query query, Target target) {
-        if (target.isTargetAllNodes()) {
-            return dispatchFullQueryOnAllMembersOnQueryThread(query);
-        } else if (target.isTargetLocalNode()) {
-            return dispatchFullQueryOnLocalMemberOnQueryThread(query);
+    protected List<Future<Result>> dispatchFullQueryOnQueryThread(Query query, Target target) {
+        switch (target.mode()) {
+            case ALL_NODES:
+                return dispatchFullQueryOnAllMembersOnQueryThread(query);
+            case LOCAL_NODE:
+                return dispatchFullQueryOnLocalMemberOnQueryThread(query);
+            default:
+                throw new IllegalArgumentException("Illegal target " + query);
         }
-        throw new IllegalArgumentException("Illegal target " + query);
     }
 
     private List<Future<Result>> dispatchFullQueryOnLocalMemberOnQueryThread(Query query) {
