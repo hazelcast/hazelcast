@@ -54,6 +54,11 @@ public class QueryEventFilter extends EntryEventFilter {
     }
 
     @Override
+    public int getId() {
+        return MapDataSerializerHook.QUERY_EVENT_FILTER;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeObject(predicate);
@@ -97,8 +102,4 @@ public class QueryEventFilter extends EntryEventFilter {
                 + '}';
     }
 
-    @Override
-    public int getId() {
-        return MapDataSerializerHook.QUERY_EVENT_FILTER;
-    }
 }
