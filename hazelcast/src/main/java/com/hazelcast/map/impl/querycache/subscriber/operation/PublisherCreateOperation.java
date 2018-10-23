@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.querycache.subscriber.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
@@ -155,7 +155,7 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     private QueryResult runInitialQuery() {
-        MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
+        QueryEngine queryEngine = mapServiceContext.getQueryEngine(name);
         IterationType iterationType = info.isIncludeValue() ? IterationType.ENTRY : IterationType.KEY;
         Query query = Query.of().mapName(name).predicate(info.getPredicate()).iterationType(iterationType).build();
         return queryEngine.execute(query, Target.LOCAL_NODE);

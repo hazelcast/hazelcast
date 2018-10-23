@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.query;
 /**
  * Responsible for executing queries on the IMap.
  */
-public interface MapQueryEngine {
+public interface QueryEngine {
 
     /**
      * Executes the given query on the given target.

@@ -40,11 +40,11 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MapQueryEngineImplTest extends HazelcastTestSupport {
+public class QueryEngineImplTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance;
     private IMap<String, String> map;
-    private MapQueryEngine queryEngine;
+    private QueryEngine queryEngine;
 
     private int partitionId;
     private String key;
@@ -55,7 +55,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
         instance = createHazelcastInstance();
         map = instance.getMap(randomName());
         MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
-        queryEngine = mapService.getMapServiceContext().getMapQueryEngine(map.getName());
+        queryEngine = mapService.getMapServiceContext().getQueryEngine(map.getName());
 
         partitionId = 100;
         key = generateKeyForPartition(instance, partitionId);

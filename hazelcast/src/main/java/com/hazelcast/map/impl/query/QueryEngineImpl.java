@@ -54,7 +54,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  * - QueryDispatcher invokes query operations on the given members and partitions
  * - QueryRunner -> runs the query logic in the calling thread (so like evaluates the predicates and asks the index)
  */
-public class MapQueryEngineImpl implements MapQueryEngine {
+public class QueryEngineImpl implements QueryEngine {
 
     protected final MapServiceContext mapServiceContext;
     protected final NodeEngine nodeEngine;
@@ -67,7 +67,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     protected final QueryDispatcher queryDispatcher;
     protected final ResultProcessorRegistry resultProcessorRegistry;
 
-    public MapQueryEngineImpl(MapServiceContext mapServiceContext) {
+    public QueryEngineImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
