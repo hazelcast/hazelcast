@@ -35,18 +35,18 @@ import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Implementation of the {@link PartitionScanExecutor} which executes the partition scan in a parallel-fashion
+ * Implementation of the {@link QueryExecutor} which executes the partition scan in a parallel-fashion
  * delegating to the underlying executor.
  */
-public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
+public class ParallelQueryExecutor implements QueryExecutor {
 
     private final PartitionScanRunner partitionScanRunner;
     private final ManagedExecutorService executor;
     private final int timeoutInMillis;
 
-    public ParallelPartitionScanExecutor(PartitionScanRunner partitionScanRunner,
-                                         ManagedExecutorService executor,
-                                         int timeoutInMillis) {
+    public ParallelQueryExecutor(PartitionScanRunner partitionScanRunner,
+                                 ManagedExecutorService executor,
+                                 int timeoutInMillis) {
         this.partitionScanRunner = partitionScanRunner;
         this.executor = executor;
         this.timeoutInMillis = timeoutInMillis;

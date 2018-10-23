@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;

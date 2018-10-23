@@ -23,14 +23,14 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import java.util.Collection;
 
 /**
- * Implementation of the {@link PartitionScanExecutor} which executes the partition scan in a sequential-fashion
+ * Implementation of the {@link QueryExecutor} which executes the partition scan in a sequential-fashion
  * in the calling thread.
  */
-public class CallerRunsPartitionScanExecutor implements PartitionScanExecutor {
+public class CallerRunsQueryExecutor implements QueryExecutor {
 
     private final PartitionScanRunner partitionScanRunner;
 
-    public CallerRunsPartitionScanExecutor(PartitionScanRunner partitionScanRunner) {
+    public CallerRunsQueryExecutor(PartitionScanRunner partitionScanRunner) {
         this.partitionScanRunner = partitionScanRunner;
     }
 

@@ -47,12 +47,12 @@ import com.hazelcast.map.impl.query.AccumulationExecutor;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
 import com.hazelcast.map.impl.query.CallerRunsAccumulationExecutor;
-import com.hazelcast.map.impl.query.CallerRunsPartitionScanExecutor;
+import com.hazelcast.map.impl.query.CallerRunsQueryExecutor;
 import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryEngineImpl;
 import com.hazelcast.map.impl.query.ParallelAccumulationExecutor;
-import com.hazelcast.map.impl.query.ParallelPartitionScanExecutor;
-import com.hazelcast.map.impl.query.PartitionScanExecutor;
+import com.hazelcast.map.impl.query.ParallelQueryExecutor;
+import com.hazelcast.map.impl.query.QueryExecutor;
 import com.hazelcast.map.impl.query.PartitionScanRunner;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultProcessor;
@@ -231,16 +231,16 @@ class MapServiceContextImpl implements MapServiceContext {
                                                ResultProcessorRegistry resultProcessorRegistry,
                                                PartitionScanRunner partitionScanRunner) {
         boolean parallelEvaluation = nodeEngine.getProperties().getBoolean(QUERY_PREDICATE_PARALLEL_EVALUATION);
-        PartitionScanExecutor partitionScanExecutor;
+        QueryExecutor queryExecutor;
         if (parallelEvaluation) {
             int opTimeoutInMillis = nodeEngine.getProperties().getInteger(OPERATION_CALL_TIMEOUT_MILLIS);
             ManagedExecutorService queryExecutorService = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
-            partitionScanExecutor = new ParallelPartitionScanExecutor(partitionScanRunner, queryExecutorService,
+            queryExecutor = new ParallelQueryExecutor(partitionScanRunner, queryExecutorService,
                     opTimeoutInMillis);
         } else {
-            partitionScanExecutor = new CallerRunsPartitionScanExecutor(partitionScanRunner);
+            queryExecutor = new CallerRunsQueryExecutor(partitionScanRunner);
         }
-        return new QueryRunner(this, queryOptimizer, partitionScanExecutor, resultProcessorRegistry);
+        return new QueryRunner(this, queryOptimizer, queryExecutor, resultProcessorRegistry);
     }
 
     private ResultProcessorRegistry createResultProcessorRegistry(SerializationService ss) {

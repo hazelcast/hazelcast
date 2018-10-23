@@ -26,7 +26,7 @@ import java.util.Collection;
  * Responsible for executing a full partition scan for the given partitions.
  * May execute the scan in the calling thread or delegate to other thread - it depends on the implementation.
  */
-public interface PartitionScanExecutor {
+public interface QueryExecutor {
 
     void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result);
 

@@ -53,12 +53,12 @@ public class QueryRunner {
     protected final OperationService operationService;
     protected final ClusterService clusterService;
     protected final LocalMapStatsProvider localMapStatsProvider;
-    protected final PartitionScanExecutor partitionScanExecutor;
+    protected final QueryExecutor queryExecutor;
     protected final ResultProcessorRegistry resultProcessorRegistry;
 
     public QueryRunner(MapServiceContext mapServiceContext,
                        QueryOptimizer optimizer,
-                       PartitionScanExecutor partitionScanExecutor,
+                       QueryExecutor queryExecutor,
                        ResultProcessorRegistry resultProcessorRegistry) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
@@ -69,7 +69,7 @@ public class QueryRunner {
         this.operationService = nodeEngine.getOperationService();
         this.clusterService = nodeEngine.getClusterService();
         this.localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-        this.partitionScanExecutor = partitionScanExecutor;
+        this.queryExecutor = queryExecutor;
         this.resultProcessorRegistry = resultProcessorRegistry;
     }
 
@@ -86,7 +86,7 @@ public class QueryRunner {
     public ResultSegment runPartitionScanQueryOnPartitionChunk(Query query, int partitionId, int tableIndex, int fetchSize) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
-        QueryableEntriesSegment entries = partitionScanExecutor
+        QueryableEntriesSegment entries = queryExecutor
                 .execute(query.getMapName(), predicate, partitionId, tableIndex, fetchSize);
 
         updateStatistics(mapContainer);
@@ -190,7 +190,7 @@ public class QueryRunner {
         Result result;
         if (entries == null) {
             result = createResult(query, partitions);
-            partitionScanExecutor.execute(query.getMapName(), predicate, partitions, result);
+            queryExecutor.execute(query.getMapName(), predicate, partitions, result);
             result.completeConstruction(partitions);
         } else {
             result = populateResult(query, partitions, entries);
@@ -217,7 +217,7 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
         Collection<Integer> partitions = singletonList(partitionId);
         Result result = createResult(query, partitions);
-        partitionScanExecutor.execute(query.getMapName(), predicate, partitions, result);
+        queryExecutor.execute(query.getMapName(), predicate, partitions, result);
         result.completeConstruction(partitions);
         return result;
     }
@@ -282,7 +282,7 @@ public class QueryRunner {
         }
 
         Result result = createResult(query, partitions);
-        partitionScanExecutor.execute(query.getMapName(), predicate, partitions, result);
+        queryExecutor.execute(query.getMapName(), predicate, partitions, result);
 
         // If a migration is in progress or migration ownership changes, this means migrations were executed and we may
         // return stale data, so we should rather return null.
