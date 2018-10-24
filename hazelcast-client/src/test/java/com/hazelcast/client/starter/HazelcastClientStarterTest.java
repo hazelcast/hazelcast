@@ -22,6 +22,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,30 +34,31 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class HazelcastClientStarterTest {
+
+    private HazelcastInstance memberInstance;
+
+    @After
+    public void tearDown() {
+        if (memberInstance != null) {
+            memberInstance.shutdown();
+        }
+    }
+
     @Test
     public void testClientLifecycle() {
-        HazelcastInstance member = null;
-        try {
-            member = HazelcastStarter.newHazelcastInstance("3.7");
+        memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
 
-            for (int i = 1; i < 6; i++) {
-                String version = "3.7." + i;
-                System.out.println("Starting client " + version);
-                HazelcastInstance instance = HazelcastClientStarter.newHazelcastClient(version, false);
-                System.out.println("Stopping client " + version);
-                instance.shutdown();
-            }
-
-        } finally {
-            if (member != null) {
-                member.shutdown();
-            }
+        for (int i = 1; i < 6; i++) {
+            String version = "3.7." + i;
+            System.out.println("Starting client " + version);
+            HazelcastInstance instance = HazelcastClientStarter.newHazelcastClient(version, false);
+            System.out.println("Stopping client " + version);
+            instance.shutdown();
         }
     }
 
     @Test
     public void testClientMap() {
-        HazelcastInstance memberInstance = null;
         HazelcastInstance clientInstance = null;
         try {
             memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
@@ -69,9 +71,6 @@ public class HazelcastClientStarterTest {
 
             assertEquals(2, (int) memberMap.get(1));
         } finally {
-            if (memberInstance != null) {
-                memberInstance.shutdown();
-            }
             if (clientInstance != null) {
                 clientInstance.shutdown();
             }
@@ -80,25 +79,16 @@ public class HazelcastClientStarterTest {
 
     @Test
     public void testAdvancedClientMap() {
-        HazelcastInstance memberInstance = null;
+        memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
+        HazelcastInstance clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
 
-        try {
-            memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
-            HazelcastInstance clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
-
-            System.out.println("About to terminate the client");
-            clientInstance.getLifecycleService().terminate();
-            System.out.println("Client terminated");
-        } finally {
-            if (memberInstance != null) {
-                memberInstance.shutdown();
-            }
-        }
+        System.out.println("About to terminate the client");
+        clientInstance.getLifecycleService().terminate();
+        System.out.println("Client terminated");
     }
 
     @Test
     public void testClientMap_async() throws InterruptedException, ExecutionException {
-        HazelcastInstance memberInstance = null;
         HazelcastInstance clientInstance = null;
         try {
             memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
@@ -111,9 +101,6 @@ public class HazelcastClientStarterTest {
 
             assertEquals(1, value);
         } finally {
-            if (memberInstance != null) {
-                memberInstance.shutdown();
-            }
             if (clientInstance != null) {
                 clientInstance.shutdown();
             }
