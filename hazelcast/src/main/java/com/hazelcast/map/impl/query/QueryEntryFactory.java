@@ -27,13 +27,18 @@ import com.hazelcast.query.impl.getters.Extractors;
 public final class QueryEntryFactory {
 
     private final CacheDeserializedValues cacheDeserializedValues;
+    private final InternalSerializationService serializationService;
+    private final Extractors extractors;
 
-    public QueryEntryFactory(CacheDeserializedValues cacheDeserializedValues) {
+    public QueryEntryFactory(CacheDeserializedValues cacheDeserializedValues,
+                             InternalSerializationService serializationService,
+                             Extractors extractors) {
         this.cacheDeserializedValues = cacheDeserializedValues;
+        this.serializationService = serializationService;
+        this.extractors = extractors;
     }
 
-    public QueryableEntry newEntry(InternalSerializationService serializationService,
-                                   Data key, Object value, Extractors extractors) {
+    public QueryableEntry newEntry(Data key, Object value) {
         switch (cacheDeserializedValues) {
             case NEVER:
                 return new QueryEntry(serializationService, key, value, extractors);
