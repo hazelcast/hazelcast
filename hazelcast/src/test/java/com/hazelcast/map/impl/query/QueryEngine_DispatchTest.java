@@ -34,7 +34,6 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -43,11 +42,11 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class QueryDispatcherTest extends HazelcastTestSupport {
+public class QueryEngine_DispatchTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance;
     private IMap<String, String> map;
-    private QueryDispatcher queryDispatcher;
+    private QueryEngineImpl queryEngine;
 
     private int partitionId;
     private String key;
@@ -58,7 +57,7 @@ public class QueryDispatcherTest extends HazelcastTestSupport {
         instance = createHazelcastInstance();
         map = instance.getMap(randomName());
         MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
-        queryDispatcher = new QueryDispatcher(mapService.getMapServiceContext());
+        queryEngine = new QueryEngineImpl(mapService.getMapServiceContext());
 
         partitionId = 100;
         key = generateKeyForPartition(instance, partitionId);
@@ -75,19 +74,19 @@ public class QueryDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dispatchFullQueryOnQueryThread_localMembers() throws ExecutionException, InterruptedException {
+    public void dispatchFullQueryOnQueryThread_localMembers() {
         dispatchFullQueryOnQueryThread(Target.LOCAL_NODE);
     }
 
     @Test
-    public void dispatchFullQueryOnQueryThread_allMembers() throws ExecutionException, InterruptedException {
+    public void dispatchFullQueryOnQueryThread_allMembers() {
         dispatchFullQueryOnQueryThread(Target.ALL_NODES);
     }
 
     private void dispatchFullQueryOnQueryThread(Target target) {
         Query query = Query.of().mapName(map.getName()).predicate(Predicates.equal("this", value))
                 .iterationType(IterationType.ENTRY).build();
-        List<Future<Result>> futures = queryDispatcher
+        List<Future<Result>> futures = queryEngine
                 .dispatchFullQueryOnQueryThread(query, target);
         Collection<Result> results = returnWithDeadline(futures, 1, TimeUnit.MINUTES);
         QueryResult result = (QueryResult) results.iterator().next();
@@ -98,10 +97,10 @@ public class QueryDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_singlePartition() throws ExecutionException, InterruptedException {
+    public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_singlePartition() {
         Query query = Query.of().mapName(map.getName()).predicate(Predicates.equal("this", value))
                 .iterationType(IterationType.ENTRY).build();
-        Future<Result> future = queryDispatcher
+        Future<Result> future = queryEngine
                 .dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(query, partitionId);
         Collection<Result> results = returnWithDeadline(Collections.singletonList(future), 1, TimeUnit.MINUTES);
         QueryResult result = (QueryResult) results.iterator().next();
