@@ -172,23 +172,4 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         }
     }
 
-    @Override
-    public E get() throws InterruptedException, ExecutionException {
-        String name = Thread.currentThread().getName();
-        System.out.println(">>> FATAL " + name);
-        if (name.contains("client.thread")) {
-            throw new IllegalStateException(">>> FATAL " + name);
-        }
-        return super.get();
-    }
-
-    @Override
-    public E get(final long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        String name = Thread.currentThread().getName();
-        System.out.println(">>> FATAL " + name);
-        if (name.contains("client.thread")) {
-            throw new IllegalStateException(">>> FATAL " + name);
-        }
-        return super.get(timeout, unit);
-    }
 }
