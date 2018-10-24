@@ -46,7 +46,7 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_THREAD_COUNT;
  * {@link NioInboundPipeline} and {@link NioOutboundPipeline} between {@link NioThread}
  * instances.
  *
- * It measures number of events serviced by each pipeline in a given interval and
+ * It measures load serviced by each pipeline in a given interval and
  * if imbalance is detected then it schedules pipeline migration to fix the situation.
  * The exact migration strategy can be customized via
  * {@link com.hazelcast.internal.networking.nio.iobalancer.MigrationStrategy}.
@@ -159,7 +159,7 @@ public class IOBalancer {
                     logger.finest("There is at most 1 pipeline associated with each thread. "
                             + "There is nothing to balance");
                 } else {
-                    logger.finest("No imbalance has been detected. Max. events: " + max + " Min events: " + min + ".");
+                    logger.finest("No imbalance has been detected. Max. load: " + max + " Min load: " + min + ".");
                 }
             }
         }
