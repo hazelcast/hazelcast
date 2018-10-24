@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -114,23 +115,28 @@ public class RecordsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void applyRecordInfo() throws Exception {
-        long now = Clock.currentTimeMillis();
-        RecordInfo recordInfo = newRecordInfo(now);
+    public void applyRecordInfo() {
+        // Shared key&value by referenceRecord and recordInfo-applied-recordInfoAppliedRecord
+        Data key = new HeapData();
+        Data value = new HeapData();
 
-        Record record = new DataRecordWithStats();
-        Records.applyRecordInfo(record, recordInfo);
+        // Create recordInfo from a reference record
+        Record referenceRecord = new DataRecordWithStats();
+        referenceRecord.setKey(key);
+        referenceRecord.setValue(value);
+        referenceRecord.setHits(123);
+        referenceRecord.setVersion(12);
+        RecordInfo recordInfo = toRecordInfo(referenceRecord);
 
-        // The creation time of the record is based on base offset (classloading time) + delta of (now - base)
-        // This info is stored as seconds, so the ms resolution is lost. Therefore the times retrieved from the Record
-        // will always be slightly elevated (depends on the classloading time).
-        assertEquals(now, record.getCreationTime(), 1000);
-        assertEquals(now, record.getLastAccessTime(), 1000);
-        assertEquals(now, record.getLastUpdateTime(), 1000);
-        assertEquals(123, record.getVersion());
-        assertEquals(12, record.getHits());
-        assertEquals(now, record.getExpirationTime(), 1000);
-        assertEquals(now, record.getLastStoredTime(), 1000);
+        // Apply created recordInfo to recordInfoAppliedRecord
+        Record recordInfoAppliedRecord = new DataRecordWithStats();
+        recordInfoAppliedRecord.setKey(key);
+        recordInfoAppliedRecord.setValue(value);
+
+        Records.applyRecordInfo(recordInfoAppliedRecord, recordInfo);
+
+        // Check recordInfo applied correctly to recordInfoAppliedRecord
+        assertEquals(referenceRecord, recordInfoAppliedRecord);
     }
 
     @Test
@@ -150,16 +156,16 @@ public class RecordsTest extends HazelcastTestSupport {
         assertEquals(now, recordInfo.getLastStoredTime());
     }
 
-    private static RecordInfo newRecordInfo(long now) {
+    private static RecordInfo toRecordInfo(Record record) {
         RecordInfo recordInfo = mock(RecordInfo.class);
 
-        when(recordInfo.getCreationTime()).thenReturn(now);
-        when(recordInfo.getLastAccessTime()).thenReturn(now);
-        when(recordInfo.getLastUpdateTime()).thenReturn(now);
-        when(recordInfo.getHits()).thenReturn(12L);
-        when(recordInfo.getVersion()).thenReturn(123L);
-        when(recordInfo.getExpirationTime()).thenReturn(now);
-        when(recordInfo.getLastStoredTime()).thenReturn(now);
+        when(recordInfo.getCreationTime()).thenReturn(record.getCreationTime());
+        when(recordInfo.getLastAccessTime()).thenReturn(record.getLastAccessTime());
+        when(recordInfo.getLastUpdateTime()).thenReturn(record.getLastUpdateTime());
+        when(recordInfo.getHits()).thenReturn(record.getHits());
+        when(recordInfo.getVersion()).thenReturn(record.getVersion());
+        when(recordInfo.getExpirationTime()).thenReturn(record.getExpirationTime());
+        when(recordInfo.getLastStoredTime()).thenReturn(record.getLastStoredTime());
 
         return recordInfo;
     }
