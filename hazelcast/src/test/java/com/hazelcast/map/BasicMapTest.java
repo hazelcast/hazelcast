@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -48,7 +47,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -1331,13 +1333,15 @@ public class BasicMapTest extends HazelcastTestSupport {
         // always run map.values on a map proxy backed by the current-version instance otherwise, when running as compatibility
         // test, the TestPagingPredicate will be proxied and fail with a NullPointerException during serialization
         IMap<Integer, Integer> test = instances[instances.length - 1].getMap("github_11489");
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             test.put(i, i);
         }
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        String result = objectMapper.writeValueAsString(test.values(new TestPagingPredicate(1000)));
-        assertNotNull(result);
+        Collection<Integer> values = test.values(new TestPagingPredicate(100));
+        Type genericSuperClass = values.getClass().getGenericSuperclass();
+        Type actualType = ((ParameterizedType) genericSuperClass).getActualTypeArguments()[0];
+        // Raw class is expected. ParameterizedType-s cause troubles to Jackson serializer.
+        assertInstanceOf(Class.class, actualType);
     }
 
     private static class TestPagingPredicate extends PagingPredicate {
