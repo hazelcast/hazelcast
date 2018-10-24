@@ -90,9 +90,7 @@ public class QueryEventFilter extends EntryEventFilter {
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + predicate.hashCode();
-        return result;
+        return 31 * super.hashCode() + predicate.hashCode();
     }
 
     @Override
