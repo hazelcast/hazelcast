@@ -99,5 +99,4 @@ public class QueryEventFilter extends EntryEventFilter {
                 + "predicate=" + predicate
                 + '}';
     }
-
 }
