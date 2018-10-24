@@ -124,11 +124,12 @@ public class MapContainer {
         this.quorumName = mapConfig.getQuorumName();
         this.serializationService = nodeEngine.getSerializationService();
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
-        this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
         this.objectNamespace = MapService.getObjectNamespace(name);
         initWanReplication(nodeEngine);
         ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), classloader);
+        this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
+                (InternalSerializationService) serializationService, extractors);
         if (shouldUseGlobalIndex(mapConfig)) {
             this.globalIndexes = createIndexes(true);
         } else {
@@ -371,7 +372,7 @@ public class MapContainer {
     }
 
     public QueryableEntry newQueryEntry(Data key, Object value) {
-        return queryEntryFactory.newEntry((InternalSerializationService) serializationService, key, value, extractors);
+        return queryEntryFactory.newEntry(key, value);
     }
 
     public Evictor getEvictor() {
