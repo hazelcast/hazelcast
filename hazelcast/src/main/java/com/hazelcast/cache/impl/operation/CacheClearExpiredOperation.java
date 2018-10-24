@@ -93,7 +93,7 @@ public class CacheClearExpiredOperation extends AbstractLocalOperation implement
 
     @Override
     public boolean returnsResponse() {
-        return true;
+        return false;
     }
 
     @Override
