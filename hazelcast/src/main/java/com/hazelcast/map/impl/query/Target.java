@@ -23,11 +23,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+import static com.hazelcast.map.impl.query.Target.TargetMode.ALL_NODES;
+import static com.hazelcast.map.impl.query.Target.TargetMode.LOCAL_NODE;
+import static com.hazelcast.map.impl.query.Target.TargetMode.PARTITION_OWNER;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Target for a query.
- *
+ * <p>
  * Possible options:
  * - all nodes
  * - local node only
@@ -38,37 +41,29 @@ public class Target implements IdentifiedDataSerializable {
     public static final Target ALL_NODES = Target.of().allNodes().build();
     public static final Target LOCAL_NODE = Target.of().localNode().build();
 
-    private TargetFlag target;
+    private TargetMode mode;
     private Integer partitionId;
 
     public Target() {
     }
 
-    private Target(TargetFlag targetFlag, Integer partitionId) {
-        this.target = checkNotNull(targetFlag);
+    private Target(TargetMode targetMode, Integer partitionId) {
+        this.mode = checkNotNull(targetMode);
         this.partitionId = partitionId;
-        if (targetFlag.equals(TargetFlag.PARTITION_OWNER) && partitionId == null) {
-            throw new IllegalArgumentException("It's forbidden to use null partitionId with PARTITION_OWNER target");
+        if (targetMode.equals(PARTITION_OWNER) && partitionId == null) {
+            throw new IllegalArgumentException("It's forbidden to use null partitionId with PARTITION_OWNER mode");
         }
     }
 
-    public Integer getPartitionId() {
+    public TargetMode mode() {
+        return mode;
+    }
+
+    public Integer partitionId() {
         return partitionId;
     }
 
-    public boolean isTargetLocalNode() {
-        return target.equals(TargetFlag.LOCAL_NODE);
-    }
-
-    public boolean isTargetAllNodes() {
-        return target.equals(TargetFlag.ALL_NODES);
-    }
-
-    public boolean isTargetPartitionOwner() {
-        return target.equals(TargetFlag.PARTITION_OWNER);
-    }
-
-    enum TargetFlag {
+    enum TargetMode {
         LOCAL_NODE,
         ALL_NODES,
         PARTITION_OWNER
@@ -87,13 +82,13 @@ public class Target implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(partitionId);
-        out.writeUTF(target.name());
+        out.writeUTF(mode.name());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         this.partitionId = in.readInt();
-        this.target = TargetFlag.valueOf(in.readUTF());
+        this.mode = TargetMode.valueOf(in.readUTF());
     }
 
     public static TargetBuilder of() {
@@ -102,30 +97,30 @@ public class Target implements IdentifiedDataSerializable {
 
     public static final class TargetBuilder {
 
-        private TargetFlag target;
+        private TargetMode mode;
         private Integer partitionId;
 
         private TargetBuilder() {
         }
 
         public TargetBuilder allNodes() {
-            this.target = TargetFlag.ALL_NODES;
+            this.mode = TargetMode.ALL_NODES;
             return this;
         }
 
         public TargetBuilder localNode() {
-            this.target = TargetFlag.LOCAL_NODE;
+            this.mode = TargetMode.LOCAL_NODE;
             return this;
         }
 
         public TargetBuilder partitionOwner(int partitionId) {
-            this.target = TargetFlag.PARTITION_OWNER;
+            this.mode = PARTITION_OWNER;
             this.partitionId = partitionId;
             return this;
         }
 
         public Target build() {
-            return new Target(target, partitionId);
+            return new Target(mode, partitionId);
         }
     }
 }
