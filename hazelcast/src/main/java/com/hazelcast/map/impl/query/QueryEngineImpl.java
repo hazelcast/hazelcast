@@ -84,11 +84,11 @@ public class QueryEngineImpl implements QueryEngine {
     public Result execute(Query query, Target target) {
         Query adjustedQuery = adjustQuery(query);
         if (target.isTargetAllNodes()) {
-            return runQueryOnAllPartitions(adjustedQuery);
+            return runOnAllPartitions(adjustedQuery);
         } else if (target.isTargetLocalNode()) {
-            return runQueryOnLocalPartitions(adjustedQuery);
+            return runOnLocalPartitions(adjustedQuery);
         } else if (target.isTargetPartitionOwner()) {
-            return runQueryOnGivenPartition(adjustedQuery, target);
+            return runOnGivenPartition(adjustedQuery, target);
         }
         throw new IllegalArgumentException("Illegal target " + query);
     }
@@ -107,12 +107,12 @@ public class QueryEngineImpl implements QueryEngine {
     }
 
     // query thread first, fallback to partition thread
-    private Result runQueryOnLocalPartitions(Query query) {
+    private Result runOnLocalPartitions(Query query) {
         BitSet mutablePartitionIds = getLocalPartitionIds();
 
-        Result result = doRunQueryOnQueryThreads(query, mutablePartitionIds, Target.LOCAL_NODE);
+        Result result = doRunOnQueryThreads(query, mutablePartitionIds, Target.LOCAL_NODE);
         if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
-            doRunQueryOnPartitionThreads(query, mutablePartitionIds, result);
+            doRunOnPartitionThreads(query, mutablePartitionIds, result);
         }
         assertAllPartitionsQueried(mutablePartitionIds);
 
@@ -120,12 +120,12 @@ public class QueryEngineImpl implements QueryEngine {
     }
 
     // query thread first, fallback to partition thread
-    private Result runQueryOnAllPartitions(Query query) {
+    private Result runOnAllPartitions(Query query) {
         BitSet mutablePartitionIds = getAllPartitionIds();
 
-        Result result = doRunQueryOnQueryThreads(query, mutablePartitionIds, Target.ALL_NODES);
+        Result result = doRunOnQueryThreads(query, mutablePartitionIds, Target.ALL_NODES);
         if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
-            doRunQueryOnPartitionThreads(query, mutablePartitionIds, result);
+            doRunOnPartitionThreads(query, mutablePartitionIds, result);
         }
         assertAllPartitionsQueried(mutablePartitionIds);
 
@@ -133,7 +133,7 @@ public class QueryEngineImpl implements QueryEngine {
     }
 
     // partition thread ONLY (for now)
-    private Result runQueryOnGivenPartition(Query query, Target target) {
+    private Result runOnGivenPartition(Query query, Target target) {
         try {
             return dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
                     query, target.getPartitionId()).get();
@@ -142,7 +142,7 @@ public class QueryEngineImpl implements QueryEngine {
         }
     }
 
-    private Result doRunQueryOnQueryThreads(Query query, BitSet partitionIds, Target target) {
+    private Result doRunOnQueryThreads(Query query, BitSet partitionIds, Target target) {
         Result result = populateResult(query, partitionIds);
         List<Future<Result>> futures = dispatchOnQueryThreads(query, target);
         addResultsOfPredicate(futures, result, partitionIds, false);
@@ -174,7 +174,7 @@ public class QueryEngineImpl implements QueryEngine {
                 queryResultSizeLimiter.getNodeResultLimit(partitionIds.cardinality()));
     }
 
-    private void doRunQueryOnPartitionThreads(Query query, BitSet partitionIds, Result result) {
+    private void doRunOnPartitionThreads(Query query, BitSet partitionIds, Result result) {
         try {
             List<Future<Result>> futures = dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
                     query, partitionIds);
