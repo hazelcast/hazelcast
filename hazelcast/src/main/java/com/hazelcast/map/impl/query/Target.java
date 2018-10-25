@@ -38,8 +38,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class Target implements IdentifiedDataSerializable {
 
-    public static final Target ALL_NODES = Target.of().allNodes().build();
-    public static final Target LOCAL_NODE = Target.of().localNode().build();
+    public static final Target ALL_NODES = new Target(TargetMode.ALL_NODES, null);
+    public static final Target LOCAL_NODE = new Target(TargetMode.LOCAL_NODE, null);
 
     private TargetMode mode;
     private Integer partitionId;
@@ -47,10 +47,10 @@ public class Target implements IdentifiedDataSerializable {
     public Target() {
     }
 
-    private Target(TargetMode targetMode, Integer partitionId) {
-        this.mode = checkNotNull(targetMode);
+    private Target(TargetMode mode, Integer partitionId) {
+        this.mode = checkNotNull(mode);
         this.partitionId = partitionId;
-        if (targetMode.equals(PARTITION_OWNER) && partitionId == null) {
+        if (mode.equals(PARTITION_OWNER) && partitionId == null) {
             throw new IllegalArgumentException("It's forbidden to use null partitionId with PARTITION_OWNER mode");
         }
     }
@@ -91,36 +91,7 @@ public class Target implements IdentifiedDataSerializable {
         this.mode = TargetMode.valueOf(in.readUTF());
     }
 
-    public static TargetBuilder of() {
-        return new TargetBuilder();
-    }
-
-    public static final class TargetBuilder {
-
-        private TargetMode mode;
-        private Integer partitionId;
-
-        private TargetBuilder() {
-        }
-
-        public TargetBuilder allNodes() {
-            this.mode = TargetMode.ALL_NODES;
-            return this;
-        }
-
-        public TargetBuilder localNode() {
-            this.mode = TargetMode.LOCAL_NODE;
-            return this;
-        }
-
-        public TargetBuilder partitionOwner(int partitionId) {
-            this.mode = PARTITION_OWNER;
-            this.partitionId = partitionId;
-            return this;
-        }
-
-        public Target build() {
-            return new Target(mode, partitionId);
-        }
+    public static Target createPartitionTarget(int partitionId) {
+        return new Target(TargetMode.PARTITION_OWNER, partitionId);
     }
 }

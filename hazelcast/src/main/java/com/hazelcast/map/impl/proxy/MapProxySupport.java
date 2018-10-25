@@ -114,6 +114,7 @@ import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -1312,7 +1313,7 @@ abstract class MapProxySupport<K, V>
             Data key = toData(partitionPredicate.getPartitionKey());
             int partitionId = partitionService.getPartitionId(key);
             userPredicate = partitionPredicate.getTarget();
-            target = Target.of().partitionOwner(partitionId).build();
+            target = createPartitionTarget(partitionId);
         }
         handleHazelcastInstanceAwareParams(userPredicate);
 
