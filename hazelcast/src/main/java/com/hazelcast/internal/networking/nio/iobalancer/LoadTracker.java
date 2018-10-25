@@ -42,12 +42,12 @@ class LoadTracker {
     private final NioThread[] ioThreads;
     private final Map<NioThread, Set<MigratablePipeline>> ownerToPipelines;
 
-    //no. of events per pipeline since an instance started
+    //load per pipeline since an instance started
     private final ItemCounter<MigratablePipeline> lastLoadCounter = new ItemCounter<MigratablePipeline>();
 
-    //no. of events per NioThread since last calculation
+    //load per NioThread since last calculation
     private final ItemCounter<NioThread> ownerLoad = new ItemCounter<NioThread>();
-    //no. of events per pipeline since last calculation
+    //load per pipeline since last calculation
     private final ItemCounter<MigratablePipeline> pipelineLoadCount = new ItemCounter<MigratablePipeline>();
 
     //contains all known pipelines
@@ -121,7 +121,6 @@ class LoadTracker {
         }
     }
 
-
     private void updateNewWorkingImbalance() {
         for (MigratablePipeline pipeline : pipelines) {
             updatePipelineState(pipeline);
@@ -158,7 +157,7 @@ class LoadTracker {
         pipelines.add(pipeline);
     }
 
-    public void removePipeline(MigratablePipeline pipeline) {
+    void removePipeline(MigratablePipeline pipeline) {
         pipelines.remove(pipeline);
         pipelineLoadCount.remove(pipeline);
         lastLoadCounter.remove(pipeline);
@@ -181,9 +180,9 @@ class LoadTracker {
 
         sb.append("Min NioThread ")
                 .append(minThread)
-                .append(" received ")
+                .append(" receive-load ")
                 .append(loadPerOwner)
-                .append(" events. ");
+                .append(" load. ");
         sb.append("It contains following pipelines: ").
                 append(LINE_SEPARATOR);
         appendSelectorInfo(minThread, ownerToPipelines, sb);
@@ -191,9 +190,8 @@ class LoadTracker {
         loadPerOwner = ownerLoad.get(maxThread);
         sb.append("Max NioThread ")
                 .append(maxThread)
-                .append(" received ")
-                .append(loadPerOwner)
-                .append(" events. ");
+                .append(" receive-load ")
+                .append(loadPerOwner);
         sb.append("It contains following pipelines: ")
                 .append(LINE_SEPARATOR);
         appendSelectorInfo(maxThread, ownerToPipelines, sb);
@@ -232,6 +230,4 @@ class LoadTracker {
         }
         sb.append(LINE_SEPARATOR);
     }
-
-
 }
