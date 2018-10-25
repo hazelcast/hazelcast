@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -314,6 +315,36 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         assertEquals(expirationTimeAfterReplace, expirationTimeAfterPut);
     }
 
+    @Test
+    public void last_access_time_updated_on_primary_when_read_backup_data_enabled() {
+        String mapName = "test";
+
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setBackupCount(0);
+        mapConfig.setAsyncBackupCount(0);
+        mapConfig.setReadBackupData(true);
+        mapConfig.setMaxIdleSeconds(20);
+        mapConfig.setInMemoryFormat(inMemoryFormat());
+
+        IMap map = createHazelcastInstance(config).getMap(mapName);
+        map.put(1, 1);
+
+        long lastAccessTimeBefore = map.getEntryView(1).getLastAccessTime();
+
+        sleepAtLeastMillis(10);
+        map.get(1);
+        sleepAtLeastMillis(10);
+        map.get(1);
+
+        long lastAccessTimeAfter = map.getEntryView(1).getLastAccessTime();
+
+        String msg = String.format("lastAccessTimeBefore:%d,"
+                + " lastAccessTimeAfter:%d", lastAccessTimeBefore, lastAccessTimeAfter);
+
+        assertTrue(msg, lastAccessTimeAfter > lastAccessTimeBefore);
+    }
+
     protected InMemoryFormat inMemoryFormat() {
         return BINARY;
     }
@@ -332,8 +363,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         Config config = getConfig();
         config.getMapConfig(mapName)
-              .setMaxIdleSeconds(maxIdleSeconds)
-              .setInMemoryFormat(inMemoryFormat());
+                .setMaxIdleSeconds(maxIdleSeconds)
+                .setInMemoryFormat(inMemoryFormat());
 
         HazelcastInstance node = createHazelcastInstance(config);
         return node.getMap(mapName);
@@ -345,8 +376,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         Config config = getConfig();
         config.getMapConfig(mapName)
-              .setTimeToLiveSeconds(ttlSeconds)
-              .setInMemoryFormat(inMemoryFormat());
+                .setTimeToLiveSeconds(ttlSeconds)
+                .setInMemoryFormat(inMemoryFormat());
 
         HazelcastInstance node = createHazelcastInstance(config);
         return node.getMap(mapName);
