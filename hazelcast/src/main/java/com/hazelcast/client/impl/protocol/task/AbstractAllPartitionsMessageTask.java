@@ -51,6 +51,10 @@ public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessag
 
     @Override
     public final void onResponse(Map<Integer, Object> map) {
-        sendResponse(reduce(map));
+        try {
+            sendResponse(reduce(map));
+        } catch (Exception e) {
+            handleProcessingFailure(e);
+        }
     }
 }
