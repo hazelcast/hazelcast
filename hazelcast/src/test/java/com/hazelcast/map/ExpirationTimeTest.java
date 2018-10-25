@@ -319,7 +319,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     public void last_access_time_updated_on_primary_when_read_backup_data_enabled() {
         String mapName = "test";
 
-        Config config = new Config();
+        Config config = getConfig();
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setBackupCount(0);
         mapConfig.setAsyncBackupCount(0);
