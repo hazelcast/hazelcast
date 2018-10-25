@@ -16,10 +16,9 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.config.ConfigCompatibilityChecker.WanReplicationConfigChecker;
-import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanPublisherConfig;
-import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.ConfigCompatibilityChecker.WanSyncConfigChecker;
+import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -32,33 +31,37 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class WanReplicationConfigDTOTest {
+public class WanSyncConfigDTOTest {
 
-    private static final WanReplicationConfigChecker WAN_REPLICATION_CONFIG_CHECKER = new WanReplicationConfigChecker();
+    private static final WanSyncConfigChecker WAN_SYNC_CONFIG_CHECKER = new WanSyncConfigChecker();
 
     @Test
     public void testSerialization() {
-        WanReplicationConfig expected = new WanReplicationConfig()
-                .setName("myName")
-                .setWanConsumerConfig(new WanConsumerConfig())
-                .addWanPublisherConfig(new WanPublisherConfig()
-                        .setGroupName("group1"))
-                .addWanPublisherConfig(new WanPublisherConfig()
-                        .setGroupName("group2"));
+        WanSyncConfig expected = new WanSyncConfig()
+                .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
 
-        WanReplicationConfig actual = cloneThroughJson(expected);
-
+        WanSyncConfig actual = cloneThroughJson(expected);
         assertTrue("Expected: " + expected + ", got:" + actual,
-                WAN_REPLICATION_CONFIG_CHECKER.check(expected, actual));
+                WAN_SYNC_CONFIG_CHECKER.check(expected, actual));
     }
 
-    private WanReplicationConfig cloneThroughJson(WanReplicationConfig expectedConfig) {
-        WanReplicationConfigDTO dto = new WanReplicationConfigDTO(expectedConfig);
+    @Test
+    public void testDefault() {
+        WanSyncConfig expected = new WanSyncConfig();
+
+        WanSyncConfig actual = cloneThroughJson(expected);
+        assertTrue("Expected: " + expected + ", got:" + actual,
+                WAN_SYNC_CONFIG_CHECKER.check(expected, actual));
+    }
+
+    private WanSyncConfig cloneThroughJson(WanSyncConfig expected) {
+        WanSyncConfigDTO dto = new WanSyncConfigDTO(expected);
 
         JsonObject json = dto.toJson();
-        WanReplicationConfigDTO deserialized = new WanReplicationConfigDTO(null);
+        WanSyncConfigDTO deserialized = new WanSyncConfigDTO(null);
         deserialized.fromJson(json);
 
         return deserialized.getConfig();
     }
+
 }
