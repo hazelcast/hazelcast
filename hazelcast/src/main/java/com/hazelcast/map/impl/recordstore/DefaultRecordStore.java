@@ -520,12 +520,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return value;
     }
 
+    /**
+     * This method is called directly by user threads, in other words
+     * it is called outside of the partition threads.
+     */
     @Override
     public Data readBackupData(Data key) {
         Record record = getRecord(key);
 
         if (record == null) {
             return null;
+        } else {
+            if (partitionService.isPartitionOwner(partitionId)) {
+                // set last access time to prevent
+                // premature removal of the entry because
+                // of idleness based expiry
+                record.setLastAccessTime(Clock.currentTimeMillis());
+            }
         }
 
         Object value = record.getValue();
