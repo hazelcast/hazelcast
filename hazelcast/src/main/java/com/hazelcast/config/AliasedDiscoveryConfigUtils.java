@@ -185,17 +185,17 @@ public final class AliasedDiscoveryConfigUtils {
      * Creates new {@link AliasedDiscoveryConfig} by the given {@code tag}.
      */
     @SuppressWarnings("unchecked")
-    public static <C extends AliasedDiscoveryConfig<C>> C newConfigFor(String tag) {
+    public static AliasedDiscoveryConfig newConfigFor(String tag) {
         if ("aws".equals(tag)) {
-            return (C) new AwsConfig();
+            return new AwsConfig();
         } else if ("gcp".equals(tag)) {
-            return (C) new GcpConfig();
+            return new GcpConfig();
         } else if ("azure".equals(tag)) {
-            return (C) new AzureConfig();
+            return new AzureConfig();
         } else if ("kubernetes".equals(tag)) {
-            return (C) new KubernetesConfig();
+            return new KubernetesConfig();
         } else if ("eureka".equals(tag)) {
-            return (C) new EurekaConfig();
+            return new EurekaConfig();
         } else {
             throw new IllegalArgumentException(String.format("Invalid tag: '%s'", tag));
         }
