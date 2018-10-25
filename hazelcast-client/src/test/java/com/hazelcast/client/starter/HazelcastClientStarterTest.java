@@ -22,6 +22,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,9 +35,18 @@ import static org.junit.Assert.assertEquals;
 @Category(SlowTest.class)
 public class HazelcastClientStarterTest {
 
+    private HazelcastInstance memberInstance;
+
+    @After
+    public void tearDown() {
+        if (memberInstance != null) {
+            memberInstance.shutdown();
+        }
+    }
+
     @Test
     public void testClientLifecycle() {
-        HazelcastInstance member = HazelcastStarter.newHazelcastInstance("3.7");
+        memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
 
         for (int i = 1; i < 6; i++) {
             String version = "3.7." + i;
@@ -45,51 +55,55 @@ public class HazelcastClientStarterTest {
             System.out.println("Stopping client " + version);
             instance.shutdown();
         }
-
-        member.shutdown();
     }
 
     @Test
     public void testClientMap() {
-        HazelcastInstance memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
-        HazelcastInstance clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
+        HazelcastInstance clientInstance = null;
+        try {
+            memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
+            clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
 
-        IMap<Integer, Integer> clientMap = clientInstance.getMap("myMap");
-        IMap<Integer, Integer> memberMap = memberInstance.getMap("myMap");
+            IMap<Integer, Integer> clientMap = clientInstance.getMap("myMap");
+            IMap<Integer, Integer> memberMap = memberInstance.getMap("myMap");
 
-        clientMap.put(1, 2);
+            clientMap.put(1, 2);
 
-        assertEquals(2, (int) memberMap.get(1));
-
-        clientInstance.shutdown();
-        memberInstance.shutdown();
+            assertEquals(2, (int) memberMap.get(1));
+        } finally {
+            if (clientInstance != null) {
+                clientInstance.shutdown();
+            }
+        }
     }
 
     @Test
     public void testAdvancedClientMap() {
-        HazelcastInstance memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
+        memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
         HazelcastInstance clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
 
         System.out.println("About to terminate the client");
         clientInstance.getLifecycleService().terminate();
         System.out.println("Client terminated");
-
-        memberInstance.shutdown();
     }
 
     @Test
     public void testClientMap_async() throws InterruptedException, ExecutionException {
-        HazelcastInstance memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
-        HazelcastInstance clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
+        HazelcastInstance clientInstance = null;
+        try {
+            memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
+            clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
 
-        IMap<Integer, Integer> clientMap = clientInstance.getMap("myMap");
-        clientMap.put(0, 1);
-        ICompletableFuture<Integer> async = clientMap.getAsync(0);
-        int value = async.get();
+            IMap<Integer, Integer> clientMap = clientInstance.getMap("myMap");
+            clientMap.put(0, 1);
+            ICompletableFuture<Integer> async = clientMap.getAsync(0);
+            int value = async.get();
 
-        assertEquals(1, value);
-
-        clientInstance.shutdown();
-        memberInstance.shutdown();
+            assertEquals(1, value);
+        } finally {
+            if (clientInstance != null) {
+                clientInstance.shutdown();
+            }
+        }
     }
 }
