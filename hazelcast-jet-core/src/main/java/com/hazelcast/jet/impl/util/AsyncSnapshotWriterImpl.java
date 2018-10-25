@@ -164,7 +164,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         }
 
         // if the buffer will exceed usableChunkSize after adding this entry, flush it first
-        if (buffers[partitionId].size() + length > usableChunkSize && !flush(partitionId)) {
+        if (buffers[partitionId].size() + length > usableChunkSize && !flushPartition(partitionId)) {
             return false;
         }
 
@@ -190,7 +190,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
     }
 
     @CheckReturnValue
-    private boolean flush(int partitionId) {
+    private boolean flushPartition(int partitionId) {
         return containsOnlyHeader(buffers[partitionId])
                 || putAsyncToMap(partitionId, () -> getBufferContentsAndClear(buffers[partitionId]));
     }
@@ -260,13 +260,13 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
      */
     @Override
     @CheckReturnValue
-    public boolean flushAndReset() {
+    public boolean flushAndResetMap() {
         if (!initCurrentMap()) {
             return false;
         }
 
         for (int i = 0; i < buffers.length; i++) {
-            if (!flush(i)) {
+            if (!flushPartition(i)) {
                 return false;
             }
         }
@@ -277,8 +277,12 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
             logger.fine(String.format("Stats for %s: keys=%,d, chunks=%,d, bytes=%,d",
                     vertexName, totalKeys, totalChunks, totalPayloadBytes));
         }
-        totalKeys = totalChunks = totalPayloadBytes = 0;
         return true;
+    }
+
+    @Override
+    public void resetStats() {
+        totalKeys = totalChunks = totalPayloadBytes = 0;
     }
 
     @Override

@@ -43,12 +43,16 @@ public class MockAsyncSnapshotWriter implements AsyncSnapshotWriter {
     }
 
     @Override
-    public boolean flushAndReset() {
+    public boolean flushAndResetMap() {
         if (ableToFlushRemaining) {
             hasPendingFlushes = !isFlushed;
             isFlushed = true;
         }
         return ableToFlushRemaining;
+    }
+
+    @Override
+    public void resetStats() {
     }
 
     @Override

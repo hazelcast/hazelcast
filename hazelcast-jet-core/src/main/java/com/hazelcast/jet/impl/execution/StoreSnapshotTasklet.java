@@ -102,7 +102,7 @@ public class StoreSnapshotTasklet implements Tasklet {
 
             case FLUSH:
                 progTracker.notDone();
-                if (ssWriter.flushAndReset()) {
+                if (ssWriter.flushAndResetMap()) {
                     progTracker.madeProgress();
                     state = REACHED_BARRIER;
                 }
@@ -122,6 +122,7 @@ public class StoreSnapshotTasklet implements Tasklet {
                 progTracker.madeProgress();
                 snapshotContext.snapshotDoneForTasklet(ssWriter.getTotalPayloadBytes(), ssWriter.getTotalKeys(),
                         ssWriter.getTotalChunks());
+                ssWriter.resetStats();
                 pendingSnapshotId++;
                 hasReachedBarrier = false;
                 state = DRAIN;

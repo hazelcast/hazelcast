@@ -26,7 +26,8 @@ public interface AsyncSnapshotWriter {
     boolean offer(Entry<? extends Data, ? extends Data> entry);
 
     @CheckReturnValue
-    boolean flushAndReset();
+    boolean flushAndResetMap();
+    void resetStats();
 
     boolean hasPendingAsyncOps();
 

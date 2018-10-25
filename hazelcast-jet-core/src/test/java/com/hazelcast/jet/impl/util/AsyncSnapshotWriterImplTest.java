@@ -98,7 +98,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
     @After
     public void after() {
-        assertTrue(writer.flushAndReset());
+        assertTrue(writer.flushAndResetMap());
         assertTrueEventually(() -> assertFalse(uncheckCall(() -> writer.hasPendingAsyncOps())));
         assertTrue(writer.isEmpty());
 
@@ -112,7 +112,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         assertTrue(writer.offer(entry));
         assertTrueAllTheTime(() -> assertTrue(map.isEmpty()), 1);
         assertFalse(writer.isEmpty());
-        assertTrue(writer.flushAndReset());
+        assertTrue(writer.flushAndResetMap());
 
         // Then
         assertTargetMapEntry("k", 0, serializedLength(entry));
@@ -161,7 +161,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         Entry<Data, Data> entry2 = entry(serialize("kk"), serialize("vv"));
         assertTrue(writer.offer(entry1));
         assertTrue(writer.offer(entry2));
-        assertTrue(writer.flushAndReset());
+        assertTrue(writer.flushAndResetMap());
 
         // Then
         assertTargetMapEntry("k", 0, serializedLength(entry1));
@@ -211,7 +211,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
         // Then
         assertTrueAllTheTime(() -> {
-            assertFalse(writer.flushAndReset());
+            assertFalse(writer.flushAndResetMap());
             assertTrue(map.isEmpty());
         }, 3);
 
@@ -219,7 +219,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         writer.numConcurrentAsyncOps.decrementAndGet();
 
         // Then
-        assertTrueEventually(() -> assertTrue(writer.flushAndReset()));
+        assertTrueEventually(() -> assertTrue(writer.flushAndResetMap()));
         assertTargetMapEntry("k", 0, serializedLength(entry1));
         assertTargetMapEntry("kk", 1, serializedLength(entry2));
     }
@@ -230,7 +230,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         when(snapshotContext.currentMapName()).thenReturn(ALWAYS_FAILING_MAP);
         Entry<Data, Data> entry = entry(serialize("k"), serialize("v"));
         assertTrue(writer.offer(entry));
-        assertTrue(writer.flushAndReset());
+        assertTrue(writer.flushAndResetMap());
 
         // Then
         assertTrueEventually(() ->
@@ -262,7 +262,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     @Test
     public void when_noItemsAndNoCurrentMap_then_flushAndResetReturnsFalse() {
         when(snapshotContext.currentMapName()).thenReturn(null);
-        assertFalse(writer.flushAndReset());
+        assertFalse(writer.flushAndResetMap());
         when(snapshotContext.currentMapName()).thenReturn("map1");
     }
 

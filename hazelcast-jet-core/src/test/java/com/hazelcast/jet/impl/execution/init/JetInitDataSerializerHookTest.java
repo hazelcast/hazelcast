@@ -70,16 +70,27 @@ public class JetInitDataSerializerHookTest {
                         singleton("config")},
 
                 new Object[]{
-                        "JobExecutionRecord",
-                        sampleJobExecutionRecord(),
+                        "sampleJobExecutionRecord_whenSuccessfulSnapshot",
+                        sampleJobExecutionRecord_whenSuccessfulSnapshot(),
+                        emptyList()},
+                new Object[]{
+                        "sampleJobExecutionRecord_whenFailedSnapshot",
+                        sampleJobExecutionRecord_whenFailedSnapshot(),
                         emptyList()}
         );
     }
 
-    private static JobExecutionRecord sampleJobExecutionRecord() {
+    private static JobExecutionRecord sampleJobExecutionRecord_whenSuccessfulSnapshot() {
         JobExecutionRecord r = new JobExecutionRecord(1, 2, true);
         r.startNewSnapshot();
-        r.ongoingSnapshotDone(10, 11, 12, "failure");
+        r.ongoingSnapshotDone(10, 11, 12, null);
+        return r;
+    }
+
+    private static JobExecutionRecord sampleJobExecutionRecord_whenFailedSnapshot() {
+        JobExecutionRecord r = new JobExecutionRecord(1, 2, true);
+        r.startNewSnapshot();
+        r.ongoingSnapshotDone(10, 11, 12, "Failed");
         return r;
     }
 
@@ -116,9 +127,9 @@ public class JetInitDataSerializerHookTest {
 
     private static void customAssertEquals(String msg, Object expected, Object actual) {
         if (expected instanceof AtomicLong) {
-            assertEquals(((AtomicLong) expected).get(), ((AtomicLong) actual).get());
+            assertEquals(msg, ((AtomicLong) expected).get(), ((AtomicLong) actual).get());
         } else if (expected instanceof AtomicInteger) {
-            assertEquals(((AtomicInteger) expected).get(), ((AtomicInteger) actual).get());
+            assertEquals(msg, ((AtomicInteger) expected).get(), ((AtomicInteger) actual).get());
         } else {
             assertEquals(msg, expected, actual);
         }

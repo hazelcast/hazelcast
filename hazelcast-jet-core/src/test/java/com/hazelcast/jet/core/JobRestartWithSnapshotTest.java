@@ -301,6 +301,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             assertNotNull("null JobExecutionRecord", record);
             assertTrue("No snapshot produced",
                     record.dataMapIndex() >= 0 && record.snapshotId() >= 0);
+            assertTrue("stats are 0", record.snapshotStats().numBytes() > 0);
             snapshotId[0] = record.snapshotId();
         }, timeout);
         logger.info("First snapshot found (id=" + snapshotId[0] + ")");
@@ -317,6 +318,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             snapshotId[0] = record.snapshotId();
             assertTrue("No more snapshots produced after restart in " + timeoutSeconds + " seconds",
                     snapshotId[0] > originalSnapshotId);
+            assertTrue("stats are 0", record.snapshotStats().numBytes() > 0);
         }, timeoutSeconds);
         logger.info("Next snapshot found (id=" + snapshotId[0] + ", previous id=" + originalSnapshotId + ")");
     }

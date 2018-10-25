@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
@@ -585,11 +586,12 @@ public class MasterContext {
                 mergedResult.getNumBytes(), mergedResult.getNumKeys(), mergedResult.getNumChunks(),
                 mergedResult.getError());
         writeJobExecutionRecord(false);
+        SnapshotStats stats = jobExecutionRecord.snapshotStats();
         logger.info(String.format("Snapshot %d for %s completed with status %s in %dms, " +
                         "%,d bytes, %,d keys in %,d chunks, stored in data map %d",
                 snapshotId, jobIdString(), isSuccess ? "SUCCESS" : "FAILURE",
-                jobExecutionRecord.duration(), jobExecutionRecord.numBytes(),
-                jobExecutionRecord.numKeys(), jobExecutionRecord.numChunks(),
+                stats.duration(), stats.numBytes(),
+                stats.numKeys(), stats.numChunks(),
                 jobExecutionRecord.dataMapIndex()));
         jobRepository.clearSnapshotData(jobId, jobExecutionRecord.ongoingDataMapIndex());
 

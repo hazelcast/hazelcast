@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.jet.impl.JobExecutionRecord;
+import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository.FilterExecutionIdByJobIdPredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobIdPredicate;
@@ -88,6 +89,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int NOTIFY_MEMBER_SHUTDOWN_OP = 31;
     public static final int GET_JOB_SUMMARY_LIST_OP = 32;
     public static final int JOB_SUMMARY = 33;
+    public static final int SNAPSHOT_STATS = 34;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -173,6 +175,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new JobSummary();
                 case GET_JOB_SUMMARY_LIST_OP:
                     return new GetJobSummaryListOperation();
+                case SNAPSHOT_STATS:
+                    return new SnapshotStats();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
