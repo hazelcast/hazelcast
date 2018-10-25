@@ -128,12 +128,12 @@ public class StringUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testArraySubraction() throws Exception {
-        assertNull(StringUtil.subraction(null, arr("a", "test", "b", "a")));
-        assertArrayEquals(arr("a", "test", "b", "a"), StringUtil.subraction(arr("a", "test", "b", "a"), null));
-        assertArrayEquals(arr("test"), StringUtil.subraction(arr("a", "test", "b", "a"), arr("a", "b")));
-        assertArrayEquals(arr(), StringUtil.subraction(arr(), arr("a", "b")));
-        assertArrayEquals(arr("a", "b"), StringUtil.subraction(arr("a", "b"), arr()));
-        assertArrayEquals(arr(), StringUtil.subraction(arr("a", "test", "b", "a"), arr("a", "b", "test")));
+        assertNull(StringUtil.subtraction(null, arr("a", "test", "b", "a")));
+        assertArrayEquals(arr("a", "test", "b", "a"), StringUtil.subtraction(arr("a", "test", "b", "a"), null));
+        assertArrayEquals(arr("test"), StringUtil.subtraction(arr("a", "test", "b", "a"), arr("a", "b")));
+        assertArrayEquals(arr(), StringUtil.subtraction(arr(), arr("a", "b")));
+        assertArrayEquals(arr("a", "b"), StringUtil.subtraction(arr("a", "b"), arr()));
+        assertArrayEquals(arr(), StringUtil.subtraction(arr("a", "test", "b", "a"), arr("a", "b", "test")));
     }
 
     @Test
