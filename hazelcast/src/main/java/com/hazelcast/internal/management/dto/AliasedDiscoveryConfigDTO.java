@@ -33,18 +33,17 @@ import static com.hazelcast.util.MapUtil.isNullOrEmpty;
  * A JSON representation of a
  * {@link com.hazelcast.config.AliasedDiscoveryConfig} implementation.
  *
- * @param <C> configuration implementation type
  */
-public class AliasedDiscoveryConfigDTO<C extends AliasedDiscoveryConfig<C>> implements JsonSerializable {
+public class AliasedDiscoveryConfigDTO implements JsonSerializable {
 
     private String tag;
-    private C config;
+    private AliasedDiscoveryConfig config;
 
     public AliasedDiscoveryConfigDTO(String tag) {
         this.tag = tag;
     }
 
-    public AliasedDiscoveryConfigDTO(C config) {
+    public AliasedDiscoveryConfigDTO(AliasedDiscoveryConfig config) {
         this.config = config;
     }
 
@@ -63,7 +62,7 @@ public class AliasedDiscoveryConfigDTO<C extends AliasedDiscoveryConfig<C>> impl
 
     @Override
     public void fromJson(JsonObject json) {
-        config = AliasedDiscoveryConfigUtils.<C>newConfigFor(tag);
+        config = AliasedDiscoveryConfigUtils.newConfigFor(tag);
 
         JsonValue enabled = json.get("enabled");
         if (enabled != null && !enabled.isNull()) {
@@ -81,7 +80,7 @@ public class AliasedDiscoveryConfigDTO<C extends AliasedDiscoveryConfig<C>> impl
         }
     }
 
-    public C getConfig() {
+    public AliasedDiscoveryConfig getConfig() {
         return config;
     }
 }

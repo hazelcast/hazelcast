@@ -58,17 +58,17 @@ public class AliasedDiscoveryConfigDTOTest {
         testDefault(new KubernetesConfig());
     }
 
-    private static <C extends AliasedDiscoveryConfig<C>> void testDefault(C expected) {
-        C actual = cloneThroughJson(expected);
+    private static void testDefault(AliasedDiscoveryConfig expected) {
+        AliasedDiscoveryConfig actual = cloneThroughJson(expected);
         assertTrue("Expected: " + expected + ", got:" + actual,
                 AliasedDiscoveryConfigsChecker.check(expected, actual));
     }
 
-    private static <C extends AliasedDiscoveryConfig<C>> C cloneThroughJson(C expected) {
-        AliasedDiscoveryConfigDTO<C> dto = new AliasedDiscoveryConfigDTO<C>(expected);
+    private static AliasedDiscoveryConfig cloneThroughJson(AliasedDiscoveryConfig expected) {
+        AliasedDiscoveryConfigDTO dto = new AliasedDiscoveryConfigDTO(expected);
 
         JsonObject json = dto.toJson();
-        AliasedDiscoveryConfigDTO<C> deserialized = new AliasedDiscoveryConfigDTO<C>(expected.getTag());
+        AliasedDiscoveryConfigDTO deserialized = new AliasedDiscoveryConfigDTO(expected.getTag());
         deserialized.fromJson(json);
 
         return deserialized.getConfig();

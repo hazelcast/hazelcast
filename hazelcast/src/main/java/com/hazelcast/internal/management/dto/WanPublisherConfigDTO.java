@@ -135,24 +135,24 @@ public class WanPublisherConfigDTO implements JsonSerializable {
             config.setClassName(className.asString());
         }
 
-        AwsConfig awsConfig = this.<AwsConfig>deserializeAliasedDiscoveryConfig(json, "aws");
+        AwsConfig awsConfig = (AwsConfig) this.deserializeAliasedDiscoveryConfig(json, "aws");
         if (awsConfig != null) {
             config.setAwsConfig(awsConfig);
         }
 
-        GcpConfig gcpConfig = this.<GcpConfig>deserializeAliasedDiscoveryConfig(json, "gcp");
+        GcpConfig gcpConfig = (GcpConfig) this.deserializeAliasedDiscoveryConfig(json, "gcp");
         if (gcpConfig != null) {
             config.setGcpConfig(gcpConfig);
         }
-        AzureConfig azureConfig = this.<AzureConfig>deserializeAliasedDiscoveryConfig(json, "azure");
+        AzureConfig azureConfig = (AzureConfig) this.deserializeAliasedDiscoveryConfig(json, "azure");
         if (azureConfig != null) {
             config.setAzureConfig(azureConfig);
         }
-        KubernetesConfig kubernetesConfig = this.<KubernetesConfig>deserializeAliasedDiscoveryConfig(json, "kubernetes");
+        KubernetesConfig kubernetesConfig = (KubernetesConfig) this.deserializeAliasedDiscoveryConfig(json, "kubernetes");
         if (kubernetesConfig != null) {
             config.setKubernetesConfig(kubernetesConfig);
         }
-        EurekaConfig eurekaConfig = this.<EurekaConfig>deserializeAliasedDiscoveryConfig(json, "eureka");
+        EurekaConfig eurekaConfig = (EurekaConfig) this.deserializeAliasedDiscoveryConfig(json, "eureka");
         if (eurekaConfig != null) {
             config.setEurekaConfig(eurekaConfig);
         }
@@ -177,15 +177,14 @@ public class WanPublisherConfigDTO implements JsonSerializable {
      *
      * @param json the JSON object containing the serialized config
      * @param tag  the tag under which the config is nested
-     * @param <C>  the configuration type
      * @return the deserialized config or {@code null} if the serialized config
      * was missing in the JSON object
      */
-    private <C extends AliasedDiscoveryConfig<C>> C deserializeAliasedDiscoveryConfig(
+    private AliasedDiscoveryConfig deserializeAliasedDiscoveryConfig(
             JsonObject json, String tag) {
         JsonValue configJson = json.get(tag);
         if (configJson != null && !configJson.isNull()) {
-            AliasedDiscoveryConfigDTO<C> dto = new AliasedDiscoveryConfigDTO<C>(tag);
+            AliasedDiscoveryConfigDTO dto = new AliasedDiscoveryConfigDTO(tag);
             dto.fromJson(configJson.asObject());
             return dto.getConfig();
         }
@@ -200,12 +199,11 @@ public class WanPublisherConfigDTO implements JsonSerializable {
      * @param object the JSON object to which the config is added
      * @param tag    the tag under which the config is added
      * @param config the configuration
-     * @param <C>    the configuration type
      */
-    private <C extends AliasedDiscoveryConfig<C>> void serializeAliasedDiscoveryConfig(
-            JsonObject object, String tag, C config) {
+    private void serializeAliasedDiscoveryConfig(
+            JsonObject object, String tag, AliasedDiscoveryConfig config) {
         if (config != null) {
-            object.add(tag, new AliasedDiscoveryConfigDTO<C>(config).toJson());
+            object.add(tag, new AliasedDiscoveryConfigDTO(config).toJson());
         }
     }
 
