@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.map.impl.query.Target.ALL_NODES;
+import static com.hazelcast.map.impl.query.Target.LOCAL_NODE;
 import static com.hazelcast.util.BitSetUtils.hasAllBitsSet;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singletonList;
@@ -112,7 +114,7 @@ public class QueryEngineImpl implements QueryEngine {
     private Result runOnLocalPartitions(Query query) {
         BitSet mutablePartitionIds = getLocalPartitionIds();
 
-        Result result = doRunOnQueryThreads(query, mutablePartitionIds, Target.LOCAL_NODE);
+        Result result = doRunOnQueryThreads(query, mutablePartitionIds, LOCAL_NODE);
         if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
             doRunOnPartitionThreads(query, mutablePartitionIds, result);
         }
@@ -125,7 +127,7 @@ public class QueryEngineImpl implements QueryEngine {
     private Result runOnAllPartitions(Query query) {
         BitSet mutablePartitionIds = getAllPartitionIds();
 
-        Result result = doRunOnQueryThreads(query, mutablePartitionIds, Target.ALL_NODES);
+        Result result = doRunOnQueryThreads(query, mutablePartitionIds, ALL_NODES);
         if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
             doRunOnPartitionThreads(query, mutablePartitionIds, result);
         }
