@@ -63,8 +63,8 @@ import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.Math.min;
 import static java.lang.System.arraycopy;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Session window processor. See {@link
@@ -170,20 +170,17 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     private Traverser<OUT> traverseClosedWindows(Watermark wm) {
         SortedMap<Long, Set<K>> windowsToClose = deadlineToKeys.headMap(wm.timestamp());
-        lazyAdd(totalWindows, -windowsToClose.values().stream().mapToInt(Set::size).sum());
 
-        List<K> distinctKeys = windowsToClose
+        Stream<OUT> closedWindows = windowsToClose
                 .values().stream()
                 .flatMap(Set::stream)
-                .distinct()
-                .collect(toList());
-        windowsToClose.clear();
-
-        Stream<OUT> closedWindows = distinctKeys
-                .stream()
                 .map(key -> closeWindows(keyToWindows.get(key), key, wm.timestamp()))
                 .flatMap(List::stream);
-        return traverseStream(closedWindows);
+        return traverseStream(closedWindows)
+                .onFirstNull(() -> {
+                    lazyAdd(totalWindows, -windowsToClose.values().stream().mapToInt(Set::size).sum());
+                    windowsToClose.clear();
+                });
     }
 
     private void addToDeadlines(K key, long deadline) {
@@ -254,6 +251,9 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     }
 
     private List<OUT> closeWindows(Windows<A> w, K key, long wm) {
+        if (w == null) {
+            return emptyList();
+        }
         List<OUT> results = new ArrayList<>();
         int i = 0;
         for (; i < w.size && w.ends[i] < wm; i++) {
