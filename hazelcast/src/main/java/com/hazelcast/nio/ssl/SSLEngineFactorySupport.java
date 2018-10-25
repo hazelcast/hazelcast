@@ -19,6 +19,8 @@ package com.hazelcast.nio.ssl;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,15 +32,21 @@ import java.util.Properties;
 import static com.hazelcast.nio.IOUtil.closeResource;
 
 /**
- * A support class for {@link SSLEngineFactory} and {@link SSLContextFactory} implementation that takes care of
- * the logic for KeyManager and TrustManager.
+ * A support class for {@link SSLEngineFactory} and {@link SSLContextFactory} implementation that takes care of the logic for
+ * KeyManager and TrustManager.
+ *
+ * @deprecated Use {@link com.hazelcast.nio.ssl.AbstractSSLFactory} instead.
  */
+@Deprecated
 public abstract class SSLEngineFactorySupport {
 
     public static final String JAVA_NET_SSL_PREFIX = "javax.net.ssl.";
 
+    @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     protected KeyManagerFactory kmf;
+    @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     protected TrustManagerFactory tmf;
+    @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     protected String protocol;
 
     protected void load(Properties properties) throws Exception {
