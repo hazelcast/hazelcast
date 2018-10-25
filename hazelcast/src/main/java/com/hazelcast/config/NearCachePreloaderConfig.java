@@ -28,8 +28,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
- * Configuration for eviction.
- * You can set a limit for number of entries or total memory cost of entries.
+ * Configuration for storing and pre-loading Near Cache keys.
+ *
+ * Preloader re-populates Near Cache after client/server restart to provide
+ * fast access.
  *
  * @since 3.8
  */
