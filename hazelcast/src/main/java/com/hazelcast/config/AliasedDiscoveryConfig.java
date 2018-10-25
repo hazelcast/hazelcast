@@ -116,7 +116,7 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
         return usePublicIp;
     }
 
-    String getTag() {
+    public String getTag() {
         return tag;
     }
 
