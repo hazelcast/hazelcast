@@ -26,7 +26,6 @@ import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.nio.ssl.TestKeyStoreUtil;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -53,11 +52,8 @@ public class TestClientNetworkConfig {
     @BeforeClass
     @AfterClass
     public static void start() {
-        String keyStoreFilePath = TestKeyStoreUtil.getOrCreateTempFile(TestKeyStoreUtil.keyStore);
-        String trustStoreFilePath = TestKeyStoreUtil.getOrCreateTempFile(TestKeyStoreUtil.trustStore);
-
-        System.setProperty("test.keyStore", keyStoreFilePath);
-        System.setProperty("test.trustStore", trustStoreFilePath);
+        System.setProperty("test.keyStore", "private.jks");
+        System.setProperty("test.trustStore", "trust.jks");
 
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
