@@ -54,7 +54,7 @@ public class SlidingWindowP_failoverTest {
 
     private SlidingWindowP<Entry<String, Long>, ?, Long, ?> p;
 
-    private void init(ProcessingGuarantee guarantee) {
+    private void init(ProcessingGuarantee guarantee) throws Exception {
         SlidingWindowPolicy wDef = SlidingWindowPolicy.tumblingWinPolicy(1);
         AggregateOperation1<Object, LongAccumulator, Long> aggrOp = counting();
         p = new SlidingWindowP<>(
@@ -72,7 +72,7 @@ public class SlidingWindowP_failoverTest {
     }
 
     @Test
-    public void when_differentWmExactlyOnce_then_fail() {
+    public void when_differentWmExactlyOnce_then_fail() throws Exception {
         init(EXACTLY_ONCE);
 
         p.restoreFromSnapshot(BroadcastKey.broadcastKey(Keys.NEXT_WIN_TO_EMIT), 1L);
@@ -81,7 +81,7 @@ public class SlidingWindowP_failoverTest {
     }
 
     @Test
-    public void when_differentWmAtLeastOnce_then_useMin() {
+    public void when_differentWmAtLeastOnce_then_useMin() throws Exception {
         init(AT_LEAST_ONCE);
 
         p.restoreFromSnapshot(BroadcastKey.broadcastKey(Keys.NEXT_WIN_TO_EMIT), 2L);
@@ -92,7 +92,7 @@ public class SlidingWindowP_failoverTest {
     }
 
     @Test
-    public void when_noSnapshotRestored_then_wmIsMin() {
+    public void when_noSnapshotRestored_then_wmIsMin() throws Exception {
         init(AT_LEAST_ONCE);
 
         assertEquals(Long.MIN_VALUE, p.nextWinToEmit);

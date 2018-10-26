@@ -79,16 +79,16 @@ public class TransformUsingContextPTest {
     }
 
     @Test
-    public void when_nonCooperativeContextFactory_then_nonCooperativeProcessor() {
+    public void when_nonCooperativeContextFactory_then_nonCooperativeProcessor() throws Exception {
         testEqualCooperativity(false);
     }
 
     @Test
-    public void when_cooperativeContextFactory_then_cooperativeProcessor() {
+    public void when_cooperativeContextFactory_then_cooperativeProcessor() throws Exception {
         testEqualCooperativity(true);
     }
 
-    private void testEqualCooperativity(boolean cooperative) {
+    private void testEqualCooperativity(boolean cooperative) throws Exception {
         ContextFactory<String> contextFactory = ContextFactory.withCreateFn(jet -> "foo");
         if (!cooperative) {
             contextFactory = contextFactory.nonCooperative();

@@ -75,6 +75,7 @@ import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurre
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.jet.impl.util.Util.readList;
@@ -310,18 +311,22 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             ProcessorSupplier supplier = vertex.processorSupplier();
             ILogger logger = nodeEngine.getLogger(supplier.getClass().getName() + '.'
                     + vertex.name() + "#ProcessorSupplier");
-            supplier.init(new ProcSupplierCtx(
-                    service.getJetInstance(),
-                    jobId,
-                    executionId,
-                    jobConfig,
-                    logger,
-                    vertex.name(),
-                    vertex.localParallelism(),
-                    vertex.localParallelism() * memberCount,
-                    memberIndex,
-                    memberCount
-            ));
+            try {
+                supplier.init(new ProcSupplierCtx(
+                        service.getJetInstance(),
+                        jobId,
+                        executionId,
+                        jobConfig,
+                        logger,
+                        vertex.name(),
+                        vertex.localParallelism(),
+                        vertex.localParallelism() * memberCount,
+                        memberIndex,
+                        memberCount
+                ));
+            } catch (Exception e) {
+                throw sneakyThrow(e);
+            }
         }
     }
 

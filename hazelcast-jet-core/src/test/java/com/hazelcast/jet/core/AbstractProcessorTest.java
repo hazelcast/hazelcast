@@ -66,7 +66,7 @@ public class AbstractProcessorTest {
     private NothingOverriddenP nothingOverriddenP;
 
     @Before
-    public void before() {
+    public void before() throws Exception {
         inbox = new TestInbox();
         inbox.add(MOCK_ITEM);
         int[] capacities = new int[OUTBOX_BUCKET_COUNT];
@@ -98,7 +98,7 @@ public class AbstractProcessorTest {
     }
 
     @Test(expected = UnknownHostException.class)
-    public void when_customInitThrows_then_initRethrows() {
+    public void when_customInitThrows_then_initRethrows() throws Exception {
         new MockP().setInitError(new UnknownHostException())
                 .init(mock(Outbox.class), mock(Processor.Context.class));
     }
@@ -158,7 +158,7 @@ public class AbstractProcessorTest {
     }
 
     @Test(expected = UnknownHostException.class)
-    public void when_processNThrows_then_processRethrows() {
+    public void when_processNThrows_then_processRethrows() throws Exception {
         // Given
         AbstractProcessor p = new AbstractProcessor() {
             @Override

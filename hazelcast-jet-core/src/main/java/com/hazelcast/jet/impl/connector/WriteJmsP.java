@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -100,9 +99,9 @@ public final class WriteJmsP {
         }
 
         @Override
-        public void init(@Nonnull Context ignored) {
+        public void init(@Nonnull Context ignored) throws Exception {
             connection = connectionSupplier.get();
-            uncheckRun(() -> connection.start());
+            connection.start();
         }
 
         @Nonnull

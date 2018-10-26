@@ -157,7 +157,7 @@ public class SessionWindowPTest {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         for (int i = 0; i < 10; i++) {
             SessionWindowPTest test = new SessionWindowPTest();
             test.before();
@@ -166,7 +166,7 @@ public class SessionWindowPTest {
     }
 
     @SuppressWarnings("checkstyle:emptystatement")
-    private void runBench() {
+    private void runBench() throws Exception {
         Random rnd = ThreadLocalRandom.current();
         long start = System.nanoTime();
         long eventCount = 40_000_000;

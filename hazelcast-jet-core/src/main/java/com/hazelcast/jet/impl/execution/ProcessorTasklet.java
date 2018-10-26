@@ -61,6 +61,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_WATERMARK;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SAVE_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.lazyAdd;
@@ -204,7 +205,11 @@ public class ProcessorTasklet implements Tasklet {
             Object initialized = serializationService.getManagedContext().initialize(toInit);
             assert initialized == toInit : "different object returned";
         }
-        processor.init(outbox, context);
+        try {
+            processor.init(outbox, context);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
     }
 
     @Override @Nonnull

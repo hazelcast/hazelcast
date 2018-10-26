@@ -85,7 +85,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void when_firstEventLate_then_notDropped() {
+    public void when_firstEventLate_then_notDropped() throws Exception {
         wmPolicy = () -> limitingTimestampAndWallClockLag(0, 0, clock::now);
         doTest(
                 singletonList(item(clock.now - 1)),
@@ -93,7 +93,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void when_manyEvents_then_oneWm() {
+    public void when_manyEvents_then_oneWm() throws Exception {
         doTest(
                 asList(
                         item(10),
@@ -106,7 +106,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void when_eventsIncrease_then_wmIncreases() {
+    public void when_eventsIncrease_then_wmIncreases() throws Exception {
         doTest(
                 asList(
                         item(10),
@@ -120,7 +120,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void when_eventsDecrease_then_oneWm() {
+    public void when_eventsDecrease_then_oneWm() throws Exception {
         doTest(
                 asList(
                         item(11),
@@ -133,7 +133,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void when_lateEvent_then_notDropped() {
+    public void when_lateEvent_then_notDropped() throws Exception {
         doTest(
                 asList(
                         item(11),
@@ -146,7 +146,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void when_gapBetweenEvents_then_oneWm() {
+    public void when_gapBetweenEvents_then_oneWm() throws Exception {
         doTest(
                 asList(
                         item(10),
@@ -160,7 +160,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void when_zeroLag() {
+    public void when_zeroLag() throws Exception {
         wmPolicy = limitingLag(0);
         doTest(
                 asList(
@@ -175,7 +175,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void emitByFrame_when_eventsIncrease_then_wmIncreases() {
+    public void emitByFrame_when_eventsIncrease_then_wmIncreases() throws Exception {
         wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2));
         doTest(
                 asList(
@@ -197,7 +197,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void emitByFrame_when_eventsIncreaseAndStartAtVergeOfFrame_then_wmIncreases() {
+    public void emitByFrame_when_eventsIncreaseAndStartAtVergeOfFrame_then_wmIncreases() throws Exception {
         wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2));
         doTest(
                 asList(
@@ -218,7 +218,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void emitByFrame_when_eventsNotAtTheVergeOfFrame_then_wmEmittedCorrectly() {
+    public void emitByFrame_when_eventsNotAtTheVergeOfFrame_then_wmEmittedCorrectly() throws Exception {
         wmEmissionPolicy = emitByFrame(tumblingWinPolicy(10));
         doTest(
                 asList(
@@ -237,7 +237,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void emitByFrame_when_gapBetweenEvents_then_gapInWms() {
+    public void emitByFrame_when_gapBetweenEvents_then_gapInWms() throws Exception {
         wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2));
         doTest(
                 asList(
@@ -252,7 +252,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void emitByMinStep_when_eventsIncrease_then_wmIncreases() {
+    public void emitByMinStep_when_eventsIncrease_then_wmIncreases() throws Exception {
         wmEmissionPolicy = emitByMinStep(2);
         doTest(
                 asList(
@@ -273,7 +273,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void emitByMinStep_when_gapBetweenEvents_then_oneWm() {
+    public void emitByMinStep_when_gapBetweenEvents_then_oneWm() throws Exception {
         wmEmissionPolicy = emitByMinStep(2);
         doTest(
                 asList(
@@ -291,7 +291,7 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void when_idleTimeout_then_idleMessageAfterTimeout() {
+    public void when_idleTimeout_then_idleMessageAfterTimeout() throws Exception {
         // We can't inject MockClock to WatermarkSourceUtil inside the InsertWatermarkP, so we use real time.
         // We send no events and expect, that after 100 ms WM will be emitted.
         createProcessor(100);
@@ -321,12 +321,12 @@ public class InsertWatermarksPTest {
         } while (elapsedMs < 1000);
     }
 
-    private void createProcessor(long idleTimeoutMillis) {
+    private void createProcessor(long idleTimeoutMillis) throws Exception {
         p = new InsertWatermarksP<>(eventTimePolicy(Item::getTimestamp, wmPolicy, wmEmissionPolicy, idleTimeoutMillis));
         p.init(outbox, context);
     }
 
-    private void doTest(List<Object> input, List<Object> expectedOutput) {
+    private void doTest(List<Object> input, List<Object> expectedOutput) throws Exception {
         if (p == null) {
             createProcessor(-1);
         }

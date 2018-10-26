@@ -43,6 +43,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static java.lang.Integer.min;
@@ -86,8 +87,12 @@ public final class ExecutionPlanBuilder {
                     e -> vertexIdMap.get(e.getDestName()), isJobDistributed);
             final ILogger logger = nodeEngine.getLogger(String.format("%s.%s#ProcessorMetaSupplier",
                     metaSupplier.getClass().getName(), vertex.getName()));
-            metaSupplier.init(new MetaSupplierCtx(instance, jobId, executionId, jobConfig, logger,
-                    vertex.getName(), localParallelism, totalParallelism, clusterSize));
+            try {
+                metaSupplier.init(new MetaSupplierCtx(instance, jobId, executionId, jobConfig, logger,
+                        vertex.getName(), localParallelism, totalParallelism, clusterSize));
+            } catch (Exception e) {
+                throw sneakyThrow(e);
+            }
 
             Function<? super Address, ? extends ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
             for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {

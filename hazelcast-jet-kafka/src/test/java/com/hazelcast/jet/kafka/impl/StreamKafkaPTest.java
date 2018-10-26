@@ -206,7 +206,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     }
 
     @Test
-    public void when_eventsInAllPartitions_then_watermarkOutputImmediately() {
+    public void when_eventsInAllPartitions_then_watermarkOutputImmediately() throws Exception {
         StreamKafkaP processor = createProcessor(1, r -> entry(r.key(), r.value()), 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
@@ -255,7 +255,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     }
 
     @Test
-    public void when_eventsInSinglePartition_then_watermarkAfterIdleTime() {
+    public void when_eventsInSinglePartition_then_watermarkAfterIdleTime() throws Exception {
         // When
         StreamKafkaP processor = createProcessor(2, r -> entry(r.key(), r.value()), 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
@@ -360,7 +360,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     }
 
     @Test
-    public void when_noAssignedPartitions_thenEmitIdleMsgImmediately() {
+    public void when_noAssignedPartitions_thenEmitIdleMsgImmediately() throws Exception {
         StreamKafkaP processor = createProcessor(2, r -> entry(r.key(), r.value()), 100_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         TestProcessorContext context = new TestProcessorContext()
@@ -375,7 +375,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     }
 
     @Test
-    public void when_customProjection_then_used() {
+    public void when_customProjection_then_used() throws Exception {
         // When
         StreamKafkaP processor = createProcessor(2, r -> r.key() + "=" + r.value(), 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
@@ -387,7 +387,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     }
 
     @Test
-    public void when_customProjectionToNull_then_filteredOut() {
+    public void when_customProjectionToNull_then_filteredOut() throws Exception {
         // When
         EventTimePolicy<String> eventTimePolicy = eventTimePolicy(
                 Long::parseLong,

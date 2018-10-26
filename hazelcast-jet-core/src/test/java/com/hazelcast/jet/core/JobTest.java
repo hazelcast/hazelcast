@@ -46,7 +46,6 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -648,8 +647,8 @@ public class JobTest extends JetTestSupport {
         }
 
         @Override
-        public void init(@Nonnull Context context) {
-            uncheckRun(() -> initLatch.await());
+        public void init(@Nonnull Context context) throws Exception {
+            initLatch.await();
         }
 
         @Nonnull @Override

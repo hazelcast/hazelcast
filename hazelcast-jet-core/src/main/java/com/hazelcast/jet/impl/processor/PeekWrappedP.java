@@ -69,7 +69,7 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
         logger = context.logger();
         outbox = new LoggingOutbox(outbox, peekOutput, peekSnapshot);
 

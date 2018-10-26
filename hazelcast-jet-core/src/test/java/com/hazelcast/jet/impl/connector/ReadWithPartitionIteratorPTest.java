@@ -42,7 +42,7 @@ public class ReadWithPartitionIteratorPTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void when_readFromTwoPartitions_then_emitRoundRobin() {
+    public void when_readFromTwoPartitions_then_emitRoundRobin() throws Exception {
         // Given
         final List<Integer> partitions = asList(0, 1);
         final Iterator<Entry<Integer, Integer>>[] content = new Iterator[]{

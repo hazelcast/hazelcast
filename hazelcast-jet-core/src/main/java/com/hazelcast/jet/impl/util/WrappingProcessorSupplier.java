@@ -50,7 +50,7 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier {
     }
 
     @Override
-    public void init(@Nonnull Context context) {
+    public void init(@Nonnull Context context) throws Exception {
         wrapped.init(context);
     }
 

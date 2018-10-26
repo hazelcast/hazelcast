@@ -87,7 +87,7 @@ public interface Processor {
      * <p>
      * The default implementation does nothing.
      */
-    default void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    default void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
     }
 
     /**

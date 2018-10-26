@@ -43,7 +43,7 @@ public final class ThrottleWrappedP implements Processor {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
         wrappedProcessor.init(new ThrottlingOutbox(outbox), context);
     }
 

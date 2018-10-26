@@ -99,7 +99,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekInputWithPeekingProcessor_distributedSupplier() {
+    public void when_peekInputWithPeekingProcessor_distributedSupplier() throws Exception {
         // Given
         DistributedSupplier<Processor> wrappedSupplier = procSupplier(TestPeekRemoveProcessor.class);
         peekP = (toStringFn == null
@@ -112,7 +112,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekInputWithPollingProcessor_distributedSupplier() {
+    public void when_peekInputWithPollingProcessor_distributedSupplier() throws Exception {
         // Given
         DistributedSupplier<Processor> passThroughPSupplier = procSupplier(TestPollProcessor.class);
         peekP = (toStringFn == null
@@ -125,7 +125,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekInput_processorSupplier() {
+    public void when_peekInput_processorSupplier() throws Exception {
         // Given
         ProcessorSupplier wrappedProcSupplier = ProcessorSupplier.of(procSupplier(TestPeekRemoveProcessor.class));
         ProcessorSupplier peekingProcSupplier = toStringFn == null
@@ -138,7 +138,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekInput_metaSupplier() {
+    public void when_peekInput_metaSupplier() throws Exception {
         // Given
         ProcessorMetaSupplier wrappedMetaSupplier =
                 ProcessorMetaSupplier.of(procSupplier(TestPeekRemoveProcessor.class));
@@ -156,7 +156,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekOutput_distributedSupplier() {
+    public void when_peekOutput_distributedSupplier() throws Exception {
         // Given
         DistributedSupplier<Processor> passThroughPSupplier = peekOutputProcessorSupplier();
         peekP = (toStringFn == null
@@ -169,7 +169,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekOutput_processorSupplier() {
+    public void when_peekOutput_processorSupplier() throws Exception {
         // Given
         ProcessorSupplier wrappedProcSupplier = ProcessorSupplier.of(peekOutputProcessorSupplier());
         ProcessorSupplier peekingProcSupplier = toStringFn == null
@@ -182,7 +182,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekOutput_metaSupplier() {
+    public void when_peekOutput_metaSupplier() throws Exception {
         // Given
         ProcessorMetaSupplier passThroughPSupplier = ProcessorMetaSupplier.of(peekOutputProcessorSupplier());
         ProcessorMetaSupplier peekingMetaSupplier = toStringFn == null
@@ -195,7 +195,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekSnapshot_distributedSupplier() {
+    public void when_peekSnapshot_distributedSupplier() throws Exception {
         // Given
         DistributedSupplier<Processor> wrappedSupplier = procSupplier(TestSourceProcessor.class);
         peekP = (toStringFn == null
@@ -208,7 +208,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekSnapshot_procSupplier() {
+    public void when_peekSnapshot_procSupplier() throws Exception {
         // Given
         ProcessorSupplier wrappedProcSupplier = ProcessorSupplier.of(procSupplier(TestSourceProcessor.class));
         ProcessorSupplier peekingProcSupplier = toStringFn == null
@@ -221,7 +221,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekSnapshot_metaSupplier() {
+    public void when_peekSnapshot_metaSupplier() throws Exception {
         // Given
         ProcessorMetaSupplier wrappedMetaSupplier = ProcessorMetaSupplier.of(procSupplier(TestSourceProcessor.class));
         ProcessorMetaSupplier peekingMetaSupplier = toStringFn == null
@@ -237,7 +237,7 @@ public class PeekingWrapperTest {
         return () -> uncheckCall(processor::newInstance);
     }
 
-    private void assertPeekInput() {
+    private void assertPeekInput() throws Exception {
         peekP.init(mock(Outbox.class), context);
 
         TestInbox inbox = new TestInbox();
@@ -266,7 +266,7 @@ public class PeekingWrapperTest {
         verify(logger).info("Input from ordinal 0: " + testJetEventString);
     }
 
-    private void assertPeekOutput() {
+    private void assertPeekOutput() throws Exception {
         TestOutbox outbox = new TestOutbox(1, 1);
         peekP.init(outbox, context);
 
@@ -309,7 +309,7 @@ public class PeekingWrapperTest {
         verifyZeroInteractions(logger);
     }
 
-    private void assertPeekSnapshot() {
+    private void assertPeekSnapshot() throws Exception {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
         peekP.init(outbox, context);
 

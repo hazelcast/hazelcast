@@ -110,7 +110,7 @@ public class SlidingWindowP_twoStageSnapshotTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         SlidingWindowP stage1p1 = stage1Supplier.get();
         SlidingWindowP stage1p2 = stage1Supplier.get();
         SlidingWindowP stage2p = stage2Supplier.get();

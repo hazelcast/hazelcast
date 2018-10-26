@@ -133,22 +133,18 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
         }
 
         @Override
-        public void init(@Nonnull Context context) {
+        public void init(@Nonnull Context context) throws Exception {
             logger = context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(ReadHdfsP.class);
-            try {
-                int totalParallelism = context.totalParallelism();
-                InputFormat inputFormat = jobConf.getInputFormat();
-                InputSplit[] splits = inputFormat.getSplits(jobConf, totalParallelism);
-                IndexedInputSplit[] indexedInputSplits = new IndexedInputSplit[splits.length];
-                Arrays.setAll(indexedInputSplits, i -> new IndexedInputSplit(i, splits[i]));
+            int totalParallelism = context.totalParallelism();
+            InputFormat inputFormat = jobConf.getInputFormat();
+            InputSplit[] splits = inputFormat.getSplits(jobConf, totalParallelism);
+            IndexedInputSplit[] indexedInputSplits = new IndexedInputSplit[splits.length];
+            Arrays.setAll(indexedInputSplits, i -> new IndexedInputSplit(i, splits[i]));
 
-                Address[] addrs = context.jetInstance().getCluster().getMembers()
-                        .stream().map(Member::getAddress).toArray(Address[]::new);
-                assigned = assignSplitsToMembers(indexedInputSplits, addrs);
-                printAssignments(assigned);
-            } catch (IOException e) {
-                throw rethrow(e);
-            }
+            Address[] addrs = context.jetInstance().getCluster().getMembers()
+                    .stream().map(Member::getAddress).toArray(Address[]::new);
+            assigned = assignSplitsToMembers(indexedInputSplits, addrs);
+            printAssignments(assigned);
         }
 
 

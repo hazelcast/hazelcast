@@ -758,7 +758,11 @@ public final class TestSupport {
         if (jetInstance != null) {
             context.setJetInstance(jetInstance);
         }
-        processor.init(outbox, context);
+        try {
+            processor.init(outbox, context);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
     }
 
     private static double toMillis(long nanos) {
@@ -778,7 +782,11 @@ public final class TestSupport {
      * Supplier<Processor>} that returns processors obtained from it.
      */
     public static Supplier<Processor> supplierFrom(ProcessorSupplier supplier, ProcessorSupplier.Context context) {
-        supplier.init(context);
+        try {
+            supplier.init(context);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
         return () -> supplier.get(1).iterator().next();
     }
 
@@ -796,7 +804,11 @@ public final class TestSupport {
      */
     public static Supplier<Processor> supplierFrom(ProcessorMetaSupplier supplier,
                                                    ProcessorSupplier.Context context) {
-        supplier.init(context);
+        try {
+            supplier.init(context);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
         return supplierFrom(supplier.get(singletonList(LOCAL_ADDRESS)).apply(LOCAL_ADDRESS), context);
     }
 

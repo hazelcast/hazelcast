@@ -36,7 +36,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 public class WriteLoggerPTest {
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         // Given
         Processor p = supplierFrom(writeLoggerP()).get();
         TestInbox inbox = new TestInbox();

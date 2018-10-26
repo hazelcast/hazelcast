@@ -115,7 +115,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
     }
 
     @Test
-    public void when_newData() {
+    public void when_newData() throws Exception {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
         List<Object> actual = new ArrayList<>();
         Processor p = supplier.get();
@@ -144,7 +144,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
     }
 
     @Test
-    public void when_lostItems() {
+    public void when_lostItems() throws Exception {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
         Processor p = supplier.get();
         p.init(outbox, new TestProcessorContext());
@@ -162,7 +162,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
     }
 
     @Test
-    public void when_lostItems_afterRestore() {
+    public void when_lostItems_afterRestore() throws Exception {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
         final Processor p = supplier.get();
         p.init(outbox, new TestProcessorContext());
@@ -190,7 +190,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
     }
 
     @Test
-    public void when_futureSequence_thenResetOffset() {
+    public void when_futureSequence_thenResetOffset() throws Exception {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
         StreamEventJournalP p = (StreamEventJournalP) supplier.get();
 
@@ -254,7 +254,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         }
     }
 
-    private void assertRestore(List<Entry> snapshotItems) {
+    private void assertRestore(List<Entry> snapshotItems) throws Exception {
         Processor p = supplier.get();
         TestOutbox newOutbox = new TestOutbox(new int[]{16}, 16);
         List<Object> output = new ArrayList<>();

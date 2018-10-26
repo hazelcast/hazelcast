@@ -53,7 +53,7 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     }
 
     @Override
-    public void init(@Nonnull Context context) {
+    public void init(@Nonnull Context context) throws Exception {
         wrapped.init(context);
     }
 

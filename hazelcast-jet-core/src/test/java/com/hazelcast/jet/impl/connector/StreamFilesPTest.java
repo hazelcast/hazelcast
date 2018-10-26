@@ -232,7 +232,7 @@ public class StreamFilesPTest extends JetTestSupport {
     }
 
     @Test
-    public void when_watchedDirDeleted_then_complete() {
+    public void when_watchedDirDeleted_then_complete() throws Exception {
         // Given
         initializeProcessor(null);
         driverThread.start();
@@ -293,7 +293,7 @@ public class StreamFilesPTest extends JetTestSupport {
         fileOffsetsSize = processor.fileOffsets.size();
     }
 
-    private void initializeProcessor(String glob) {
+    private void initializeProcessor(String glob) throws Exception {
         if (glob == null) {
             glob = "*";
         }

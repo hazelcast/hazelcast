@@ -53,7 +53,7 @@ public class SessionWindowP_failoverTest {
 
     private SessionWindowP<Entry<String, Long>, ?, Long, ?> p;
 
-    private void init(ProcessingGuarantee guarantee) {
+    private void init(ProcessingGuarantee guarantee) throws Exception {
         AggregateOperation1<Object, LongAccumulator, Long> aggrOp = counting();
         p = new SessionWindowP<>(
                 5000,
@@ -69,7 +69,7 @@ public class SessionWindowP_failoverTest {
     }
 
     @Test
-    public void when_differentWmExactlyOnce_then_fail() {
+    public void when_differentWmExactlyOnce_then_fail() throws Exception {
         init(EXACTLY_ONCE);
 
         p.restoreFromSnapshot(BroadcastKey.broadcastKey(Keys.CURRENT_WATERMARK), 1L);
@@ -78,7 +78,7 @@ public class SessionWindowP_failoverTest {
     }
 
     @Test
-    public void when_differentWmAtLeastOnce_then_useMin() {
+    public void when_differentWmAtLeastOnce_then_useMin() throws Exception {
         init(AT_LEAST_ONCE);
 
         p.restoreFromSnapshot(BroadcastKey.broadcastKey(Keys.CURRENT_WATERMARK), 2L);
@@ -89,7 +89,7 @@ public class SessionWindowP_failoverTest {
     }
 
     @Test
-    public void when_noSnapshotRestored_then_wmIsMin() {
+    public void when_noSnapshotRestored_then_wmIsMin() throws Exception {
         init(AT_LEAST_ONCE);
 
         assertEquals(Long.MIN_VALUE, p.currentWatermark);

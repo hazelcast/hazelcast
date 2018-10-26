@@ -75,7 +75,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * instance's services and provides the parallelism parameters determined
      * from the cluster size.
      */
-    default void init(@Nonnull Context context) {
+    default void init(@Nonnull Context context) throws Exception {
     }
 
     /**

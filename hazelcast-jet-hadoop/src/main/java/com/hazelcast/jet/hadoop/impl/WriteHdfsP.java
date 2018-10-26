@@ -38,7 +38,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.String.valueOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -116,10 +115,10 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         }
 
         @Override
-        public void init(@Nonnull Context context) {
+        public void init(@Nonnull Context context) throws Exception {
             outputCommitter = jobConf.getOutputCommitter();
             jobContext = new JobContextImpl(jobConf, new JobID());
-            uncheckRun(() -> outputCommitter.setupJob(jobContext));
+            outputCommitter.setupJob(jobContext);
         }
 
         @Override

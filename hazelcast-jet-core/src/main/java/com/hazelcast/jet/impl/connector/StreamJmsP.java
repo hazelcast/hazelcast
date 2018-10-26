@@ -35,7 +35,6 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.IntStream.range;
 
 /**
@@ -133,9 +132,9 @@ public class StreamJmsP<T> extends AbstractProcessor {
         }
 
         @Override
-        public void init(@Nonnull Context context) {
+        public void init(@Nonnull Context context) throws Exception {
             connection = connectionSupplier.get();
-            uncheckRun(() -> connection.start());
+            connection.start();
         }
 
         @Override

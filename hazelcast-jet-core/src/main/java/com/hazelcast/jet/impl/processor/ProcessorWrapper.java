@@ -45,7 +45,7 @@ public abstract class ProcessorWrapper implements Processor {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
         wrapped.init(outbox, context);
     }
 

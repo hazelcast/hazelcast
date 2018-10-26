@@ -75,14 +75,10 @@ public abstract class AbstractProcessor implements Processor {
     // final implementations of Processor API
 
     @Override
-    public final void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    public final void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
         this.outbox = outbox;
         this.logger = context.logger();
-        try {
-            init(context);
-        } catch (Exception e) {
-            throw sneakyThrow(e);
-        }
+        init(context);
     }
 
     /**
