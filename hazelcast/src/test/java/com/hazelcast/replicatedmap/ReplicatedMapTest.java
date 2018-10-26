@@ -153,6 +153,8 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(2, instance1, instance2);
+
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
