@@ -16,9 +16,9 @@
 
 package com.hazelcast.gcp;
 
-import com.hazelcast.com.eclipsesource.json.Json;
-import com.hazelcast.com.eclipsesource.json.JsonArray;
-import com.hazelcast.com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonValue;
 
 import java.util.ArrayList;
 import java.util.List;
