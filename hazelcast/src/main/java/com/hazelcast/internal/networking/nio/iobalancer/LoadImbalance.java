@@ -31,9 +31,9 @@ import java.util.Set;
  * {@link NioPipeline} should be migrated.
  */
 class LoadImbalance {
-    //number of events recorded by the busiest NioThread
+    //load recorded by the busiest NioThread
     long maximumLoad;
-    //number of events recorded by the least busy NioThread
+    //load recorded by the least busy NioThread
     long minimumLoad;
     //busiest NioThread
     NioThread srcOwner;

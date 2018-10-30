@@ -16,60 +16,194 @@
 
 package com.hazelcast.internal.management.dto;
 
+import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.AzureConfig;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.EurekaConfig;
+import com.hazelcast.config.GcpConfig;
+import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.WANQueueFullBehavior;
 import com.hazelcast.config.WanPublisherConfig;
-import com.hazelcast.internal.json.Json;
+import com.hazelcast.config.WanPublisherState;
+import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
 
-import java.util.Map;
+import static com.hazelcast.util.JsonUtil.fromJsonObject;
+import static com.hazelcast.util.JsonUtil.toJsonObject;
+import static com.hazelcast.util.MapUtil.isNullOrEmpty;
 
 /**
- * A {@link JsonSerializable} to be used within {@link WanReplicationConfigDTO}
+ * A JSON representation of {@link WanPublisherConfig}.
  */
 public class WanPublisherConfigDTO implements JsonSerializable {
 
     private WanPublisherConfig config;
+
+    public WanPublisherConfigDTO() {
+    }
 
     public WanPublisherConfigDTO(WanPublisherConfig config) {
         this.config = config;
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public JsonObject toJson() {
-        JsonObject object = new JsonObject();
-        object.add("groupName", config.getGroupName());
+        JsonObject root = new JsonObject();
+
+        if (config.getGroupName() != null) {
+            root.add("groupName", config.getGroupName());
+        }
+
         if (config.getPublisherId() != null) {
-            object.add("publisherId", config.getPublisherId());
+            root.add("publisherId", config.getPublisherId());
         }
-        object.add("queueCapacity", config.getQueueCapacity());
-        object.add("className", config.getClassName());
-        object.add("queueFullBehavior", config.getQueueFullBehavior().getId());
-        JsonObject properties = new JsonObject();
-        for (Map.Entry<String, Comparable> property : config.getProperties().entrySet()) {
-            properties.add(property.getKey(), Json.value(property.getValue().toString()));
+
+        root.add("queueCapacity", config.getQueueCapacity());
+
+        if (config.getQueueFullBehavior() != null) {
+            root.add("queueFullBehavior", config.getQueueFullBehavior().getId());
         }
-        object.add("properties", properties);
-        return object;
+        if (config.getInitialPublisherState() != null) {
+            root.add("initialPublisherState", config.getInitialPublisherState().getId());
+        }
+
+        if (!isNullOrEmpty(config.getProperties())) {
+            root.add("properties", toJsonObject(config.getProperties()));
+        }
+
+        if (config.getClassName() != null) {
+            root.add("className", config.getClassName());
+        }
+
+        serializeAliasedDiscoveryConfig(root, "aws", config.getAwsConfig());
+        serializeAliasedDiscoveryConfig(root, "gcp", config.getGcpConfig());
+        serializeAliasedDiscoveryConfig(root, "azure", config.getAzureConfig());
+        serializeAliasedDiscoveryConfig(root, "kubernetes", config.getKubernetesConfig());
+        serializeAliasedDiscoveryConfig(root, "eureka", config.getEurekaConfig());
+
+        DiscoveryConfig discoveryConfig = config.getDiscoveryConfig();
+        if (discoveryConfig != null) {
+            root.add("discovery", new DiscoveryConfigDTO(discoveryConfig).toJson());
+        }
+
+        WanSyncConfig syncConfig = config.getWanSyncConfig();
+        if (syncConfig != null) {
+            root.add("sync", new WanSyncConfigDTO(syncConfig).toJson());
+        }
+        return root;
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:methodlength", "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public void fromJson(JsonObject json) {
         config = new WanPublisherConfig();
-        config.setGroupName(json.get("groupName").asString());
+        JsonValue groupName = json.get("groupName");
+        if (groupName != null && !groupName.isNull()) {
+            config.setGroupName(groupName.asString());
+        }
+
         JsonValue publisherId = json.get("publisherId");
         if (publisherId != null && !publisherId.isNull()) {
             config.setPublisherId(publisherId.asString());
         }
-        config.setQueueCapacity(json.get("queueCapacity").asInt());
-        config.setClassName(json.get("className").asString());
-        int queueFullBehavior = json.get("queueFullBehavior").asInt();
-        config.setQueueFullBehavior(WANQueueFullBehavior.getByType(queueFullBehavior));
-        JsonObject properties = (JsonObject) json.get("properties");
-        Map<String, Comparable> configProperties = config.getProperties();
-        for (String propertyName : properties.names()) {
-            configProperties.put(propertyName, properties.get(propertyName).asString());
+
+        JsonValue queueCapacity = json.get("queueCapacity");
+        if (queueCapacity != null && !queueCapacity.isNull()) {
+            config.setQueueCapacity(queueCapacity.asInt());
+        }
+
+        JsonValue queueFullBehavior = json.get("queueFullBehavior");
+        if (queueFullBehavior != null && !queueFullBehavior.isNull()) {
+            config.setQueueFullBehavior(
+                    WANQueueFullBehavior.getByType(queueFullBehavior.asInt()));
+        }
+
+        JsonValue initialPublisherState = json.get("initialPublisherState");
+        if (initialPublisherState != null && !initialPublisherState.isNull()) {
+            config.setInitialPublisherState(
+                    WanPublisherState.getByType((byte) initialPublisherState.asInt()));
+        }
+
+        config.setProperties(fromJsonObject((JsonObject) json.get("properties")));
+
+        JsonValue className = json.get("className");
+        if (className != null && !className.isNull()) {
+            config.setClassName(className.asString());
+        }
+
+        AwsConfig awsConfig = (AwsConfig) this.deserializeAliasedDiscoveryConfig(json, "aws");
+        if (awsConfig != null) {
+            config.setAwsConfig(awsConfig);
+        }
+
+        GcpConfig gcpConfig = (GcpConfig) this.deserializeAliasedDiscoveryConfig(json, "gcp");
+        if (gcpConfig != null) {
+            config.setGcpConfig(gcpConfig);
+        }
+        AzureConfig azureConfig = (AzureConfig) this.deserializeAliasedDiscoveryConfig(json, "azure");
+        if (azureConfig != null) {
+            config.setAzureConfig(azureConfig);
+        }
+        KubernetesConfig kubernetesConfig = (KubernetesConfig) this.deserializeAliasedDiscoveryConfig(json, "kubernetes");
+        if (kubernetesConfig != null) {
+            config.setKubernetesConfig(kubernetesConfig);
+        }
+        EurekaConfig eurekaConfig = (EurekaConfig) this.deserializeAliasedDiscoveryConfig(json, "eureka");
+        if (eurekaConfig != null) {
+            config.setEurekaConfig(eurekaConfig);
+        }
+
+        JsonValue discoveryJson = json.get("discovery");
+        if (discoveryJson != null && !discoveryJson.isNull()) {
+            DiscoveryConfigDTO discoveryDTO = new DiscoveryConfigDTO();
+            discoveryDTO.fromJson(discoveryJson.asObject());
+            config.setDiscoveryConfig(discoveryDTO.getConfig());
+        }
+
+        JsonValue syncJson = json.get("sync");
+        if (syncJson != null && !syncJson.isNull()) {
+            WanSyncConfigDTO syncDTO = new WanSyncConfigDTO();
+            syncDTO.fromJson(syncJson.asObject());
+            config.setWanSyncConfig(syncDTO.getConfig());
+        }
+    }
+
+    /**
+     * Deserializes the aliased discovery config nested under the {@code tag} in the provided JSON.
+     *
+     * @param json the JSON object containing the serialized config
+     * @param tag  the tag under which the config is nested
+     * @return the deserialized config or {@code null} if the serialized config
+     * was missing in the JSON object
+     */
+    private AliasedDiscoveryConfig deserializeAliasedDiscoveryConfig(
+            JsonObject json, String tag) {
+        JsonValue configJson = json.get(tag);
+        if (configJson != null && !configJson.isNull()) {
+            AliasedDiscoveryConfigDTO dto = new AliasedDiscoveryConfigDTO(tag);
+            dto.fromJson(configJson.asObject());
+            return dto.getConfig();
+        }
+        return null;
+    }
+
+    /**
+     * Serializes the provided aliased discovery config and adds the serialized
+     * contents under the tag in the JSON object if the config is not
+     * {@code null}.
+     *
+     * @param object the JSON object to which the config is added
+     * @param tag    the tag under which the config is added
+     * @param config the configuration
+     */
+    private void serializeAliasedDiscoveryConfig(
+            JsonObject object, String tag, AliasedDiscoveryConfig config) {
+        if (config != null) {
+            object.add(tag, new AliasedDiscoveryConfigDTO(config).toJson());
         }
     }
 

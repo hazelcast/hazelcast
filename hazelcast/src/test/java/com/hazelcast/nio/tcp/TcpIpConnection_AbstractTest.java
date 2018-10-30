@@ -31,6 +31,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
 
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -39,6 +40,9 @@ import static org.junit.Assert.fail;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport {
+
+    private static final int PORT_NUMBER_UPPER_LIMIT = 5799;
+    private int portNumber = 5701;
 
     protected NetworkingFactory networkingFactory = new Select_NioNetworkingFactory();
 
@@ -64,24 +68,24 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
 
     @Before
     public void setup() throws Exception {
-        addressA = new Address("127.0.0.1", 5701);
-        addressB = new Address("127.0.0.1", 5702);
-        addressC = new Address("127.0.0.1", 5703);
 
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
         logger = loggingService.getLogger(TcpIpConnection_AbstractTest.class);
 
         metricsRegistryA = newMetricsRegistry();
-        connManagerA = newConnectionManager(addressA.getPort(), metricsRegistryA);
+        connManagerA = newConnectionManager(metricsRegistryA);
         ioServiceA = (MockIOService) connManagerA.getIoService();
+        addressA = ioServiceA.getThisAddress();
 
         metricsRegistryB = newMetricsRegistry();
-        connManagerB = newConnectionManager(addressB.getPort(), metricsRegistryB);
+        connManagerB = newConnectionManager(metricsRegistryB);
         ioServiceB = (MockIOService) connManagerB.getIoService();
+        addressB = ioServiceB.getThisAddress();
 
         metricsRegistryC = newMetricsRegistry();
-        connManagerC = newConnectionManager(addressC.getPort(), metricsRegistryC);
-        ioServiceC = (MockIOService) connManagerB.getIoService();
+        connManagerC = newConnectionManager(metricsRegistryC);
+        ioServiceC = (MockIOService) connManagerC.getIoService();
+        addressC = ioServiceC.getThisAddress();
 
         serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
@@ -105,8 +109,17 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         return new MetricsRegistryImpl();
     }
 
-    protected TcpIpConnectionManager newConnectionManager(int port, MetricsRegistry metricsRegistry) throws Exception {
-        MockIOService ioService = new MockIOService(port);
+    protected TcpIpConnectionManager newConnectionManager(MetricsRegistry metricsRegistry) throws Exception {
+        MockIOService ioService = null;
+        while (ioService == null) {
+            try {
+                ioService = new MockIOService(portNumber++);
+            } catch (IOException e) {
+                if (portNumber >= PORT_NUMBER_UPPER_LIMIT) {
+                    throw e;
+                }
+            }
+        }
 
         return new TcpIpConnectionManager(
                 ioService,

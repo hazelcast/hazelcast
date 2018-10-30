@@ -96,7 +96,7 @@ public class ClearExpiredOperation extends AbstractLocalOperation implements Par
 
     @Override
     public boolean returnsResponse() {
-        return true;
+        return false;
     }
 
     @Override

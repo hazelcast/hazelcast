@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.PartitionScanRunner;
 import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
@@ -145,7 +145,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapEventJournal getEventJournal();
 
-    MapQueryEngine getMapQueryEngine(String name);
+    QueryEngine getQueryEngine(String name);
 
     QueryRunner getMapQueryRunner(String name);
 

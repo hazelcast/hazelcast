@@ -26,10 +26,11 @@ import com.hazelcast.spi.CoreService;
 import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
 
 /**
- * This is the WAN replications service API core interface. The WanReplicationService needs to
- * be capable of creating the actual {@link com.hazelcast.wan.WanReplicationPublisher} instances
- * to replicate values to other clusters over the wide area network, so it has to deal with long
- * delays, slow uploads and higher latencies.
+ * This is the WAN replications service API core interface. The
+ * WanReplicationService needs to be capable of creating the actual
+ * {@link com.hazelcast.wan.WanReplicationPublisher} instances to replicate
+ * values to other clusters over the wide area network, so it has to deal
+ * with long delays, slow uploads and higher latencies.
  */
 public interface WanReplicationService extends CoreService {
 
@@ -92,8 +93,10 @@ public interface WanReplicationService extends CoreService {
      * @param targetGroupName    the group name on the target cluster
      * @param mapName            the map name
      * @throws UnsupportedOperationException if the operation is not supported (not EE)
-     * @throws InvalidConfigurationException if there is no WAN replication config for {@code wanReplicationName}
-     * @throws SyncFailedException           if there is a anti-entropy request in progress
+     * @throws InvalidConfigurationException if there is no WAN replication
+     *                                       config for {@code wanReplicationName}
+     * @throws SyncFailedException           if there is a anti-entropy request in
+     *                                       progress
      */
     void syncMap(String wanReplicationName, String targetGroupName, String mapName);
 
@@ -104,7 +107,8 @@ public interface WanReplicationService extends CoreService {
      * @param wanReplicationName the name of the wan replication config
      * @param targetGroupName    the group name on the target cluster
      * @throws UnsupportedOperationException if the operation is not supported (not EE)
-     * @throws InvalidConfigurationException if there is no WAN replication config for {@code wanReplicationName}
+     * @throws InvalidConfigurationException if there is no WAN replication config for
+     *                                       {@code wanReplicationName}
      * @throws SyncFailedException           if there is a anti-entropy request in progress
      */
     void syncAllMaps(String wanReplicationName, String targetGroupName);
@@ -133,8 +137,8 @@ public interface WanReplicationService extends CoreService {
     void clearQueues(String wanReplicationName, String targetGroupName);
 
     /**
-     * Adds a new {@link WanReplicationConfig} to this member and creates the {@link WanReplicationPublisher}s specified
-     * in the config.
+     * Adds a new {@link WanReplicationConfig} to this member and creates the
+     * {@link WanReplicationPublisher}s specified in the config.
      */
     void addWanReplicationConfig(WanReplicationConfig wanConfig);
 

@@ -34,7 +34,7 @@ import java.util.Queue;
  */
 public final class ToBackupSender<RS> {
 
-    private static final int MAX_EXPIRED_KEY_COUNT_IN_BATCH = 100;
+    private static final int TARGET_BATCH_SIZE = 100;
 
     private final String serviceName;
     private final OperationService operationService;
@@ -58,27 +58,6 @@ public final class ToBackupSender<RS> {
         return new ToBackupSender<S>(serviceName, operationSupplier, backupOpFilter, nodeEngine);
     }
 
-    private static Collection<ExpiredKey> tryTakeExpiredKeys(InvalidationQueue<ExpiredKey> invalidationQueue,
-                                                             boolean checkIfReachedBatch) {
-        int size = invalidationQueue.size();
-        if (size == 0 || checkIfReachedBatch && size < MAX_EXPIRED_KEY_COUNT_IN_BATCH) {
-            return null;
-        }
-
-        if (!invalidationQueue.tryAcquire()) {
-            return null;
-        }
-
-        Collection<ExpiredKey> expiredKeys;
-        try {
-            expiredKeys = pollExpiredKeys(invalidationQueue);
-        } finally {
-            invalidationQueue.release();
-        }
-
-        return expiredKeys;
-    }
-
     private static Collection<ExpiredKey> pollExpiredKeys(Queue<ExpiredKey> expiredKeys) {
         Collection<ExpiredKey> polledKeys = new ArrayList<ExpiredKey>(expiredKeys.size());
 
@@ -93,9 +72,12 @@ public final class ToBackupSender<RS> {
         return polledKeys;
     }
 
-    public void trySendExpiryOp(RS recordStore, InvalidationQueue invalidationQueue,
-                                int backupReplicaCount, int partitionId, boolean checkIfReachedBatch) {
-        Collection<ExpiredKey> expiredKeys = tryTakeExpiredKeys(invalidationQueue, checkIfReachedBatch);
+    public void trySendExpiryOp(RS recordStore, InvalidationQueue expiredKeyQueue,
+                                int backupReplicaCount, int partitionId, boolean sendIfAtBatchSize) {
+        if (sendIfAtBatchSize && expiredKeyQueue.size() < TARGET_BATCH_SIZE) {
+            return;
+        }
+        Collection<ExpiredKey> expiredKeys = pollExpiredKeys(expiredKeyQueue);
         if (CollectionUtil.isEmpty(expiredKeys)) {
             return;
         }

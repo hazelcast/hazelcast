@@ -20,7 +20,6 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -35,7 +34,7 @@ import java.util.Map;
  * <p>
  * At the end of the aggregation execution path all AggregationResults are merged into one AggregationResult.
  */
-public class AggregationResult implements Result<AggregationResult>, IdentifiedDataSerializable {
+public class AggregationResult implements Result<AggregationResult> {
 
     private Aggregator aggregator;
     private Collection<Integer> partitionIds;

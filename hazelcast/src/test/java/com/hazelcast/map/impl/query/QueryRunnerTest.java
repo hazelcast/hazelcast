@@ -32,8 +32,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.ExecutionException;
-
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -75,7 +73,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runFullQuery() throws ExecutionException, InterruptedException {
+    public void runFullQuery() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
         QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
@@ -85,7 +83,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runPartitionScanQueryOnSinglePartition() throws ExecutionException, InterruptedException {
+    public void runPartitionScanQueryOnSinglePartition() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
         QueryResult result = (QueryResult) queryRunner.runPartitionScanQueryOnGivenOwnedPartition(query, partitionId);

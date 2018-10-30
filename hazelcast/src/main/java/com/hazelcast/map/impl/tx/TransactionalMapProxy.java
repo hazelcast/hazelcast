@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultUtils;
@@ -357,7 +357,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkNotNull(predicate, "Predicate should not be null!");
         checkNotInstanceOf(PagingPredicate.class, predicate, "Paging is not supported for Transactional queries!");
 
-        MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
+        QueryEngine queryEngine = mapServiceContext.getQueryEngine(name);
 
         Query query = Query.of().mapName(name).predicate(predicate).iterationType(IterationType.KEY).build();
         QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);
@@ -401,7 +401,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkNotNull(predicate, "Predicate can not be null!");
         checkNotInstanceOf(PagingPredicate.class, predicate, "Paging is not supported for Transactional queries");
 
-        MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
+        QueryEngine queryEngine = mapServiceContext.getQueryEngine(name);
 
         Query query = Query.of().mapName(name).predicate(predicate).iterationType(IterationType.ENTRY).build();
         QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);

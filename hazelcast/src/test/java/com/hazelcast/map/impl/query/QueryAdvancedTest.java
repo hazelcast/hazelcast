@@ -153,7 +153,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTwoNodesWithPartialIndexes() throws Exception {
+    public void testTwoNodesWithPartialIndexes() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -199,7 +199,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTwoNodesWithIndexes() throws Exception {
+    public void testTwoNodesWithIndexes() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);

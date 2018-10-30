@@ -55,7 +55,7 @@ import com.hazelcast.map.impl.operation.IsPartitionLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
-import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.query.Result;
@@ -114,6 +114,7 @@ import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -328,8 +329,8 @@ abstract class MapProxySupport<K, V>
         return mapConfig.getBackupCount() + mapConfig.getAsyncBackupCount();
     }
 
-    protected MapQueryEngine getMapQueryEngine() {
-        return mapServiceContext.getMapQueryEngine(name);
+    protected QueryEngine getMapQueryEngine() {
+        return mapServiceContext.getQueryEngine(name);
     }
 
     protected boolean isMapStoreEnabled() {
@@ -1304,7 +1305,7 @@ abstract class MapProxySupport<K, V>
 
     protected <T extends Result> T executeQueryInternal(Predicate predicate, Aggregator aggregator, Projection projection,
                                                         IterationType iterationType, Target target) {
-        MapQueryEngine queryEngine = getMapQueryEngine();
+        QueryEngine queryEngine = getMapQueryEngine();
         Predicate userPredicate = predicate;
 
         if (predicate instanceof PartitionPredicate) {
@@ -1312,7 +1313,7 @@ abstract class MapProxySupport<K, V>
             Data key = toData(partitionPredicate.getPartitionKey());
             int partitionId = partitionService.getPartitionId(key);
             userPredicate = partitionPredicate.getTarget();
-            target = Target.of().partitionOwner(partitionId).build();
+            target = createPartitionTarget(partitionId);
         }
         handleHazelcastInstanceAwareParams(userPredicate);
 

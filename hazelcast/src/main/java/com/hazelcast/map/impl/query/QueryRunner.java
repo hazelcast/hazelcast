@@ -32,8 +32,9 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+
+import static java.util.Collections.singletonList;
 
 /**
  * Runs query operations in the calling thread (thus blocking it)
@@ -55,7 +56,9 @@ public class QueryRunner {
     protected final PartitionScanExecutor partitionScanExecutor;
     protected final ResultProcessorRegistry resultProcessorRegistry;
 
-    public QueryRunner(MapServiceContext mapServiceContext, QueryOptimizer optimizer, PartitionScanExecutor partitionScanExecutor,
+    public QueryRunner(MapServiceContext mapServiceContext,
+                       QueryOptimizer optimizer,
+                       PartitionScanExecutor partitionScanExecutor,
                        ResultProcessorRegistry resultProcessorRegistry) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
@@ -81,16 +84,15 @@ public class QueryRunner {
      * @return the queried entries along with the next {@code tableIndex} to resume querying
      */
     public ResultSegment runPartitionScanQueryOnPartitionChunk(Query query, int partitionId, int tableIndex, int fetchSize) {
-        final MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
-        final Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
-        final QueryableEntriesSegment entries = partitionScanExecutor
+        MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
+        QueryableEntriesSegment entries = partitionScanExecutor
                 .execute(query.getMapName(), predicate, partitionId, tableIndex, fetchSize);
 
         updateStatistics(mapContainer);
 
-        final ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
-        final Result result = processor
-                .populateResult(query, Long.MAX_VALUE, entries.getEntries(), Collections.singletonList(partitionId));
+        ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
+        Result result = processor.populateResult(query, Long.MAX_VALUE, entries.getEntries(), singletonList(partitionId));
 
         return new ResultSegment(result, entries.getNextTableIndexToReadFrom());
     }
@@ -174,7 +176,7 @@ public class QueryRunner {
     // for a single partition. If the index is global it won't be asked
     public Result runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
-        List<Integer> partitions = Collections.singletonList(partitionId);
+        List<Integer> partitions = singletonList(partitionId);
 
         // first we optimize the query
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
@@ -213,7 +215,7 @@ public class QueryRunner {
     Result runPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
-        Collection<Integer> partitions = Collections.singletonList(partitionId);
+        Collection<Integer> partitions = singletonList(partitionId);
         Result result = createResult(query, partitions);
         partitionScanExecutor.execute(query.getMapName(), predicate, partitions, result);
         result.completeConstruction(partitions);

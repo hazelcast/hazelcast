@@ -51,7 +51,7 @@ import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.util.SortingUtil.compareAnchor;
 
 /**
- * Responsible for running a full-partition scna for a single partition in the calling thread.
+ * Responsible for running a full-partition scan for a single partition in the calling thread.
  */
 public class PartitionScanRunner {
 

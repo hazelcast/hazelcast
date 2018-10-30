@@ -17,80 +17,82 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.BitSetUtils;
 import com.hazelcast.util.IterationType;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.util.BitSetUtils.hasAllBitsSet;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.util.Collections.singletonList;
 
 /**
  * Invokes and orchestrates the query logic returning the final result.
  * <p>
- * Knows nothing about query logic or how to dispatch query operations. It relies on QueryDispatcher only.
+ * Knows nothing about query logic.
  * Should never invoke any query operations directly.
  * <p>
  * Should be used from top-level proxy-layer only (e.g. MapProxy, etc.).
  * <p>
  * Top level-query actors:
- * - QueryEngine orchestrates the queries by dispatching query operations using QueryDispatcher and merging the result
- * - QueryDispatcher invokes query operations on the given members and partitions
+ * - QueryEngine orchestrates the queries and  merging the result
  * - QueryRunner -> runs the query logic in the calling thread (so like evaluates the predicates and asks the index)
  */
-public class MapQueryEngineImpl implements MapQueryEngine {
+public class QueryEngineImpl implements QueryEngine {
 
-    protected final MapServiceContext mapServiceContext;
-    protected final NodeEngine nodeEngine;
-    protected final ILogger logger;
-    protected final QueryResultSizeLimiter queryResultSizeLimiter;
-    protected final InternalSerializationService serializationService;
-    protected final IPartitionService partitionService;
-    protected final OperationService operationService;
-    protected final ClusterService clusterService;
-    protected final QueryDispatcher queryDispatcher;
-    protected final ResultProcessorRegistry resultProcessorRegistry;
+    private final MapServiceContext mapServiceContext;
+    private final NodeEngine nodeEngine;
+    private final ILogger logger;
+    private final QueryResultSizeLimiter queryResultSizeLimiter;
+    private final IPartitionService partitionService;
+    private final OperationService operationService;
+    private final ClusterService clusterService;
+    private final ResultProcessorRegistry resultProcessorRegistry;
 
-    public MapQueryEngineImpl(MapServiceContext mapServiceContext) {
+    public QueryEngineImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
-        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.partitionService = nodeEngine.getPartitionService();
         this.logger = nodeEngine.getLogger(getClass());
         this.queryResultSizeLimiter = new QueryResultSizeLimiter(mapServiceContext, logger);
         this.operationService = nodeEngine.getOperationService();
         this.clusterService = nodeEngine.getClusterService();
-        this.queryDispatcher = new QueryDispatcher(mapServiceContext);
         this.resultProcessorRegistry = mapServiceContext.getResultProcessorRegistry();
     }
 
     @Override
     public Result execute(Query query, Target target) {
         Query adjustedQuery = adjustQuery(query);
-        if (target.isTargetAllNodes()) {
-            return runQueryOnAllPartitions(adjustedQuery);
-        } else if (target.isTargetLocalNode()) {
-            return runQueryOnLocalPartitions(adjustedQuery);
-        } else if (target.isTargetPartitionOwner()) {
-            return runQueryOnGivenPartition(adjustedQuery, target);
+        switch (target.mode()) {
+            case ALL_NODES:
+                return runOnAllPartitions(adjustedQuery);
+            case LOCAL_NODE:
+                return runOnLocalPartitions(adjustedQuery);
+            case PARTITION_OWNER:
+                return runOnGivenPartition(adjustedQuery, target);
+            default:
+                throw new IllegalArgumentException("Illegal target " + query);
         }
-        throw new IllegalArgumentException("Illegal target " + query);
     }
 
     private Query adjustQuery(Query query) {
@@ -107,12 +109,12 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     // query thread first, fallback to partition thread
-    private Result runQueryOnLocalPartitions(Query query) {
+    private Result runOnLocalPartitions(Query query) {
         BitSet mutablePartitionIds = getLocalPartitionIds();
 
-        Result result = doRunQueryOnQueryThreads(query, mutablePartitionIds, Target.LOCAL_NODE);
+        Result result = doRunOnQueryThreads(query, mutablePartitionIds, Target.LOCAL_NODE);
         if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
-            doRunQueryOnPartitionThreads(query, mutablePartitionIds, result);
+            doRunOnPartitionThreads(query, mutablePartitionIds, result);
         }
         assertAllPartitionsQueried(mutablePartitionIds);
 
@@ -120,12 +122,12 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     // query thread first, fallback to partition thread
-    private Result runQueryOnAllPartitions(Query query) {
+    private Result runOnAllPartitions(Query query) {
         BitSet mutablePartitionIds = getAllPartitionIds();
 
-        Result result = doRunQueryOnQueryThreads(query, mutablePartitionIds, Target.ALL_NODES);
+        Result result = doRunOnQueryThreads(query, mutablePartitionIds, Target.ALL_NODES);
         if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
-            doRunQueryOnPartitionThreads(query, mutablePartitionIds, result);
+            doRunOnPartitionThreads(query, mutablePartitionIds, result);
         }
         assertAllPartitionsQueried(mutablePartitionIds);
 
@@ -133,16 +135,16 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     // partition thread ONLY (for now)
-    private Result runQueryOnGivenPartition(Query query, Target target) {
+    private Result runOnGivenPartition(Query query, Target target) {
         try {
-            return queryDispatcher.dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-                    query, target.getPartitionId()).get();
+            return dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
+                    query, target.partitionId()).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    private Result doRunQueryOnQueryThreads(Query query, BitSet partitionIds, Target target) {
+    private Result doRunOnQueryThreads(Query query, BitSet partitionIds, Target target) {
         Result result = populateResult(query, partitionIds);
         List<Future<Result>> futures = dispatchOnQueryThreads(query, target);
         addResultsOfPredicate(futures, result, partitionIds, false);
@@ -151,7 +153,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
 
     private List<Future<Result>> dispatchOnQueryThreads(Query query, Target target) {
         try {
-            return queryDispatcher.dispatchFullQueryOnQueryThread(query, target);
+            return dispatchFullQueryOnQueryThread(query, target);
         } catch (Throwable t) {
             if (!(t instanceof HazelcastException)) {
                 // these are programmatic errors that needs to be visible
@@ -174,9 +176,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
                 queryResultSizeLimiter.getNodeResultLimit(partitionIds.cardinality()));
     }
 
-    private void doRunQueryOnPartitionThreads(Query query, BitSet partitionIds, Result result) {
+    private void doRunOnPartitionThreads(Query query, BitSet partitionIds, Result result) {
         try {
-            List<Future<Result>> futures = queryDispatcher.dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
+            List<Future<Result>> futures = dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
                     query, partitionIds);
             addResultsOfPredicate(futures, result, partitionIds, true);
         } catch (Throwable t) {
@@ -253,5 +255,71 @@ public class MapQueryEngineImpl implements MapQueryEngine {
 
     protected QueryResultSizeLimiter getQueryResultSizeLimiter() {
         return queryResultSizeLimiter;
+    }
+
+    protected List<Future<Result>> dispatchFullQueryOnQueryThread(Query query, Target target) {
+        switch (target.mode()) {
+            case ALL_NODES:
+                return dispatchFullQueryOnAllMembersOnQueryThread(query);
+            case LOCAL_NODE:
+                return dispatchFullQueryOnLocalMemberOnQueryThread(query);
+            default:
+                throw new IllegalArgumentException("Illegal target " + query);
+        }
+    }
+
+    private List<Future<Result>> dispatchFullQueryOnLocalMemberOnQueryThread(Query query) {
+        Operation operation = mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
+        Future<Result> result = operationService.invokeOnTarget(
+                MapService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
+        return singletonList(result);
+    }
+
+    private List<Future<Result>> dispatchFullQueryOnAllMembersOnQueryThread(Query query) {
+        Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
+        List<Future<Result>> futures = new ArrayList<Future<Result>>(members.size());
+        for (Member member : members) {
+            Operation operation = createQueryOperation(query);
+            Future<Result> future = operationService.invokeOnTarget(
+                    MapService.SERVICE_NAME, operation, member.getAddress());
+            futures.add(future);
+        }
+        return futures;
+    }
+
+    private Operation createQueryOperation(Query query) {
+        return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
+    }
+
+    protected List<Future<Result>> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
+            Query query, BitSet partitionIds) {
+        if (shouldSkipPartitionsQuery(partitionIds)) {
+            return Collections.emptyList();
+        }
+        List<Future<Result>> futures = new ArrayList<Future<Result>>(partitionIds.size());
+        for (int partitionId = 0; partitionId < partitionIds.length(); partitionId++) {
+            if (partitionIds.get(partitionId)) {
+                futures.add(dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(query, partitionId));
+            }
+        }
+        return futures;
+    }
+
+    protected Future<Result> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(Query query, int partitionId) {
+        Operation op = createQueryPartitionOperation(query);
+        op.setPartitionId(partitionId);
+        try {
+            return operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    private Operation createQueryPartitionOperation(Query query) {
+        return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryPartitionOperation(query);
+    }
+
+    private static boolean shouldSkipPartitionsQuery(BitSet partitionIds) {
+        return partitionIds == null || partitionIds.isEmpty();
     }
 }

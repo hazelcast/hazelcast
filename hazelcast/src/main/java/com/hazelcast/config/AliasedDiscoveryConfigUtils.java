@@ -184,6 +184,7 @@ public final class AliasedDiscoveryConfigUtils {
     /**
      * Creates new {@link AliasedDiscoveryConfig} by the given {@code tag}.
      */
+    @SuppressWarnings("unchecked")
     public static AliasedDiscoveryConfig newConfigFor(String tag) {
         if ("aws".equals(tag)) {
             return new AwsConfig();

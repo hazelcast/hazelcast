@@ -62,12 +62,19 @@ public class HazelcastStarterTest {
     public void testMember() {
         hz = HazelcastStarter.newHazelcastInstance("3.7", false);
 
-        for (int i = 1; i < 6; i++) {
-            String version = "3.7." + i;
-            System.out.println("Starting member " + version);
-            HazelcastInstance instance = HazelcastStarter.newHazelcastInstance(version);
-            System.out.println("Stopping member " + version);
-            instance.shutdown();
+        HazelcastInstance bouncingInstance = null;
+        try {
+            for (int i = 1; i < 6; i++) {
+                String version = "3.7." + i;
+                System.out.println("Starting member " + version);
+                bouncingInstance = HazelcastStarter.newHazelcastInstance(version);
+                System.out.println("Stopping member " + version);
+                bouncingInstance.shutdown();
+            }
+        } finally {
+            if (bouncingInstance != null && bouncingInstance.getLifecycleService().isRunning()) {
+                terminateInstance(bouncingInstance);
+            }
         }
     }
 

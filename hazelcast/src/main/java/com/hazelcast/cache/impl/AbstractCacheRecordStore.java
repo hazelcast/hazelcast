@@ -38,6 +38,7 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
@@ -127,6 +128,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final AbstractCacheService cacheService;
     protected final CacheRecordFactory cacheRecordFactory;
     protected final EventJournalConfig eventJournalConfig;
+    protected final ClearExpiredRecordsTask clearExpiredRecordsTask;
     protected final SamplingEvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
@@ -198,6 +200,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         this.persistWanReplicatedData = canPersistWanReplicatedData(cacheConfig, nodeEngine);
         this.cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(), ss);
         this.valueComparator = getValueComparatorOf(cacheConfig.getInMemoryFormat());
+        this.clearExpiredRecordsTask = cacheService.getExpirationManager().getTask();
 
         injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
         registerResourceIfItIsClosable(cacheWriter);
@@ -504,7 +507,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             this.expiredKeys.offer(new ExpiredKey(toHeapData(key), record.getCreationTime()));
         }
 
-        cacheService.getExpirationManager().getTask().tryToSendBackupExpiryOp(this, true);
+        clearExpiredRecordsTask.tryToSendBackupExpiryOp(this, true);
     }
 
     @Override

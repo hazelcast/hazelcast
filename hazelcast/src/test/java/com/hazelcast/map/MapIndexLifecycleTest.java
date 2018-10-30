@@ -114,7 +114,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void whenIndexAddedProgrammatically_existsOnAllMembers() {
         // GIVEN indexes are configured before Hazelcast starts
         int clusterSize = 3;

@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelTest.class})
-public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends HazelcastTestSupport {
+public class QueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends HazelcastTestSupport {
 
     private static final int RESULT_SIZE_LIMIT = QueryResultSizeLimiter.MINIMUM_MAX_RESULT_LIMIT + 2342;
     private static final int PARTITION_COUNT = 2;
@@ -46,7 +46,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
 
     private HazelcastInstance hz;
     private IMap<String, String> map;
-    private MapQueryEngineImpl queryEngine;
+    private QueryEngineImpl queryEngine;
     private int limit;
 
     @Before
@@ -60,7 +60,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
         map = hz.getMap(randomName());
 
         MapService mapService = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
-        queryEngine = new MapQueryEngineImpl(mapService.getMapServiceContext());
+        queryEngine = new QueryEngineImpl(mapService.getMapServiceContext());
 
         // we just fill a single partition, so we get the NodeResultLimit for a single partition as well
         QueryResultSizeLimiter resultSizeLimiter = queryEngine.getQueryResultSizeLimiter();
@@ -68,7 +68,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
     }
 
     @Test
-    public void checkResultSize_limitNotExceeded() throws Exception {
+    public void checkResultSize_limitNotExceeded() {
         fillPartition(limit - 1);
 
         Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
@@ -78,7 +78,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
     }
 
     @Test
-    public void checkResultSize_limitNotEquals() throws Exception {
+    public void checkResultSize_limitNotEquals() {
         fillPartition(limit);
 
         Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
@@ -89,7 +89,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
 
     @Ignore
     @Test(expected = QueryResultSizeExceededException.class)
-    public void checkResultSize_limitExceeded() throws Exception {
+    public void checkResultSize_limitExceeded() {
         fillPartition(limit + 1);
 
         Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();

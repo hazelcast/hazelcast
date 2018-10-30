@@ -37,12 +37,14 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -66,6 +68,7 @@ import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryInfoAccessor;
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
+import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -82,47 +85,57 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("deprecation")
 public class EvictionTest extends HazelcastTestSupport {
 
+    @Rule
+    public final OverridePropertyRule overrideTaskSecondsRule
+            = set(PROP_TASK_PERIOD_SECONDS, String.valueOf(1));
+
     @Test
     public void testTTL_entryShouldNotBeReachableAfterTTL() {
-        IMap<Integer, String> map = createSimpleMap();
+        final IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value0", 1, SECONDS);
-        sleepAtLeastSeconds(1);
 
-        assertFalse(map.containsKey(1));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(map.containsKey(1));
+            }
+        });
     }
 
     @Test
     public void testMaxIdle_entryShouldNotBeReachableAfterMaxIdle() {
-        IMap<Integer, String> map = createSimpleMap();
+        final IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value0", 0, SECONDS, 1, SECONDS);
-        sleepAtLeastSeconds(1);
 
-        assertFalse(map.containsKey(1));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(map.containsKey(1));
+            }
+        });
     }
 
     @Test
-    @Category(SlowTest.class)
     public void testMaxIdle_backupEntryShouldNotBeReachableAfterMaxIdle() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
-        HazelcastInstance instanceB = factory.newHazelcastInstance(getConfig());
 
-        String keyOwnedByInstanceA = generateKeyOwnedBy(instance);
+        HazelcastInstance instanceA = factory.newHazelcastInstance(getConfig());
+        final HazelcastInstance instanceB = factory.newHazelcastInstance(getConfig());
 
-        IMap<String, String> map = instance.getMap("Test");
-        map.put(keyOwnedByInstanceA, "value0", 0, SECONDS, 3, SECONDS);
-        // Wait enough time for the ClearExpiredOperation to kick-in (default 5 seconds)
-        sleepAtLeastSeconds(10);
+        final String keyOwnedByInstanceA = generateKeyOwnedBy(instanceA);
 
-        Partition partition = instanceB.getPartitionService().getPartition(keyOwnedByInstanceA);
-        MapService service = getNodeEngineImpl(instanceB).getService(MapService.SERVICE_NAME);
-        RecordStore store = service.getMapServiceContext()
-                                   .getPartitionContainer(partition.getPartitionId())
-                                   .getExistingRecordStore("Test");
+        instanceA.getMap("Test")
+                .put(keyOwnedByInstanceA, "value0", 0, SECONDS, 3, SECONDS);
 
-        assertEquals(0, store.size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                RecordStore recordStore = getRecordStore(instanceB, keyOwnedByInstanceA);
+                assertEquals(0, recordStore.size());
+            }
+        });
     }
 
     @Test
@@ -130,22 +143,29 @@ public class EvictionTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
 
-        HazelcastInstance instanceB = factory.newHazelcastInstance(getConfig());
+        final HazelcastInstance instanceB = factory.newHazelcastInstance(getConfig());
 
-        String keyOwnedByInstanceA = generateKeyOwnedBy(instance);
+        final String keyOwnedByInstanceA = generateKeyOwnedBy(instance);
 
         IMap<String, String> map = instance.getMap("Test");
         map.put(keyOwnedByInstanceA, "value0", 0, SECONDS, 30, SECONDS);
-        sleepAtLeastSeconds(2);
 
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                RecordStore store = getRecordStore(instanceB, keyOwnedByInstanceA);
+                assertEquals(1, store.size());
+                assertEquals(true, store.isExpirable());
+            }
+        });
+    }
+
+    private static RecordStore getRecordStore(HazelcastInstance instanceB, String keyOwnedByInstanceA) {
         Partition partition = instanceB.getPartitionService().getPartition(keyOwnedByInstanceA);
         MapService service = getNodeEngineImpl(instanceB).getService(MapService.SERVICE_NAME);
-        RecordStore store = service.getMapServiceContext()
-                                   .getPartitionContainer(partition.getPartitionId())
-                                   .getExistingRecordStore("Test");
-
-        assertEquals(1, store.size());
-        assertEquals(true, store.isExpirable());
+        return service.getMapServiceContext()
+                .getPartitionContainer(partition.getPartitionId())
+                .getExistingRecordStore("Test");
     }
 
     @Test
@@ -154,7 +174,6 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, "value0", 2, SECONDS);
         map.put(1, "value1", 0, SECONDS);
-        sleepAtLeastSeconds(3);
 
         assertTrue(map.containsKey(1));
     }
@@ -165,7 +184,6 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, "value0", 0, SECONDS, 1, SECONDS);
         map.put(1, "value1", 0, SECONDS, 0, SECONDS);
-        sleepAtLeastSeconds(3);
 
         assertTrue(map.containsKey(1));
     }
@@ -267,14 +285,16 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testGetEntryView_withTTL() {
-        IMap<Integer, String> map = createSimpleMap();
+        final IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value", 1, SECONDS);
-        sleepAtLeastSeconds(2);
 
-        EntryView<Integer, String> entryView = map.getEntryView(1);
-
-        assertNull(entryView);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(map.getEntryView(1));
+            }
+        });
     }
 
     @Test
