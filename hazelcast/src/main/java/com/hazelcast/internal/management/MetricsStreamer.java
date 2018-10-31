@@ -44,10 +44,16 @@ final class MetricsStreamer implements MetricsCollector {
 
     private final DataOutputStream out;
 
+    private int collected;
+
     public MetricsStreamer(OutputStream out) throws IOException {
         Deflater compressor = new Deflater(Deflater.BEST_SPEED);
         out.write(BINARY_FORMAT_VERSION);
         this.out = new DataOutputStream(new DeflaterOutputStream(out, compressor));
+    }
+
+    public int getCollectedCount() {
+        return collected;
     }
 
     public void done() {
@@ -63,6 +69,7 @@ final class MetricsStreamer implements MetricsCollector {
         try {
             writeKey(key);
             out.writeLong(value);
+            collected++;
         } catch (Exception e) {
             LOGGER.fine("Failed to collect metric.", e);
         }

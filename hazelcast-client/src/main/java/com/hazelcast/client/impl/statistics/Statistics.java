@@ -63,8 +63,7 @@ public class Statistics implements MetricsSource {
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
             SECONDS);
 
-    //TODO later set to 3.12
-    private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.11";
+    private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.12";
     private static final int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
 
     private final CollectionContext context;
@@ -204,7 +203,7 @@ public class Statistics implements MetricsSource {
             .tag(TAG_TARGET, address)
             .tag("version", BuildInfoProvider.getBuildInfo().getVersion());
         ClientConnectionManagerImpl cm = (ClientConnectionManagerImpl) client.getConnectionManager();
-        cycle.collect("principal", cm.getLastCredentials() != null);
+        cycle.collect(MANDATORY, "principal", cm.getLastCredentials() != null);
         Collection<NearCache> caches = client.getNearCacheManager().listAllNearCaches();
         if (caches.isEmpty()) {
             return;

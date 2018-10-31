@@ -193,6 +193,7 @@ public final class OperationServiceImpl implements InternalOperationService, Liv
     }
 
     @Override
+    @Probe(name = "slowOperationsCount", level = MANDATORY)
     public List<SlowOperationDTO> getSlowOperationDTOs() {
         return slowOperationDetector.getSlowOperationDTOs();
     }

@@ -102,7 +102,7 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
 
     @Test
     public void clientCoreStats() {
-        final HazelcastClientInstanceImpl client = createHazelcastClient();
+        final HazelcastClientInstanceImpl client = createHazelcastClient(false);
 
         String prefix = "origin=" + getUuid(client) + " ";
         assertEventuallyHasStatsWith(54, prefix);
@@ -191,13 +191,20 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
     }
 
     private HazelcastClientInstanceImpl createHazelcastClient() {
+        return createHazelcastClient(true);
+    }
+
+    private HazelcastClientInstanceImpl createHazelcastClient(boolean nearCaches) {
         ClientConfig clientConfig = new ClientConfig()
                 .setProperty(Statistics.ENABLED.getName(), "true")
                 .setProperty(Statistics.PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS))
-                .setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name())
+                .setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
+        if (nearCaches) {
                 // add IMap and ICache with Near Cache config
+            clientConfig
                 .addNearCacheConfig(new NearCacheConfig(MAP_NAME))
                 .addNearCacheConfig(new NearCacheConfig(CACHE_NAME));
+        }
 
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(20);
 

@@ -142,6 +142,8 @@ final class MetricsUrlSender implements Runnable, Closeable {
             if (connected) {
                 context.collectAll(streamer);
             }
+            // finish with the count of collected metrics for debugging purposes
+            streamer.collect("sendMetricsCount", streamer.getCollectedCount() + 1);
             streamer.done();
             return conn.getResponseCode() == HTTP_OK;
         } catch (Exception e) {
