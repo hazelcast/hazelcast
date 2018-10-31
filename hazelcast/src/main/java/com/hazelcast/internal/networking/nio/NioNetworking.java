@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
@@ -43,6 +45,7 @@ import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
@@ -51,7 +54,7 @@ import static java.util.logging.Level.INFO;
  * A non blocking {@link Networking} implementation that makes use of
  * {@link java.nio.channels.Selector} to have a limited set of io threads, handle
  * an arbitrary number of connections.
- *
+ * <p>
  * Each {@link NioChannel} has 2 parts:
  * <ol>
  * <li>{@link NioInboundPipeline}: triggered by the NioThread when data is available
@@ -66,7 +69,7 @@ import static java.util.logging.Level.INFO;
  * in in the ByteBuffer and writing it to the socket.
  * </li>
  * </ol>
- *
+ * <p>
  * By default the {@link NioThread} blocks on the Selector, but it can be put in a
  * 'selectNow' mode that makes it spinning on the selector. This is an experimental
  * feature and will cause the io threads to run hot. For this reason, when this feature
@@ -90,6 +93,7 @@ public final class NioNetworking implements Networking {
     private final SelectorMode selectorMode;
     private final BackoffIdleStrategy idleStrategy;
     private final boolean selectorWorkaroundTest;
+    private final ExecutorService closeListenerExecutor;
     private volatile IOBalancer ioBalancer;
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
@@ -107,6 +111,14 @@ public final class NioNetworking implements Networking {
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
+        this.closeListenerExecutor = newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName(threadNamePrefix + "-NioNetworking-closeListenerExecutor");
+                return t;
+            }
+        });
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -193,6 +205,7 @@ public final class NioNetworking implements Networking {
         inputThreads = null;
         shutdown(outputThreads);
         outputThreads = null;
+        closeListenerExecutor.shutdown();
     }
 
     private void shutdown(NioThread[] threads) {
@@ -206,7 +219,8 @@ public final class NioNetworking implements Networking {
 
     @Override
     public Channel register(SocketChannel socketChannel, boolean clientMode) throws IOException {
-        NioChannel channel = new NioChannel(socketChannel, clientMode, channelInitializer, metricsRegistry);
+        NioChannel channel = new NioChannel(
+                socketChannel, clientMode, channelInitializer, metricsRegistry, closeListenerExecutor);
 
         socketChannel.configureBlocking(false);
 

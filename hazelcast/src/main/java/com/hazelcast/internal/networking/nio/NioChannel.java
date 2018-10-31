@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * A {@link com.hazelcast.internal.networking.Channel} implementation tailored
@@ -34,10 +36,11 @@ import java.nio.channels.SocketChannel;
  */
 public final class NioChannel extends AbstractChannel {
 
-    private static final int DELAY_MS = Integer.getInteger("hazelcast.channel.close.delayMs", 200);
+    // The close delays is needed for the TLS goodbye handshake to complete.
     NioInboundPipeline inboundPipeline;
     NioOutboundPipeline outboundPipeline;
 
+    private final Executor closeListenerExecutor;
     private final MetricsRegistry metricsRegistry;
     private final ChannelInitializer channelInitializer;
     private final NioChannelOptions config;
@@ -45,10 +48,12 @@ public final class NioChannel extends AbstractChannel {
     public NioChannel(SocketChannel socketChannel,
                       boolean clientMode,
                       ChannelInitializer channelInitializer,
-                      MetricsRegistry metricsRegistry) {
+                      MetricsRegistry metricsRegistry,
+                      Executor closeListenerExecutor) {
         super(socketChannel, clientMode);
         this.channelInitializer = channelInitializer;
         this.metricsRegistry = metricsRegistry;
+        this.closeListenerExecutor = closeListenerExecutor;
         this.config = new NioChannelOptions(socketChannel.socket());
     }
 
@@ -112,40 +117,26 @@ public final class NioChannel extends AbstractChannel {
 
     @Override
     protected void close0() {
-        if (Thread.currentThread() instanceof NioThread) {
-            new Thread() {
-                public void run() {
-                    try {
-                        doClose();
-                    } catch (Exception e) {
-                        logger.warning(e.getMessage(), e);
-                    }
-                }
-            }.start();
-        } else {
-            doClose();
-        }
-    }
+        outboundPipeline.drainWriteQueues();
 
-    private void doClose() {
+        // the socket is immediately closed.
         try {
-            inboundPipeline.requestClose();
-            outboundPipeline.requestClose();
-
-            if (DELAY_MS > 0) {
-                try {
-                    Thread.sleep(DELAY_MS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+            socketChannel.close();
+        } catch (IOException e) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Failed to close " + this, e);
             }
+        }
 
+        if (Thread.currentThread() instanceof NioThread) {
+            // we don't want to do any tasks on an io thread; we offload it instead
             try {
-                socketChannel.close();
-            } catch (IOException e) {
-                logger.warning(e);
+                closeListenerExecutor.execute(new NotifyCloseListenersTask());
+            } catch (RejectedExecutionException e) {
+                // if the task gets rejected, the networking must be shutting down.
+                logger.fine(e);
             }
-        } finally {
+        } else {
             notifyCloseListeners();
         }
     }
@@ -155,7 +146,7 @@ public final class NioChannel extends AbstractChannel {
         return "NioChannel{" + localSocketAddress() + "->" + remoteSocketAddress() + '}';
     }
 
-      //  this toString implementation is very useful for debugging. Please don't remove it.
+    //  this toString implementation is very useful for debugging. Please don't remove it.
 //    @Override
 //    public String toString() {
 //        String local = getPort(localSocketAddress());it
@@ -173,5 +164,16 @@ public final class NioChannel extends AbstractChannel {
 
     private String getPort(SocketAddress socketAddress) {
         return socketAddress == null ? "*missing*" : Integer.toString(((InetSocketAddress) socketAddress).getPort());
+    }
+
+    private class NotifyCloseListenersTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                notifyCloseListeners();
+            } catch (Exception e) {
+                logger.warning(e.getMessage(), e);
+            }
+        }
     }
 }

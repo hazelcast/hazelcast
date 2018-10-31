@@ -275,12 +275,10 @@ public final class NioOutboundPipeline
         //System.out.println(channel+" bytes written:"+written);
     }
 
-    @Override
-    public void requestClose() {
+    void drainWriteQueues() {
         writeQueue.clear();
         priorityWriteQueue.clear();
-        super.requestClose();
-   }
+    }
 
     @Override
     protected void publishMetrics() {

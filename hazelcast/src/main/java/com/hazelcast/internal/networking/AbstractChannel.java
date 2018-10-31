@@ -171,8 +171,7 @@ public abstract class AbstractChannel implements Channel {
     }
 
     /**
-     * Template method that is called when the socket channel closed. It is
-     * called before the {@code socketChannel} is closed.
+     * Template method that is called when the Channel is closed.
      *
      * It will be called only once.
      */
