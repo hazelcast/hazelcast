@@ -6,6 +6,7 @@ This repository contains a plugin which provides the automatic Hazelcast member 
 
 - Hazelcast 3.10+
 - GCP VM instances must have access to Cloud API (at minimum "Read Only" Access Scope to "Compute Engine" API)
+- Versions compatibility: hazelcast-gcp 1.1+ is compatible with hazelcast 3.11+; for older hazelcast versions you need to use hazelcast-gcp 1.0.
 
 ## Configuration
 
