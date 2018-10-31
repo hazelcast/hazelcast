@@ -97,18 +97,18 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         return selectionKey == null ? -1 : selectionKey.readyOps();
     }
 
-        /**
-         * Returns the {@link NioThread} owning this pipeline.
-         * It can be null when the pipeline is being migrated between threads.
-         *
-         * Owner is the thread executing the pipeline.
-         *
-         * @return thread owning the pipeline or <code>null</code> when the pipeline is being migrated
-         */
-        @Override
-        public NioThread owner() {
-            return owner;
-        }
+    /**
+     * Returns the {@link NioThread} owning this pipeline.
+     * It can be null when the pipeline is being migrated between threads.
+     * <p>
+     * Owner is the thread executing the pipeline.
+     *
+     * @return thread owning the pipeline or <code>null</code> when the pipeline is being migrated
+     */
+    @Override
+    public NioThread owner() {
+        return owner;
+    }
 
     void start() {
         addTaskAndWakeup(new NioPipelineTask(this) {
@@ -151,7 +151,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
 
     /**
      * Called when the pipeline needs to be processed.
-     *
+     * <p>
      * Any exception that leads to a termination of the connection like an
      * IOException should not be dealt with in the handle method but should
      * be propagated. The reason behind this is that the handle logic already
@@ -164,15 +164,15 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
 
     /**
      * Adds a task to be executed on the {@link NioThread owner}.
-     *
+     * <p>
      * This task is scheduled on the task queue of the owning {@link NioThread}.
-     *
+     * <p>
      * If the pipeline is currently migrating, this method will make sure the
      * task ends up at the new owner.
-     *
+     * <p>
      * It is extremely important that this task takes very little time because
      * otherwise it could cause a lot of problems in the IOSystem.
-     *
+     * <p>
      * This method can be called by any thread. It is a pretty expensive method
      * because it will cause the {@link Selector#wakeup()} method to be called.
      *
@@ -237,15 +237,15 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
 
     /**
      * Is called when the {@link #process()} throws a {@link Throwable}.
-     *
+     * <p>
      * This method should only be called by the current {@link NioThread owner}.
-     *
+     * <p>
      * The idiom to use a pipeline is:
      * <code>
      * try{
-     *     pipeline.process();
+     * pipeline.process();
      * } catch(Throwable t) {
-     *     pipeline.onError(t);
+     * pipeline.onError(t);
      * }
      * </code>
      *
@@ -276,7 +276,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     /**
      * Returns an Iterable that can iterate over each {@link ChannelHandler} of
      * the pipeline.
-     *
+     * <p>
      * This method is called only by the {@link #onError(Throwable)}.
      *
      * @return the Iterable.
@@ -297,32 +297,6 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     public final void requestMigration(NioThread newOwner) {
         // todo: what happens when owner null.
         owner.addTaskAndWakeup(new StartMigrationTask(newOwner));
-    }
-
-    protected void requestClose() {
-        addTaskAndWakeup(new RequestCloseTask());
-    }
-
-    private class RequestCloseTask extends NioPipelineTask {
-        RequestCloseTask() {
-            super(NioPipeline.this);
-        }
-
-        @Override
-        public void run0() {
-            try {
-                boolean hasHandlers = false;
-                for (ChannelHandler handler : handlers()) {
-                    hasHandlers = true;
-                    handler.requestClose();
-                }
-                if (hasHandlers) {
-                    NioPipeline.this.run();
-                }
-            } catch (Exception e) {
-                logger.finest("Error while closing outbound", e);
-            }
-        }
     }
 
     private class StartMigrationTask implements Runnable {
