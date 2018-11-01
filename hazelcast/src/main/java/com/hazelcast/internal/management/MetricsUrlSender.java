@@ -90,9 +90,10 @@ final class MetricsUrlSender implements Runnable, Closeable {
             boolean assumeFast = true;
             boolean assumeConnected = true;
             long currentIntervalMs = intervalMs;
+            long nextRun = 0;
             while (isRunning()) {
-                long startMs = Clock.currentTimeMillis();
                 URL currentURL = url;
+                long startMs = Clock.currentTimeMillis();
                 boolean isFailure = !collectAndSend(currentURL, assumeConnected);
                 long endMs = Clock.currentTimeMillis();
                 long durationMs = endMs - startMs;
@@ -102,7 +103,8 @@ final class MetricsUrlSender implements Runnable, Closeable {
                 assumeConnected = !isFailure;
                 assumeFast = !isSlow;
                 currentIntervalMs = isFailure ? RECONNECT_SLOWDOWN_FACTOR * intervalMs : intervalMs;
-                long sleepMs = currentIntervalMs - durationMs;
+                nextRun = (nextRun == 0 ? startMs : nextRun) + currentIntervalMs;
+                long sleepMs = nextRun - Clock.currentTimeMillis();
                 if (sleepMs > 0) {
                     Thread.sleep(sleepMs);
                 }
