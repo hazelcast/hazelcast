@@ -112,9 +112,9 @@ public final class ClientEndpointImpl implements ClientEndpoint, MetricsSource, 
     @Override
     public void collectAll(CollectionCycle cycle) {
         cycle.switchContext().namespace("client").instance(getUuid())
-                .tag(TAG_TARGET, getClientType().name())
+                .tag("type", getClientType().name())
                 .tag("version", clientVersionString == null ? "?" : clientVersionString)
-                .tag("address", address == null ? "?" : address);
+                .tag(TAG_TARGET, address == null ? "?" : address);
         // this particular metric is used to convey details of the endpoint via tags
         cycle.collect("ownerConnection", ownerConnection);
         if (ownerConnection) {
