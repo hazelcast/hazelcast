@@ -85,11 +85,11 @@ public class LocalReplicatedMapStatsImpl extends LocalDistributedObjectStats
     private volatile long putCount;
     @Probe
     private volatile long removeCount;
-    @Probe
+    @Probe(name = "totalGetLatency")
     private volatile long totalGetLatencies;
-    @Probe
+    @Probe(name = "totalPutLatency")
     private volatile long totalPutLatencies;
-    @Probe
+    @Probe(name = "totalRemoveLatency")
     private volatile long totalRemoveLatencies;
     @Probe
     private volatile long maxGetLatency;
