@@ -190,19 +190,20 @@ public class Statistics implements MetricsSource {
         if (conn == null) {
             return;
         }
-        cycle.switchContext().namespace("client");
+        ClientConnectionManagerImpl cm = (ClientConnectionManagerImpl) client.getConnectionManager();
+        String uuid = cm.getPrincipal().getUuid();
+        cycle.switchContext().namespace("client").instance(uuid);
         cycle.collect(MANDATORY, "enterprise", enterprise);
         cycle.collect(MANDATORY, "lastStatisticsCollectionTime", System.currentTimeMillis());
         cycle.collect(MANDATORY, "clusterConnectionTimestamp", conn.getStartTime());
         String address = ownerConnection.getLocalSocketAddress().getAddress().getHostAddress() + ":"
                 + ownerConnection.getLocalSocketAddress().getPort();
         cycle.switchContext()
-            .namespace("client")
-            .instance(client.getName())
+            .namespace("client").instance(uuid)
+            .tag("name", client.getName())
             .tag("type", ClientType.JAVA.toString())
             .tag(TAG_TARGET, address)
             .tag("version", BuildInfoProvider.getBuildInfo().getVersion());
-        ClientConnectionManagerImpl cm = (ClientConnectionManagerImpl) client.getConnectionManager();
         cycle.collect(MANDATORY, "principal", cm.getLastCredentials() != null);
         Collection<NearCache> caches = client.getNearCacheManager().listAllNearCaches();
         if (caches.isEmpty()) {
