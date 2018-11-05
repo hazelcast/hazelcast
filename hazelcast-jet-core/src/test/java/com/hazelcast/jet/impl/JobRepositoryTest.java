@@ -25,7 +25,9 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.pipeline.JournalInitialPosition;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.TestProcessors;
+import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -71,6 +73,8 @@ public class JobRepositoryTest extends JetTestSupport {
         jobRepository.setResourcesExpirationMillis(RESOURCES_EXPIRATION_TIME_MILLIS);
 
         jobIds = instance.getMap(RANDOM_IDS_MAP_NAME);
+
+        TestProcessors.reset(2);
     }
 
     @Test
@@ -157,7 +161,7 @@ public class JobRepositoryTest extends JetTestSupport {
     public void test_getJobRecordFromClient() {
         JetInstance client = createJetClient();
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal("map", JournalInitialPosition.START_FROM_OLDEST))
+        p.drawFrom(Sources.streamFromProcessor("source", ProcessorMetaSupplier.of(() -> new StuckProcessor())))
          .drainTo(Sinks.logger());
         Job job = instance.newJob(p, new JobConfig()
                 .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
