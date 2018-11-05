@@ -892,6 +892,9 @@ public final class Sources {
      * IList}. All elements are emitted on a single member &mdash; the one
      * where the entire list is stored by the IMDG.
      * <p>
+     * If the {@code IList} is modified while being read, the source may miss
+     * and/or duplicate some entries.
+     * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
@@ -906,6 +909,9 @@ public final class Sources {
      * Returns a source that emits items retrieved from a Hazelcast {@code
      * IList}. All elements are emitted on a single member &mdash; the one
      * where the entire list is stored by the IMDG.
+     * <p>
+     * If the {@code IList} is modified while being read, the source may miss
+     * and/or duplicate some entries.
      * <p>
      * <strong>NOTE:</strong> Jet only remembers the name of the list you
      * supply and acquires a list with that name on the local cluster. If you
@@ -926,6 +932,9 @@ public final class Sources {
      * Returns a source that emits items retrieved from a Hazelcast {@code
      * IList} in a remote cluster identified by the supplied {@code
      * ClientConfig}. All elements are emitted on a single member.
+     * <p>
+     * If the {@code IList} is modified while being read, the source may miss
+     * and/or duplicate some entries.
      * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
@@ -998,6 +1007,10 @@ public final class Sources {
      *      .mapToOutputFn((fileName, line) -> line)
      *      .build()
      * }</pre>
+     * <p>
+     * If files are appended to while being read, the addition might or might
+     * not be emitted or part of a line can be emitted. If files are modified
+     * in more complex ways, the behavior is undefined.
      *
      * See {@link #filesBuilder(String)}.
      */
@@ -1147,6 +1160,10 @@ public final class Sources {
      *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      * }</pre>
      * <p>
+     * If the underlying table is modified while being read, the source may
+     * miss and/or duplicate some entries, because multiple queries for parts
+     * of the data on multiple members will be executed.
+     * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
@@ -1174,6 +1191,11 @@ public final class Sources {
      * ToResultSetFunction, DistributedFunction)}.
      * A non-distributed, single-worker source which fetches the whole resultSet
      * with a single query on single member.
+     * <p>
+     * This method executes exactly one query in the target database. If the
+     * underlying table is modified while being read, the behavior depends on
+     * the configured transaction isolation level in the target database. Refer
+     * to the documentation for the target database system.
      * <p>
      * Example: <pre>{@code
      *     p.drawFrom(Sources.jdbc(
