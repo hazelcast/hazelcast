@@ -74,6 +74,18 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
 
     private static final Object[] EMPTY_ARGS = new Object[0];
 
+    /**
+     * Maximum number of times a {@link MetricsSource} may throw an exception during
+     * collection before it is auto-disabled.
+     */
+    private static final int DISABLE_THROWING_SOURCE_LIMIT = 5;
+
+    /**
+     * Maximum number of times a method annotated with {@link BeforeCollectionCycle}
+     * may throw an exception during collection before it is auto-disabled.
+     */
+    private static final int DISABLE_THROWING_UPDATE_LIMIT = 5;
+
     private final ConcurrentMap<Class<?>, ProbeAnnotatedType> metaDataCache =
             new ConcurrentReferenceHashMap<Class<?>, ProbeAnnotatedType>();
 
@@ -709,6 +721,8 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         final boolean isContributing;
         final String staticNs;
         final ProbeAnnotatedTypeLevel[] levels;
+        private int timesSourceThrownException;
+        private int timesUpdateThrownException;
 
         ProbeAnnotatedType(Class<?> type) {
             this(type, initByAnnotations(type));
@@ -747,9 +761,12 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                 try {
                     update.invoke(obj, EMPTY_ARGS);
                 } catch (Exception e) {
-                    LOGGER.warning("Failed to update source: "
-                            + update.getDeclaringClass().getSimpleName() + "."
-                            + update.getName(), e);
+                    timesUpdateThrownException++;
+                    String methodName = update.getDeclaringClass().getSimpleName() + "." + update.getName();
+                    LOGGER.warning("Failed to update source: " + methodName, e);
+                    if (timesUpdateThrownException >= DISABLE_THROWING_UPDATE_LIMIT) {
+                        LOGGER.warning("Update disabled for objects of type " + methodName);
+                    }
                 }
             }
         }
@@ -783,8 +800,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                         probedMethods.add(m);
                     }
                 } catch (NoSuchMethodException e) {
-                    LOGGER.warning("Expected probe method `" + name + "` does not exist for type: "
-                            + type.getName());
+                    LOGGER.warning("Expected probe method `" + name + "` does not exist for type: " + type.getName());
                 } catch (Exception e) {
                     LOGGER.warning("Failed to add probe method `" + name + "`: " + e.getMessage());
                 }
@@ -831,7 +847,8 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                 return;
             }
             try {
-                if (isUpdated && cycle.isCollected(updateLevel)) {
+                if (isUpdated && cycle.isCollected(updateLevel)
+                        && timesUpdateThrownException < DISABLE_THROWING_UPDATE_LIMIT) {
                     updateIfNeeded(instance);
                 }
                 if (isAnnotated) {
@@ -841,7 +858,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                         collectAllInternal(cycle, instance);
                     }
                 }
-                if (isSource) {
+                if (isSource && timesSourceThrownException < DISABLE_THROWING_SOURCE_LIMIT) {
                     collectAllOfSource(cycle, (MetricsSource) instance);
                 }
             } catch (Exception e) {
@@ -857,10 +874,20 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             int baseIndex = cycle.tagBaseIndex;
             CharSequence lastTag = cycle.lastTagName;
             cycle.tagBaseIndex = cycle.tags.length();
-            source.collectAll(cycle);
-            cycle.tagBaseIndex = baseIndex;
-            cycle.lastTagName = lastTag;
-            cycle.tags.setLength(cycle.tagBaseIndex);
+            try {
+                source.collectAll(cycle);
+            } catch (Exception e) {
+                timesSourceThrownException++;
+                String typeName = source.getClass().getSimpleName();
+                LOGGER.warning("Excetion while collecting source of type " + typeName, e);
+                if (timesSourceThrownException >= DISABLE_THROWING_SOURCE_LIMIT) {
+                    LOGGER.warning("Disabling collection for all sources of type " + typeName, e);
+                }
+            } finally {
+                cycle.tagBaseIndex = baseIndex;
+                cycle.lastTagName = lastTag;
+                cycle.tags.setLength(cycle.tagBaseIndex);
+            }
         }
 
         /**
