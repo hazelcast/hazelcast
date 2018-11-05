@@ -16,6 +16,18 @@
 
 package com.hazelcast.nio.ssl;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.util.Properties;
+
 import static com.hazelcast.nio.ssl.TestKeyStoreUtil.JAVAX_NET_SSL_KEY_STORE;
 import static com.hazelcast.nio.ssl.TestKeyStoreUtil.JAVAX_NET_SSL_TRUST_STORE;
 import static com.hazelcast.nio.ssl.TestKeyStoreUtil.JAVAX_NET_SSL_TRUST_STORE_PASSWORD;
@@ -24,20 +36,7 @@ import static com.hazelcast.nio.ssl.TestKeyStoreUtil.getMalformedKeyStoreFilePat
 import static com.hazelcast.nio.ssl.TestKeyStoreUtil.getWrongKeyStoreFilePath;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
-import java.io.IOException;
-import java.security.KeyStoreException;
-import java.util.Properties;
-
-import javax.net.ssl.SSLContext;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -51,7 +50,10 @@ public class BasicSSLContextFactoryTest {
 
         factory.init(properties);
 
-        assertSSLContext();
+        SSLContext sslContext = factory.getSSLContext();
+        assertNull("TrustManagerFactory must be null", factory.tmf);
+        assertNotNull(sslContext);
+        assertEquals("TLS", sslContext.getProtocol());
     }
 
     @Test
@@ -70,7 +72,10 @@ public class BasicSSLContextFactoryTest {
         properties.remove(JAVAX_NET_SSL_TRUST_STORE_PASSWORD);
         factory.init(properties);
 
-        assertSSLContext();
+        SSLContext sslContext = factory.getSSLContext();
+        assertNull("TrustManagerFactory must be null", factory.tmf);
+        assertNotNull(sslContext);
+        assertEquals("TLS", sslContext.getProtocol());
     }
 
     @Test(expected = KeyStoreException.class)
