@@ -49,7 +49,12 @@ public class WanSyncStateImpl implements WanSyncState, MetricsNs {
 
     @Override
     public void switchContext(Tags context) {
-        context.instance(getActiveWanConfigName()).tag(TAG_TARGET, getActivePublisherName());
+        if (activeWanConfigName != null) {
+            context.instance(activeWanConfigName);
+            if (activePublisherName != null) {
+                context.tag(TAG_TARGET, activePublisherName);
+            }
+        }
     }
 
     @Override
