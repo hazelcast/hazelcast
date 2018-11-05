@@ -74,7 +74,7 @@ abstract class AbstractJetMessageTask<P> extends AbstractInvocationMessageTask<P
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation operation) {
         return nodeEngine.getOperationService().createInvocationBuilder(JetService.SERVICE_NAME,
-                operation, nodeEngine.getThisAddress());
+                operation, nodeEngine.getMasterAddress());
     }
 
     protected JetService getJetService() {

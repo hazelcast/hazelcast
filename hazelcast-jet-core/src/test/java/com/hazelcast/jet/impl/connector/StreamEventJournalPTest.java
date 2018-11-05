@@ -23,6 +23,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.WatermarkEmissionPolicy;
@@ -48,9 +49,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
+import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
@@ -237,14 +237,14 @@ public class StreamEventJournalPTest extends JetTestSupport {
         Job job = instance.newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(200_000));
-        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()), 25);
+        assertJobStatusEventually(job, JobStatus.RUNNING, 25);
         job.restart();
 
         // Then
         // The job should be running: this test checks that state restored to NoopP, which is
         // created by the meta supplier for processor with no partitions, is ignored.
         sleepMillis(3000);
-        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()), 10);
+        assertJobStatusEventually(job, JobStatus.RUNNING, 10);
     }
 
     private void fillJournal(int countPerPartition) {

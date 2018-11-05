@@ -72,10 +72,10 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
         job.restart();
 
         // Then
-        assertTrueEventually(() -> assertEquals(JobStatus.COMPLETING, job.getStatus()), 5);
+        assertJobStatusEventually(job, JobStatus.COMPLETING, 5);
         assertTrueAllTheTime(() -> assertEquals(JobStatus.COMPLETING, job.getStatus()), 5);
         SnapshotOperation.postponeResponses = false;
-        assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()), 5);
+        assertJobStatusEventually(job, JobStatus.RUNNING, 5);
     }
 
     @Test
@@ -89,6 +89,6 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
 
         // Then
         assertTrueEventually(() -> assertEquals(4, StuckProcessor.initCount.get()), 5);
-        assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()), 5);
+        assertJobStatusEventually(job, JobStatus.RUNNING, 5);
     }
 }

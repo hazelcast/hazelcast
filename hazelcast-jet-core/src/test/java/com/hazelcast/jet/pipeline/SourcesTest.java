@@ -415,7 +415,7 @@ public class SourcesTest extends PipelineTestSupport {
         p.drawFrom(source).drainTo(sink);
         Job job = jet().newJob(p);
         // wait for the processor to initialize
-        assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
+        assertJobStatusEventually(job, JobStatus.RUNNING);
         // pre-existing file should not be picked up
         assertEquals(0, sinkList.size());
         appendToFile(file, "third line");

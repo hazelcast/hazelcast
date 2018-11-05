@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
@@ -25,6 +26,7 @@ import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.util.Util.RunnableExc;
@@ -46,6 +48,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 public abstract class JetTestSupport extends HazelcastTestSupport {
 
     protected ILogger logger = Logger.getLogger(getClass());
@@ -60,6 +65,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     protected JetInstance createJetClient() {
         return instanceFactory.newClient();
+    }
+
+    protected JetInstance createJetClient(ClientConfig config) {
+        return instanceFactory.newClient(config);
     }
 
     protected JetInstance createJetMember() {
@@ -124,6 +133,19 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         file.deleteOnExit();
         return file;
     }
+
+    public static void assertJobStatusEventually(Job job, JobStatus expected) {
+        assertJobStatusEventually(job, expected, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+
+    }
+
+    public static void assertJobStatusEventually(Job job, JobStatus expected, int timeoutSeconds) {
+        assertTrueEventually(() -> {
+            assertNotNull(job);
+            assertEquals(job.getStatus(), expected);
+        }, timeoutSeconds);
+    }
+
 
     public static void assertTrueEventually(RunnableExc runnable) {
         HazelcastTestSupport.assertTrueEventually(assertTask(runnable));

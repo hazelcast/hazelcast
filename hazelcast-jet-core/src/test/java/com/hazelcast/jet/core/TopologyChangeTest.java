@@ -96,7 +96,7 @@ public class TopologyChangeTest extends JetTestSupport {
 
     @Parameterized.Parameters
     public static Collection<boolean[]> parameters() {
-        return Arrays.asList(new boolean[][] {
+        return Arrays.asList(new boolean[][]{
                 {false, false, false},
                 {true, false, false},
                 {false, true, false}
@@ -223,7 +223,7 @@ public class TopologyChangeTest extends JetTestSupport {
         instances[2].getHazelcastInstance().getLifecycleService().terminate();
         StuckProcessor.proceedLatch.countDown();
 
-        assertTrueEventually(() -> assertEquals(snapshotted ? SUSPENDED : FAILED, job.getStatus()), 10);
+        assertJobStatusEventually(job, snapshotted ? SUSPENDED : FAILED, 10);
     }
 
     @Test
@@ -320,7 +320,8 @@ public class TopologyChangeTest extends JetTestSupport {
             while (status == null) {
                 try {
                     status = job.getStatus();
-                } catch (TargetNotMemberException ignored) { }
+                } catch (TargetNotMemberException ignored) {
+                }
             }
             assertEquals(snapshotted ? SUSPENDED : FAILED, status);
         }, 10);
@@ -374,7 +375,7 @@ public class TopologyChangeTest extends JetTestSupport {
 
 
         // Then
-        assertTrueEventually(() -> assertEquals(STARTING, job.getStatus()));
+        assertJobStatusEventually(job, STARTING);
         assertTrueAllTheTime(() -> assertEquals(STARTING, job.getStatus()), 5);
 
         resetPacketFiltersFrom(instances[0].getHazelcastInstance());
@@ -413,7 +414,7 @@ public class TopologyChangeTest extends JetTestSupport {
         assertTrueEventually(() -> {
             Arrays.stream(instances)
                   .filter(instance -> !instance.getHazelcastInstance().getCluster().getLocalMember().isLiteMember())
-                  .filter(instance ->  instance != instances[2])
+                  .filter(instance -> instance != instances[2])
                   .map(JetTestSupport::getJetService)
                   .map(service -> service.getJobExecutionService().getExecutionContext(executionId))
                   .forEach(Assert::assertNotNull);
@@ -455,7 +456,7 @@ public class TopologyChangeTest extends JetTestSupport {
         spawn(() -> instances[2].getHazelcastInstance().shutdown());
 
         // Then, it restarts until the shutting down node is gone
-        assertTrueEventually(() -> assertEquals(STARTING, job.getStatus()));
+        assertJobStatusEventually(job, STARTING);
         assertTrueAllTheTime(() -> assertEquals(STARTING, job.getStatus()), 5);
 
         resetPacketFiltersFrom(instances[2].getHazelcastInstance());
@@ -477,7 +478,7 @@ public class TopologyChangeTest extends JetTestSupport {
 
         Job job = instances[0].newJob(dag);
 
-        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()));
+        assertJobStatusEventually(job, RUNNING);
 
         // When a participant shuts down during execution
         instances[2].shutdown();

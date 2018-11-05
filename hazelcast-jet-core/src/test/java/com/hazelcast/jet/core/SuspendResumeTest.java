@@ -76,9 +76,9 @@ public class SuspendResumeTest extends JetTestSupport {
         Job job = instances[0].newJob(dag);
         StuckProcessor.executionStarted.await();
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         job.resume();
-        assertEqualsEventually(job::getStatus, RUNNING);
+        assertJobStatusEventually(job, RUNNING);
         StuckProcessor.proceedLatch.countDown();
         job.join();
 
@@ -98,10 +98,10 @@ public class SuspendResumeTest extends JetTestSupport {
         Job job = instances[0].newJob(dag);
         StuckProcessor.executionStarted.await();
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         createJetMember(config);
         job.resume();
-        assertEqualsEventually(job::getStatus, RUNNING);
+        assertJobStatusEventually(job, RUNNING);
         StuckProcessor.proceedLatch.countDown();
         job.join();
 
@@ -121,10 +121,10 @@ public class SuspendResumeTest extends JetTestSupport {
         Job job = instances[0].newJob(dag);
         StuckProcessor.executionStarted.await();
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         instances[2].getHazelcastInstance().getLifecycleService().terminate();
         job.resume();
-        assertEqualsEventually(job::getStatus, RUNNING);
+        assertJobStatusEventually(job, RUNNING);
         StuckProcessor.proceedLatch.countDown();
         job.join();
 
@@ -144,7 +144,7 @@ public class SuspendResumeTest extends JetTestSupport {
         Job job = instances[1].newJob(dag);
         StuckProcessor.executionStarted.await();
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         instances[0].getHazelcastInstance().getLifecycleService().terminate();
         for (int i = 0; ; i++) {
             try {
@@ -159,7 +159,7 @@ public class SuspendResumeTest extends JetTestSupport {
                 sleepSeconds(1);
             }
         }
-        assertEqualsEventually(job::getStatus, RUNNING);
+        assertJobStatusEventually(job, RUNNING);
         StuckProcessor.proceedLatch.countDown();
         job.join();
 
@@ -181,7 +181,7 @@ public class SuspendResumeTest extends JetTestSupport {
         Future future = spawn(job::join);
         sleepSeconds(1); // wait for the join to reach member
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         // Then
         assertTrueAllTheTime(() -> assertFalse(future.isDone()), 2);
     }
@@ -192,7 +192,7 @@ public class SuspendResumeTest extends JetTestSupport {
         StuckProcessor.executionStarted.await();
         // When
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         Future future = spawn(job::join);
         // Then
         assertTrueAllTheTime(() -> assertFalse(future.isDone()), 2);
@@ -203,12 +203,12 @@ public class SuspendResumeTest extends JetTestSupport {
         Job job = instances[0].newJob(dag);
         StuckProcessor.executionStarted.await();
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         // When
         Future future = spawn(job::join);
         assertTrueAllTheTime(() -> assertFalse(future.isDone()), 1);
         job.resume();
-        assertEqualsEventually(job::getStatus, RUNNING);
+        assertJobStatusEventually(job, RUNNING);
         assertTrueAllTheTime(() -> assertFalse(future.isDone()), 1);
         StuckProcessor.proceedLatch.countDown();
         assertTrueEventually(() -> assertTrue(future.isDone()), 5);
@@ -219,7 +219,7 @@ public class SuspendResumeTest extends JetTestSupport {
         Job job = instances[0].newJob(dag);
         StuckProcessor.executionStarted.await();
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         // When
         job.cancel();
         // Then
@@ -227,7 +227,7 @@ public class SuspendResumeTest extends JetTestSupport {
             job.join();
             fail("job.join() should have failed");
         } catch (CancellationException ignored) { }
-        assertEqualsEventually(job::getStatus, COMPLETED);
+        assertJobStatusEventually(job, COMPLETED);
 
         // check that job resources are deleted
         JobRepository jobRepository = new JobRepository(instances[0]);
@@ -244,7 +244,7 @@ public class SuspendResumeTest extends JetTestSupport {
         Job job = instances[0].newJob(dag);
         StuckProcessor.executionStarted.await();
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         // Then
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage("Cannot RESTART_GRACEFUL, job status is SUSPENDED");
@@ -257,7 +257,7 @@ public class SuspendResumeTest extends JetTestSupport {
         Job job = instances[0].newJob(dag);
         StuckProcessor.executionStarted.await();
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         // Then
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage("Cannot SUSPEND_GRACEFUL, job status is SUSPENDED");
@@ -280,7 +280,7 @@ public class SuspendResumeTest extends JetTestSupport {
         Job job = instances[1].newJob(dag);
         StuckProcessor.executionStarted.await();
         job.suspend();
-        assertEqualsEventually(job::getStatus, SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         if (graceful) {
             instances[0].shutdown();
         } else {

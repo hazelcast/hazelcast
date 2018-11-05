@@ -364,7 +364,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             // Sleep a little in order to not observe the RUNNING status from the execution
             // before the restart.
             LockSupport.parkNanos(MILLISECONDS.toNanos(500));
-            assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
+            assertJobStatusEventually(job, JobStatus.RUNNING);
         });
     }
 
@@ -374,7 +374,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             logger.info("Suspending the job...");
             job.suspend();
             logger.info("suspend() returned");
-            assertTrueEventually(() -> assertEquals(JobStatus.SUSPENDED, job.getStatus()), 15);
+            assertJobStatusEventually(job, JobStatus.SUSPENDED, 15);
             // The Job.resume() call might overtake the suspension.
             // resume() does nothing when job is not suspended. Without
             // the sleep, the job might remain suspended.
@@ -382,7 +382,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             logger.info("Resuming the job...");
             job.resume();
             logger.info("resume() returned");
-            assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()), 15);
+            assertJobStatusEventually(job, JobStatus.RUNNING, 15);
         });
     }
 

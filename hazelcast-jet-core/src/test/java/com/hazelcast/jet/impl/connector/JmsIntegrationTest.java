@@ -48,7 +48,6 @@ import static java.util.Collections.synchronizedList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static javax.jms.Session.AUTO_ACKNOWLEDGE;
-import static org.junit.Assert.assertEquals;
 
 public class JmsIntegrationTest extends PipelineTestSupport {
 
@@ -126,8 +125,8 @@ public class JmsIntegrationTest extends PipelineTestSupport {
     @Test
     public void sourceQueue_whenBuilder() {
         StreamSource<Message> source = Sources.jmsQueueBuilder(() -> broker.createConnectionFactory())
-                .destinationName(destinationName)
-                .build();
+                                              .destinationName(destinationName)
+                                              .build();
 
         p.drawFrom(source)
          .map(TEXT_MESSAGE_FN)
@@ -322,17 +321,13 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         job = start();
         // batch jobs can be completed before we observe RUNNING status
         if (waitForRunning) {
-            waitForJobStatus(JobStatus.RUNNING);
+            assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         }
     }
 
     private void cancelJob() {
         job.cancel();
-        waitForJobStatus(JobStatus.COMPLETED);
-    }
-
-    private void waitForJobStatus(JobStatus status) {
-        assertTrueEventually(() -> assertEquals(status, job.getStatus()), 10);
+        assertJobStatusEventually(job, JobStatus.COMPLETED, 10);
     }
 
     private String sendMessage(String destinationName, boolean isQueue) throws Exception {

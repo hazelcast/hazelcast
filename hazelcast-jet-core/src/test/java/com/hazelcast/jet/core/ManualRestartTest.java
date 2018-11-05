@@ -45,13 +45,13 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -116,7 +116,7 @@ public class ManualRestartTest extends JetTestSupport {
         JetInstance client = createJetClient();
         Job job = client.newJob(dag);
 
-        assertTrueEventually(() -> assertSame(job.getStatus(), JobStatus.STARTING), 10);
+        assertJobStatusEventually(job, STARTING, 10);
 
         // Then, the job cannot restart
         exception.expect(IllegalStateException.class);

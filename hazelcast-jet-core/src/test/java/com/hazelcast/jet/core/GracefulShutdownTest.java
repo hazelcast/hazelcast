@@ -107,7 +107,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         Job job = client.newJob(dag, new JobConfig()
                 .setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE)
                 .setSnapshotIntervalMillis(HOURS.toMillis(1)));
-        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()));
+        assertJobStatusEventually(job, JobStatus.RUNNING);
         logger.info("sleeping 1 sec");
         sleepSeconds(1);
 
@@ -151,7 +151,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("v", (DistributedSupplier<Processor>) StuckProcessor::new);
         Job job = instances[0].newJob(dag);
-        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()), 10);
+        assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         Future future = spawn(liteMember::shutdown);
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 5);
         future.get();
@@ -162,7 +162,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("v", (DistributedSupplier<Processor>) StuckProcessor::new);
         Job job = instances[0].newJob(dag);
-        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()), 10);
+        assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         Future future = spawn(() -> {
             JetInstance nonParticipatingMember = createJetMember();
             sleepSeconds(1);
@@ -200,7 +200,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         }
 
         // after that, the job should become RUNNING
-        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()), 5);
+        assertJobStatusEventually(job, JobStatus.RUNNING, 5);
     }
 
     @Test

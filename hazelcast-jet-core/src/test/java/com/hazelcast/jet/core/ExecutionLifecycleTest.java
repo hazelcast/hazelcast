@@ -57,6 +57,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
@@ -418,10 +419,11 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
         // Then
         job.cancel();
 
-        assertTrueEventually(() -> assertEquals(JobStatus.COMPLETING, job.getStatus()), 3);
+
+        assertJobStatusEventually(job, COMPLETING, 3);
 
         assertTrueFiveSeconds(() -> {
-            assertEquals(JobStatus.COMPLETING, job.getStatus());
+            assertEquals(COMPLETING, job.getStatus());
             assertEquals("PS.close called before execution finished", 0, MockPS.closeCount.get());
         });
 

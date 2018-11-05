@@ -115,7 +115,7 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertTrueEventually(() -> assertEquals(JobStatus.COMPLETED, job.getStatus()), 3);
+        assertJobStatusEventually(job, JobStatus.COMPLETED, 3);
     }
 
     @Test
@@ -157,7 +157,7 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertTrueEventually(() -> assertEquals(JobStatus.COMPLETED, job.getStatus()), 3);
+        assertJobStatusEventually(job, JobStatus.COMPLETED, 3);
     }
 
     @Test
@@ -200,11 +200,11 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertTrueEventually(() -> assertEquals(JobStatus.COMPLETING, job.getStatus()), 3);
+        assertJobStatusEventually(job, JobStatus.COMPLETING, 3);
 
         resetPacketFiltersFrom(instance1.getHazelcastInstance());
 
-        assertTrueEventually(() -> assertEquals(JobStatus.COMPLETED, job.getStatus()), 3);
+        assertJobStatusEventually(job, JobStatus.COMPLETED, 3);
     }
 
     @Test
@@ -342,12 +342,12 @@ public class CancellationTest extends JetTestSupport {
     private static void assertExecutionTerminated() {
         final long[] previous = {0};
         assertTrueEventually(() -> {
-                long current = StuckSource.callCounter.get();
-                long last = previous[0];
-                previous[0] = current;
-                assertTrue("Call counter should eventually stop being incremented.", current == last);
-                sleepMillis(200);
-            }, 3);
+            long current = StuckSource.callCounter.get();
+            long last = previous[0];
+            previous[0] = current;
+            assertTrue("Call counter should eventually stop being incremented.", current == last);
+            sleepMillis(200);
+        }, 3);
     }
 
     private static void assertBlockingProcessorEventuallyNotRunning() {
@@ -423,7 +423,8 @@ public class CancellationTest extends JetTestSupport {
             this.port = failOnAddress.getPort();
         }
 
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             Address failOnAddress;
             try {
