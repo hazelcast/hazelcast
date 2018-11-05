@@ -140,10 +140,8 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     public static void assertJobStatusEventually(Job job, JobStatus expected, int timeoutSeconds) {
-        assertTrueEventually(() -> {
-            assertNotNull(job);
-            assertEquals(job.getStatus(), expected);
-        }, timeoutSeconds);
+        assertNotNull(job);
+        assertTrueEventually(() -> assertEquals(job.getStatus(), expected), timeoutSeconds);
     }
 
 
