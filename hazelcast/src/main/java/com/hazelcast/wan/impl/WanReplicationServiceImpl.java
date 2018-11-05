@@ -20,10 +20,6 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.MetricsSource;
-import com.hazelcast.internal.metrics.CollectionCycle;
-import com.hazelcast.internal.metrics.CollectionCycle.Tags;
-import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.management.events.AddWanConfigIgnoredEvent;
 import com.hazelcast.internal.management.events.WanConsistencyCheckIgnoredEvent;
 import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
@@ -36,7 +32,6 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.getOrCreate;
@@ -45,7 +40,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 /**
  * Open source implementation of the {@link com.hazelcast.wan.WanReplicationService}
  */
-public class WanReplicationServiceImpl implements WanReplicationService, MetricsSource {
+public class WanReplicationServiceImpl implements WanReplicationService {
 
     private final Node node;
 
@@ -174,24 +169,6 @@ public class WanReplicationServiceImpl implements WanReplicationService, Metrics
     @Override
     public Map<String, LocalWanStats> getStats() {
         return null;
-    }
-
-    @Override
-    public void collectAll(CollectionCycle cycle) {
-        Map<String, LocalWanStats> wanStats = getStats();
-        if (wanStats != null && !wanStats.isEmpty()) {
-            for (Entry<String, LocalWanStats> config : wanStats.entrySet()) {
-                Tags tags = cycle.switchContext().namespace("wan").instance(config.getKey());
-                for (Map.Entry<String, LocalWanPublisherStats> stats : config.getValue()
-                        .getLocalWanPublisherStats().entrySet()) {
-                    tags.tag(TAG_TARGET, stats.getKey());
-                    cycle.collectAll(stats.getValue());
-                    cycle.collect("state", stats.getValue().getPublisherState().getId());
-                }
-            }
-        }
-        cycle.switchContext().namespace("wan-sync");
-        cycle.collectAll(getWanSyncState());
     }
 
     private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {

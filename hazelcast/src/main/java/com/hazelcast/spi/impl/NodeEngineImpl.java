@@ -33,6 +33,7 @@ import com.hazelcast.internal.metrics.sources.ClassLoadingMetrics;
 import com.hazelcast.internal.metrics.sources.HotBackupMetrics;
 import com.hazelcast.internal.metrics.sources.HotRestartMetrics;
 import com.hazelcast.internal.metrics.sources.UserHomeMetrics;
+import com.hazelcast.internal.metrics.sources.WanReplicationMetrics;
 import com.hazelcast.internal.metrics.sources.MemoryMetrics;
 import com.hazelcast.internal.metrics.sources.OperatingSystemMetrics;
 import com.hazelcast.internal.metrics.sources.RuntimeMetrics;
@@ -199,6 +200,7 @@ public class NodeEngineImpl implements NodeEngine {
         metricsRegistry.register(new OperatingSystemMetrics());
         metricsRegistry.register(new ClassLoadingMetrics());
         metricsRegistry.register(new HotRestartMetrics(node));
+        metricsRegistry.register(new WanReplicationMetrics(wanReplicationService));
         metricsRegistry.register(new HotBackupMetrics(node.getNodeExtension()));
         metricsRegistry.register(new MemoryMetrics(node.getNodeExtension()));
         for (Object s : serviceManager.getServices(Object.class)) {
