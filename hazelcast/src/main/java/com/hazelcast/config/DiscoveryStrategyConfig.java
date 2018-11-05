@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -36,7 +37,7 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     private Map<String, Comparable> properties;
 
     public DiscoveryStrategyConfig() {
-        properties = new HashMap<String, Comparable>();
+        properties = MapUtil.createHashMap(1);
     }
 
     public DiscoveryStrategyConfig(String className) {
@@ -46,7 +47,9 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     public DiscoveryStrategyConfig(String className,
                                    Map<String, Comparable> properties) {
         this.className = className;
-        this.properties = new HashMap<String, Comparable>(properties);
+        this.properties = properties == null
+                ? MapUtil.<String, Comparable>createHashMap(1)
+                : new HashMap<String, Comparable>(properties);
         this.discoveryStrategyFactory = null;
     }
 
@@ -57,7 +60,9 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
 
     public DiscoveryStrategyConfig(DiscoveryStrategyFactory discoveryStrategyFactory, Map<String, Comparable> properties) {
         this.className = null;
-        this.properties = new HashMap<String, Comparable>(properties);
+        this.properties = properties == null
+                ? MapUtil.<String, Comparable>createHashMap(1)
+                : new HashMap<String, Comparable>(properties);
         this.discoveryStrategyFactory = discoveryStrategyFactory;
     }
 
@@ -88,7 +93,9 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     }
 
     public DiscoveryStrategyConfig setProperties(Map<String, Comparable> properties) {
-        this.properties = properties;
+        this.properties = properties == null
+                ? MapUtil.<String, Comparable>createHashMap(1)
+                : new HashMap<String, Comparable>(properties);
         return this;
     }
 

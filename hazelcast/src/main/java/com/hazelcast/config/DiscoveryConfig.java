@@ -95,9 +95,9 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the defined {@link DiscoveryStrategy}
-     * configurations. This collection does not include deactivated configurations
-     * since those are automatically skipped while reading the configuration file.
+     * Returns the defined {@link DiscoveryStrategy} configurations.
+     * This collection does not include deactivated configurations since those
+     * are automatically skipped while reading the configuration file.
      * <p>
      * All returned configurations are expected to be active, this is to remember
      * when building custom {@link com.hazelcast.config.Config} instances.
@@ -108,8 +108,15 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return discoveryStrategyConfigs;
     }
 
+    /**
+     * Sets the strategy configurations for this discovery config.
+     *
+     * @param discoveryStrategyConfigs the strategy configurations
+     */
     public void setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
-        this.discoveryStrategyConfigs = discoveryStrategyConfigs;
+        this.discoveryStrategyConfigs = discoveryStrategyConfigs == null
+                ? new ArrayList<DiscoveryStrategyConfig>(1)
+                : discoveryStrategyConfigs;
     }
 
     /**
