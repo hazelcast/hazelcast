@@ -26,8 +26,11 @@ import com.hazelcast.monitor.impl.HotRestartStateImpl;
 import com.hazelcast.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
+import com.hazelcast.monitor.impl.NodeStateImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.partition.IPartition;
+
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -80,6 +83,7 @@ public class TimedMemberStateFactory {
         }
 
         memberState.setOperationStats(getOperationStats());
+        createNodeState(memberState);
         createHotRestartState(memberState);
     }
 
@@ -89,6 +93,7 @@ public class TimedMemberStateFactory {
     }
 
     protected void createNodeState(MemberStateImpl memberState) {
-        // to allow override by EE
+        memberState.setNodeState(new NodeStateImpl(instance.node.clusterService.getClusterVersion(),
+                Collections.<String, List<String>>emptyMap()));
     }
 }

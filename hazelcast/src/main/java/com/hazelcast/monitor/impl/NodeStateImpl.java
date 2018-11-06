@@ -20,27 +20,36 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.monitor.NodeState;
+import com.hazelcast.version.Version;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.util.JsonUtil.getString;
+
 public class NodeStateImpl implements NodeState {
+
+    private Version clusterVersion;
 
     private Map<String, List<String>> weakSecretsConfigs;
 
     public NodeStateImpl() {
-        this(Collections.<String, List<String>>emptyMap());
+        this(null, Collections.<String, List<String>>emptyMap());
     }
 
-    public NodeStateImpl(Map<String, List<String>> weakSecretsConfigs) {
+    public NodeStateImpl(Version clusterVersion, Map<String, List<String>> weakSecretsConfigs) {
+        this.clusterVersion = clusterVersion;
         this.weakSecretsConfigs = weakSecretsConfigs;
     }
 
     @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
+        root.add("clusterVersion", clusterVersion.toString());
+
         JsonObject weaknesses = new JsonObject();
         for (Map.Entry<String, List<String>> entry : weakSecretsConfigs.entrySet()) {
             JsonArray values = new JsonArray();
@@ -56,6 +65,10 @@ public class NodeStateImpl implements NodeState {
     @SuppressWarnings({"checkstyle:npathcomplexity"})
     @Override
     public void fromJson(JsonObject json) {
+        String jsonClusterVersion = getString(json, "clusterVersion", null);
+        if (jsonClusterVersion != null) {
+            clusterVersion = Version.of(jsonClusterVersion);
+        }
         weakSecretsConfigs = new HashMap<String, List<String>>();
         JsonValue jsonWeakConfigs = json.get("weakConfigs");
         if (jsonWeakConfigs != null) {
@@ -73,6 +86,7 @@ public class NodeStateImpl implements NodeState {
     @Override
     public String toString() {
         return "NodeStateImpl{"
+                + "clusterVersion=" + clusterVersion
                 + '}';
     }
 

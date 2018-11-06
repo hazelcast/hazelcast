@@ -84,6 +84,7 @@ public class MemberStateImpl implements MemberState {
         root.add("address", address);
         root.add("operationStats", operationStats.toJson());
         root.add("memberPartitionState", memberPartitionState.toJson());
+        root.add("nodeState", nodeState.toJson());
         root.add("hotRestartState", hotRestartState.toJson());
         return root;
     }
@@ -100,6 +101,11 @@ public class MemberStateImpl implements MemberState {
             memberPartitionState = new MemberPartitionStateImpl();
             memberPartitionState.fromJson(jsonMemberPartitionState);
         }
+        JsonObject jsonNodeState = getObject(json, "nodeState", null);
+        if (jsonNodeState != null) {
+            nodeState = new NodeStateImpl();
+            nodeState.fromJson(jsonNodeState);
+        }
         JsonObject jsonHotRestartState = getObject(json, "hotRestartState", null);
         if (jsonHotRestartState != null) {
             hotRestartState = new HotRestartStateImpl();
@@ -113,6 +119,7 @@ public class MemberStateImpl implements MemberState {
                 + "address=" + address
                 + ", operationStats=" + operationStats
                 + ", memberPartitionState=" + memberPartitionState
+                + ", nodeState=" + nodeState
                 + ", hotRestartState=" + hotRestartState
                 + '}';
     }
