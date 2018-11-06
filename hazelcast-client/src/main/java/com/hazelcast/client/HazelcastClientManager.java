@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.internal.util.Trace;
 import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.DefaultClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -26,18 +27,23 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.logging.Logger;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.util.Trace.removeThreadLocalTrace;
+import static com.hazelcast.internal.util.Trace.setThreadLocalTrace;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Central manager for all Hazelcast clients of the JVM.
- *
+ * <p>
  * All creation functionality will be stored here and a particular instance of a client will delegate here.
  */
 public final class HazelcastClientManager {
@@ -62,32 +68,91 @@ public final class HazelcastClientManager {
     }
 
     @SuppressWarnings("unchecked")
-    public static HazelcastInstance newHazelcastClient(ClientConfig config, HazelcastClientFactory hazelcastClientFactory) {
-        if (config == null) {
-            config = new XmlClientConfigBuilder().build();
-        }
+    public static HazelcastInstance newHazelcastClient(ClientConfig config, final HazelcastClientFactory hazelcastClientFactory) {
+        Trace trace = setThreadLocalTrace(new Trace("HazelcastClient start"));
 
-        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        HazelcastClientProxy proxy;
         try {
-            Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
-            ClientConnectionManagerFactory clientConnectionManagerFactory = new DefaultClientConnectionManagerFactory();
-            final HazelcastClientInstanceImpl client = hazelcastClientFactory.createHazelcastInstanceClient(
-                    config,
-                    clientConnectionManagerFactory
-            );
-            client.start();
-            OutOfMemoryErrorDispatcher.registerClient(client);
-            proxy = hazelcastClientFactory.createProxy(client);
-
-            if (INSTANCE.clients.putIfAbsent(client.getName(), proxy) != null) {
-                throw new DuplicateInstanceNameException("HazelcastClientInstance with name '" + client.getName()
-                        + "' already exists!");
+            if (config == null) {
+                trace.startSubtrace("build xml config");
+                try {
+                    config = new XmlClientConfigBuilder().build();
+                } finally {
+                    trace.completeSubtrace();
+                }
             }
+
+            final ClassLoader contextClassLoader = trace.subtrace("getting context classloader", new Callable<ClassLoader>() {
+                @Override
+                public ClassLoader call() {
+                    return Thread.currentThread().getContextClassLoader();
+                }
+            });
+
+            HazelcastClientProxy proxy;
+            try {
+                trace.subtrace("setting context classloader", new Runnable() {
+                    @Override
+                    public void run() {
+                        Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
+
+                    }
+                });
+
+                final ClientConnectionManagerFactory clientConnectionManagerFactory = trace.subtrace(
+                        "creating clientConnectionManagerFactory", new Callable<ClientConnectionManagerFactory>() {
+                            @Override
+                            public ClientConnectionManagerFactory call() {
+                                return new DefaultClientConnectionManagerFactory();
+                            }
+                        });
+
+                // bleh
+                final AtomicReference<ClientConfig> ref = new AtomicReference<ClientConfig>(config);
+                final HazelcastClientInstanceImpl client = trace.subtrace("creating HazelcastClientInstanceImpl", new Callable<HazelcastClientInstanceImpl>() {
+                    @Override
+                    public HazelcastClientInstanceImpl call() throws Exception {
+                        return hazelcastClientFactory.createHazelcastInstanceClient(ref.get(),
+                                clientConnectionManagerFactory);
+
+                    }
+                });
+
+                trace.subtrace("starting HazelcastClientInstanceImpl", new Runnable() {
+                    @Override
+                    public void run() {
+                        client.start();
+                    }
+                });
+
+                OutOfMemoryErrorDispatcher.registerClient(client);
+                proxy = trace.subtrace("create proxy", new Callable<HazelcastClientProxy>() {
+                    @Override
+                    public HazelcastClientProxy call() {
+                        return hazelcastClientFactory.createProxy(client);
+                    }
+                });
+
+                if (INSTANCE.clients.putIfAbsent(client.getName(), proxy) != null) {
+                    throw new DuplicateInstanceNameException("HazelcastClientInstance with name '" + client.getName()
+                            + "' already exists!");
+                }
+            } finally {
+                trace.subtrace("restoring context classloader", new Runnable() {
+                    @Override
+                    public void run() {
+                        Thread.currentThread().setContextClassLoader(contextClassLoader);
+                    }
+                });
+
+            }
+            return proxy;
         } finally {
-            Thread.currentThread().setContextClassLoader(contextClassLoader);
+            trace.complete();
+            removeThreadLocalTrace();
+            String message = trace.toString();
+            if (message != null)
+                Logger.getLogger(HazelcastClientManager.class).info(message);
         }
-        return proxy;
     }
 
     public static HazelcastInstance getHazelcastClientByName(String instanceName) {

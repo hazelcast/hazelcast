@@ -17,13 +17,16 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.HazelcastClientManager;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.util.Trace;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
@@ -41,6 +44,8 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static com.hazelcast.internal.util.Trace.removeThreadLocalTrace;
+import static com.hazelcast.internal.util.Trace.setThreadLocalTrace;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
 /**
@@ -147,12 +152,35 @@ public final class LifecycleServiceImpl implements LifecycleService {
             return;
         }
 
-        fireLifecycleEvent(SHUTTING_DOWN);
-        HazelcastClient.shutdown(client.getName());
-        client.doShutdown();
-        fireLifecycleEvent(SHUTDOWN);
+        Trace trace = setThreadLocalTrace(new Trace("HazelcastClient shutdown"));
+        try {
+            trace.subtrace("firing lifecycle event shutting down", new Runnable() {
+                @Override
+                public void run() {
+                    fireLifecycleEvent(SHUTTING_DOWN);
 
-        shutdownExecutor();
+                }
+            });
+
+
+            HazelcastClient.shutdown(client.getName());
+            client.doShutdown();
+            fireLifecycleEvent(SHUTDOWN);
+
+            trace.subtrace("shutdown executor", new Runnable() {
+                @Override
+                public void run() {
+                    shutdownExecutor();
+                }
+            });
+
+        } finally {
+            trace.complete();
+            removeThreadLocalTrace();
+            String message = trace.toString();
+            if (message != null)
+                Logger.getLogger(HazelcastClientManager.class).info(message);
+        }
     }
 
     @Override

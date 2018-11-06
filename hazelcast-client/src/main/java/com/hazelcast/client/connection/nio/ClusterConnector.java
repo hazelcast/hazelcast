@@ -28,6 +28,7 @@ import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.util.Trace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -46,6 +47,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.Trace.getThreadLocalTrace;
+import static com.hazelcast.internal.util.Trace.removeThreadLocalTrace;
+import static com.hazelcast.internal.util.Trace.setThreadLocalTrace;
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -129,18 +133,51 @@ class ClusterConnector {
         this.ownerConnectionAddress = ownerConnectionAddress;
     }
 
-    private Connection connectAsOwner(Address address) {
+    private Connection connectAsOwner(final Address address) {
+        Trace trace = getThreadLocalTrace();
+        trace.startSubtrace("connect attempt to:" + address);
+
         Connection connection = null;
         try {
             logger.info("Trying to connect to " + address + " as owner member");
-            connection = connectionManager.getOrConnect(address, true);
-            client.onClusterConnect(connection);
-            fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
-            connectionStrategy.onConnectToCluster();
+
+            connection = trace.subtrace("get or connect to [" + address + "]", new Callable<Connection>(){
+                @Override
+                public Connection call() {
+                    return connectionManager.getOrConnect(address, true);
+                }
+            });
+
+            trace.startSubtrace("on cluster connect");
+            try {
+                client.onClusterConnect(connection);
+            } finally {
+                trace.completeSubtrace();
+            }
+
+            trace.subtrace("fire connect event", new Runnable() {
+                @Override
+                public void run() {
+                    fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
+                }
+            });
+
+            trace.subtrace("connect strategy on connect to cluster", new Runnable() {
+                @Override
+                public void run() {
+                    connectionStrategy.onConnectToCluster();
+                }
+            });
+
+            trace.completeSubtrace();
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + address + ", exception " + e);
+            logger.warning("Exception during initial connection to " + address + ", exception " + e, e);
+
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
+                trace.completeSubtrace("Could not connect to " + address + " as owner", e);
+            } else {
+                trace.completeSubtrace("Exception during initial connection to " + address + ", exception:" + e.getMessage(), e);
             }
             return null;
         }
@@ -183,15 +220,22 @@ class ClusterConnector {
     private void connectToClusterInternal() {
         Set<Address> triedAddresses = new HashSet<Address>();
 
+        Trace trace = getThreadLocalTrace();
+
         waitStrategy.reset();
         do {
+
             Collection<Address> addresses = getPossibleMemberAddresses();
+            trace.addMeta("addresses", addresses);
+
             for (Address address : addresses) {
                 if (!client.getLifecycleService().isRunning()) {
                     throw new IllegalStateException("Giving up on retrying to connect to cluster since client is shutdown.");
                 }
                 triedAddresses.add(address);
-                if (connectAsOwner(address) != null) {
+
+                Connection connection = connectAsOwner(address);
+                if (connection != null) {
                     return;
                 }
             }
@@ -203,14 +247,17 @@ class ClusterConnector {
             }
 
         } while (waitStrategy.sleep());
+
         throw new IllegalStateException(
                 "Unable to connect to any address! The following addresses were tried: " + triedAddresses);
     }
 
     Future<Void> connectToClusterAsync() {
+        final Trace trace = getThreadLocalTrace();
         return clusterConnectionExecutor.submit(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
+                setThreadLocalTrace(trace);
                 try {
                     connectToClusterInternal();
                 } catch (Exception e) {
@@ -227,6 +274,8 @@ class ClusterConnector {
                     }, client.getName() + ".clientShutdown-").start();
 
                     throw rethrow(e);
+                } finally {
+                    removeThreadLocalTrace();
                 }
                 return null;
             }
@@ -328,7 +377,6 @@ class ClusterConnector {
             }
             return true;
         }
-
     }
 
 
