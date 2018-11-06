@@ -400,10 +400,5 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         public String tryPublishReserved(Integer key, String value, long reservationId, boolean deserialize) {
             return null;
         }
-
-        @Override
-        public boolean isAvailable() {
-            return true;
-        }
     }
 }
