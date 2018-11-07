@@ -42,8 +42,6 @@ import static com.hazelcast.util.EmptyStatement.ignore;
  * Scans your classpath, indexes the metadata, allows you to query it on runtime.
  */
 public final class ReflectionHelper {
-    static final ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
-
     private static final int INITIAL_CAPACITY = 3;
 
     // we don't want instances
