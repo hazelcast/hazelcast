@@ -161,13 +161,16 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         IQueue<String> queue = newQueue();
         queue.offer("maxAgeItem");
         queue.offer("minAgeItem");
+        queue.poll();
 
         LocalQueueStats stats = queue.getLocalQueueStats();
         long maxAge = stats.getMaxAge();
         long minAge = stats.getMinAge();
-        long testAge = (maxAge + minAge) / 2;
-        long avgAge = stats.getAvgAge();
-        assertEquals(testAge, avgAge);
+        if (maxAge > 0) {
+            long testAge = (maxAge + minAge) / 2;
+            long avgAge = stats.getAvgAge();
+            assertEquals(testAge, avgAge);
+        }
     }
 
     @Test
