@@ -35,6 +35,7 @@ import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -96,7 +97,11 @@ public class PostponedSnapshotTest extends JetTestSupport {
         JobRepository jr = new JobRepository(instance);
 
         // check, that snapshot starts, but stays in ONGOING state
-        assertTrueEventually(() -> assertTrue(jr.getJobExecutionRecord(job.getId()).ongoingSnapshotId() >= 0), 5);
+        assertTrueEventually(() -> {
+            JobExecutionRecord record = jr.getJobExecutionRecord(job.getId());
+            assertNotNull("record is null", record);
+            assertTrue(record.ongoingSnapshotId() >= 0);
+        }, 5);
         assertTrueAllTheTime(() -> {
             JobExecutionRecord record = jr.getJobExecutionRecord(job.getId());
             assertTrue(record.ongoingSnapshotId() >= 0);
