@@ -39,6 +39,11 @@ public interface Evictor {
         public boolean checkEvictable(RecordStore recordStore) {
             return false;
         }
+
+        @Override
+        public String toString() {
+            return "Null Evictor implementation";
+        }
     };
 
     String SYSTEM_PROPERTY_SAMPLE_COUNT = "hazelcast.map.eviction.sample.count";
@@ -50,7 +55,7 @@ public interface Evictor {
     /**
      * Evict supplied record-store.
      *
-     * @param recordStore     the recordStore
+     * @param recordStore the recordStore
      * @param excludedKey this key has lowest priority to be selected for eviction and it is nullable.
      */
     void evict(RecordStore recordStore, Data excludedKey);

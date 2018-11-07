@@ -129,4 +129,11 @@ public class EvictorImpl implements Evictor {
         return Clock.currentTimeMillis();
     }
 
+    @Override
+    public String toString() {
+        return "EvictorImpl{"
+                + ", mapEvictionPolicy=" + mapEvictionPolicy
+                + ", batchSize=" + batchSize
+                + '}';
+    }
 }
