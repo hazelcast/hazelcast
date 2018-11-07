@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.metrics.ProbeSource;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -45,6 +46,7 @@ public class FirewallingConnectionManager implements ConnectionManager, Consumer
             = newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FirewallingConnectionManager"));
     private final Set<Address> blockedAddresses = newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
+    @ProbeSource
     private final ConnectionManager delegate;
     private final Consumer<Packet> packetConsumer;
 

@@ -142,7 +142,6 @@ public class DefaultNodeContext implements NodeContext {
                 ioService,
                 serverSocketChannel,
                 node.loggingService,
-                node.nodeEngine.getMetricsRegistry(),
                 networking,
                 node.getProperties());
     }

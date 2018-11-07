@@ -19,7 +19,6 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeSource;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.Networking;
@@ -130,15 +129,13 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
-                                  MetricsRegistry metricsRegistry,
                                   Networking networking) {
-        this(ioService, serverSocketChannel, loggingService, metricsRegistry, networking, null);
+        this(ioService, serverSocketChannel, loggingService, networking, null);
     }
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
-                                  MetricsRegistry metricsRegistry,
                                   Networking networking,
                                   HazelcastProperties properties) {
         this.ioService = ioService;
@@ -150,8 +147,6 @@ public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packe
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpConnectionManager")));
         this.spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
-        // the problem is that this is behind a delegate and therefore not automatically recognized as probe source
-        metricsRegistry.register(this);
     }
 
     public IOService getIoService() {

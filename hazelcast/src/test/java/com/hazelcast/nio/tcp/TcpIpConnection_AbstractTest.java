@@ -72,18 +72,15 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
         logger = loggingService.getLogger(TcpIpConnection_AbstractTest.class);
 
-        metricsRegistryA = newMetricsRegistry();
-        connManagerA = newConnectionManager(metricsRegistryA);
+        connManagerA = newConnectionManager();
         ioServiceA = (MockIOService) connManagerA.getIoService();
         addressA = ioServiceA.getThisAddress();
 
-        metricsRegistryB = newMetricsRegistry();
-        connManagerB = newConnectionManager(metricsRegistryB);
+        connManagerB = newConnectionManager();
         ioServiceB = (MockIOService) connManagerB.getIoService();
         addressB = ioServiceB.getThisAddress();
 
-        metricsRegistryC = newMetricsRegistry();
-        connManagerC = newConnectionManager(metricsRegistryC);
+        connManagerC = newConnectionManager();
         ioServiceC = (MockIOService) connManagerC.getIoService();
         addressC = ioServiceC.getThisAddress();
 
@@ -109,7 +106,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         return new MetricsRegistryImpl();
     }
 
-    protected TcpIpConnectionManager newConnectionManager(MetricsRegistry metricsRegistry) throws Exception {
+    protected TcpIpConnectionManager newConnectionManager() throws Exception {
         MockIOService ioService = null;
         while (ioService == null) {
             try {
@@ -125,7 +122,6 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
                 ioService,
                 ioService.serverSocketChannel,
                 ioService.loggingService,
-                metricsRegistry,
                 networkingFactory.create(ioService));
     }
 

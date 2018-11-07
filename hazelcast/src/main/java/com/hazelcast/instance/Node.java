@@ -142,6 +142,7 @@ public class Node {
     public final TextCommandService textCommandService;
     public final LoggingServiceImpl loggingService;
 
+    @ProbeSource
     public final ConnectionManager connectionManager;
 
     public final Address address;

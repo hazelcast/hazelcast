@@ -19,6 +19,7 @@ package com.hazelcast.test.mocknetwork;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.metrics.Namespace;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
@@ -45,6 +46,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
+@Namespace("tcp.connection")
 class MockConnectionManager implements ConnectionManager {
 
     private static final int RETRY_NUMBER = 5;

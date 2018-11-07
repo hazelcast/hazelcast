@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -108,6 +109,17 @@ public class NodeMetricsTest extends HazelcastInstanceMetricsIntegrationTest {
         assertHasStats(5, "internal-executor", ExecutionService.SCHEDULED_EXECUTOR);
         assertHasStats(5, "internal-executor", ExecutionService.QUERY_EXECUTOR);
         assertHasStats(5, "internal-executor", ExecutionService.SYSTEM_EXECUTOR);
+    }
+
+    /**
+     * These only check that the mock {@link ConnectionManager} publishes minimum
+     * statistics.
+     *
+     * The real implementation is tested in {@link NetworkMetricsTest}.
+     */
+    @Test
+    public void connectionManagerStats() {
+        assertHasStats(3, "tcp.connection");
     }
 
 }
