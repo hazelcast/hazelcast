@@ -180,7 +180,31 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
         Predicate partitionPredicate = new PartitionPredicate<String, Integer>(keyForPartition, TruePredicate.INSTANCE);
         Map<String, Object> entries = map.executeOnEntries(new MyProcessor(), partitionPredicate);
         assertEquals(ITEMS_PER_PARTITION, entries.size());
+    }
 
+    @Test
+    public void removeAll() {
+        int sizeBefore = map.size();
+        int partitionSizeBefore = map.keySet(predicate).size();
+
+        map.removeAll(predicate);
+        assertEquals(sizeBefore - partitionSizeBefore, map.size());
+        assertEquals(0, map.keySet(predicate).size());
+
+        for (int i = 0; i < ITEMS_PER_PARTITION; ++i) {
+            String key;
+            do {
+                key = generateKeyForPartition(server, partitionId);
+            } while (map.containsKey(key));
+
+            map.put(key, i);
+        }
+        sizeBefore = map.size();
+        partitionSizeBefore = map.keySet(predicate).size();
+        assertEquals(ITEMS_PER_PARTITION, partitionSizeBefore);
+        map.removeAll(new PartitionPredicate<String, Integer>(partitionKey, Predicates.equal("this", ITEMS_PER_PARTITION - 1)));
+        assertEquals(sizeBefore - 1, map.size());
+        assertEquals(partitionSizeBefore - 1, map.keySet(predicate).size());
     }
 
     static class MyProcessor extends AbstractEntryProcessor<String, Integer> {

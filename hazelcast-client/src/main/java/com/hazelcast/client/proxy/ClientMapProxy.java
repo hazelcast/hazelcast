@@ -385,7 +385,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     protected void removeAllInternal(Predicate predicate) {
         ClientMessage request = MapRemoveAllCodec.encodeRequest(name, toData(predicate));
-        invoke(request);
+        invokeWithPredicate(request, predicate);
     }
 
     @Override

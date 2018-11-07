@@ -55,8 +55,8 @@ import com.hazelcast.map.impl.operation.IsPartitionLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
-import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.query.Result;
 import com.hazelcast.map.impl.query.Target;
@@ -125,6 +125,7 @@ import static com.hazelcast.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
+import static java.util.Collections.singletonList;
 
 abstract class MapProxySupport<K, V>
         extends AbstractDistributedObject<MapService>
@@ -599,10 +600,25 @@ abstract class MapProxySupport<K, V>
     }
 
     protected void removeAllInternal(Predicate predicate) {
-        OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(name,
-                ENTRY_REMOVING_PROCESSOR, predicate);
         try {
-            operationService.invokeOnAllPartitions(SERVICE_NAME, operation);
+            if (predicate instanceof PartitionPredicate) {
+                PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+                OperationFactory operation = operationProvider
+                        .createPartitionWideEntryWithPredicateOperationFactory(name, ENTRY_REMOVING_PROCESSOR,
+                                partitionPredicate.getTarget());
+                Data partitionKey = toDataWithStrategy(partitionPredicate.getPartitionKey());
+                int partitionId = partitionService.getPartitionId(partitionKey);
+
+                // invokeOnPartitions is used intentionally here, instead of invokeOnPartition, since
+                // the later one doesn't support PartitionAwareOperationFactory, which we need to use
+                // to speed up the removal operation using global indexes
+                // (see PartitionWideEntryWithPredicateOperationFactory.createFactoryOnRunner).
+                operationService.invokeOnPartitions(SERVICE_NAME, operation, singletonList(partitionId));
+            } else {
+                OperationFactory operation = operationProvider
+                        .createPartitionWideEntryWithPredicateOperationFactory(name, ENTRY_REMOVING_PROCESSOR, predicate);
+                operationService.invokeOnAllPartitions(SERVICE_NAME, operation);
+            }
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -1222,7 +1238,7 @@ abstract class MapProxySupport<K, V>
 
                 OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
                         name, entryProcessor, partitionPredicate.getTarget());
-                results = operationService.invokeOnPartitions(SERVICE_NAME, operation, Collections.singletonList(partitionId));
+                results = operationService.invokeOnPartitions(SERVICE_NAME, operation, singletonList(partitionId));
             } else {
                 OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
                         name, entryProcessor, predicate);
