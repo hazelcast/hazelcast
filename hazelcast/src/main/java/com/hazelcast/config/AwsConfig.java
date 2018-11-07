@@ -302,4 +302,9 @@ public class AwsConfig
         super.setEnabled(enabled);
         return this;
     }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.AWS_CONFIG;
+    }
 }

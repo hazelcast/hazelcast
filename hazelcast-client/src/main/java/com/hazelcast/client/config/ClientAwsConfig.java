@@ -17,6 +17,8 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 /**
  * The AWSConfig contains the configuration for client to connect to nodes in aws environment.
@@ -69,5 +71,25 @@ public class ClientAwsConfig
             super.setProperty(name, value);
         }
         return this;
+    }
+
+    @Override
+    public int getFactoryId() {
+        throw new UnsupportedOperationException(getClass().getName() + " is only used locally!");
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) {
+        throw new UnsupportedOperationException(getClass().getName() + " is only used locally!");
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) {
+        throw new UnsupportedOperationException(getClass().getName() + " is only used locally!");
+    }
+
+    @Override
+    public int getId() {
+        throw new UnsupportedOperationException(getClass().getName() + " is only used locally!");
     }
 }
