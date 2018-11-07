@@ -340,7 +340,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     public void shutdown() {
-        scheduledExecutorService.shutdown();
+        // we want to immediately terminate; we don't want to wait till pending tasks have completed.
+        scheduledExecutorService.shutdownNow();
     }
 
     private static class SortedProbeInstances {
