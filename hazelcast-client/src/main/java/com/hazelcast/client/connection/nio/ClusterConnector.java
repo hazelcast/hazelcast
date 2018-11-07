@@ -25,7 +25,6 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
-import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -46,6 +45,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.client.spi.impl.ClientExecutionServiceImpl.shutdownNowExecutor;
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -282,7 +282,9 @@ class ClusterConnector {
     }
 
     public void shutdown() {
-        ClientExecutionServiceImpl.shutdownExecutor("cluster", clusterConnectionExecutor, logger);
+        // since the connector is shutting down, we don't care about any remaining
+        // task. So we want to shutdown fast.
+        shutdownNowExecutor("cluster", clusterConnectionExecutor, logger);
     }
 
     interface WaitStrategy {

@@ -112,7 +112,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
         return userExecutor;
     }
 
-    @Probe (level = MANDATORY)
+    @Probe(level = MANDATORY)
     public int getUserExecutorQueueSize() {
         return ((ThreadPoolExecutor) userExecutor).getQueue().size();
     }
@@ -123,7 +123,19 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
     }
 
     public static void shutdownExecutor(String name, ExecutorService executor, ILogger logger) {
-        executor.shutdown();
+        shutdownExecutor(name, executor, logger, false);
+    }
+
+    public static void shutdownNowExecutor(String name, ExecutorService executor, ILogger logger) {
+        shutdownExecutor(name, executor, logger, true);
+    }
+
+    private static void shutdownExecutor(String name, ExecutorService executor, ILogger logger, boolean shutdownNow) {
+        if (shutdownNow) {
+            executor.shutdownNow();
+        } else {
+            executor.shutdown();
+        }
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
