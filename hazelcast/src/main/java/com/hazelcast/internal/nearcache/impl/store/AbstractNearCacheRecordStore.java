@@ -168,8 +168,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
-    @Override
-    public boolean isAvailable() {
+    private boolean isAvailable() {
         return records != null;
     }
 
