@@ -27,6 +27,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.BeforeCollectionCycle;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
@@ -363,6 +364,16 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                     .setService(this)
                     .setNodeEngine(nodeEngine);
             operationService.invokeOnPartition(operation);
+        }
+    }
+
+    /**
+     * Needed to update owned and backup item count
+     */
+    @BeforeCollectionCycle
+    private void updateStats() {
+        for (String name : containerMap.keySet()) {
+            createLocalQueueStats(name);
         }
     }
 
