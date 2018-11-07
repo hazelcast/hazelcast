@@ -987,8 +987,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     public void setStats(LocalQueueStatsImpl stats) {
-        stats.setMinAge(minAge);
-        stats.setMaxAge(maxAge);
+        stats.setMinAge(minAge == Long.MAX_VALUE ? -1L : minAge);
+        stats.setMaxAge(maxAge == Long.MIN_VALUE ? -1L : maxAge);
         long totalAgedCountVal = Math.max(totalAgedCount, 1);
         stats.setAveAge(totalAge / totalAgedCountVal);
     }
