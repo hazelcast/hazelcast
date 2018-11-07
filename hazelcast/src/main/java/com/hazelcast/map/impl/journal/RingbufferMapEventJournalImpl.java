@@ -180,7 +180,7 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
         InternalEventJournalMapEvent event
                 = new InternalEventJournalMapEvent(toData(key), toData(newValue), toData(oldValue), eventType.getType());
         eventContainer.add(event);
-        getOperationParker().unpark(eventContainer);
+        getOperationParker().unparkAll(eventContainer);
     }
 
     private Data toData(Object val) {

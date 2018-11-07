@@ -108,6 +108,15 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
+    @Override
+    public void unparkAll(Notifier notifier) {
+        WaitNotifyKey waitNotifyKey = notifier.getNotifiedKey();
+        WaitSet waitSet = waitSetMap.get(waitNotifyKey);
+        if (waitSet != null) {
+            waitSet.unpark(notifier, waitNotifyKey, false);
+        }
+    }
+
     @Probe
     public int getParkQueueCount() {
         return waitSetMap.size();

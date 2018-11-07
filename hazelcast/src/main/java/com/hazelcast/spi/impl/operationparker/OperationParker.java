@@ -39,16 +39,19 @@ public interface OperationParker {
      *
      * This method should be called in the thread that executes the actual {@link BlockingOperation} operation.
      *
-     *
      * @param op operation which will wait for notification
      */
     void park(BlockingOperation op);
 
     /**
-     * Unparks the parked {@link BlockingOperation} operation by rescheduling it on the
+     * Unparks the parked {@link BlockingOperation} operations by rescheduling them on the
      * {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor}
      *
-     * A parked operation registered with the {@link Notifier#getNotifiedKey()} will be notified and deregistered.
+     * Parked operations registered with the {@link Notifier#getNotifiedKey()} will be notified .
+     * If {@link BlockingOperation#shouldWait()} returns {@code true} then the operation will be deregistered and the
+     * next operation in the queue will be notified. If any of the operations in the queue returns {@code false} then
+     * the unparking will be stopped.
+     *
      * This method has no effect if there isn't any operation registered
      * for related {@link com.hazelcast.spi.WaitNotifyKey}.
      *
@@ -57,6 +60,19 @@ public interface OperationParker {
      * @param notifier operation which will unpark a corresponding waiting operation
      */
     void unpark(Notifier notifier);
+
+    /**
+     * Unparks the parked {@link BlockingOperation} operations by rescheduling them on the
+     * {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor}
+     *
+     * Parked operations registered with the {@link Notifier#getNotifiedKey()} will be notified .
+     * If {@link BlockingOperation#shouldWait()} returns {@code true} then the operation will be deregistered and the
+     * next operation in the queue will be notified. Unlike {@link #unpark(Notifier)} all operations in the queue will
+     * be notified regardless of the {@link BlockingOperation#shouldWait()} value.
+     *
+     * @param notifier operation which will unpark a corresponding waiting operation
+     */
+    void unparkAll(Notifier notifier);
 
     void cancelParkedOperations(String serviceName, Object objectId, Throwable cause);
 }

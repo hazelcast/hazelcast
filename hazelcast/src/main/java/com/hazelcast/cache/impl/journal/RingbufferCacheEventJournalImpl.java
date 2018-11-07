@@ -216,7 +216,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
         InternalEventJournalCacheEvent event
                 = new InternalEventJournalCacheEvent(toData(key), toData(newValue), toData(oldValue), eventType.getType());
         eventContainer.add(event);
-        getOperationParker().unpark(eventContainer);
+        getOperationParker().unparkAll(eventContainer);
     }
 
     protected Data toData(Object val) {

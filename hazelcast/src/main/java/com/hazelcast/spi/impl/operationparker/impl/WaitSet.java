@@ -82,44 +82,55 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         }
     }
 
+    public void unpark(Notifier notifier, WaitNotifyKey key) {
+        unpark(notifier, key, true);
+    }
+
     // Runs in partition-thread, and therefor we can assume we have exclusive access to the WaitNotifyKey
     // (since each WaitNotifyKey is mapped to a single partition). So a park will not be concurrently
     // executed with an unpark for the same key.
-    public void unpark(Notifier notifier, WaitNotifyKey key) {
-        WaitSetEntry entry = queue.peek();
-        while (entry != null) {
-            Operation op = entry.getOperation();
-            if (notifier == op) {
-                throw new IllegalStateException("Found cyclic wait-notify! -> " + notifier);
-            }
-            if (entry.isValid()) {
-                if (entry.isExpired()) {
-                    // expired
-                    entry.onExpire();
-                } else if (entry.isCancelled()) {
-                    entry.onCancel();
-                } else {
-                    if (entry.shouldWait()) {
-                        return;
-                    }
-                    OperationService operationService = nodeEngine.getOperationService();
-                    operationService.run(op);
-                }
-                entry.setValid(false);
-            }
-            // consume
-            queue.poll();
+    public void unpark(Notifier notifier, WaitNotifyKey key, boolean stopUnparkingIfNotConsumed) {
+        Iterator<WaitSetEntry> iterator = queue.iterator();
+        while (iterator.hasNext()) {
+            WaitSetEntry entry = iterator.next();
 
-            entry = queue.peek();
-
-            // If parkQueue.peek() returns null, we should deregister this specific
-            // key to avoid memory leak. By contract we know that park() and unpark()
-            // cannot be called in parallel.
-            // We can safely remove this queue from registration map here.
-            if (entry == null) {
-                waitSetMap.remove(key);
+            boolean consumed = unparkInternal(notifier, entry);
+            if (consumed) {
+                iterator.remove();
+            } else if (stopUnparkingIfNotConsumed) {
+                return;
             }
         }
+        // If parkQueue.peek() returns null, we should deregister this specific
+        // key to avoid memory leak. By contract we know that park() and unpark()
+        // cannot be called in parallel.
+        // We can safely remove this queue from registration map here.
+        if (queue.isEmpty()) {
+            waitSetMap.remove(key);
+        }
+    }
+
+    private boolean unparkInternal(Notifier notifier, WaitSetEntry entry) {
+        Operation op = entry.getOperation();
+        if (notifier == op) {
+            throw new IllegalStateException("Found cyclic wait-notify! -> " + notifier);
+        }
+        if (entry.isValid()) {
+            if (entry.isExpired()) {
+                // expired
+                entry.onExpire();
+            } else if (entry.isCancelled()) {
+                entry.onCancel();
+            } else {
+                if (entry.shouldWait()) {
+                    return false;
+                }
+                OperationService operationService = nodeEngine.getOperationService();
+                operationService.run(op);
+            }
+            entry.setValid(false);
+        }
+        return true;
     }
 
     /**
