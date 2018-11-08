@@ -151,7 +151,11 @@ public class MockConnection implements Connection {
     }
 
     public InetSocketAddress getRemoteSocketAddress() {
-        return new InetSocketAddress(getInetAddress(), getPort());
+        try {
+            return remoteEndpoint.getInetSocketAddress();
+        } catch (UnknownHostException e) {
+            throw rethrow(e);
+        }
     }
 
     public int getPort() {

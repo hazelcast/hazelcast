@@ -20,6 +20,7 @@ import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 import static org.junit.Assert.assertEquals;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 
 import javax.cache.CacheManager;
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -48,6 +50,7 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.diagnostics.AbstractMetricsIntegrationTest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -97,7 +100,14 @@ public class ClientMetricsTest extends AbstractMetricsIntegrationTest {
     @Test
     public void clientEndpointStats() {
         final HazelcastClientInstanceImpl client = createHazelcastClient();
-        assertEventuallyHasStats(3, "client", getUuid(client));
+        String uuid = getUuid(client);
+        assertEventuallyHasStats(3, "client", uuid);
+        String version = BuildInfoProvider.getBuildInfo().getVersion();
+        ClientConnection ownerConnection = client.getConnectionManager().getOwnerConnection();
+        InetSocketAddress clientAddress = ownerConnection.getLocalSocketAddress();
+        String address = clientAddress.getAddress().getHostAddress() + ":" + clientAddress.getPort();
+        assertHasStatsWith(1, "ns=client instance=" + uuid + " type=JAVA version=" + version
+                + " target=" + address);
     }
 
     @Test
