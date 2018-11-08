@@ -148,6 +148,7 @@ public class HealthMonitor {
         @Override
         public void run() {
             try {
+                collectionContext.collectAll(healthMetrics);
                 while (node.getState() == NodeState.ACTIVE) {
                     healthMetrics.update();
 
@@ -297,7 +298,6 @@ public class HealthMonitor {
         private double memoryUsedOfMaxPercentage;
 
         public void update() {
-            collectionContext.collectAll(this);
             memoryUsedOfTotalPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read()) / runtimeTotalMemory.read();
             memoryUsedOfMaxPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read()) / runtimeMaxMemory.read();
         }
