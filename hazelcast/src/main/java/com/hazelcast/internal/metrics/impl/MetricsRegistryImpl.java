@@ -756,7 +756,10 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             this.isContributing = isSource || isAnnotated || isUpdated;
         }
 
-        private void updateIfNeeded(Object obj) {
+        private void updateIfNeeded(ProbeLevel level, Object obj) {
+            if (skipUpdateForLevel(level)) {
+                return;
+            }
             long next = nextUpdateTimeMs.get();
             long now = Clock.currentTimeMillis();
             if (now > next && nextUpdateTimeMs.compareAndSet(next, now + updateIntervalMs)) {
@@ -771,6 +774,16 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                     }
                 }
             }
+        }
+
+        private boolean skipUpdateForLevel(ProbeLevel level) {
+            if (isSource) {
+                return false;
+            }
+            boolean noMandatoryProbes = levels[ProbeLevel.MANDATORY.ordinal()] == null;
+            boolean noInfoProbes = levels[ProbeLevel.INFO.ordinal()] == null;
+            return level == ProbeLevel.MANDATORY && noMandatoryProbes
+                    || level == ProbeLevel.INFO && noMandatoryProbes && noInfoProbes;
         }
 
         private static Method reprobeFor(Class<?> type) {
@@ -853,7 +866,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             try {
                 if (isUpdated && cycle.isCollected(updateLevel)
                         && timesUpdateThrownException < DISABLE_THROWING_UPDATE_LIMIT) {
-                    updateIfNeeded(instance);
+                    updateIfNeeded(cycle.level, instance);
                 }
                 if (isAnnotated) {
                     if (isDynamicTagAware || isStaticTagAware) {

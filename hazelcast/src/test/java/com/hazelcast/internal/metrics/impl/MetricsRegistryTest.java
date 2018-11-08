@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import static com.hazelcast.internal.metrics.ProbeUtils.collectAllEntries;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -132,7 +133,7 @@ public class MetricsRegistryTest extends AbstractMetricsTest {
     private static class UpdatedMetrics {
 
         @Probe
-        private int updates = 0;
+        int updates = 0;
 
         @BeforeCollectionCycle(value = 500, unit = TimeUnit.MILLISECONDS)
         private void update() {
@@ -149,6 +150,15 @@ public class MetricsRegistryTest extends AbstractMetricsTest {
         sleepAtLeastMillis(501L);
         assertCollected("updates", 2);
         assertCollected("updates", 2);
+    }
+
+    @Test
+    public void updateIsSkippedIfNotNeededForProbeLevel() {
+        setLevel(ProbeLevel.MANDATORY);
+        UpdatedMetrics obj = new UpdatedMetrics();
+        register(obj);
+        assertNotCollected("updates");
+        assertEquals(0, obj.updates);
     }
 
     private static final class RootService {
