@@ -125,7 +125,6 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(className);
-        out.writeObject(discoveryStrategyFactory);
 
         out.writeInt(properties.size());
         for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
@@ -137,7 +136,6 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readUTF();
-        discoveryStrategyFactory = in.readObject();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             properties.put(in.readUTF(), (Comparable) in.readObject());
