@@ -102,7 +102,7 @@ public interface CollectionCycle {
      * @param methods the names of the methods to probe. Methods that do not exist
      *        or have the wrong number of arguments (not none) are ignored.
      */
-    void collect(ProbeLevel level, Object instance, String[] methods);
+    void collectAll(ProbeLevel level, Object instance, String[] methods);
 
     /**
      * Equal to {@link #collect(ProbeLevel, CharSequence, long)} with {@link ProbeLevel#INFO}.

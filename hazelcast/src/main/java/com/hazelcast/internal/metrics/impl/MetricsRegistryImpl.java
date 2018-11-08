@@ -208,7 +208,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         }
 
         @Override
-        public void collect(ProbeLevel level, Object instance, String[] methods) {
+        public void collectAll(ProbeLevel level, Object instance, String[] methods) {
             if (instance == null || !isCollected(level)) {
                 return;
             }
@@ -218,9 +218,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                 // main goal was to avoid creating expensive metadata but at this point we have to
                 typeMetaData = register(mataDataCache, new ProbeAnnotatedType(type, level, methods));
             }
-            source = instance;
             typeMetaData.collectAll(this, instance);
-            source = null;
         }
 
         @Override
@@ -234,9 +232,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
 
         private void collectAllOfObject(Object obj) {
             if (obj != null) {
-                source = obj;
                 getOrCreate(mataDataCache, obj.getClass()).collectAll(this, obj);
-                source = null;
             }
         }
 
@@ -852,6 +848,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             if (!isContributing) {
                 return;
             }
+            cycle.source = instance;
             try {
                 if (isUpdated && cycle.isCollected(updateLevel)
                         && timesUpdateThrownException < DISABLE_THROWING_UPDATE_LIMIT) {
@@ -871,6 +868,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                 LOGGER.warning("Exception while collecting object of type "
                         + instance.getClass().getSimpleName(), e);
             }
+            cycle.source = null;
         }
 
         private void collectAllOfSource(CollectionCycleImpl cycle, MetricsSource source) {

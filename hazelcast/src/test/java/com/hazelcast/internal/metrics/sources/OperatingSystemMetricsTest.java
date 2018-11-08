@@ -44,7 +44,7 @@ public class OperatingSystemMetricsTest extends AbstractMetricsTest {
 
         @Override
         public void collectAll(CollectionCycle cycle) {
-            cycle.collect(MANDATORY, new FakeOperatingSystemBean(),
+            cycle.collectAll(MANDATORY, new FakeOperatingSystemBean(),
                     new String[] { "longMethod", "doubleMethod", "notExist" });
         }
     };

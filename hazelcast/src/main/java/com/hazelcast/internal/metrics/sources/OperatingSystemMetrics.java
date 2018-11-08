@@ -52,6 +52,6 @@ public final class OperatingSystemMetrics implements MetricsSource {
     @Override
     public void collectAll(CollectionCycle cycle) {
         cycle.switchContext().namespace("os");
-        cycle.collect(MANDATORY, os, PROBED_OS_METHODS);
+        cycle.collectAll(MANDATORY, os, PROBED_OS_METHODS);
     }
 }
