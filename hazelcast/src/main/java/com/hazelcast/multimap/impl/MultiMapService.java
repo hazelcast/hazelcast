@@ -455,16 +455,21 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        collectAllStatistics(cycle, "multiMap", getStats());
+        if (partitionContainers != null && partitionContainers.length > 0) {
+            collectAllStatistics(cycle, "multiMap", getStats());
+        }
     }
 
     // visible for testing only
     Map<String, LocalMultiMapStatsImpl> getStats() {
-        Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
+        Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>(
+                partitionContainers.length);
         for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
-            for (String name : partitionContainer.containerMap.keySet()) {
-                if (!multiMapStats.containsKey(name)) {
-                    multiMapStats.put(name, createStats(name));
+            if (partitionContainer != null) {
+                for (String name : partitionContainer.containerMap.keySet()) {
+                    if (!multiMapStats.containsKey(name)) {
+                        multiMapStats.put(name, createStats(name));
+                    }
                 }
             }
         }
