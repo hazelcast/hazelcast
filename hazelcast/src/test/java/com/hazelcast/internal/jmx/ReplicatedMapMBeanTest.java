@@ -22,13 +22,16 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -40,11 +43,13 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
     private TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(1);
     private MBeanDataHolder holder = new MBeanDataHolder(hazelcastInstanceFactory);
 
+    private long started;
     private ReplicatedMap<String, String> replicatedMap;
     private String objectName;
 
     @Before
     public void setUp() {
+        started = System.currentTimeMillis();
         replicatedMap = holder.getHz().getReplicatedMap("replicatedMap");
         objectName = replicatedMap.getName();
 
@@ -72,8 +77,6 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
 
     @Test
     public void testAttributesAndOperations() throws Exception {
-        long started = System.currentTimeMillis();
-
         replicatedMap.put("firstKey", "firstValue");
         replicatedMap.put("secondKey", "secondValue");
         replicatedMap.remove("secondKey");
@@ -108,9 +111,9 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
         assertEquals("[{key:firstKey, value:firstValue},]", entries);
 
         assertEquals(1, localEntryCount);
-        assertTrue(localCreationTime >= started);
-        assertTrue(localLastAccessTime >= started);
-        assertTrue(localLastUpdateTime >= started);
+        assertThat("localCreationTime should not be before start", localCreationTime, greaterThanOrEqualTo(started));
+        assertThat("localLastAccessTime should not be before start", localLastAccessTime, greaterThanOrEqualTo(started));
+        assertThat("localLastUpdateTime should not be before start", localLastUpdateTime,  greaterThanOrEqualTo(started));
         assertEquals(3, localHits);
 
         assertEquals(2, localPutOperationCount);
