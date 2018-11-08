@@ -61,6 +61,7 @@ public class HotRestartPersistenceConfig {
     private int dataLoadTimeoutSeconds = DEFAULT_DATA_LOAD_TIMEOUT;
     private HotRestartClusterDataRecoveryPolicy clusterDataRecoveryPolicy
             = HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
+    private boolean autoRemoveStaleData = true;
 
     /**
      * Returns whether hot restart enabled on this member.
@@ -74,7 +75,7 @@ public class HotRestartPersistenceConfig {
     /**
      * Sets whether hot restart is enabled on this member.
      *
-     * @return HotRestartConfig
+     * @return HotRestartPersistenceConfig
      */
     public HotRestartPersistenceConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
@@ -95,7 +96,7 @@ public class HotRestartPersistenceConfig {
      *
      * @param clusterDataRecoveryPolicy the policy to be used when the cluster is started
      *
-     * @return HotRestartConfig
+     * @return HotRestartPersistenceConfig
      */
     public HotRestartPersistenceConfig setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy
                                                                             clusterDataRecoveryPolicy) {
@@ -114,7 +115,7 @@ public class HotRestartPersistenceConfig {
      * Sets base directory for all Hot Restart stores. Can be an absolute or relative path to the node startup directory.
      *
      * @param baseDir home directory
-     * @return HotRestartConfig
+     * @return HotRestartPersistenceConfig
      */
     public HotRestartPersistenceConfig setBaseDir(File baseDir) {
         checkNotNull(baseDir, "Base directory cannot be null!");
@@ -134,7 +135,7 @@ public class HotRestartPersistenceConfig {
      * Sets base directory for all Hot Restart stores.
      *
      * @param backupDir home directory
-     * @return HotRestartConfig
+     * @return HotRestartPersistenceConfig
      */
     public HotRestartPersistenceConfig setBackupDir(File backupDir) {
         this.backupDir = backupDir;
@@ -171,7 +172,7 @@ public class HotRestartPersistenceConfig {
      * cluster members expected to join and partition table on all cluster.
      *
      * @param validationTimeoutSeconds validation timeout in seconds
-     * @return HotRestartConfig
+     * @return HotRestartPersistenceConfig
      */
     public HotRestartPersistenceConfig setValidationTimeoutSeconds(int validationTimeoutSeconds) {
         checkPositive(validationTimeoutSeconds, "Validation timeout should be positive!");
@@ -194,11 +195,38 @@ public class HotRestartPersistenceConfig {
      * before this timeout.
      *
      * @param dataLoadTimeoutSeconds data load timeout in seconds
-     * @return HotRestartConfig
+     * @return HotRestartPersistenceConfig
      */
     public HotRestartPersistenceConfig setDataLoadTimeoutSeconds(int dataLoadTimeoutSeconds) {
         checkPositive(dataLoadTimeoutSeconds, "Load timeout should be positive!");
         this.dataLoadTimeoutSeconds = dataLoadTimeoutSeconds;
+        return this;
+    }
+
+    /**
+     * Returns whether or not automatically removal of stale Hot Restart data is enabled.
+     *
+     * @return whether or not automatically removal of stale data is enabled
+     */
+    public boolean isAutoRemoveStaleData() {
+        return autoRemoveStaleData;
+    }
+
+    /**
+     * Sets whether or not automatically removal of stale Hot Restart data is enabled.
+     * <p>
+     * When a member terminates or crashes when cluster state is {@link com.hazelcast.cluster.ClusterState#ACTIVE},
+     * remaining members redistributes data among themselves and data persisted on terminated member's storage becomes
+     * stale. That terminated member cannot rejoin the cluster without removing Hot Restart data.
+     * When auto-removal of stale Hot Restart data is enabled, while restarting that member, Hot Restart data is
+     * automatically removed and it joins the cluster as a completely new member.
+     * Otherwise, Hot Restart data should be removed manually.
+     *
+     * @param autoRemoveStaleData {@code true} to enable auto-removal of stale data, {@code false} otherwise
+     * @return HotRestartPersistenceConfig
+     */
+    public HotRestartPersistenceConfig setAutoRemoveStaleData(boolean autoRemoveStaleData) {
+        this.autoRemoveStaleData = autoRemoveStaleData;
         return this;
     }
 
@@ -225,6 +253,9 @@ public class HotRestartPersistenceConfig {
         if (dataLoadTimeoutSeconds != that.dataLoadTimeoutSeconds) {
             return false;
         }
+        if (autoRemoveStaleData != that.autoRemoveStaleData) {
+            return false;
+        }
         if (baseDir != null ? !baseDir.equals(that.baseDir) : that.baseDir != null) {
             return false;
         }
@@ -243,6 +274,7 @@ public class HotRestartPersistenceConfig {
         result = 31 * result + validationTimeoutSeconds;
         result = 31 * result + dataLoadTimeoutSeconds;
         result = 31 * result + (clusterDataRecoveryPolicy != null ? clusterDataRecoveryPolicy.hashCode() : 0);
+        result = 31 * result + (autoRemoveStaleData ? 1 : 0);
         return result;
     }
 }
