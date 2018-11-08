@@ -464,7 +464,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      */
     public MapConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
         this.evictionPolicy = checkNotNull(evictionPolicy, "evictionPolicy cannot be null");
-        this.mapEvictionPolicy = findMatchingMapEvictionPolicy(evictionPolicy);
         return this;
     }
 
@@ -489,7 +488,13 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      * @return custom eviction policy or {@code null}
      */
     public MapEvictionPolicy getMapEvictionPolicy() {
-        return mapEvictionPolicy;
+        if (mapEvictionPolicy != null) {
+            return mapEvictionPolicy;
+        }
+        if (evictionPolicy == null) {
+            return null;
+        }
+        return findMatchingMapEvictionPolicy(evictionPolicy);
     }
 
     /**
