@@ -41,6 +41,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.internal.metrics.CharSequenceUtils.startsWith;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -116,13 +117,13 @@ public final class ClientEndpointImpl implements ClientEndpoint, MetricsSource, 
                 .tag("version", clientVersionString == null ? "?" : clientVersionString)
                 .tag(TAG_TARGET, address == null ? "?" : address);
         // this particular metric is used to convey details of the endpoint via tags
-        cycle.collect("ownerConnection", ownerConnection);
+        cycle.collect(MANDATORY, "ownerConnection", ownerConnection);
         if (ownerConnection) {
             collectAllClientStatistics(cycle, getUuid(), getClientStatistics());
         }
     }
 
-    @Probe
+    @Probe(level = MANDATORY)
     @Override
     public boolean isAlive() {
         return connection.isAlive();
