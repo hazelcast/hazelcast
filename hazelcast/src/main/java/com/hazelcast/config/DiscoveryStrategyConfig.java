@@ -33,6 +33,10 @@ import java.util.Map;
  */
 public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     private String className;
+    // we skip serialization since this may be a user-supplied object and
+    // it may not be serializable. Since we send the WAN config in the
+    // FinalizeJoinOp, this may prevent a node from sending it to a joining
+    // member
     private transient DiscoveryStrategyFactory discoveryStrategyFactory;
     private Map<String, Comparable> properties;
 
