@@ -19,9 +19,12 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.metrics.CollectionContext;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
+import com.hazelcast.internal.metrics.MetricsCollector;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -72,6 +75,7 @@ public class HealthMonitor {
     private final int thresholdMemoryPercentage;
     private final int thresholdCPUPercentage;
     private final MetricsRegistry metricRegistry;
+    private final CollectionContext collectionContext;
     private final HealthMonitorThread monitorThread;
 
     public HealthMonitor(Node node) {
@@ -82,6 +86,7 @@ public class HealthMonitor {
         this.node = node;
         this.logger = node.getLogger(HealthMonitor.class);
         this.metricRegistry = metricsRegistry;
+        this.collectionContext = metricRegistry.openContext(ProbeLevel.MANDATORY);
         this.monitorLevel = getHealthMonitorLevel();
         this.thresholdMemoryPercentage = node.getProperties().getInteger(HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
         this.thresholdCPUPercentage = node.getProperties().getInteger(HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
@@ -190,7 +195,7 @@ public class HealthMonitor {
         }
     }
 
-    class HealthMetrics {
+    class HealthMetrics implements MetricsCollector {
         final LongGauge clientEndpointCount
                 = metricRegistry.newLongGauge("ns=client.endpoint count");
         final LongGauge clusterTimeDiff
@@ -292,8 +297,14 @@ public class HealthMonitor {
         private double memoryUsedOfMaxPercentage;
 
         public void update() {
+            collectionContext.collectAll(this);
             memoryUsedOfTotalPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read()) / runtimeTotalMemory.read();
             memoryUsedOfMaxPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read()) / runtimeMaxMemory.read();
+        }
+
+        @Override
+        public void collect(CharSequence key, long value) {
+            // collection is just performed to connect gauges
         }
 
         boolean exceedsThreshold() {
