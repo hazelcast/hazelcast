@@ -40,10 +40,7 @@ public class JetTestInstanceFactory {
     }
 
     public JetInstance newMember(JetConfig config) {
-        Jet.configureJetService(config);
-        HazelcastInstanceImpl hazelcastInstance =
-                ((HazelcastInstanceProxy) (factory.newHazelcastInstance(config.getHazelcastConfig()))).getOriginal();
-        return new JetInstanceImpl(hazelcastInstance, config);
+        return Jet.newJetInstanceImpl(config, factory::newHazelcastInstance);
     }
 
     public JetInstance newMember(JetConfig config, Address[] blockedAddresses) {

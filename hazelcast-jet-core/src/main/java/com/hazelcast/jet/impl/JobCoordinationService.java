@@ -109,13 +109,13 @@ public class JobCoordinationService {
         this.jobRepository = jobRepository;
     }
 
-    public void init() {
+    public void startScanningForJobs() {
         InternalExecutionService executionService = nodeEngine.getExecutionService();
         HazelcastProperties properties = new HazelcastProperties(config.getProperties());
         long jobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
         executionService.register(COORDINATOR_EXECUTOR_NAME, 2, Integer.MAX_VALUE, CACHED);
         executionService.scheduleWithRepetition(COORDINATOR_EXECUTOR_NAME, this::scanJobs,
-                jobScanPeriodInMillis, jobScanPeriodInMillis, MILLISECONDS);
+                0, jobScanPeriodInMillis, MILLISECONDS);
     }
 
     public void shutdown() {
@@ -671,23 +671,21 @@ public class JobCoordinationService {
         if (!shouldStartJobs()) {
             return;
         }
-
         try {
             Collection<JobRecord> jobs = jobRepository.getJobRecords();
             for (JobRecord jobRecord : jobs) {
                 JobExecutionRecord jobExecutionRecord = ensureExecutionRecord(jobRecord.getJobId(),
                         jobRepository.getJobExecutionRecord(jobRecord.getJobId()));
                 if (!jobExecutionRecord.isSuspended()) {
-                    startJobIfNotStartedOrCompleted(jobRecord, jobExecutionRecord, "discovered by scanning of JobRecords");
+                    startJobIfNotStartedOrCompleted(jobRecord, jobExecutionRecord,
+                            "discovered by scanning of JobRecords");
                 }
             }
-
             performCleanup();
         } catch (Exception e) {
             if (e instanceof HazelcastInstanceNotActiveException) {
                 return;
             }
-
             logger.severe("Scanning jobs failed", e);
         }
     }

@@ -287,7 +287,7 @@ public final class Util {
             return;
         }
         if (!(object instanceof Serializable)) {
-            throw new IllegalArgumentException("\"" + objectName + "\" must implement Serializable");
+            throw new IllegalArgumentException('"' + objectName + "\" must implement Serializable");
         }
         try (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
             os.writeObject(object);
