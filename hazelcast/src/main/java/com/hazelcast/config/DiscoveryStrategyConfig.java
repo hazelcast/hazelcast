@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     private String className;
-    private DiscoveryStrategyFactory discoveryStrategyFactory;
+    private transient DiscoveryStrategyFactory discoveryStrategyFactory;
     private Map<String, Comparable> properties;
 
     public DiscoveryStrategyConfig() {
