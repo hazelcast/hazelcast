@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
@@ -198,7 +199,9 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        collectAllStatistics(cycle, "map", mapServiceContext.getLocalMapStatsProvider().createAllLocalMapStats());
+        if (cycle.isCollected(ProbeLevel.INFO) || cycle.isCollected(ProbeLevel.DEBUG)) {
+            collectAllStatistics(cycle, "map", mapServiceContext.getLocalMapStatsProvider().createAllLocalMapStats());
+        }
         collectAllEntries(cycle, "map", mapServiceContext.getMapContainers());
     }
 

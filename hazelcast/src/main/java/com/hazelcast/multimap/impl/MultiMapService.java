@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
@@ -455,7 +456,8 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        if (partitionContainers != null && partitionContainers.length > 0) {
+        if ((cycle.isCollected(ProbeLevel.INFO) || cycle.isCollected(ProbeLevel.DEBUG))
+                && partitionContainers != null && partitionContainers.length > 0) {
             collectAllStatistics(cycle, "multiMap", getStats());
         }
     }

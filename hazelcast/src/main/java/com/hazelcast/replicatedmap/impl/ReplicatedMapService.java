@@ -29,6 +29,7 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.MetricsSource;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.CollectionCycle;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -364,7 +365,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public void collectAll(CollectionCycle cycle) {
-        collectAllStatistics(cycle, "replicatedMap", getStats());
+        if (cycle.isCollected(ProbeLevel.INFO) || cycle.isCollected(ProbeLevel.DEBUG)) {
+            collectAllStatistics(cycle, "replicatedMap", getStats());
+        }
     }
 
     // visible for testing only
