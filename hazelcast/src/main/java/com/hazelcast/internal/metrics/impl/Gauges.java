@@ -135,6 +135,10 @@ public final class Gauges {
             return v;
         }
 
+        @Override
+        public String toString() {
+            return gauge == null ? "(unconnected)" : gauge.toString();
+        }
     }
 
     private static final class ConnectingDoubleGauge implements DoubleGauge {
@@ -152,6 +156,11 @@ public final class Gauges {
             }
             return v;
         }
+
+        @Override
+        public String toString() {
+            return gauge == null ? "(unconnected)" : gauge.toString();
+        }
     }
 
     private abstract static class AbstractGauge<T> {
@@ -161,6 +170,12 @@ public final class Gauges {
         AbstractGauge(T supplier, Object source) {
             this.supplier = new WeakReference<T>(supplier);
             this.source = new WeakReference<Object>(source);
+        }
+
+        @Override
+        public final String toString() {
+            T m = supplier.get();
+            return m == null ? "(disconnected)" : m.toString();
         }
     }
 
@@ -220,6 +235,7 @@ public final class Gauges {
         long read(Method supplier, Object source) throws Exception {
             return toLong(supplier.invoke(source, EMPTY_ARGS));
         }
+
     }
 
     private static final class DoubleMethodGauge extends AbstractDoubleGauge<Method> {
@@ -279,6 +295,11 @@ public final class Gauges {
         public long read() {
             return supplier.getAsLong();
         }
+
+        @Override
+        public String toString() {
+            return supplier.toString();
+        }
     }
 
     private static final class DoubleProbeFunctionGauge implements DoubleGauge {
@@ -293,6 +314,10 @@ public final class Gauges {
         public double read() {
             return supplier.getAsDouble();
         }
-    }
 
+        @Override
+        public String toString() {
+            return supplier.toString();
+        }
+    }
 }

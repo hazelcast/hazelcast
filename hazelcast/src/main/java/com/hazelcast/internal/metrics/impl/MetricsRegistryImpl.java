@@ -115,9 +115,9 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         if (gauge != null) {
             return gauge;
         }
-        gauge = Gauges.longGauge();
-        longGauges.put(name, gauge);
-        return gauge;
+        LongGauge unconnected = Gauges.longGauge();
+        gauge = longGauges.putIfAbsent(name, unconnected);
+        return gauge == null ? unconnected : gauge;
     }
 
     @Override
@@ -126,9 +126,9 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
         if (gauge != null) {
             return gauge;
         }
-        gauge = Gauges.doubleGauge();
-        doubleGauges.put(name, gauge);
-        return gauge;
+        DoubleGauge unconnected = Gauges.doubleGauge();
+        gauge = doubleGauges.putIfAbsent(name, unconnected);
+        return gauge == null ? unconnected : gauge;
     }
 
     @Override
@@ -218,7 +218,9 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
                 // main goal was to avoid creating expensive metadata but at this point we have to
                 typeMetaData = register(mataDataCache, new ProbeAnnotatedType(type, level, methods));
             }
+            source = instance;
             typeMetaData.collectAll(this, instance);
+            source = null;
         }
 
         @Override
@@ -276,13 +278,17 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
 
         private void connectToGauge() {
             try {
-                if (longGauges.containsKey(tags)) {
-                    Gauges.connect(longGauges.remove(tags), Gauges.longGauge(gauge, source));
-                } else if (doubleGauges.containsKey(tags)) {
-                    Gauges.connect(doubleGauges.remove(tags), Gauges.doubleGauge(gauge, source));
+                LongGauge lg = longGauges.remove(tags);
+                if (lg != null) {
+                    Gauges.connect(lg, Gauges.longGauge(gauge, source));
+                } else {
+                    DoubleGauge dg = doubleGauges.remove(tags);
+                    if (dg != null) {
+                        Gauges.connect(dg, Gauges.doubleGauge(gauge, source));
+                    }
                 }
             } catch (RuntimeException e) {
-                LOGGER.warning("Failed to connect gauge: ", e);
+                LOGGER.warning("Failed to connect gauge: " + tags.toString(), e);
             }
         }
 
