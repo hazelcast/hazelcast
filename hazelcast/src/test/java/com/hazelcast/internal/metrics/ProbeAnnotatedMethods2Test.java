@@ -46,6 +46,7 @@ public class ProbeAnnotatedMethods2Test extends AbstractMetricsTest {
 
     @Test
     public void longValueMethodProbes() {
+        assertLong("booleanMethod", 1);
         assertLong("byteMethod", 10);
         assertLong("shortMethod", 10);
         assertLong("intMethod", 10);
@@ -56,6 +57,7 @@ public class ProbeAnnotatedMethods2Test extends AbstractMetricsTest {
         assertLong("collectionMethod", 10);
         assertLong("mapMethod", 10);
 
+        assertLong("BooleanMethod", 1);
         assertLong("ByteMethod", 10);
         assertLong("ShortMethod", 10);
         assertLong("IntegerMethod", 10);
@@ -105,6 +107,12 @@ public class ProbeAnnotatedMethods2Test extends AbstractMetricsTest {
     }
 
     private static final class SomeSource {
+
+        @Probe
+        private boolean booleanMethod() {
+            return true;
+        }
+
         @Probe
         private byte byteMethod() {
             return 10;
@@ -184,6 +192,11 @@ public class ProbeAnnotatedMethods2Test extends AbstractMetricsTest {
         @Probe
         private Map<Integer, Integer> nullMapMethod() {
             return null;
+        }
+
+        @Probe
+        private Boolean BooleanMethod() {
+            return true;
         }
 
         @Probe

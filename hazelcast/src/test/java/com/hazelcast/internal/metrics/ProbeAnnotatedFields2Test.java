@@ -57,6 +57,7 @@ public class ProbeAnnotatedFields2Test extends AbstractMetricsTest {
 
     @Test
     public void longValueFieldProbes() throws Exception {
+        assertLong("booleanField", 1);
         assertLong("byteField", 10);
         assertLong("shortField", 10);
         assertLong("intField", 10);
@@ -68,6 +69,7 @@ public class ProbeAnnotatedFields2Test extends AbstractMetricsTest {
         assertLong("mapField", 10);
         assertLong("semaphoreField", 10);
 
+        assertLong("BooleanField", 1);
         assertLong("ByteField", 10);
         assertLong("ShortField", 10);
         assertLong("IntegerField", 10);
@@ -104,6 +106,8 @@ public class ProbeAnnotatedFields2Test extends AbstractMetricsTest {
     }
 
     private static final class SomeSource {
+        @Probe
+        private boolean booleanField = true;
         @Probe
         private byte byteField = 10;
         @Probe
@@ -143,6 +147,8 @@ public class ProbeAnnotatedFields2Test extends AbstractMetricsTest {
         @Probe
         private Semaphore nullSemaphoreField;
 
+        @Probe
+        private Boolean BooleanField = true;
         @Probe
         private Byte ByteField = (byte) 10;
         @Probe
