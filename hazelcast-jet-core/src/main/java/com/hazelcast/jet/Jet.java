@@ -20,9 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.Hazelcast;
@@ -144,17 +142,17 @@ public final class Jet {
                         .setClassName(JetMetricsService.class.getName())
                         .setConfigObject(jetConfig.getMetricsConfig()));
 
+        boolean hotRestartEnabled = hzConfig.getHotRestartPersistenceConfig().isEnabled();
         MapConfig metadataMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
                 .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
-                .setStatisticsEnabled(false)
-                .setMergePolicyConfig(
-                        new MergePolicyConfig().setPolicy(IgnoreMergingEntryMapMergePolicy.class.getName()))
-                .setHotRestartConfig(new HotRestartConfig().setEnabled(true));
+                .setStatisticsEnabled(false);
+        metadataMapConfig.getMergePolicyConfig().setPolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
+        metadataMapConfig.getHotRestartConfig().setEnabled(hotRestartEnabled);
 
         MapConfig resultsMapConfig = new MapConfig(metadataMapConfig)
                 .setName(JOB_RESULTS_MAP_NAME)
                 .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
-        resultsMapConfig.getHotRestartConfig().setEnabled(true);
+        resultsMapConfig.getHotRestartConfig().setEnabled(hotRestartEnabled);
 
         hzConfig.addMapConfig(metadataMapConfig)
                 .addMapConfig(resultsMapConfig);
