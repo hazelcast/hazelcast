@@ -110,6 +110,8 @@ public class ClusterStateManager {
     void initialClusterState(ClusterState initialState, Version version) {
         clusterServiceLock.lock();
         try {
+            node.getNodeExtension().onInitialClusterState(initialState);
+
             final ClusterState currentState = getState();
             if (currentState != ClusterState.ACTIVE && currentState != initialState) {
                 logger.warning("Initial state is already set! " + "Current state: " + currentState + ", Given state: "
