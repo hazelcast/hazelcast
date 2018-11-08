@@ -19,19 +19,15 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
-import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
@@ -39,9 +35,6 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
@@ -485,23 +478,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      */
     private void handleAddWanConfig(HttpPostCommand command) throws UnsupportedEncodingException {
         String res;
-        final String[] params = decodeParams(command, 1);
-        final String wanConfigJson = params[0];
+        String[] params = decodeParams(command, 1);
+        String wanConfigJson = params[0];
         try {
-            OperationService opService = textCommandService.getNode().getNodeEngine().getOperationService();
-            final Set<Member> members = textCommandService.getNode().getClusterService().getMembers();
-            WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
-            WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanReplicationConfig);
+            WanReplicationConfigDTO dto = new WanReplicationConfigDTO(new WanReplicationConfig());
             dto.fromJson(Json.parse(wanConfigJson).asObject());
-            List<InternalCompletableFuture> futureList = new ArrayList<InternalCompletableFuture>(members.size());
-            for (Member member : members) {
-                InternalCompletableFuture<Object> future = opService.invokeOnTarget(WanReplicationService.SERVICE_NAME,
-                        new AddWanConfigOperation(dto.getConfig()), member.getAddress());
-                futureList.add(future);
-            }
-            for (InternalCompletableFuture future : futureList) {
-                future.get();
-            }
+
+            textCommandService.getNode().getNodeEngine()
+                              .getWanReplicationService()
+                              .addWanReplicationConfig(dto.getConfig());
             res = response(ResponseType.SUCCESS, "message", "WAN configuration added.");
         } catch (Exception ex) {
             logger.warning("Error occurred while adding WAN config", ex);

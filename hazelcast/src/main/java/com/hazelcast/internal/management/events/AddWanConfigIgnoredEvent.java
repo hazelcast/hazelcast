@@ -30,11 +30,6 @@ public final class AddWanConfigIgnoredEvent extends AbstractEventBase {
         this.reason = reason;
     }
 
-    public static AddWanConfigIgnoredEvent alreadyExists(String wanConfigName) {
-        return new AddWanConfigIgnoredEvent(wanConfigName,
-                "A WAN replication config already exists with the given name.");
-    }
-
     public static AddWanConfigIgnoredEvent enterpriseOnly(String wanConfigName) {
         return new AddWanConfigIgnoredEvent(wanConfigName,
                 "Adding new WAN replication config is supported for enterprise clusters only.");
