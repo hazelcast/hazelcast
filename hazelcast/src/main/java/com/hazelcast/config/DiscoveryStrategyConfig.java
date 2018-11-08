@@ -33,7 +33,11 @@ import java.util.Map;
  */
 public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     private String className;
-    private DiscoveryStrategyFactory discoveryStrategyFactory;
+    // we skip serialization since this may be a user-supplied object and
+    // it may not be serializable. Since we send the WAN config in the
+    // FinalizeJoinOp, this may prevent a node from sending it to a joining
+    // member
+    private transient DiscoveryStrategyFactory discoveryStrategyFactory;
     private Map<String, Comparable> properties;
 
     public DiscoveryStrategyConfig() {
@@ -125,7 +129,6 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(className);
-        out.writeObject(discoveryStrategyFactory);
 
         out.writeInt(properties.size());
         for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
@@ -137,7 +140,6 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readUTF();
-        discoveryStrategyFactory = in.readObject();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             properties.put(in.readUTF(), (Comparable) in.readObject());
