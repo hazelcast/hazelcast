@@ -848,6 +848,7 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             if (!isContributing) {
                 return;
             }
+            Object previousSource = cycle.source;
             cycle.source = instance;
             try {
                 if (isUpdated && cycle.isCollected(updateLevel)
@@ -867,8 +868,9 @@ public final class MetricsRegistryImpl implements MetricsRegistry {
             } catch (Exception e) {
                 LOGGER.warning("Exception while collecting object of type "
                         + instance.getClass().getSimpleName(), e);
+            } finally {
+                cycle.source = previousSource;
             }
-            cycle.source = null;
         }
 
         private void collectAllOfSource(CollectionCycleImpl cycle, MetricsSource source) {
