@@ -89,7 +89,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         int perNodeMaxSize = 1000;
 
         // eviction takes place if a partitions size exceeds this number
-        // see EvictionChecker#translatePerNodeSizeToPartitionSize
+        // see EvictionChecker#toPerPartitionMaxSize
         double maxPartitionSize = 1D * nodeCount * perNodeMaxSize / PARTITION_COUNT;
 
         String mapName = "testPerNodePolicy_afterGracefulShutdown";
