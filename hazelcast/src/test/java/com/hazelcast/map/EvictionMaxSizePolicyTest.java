@@ -358,7 +358,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(map.getName());
 
-        MapEvictionPolicy mapEvictionPolicy = mapContainer.getMapConfig().getMapEvictionPolicy();
+        MapEvictionPolicy mapEvictionPolicy = mapContainer.getMapEvictionPolicy();
         EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
         IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         Evictor evictor = new TestEvictor(mapEvictionPolicy, evictionChecker, partitionService);
