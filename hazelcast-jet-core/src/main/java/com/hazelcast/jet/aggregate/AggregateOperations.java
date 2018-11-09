@@ -44,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -158,6 +159,68 @@ public final class AggregateOperations {
                     }
                 })
                 .andExportFinish(MutableReference::get);
+    }
+
+    /**
+     * Returns an aggregate operation that computes the top {@code n} items
+     * calculated according to the given {@link DistributedComparator comparator}.
+     * The returned list of elements is sorted in descending order.
+     * <p>
+     * This aggregate operation does not implement the {@link
+     * AggregateOperation1#deductFn() deduct} primitive.
+     *
+     * @param n number of items to return
+     * @param comparator the comparator to use
+     * @param <T> input item type
+     */
+    @Nonnull
+    public static <T> AggregateOperation1<T, PriorityQueue<T>, List<T>> topN(
+            int n, @Nonnull DistributedComparator<? super T> comparator
+    ) {
+        checkSerializable(comparator, "comparator");
+        DistributedComparator<? super T> comparatorReversed = comparator.reversed();
+        DistributedBiConsumer<PriorityQueue<T>, T> accumulateFn = (queue, item) -> {
+            if (queue.size() == n) {
+                if (comparator.compare(item, queue.peek()) <= 0) {
+                    // the new item is smaller or equal to the smallest in queue
+                    return;
+                }
+                queue.poll();
+            }
+            queue.offer(item);
+        };
+        return AggregateOperation
+                .withCreate(() -> new PriorityQueue<T>(n, comparator))
+                .andAccumulate(accumulateFn)
+                .andCombine((left, right) -> {
+                    for (T item : right) {
+                        accumulateFn.accept(left, item);
+                    }
+                })
+                .andExportFinish(queue -> {
+                    ArrayList<T> res = new ArrayList<>(queue);
+                    res.sort(comparatorReversed);
+                    return res;
+                });
+    }
+
+    /**
+     * Returns an aggregate operation that computes the bottom {@code n} items
+     * calculated according to the given {@link DistributedComparator comparator}.
+     * The returned list of elements is sorted in ascending order.
+     * <p>
+     * This aggregate operation does not implement the {@link
+     * AggregateOperation1#deductFn() deduct} primitive.
+     *
+     * @param n number of items to return
+     * @param comparator the comparator to use
+     * @param <T> input item type
+     */
+    @Nonnull
+    public static <T> AggregateOperation1<T, PriorityQueue<T>, List<T>> bottomN(
+            int n, @Nonnull DistributedComparator<? super T> comparator
+    ) {
+        return topN(n, comparator.reversed());
     }
 
     /**

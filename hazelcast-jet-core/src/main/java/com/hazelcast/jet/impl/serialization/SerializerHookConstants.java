@@ -53,6 +53,7 @@ public final class SerializerHookConstants {
     public static final int HASH_SET = -323;
     public static final int JET_EVENT = -324;
     public static final int TIMESTAMPED_ITEM = -325;
+    public static final int PRIORITY_QUEUE = -326;
 
 
     // reserved for hadoop module: -380 to -390
