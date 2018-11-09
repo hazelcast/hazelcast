@@ -16,40 +16,37 @@
 
 package com.hazelcast.internal.management.events;
 
+import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.events.EventMetadata.EventType;
 
-import static com.hazelcast.internal.management.events.EventMetadata.EventType.ADD_WAN_CONFIGURATION_IGNORED;
+import java.util.Collection;
 
-public final class AddWanConfigIgnoredEvent extends AbstractEventBase {
+import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_CONFIGURATION_EXTENDED;
+
+public class WanConfigurationExtendedEvent extends AbstractEventBase {
     private final String wanConfigName;
-    private final String reason;
+    private final Collection<String> wanPublisherIds;
 
-    private AddWanConfigIgnoredEvent(String wanConfigName, String reason) {
+    public WanConfigurationExtendedEvent(String wanConfigName, Collection<String> wanPublisherIds) {
         this.wanConfigName = wanConfigName;
-        this.reason = reason;
-    }
-
-    public static AddWanConfigIgnoredEvent alreadyExists(String wanConfigName) {
-        return new AddWanConfigIgnoredEvent(wanConfigName,
-                "A WAN replication config already exists with the given name.");
-    }
-
-    public static AddWanConfigIgnoredEvent enterpriseOnly(String wanConfigName) {
-        return new AddWanConfigIgnoredEvent(wanConfigName,
-                "Adding new WAN replication config is supported for enterprise clusters only.");
+        this.wanPublisherIds = wanPublisherIds;
     }
 
     @Override
     public EventType getType() {
-        return ADD_WAN_CONFIGURATION_IGNORED;
+        return WAN_CONFIGURATION_EXTENDED;
     }
 
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.add("wanConfigName", wanConfigName);
-        json.add("reason", reason);
+        JsonArray publisherIds = new JsonArray();
+        for (String publisherId : wanPublisherIds) {
+            publisherIds.add(publisherId);
+        }
+        json.add("wanPublisherIds", publisherIds);
         return json;
     }
 }
