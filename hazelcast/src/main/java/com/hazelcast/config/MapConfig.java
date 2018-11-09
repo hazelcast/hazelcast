@@ -467,34 +467,13 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         return this;
     }
 
-    private static MapEvictionPolicy findMatchingMapEvictionPolicy(EvictionPolicy evictionPolicy) {
-        switch (evictionPolicy) {
-            case LRU:
-                return LRUEvictionPolicy.INSTANCE;
-            case LFU:
-                return LFUEvictionPolicy.INSTANCE;
-            case RANDOM:
-                return RandomEvictionPolicy.INSTANCE;
-            case NONE:
-                return null;
-            default:
-                throw new IllegalArgumentException("Not known eviction policy: " + evictionPolicy);
-        }
-    }
-
     /**
      * Returns custom eviction policy if it is set otherwise returns {@code null}.
      *
      * @return custom eviction policy or {@code null}
      */
     public MapEvictionPolicy getMapEvictionPolicy() {
-        if (mapEvictionPolicy != null) {
-            return mapEvictionPolicy;
-        }
-        if (evictionPolicy == null) {
-            return null;
-        }
-        return findMatchingMapEvictionPolicy(evictionPolicy);
+        return mapEvictionPolicy;
     }
 
     /**
