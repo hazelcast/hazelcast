@@ -657,6 +657,17 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.slow.operation.detector.stacktrace.logging.enabled", false);
 
     /**
+     * Allows to enable/disable using Script engines from the
+     * {@link com.hazelcast.internal.management.operation.ScriptExecutorOperation}. Default value differs between Hazelcast
+     * ({@code true}) and Hazelcast Enterprise ({@code false}).
+     *
+     * @deprecated This property will be replaced by a field in ManagementCenterConfig in Hazelcast 3.12.
+     */
+    @Deprecated
+    public static final HazelcastProperty SCRIPTING_ENABLED = new HazelcastProperty("hazelcast.mancenter.scripting.enabled",
+            ! BuildInfoProvider.getBuildInfo().isEnterprise());
+
+    /**
      * Property isn't used anymore.
      */
     @Deprecated
