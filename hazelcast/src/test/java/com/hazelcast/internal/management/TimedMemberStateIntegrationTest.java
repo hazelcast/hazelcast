@@ -19,6 +19,7 @@ package com.hazelcast.internal.management;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -27,7 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -83,5 +83,34 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
         assertEquals(enabled, timedMemberState.sslEnabled);
+    }
+
+    @Test
+    public void testScripting_defaultValue() {
+        testScripting(null);
+    }
+
+    @Test
+    public void testScripting_enabled() {
+        testScripting(true);
+    }
+
+    @Test
+    public void testScripting_disabled() {
+        testScripting(false);
+    }
+
+    private void testScripting(Boolean enabled) {
+        Config config = getConfig();
+        if (enabled != null) {
+            config.setProperty(GroupProperty.SCRIPTING_ENABLED.getName(), String.valueOf(enabled));
+        }
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+        TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
+
+        TimedMemberState timedMemberState = factory.createTimedMemberState();
+        boolean expected = enabled == null ? true : enabled;
+        assertEquals(expected, timedMemberState.scriptingEnabled);
     }
 }

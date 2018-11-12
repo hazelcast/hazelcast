@@ -22,12 +22,15 @@ import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.IOException;
+import java.security.AccessControlException;
 
 import static com.hazelcast.internal.cluster.Versions.V3_10;
 
@@ -51,6 +54,10 @@ public class ScriptExecutorOperation extends AbstractManagementOperation impleme
 
     @Override
     public void run() {
+        HazelcastProperties hzProperties = getNodeEngine().getProperties();
+        if (! hzProperties.getBoolean(GroupProperty.SCRIPTING_ENABLED)) {
+            throw new AccessControlException("Using ScriptEngine is not allowed on this Hazelcast member.");
+        }
         ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
         ScriptEngine engine = scriptEngineManager.getEngineByName(engineName);
         if (engine == null) {
