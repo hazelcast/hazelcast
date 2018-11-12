@@ -28,12 +28,14 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.Test;
+import usercodedeployment.EnclosingClass;
 import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.blacklisted.BlacklistedEP;
 import usercodedeployment.whitelisted.WhitelistedEP;
 
 import static com.hazelcast.test.starter.HazelcastStarterUtils.assertInstanceOfByClassName;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -195,6 +197,53 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
         } catch (Exception e) {
             assertInstanceOfByClassName(HazelcastSerializationException.class.getName(), e);
         }
+    }
+
+    @Test
+    public void givenSomeMemberCanAccessTheEP_whenTheEPIsFilteredLocally_thenItWillBeLoadedOverNetwork_multipleNestedClasses() {
+        Config i1Config = new Config();
+        i1Config.getUserCodeDeploymentConfig()
+                .setEnabled(true);
+
+        Config i2Config = new Config();
+        FilteringClassLoader filteringCL = new FilteringClassLoader(asList("usercodedeployment"), null);
+        i2Config.setClassLoader(filteringCL);
+        i2Config.getUserCodeDeploymentConfig()
+                .setEnabled(true);
+
+        EnclosingClass.StaticNestedIncrementingEntryProcessor ep =
+                new EnclosingClass.StaticNestedIncrementingEntryProcessor();
+
+        int keyCount = 100;
+
+        factory = newFactory();
+        // first instance without EP
+        HazelcastInstance instance1WithoutEp = factory.newHazelcastInstance(i2Config);
+        // second with new EP
+        HazelcastInstance instance2WithNewEp = factory.newHazelcastInstance(i1Config);
+
+        String mapName = randomName();
+        IMap<Integer, Integer> map = instance2WithNewEp.getMap(mapName);
+
+        for (int i1 = 0; i1 < keyCount; i1++) {
+            map.put(i1, 0);
+        }
+        map.executeOnEntries(ep);
+        for (int i1 = 0; i1 < keyCount; i1++) {
+            assertEquals(1, (int) map.get(i1));
+        }
+
+        // create new instance without EP
+        HazelcastInstance instance3WithoutEp = factory.newHazelcastInstance(i2Config);
+        IMap<Integer, Integer> map3 = instance3WithoutEp.getMap(mapName);
+        Integer key = map3.localKeySet().iterator().next();
+
+        EnclosingClass.StaticNestedDecrementingEntryProcessor ep2 =
+                new EnclosingClass.StaticNestedDecrementingEntryProcessor();
+        // executing ep on instance without that ep
+        map.executeOnKey(key, ep2);
+
+        assertEquals(0, (int) map.get(key));
     }
 
     @Test
