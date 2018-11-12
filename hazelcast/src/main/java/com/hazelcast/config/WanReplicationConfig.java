@@ -149,8 +149,8 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
 
-        // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+        // RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             // using this method is nicer since the object
             // can implement Versioned and have a version injected
             out.writeObject(wanConsumerConfig);
@@ -166,8 +166,8 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
         int publisherCount = wanPublisherConfigs.size();
         out.writeInt(publisherCount);
         for (WanPublisherConfig wanPublisherConfig : wanPublisherConfigs) {
-            // RU_COMPAT_3_11
-            if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+            // RU_COMPAT_3_10
+            if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
                 // using this method is nicer since the object
                 // can implement Versioned and have a version injected
                 out.writeObject(wanPublisherConfig);
@@ -181,8 +181,8 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
 
-        // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+        // RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             wanConsumerConfig = in.readObject();
         } else {
             boolean consumerConfigExists = in.readBoolean();
@@ -197,8 +197,8 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
         for (int i = 0; i < publisherCount; i++) {
             WanPublisherConfig publisherConfig;
 
-            // RU_COMPAT_3_11
-            if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+            // RU_COMPAT_3_10
+            if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
                 publisherConfig = in.readObject();
             } else {
                 publisherConfig = new WanPublisherConfig();

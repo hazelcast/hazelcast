@@ -57,8 +57,8 @@ public class AddWanConfigLegacyOperation extends AbstractManagementOperation imp
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+        // RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             // using this method is nicer since the object
             // can implement Versioned and have a version injected
             out.writeObject(wanReplicationConfig);
@@ -69,8 +69,8 @@ public class AddWanConfigLegacyOperation extends AbstractManagementOperation imp
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+        // RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             wanReplicationConfig = in.readObject();
         } else {
             wanReplicationConfig = new WanReplicationConfig();

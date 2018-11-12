@@ -459,8 +459,8 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
             out.writeObject(wanSyncConfig);
             out.writeUTF(publisherId);
         }
-        // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+        // RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             out.writeObject(awsConfig);
             out.writeObject(gcpConfig);
             out.writeObject(azureConfig);
@@ -488,8 +488,8 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
             wanSyncConfig = in.readObject();
             publisherId = in.readUTF();
         }
-        // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+        // RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             awsConfig = in.readObject();
             gcpConfig = in.readObject();
             azureConfig = in.readObject();
