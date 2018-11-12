@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanConsumerConfig;
@@ -29,7 +30,10 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.eviction.LFUEvictionPolicy;
+import com.hazelcast.map.eviction.LRUEvictionPolicy;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
+import com.hazelcast.map.eviction.RandomEvictionPolicy;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
@@ -174,7 +178,7 @@ public class MapContainer {
 
     // this method is overridden
     public void initEvictor() {
-        MapEvictionPolicy mapEvictionPolicy = mapConfig.getMapEvictionPolicy();
+        MapEvictionPolicy mapEvictionPolicy = getMapEvictionPolicy();
         if (mapEvictionPolicy == null) {
             evictor = NULL_EVICTOR;
         } else {
@@ -184,6 +188,29 @@ public class MapContainer {
             IPartitionService partitionService = nodeEngine.getPartitionService();
             int batchSize = nodeEngine.getProperties().getInteger(MAP_EVICTION_BATCH_SIZE);
             evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService, batchSize);
+        }
+    }
+
+    public MapEvictionPolicy getMapEvictionPolicy() {
+        MapEvictionPolicy mapEvictionPolicy = mapConfig.getMapEvictionPolicy();
+        if (mapEvictionPolicy != null) {
+            return mapEvictionPolicy;
+        }
+        EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
+        if (evictionPolicy == null) {
+            return null;
+        }
+        switch (evictionPolicy) {
+            case LRU:
+                return LRUEvictionPolicy.INSTANCE;
+            case LFU:
+                return LFUEvictionPolicy.INSTANCE;
+            case RANDOM:
+                return RandomEvictionPolicy.INSTANCE;
+            case NONE:
+                return null;
+            default:
+                throw new IllegalArgumentException("Not known eviction policy: " + evictionPolicy);
         }
     }
 
