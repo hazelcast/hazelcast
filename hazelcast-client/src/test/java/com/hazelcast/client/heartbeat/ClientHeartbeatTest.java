@@ -79,12 +79,45 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     }
 
     @Test
-    public void testConnectionClosed_whenHeartbeatStopped() throws InterruptedException {
+    public void testOwnerConnectionClosed_whenHeartbeatStopped() throws InterruptedException {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
 
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        connectionManager.addConnectionListener(new ConnectionListener() {
+            @Override
+            public void connectionAdded(Connection connection) {
+
+            }
+
+            @Override
+            public void connectionRemoved(Connection connection) {
+                countDownLatch.countDown();
+            }
+        });
+
+        blockMessagesFromInstance(instance, client);
+        assertOpenEventually(countDownLatch);
+    }
+
+    @Test
+    public void testNonOwnerConnectionClosed_whenHeartbeatStopped() throws InterruptedException {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+
+        HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
+        final ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, connectionManager.getActiveConnections().size());
+            }
+        });
+
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         connectionManager.addConnectionListener(new ConnectionListener() {
             @Override
