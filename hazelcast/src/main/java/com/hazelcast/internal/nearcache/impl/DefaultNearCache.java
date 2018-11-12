@@ -121,7 +121,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     public void put(K key, Data keyData, V value, Data valueData) {
         checkKeyFormat(key);
 
-        nearCacheRecordStore.doEvictionIfRequired();
+        nearCacheRecordStore.doEviction(false);
 
         nearCacheRecordStore.put(key, keyData, value, valueData);
     }
@@ -191,7 +191,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     @Override
     public long tryReserveForUpdate(K key, Data keyData) {
-        nearCacheRecordStore.doEvictionIfRequired();
+        nearCacheRecordStore.doEviction(false);
 
         return nearCacheRecordStore.tryReserveForUpdate(key, keyData);
     }

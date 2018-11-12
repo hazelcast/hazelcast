@@ -41,12 +41,39 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
 
     /**
      * Puts (associates) a value with the given {@code key}.
-     *  @param key     the key to which the given value will be associated.
-     * @param keyData the key as {@link Data} to which the given value will be associated.
-     * @param value   the value that will be associated with the key.
+     *
+     * @param key       the key to which the given value will be associated.
+     * @param keyData   the key as {@link Data} to which the given value will be associated.
+     * @param value     the value that will be associated with the key.
      * @param valueData
      */
     void put(K key, Data keyData, V value, Data valueData);
+
+    /**
+     * Tries to reserve supplied key for update. <p> If one thread takes
+     * reservation, only that thread can update the key.
+     *
+     * @param key     key to be reserved for update
+     * @param keyData key to be reserved for update as {@link Data}
+     * @return reservation ID if reservation succeeds, else returns {@link
+     * NearCacheRecord#NOT_RESERVED}
+     */
+    long tryReserveForUpdate(K key, Data keyData);
+
+    /**
+     * Tries to update reserved key with supplied value. If update
+     * happens, value is published. Publishing means making the value
+     * readable to all threads. If update fails, record is not updated.
+     *
+     * @param key           reserved key for update
+     * @param value         value to be associated with reserved key
+     * @param reservationId ID for this reservation
+     * @param deserialize   eagerly deserialize
+     *                      returning value
+     * @return associated value if deserialize is {@code
+     * true} and update succeeds, otherwise returns null
+     */
+    V tryPublishReserved(K key, V value, long reservationId, boolean deserialize);
 
     /**
      * Removes the value associated with the given {@code key}
@@ -96,14 +123,12 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     /**
      * Does eviction as specified configuration {@link com.hazelcast.config.EvictionConfig}
      * in {@link com.hazelcast.config.NearCacheConfig}.
+     *
+     * @param withoutMaxSizeCheck set {@code true} to evict regardless of a max
+     *                            size check, otherwise set {@code false} to evict
+     *                            after a max size check.
      */
-    void doEvictionIfRequired();
-
-    /**
-     * Does eviction as specified configuration {@link com.hazelcast.config.EvictionConfig}
-     * in {@link com.hazelcast.config.NearCacheConfig} regardless from the max-size policy.
-     */
-    void doEviction();
+    void doEviction(boolean withoutMaxSizeCheck);
 
     /**
      * Loads the keys into the Near Cache.
@@ -119,13 +144,4 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * @see StaleReadDetector
      */
     void setStaleReadDetector(StaleReadDetector detector);
-
-    /**
-     * @see StaleReadDetector
-     */
-    StaleReadDetector getStaleReadDetector();
-
-    long tryReserveForUpdate(K key, Data keyData);
-
-    V tryPublishReserved(K key, V value, long reservationId, boolean deserialize);
 }

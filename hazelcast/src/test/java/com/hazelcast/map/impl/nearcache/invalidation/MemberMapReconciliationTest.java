@@ -23,9 +23,11 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Partition;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
+import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
@@ -180,7 +182,8 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 final DefaultNearCache nearCache = getNearCache((NearCachedMapProxyImpl) nearCachedMapFromNewServer);
 
-                StaleReadDetector staleReadDetector = nearCache.getNearCacheRecordStore().getStaleReadDetector();
+                NearCacheRecordStore nearCacheRecordStore = nearCache.getNearCacheRecordStore();
+                StaleReadDetector staleReadDetector = ((AbstractNearCacheRecordStore) nearCacheRecordStore).getStaleReadDetector();
 
                 // we first assert that the stale detector is not the initial one, since the metadata that the records are
                 // initialized with on putting records into the record store is queried from the stale detector

@@ -131,12 +131,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public StaleReadDetector getStaleReadDetector() {
-        checkAvailable();
-        return staleReadDetector;
-    }
-
-    @Override
     public abstract R getRecord(K key);
 
     protected abstract EvictionChecker createNearCacheEvictionChecker(EvictionConfig evictionConfig,
@@ -418,20 +412,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public void doEvictionIfRequired() {
+    public void doEviction(boolean withoutMaxSizeCheck) {
         checkAvailable();
 
         if (!evictionDisabled) {
+            EvictionChecker evictionChecker = withoutMaxSizeCheck ? null : this.evictionChecker;
             evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
-        }
-    }
-
-    @Override
-    public void doEviction() {
-        checkAvailable();
-
-        if (!evictionDisabled) {
-            evictionStrategy.evict(records, evictionPolicyEvaluator, null, this);
         }
     }
 
@@ -457,6 +443,11 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
         checkAvailable();
         return updateAndGetReserved(key, value, reservationId, deserialize);
+    }
+
+    // only used for testing purposes
+    public StaleReadDetector getStaleReadDetector() {
+        return staleReadDetector;
     }
 
     protected void onRecordCreate(K key, Data keyData, R record) {
