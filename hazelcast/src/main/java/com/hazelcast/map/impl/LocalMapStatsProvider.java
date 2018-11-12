@@ -24,10 +24,10 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.monitor.impl.IndexesStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.OnDemandIndexStats;
+import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
@@ -318,9 +318,7 @@ public class LocalMapStatsProvider {
         NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
 
         localMapStats.setNearCacheStats(nearCacheStats);
-        if (NATIVE != nearCache.getInMemoryFormat()) {
-            onDemandStats.incrementHeapCost(nearCacheStats.getOwnedEntryMemoryCost());
-        }
+        onDemandStats.incrementHeapCost(nearCacheStats.getOwnedEntryMemoryCost());
     }
 
     private void addIndexStats(String mapName, LocalMapStatsImpl localMapStats) {

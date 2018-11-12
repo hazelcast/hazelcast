@@ -18,7 +18,6 @@ package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
@@ -75,31 +74,5 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
             return (V) CACHED_AS_NULL;
         }
         return record.getValue();
-    }
-
-    @Override
-    public Object selectToSave(Object... candidates) {
-        Object selectedCandidate = null;
-        if (candidates != null && candidates.length > 0) {
-            for (Object candidate : candidates) {
-                // give priority to non Data typed candidate, so there will be no extra conversion from Data to Object
-                if (!(candidate instanceof Data)) {
-                    selectedCandidate = candidate;
-                    break;
-                }
-            }
-            if (selectedCandidate != null) {
-                return selectedCandidate;
-            } else {
-                // select a non-null candidate
-                for (Object candidate : candidates) {
-                    if (candidate != null) {
-                        selectedCandidate = candidate;
-                        break;
-                    }
-                }
-            }
-        }
-        return selectedCandidate;
     }
 }

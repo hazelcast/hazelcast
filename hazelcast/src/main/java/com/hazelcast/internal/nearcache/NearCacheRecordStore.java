@@ -41,12 +41,12 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
 
     /**
      * Puts (associates) a value with the given {@code key}.
-     *
-     * @param key     the key to which the given value will be associated.
+     *  @param key     the key to which the given value will be associated.
      * @param keyData the key as {@link Data} to which the given value will be associated.
      * @param value   the value that will be associated with the key.
+     * @param valueData
      */
-    void put(K key, Data keyData, V value);
+    void put(K key, Data keyData, V value, Data valueData);
 
     /**
      * Removes the value associated with the given {@code key}
@@ -87,14 +87,6 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * @return the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this record store.
      */
     NearCacheStats getNearCacheStats();
-
-    /**
-     * Selects the best candidate object to store from the given {@code candidates}.
-     *
-     * @param candidates the candidates from which the best candidate object will be selected.
-     * @return the best candidate object to store, selected from the given {@code candidates}.
-     */
-    Object selectToSave(Object... candidates);
 
     /**
      * Performs expiration and evicts expired records.
