@@ -17,7 +17,6 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,48 +31,38 @@ import java.io.IOException;
  * <p>
  * NOTE: needs to be {@link Versioned} since some classes in the
  * WanReplicationConfig hierarchy are Versioned. Unfortunately, this class
- * has until now serialized by invoking
- * {@link ObjectDataOutput#writeData(Data)} directly, which circumvents
+ * is serialized by invoking {@link ObjectDataOutput#writeData(Data)}
+ * directly, which circumvents the check for {@link Versioned} in the
+ * serialization service.
  */
-public class AddWanConfigOperation extends AbstractManagementOperation implements Versioned {
+public class AddWanConfigLegacyOperation extends AbstractManagementOperation implements Versioned {
 
     private WanReplicationConfig wanReplicationConfig;
 
     @SuppressWarnings("unused")
-    public AddWanConfigOperation() {
+    public AddWanConfigLegacyOperation() {
     }
 
-    public AddWanConfigOperation(WanReplicationConfig wanReplicationConfig) {
+    public AddWanConfigLegacyOperation(WanReplicationConfig wanReplicationConfig) {
         this.wanReplicationConfig = wanReplicationConfig;
     }
 
     @Override
     public void run() throws Exception {
-        WanReplicationService wanReplicationService = getNodeEngine().getWanReplicationService();
-        wanReplicationService.addWanReplicationConfig(wanReplicationConfig);
+        getNodeEngine().getWanReplicationService()
+                       .addWanReplicationConfigLocally(wanReplicationConfig);
+        getLogger().info("Appended WAN config with name " + wanReplicationConfig.getName());
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            // using this method is nicer since the object
-            // can implement Versioned and have a version injected
-            out.writeObject(wanReplicationConfig);
-        } else {
-            wanReplicationConfig.writeData(out);
-        }
+        wanReplicationConfig.writeData(out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            wanReplicationConfig = in.readObject();
-        } else {
-            wanReplicationConfig = new WanReplicationConfig();
-            wanReplicationConfig.readData(in);
-        }
+        wanReplicationConfig = new WanReplicationConfig();
+        wanReplicationConfig.readData(in);
     }
 
     @Override
