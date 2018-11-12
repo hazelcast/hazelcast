@@ -221,6 +221,8 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
         HazelcastInstance instance1WithoutEp = factory.newHazelcastInstance(i2Config);
         // second with new EP
         HazelcastInstance instance2WithNewEp = factory.newHazelcastInstance(i1Config);
+        // third instance without EP
+        HazelcastInstance instance3WithoutEp = factory.newHazelcastInstance(i2Config);
 
         String mapName = randomName();
         IMap<Integer, Integer> map = instance2WithNewEp.getMap(mapName);
@@ -233,8 +235,6 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
             assertEquals(1, (int) map.get(i1));
         }
 
-        // create new instance without EP
-        HazelcastInstance instance3WithoutEp = factory.newHazelcastInstance(i2Config);
         IMap<Integer, Integer> map3 = instance3WithoutEp.getMap(mapName);
         Integer key = map3.localKeySet().iterator().next();
 
