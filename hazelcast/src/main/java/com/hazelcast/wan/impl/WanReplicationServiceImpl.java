@@ -167,6 +167,11 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
+    public void addWanReplicationConfigLocally(WanReplicationConfig wanConfig) {
+        throw new UnsupportedOperationException("Adding new WAN config is not supported.");
+    }
+
+    @Override
     public Map<String, LocalWanStats> getStats() {
         return null;
     }
