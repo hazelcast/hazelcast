@@ -1371,9 +1371,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("eviction-policy".equals(nodeName)) {
-                if (mapConfig.getMapEvictionPolicy() == null) {
-                    mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
-                }
+                mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
             } else if ("max-size".equals(nodeName)) {
                 MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
                 Node maxSizePolicy = node.getAttributes().getNamedItem("policy");

@@ -17,10 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.map.eviction.LFUEvictionPolicy;
-import com.hazelcast.map.eviction.LRUEvictionPolicy;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
-import com.hazelcast.map.eviction.RandomEvictionPolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -464,23 +461,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      */
     public MapConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
         this.evictionPolicy = checkNotNull(evictionPolicy, "evictionPolicy cannot be null");
-        this.mapEvictionPolicy = findMatchingMapEvictionPolicy(evictionPolicy);
         return this;
-    }
-
-    private static MapEvictionPolicy findMatchingMapEvictionPolicy(EvictionPolicy evictionPolicy) {
-        switch (evictionPolicy) {
-            case LRU:
-                return LRUEvictionPolicy.INSTANCE;
-            case LFU:
-                return LFUEvictionPolicy.INSTANCE;
-            case RANDOM:
-                return RandomEvictionPolicy.INSTANCE;
-            case NONE:
-                return null;
-            default:
-                throw new IllegalArgumentException("Not known eviction policy: " + evictionPolicy);
-        }
     }
 
     /**
