@@ -147,6 +147,7 @@
         <xs:attribute name="cooperative-thread-Count" type="hz:parameterized-positive-integer"/>
         <xs:attribute name="flow-control-period-ms" type="hz:parameterized-positive-integer"/>
         <xs:attribute name="backup-count" type="hz:parameterized-backup-count"/>
+        <xs:attribute name="scale-up-delay-millis" type="parameterized-non-negative-long"/>
     </xs:complexType>
 
     <xs:complexType name="edge-config">
@@ -162,5 +163,15 @@
         <xs:attribute name="collection-interval-seconds" type="hz:parameterized-positive-integer"/>
         <xs:attribute name="metrics-for-data-structures" type="hz:parameterized-boolean"/>
     </xs:complexType>
+
+    <xs:simpleType name="nonNegativeLong" id="nonNegativeLong">
+        <xs:restriction base="xs:long">
+            <xs:minInclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="parameterized-non-negative-long">
+        <xs:union memberTypes="xs:nonNegativeInteger hz:parameterizedValueType"/>
+    </xs:simpleType>
 
 </xs:schema>

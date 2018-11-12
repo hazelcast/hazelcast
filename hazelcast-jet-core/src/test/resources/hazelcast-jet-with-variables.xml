@@ -23,6 +23,7 @@
         <cooperative-thread-count>${thread.count}</cooperative-thread-count>
         <flow-control-period>${flow.control.period}</flow-control-period>
         <backup-count>${backup.count}</backup-count>
+        <scale-up-delay-millis>${scale.up.delay.millis}</scale-up-delay-millis>
     </instance>
 
     <properties>

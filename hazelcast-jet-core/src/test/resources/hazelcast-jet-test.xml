@@ -22,6 +22,7 @@
         <cooperative-thread-count>55</cooperative-thread-count>
         <flow-control-period>50</flow-control-period>
         <backup-count>2</backup-count>
+        <scale-up-delay-millis>1234</scale-up-delay-millis>
     </instance>
 
     <properties>

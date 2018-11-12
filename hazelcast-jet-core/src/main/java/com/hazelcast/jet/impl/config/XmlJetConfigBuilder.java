@@ -194,6 +194,9 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
                 case "backup-count":
                     instanceConfig.setBackupCount(intValue(node));
                     break;
+                case "scale-up-delay-millis":
+                    instanceConfig.setScaleUpDelayMillis(longValue(node));
+                    break;
                 default:
                     throw new AssertionError("Unrecognized XML element: " + name);
             }
@@ -245,6 +248,10 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
     }
 
     private int intValue(Node node) {
+        return Integer.parseInt(stringValue(node));
+    }
+
+    private int longValue(Node node) {
         return Integer.parseInt(stringValue(node));
     }
 

@@ -52,6 +52,7 @@ public class JetConfigTest_loadFromClassPath {
         properties.setProperty("thread.count", "123");
         properties.setProperty("flow.control.period", "456");
         properties.setProperty("backup.count", "6");
+        properties.setProperty("scale.up.delay.millis", "1234");
 
         properties.setProperty("metrics.enabled", "false");
         properties.setProperty("metrics.jmxEnabled", "false");
@@ -63,6 +64,7 @@ public class JetConfigTest_loadFromClassPath {
         assertEquals(123, config.getInstanceConfig().getCooperativeThreadCount());
         assertEquals(456, config.getInstanceConfig().getFlowControlPeriodMs());
         assertEquals(6, config.getInstanceConfig().getBackupCount());
+        assertEquals(1234, config.getInstanceConfig().getScaleUpDelayMillis());
 
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());

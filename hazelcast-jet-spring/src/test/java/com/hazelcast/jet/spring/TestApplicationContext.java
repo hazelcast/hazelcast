@@ -95,6 +95,7 @@ public class TestApplicationContext {
         assertEquals(4, instanceConfig.getBackupCount());
         assertEquals(2, instanceConfig.getCooperativeThreadCount());
         assertEquals(200, instanceConfig.getFlowControlPeriodMs());
+        assertEquals(1234, instanceConfig.getScaleUpDelayMillis());
 
         EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
         assertEquals(8, edgeConfig.getQueueSize());

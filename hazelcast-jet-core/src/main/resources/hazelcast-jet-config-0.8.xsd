@@ -29,7 +29,8 @@
                         <xs:all>
                             <xs:element name="cooperative-thread-count" type="positive-int" minOccurs="0"/>
                             <xs:element name="flow-control-period" type="positive-int" minOccurs="0"/>
-                            <xs:element name="backup-count" minOccurs="0" type="backup-count" />
+                            <xs:element name="backup-count" type="backup-count" minOccurs="0" />
+                            <xs:element name="scale-up-delay-millis" type="non-negative-long" minOccurs="0" />
                         </xs:all>
                     </xs:complexType>
                 </xs:element>
@@ -80,6 +81,11 @@
     <xs:simpleType name="positive-int">
         <xs:restriction base="xs:int">
             <xs:minInclusive value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="non-negative-long">
+        <xs:restriction base="xs:long">
+            <xs:minInclusive value="0"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="backup-count">
