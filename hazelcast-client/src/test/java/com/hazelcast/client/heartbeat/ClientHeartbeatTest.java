@@ -18,6 +18,7 @@ package com.hazelcast.client.heartbeat;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
@@ -79,7 +80,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     }
 
     @Test
-    public void testOwnerConnectionClosed_whenHeartbeatStopped() throws InterruptedException {
+    public void testOwnerConnectionClosed_whenHeartbeatStopped() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
 
@@ -94,7 +95,10 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
             @Override
             public void connectionRemoved(Connection connection) {
-                countDownLatch.countDown();
+                ClientConnection clientConnection = (ClientConnection) connection;
+                if (clientConnection.isAuthenticatedAsOwner()) {
+                    countDownLatch.countDown();
+                }
             }
         });
 
@@ -103,9 +107,9 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     }
 
     @Test
-    public void testNonOwnerConnectionClosed_whenHeartbeatStopped() throws InterruptedException {
+    public void testNonOwnerConnectionClosed_whenHeartbeatStopped() {
         hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
@@ -127,7 +131,10 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
             @Override
             public void connectionRemoved(Connection connection) {
-                countDownLatch.countDown();
+                ClientConnection clientConnection = (ClientConnection) connection;
+                if (!clientConnection.isAuthenticatedAsOwner()) {
+                    countDownLatch.countDown();
+                }
             }
         });
 
