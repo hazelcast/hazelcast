@@ -34,7 +34,6 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.function.BiConsumer;
-import com.hazelcast.version.Version;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,10 +45,8 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -134,39 +131,21 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
             Collection<Store> stores = entry.getValue();
 
             if (getMergePolicy(dataStructureName) instanceof SplitBrainMergePolicy) {
-                if (canMerge(dataStructureName)) {
-                    MergingItemBiConsumer consumer = newConsumer(dataStructureName);
-                    for (Store store : stores) {
-                        try {
-                            mergeStore(store, consumer);
-                            consumer.consumeRemaining();
-                        } finally {
-                            asyncDestroyStores(singleton(store));
-                        }
+                MergingItemBiConsumer consumer = newConsumer(dataStructureName);
+                for (Store store : stores) {
+                    try {
+                        mergeStore(store, consumer);
+                        consumer.consumeRemaining();
+                    } finally {
+                        asyncDestroyStores(singleton(store));
                     }
-                    mergedCount += consumer.mergedCount;
-                    onMerge(dataStructureName);
-                } else {
-                    asyncDestroyStores(stores);
                 }
+                mergedCount += consumer.mergedCount;
+                onMerge(dataStructureName);
                 iterator.remove();
             }
         }
         return mergedCount;
-    }
-
-    /**
-     * Check if data structure can use {@link SplitBrainMergePolicy}
-     */
-    private boolean canMerge(String dataStructureName) {
-        Version currentVersion = clusterService.getClusterVersion();
-        if (currentVersion.isGreaterOrEqual(V3_10)) {
-            return true;
-        }
-        // RU_COMPAT_3_9
-        String msg = "Cannot merge '%s' with merge policy '%s'. Cluster version should be %s or later but found %s";
-        logger.info(format(msg, dataStructureName, getMergePolicy(dataStructureName), V3_10, currentVersion));
-        return false;
     }
 
     private MergingItemBiConsumer newConsumer(String dataStructureName) {
@@ -218,10 +197,9 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     private boolean canMergeLegacy(String dataStructureName) {
         Object mergePolicy = getMergePolicy(dataStructureName);
         InMemoryFormat inMemoryFormat = getInMemoryFormat(dataStructureName);
-        Version clusterVersion = clusterService.getClusterVersion();
 
         return checkMergePolicySupportsInMemoryFormat(dataStructureName,
-                mergePolicy, inMemoryFormat, clusterVersion, false, logger);
+                mergePolicy, inMemoryFormat, false, logger);
     }
 
     private void waitMergeEnd(int mergedCount) {
