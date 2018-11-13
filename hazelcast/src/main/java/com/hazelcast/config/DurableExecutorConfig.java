@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.durableexecutor.DurableExecutorService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -218,10 +217,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, Versio
         out.writeInt(poolSize);
         out.writeInt(durability);
         out.writeInt(capacity);
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeUTF(quorumName);
-        }
+        out.writeUTF(quorumName);
     }
 
     @Override
@@ -230,10 +226,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, Versio
         poolSize = in.readInt();
         durability = in.readInt();
         capacity = in.readInt();
-        // RU_COMPAT_3_9
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            quorumName = in.readUTF();
-        }
+        quorumName = in.readUTF();
     }
 
     @Override

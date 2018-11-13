@@ -19,7 +19,6 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.quorum.QuorumService;
@@ -320,10 +319,6 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
 
     @Override
     public String getQuorumName(final String name) {
-        // RU_COMPAT_3_9
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
-            return null;
-        }
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
                 quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
