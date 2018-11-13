@@ -175,7 +175,7 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
         return map;
     }
 
-    private static void waitForNearCacheInvalidationMetadata(final IMap<Integer, Integer> nearCachedMapFromNewServer,
+    private void waitForNearCacheInvalidationMetadata(final IMap<Integer, Integer> nearCachedMapFromNewServer,
                                                              final HazelcastInstance server) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -183,7 +183,7 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
                 final DefaultNearCache nearCache = getNearCache((NearCachedMapProxyImpl) nearCachedMapFromNewServer);
 
                 NearCacheRecordStore nearCacheRecordStore = nearCache.getNearCacheRecordStore();
-                StaleReadDetector staleReadDetector = ((AbstractNearCacheRecordStore) nearCacheRecordStore).getStaleReadDetector();
+                StaleReadDetector staleReadDetector = getStaleReadDetector(nearCacheRecordStore);
 
                 // we first assert that the stale detector is not the initial one, since the metadata that the records are
                 // initialized with on putting records into the record store is queried from the stale detector
@@ -198,6 +198,10 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
                 }
             }
         });
+    }
+
+    protected StaleReadDetector getStaleReadDetector(NearCacheRecordStore nearCacheRecordStore) {
+        return ((AbstractNearCacheRecordStore) nearCacheRecordStore).getStaleReadDetector();
     }
 
     private static DefaultNearCache getNearCache(NearCachedMapProxyImpl nearCachedMapFromNewServer) {
