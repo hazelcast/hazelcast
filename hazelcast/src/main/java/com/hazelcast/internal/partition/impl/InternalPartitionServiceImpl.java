@@ -408,25 +408,20 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             migrationManager.onMemberRemove(member);
             replicaManager.cancelReplicaSyncRequestsTo(member.getAddress());
 
-            if (!node.getClusterService().getClusterState().isJoinAllowed()) {
-                // If join is not allowed, partition table cannot be modified and we should have
-                // the most recent partition table already. Because cluster state cannot be changed
-                // when our partition table is stale.
-                return;
-            }
+            if (node.getClusterService().getClusterState().isJoinAllowed()) {
+                partitionStateManager.updateMemberGroupsSize();
 
-            partitionStateManager.updateMemberGroupsSize();
-
-            boolean isThisNodeNewMaster = node.isMaster() && !node.getThisAddress().equals(lastMaster);
-            if (isThisNodeNewMaster) {
-                assert !shouldFetchPartitionTables : "SOMETHING IS WRONG! Removed member: " + member;
-                shouldFetchPartitionTables = true;
+                boolean isThisNodeNewMaster = node.isMaster() && !node.getThisAddress().equals(lastMaster);
+                if (isThisNodeNewMaster) {
+                    assert !shouldFetchPartitionTables;
+                    shouldFetchPartitionTables = true;
+                }
+                if (node.isMaster()) {
+                    migrationManager.triggerControlTask();
+                }
             }
 
             lastMaster = node.getClusterService().getMasterAddress();
-            if (node.isMaster()) {
-                migrationManager.triggerControlTask();
-            }
         } finally {
             lock.unlock();
         }
@@ -1222,6 +1217,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         private PartitionRuntimeState newState;
 
         public void run() {
+            if (!node.getClusterService().getClusterState().isJoinAllowed()) {
+                // If join is not allowed, partition table cannot be modified and we should have
+                // the most recent partition table already. Because cluster state cannot be changed
+                // when our partition table is stale.
+                logger.fine("No need to fetch the latest partition table. Cluster state does not allow new members to join.");
+                shouldFetchPartitionTables = false;
+                return;
+            }
             maxVersion = partitionStateManager.getVersion();
             logger.info("Fetching most recent partition table! my version: " + maxVersion);
 

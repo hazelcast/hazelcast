@@ -782,6 +782,9 @@ public class MigrationManager {
             return false;
         }
 
+        /**
+         * Returns whether migrations are allowed by current cluster state.
+         */
         private boolean isMigrationAllowedByClusterState() {
             ClusterState clusterState = node.getClusterService().getClusterState();
             return clusterState.isMigrationAllowed();
@@ -1161,6 +1164,15 @@ public class MigrationManager {
             if (!partitionStateManager.isInitialized()) {
                 return;
             }
+            if (!node.getClusterService().getClusterState().isJoinAllowed()) {
+                // If join is not allowed, partition table cannot be modified and we should have
+                // the most recent partition table already. Because cluster state cannot be changed
+                // when our partition table is stale.
+                logger.fine("Will not repair partition table at the moment. "
+                        + "Cluster state does not allow new members to join.");
+                return;
+            }
+
             Map<Address, Collection<MigrationInfo>> promotions = removeUnknownAddressesAndCollectPromotions();
             boolean success = promoteBackupsForMissingOwners(promotions);
             partitionServiceLock.lock();
