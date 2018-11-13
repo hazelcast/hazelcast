@@ -16,10 +16,8 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.config.ConfigCompatibilityChecker.WanReplicationConfigChecker;
+import com.hazelcast.config.ConfigCompatibilityChecker.WanConsumerConfigChecker;
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanPublisherConfig;
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -28,37 +26,50 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class WanReplicationConfigDTOTest {
+public class WanConsumerConfigDTOTest {
 
-    private static final WanReplicationConfigChecker WAN_REPLICATION_CONFIG_CHECKER = new WanReplicationConfigChecker();
+    private static final WanConsumerConfigChecker WAN_CONSUMER_CONFIG_CHECKER = new WanConsumerConfigChecker();
 
     @Test
     public void testSerialization() {
-        WanReplicationConfig expected = new WanReplicationConfig()
-                .setName("myName")
-                .setWanConsumerConfig(new WanConsumerConfig())
-                .addWanPublisherConfig(new WanPublisherConfig()
-                        .setGroupName("group1"))
-                .addWanPublisherConfig(new WanPublisherConfig()
-                        .setGroupName("group2"));
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("key1", "value1");
+        properties.put("key2", "value2");
 
-        WanReplicationConfig actual = cloneThroughJson(expected);
+        WanConsumerConfig expected = new WanConsumerConfig()
+                .setPersistWanReplicatedData(true)
+                .setProperties(properties)
+                .setClassName("myClassName");
 
+        WanConsumerConfig actual = cloneThroughJson(expected);
         assertTrue("Expected: " + expected + ", got:" + actual,
-                WAN_REPLICATION_CONFIG_CHECKER.check(expected, actual));
+                WAN_CONSUMER_CONFIG_CHECKER.check(expected, actual));
     }
 
-    private WanReplicationConfig cloneThroughJson(WanReplicationConfig expectedConfig) {
-        WanReplicationConfigDTO dto = new WanReplicationConfigDTO(expectedConfig);
+    @Test
+    public void testDefault() {
+        WanConsumerConfig expected = new WanConsumerConfig();
+
+        WanConsumerConfig actual = cloneThroughJson(expected);
+        assertTrue("Expected: " + expected + ", got:" + actual,
+                WAN_CONSUMER_CONFIG_CHECKER.check(expected, actual));
+    }
+
+    private WanConsumerConfig cloneThroughJson(WanConsumerConfig expected) {
+        WanConsumerConfigDTO dto = new WanConsumerConfigDTO(expected);
 
         JsonObject json = dto.toJson();
-        WanReplicationConfigDTO deserialized = new WanReplicationConfigDTO(null);
+        WanConsumerConfigDTO deserialized = new WanConsumerConfigDTO(null);
         deserialized.fromJson(json);
 
         return deserialized.getConfig();
     }
+
 }

@@ -16,9 +16,13 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Utility class to deal with Json.
@@ -273,6 +277,37 @@ public final class JsonUtil {
         } else {
             return value.asObject();
         }
+    }
+
+    /**
+     * Transforms the provided {@link JsonObject} int a map of name/value pairs.
+     *
+     * @param object the JSON object
+     * @return map from JSON name to value
+     */
+    public static Map<String, Comparable> fromJsonObject(JsonObject object) {
+        if (object == null || object.isNull() || object.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<String, Comparable> map = MapUtil.createHashMap(object.size());
+        for (String propertyName : object.names()) {
+            map.put(propertyName, object.get(propertyName).asString());
+        }
+        return map;
+    }
+
+    /**
+     * Transforms the provided map of name/value pairs into a {@link JsonObject}.
+     *
+     * @param map map of JSON name-value pairs
+     * @return the JSON object
+     */
+    public static JsonObject toJsonObject(Map<String, ?> map) {
+        JsonObject properties = new JsonObject();
+        for (Map.Entry<String, ?> property : map.entrySet()) {
+            properties.add(property.getKey(), Json.value(property.getValue().toString()));
+        }
+        return properties;
     }
 
     /**
