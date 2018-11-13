@@ -96,37 +96,27 @@ spec:
 
 #### Hazelcast Configuration
 
-The second step is to configure the discovery plugin inside of your Hazelcast configuration.
+The second step is to configure the discovery plugin inside `hazelcast.xml` or an equivalent Java-based configuration.
 
 ```xml
 <hazelcast>        
-  <properties>
-    <property name="hazelcast.discovery.enabled">true</property>
-  </properties>
-
   <network>
     <join>
-      <!-- deactivate normal discovery -->
       <multicast enabled="false"/>
-      <tcp-ip enabled="false" />
-
-      <!-- activate the Kubernetes plugin -->
-      <discovery-strategies>
-        <discovery-strategy enabled="true"
-            class="com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
-
-          <properties>
-            <!-- configure discovery service API lookup -->
-            <property name="namespace">MY-KUBERNETES-NAMESPACE</property>
-            <property name="service-name">MY-SERVICE-NAME</property>
-            <property name="service-label-name">MY-SERVICE-LABEL-NAME</property>
-            <property name="service-label-value">MY-SERVICE-LABEL-VALUE</property>
-          </properties>
-        </discovery-strategy>
-      </discovery-strategies>
+      <kubernetes enabled="true">
+        <namespace>MY-KUBERNETES-NAMESPACE</namespace>
+        <service-name>MY-SERVICE-NAME</service-name>
+      </kubernetes>
     </join>
   </network>
 </hazelcast>
+```
+
+```java
+config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+config.getNetworkConfig().getJoin().getKubernetesConfig().setEnabled(true)
+      .setProperty("namespace", "MY-KUBERNETES-NAMESPACE")
+      .setProperty("service-name", "MY-SERVICE-NAME");
 ```
 
 There are 4 properties to configure the plugin, all of them are optional.
@@ -166,30 +156,21 @@ The Hazelcast configuration to use DNS Lookup looks as follows.
 
 ```xml
 <hazelcast>
-  <properties>
-    <property name="hazelcast.discovery.enabled">true</property>
-  </properties>
-
   <network>
     <join>
-      <!-- deactivate normal discovery -->
       <multicast enabled="false"/>
-      <tcp-ip enabled="false" />
-
-      <!-- activate the Kubernetes plugin -->
-      <discovery-strategies>
-        <discovery-strategy enabled="true"
-            class="com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
-
-          <properties>
-            <property name="service-dns">MY-SERVICE-DNS-NAME</property>
-            <property name="service-dns-timeout">10</property>
-          </properties>
-        </discovery-strategy>
-      </discovery-strategies>
+      <kubernetes enabled="true">
+        <service-dns>MY-SERVICE-DNS-NAME</service-dns>
+      </kubernetes>
     </join>
   </network>
 </hazelcast>
+```
+
+```java
+config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+config.getNetworkConfig().getJoin().getKubernetesConfig().setEnabled(true)
+      .setProperty("service-dns", "MY-SERVICE-DNS-NAME");
 ```
 
 There are 2 properties to configure the plugin:
@@ -197,6 +178,17 @@ There are 2 properties to configure the plugin:
  * `service-dns-time` (optional): custom time for how long the DNS Lookup is checked
 
 **Note**: In this README, only XML configurations are presented, however you can achieve exactly the same effect using Java-based configurations.
+
+## Scaling Hazelcast cluster in Kubernetes
+
+Hazelcast cluster is easily scalable within Kubernetes. You can use the standard `kubectl scale` command to change the cluster size.
+
+Note however that, by default, Hazelcast does not shutdown gracefully. It means that if you suddenly scale down by more than your `backup-count` property (1 by default), you may lose the cluster data. To prevent that from happening, set the following properties:
+- `terminationGracePeriodSeconds`:  in your StatefulSet (or Deployment) configuration; the value should be high enough to cover the data migration process
+- `-Dhazelcast.shutdownhook.policy=GRACEFUL`: in the JVM parameters
+- `-Dhazelcast.graceful.shutdown.max.wait`: in the JVM parameters; the value should be high enough to cover the data migration process
+
+The graceful shutdown configuration is already included in [Hazelcast Helm Charts](#helm-chart).
 
 ## Plugin Usages
 
@@ -209,27 +201,20 @@ If you have a Hazelcast cluster deployed on Kubernetes, then you can configure H
 Here's an example in case of the **Kubernetes API** mode.
 
 ```xml
- <hazelcast-client>
-  <properties>
-    <property name="hazelcast.discovery.enabled">true</property>
-  </properties>
-
+<hazelcast-client>
   <network>
-    <discovery-strategies>
-        <discovery-strategy enabled="true"
-          class="com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
-    
-        <properties>
-          <!-- configure discovery service API lookup -->
-          <property name="namespace">MY-KUBERNETES-NAMESPACE</property>
-          <property name="service-name">MY-SERVICE-NAME</property>
-          <property name="service-label-name">MY-SERVICE-LABEL-NAME</property>
-          <property name="service-label-value">MY-SERVICE-LABEL-VALUE</property>
-        </properties>
-      </discovery-strategy>
-    </discovery-strategies>
+    <kubernetes enabled="true">
+      <namespace>MY-KUBERNETES-NAMESPACE</namespace>
+      <service-name>MY-SERVICE-NAME</service-name>
+    </kubernetes>
   </network>
- </hazelcast-client>
+</hazelcast-client>
+```
+
+```java
+clientConfig.getNetworkConfig().getKubernetesConfig().setEnabled(true)
+            .setProperty("namespace", "MY-KUBERNETES-NAMESPACE")
+            .setProperty("service-name", "MY-SERVICE-NAME");
 ```
 
 ### Docker images
