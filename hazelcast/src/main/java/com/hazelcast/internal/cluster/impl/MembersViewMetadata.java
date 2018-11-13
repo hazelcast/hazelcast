@@ -119,7 +119,7 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "MembersViewMetadata{" + "memberAddress=" + memberAddress + ", memberUuid='" + memberUuid + '\''
+        return "MembersViewMetadata{" + "address=" + memberAddress + ", memberUuid='" + memberUuid + '\''
                 + ", masterAddress=" + masterAddress + ", memberListVersion=" + memberListVersion + '}';
     }
 

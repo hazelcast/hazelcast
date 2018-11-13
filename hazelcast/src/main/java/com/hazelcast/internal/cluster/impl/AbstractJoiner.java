@@ -49,11 +49,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static java.lang.Thread.currentThread;
 
-public abstract class AbstractJoiner implements Joiner {
+public abstract class AbstractJoiner
+        implements Joiner {
 
     private static final int JOIN_TRY_COUNT = 5;
     private static final int SPLIT_BRAIN_MERGE_TIMEOUT_SECONDS = 30;
@@ -186,7 +188,7 @@ public abstract class AbstractJoiner implements Joiner {
                 boolean allConnected = true;
                 Collection<Member> members = clusterService.getMembers();
                 for (Member member : members) {
-                    if (!member.localMember() && node.connectionManager.getOrConnect(member.getAddress()) == null) {
+                    if (!member.localMember() && node.getEndpointManager(MEMBER).getOrConnect(member.getAddress()) == null) {
                         allConnected = false;
                         if (logger.isFineEnabled()) {
                             logger.fine("Not-connected to " + member.getAddress());
@@ -236,7 +238,7 @@ public abstract class AbstractJoiner implements Joiner {
             logger.fine("Sending SplitBrainJoinMessage to " + target);
         }
 
-        Connection conn = node.connectionManager.getOrConnect(target, true);
+        Connection conn = node.getEndpointManager(MEMBER).getOrConnect(target, true);
         long timeout = SPLIT_BRAIN_CONN_TIMEOUT_MILLIS;
         while (conn == null) {
             timeout -= SPLIT_BRAIN_SLEEP_TIME_MILLIS;
@@ -251,7 +253,7 @@ public abstract class AbstractJoiner implements Joiner {
                 currentThread().interrupt();
                 return null;
             }
-            conn = node.connectionManager.getConnection(target);
+            conn = node.getEndpointManager(MEMBER).getConnection(target);
         }
 
         NodeEngine nodeEngine = node.nodeEngine;

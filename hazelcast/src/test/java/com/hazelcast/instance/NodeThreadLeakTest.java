@@ -19,7 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
+import com.hazelcast.nio.tcp.TcpIpNetworkingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
@@ -52,7 +52,7 @@ public class NodeThreadLeakTest extends HazelcastTestSupport {
 
     @Test
     public void testLeakWhenCreatingConnectionManager() throws Exception {
-        mockConstructorAndTest(TcpIpConnectionManager.class);
+        mockConstructorAndTest(TcpIpNetworkingService.class);
     }
 
     @Test

@@ -20,6 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.EndpointManager;
 
 import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
 import static com.hazelcast.util.Preconditions.checkFalse;
@@ -70,6 +71,7 @@ public abstract class InvocationBuilder {
     protected long tryPauseMillis = DEFAULT_TRY_PAUSE_MILLIS;
     protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
     protected boolean failOnIndeterminateOperationState;
+    protected EndpointManager endpointManager;
 
     /**
      * Creates an InvocationBuilder
@@ -262,6 +264,11 @@ public abstract class InvocationBuilder {
      */
     public InvocationBuilder setExecutionCallback(ExecutionCallback<Object> executionCallback) {
         this.executionCallback = executionCallback;
+        return this;
+    }
+
+    public InvocationBuilder setEndpointManager(EndpointManager endpointManager) {
+        this.endpointManager = endpointManager;
         return this;
     }
 

@@ -50,7 +50,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
@@ -114,7 +116,8 @@ public class ClusterHeartbeatManager {
         heartbeatIntervalMillis = getHeartbeatInterval(hazelcastProperties);
         legacyIcmpCheckThresholdMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
 
-        IcmpFailureDetectorConfig icmpFailureDetectorConfig = node.getConfig().getNetworkConfig().getIcmpFailureDetectorConfig();
+        IcmpFailureDetectorConfig icmpFailureDetectorConfig
+                = getActiveMemberNetworkConfig(node.config).getIcmpFailureDetectorConfig();
 
         this.icmpTtl = icmpFailureDetectorConfig == null
                 ? hazelcastProperties.getInteger(GroupProperty.ICMP_TTL)
@@ -150,7 +153,8 @@ public class ClusterHeartbeatManager {
     }
 
     private PingFailureDetector createIcmpFailureDetectorIfNeeded(HazelcastProperties properties) {
-        IcmpFailureDetectorConfig icmpFailureDetectorConfig = node.getConfig().getNetworkConfig().getIcmpFailureDetectorConfig();
+        IcmpFailureDetectorConfig icmpFailureDetectorConfig
+                = getActiveMemberNetworkConfig(node.config).getIcmpFailureDetectorConfig();
 
         boolean icmpEchoFailFast = icmpFailureDetectorConfig == null
                 ? properties.getBoolean(GroupProperty.ICMP_ECHO_FAIL_FAST)
@@ -638,7 +642,7 @@ public class ClusterHeartbeatManager {
     private void logIfConnectionToEndpointIsMissing(long now, Member member) {
         long heartbeatTime = heartbeatFailureDetector.lastHeartbeat(member);
         if ((now - heartbeatTime) >= heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
-            Connection conn = node.connectionManager.getOrConnect(member.getAddress());
+            Connection conn = node.getEndpointManager(MEMBER).getOrConnect(member.getAddress());
             if (conn == null || !conn.isAlive()) {
                 logger.warning("This node does not have a connection to " + member);
             }

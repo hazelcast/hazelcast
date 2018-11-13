@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -51,7 +52,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     final Config config;
     final Cluster cluster;
     private NodeMBean nodeMBean;
-    private ConnectionManagerMBean connectionManagerMBean;
+    private NetworkingServiceMBean networkingServiceMBean;
     private EventServiceMBean eventServiceMBean;
     private OperationServiceMBean operationServiceMBean;
     private ProxyServiceMBean proxyServiceMBean;
@@ -105,7 +106,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     private void createMBeans(HazelcastInstanceImpl hazelcastInstance, ManagementService managementService, Node node,
                               ExecutionService executionService, InternalOperationService operationService) {
         this.nodeMBean = new NodeMBean(hazelcastInstance, node, managementService);
-        this.connectionManagerMBean = new ConnectionManagerMBean(hazelcastInstance, node.connectionManager, service);
+        this.networkingServiceMBean = new NetworkingServiceMBean(hazelcastInstance, node.networkingService, service);
         this.eventServiceMBean = new EventServiceMBean(hazelcastInstance, node.nodeEngine.getEventService(), service);
         this.operationServiceMBean = new OperationServiceMBean(hazelcastInstance, operationService, service);
         this.proxyServiceMBean = new ProxyServiceMBean(hazelcastInstance, node.nodeEngine.getProxyService(), service);
@@ -134,7 +135,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     private void registerMBeans() {
         register(operationServiceMBean);
         register(nodeMBean);
-        register(connectionManagerMBean);
+        register(networkingServiceMBean);
         register(eventServiceMBean);
         register(proxyServiceMBean);
         register(partitionServiceMBean);
@@ -210,8 +211,8 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         return clientEngineMBean;
     }
 
-    public ConnectionManagerMBean getConnectionManagerMBean() {
-        return connectionManagerMBean;
+    public NetworkingServiceMBean getNetworkingServiceMBean() {
+        return networkingServiceMBean;
     }
 
     public EventServiceMBean getEventServiceMBean() {
@@ -273,7 +274,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     @ManagedAnnotation("port")
     @ManagedDescription("Network Port")
     public int getPort() {
-        return config.getNetworkConfig().getPort();
+        return getActiveMemberNetworkConfig(config).getPort();
     }
 
     @ManagedAnnotation("clusterTime")

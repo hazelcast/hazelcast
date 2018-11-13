@@ -16,10 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
-import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
-import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
-
+import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
@@ -42,7 +39,6 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
-import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -53,7 +49,6 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
@@ -71,6 +66,8 @@ import com.hazelcast.internal.dynamicconfig.search.Searcher;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.StringUtil;
+
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -79,7 +76,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
-import javax.annotation.Nonnull;
+
+import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
+import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
+import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
 
 @SuppressWarnings({"unchecked", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class DynamicConfigurationAwareConfig extends Config {
@@ -176,26 +176,6 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public RestApiConfig getRestApiConfig() {
-        return staticConfig.getRestApiConfig();
-    }
-
-    @Override
-    public Config setRestApiConfig(RestApiConfig restApiConfig) {
-        return staticConfig.setRestApiConfig(restApiConfig);
-    }
-
-    @Override
-    public MemcacheProtocolConfig getMemcacheProtocolConfig() {
-        return staticConfig.getMemcacheProtocolConfig();
-    }
-
-    @Override
-    public Config setMemcacheProtocolConfig(MemcacheProtocolConfig memcacheProtocolConfig) {
-        return staticConfig.setMemcacheProtocolConfig(memcacheProtocolConfig);
-    }
-
-    @Override
     public ClassLoader getClassLoader() {
         return staticConfig.getClassLoader();
     }
@@ -273,6 +253,16 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public Config setNetworkConfig(NetworkConfig networkConfig) {
         return staticConfig.setNetworkConfig(networkConfig);
+    }
+
+    @Override
+    public AdvancedNetworkConfig getAdvancedNetworkConfig() {
+        return staticConfig.getAdvancedNetworkConfig();
+    }
+
+    @Override
+    public Config setAdvancedNetworkConfig(AdvancedNetworkConfig advancedNetworkConfig) {
+        return staticConfig.setAdvancedNetworkConfig(advancedNetworkConfig);
     }
 
     @Override

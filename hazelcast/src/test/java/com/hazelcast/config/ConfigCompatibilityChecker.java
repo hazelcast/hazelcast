@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.util.CollectionUtil;
 import org.apache.commons.lang3.ArrayUtils;
@@ -85,6 +86,8 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("CRDT replication", c1.getCRDTReplicationConfig(), c2.getCRDTReplicationConfig(),
                 new CRDTReplicationConfigChecker());
         checkCompatibleConfigs("network", c1.getNetworkConfig(), c2.getNetworkConfig(), new NetworkConfigChecker());
+        checkCompatibleConfigs("advanced network", c1.getAdvancedNetworkConfig(), c2.getAdvancedNetworkConfig(),
+                new AdvancedNetworkConfigChecker());
         checkCompatibleConfigs("map", c1, c2, c1.getMapConfigs(), c2.getMapConfigs(), new MapConfigChecker());
         checkCompatibleConfigs("ringbuffer", c1, c2, c1.getRingbufferConfigs(), c2.getRingbufferConfigs(),
                 new RingbufferConfigChecker());
@@ -129,10 +132,6 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("quorum", c1, c2, c1.getQuorumConfigs(), c2.getQuorumConfigs(), new QuorumConfigChecker());
         checkCompatibleConfigs("security", c1, c2, singletonMap("", c1.getSecurityConfig()),
                 singletonMap("", c2.getSecurityConfig()), new SecurityConfigChecker());
-        checkCompatibleConfigs("rest-api", c1.getRestApiConfig(), c2.getRestApiConfig(),
-                new RestApiConfigChecker());
-        checkCompatibleConfigs("memcache-protocol", c1.getMemcacheProtocolConfig(), c2.getMemcacheProtocolConfig(),
-                new MemcacheProtocolConfigChecker());
 
         return true;
     }
@@ -145,6 +144,10 @@ public class ConfigCompatibilityChecker {
         for (Entry<String, WanReplicationConfig> entry : c1.entrySet()) {
             checkCompatibleConfigs("wan replication", entry.getValue(), c2.get(entry.getKey()), checker);
         }
+    }
+
+    public static void checkEndpointConfigCompatible(EndpointConfig c1, EndpointConfig c2) {
+        checkCompatibleConfigs("endpoint-config", c1, c2, new EndpointConfigChecker());
     }
 
     private static Map<String, SemaphoreConfig> getSemaphoreConfigsByName(Config c) {
@@ -909,6 +912,25 @@ public class ConfigCompatibilityChecker {
     }
 
     private static class NetworkConfigChecker extends ConfigChecker<NetworkConfig> {
+        private static final JoinConfigChecker JOIN_CONFIG_CHECKER = new JoinConfigChecker();
+        private static final IcmpFailureDetectorConfigChecker FAILURE_DETECTOR_CONFIG_CHECKER
+                = new IcmpFailureDetectorConfigChecker();
+        private static final MemberAddressProviderConfigChecker MEMBER_ADDRESS_PROVIDER_CONFIG_CHECKER
+                = new MemberAddressProviderConfigChecker();
+        private static final OutboundPortDefinitionsChecker OUTBOUND_PORT_DEFINITIONS_CHECKER
+                = new OutboundPortDefinitionsChecker();
+        private static final InterfacesConfigChecker INTERFACES_CONFIG_CHECKER
+                = new InterfacesConfigChecker();
+        private static final SSLConfigChecker SSL_CONFIG_CHECKER
+                = new SSLConfigChecker();
+        private static final SocketInterceptorConfigChecker SOCKET_INTERCEPTOR_CONFIG_CHECKER
+                = new SocketInterceptorConfigChecker();
+        private static final SymmetricEncryptionConfigChecker SYMMETRIC_ENCRYPTION_CONFIG_CHECKER
+                = new SymmetricEncryptionConfigChecker();
+        private static final RestApiConfigChecker REST_API_CONFIG_CHECKER = new RestApiConfigChecker();
+        private static final MemcacheProtocolConfigChecker MEMCACHE_PROTOCOL_CONFIG_CHECKER
+                = new MemcacheProtocolConfigChecker();
+
         @Override
         boolean check(NetworkConfig c1, NetworkConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
@@ -917,31 +939,93 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isPortAutoIncrement(), c2.isPortAutoIncrement())
                     && nullSafeEqual(c1.isReuseAddress(), c2.isReuseAddress())
                     && nullSafeEqual(c1.getPublicAddress(), c2.getPublicAddress())
-                    && isCompatible(c1.getOutboundPortDefinitions(), c2.getOutboundPortDefinitions())
+                    && OUTBOUND_PORT_DEFINITIONS_CHECKER.check(c1.getOutboundPortDefinitions(),
+                                                                c2.getOutboundPortDefinitions())
                     && nullSafeEqual(c1.getOutboundPorts(), c2.getOutboundPorts())
-                    && isCompatible(c1.getInterfaces(), c2.getInterfaces())
-                    && isCompatible(c1.getJoin(), c2.getJoin())
-                    && isCompatible(c1.getSymmetricEncryptionConfig(), c2.getSymmetricEncryptionConfig())
-                    && isCompatible(c1.getSocketInterceptorConfig(), c2.getSocketInterceptorConfig())
-                    && isCompatible(c1.getSSLConfig(), c2.getSSLConfig());
+                    && INTERFACES_CONFIG_CHECKER.check(c1.getInterfaces(), c2.getInterfaces())
+                    && JOIN_CONFIG_CHECKER.check(c1.getJoin(), c2.getJoin())
+                    && FAILURE_DETECTOR_CONFIG_CHECKER.check(c1.getIcmpFailureDetectorConfig(),
+                                                            c2.getIcmpFailureDetectorConfig())
+                    && MEMBER_ADDRESS_PROVIDER_CONFIG_CHECKER.check(c1.getMemberAddressProviderConfig(),
+                                                            c2.getMemberAddressProviderConfig())
+                    && SYMMETRIC_ENCRYPTION_CONFIG_CHECKER.check(c1.getSymmetricEncryptionConfig(),
+                                                            c2.getSymmetricEncryptionConfig())
+                    && SOCKET_INTERCEPTOR_CONFIG_CHECKER.check(c1.getSocketInterceptorConfig(),
+                                                            c2.getSocketInterceptorConfig())
+                    && SSL_CONFIG_CHECKER.check(c1.getSSLConfig(), c2.getSSLConfig())
+                    && REST_API_CONFIG_CHECKER.check(c1.getRestApiConfig(), c2.getRestApiConfig())
+                    && MEMCACHE_PROTOCOL_CONFIG_CHECKER.check(
+                            c1.getMemcacheProtocolConfig(),
+                            c2.getMemcacheProtocolConfig());
         }
+    }
 
-        private static boolean isCompatible(Collection<String> portDefinitions1, Collection<String> portDefinitions2) {
-            String[] defaultValues = {"0", "*"};
-            boolean defaultDefinition1 = CollectionUtil.isEmpty(portDefinitions1)
-                    || (portDefinitions1.size() == 1 && ArrayUtils.contains(defaultValues, portDefinitions1.iterator().next()));
-            boolean defaultDefinition2 = CollectionUtil.isEmpty(portDefinitions2)
-                    || (portDefinitions2.size() == 1 && ArrayUtils.contains(defaultValues, portDefinitions2.iterator().next()));
-            return (defaultDefinition1 && defaultDefinition2) || nullSafeEqual(portDefinitions1, portDefinitions2);
+    private static class AdvancedNetworkConfigChecker extends ConfigChecker<AdvancedNetworkConfig> {
+
+        private static final JoinConfigChecker JOIN_CONFIG_CHECKER = new JoinConfigChecker();
+        private static final IcmpFailureDetectorConfigChecker FAILURE_DETECTOR_CONFIG_CHECKER
+                = new IcmpFailureDetectorConfigChecker();
+        private static final MemberAddressProviderConfigChecker MEMBER_ADDRESS_PROVIDER_CONFIG_CHECKER
+                = new MemberAddressProviderConfigChecker();
+        private static final EndpointConfigChecker ENDPOINT_CONFIG_CHECKER
+                = new EndpointConfigChecker();
+
+        @Override
+        boolean check(AdvancedNetworkConfig t1, AdvancedNetworkConfig t2) {
+            boolean t1Disabled = t1 == null || !t1.isEnabled();
+            boolean t2Disabled = t1 == null || !t2.isEnabled();
+            if (t1Disabled && t2Disabled) {
+                return true;
+            }
+            boolean compatible = JOIN_CONFIG_CHECKER.check(t1.getJoin(), t2.getJoin())
+                    && FAILURE_DETECTOR_CONFIG_CHECKER.check(t1.getIcmpFailureDetectorConfig(),
+                                                            t2.getIcmpFailureDetectorConfig())
+                    && MEMBER_ADDRESS_PROVIDER_CONFIG_CHECKER.check(t1.getMemberAddressProviderConfig(),
+                                                            t2.getMemberAddressProviderConfig());
+
+            if (!compatible || (t1.getEndpointConfigs().size() != t2.getEndpointConfigs().size())) {
+                return false;
+            }
+            Set<EndpointQualifier> t1EndpointQualifiers = t1.getEndpointConfigs().keySet();
+            Set<EndpointQualifier> t2EndpointQualifiers = t2.getEndpointConfigs().keySet();
+            isCollectionCompatible(t1EndpointQualifiers, t2EndpointQualifiers,
+                    new ConfigChecker<EndpointQualifier>() {
+                @Override
+                boolean check(EndpointQualifier t1, EndpointQualifier t2) {
+                    return t1.equals(t2);
+                }
+            });
+
+            boolean endpointConfigsCompatible = true;
+            for (EndpointQualifier endpointQualifier : t1EndpointQualifiers) {
+                EndpointConfig t1Config = t1.getEndpointConfigs().get(endpointQualifier);
+                EndpointConfig t2Config = t2.getEndpointConfigs().get(endpointQualifier);
+                endpointConfigsCompatible = endpointConfigsCompatible
+                        && (t1Config.getClass().equals(t2Config.getClass()))
+                        && ENDPOINT_CONFIG_CHECKER.check(t1Config, t2Config);
+            }
+            return endpointConfigsCompatible;
+        }
+    }
+
+    private static class JoinConfigChecker extends ConfigChecker<JoinConfig> {
+        private static final AliasedDiscoveryConfigsChecker ALIASED_DISCOVERY_CONFIGS_CHECKER
+                = new AliasedDiscoveryConfigsChecker();
+        private static final DiscoveryConfigChecker DISCOVERY_CONFIG_CHECKER = new DiscoveryConfigChecker();
+
+        @Override
+        boolean check(JoinConfig t1, JoinConfig t2) {
+            return isCompatible(t1, t2);
         }
 
         private static boolean isCompatible(JoinConfig c1, JoinConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && isCompatible(c1.getMulticastConfig(), c2.getMulticastConfig())
                     && isCompatible(c1.getTcpIpConfig(), c2.getTcpIpConfig())
-                    && new AliasedDiscoveryConfigsChecker().check(AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(c1), AliasedDiscoveryConfigUtils
-                    .aliasedDiscoveryConfigsFrom(c2))
-                    && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig());
+                    && ALIASED_DISCOVERY_CONFIGS_CHECKER.check(
+                            AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(c1),
+                            AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(c2))
+                    && DISCOVERY_CONFIG_CHECKER.check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig());
         }
 
         private static boolean isCompatible(TcpIpConfig c1, TcpIpConfig c2) {
@@ -963,15 +1047,134 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getMulticastTimeToLive(), c2.getMulticastTimeToLive())
                     && nullSafeEqual(c1.getTrustedInterfaces(), c2.getTrustedInterfaces());
         }
+    }
 
-        private static boolean isCompatible(InterfacesConfig c1, InterfacesConfig c2) {
+    private static class IcmpFailureDetectorConfigChecker extends ConfigChecker<IcmpFailureDetectorConfig> {
+        @Override
+        boolean check(IcmpFailureDetectorConfig t1, IcmpFailureDetectorConfig t2) {
+            boolean t1Disabled = t1 == null || !t1.isEnabled();
+            boolean t2Disabled = t2 == null || !t2.isEnabled();
+            return t1 == t2 || (t1Disabled && t2Disabled) || (t1 != null && t2 != null
+                    && t1.isParallelMode() == t2.isParallelMode()
+                    && t1.isFailFastOnStartup() == t2.isFailFastOnStartup()
+                    && t1.getMaxAttempts() == t2.getMaxAttempts()
+                    && t1.getIntervalMilliseconds() == t2.getIntervalMilliseconds()
+                    && t1.getTimeoutMilliseconds() == t2.getTimeoutMilliseconds()
+                    && t1.getTtl() == t2.getTtl()
+            );
+        }
+    }
+
+    private static class MemberAddressProviderConfigChecker extends ConfigChecker<MemberAddressProviderConfig> {
+
+        @Override
+        boolean check(MemberAddressProviderConfig t1, MemberAddressProviderConfig t2) {
+            boolean t1Disabled = t1 == null || !t1.isEnabled();
+            boolean t2Disabled = t2 == null || !t2.isEnabled();
+            return t1 == t2 || (t1Disabled && t2Disabled) || (t1 != null && t1.equals(t2));
+        }
+    }
+
+    private static class EndpointConfigChecker extends ConfigChecker<EndpointConfig> {
+
+        private static final OutboundPortDefinitionsChecker OUTBOUND_PORT_DEFINITIONS_CHECKER
+                = new OutboundPortDefinitionsChecker();
+        private static final InterfacesConfigChecker INTERFACES_CONFIG_CHECKER
+                = new InterfacesConfigChecker();
+        private static final SSLConfigChecker SSL_CONFIG_CHECKER
+                = new SSLConfigChecker();
+        private static final SocketInterceptorConfigChecker SOCKET_INTERCEPTOR_CONFIG_CHECKER
+                = new SocketInterceptorConfigChecker();
+        private static final SymmetricEncryptionConfigChecker SYMMETRIC_ENCRYPTION_CONFIG_CHECKER
+                = new SymmetricEncryptionConfigChecker();
+
+        @Override
+        boolean check(EndpointConfig c1, EndpointConfig c2) {
+            if (c1.getClass() != c2.getClass()) {
+                return false;
+            }
+            boolean compatible = c1 == c2 || !(c1 == null || c2 == null)
+                    && OUTBOUND_PORT_DEFINITIONS_CHECKER.check(c1.getOutboundPortDefinitions(),
+                    c2.getOutboundPortDefinitions())
+                    && nullSafeEqual(c1.getOutboundPorts(), c2.getOutboundPorts())
+                    && INTERFACES_CONFIG_CHECKER.check(c1.getInterfaces(), c2.getInterfaces())
+                    && SSL_CONFIG_CHECKER.check(c1.getSSLConfig(), c2.getSSLConfig())
+                    && SOCKET_INTERCEPTOR_CONFIG_CHECKER.check(c1.getSocketInterceptorConfig(),
+                    c2.getSocketInterceptorConfig())
+                    && SYMMETRIC_ENCRYPTION_CONFIG_CHECKER.check(c1.getSymmetricEncryptionConfig(),
+                    c2.getSymmetricEncryptionConfig())
+                    && (c1.isSocketBufferDirect() == c2.isSocketBufferDirect())
+                    && (c1.isSocketKeepAlive() == c2.isSocketKeepAlive())
+                    && (c1.isSocketBufferDirect() == c2.isSocketBufferDirect())
+                    && (c1.getSocketConnectTimeoutSeconds() == c2.getSocketConnectTimeoutSeconds())
+                    && (c1.getSocketLingerSeconds() == c2.getSocketLingerSeconds())
+                    && (c1.getSocketRcvBufferSizeKb() == c2.getSocketRcvBufferSizeKb())
+                    && (c1.getSocketSendBufferSizeKb() == c2.getSocketSendBufferSizeKb());
+
+            if (c1 instanceof ServerSocketEndpointConfig) {
+                ServerSocketEndpointConfig s1 = (ServerSocketEndpointConfig) c1;
+                ServerSocketEndpointConfig s2 = (ServerSocketEndpointConfig) c2;
+                return compatible && nullSafeEqual(s1.getPort(), s2.getPort())
+                        && nullSafeEqual(s1.getPortCount(), s2.getPortCount())
+                        && (s1.isPortAutoIncrement() == s2.isPortAutoIncrement())
+                        && nullSafeEqual(s1.isReuseAddress(), s2.isReuseAddress())
+                        && nullSafeEqual(s1.getPublicAddress(), s2.getPublicAddress());
+            } else {
+                return compatible;
+            }
+        }
+    }
+
+    private static class OutboundPortDefinitionsChecker extends ConfigChecker<Collection<String>> {
+
+        @Override
+        boolean check(Collection<String> portDefinitions1, Collection<String> portDefinitions2) {
+            String[] defaultValues = {"0", "*"};
+            boolean defaultDefinition1 = CollectionUtil.isEmpty(portDefinitions1)
+                    || (portDefinitions1.size() == 1 && ArrayUtils.contains(defaultValues, portDefinitions1.iterator().next()));
+            boolean defaultDefinition2 = CollectionUtil.isEmpty(portDefinitions2)
+                    || (portDefinitions2.size() == 1 && ArrayUtils.contains(defaultValues, portDefinitions2.iterator().next()));
+            return (defaultDefinition1 && defaultDefinition2) || nullSafeEqual(portDefinitions1, portDefinitions2);
+        }
+    }
+
+    private static class InterfacesConfigChecker extends ConfigChecker<InterfacesConfig> {
+        @Override
+        boolean check(InterfacesConfig c1, InterfacesConfig c2) {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
                     && nullSafeEqual(new ArrayList<String>(c1.getInterfaces()), new ArrayList<String>(c2.getInterfaces())));
         }
+    }
 
-        private static boolean isCompatible(SymmetricEncryptionConfig c1, SymmetricEncryptionConfig c2) {
+    private static class SSLConfigChecker extends ConfigChecker<SSLConfig> {
+        @Override
+        boolean check(SSLConfig c1, SSLConfig c2) {
+            boolean c1Disabled = c1 == null || !c1.isEnabled();
+            boolean c2Disabled = c2 == null || !c2.isEnabled();
+            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
+                    && nullSafeEqual(c1.getFactoryImplementation(), c2.getFactoryImplementation()))
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+        }
+    }
+
+    private static class SocketInterceptorConfigChecker extends ConfigChecker<SocketInterceptorConfig> {
+        @Override
+        boolean check(SocketInterceptorConfig c1, SocketInterceptorConfig c2) {
+            boolean c1Disabled = c1 == null || !c1.isEnabled();
+            boolean c2Disabled = c2 == null || !c2.isEnabled();
+            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getImplementation(), c2.getImplementation()))
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+        }
+    }
+
+    private static class SymmetricEncryptionConfigChecker extends ConfigChecker<SymmetricEncryptionConfig> {
+        @Override
+        boolean check(SymmetricEncryptionConfig c1, SymmetricEncryptionConfig c2) {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
@@ -980,24 +1183,6 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getIterationCount(), c2.getIterationCount())
                     && nullSafeEqual(c1.getAlgorithm(), c2.getAlgorithm())
                     && nullSafeEqual(c1.getKey(), c2.getKey());
-        }
-
-        private static boolean isCompatible(SocketInterceptorConfig c1, SocketInterceptorConfig c2) {
-            boolean c1Disabled = c1 == null || !c1.isEnabled();
-            boolean c2Disabled = c2 == null || !c2.isEnabled();
-            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
-                    && nullSafeEqual(c1.getImplementation(), c2.getImplementation()))
-                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
-        }
-
-        private static boolean isCompatible(SSLConfig c1, SSLConfig c2) {
-            boolean c1Disabled = c1 == null || !c1.isEnabled();
-            boolean c2Disabled = c2 == null || !c2.isEnabled();
-            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
-                    && nullSafeEqual(c1.getFactoryImplementation(), c2.getFactoryImplementation()))
-                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
         }
     }
 
@@ -1093,6 +1278,7 @@ public class ConfigCompatibilityChecker {
                     && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig())
                     && new WanSyncConfigChecker().check(c1.getWanSyncConfig(), c2.getWanSyncConfig())
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getEndpoint(), c2.getEndpoint())
                     && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
                     && nullSafeEqual(c1.getProperties(), c2.getProperties());
         }

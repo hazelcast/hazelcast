@@ -23,6 +23,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -46,9 +47,13 @@ import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.nio.Packet.Type.BIND;
+import static com.hazelcast.nio.Packet.Type.EXTENDED_BIND;
 import static com.hazelcast.spi.properties.GroupProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
 
@@ -108,17 +113,24 @@ public class MockIOService implements IOService {
     }
 
     @Override
+    public Map<EndpointQualifier, Address> getThisAddresses() {
+        Map<EndpointQualifier, Address> addressMap = new HashMap<EndpointQualifier, Address>();
+        addressMap.put(EndpointQualifier.MEMBER, thisAddress);
+        return addressMap;
+    }
+
+    @Override
     public void onFatalError(Exception e) {
         logger.severe("Fatal error", e);
     }
 
     @Override
-    public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
+    public SymmetricEncryptionConfig getSymmetricEncryptionConfig(EndpointQualifier endpointQualifier) {
         return null;
     }
 
     @Override
-    public SSLConfig getSSLConfig() {
+    public SSLConfig getSSLConfig(EndpointQualifier endpointQualifier) {
         return null;
     }
 
@@ -165,16 +177,16 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public void interceptSocket(Socket socket, boolean onAccept) {
+    public void interceptSocket(EndpointQualifier endpointQualifier, Socket socket, boolean onAccept) {
     }
 
     @Override
-    public boolean isSocketInterceptorEnabled() {
+    public boolean isSocketInterceptorEnabled(EndpointQualifier endpointQualifier) {
         return false;
     }
 
     @Override
-    public int getSocketConnectTimeoutSeconds() {
+    public int getSocketConnectTimeoutSeconds(EndpointQualifier endpointQualifier) {
         return 0;
     }
 
@@ -292,7 +304,7 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public Collection<Integer> getOutboundPorts() {
+    public Collection<Integer> getOutboundPorts(EndpointQualifier endpointQualifier) {
         return Collections.emptyList();
     }
 
@@ -302,18 +314,18 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public MemberSocketInterceptor getMemberSocketInterceptor() {
+    public MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier) {
         return null;
     }
 
     @Override
-    public InboundHandler[] createMemberInboundHandlers(final TcpIpConnection connection) {
+    public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, final TcpIpConnection connection) {
         return new InboundHandler[]{new PacketDecoder(connection, new Consumer<Packet>() {
             @Override
             public void accept(Packet packet) {
                 try {
-                    if (packet.getPacketType() == Packet.Type.BIND) {
-                        connection.getConnectionManager().accept(packet);
+                    if (packet.getPacketType() == BIND || packet.getPacketType() == EXTENDED_BIND) {
+                        connection.getEndpointManager().accept(packet);
                     } else {
                         Consumer<Packet> consumer = packetConsumer;
                         if (consumer != null) {
@@ -328,7 +340,7 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public OutboundHandler[] createMemberOutboundHandlers(TcpIpConnection connection) {
+    public OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection) {
         return new OutboundHandler[]{new PacketEncoder()};
     }
 

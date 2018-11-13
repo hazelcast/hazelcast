@@ -52,9 +52,9 @@ public class NodeAnswer extends AbstractAnswer {
         } else if (arguments.length == 0 && methodName.equals("getNodeEngine")) {
             Object nodeEngine = invokeForMock(invocation);
             return mock(NodeEngineImpl.class, new NodeEngineAnswer(nodeEngine));
-        } else if (arguments.length == 0 && methodName.equals("getConnectionManager")) {
-            Object connectionManager = invokeForMock(invocation);
-            return createMockForTargetClass(connectionManager, new FirewallingConnectionManagerAnswer(connectionManager));
+        } else if (arguments.length == 0 && methodName.equals("getEndpointManager")) {
+            Object networkingService = invokeForMock(invocation);
+            return createMockForTargetClass(networkingService, new FirewallingConnectionManagerAnswer(networkingService));
         } else if (arguments.length == 0 && (methodName.startsWith("get") || methodName.startsWith("is"))) {
             return invoke(invocation);
         }

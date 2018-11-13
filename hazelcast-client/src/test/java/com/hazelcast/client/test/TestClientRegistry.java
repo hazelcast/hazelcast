@@ -51,6 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -88,7 +89,8 @@ class TestClientRegistry {
         }
     }
 
-    class MockClientConnectionManager extends ClientConnectionManagerImpl {
+    class MockClientConnectionManager
+            extends ClientConnectionManagerImpl {
 
         private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<Address, LockPair>();
 
@@ -196,15 +198,16 @@ class TestClientRegistry {
         private volatile long lastReadTime;
         private volatile long lastWriteTime;
 
-        MockedClientConnection(HazelcastClientInstanceImpl client, int connectionId, NodeEngineImpl serverNodeEngine,
-                               Address address, Address localAddress, LockPair lockPair) {
+        MockedClientConnection(HazelcastClientInstanceImpl client,
+                               int connectionId, NodeEngineImpl serverNodeEngine, Address address, Address localAddress,
+                               LockPair lockPair) {
             super(client, connectionId);
             this.serverNodeEngine = serverNodeEngine;
             this.remoteAddress = address;
             this.localAddress = localAddress;
             this.executor = new TwoWayBlockableExecutor(lockPair);
-            this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress, localAddress, serverNodeEngine,
-                    this);
+            this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress,
+                    localAddress, serverNodeEngine, this);
         }
 
         @Override
@@ -301,7 +304,6 @@ class TestClientRegistry {
                 @Override
                 public void run() {
                     serverSideConnection.close(null, null);
-
                 }
 
                 @Override
@@ -347,8 +349,8 @@ class TestClientRegistry {
         private volatile long lastReadTimeMillis;
         private volatile long lastWriteTimeMillis;
 
-        MockedNodeConnection(int connectionId, Address localEndpoint, Address remoteEndpoint, NodeEngineImpl nodeEngine,
-                             MockedClientConnection responseConnection) {
+        MockedNodeConnection(int connectionId, Address localEndpoint,
+                             Address remoteEndpoint, NodeEngineImpl nodeEngine, MockedClientConnection responseConnection) {
             super(localEndpoint, remoteEndpoint, nodeEngine);
             this.responseConnection = responseConnection;
             this.connectionId = connectionId;
@@ -359,7 +361,7 @@ class TestClientRegistry {
 
         private void register() {
             Node node = remoteNodeEngine.getNode();
-            node.getConnectionManager().registerConnection(getEndPoint(), this);
+            node.getEndpointManager(CLIENT).registerConnection(getEndPoint(), this);
         }
 
         @Override

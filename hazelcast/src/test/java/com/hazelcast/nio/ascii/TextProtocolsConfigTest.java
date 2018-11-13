@@ -82,7 +82,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
     @Test
     public void testRestApiCallWithDefaults() throws Exception {
         Config config = new Config();
-        config.setRestApiConfig(new RestApiConfig());
+        config.getNetworkConfig().setRestApiConfig(new RestApiConfig());
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         for (TestUrl testUrl : TEST_URLS) {
             assertNoTextProtocolResponse(hz, testUrl);
@@ -99,7 +99,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
     @Test
     public void testEnabledRestApiCallWithGroupDefaults() throws Exception {
         Config config = new Config();
-        config.setRestApiConfig(new RestApiConfig().setEnabled(true));
+        config.getNetworkConfig().setRestApiConfig(new RestApiConfig().setEnabled(true));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         for (TestUrl testUrl : TEST_URLS) {
             if (isExpectedDefaultEnabled(testUrl.restEndpointGroup)) {
@@ -120,7 +120,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
     @Test
     public void testRestApiCallEnabledGroupsEnabled() throws Exception {
         Config config = new Config();
-        config.setRestApiConfig(new RestApiConfig().setEnabled(true).enableAllGroups());
+        config.getNetworkConfig().setRestApiConfig(new RestApiConfig().setEnabled(true).enableAllGroups());
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         for (TestUrl testUrl : TEST_URLS) {
             assertTextProtocolResponse(hz, testUrl);
@@ -137,7 +137,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
     @Test
     public void testRestApiCallDisabledGroupsEnabled() throws Exception {
         Config config = new Config();
-        config.setRestApiConfig(new RestApiConfig().setEnabled(false).enableAllGroups());
+        config.getNetworkConfig().setRestApiConfig(new RestApiConfig().setEnabled(false).enableAllGroups());
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         for (TestUrl testUrl : TEST_URLS) {
             assertNoTextProtocolResponse(hz, testUrl);
@@ -162,7 +162,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
     public void testRestConfigWithMemcacheProperty() throws Exception {
         Config config = new Config()
                 .setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "true");
-        config.setRestApiConfig(new RestApiConfig());
+        config.getNetworkConfig().setRestApiConfig(new RestApiConfig());
         factory.newHazelcastInstance(config);
     }
 
@@ -170,7 +170,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
     public void testMemcacheProtocolConfigWithMemcachePropertyEnabled() throws Exception {
         Config config = new Config()
                 .setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "true");
-        config.setMemcacheProtocolConfig(new MemcacheProtocolConfig());
+        config.getNetworkConfig().setMemcacheProtocolConfig(new MemcacheProtocolConfig());
         expectedException.expect(ConfigurationException.class);
         factory.newHazelcastInstance(config);
     }
@@ -193,7 +193,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
     public void testRestConfigWithMemcachePropertyDisabled() throws Exception {
         Config config = new Config()
                 .setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "false");
-        config.setRestApiConfig(new RestApiConfig());
+        config.getNetworkConfig().setRestApiConfig(new RestApiConfig());
         factory.newHazelcastInstance(config);
     }
 
@@ -201,7 +201,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
     public void testMemcacheProtocolConfigWithMemcachePropertyDisabled() throws Exception {
         Config config = new Config()
                 .setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "false");
-        config.setMemcacheProtocolConfig(new MemcacheProtocolConfig());
+        config.getNetworkConfig().setMemcacheProtocolConfig(new MemcacheProtocolConfig());
         expectedException.expect(ConfigurationException.class);
         factory.newHazelcastInstance(config);
     }
@@ -283,7 +283,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
     }
 
     private void createMemberWithRestConfigAndAssertConfigException(Config config) {
-        config.setRestApiConfig(new RestApiConfig());
+        config.getNetworkConfig().setRestApiConfig(new RestApiConfig());
         expectedException.expect(ConfigurationException.class);
         factory.newHazelcastInstance(config);
     }

@@ -78,56 +78,22 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     @Test
     public void testMulticast_ClusterMerge() {
-        testClusterMerge(true);
+        testClusterMerge(false, true);
     }
 
     @Test
     public void testTcpIp_ClusterMerge() {
-        testClusterMerge(false);
+        testClusterMerge(false, false);
     }
 
-    private void testClusterMerge(boolean multicast) {
-        Config config1 = new Config();
-        config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
-        String firstGroupName = generateRandomString(10);
-        config1.getGroupConfig().setName(firstGroupName);
+    @Test
+    public void testAdvancedNetworkMulticast_ClusterMerge() {
+        testClusterMerge(true, true);
+    }
 
-        NetworkConfig networkConfig1 = config1.getNetworkConfig();
-        JoinConfig join1 = networkConfig1.getJoin();
-        join1.getMulticastConfig().setEnabled(multicast);
-        join1.getTcpIpConfig().setEnabled(!multicast);
-        join1.getTcpIpConfig().addMember("127.0.0.1");
-
-        Config config2 = new Config();
-        config2.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        config2.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
-        String secondGroupName = generateRandomString(10);
-        config2.getGroupConfig().setName(secondGroupName);
-
-        NetworkConfig networkConfig2 = config2.getNetworkConfig();
-        JoinConfig join2 = networkConfig2.getJoin();
-        join2.getMulticastConfig().setEnabled(multicast);
-        join2.getTcpIpConfig().setEnabled(!multicast);
-        join2.getTcpIpConfig().addMember("127.0.0.1");
-
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
-        LifecycleCountingListener l = new LifecycleCountingListener();
-        h2.getLifecycleService().addLifecycleListener(l);
-
-        assertClusterSize(1, h1);
-        assertClusterSize(1, h2);
-
-        // warning: assuming group name will be visible to the split brain handler!
-        config1.getGroupConfig().setName(secondGroupName);
-        assertTrue(l.waitFor(LifecycleState.MERGED, 30));
-
-        assertEquals(1, l.getCount(LifecycleState.MERGING));
-        assertEquals(1, l.getCount(LifecycleState.MERGED));
-        assertClusterSize(2, h1, h2);
-
-        assertClusterState(ACTIVE, h1, h2);
+    @Test
+    public void testAdvancedNetworkTcpIp_ClusterMerge() {
+        testClusterMerge(true, false);
     }
 
     @Test
@@ -822,5 +788,54 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         @Override
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
         }
+    }
+
+    private void testClusterMerge(boolean advancedNetwork, boolean multicast) {
+        Config config1 = config(advancedNetwork, multicast);
+        String firstGroupName = generateRandomString(10);
+        config1.getGroupConfig().setName(firstGroupName);
+
+        Config config2 = config(advancedNetwork, multicast);
+        String secondGroupName = generateRandomString(10);
+        config2.getGroupConfig().setName(secondGroupName);
+
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+        LifecycleCountingListener l = new LifecycleCountingListener();
+        h2.getLifecycleService().addLifecycleListener(l);
+
+        assertClusterSize(1, h1);
+        assertClusterSize(1, h2);
+
+        // warning: assuming group name will be visible to the split brain handler!
+        config1.getGroupConfig().setName(secondGroupName);
+        assertTrue(l.waitFor(LifecycleState.MERGED, 30));
+
+        assertEquals(1, l.getCount(LifecycleState.MERGING));
+        assertEquals(1, l.getCount(LifecycleState.MERGED));
+        assertClusterSize(2, h1, h2);
+
+        assertClusterState(ACTIVE, h1, h2);
+    }
+
+    private Config config(boolean advancedNetwork, boolean multicast) {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
+
+        if (advancedNetwork) {
+            config.getAdvancedNetworkConfig().setEnabled(true)
+                  .getJoin().getMulticastConfig().setEnabled(multicast);
+            config.getAdvancedNetworkConfig()
+                  .getJoin().getTcpIpConfig().setEnabled(!multicast)
+                  .addMember("127.0.0.1");
+        } else {
+            config.getNetworkConfig()
+                  .getJoin().getMulticastConfig().setEnabled(multicast);
+            config.getNetworkConfig()
+                  .getJoin().getTcpIpConfig().setEnabled(!multicast)
+                  .addMember("127.0.0.1");
+        }
+        return config;
     }
 }

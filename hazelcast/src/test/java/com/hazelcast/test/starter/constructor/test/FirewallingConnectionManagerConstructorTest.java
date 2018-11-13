@@ -17,12 +17,12 @@
 package com.hazelcast.test.starter.constructor.test;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.nio.NetworkingService;
+import com.hazelcast.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.starter.constructor.FirewallingConnectionManagerConstructor;
+import com.hazelcast.test.starter.constructor.FirewallingNetworkingInstanceConstructor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,16 +40,16 @@ public class FirewallingConnectionManagerConstructorTest {
 
     @Test
     public void testConstructor() throws Exception {
-        ConnectionManager delegate = mock(ConnectionManager.class);
+        NetworkingService delegate = mock(NetworkingService.class);
         Address address = new Address("172.16.16.1", 4223);
         Set<Address> blockedAddresses = Collections.singleton(address);
 
-        FirewallingConnectionManager connectionManager = new FirewallingConnectionManager(delegate, blockedAddresses);
+        FirewallingNetworkingService ns = new FirewallingNetworkingService(delegate, blockedAddresses);
 
-        FirewallingConnectionManagerConstructor constructor
-                = new FirewallingConnectionManagerConstructor(FirewallingConnectionManager.class);
-        FirewallingConnectionManager clonedConnectionManager
-                = (FirewallingConnectionManager) constructor.createNew(connectionManager);
+        FirewallingNetworkingInstanceConstructor constructor
+                = new FirewallingNetworkingInstanceConstructor(FirewallingNetworkingService.class);
+        FirewallingNetworkingService clonedConnectionManager
+                = (FirewallingNetworkingService) constructor.createNew(ns);
 
         assertEquals(delegate, getFieldValueReflectively(clonedConnectionManager, "delegate"));
         assertEquals(blockedAddresses, getFieldValueReflectively(clonedConnectionManager, "blockedAddresses"));

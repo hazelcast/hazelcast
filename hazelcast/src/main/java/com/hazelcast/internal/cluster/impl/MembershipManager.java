@@ -66,6 +66,7 @@ import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.MEMBERSHIP_EVENT_EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.spi.properties.GroupProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS;
 import static java.util.Collections.unmodifiableMap;
@@ -376,8 +377,14 @@ public class MembershipManager {
         address.setScopeId(ipV6ScopeId);
         boolean localMember = thisAddress.equals(address);
 
-        return new MemberImpl(address, memberInfo.getVersion(), localMember, memberInfo.getUuid(), attributes,
-                memberInfo.isLiteMember(), memberInfo.getMemberListJoinVersion(), node.hazelcastInstance);
+        return new MemberImpl.Builder(address).version(memberInfo.getVersion())
+                                              .localMember(localMember)
+                                              .uuid(memberInfo.getUuid())
+                                              .attributes(attributes)
+                                              .liteMember(memberInfo.isLiteMember())
+                                              .memberListJoinVersion(memberInfo.getMemberListJoinVersion())
+                                              .instance(node.hazelcastInstance)
+                                              .build();
     }
 
     private void repairPartitionTableIfReturningMember(MemberImpl member) {
@@ -691,7 +698,7 @@ public class MembershipManager {
     }
 
     private void closeConnection(Address address, String reason) {
-        Connection conn = node.connectionManager.getConnection(address);
+        Connection conn = node.getEndpointManager(MEMBER).getConnection(address);
         if (conn != null) {
             conn.close(reason, null);
         }
@@ -1095,8 +1102,14 @@ public class MembershipManager {
                     if (member.localMember()) {
                         member = clusterService.promoteAndGetLocalMember();
                     } else {
-                        member = new MemberImpl(member.getAddress(), member.getVersion(), member.localMember(), member.getUuid(),
-                                member.getAttributes(), false, members[i].getMemberListJoinVersion(), node.hazelcastInstance);
+                        member = new MemberImpl.Builder(member.getAddressMap())
+                                .version(member.getVersion())
+                                .localMember(member.localMember())
+                                .uuid(member.getUuid())
+                                .attributes(member.getAttributes())
+                                .memberListJoinVersion(members[i].getMemberListJoinVersion())
+                                .instance(node.hazelcastInstance)
+                                .build();
                     }
                     members[i] = member;
                     break;

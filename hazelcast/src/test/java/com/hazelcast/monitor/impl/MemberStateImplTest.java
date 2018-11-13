@@ -21,6 +21,8 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hotrestart.BackupTaskState;
 import com.hazelcast.hotrestart.BackupTaskStatus;
+import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
@@ -28,6 +30,7 @@ import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.WanSyncState;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -40,6 +43,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -63,7 +67,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerialization() {
+    public void testSerialization()
+            throws UnknownHostException {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
 
         LocalReplicatedMapStatsImpl replicatedMapStats = new LocalReplicatedMapStatsImpl();
@@ -96,11 +101,16 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         Map<String, String> clientStats = new HashMap<String, String>();
         clientStats.put("abc123456", "someStats");
 
+        Map<EndpointQualifier, Address> endpoints = new HashMap<EndpointQualifier, Address>();
+        endpoints.put(EndpointQualifier.MEMBER, new Address("127.0.0.1", 5701));
+        endpoints.put(EndpointQualifier.resolve(ProtocolType.WAN, "MyWAN"), new Address("127.0.0.1", 5901));
+
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
         TimedMemberState timedMemberState = factory.createTimedMemberState();
 
         MemberStateImpl memberState = timedMemberState.getMemberState();
         memberState.setAddress("memberStateAddress:Port");
+        memberState.setEndpoints(endpoints);
         memberState.putLocalMapStats("mapStats", new LocalMapStatsImpl());
         memberState.putLocalMultiMapStats("multiMapStats", new LocalMultiMapStatsImpl());
         memberState.putLocalQueueStats("queueStats", new LocalQueueStatsImpl());
@@ -124,6 +134,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         deserialized.fromJson(memberState.toJson());
 
         assertEquals("memberStateAddress:Port", deserialized.getAddress());
+        assertEquals(endpoints, deserialized.getEndpoints());
         assertNotNull(deserialized.getLocalMapStats("mapStats").toString());
         assertNotNull(deserialized.getLocalMultiMapStats("multiMapStats").toString());
         assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());

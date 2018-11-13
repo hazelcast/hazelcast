@@ -150,7 +150,6 @@ public class NodeEngineImpl implements NodeEngine {
                     operationService.getInboundResponseHandlerSupplier().get(),
                     operationService.getInvocationMonitor(),
                     eventService,
-                    new ConnectionManagerPacketConsumer(),
                     getJetPacketConsumer(node.getNodeExtension()));
             this.quorumService = new QuorumServiceImpl(this);
             this.diagnostics = newDiagnostics();
@@ -501,16 +500,6 @@ public class NodeEngineImpl implements NodeEngine {
         }
         if (diagnostics != null) {
             diagnostics.shutdown();
-        }
-    }
-
-    private class ConnectionManagerPacketConsumer implements Consumer<Packet> {
-
-        @Override
-        public void accept(Packet packet) {
-            // ConnectionManager is only available after the NodeEngineImpl is available
-            Consumer<Packet> packetConsumer = (Consumer<Packet>) node.getConnectionManager();
-            packetConsumer.accept(packet);
         }
     }
 

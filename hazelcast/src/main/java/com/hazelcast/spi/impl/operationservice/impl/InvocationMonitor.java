@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
@@ -501,7 +502,7 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
                 Packet packet = new Packet(serializationService.toBytes(opControl))
                         .setPacketType(Packet.Type.OPERATION)
                         .raiseFlags(FLAG_OP_CONTROL | FLAG_URGENT);
-                nodeEngine.getNode().getConnectionManager().transmit(packet, address);
+                nodeEngine.getNode().getNetworkingService().getEndpointManager(MEMBER).transmit(packet, address);
             }
         }
     }

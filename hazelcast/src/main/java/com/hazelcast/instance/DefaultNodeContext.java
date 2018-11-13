@@ -21,25 +21,26 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
-import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.util.InstantiationUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
+import com.hazelcast.nio.tcp.TcpIpNetworkingService;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.nio.channels.ServerSocketChannel;
 import java.util.List;
 import java.util.Properties;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
@@ -62,16 +63,21 @@ public class DefaultNodeContext implements NodeContext {
     @Override
     public AddressPicker createAddressPicker(Node node) {
         Config config = node.getConfig();
-        MemberAddressProviderConfig memberAddressProviderConfig = config.getNetworkConfig().getMemberAddressProviderConfig();
+        MemberAddressProviderConfig memberAddressProviderConfig =
+                getActiveMemberNetworkConfig(config).getMemberAddressProviderConfig();
 
         final ILogger addressPickerLogger = node.getLogger(AddressPicker.class);
         if (!memberAddressProviderConfig.isEnabled()) {
+            if (config.getAdvancedNetworkConfig().isEnabled()) {
+                return new AdvancedNetworkAddressPicker(config, addressPickerLogger);
+            }
+
             return new DefaultAddressPicker(config, addressPickerLogger);
         }
 
         MemberAddressProvider implementation = memberAddressProviderConfig.getImplementation();
         if (implementation != null) {
-            return new DelegatingAddressPicker(implementation, config.getNetworkConfig(), addressPickerLogger);
+            return new DelegatingAddressPicker(implementation, config, addressPickerLogger);
         }
         ClassLoader classLoader = config.getClassLoader();
         String classname = memberAddressProviderConfig.getClassName();
@@ -81,7 +87,7 @@ public class DefaultNodeContext implements NodeContext {
         Properties properties = memberAddressProviderConfig.getProperties();
         MemberAddressProvider memberAddressProvider = newMemberAddressProviderInstance(clazz,
                 memberAddressProviderLogger, properties);
-        return new DelegatingAddressPicker(memberAddressProvider, config.getNetworkConfig(), addressPickerLogger);
+        return new DelegatingAddressPicker(memberAddressProvider, config, addressPickerLogger);
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
@@ -136,21 +142,23 @@ public class DefaultNodeContext implements NodeContext {
     }
 
     @Override
-    public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
+    public NetworkingService createNetworkingService(Node node, ServerSocketRegistry registry) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
         Networking networking = createNetworking(node, ioService);
+        Config config = node.getConfig();
 
-        return new TcpIpConnectionManager(
+        return new TcpIpNetworkingService(config,
                 ioService,
-                serverSocketChannel,
+                registry,
                 node.loggingService,
                 node.nodeEngine.getMetricsRegistry(),
                 networking,
+
                 node.getProperties());
     }
 
     private Networking createNetworking(Node node, NodeIOService ioService) {
-        ChannelInitializer initializer = node.getNodeExtension().createChannelInitializer(ioService);
+        ChannelInitializerProvider initializerProvider = node.getNodeExtension().createChannelInitializerProvider(ioService);
 
         LoggingServiceImpl loggingService = node.loggingService;
 
@@ -168,6 +176,6 @@ public class DefaultNodeContext implements NodeContext {
                         .inputThreadCount(props.getInteger(IO_INPUT_THREAD_COUNT))
                         .outputThreadCount(props.getInteger(IO_OUTPUT_THREAD_COUNT))
                         .balancerIntervalSeconds(props.getInteger(IO_BALANCER_INTERVAL_SECONDS))
-                        .channelInitializer(initializer));
+                        .channelInitializerProvider(initializerProvider));
     }
 }

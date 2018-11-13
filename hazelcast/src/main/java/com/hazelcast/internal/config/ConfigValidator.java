@@ -22,11 +22,14 @@ import com.hazelcast.config.AbstractBasicConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CollectionConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -37,6 +40,11 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.ServerSocketEndpointConfig;
+import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -45,8 +53,11 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.util.MutableInteger;
 
+import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.Map;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.EvictionPolicy.LRU;
@@ -55,10 +66,16 @@ import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
+import static com.hazelcast.instance.ProtocolType.MEMBER;
+import static com.hazelcast.instance.ProtocolType.REST;
+import static com.hazelcast.instance.ProtocolType.WAN;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkCacheMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkReplicatedMapMergePolicy;
+import static com.hazelcast.spi.properties.GroupProperty.HTTP_HEALTHCHECK_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.MEMCACHE_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.REST_ENABLED;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 
@@ -97,6 +114,73 @@ public final class ConfigValidator {
                     + " are deprecated due to a change of the eviction mechanism."
                     + " The new eviction mechanism uses a probabilistic algorithm based on sampling."
                     + " Please see documentation for further details.");
+        }
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity",
+                       "checkstyle:booleanexpressioncomplexity"})
+    public static void checkAdvancedNetworkConfig(Config config) {
+        if (!config.getAdvancedNetworkConfig().isEnabled()) {
+            return;
+        }
+
+        EnumMap<ProtocolType, MutableInteger> serverSocketsPerProtocolType
+                = new EnumMap<ProtocolType, MutableInteger>(ProtocolType.class);
+        for (ProtocolType protocolType : ProtocolType.values()) {
+            serverSocketsPerProtocolType.put(protocolType, new MutableInteger());
+        }
+
+        Map<EndpointQualifier, EndpointConfig> endpointConfigs = config.getAdvancedNetworkConfig().getEndpointConfigs();
+
+        for (EndpointConfig endpointConfig : endpointConfigs.values()) {
+            if (endpointConfig instanceof ServerSocketEndpointConfig) {
+                serverSocketsPerProtocolType.get(endpointConfig.getProtocolType()).getAndInc();
+            }
+        }
+
+        for (ProtocolType protocolType : ProtocolType.values()) {
+            int serverSocketCount = serverSocketsPerProtocolType.get(protocolType).value;
+            if (serverSocketCount > protocolType.getServerSocketCardinality()) {
+                throw new InvalidConfigurationException(format("Protocol type %s allows definition "
+                                + "of up to %d server sockets but %d were configured", protocolType,
+                        protocolType.getServerSocketCardinality(), serverSocketCount));
+            }
+        }
+
+        // ensure there is 1 MEMBER type server socket
+        if (serverSocketsPerProtocolType.get(MEMBER).value != 1) {
+            throw new InvalidConfigurationException("A member-server-socket-endpoint configuration is required for the cluster"
+                    + "to form.");
+        }
+
+        HazelcastProperties props = new HazelcastProperties(config);
+        if (props.getBoolean(REST_ENABLED) || props.getBoolean(HTTP_HEALTHCHECK_ENABLED)) {
+            if (serverSocketsPerProtocolType.get(REST).value != 1) {
+                throw new InvalidConfigurationException("`hazelcast.rest.enabled` and/or "
+                        + "`hazelcast.http.healthcheck.enabled` properties are enabled, without a rest-server-socket-endpoint");
+            }
+        }
+
+        if (props.getBoolean(MEMCACHE_ENABLED)) {
+            if (serverSocketsPerProtocolType.get(REST).value != 1) {
+                throw new InvalidConfigurationException("`hazelcast.memcache.enabled` property is enabled, without "
+                        + "a memcache-server-socket-endpoint");
+            }
+        }
+
+        // endpoint qualifiers referenced by WAN publishers must exist
+        for (WanReplicationConfig wanReplicationConfig : config.getWanReplicationConfigs().values()) {
+            for (WanPublisherConfig wanPublisherConfig : wanReplicationConfig.getWanPublisherConfigs()) {
+                if (wanPublisherConfig.getEndpoint() != null) {
+                    EndpointQualifier qualifier = EndpointQualifier.resolve(WAN, wanPublisherConfig.getEndpoint());
+                    if (endpointConfigs.get(qualifier) == null) {
+                        throw new InvalidConfigurationException(
+                                format("WAN publisher config for group name '%s' requires an wan-endpoint "
+                                + "config with identifier '%s' but none was found",
+                                        wanPublisherConfig.getGroupName(), wanPublisherConfig.getEndpoint()));
+                    }
+                }
+            }
         }
     }
 

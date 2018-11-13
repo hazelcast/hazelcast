@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEndpointImpl;
-import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.spi.ReadonlyOperation;
@@ -38,7 +38,7 @@ public class GetConnectedClientsOperation extends AbstractClientOperation implem
 
     @Override
     public void run() throws Exception {
-        ClientEngineImpl service = getService();
+        ClientEngine service = getService();
         final Collection<Client> serviceClients = service.getClients();
         this.clients = createHashMap(serviceClients.size());
         for (Client clientEndpoint : serviceClients) {

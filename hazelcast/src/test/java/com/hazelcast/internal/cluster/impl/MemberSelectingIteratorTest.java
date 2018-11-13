@@ -58,10 +58,14 @@ public class MemberSelectingIteratorTest extends HazelcastTestSupport {
     public void before()
             throws Exception {
         MemberVersion version = new MemberVersion(BuildInfoProvider.getBuildInfo().getVersion());
-        thisMember = new MemberImpl(new Address("localhost", 5701), version, true, newUnsecureUuidString(), null, true);
-        matchingMember = new MemberImpl(new Address("localhost", 5702), version, false, newUnsecureUuidString(), null, true);
-        matchingMember2 = new MemberImpl(new Address("localhost", 5703), version, false, newUnsecureUuidString(), null, true);
-        nonMatchingMember = new MemberImpl(new Address("localhost", 5704), version, false, newUnsecureUuidString(), null, false);
+        thisMember = new MemberImpl.Builder(new Address("localhost", 5701)).version(version).localMember(true)
+                .uuid(newUnsecureUuidString()).liteMember(true).build();
+        matchingMember = new MemberImpl.Builder(new Address("localhost", 5702)).version(version).uuid(newUnsecureUuidString())
+                .liteMember(true).build();
+        matchingMember2 = new MemberImpl.Builder(new Address("localhost", 5703)).version(version).uuid(newUnsecureUuidString())
+                .liteMember(true).build();
+        nonMatchingMember = new MemberImpl.Builder(new Address("localhost", 5704)).version(version).uuid(newUnsecureUuidString())
+                .build();
     }
 
     private Set<MemberImpl> createMembers() {

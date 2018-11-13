@@ -18,6 +18,7 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.nio.IOUtil;
 import org.apache.http.Consts;
@@ -56,6 +57,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.instance.EndpointQualifier.REST;
+import static com.hazelcast.test.HazelcastTestSupport.getNode;
+
 @SuppressWarnings("SameParameterValue")
 public class HTTPCommunicator {
 
@@ -63,6 +67,7 @@ public class HTTPCommunicator {
     private final String address;
     private final boolean sslEnabled;
     private boolean enableChunkedStreaming;
+    private final String baseRestAddress;
     private TrustManager[] clientTrustManagers;
     private KeyManager[] clientKeyManagers;
     private String tlsProtocol = "TLSv1.1";
@@ -73,7 +78,9 @@ public class HTTPCommunicator {
         SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
         sslEnabled = sslConfig != null && sslConfig.isEnabled();
         String protocol = sslEnabled ? "https:/" : "http:/";
-        this.address = protocol + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        MemberImpl localMember = getNode(instance).getClusterService().getLocalMember();
+        this.baseRestAddress = localMember.getSocketAddress(REST).toString();
+        this.address = protocol + baseRestAddress + "/hazelcast/rest/";
     }
 
     public HTTPCommunicator setTlsProtocol(String tlsProtocol) {
@@ -138,8 +145,7 @@ public class HTTPCommunicator {
     }
 
     public int getFailingClusterHealthWithTrailingGarbage() throws IOException {
-        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
-        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
+        String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
         return doGet(url).responseCode;
     }
 
@@ -148,14 +154,12 @@ public class HTTPCommunicator {
     }
 
     public String getClusterHealth(String pathParam) throws IOException {
-        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
-        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + pathParam;
+        String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_HEALTH_URL + pathParam;
         return doGet(url).response;
     }
 
     public int getClusterHealthResponseCode(String pathParam) throws IOException {
-        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
-        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + pathParam;
+        String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_HEALTH_URL + pathParam;
         return doGet(url).responseCode;
     }
 
@@ -470,20 +474,17 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse headRequestToClusterHealthURI() throws IOException {
-        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
-        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL;
+        String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_HEALTH_URL;
         return doHead(url);
     }
 
     public ConnectionResponse headRequestToClusterVersionURI() throws IOException {
-        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
-        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_CLUSTER_VERSION_URL;
+        String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_CLUSTER_VERSION_URL;
         return doHead(url);
     }
 
     public ConnectionResponse headRequestToGarbageClusterHealthURI() throws IOException {
-        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
-        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
+        String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
         return doHead(url);
     }
 

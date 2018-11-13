@@ -16,7 +16,10 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -42,6 +45,13 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
+import static com.hazelcast.internal.networking.ChannelOption.SO_KEEPALIVE;
+import static com.hazelcast.internal.networking.ChannelOption.SO_LINGER;
+import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
+import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
+import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
@@ -326,6 +336,17 @@ public final class IOUtil {
         try {
             closeable.close();
         } catch (IOException e) {
+            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+        }
+    }
+
+    public static void close(Connection conn, String reason) {
+        if (conn == null) {
+            return;
+        }
+        try {
+            conn.close(reason, null);
+        } catch (Throwable e) {
             Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
         }
     }
@@ -623,6 +644,21 @@ public final class IOUtil {
     public static String toDebugString(String name, ByteBuffer byteBuffer) {
         return name + "(pos:" + byteBuffer.position() + " lim:" + byteBuffer.limit()
                 + " remain:" + byteBuffer.remaining() + " cap:" + byteBuffer.capacity() + ")";
+    }
+
+    /**
+     * Sets configured channel options on given {@link Channel}.
+     * @param channel   the {@link Channel} on which options will be set
+     * @param config    the endpoint configuration
+     */
+    public static void setChannelOptions(Channel channel, EndpointConfig config) {
+        ChannelOptions options = channel.options();
+        options.setOption(DIRECT_BUF, config.isSocketBufferDirect())
+               .setOption(TCP_NODELAY, config.isSocketTcpNoDelay())
+               .setOption(SO_KEEPALIVE, config.isSocketKeepAlive())
+               .setOption(SO_SNDBUF, config.getSocketSendBufferSizeKb() * KILO_BYTE)
+               .setOption(SO_RCVBUF, config.getSocketRcvBufferSizeKb() * KILO_BYTE)
+               .setOption(SO_LINGER, config.getSocketLingerSeconds());
     }
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {

@@ -22,6 +22,8 @@ import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
@@ -30,8 +32,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -54,6 +58,9 @@ import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
+import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
+import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
+import static com.hazelcast.config.RestEndpointGroup.WAN;
 import static com.hazelcast.config.WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
@@ -61,7 +68,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * XML specific implementation of the tests that should be maintained in
@@ -94,6 +100,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
             + "<action>add</action>"
             + "<action>remove</action>"
             + "</actions>";
+
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
 
     @Override
     @Test
@@ -1445,6 +1454,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <properties>\n"
                 + "                <property name=\"propName1\">propValue1</property>\n"
                 + "            </properties>\n"
+                + "            <endpoint-qualifier>nyc-endpoint-qualifier</endpoint-qualifier>\n"
                 + "        </wan-publisher>\n"
                 + "        <wan-consumer>\n"
                 + "            <class-name>ConsumerClassName</class-name>\n"
@@ -1479,6 +1489,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(15000, publisherConfig.getQueueCapacity());
         assertEquals(DISCARD_AFTER_MUTATION, publisherConfig.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
+        assertEquals("nyc-endpoint-qualifier", publisherConfig.getEndpoint());
 
         properties = publisherConfig.getProperties();
         assertNotNull(properties);
@@ -1612,13 +1623,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml = HAZELCAST_START_TAG + "</hazelcast";
+        expected.expect(InvalidConfigurationException.class);
         buildConfig(invalidXml);
-
-        // if we (for any reason) get through the parsing, then fail
-        fail();
     }
 
     @Override
@@ -1912,7 +1921,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test(expected = ConfigurationException.class)
+    @Test
     public void testQuorumConfig_whenClassNameAndRecentlyActiveQuorumDefined_exceptionIsThrown() {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
@@ -1922,11 +1931,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
+        expected.expect(ConfigurationException.class);
         buildConfig(xml);
     }
 
     @Override
-    @Test(expected = ConfigurationException.class)
+    @Test
     public void testQuorumConfig_whenClassNameAndProbabilisticQuorumDefined_exceptionIsThrown() {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
@@ -1936,11 +1946,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
+        expected.expect(ConfigurationException.class);
         buildConfig(xml);
     }
 
     @Override
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testQuorumConfig_whenBothBuiltinQuorumsDefined_exceptionIsThrown() {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
@@ -1950,6 +1961,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
+        expected.expect(InvalidConfigurationException.class);
         buildConfig(xml);
     }
 
@@ -2200,7 +2212,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testCardinalityEstimatorConfigWithInvalidMergePolicy() {
         String xml = HAZELCAST_START_TAG
                 + "    <cardinality-estimator name=\"foobar\">\n"
@@ -2211,8 +2223,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </cardinality-estimator>\n"
                 + HAZELCAST_END_TAG;
 
+        expected.expect(InvalidConfigurationException.class);
         buildConfig(xml);
-        fail();
     }
 
     @Override
@@ -2541,7 +2553,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAttributeConfig_noName_emptyTag() {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
@@ -2550,6 +2562,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
+        expected.expect(IllegalArgumentException.class);
         buildConfig(xml);
     }
 
@@ -2559,7 +2572,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAttributeConfig_noName_singleTag() {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
@@ -2568,11 +2581,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
+        expected.expect(IllegalArgumentException.class);
         buildConfig(xml);
     }
 
     @Override
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAttributeConfig_noExtractor() {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
@@ -2581,11 +2595,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
+        expected.expect(IllegalArgumentException.class);
         buildConfig(xml);
     }
 
     @Override
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAttributeConfig_emptyExtractor() {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
@@ -2594,6 +2609,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
+        expected.expect(IllegalArgumentException.class);
         buildConfig(xml);
     }
 
@@ -2697,35 +2713,37 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testNonLiteMemberConfigWithoutEnabledField() {
         String xml = HAZELCAST_START_TAG
                 + "    <lite-member/>\n"
                 + HAZELCAST_END_TAG;
 
+        expected.expect(InvalidConfigurationException.class);
         buildConfig(xml);
     }
 
     @Override
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testInvalidLiteMemberConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <lite-member enabled=\"dummytext\"/>\n"
                 + HAZELCAST_END_TAG;
 
+        expected.expect(InvalidConfigurationException.class);
         buildConfig(xml);
     }
 
     @Override
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testDuplicateLiteMemberConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <lite-member enabled=\"true\"/>\n"
                 + "    <lite-member enabled=\"true\"/>\n"
                 + HAZELCAST_END_TAG;
 
+        expected.expect(InvalidConfigurationException.class);
         buildConfig(xml);
-        fail();
     }
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
@@ -3099,10 +3117,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testMemcacheProtocolEnabled() {
         String xml = HAZELCAST_START_TAG
-                + "<memcache-protocol enabled='true'/>\n"
+                + "<network><memcache-protocol enabled='true'/></network>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
-        MemcacheProtocolConfig memcacheProtocolConfig = config.getMemcacheProtocolConfig();
+        MemcacheProtocolConfig memcacheProtocolConfig = config.getNetworkConfig().getMemcacheProtocolConfig();
         assertNotNull(memcacheProtocolConfig);
         assertTrue(memcacheProtocolConfig.isEnabled());
     }
@@ -3111,10 +3129,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testRestApiDefaults() {
         String xml = HAZELCAST_START_TAG
-                + "<rest-api enabled='false'/>\n"
+                + "<network><rest-api enabled='false'/></network>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
-        RestApiConfig restApiConfig = config.getRestApiConfig();
+        RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
         assertNotNull(restApiConfig);
         assertFalse(restApiConfig.isEnabled());
         for (RestEndpointGroup group : RestEndpointGroup.values()) {
@@ -3127,17 +3145,19 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testRestApiEndpointGroups() {
         String xml = HAZELCAST_START_TAG
+                + "<network>\n"
                 + "<rest-api enabled='true'>\n"
                 + "  <endpoint-group name='HEALTH_CHECK' enabled='true'/>\n"
                 + "  <endpoint-group name='DATA' enabled='true'/>\n"
                 + "  <endpoint-group name='CLUSTER_READ' enabled='false'/>\n"
                 + "</rest-api>\n"
+                + "</network>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
-        RestApiConfig restApiConfig = config.getRestApiConfig();
+        RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
         assertTrue(restApiConfig.isEnabled());
-        assertTrue(restApiConfig.isGroupEnabled(RestEndpointGroup.HEALTH_CHECK));
-        assertFalse(restApiConfig.isGroupEnabled(RestEndpointGroup.CLUSTER_READ));
+        assertTrue(restApiConfig.isGroupEnabled(HEALTH_CHECK));
+        assertFalse(restApiConfig.isGroupEnabled(CLUSTER_READ));
         assertEquals(RestEndpointGroup.CLUSTER_WRITE.isEnabledByDefault(),
                 restApiConfig.isGroupEnabled(RestEndpointGroup.CLUSTER_WRITE));
     }
@@ -3151,5 +3171,239 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "</rest-api>\n"
                 + HAZELCAST_END_TAG;
         buildConfig(xml);
+    }
+
+    @Test
+    public void testDefaultAdvancedNetworkConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        JoinConfig joinConfig = advancedNetworkConfig.getJoin();
+        IcmpFailureDetectorConfig fdConfig = advancedNetworkConfig.getIcmpFailureDetectorConfig();
+        MemberAddressProviderConfig providerConfig = advancedNetworkConfig.getMemberAddressProviderConfig();
+
+        assertFalse(advancedNetworkConfig.isEnabled());
+        assertTrue(joinConfig.getMulticastConfig().isEnabled());
+        assertNull(fdConfig);
+        assertFalse(providerConfig.isEnabled());
+
+        assertTrue(advancedNetworkConfig.getEndpointConfigs().containsKey(EndpointQualifier.MEMBER));
+        assertEquals(1, advancedNetworkConfig.getEndpointConfigs().size());
+
+    }
+
+    @Test
+    public void testAmbiguousNetworkConfig_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "  <advanced-network enabled=\"true\">\n"
+                + "  </advanced-network>\n"
+                + "  <network>\n"
+                + "    <port>9999</port>\n"
+                + "  </network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Test
+    public void testNetworkConfigUnambiguous_whenAdvancedNetworkDisabled() {
+        String xml = HAZELCAST_START_TAG
+                + "  <advanced-network>\n"
+                + "  </advanced-network>\n"
+                + "  <network>\n"
+                + "    <port>9999</port>\n"
+                + "  </network>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        assertFalse(config.getAdvancedNetworkConfig().isEnabled());
+        assertEquals(9999, config.getNetworkConfig().getPort());
+    }
+
+    @Test
+    public void testMultipleMemberEndpointConfigs_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <join>\n"
+                + "      <multicast enabled=\"false\"/>\n"
+                + "      <tcp-ip enabled=\"true\">\n"
+                + "        <required-member>10.10.1.10</required-member>\n"
+                + "        <member>10.10.1.11</member>\n"
+                + "        <member>10.10.1.12</member>\n"
+                + "      </tcp-ip>\n"
+                + "  </join>\n"
+                + "  <failure-detector>\n"
+                + "            <icmp enabled=\"true\">\n"
+                + "                <timeout-milliseconds>42</timeout-milliseconds>\n"
+                + "                <fail-fast-on-startup>true</fail-fast-on-startup>\n"
+                + "                <interval-milliseconds>4200</interval-milliseconds>\n"
+                + "                <max-attempts>42</max-attempts>\n"
+                + "                <parallel-mode>true</parallel-mode>\n"
+                + "                <ttl>255</ttl>\n"
+                + "            </icmp>\n"
+                + "  </failure-detector>\n"
+                + "  <member-address-provider>\n"
+                + "    <class-name>com.hazelcast.test.Provider</class-name>\n"
+                + "  </member-address-provider>\n"
+                + "  <member-server-socket-endpoint-config name=\"member-server-socket\">\n"
+                + "    <port port-count=\"93\" auto-increment=\"false\">9191</port>\n"
+                + "    <public-address>10.20.10.10</public-address>\n"
+                + "    <reuse-address>true</reuse-address>\n"
+                + "  </member-server-socket-endpoint-config>\n"
+                + "  <endpoint-config name=\"member-server-socket-2\">\n"
+                + "  </endpoint-config>\n"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Test
+    public void testCompleteAdvancedNetworkConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <join>\n"
+                + "      <multicast enabled=\"false\"/>\n"
+                + "      <tcp-ip enabled=\"true\">\n"
+                + "        <required-member>10.10.1.10</required-member>\n"
+                + "        <member>10.10.1.11</member>\n"
+                + "        <member>10.10.1.12</member>\n"
+                + "      </tcp-ip>\n"
+                + "  </join>\n"
+                + "  <failure-detector>\n"
+                + "            <icmp enabled=\"true\">\n"
+                + "                <timeout-milliseconds>42</timeout-milliseconds>\n"
+                + "                <fail-fast-on-startup>true</fail-fast-on-startup>\n"
+                + "                <interval-milliseconds>4200</interval-milliseconds>\n"
+                + "                <max-attempts>42</max-attempts>\n"
+                + "                <parallel-mode>true</parallel-mode>\n"
+                + "                <ttl>255</ttl>\n"
+                + "            </icmp>\n"
+                + "  </failure-detector>\n"
+                + "  <member-address-provider>\n"
+                + "    <class-name>com.hazelcast.test.Provider</class-name>\n"
+                + "  </member-address-provider>\n"
+                + "  <member-server-socket-endpoint-config name=\"member-server-socket\">\n"
+                + "    <outbound-ports><ports>33000-33100</ports></outbound-ports>\n"
+                + "    <interfaces enabled=\"true\">\n"
+                + "      <interface>10.10.0.1</interface>\n"
+                + "    </interfaces>\n"
+                + "    <ssl enabled=\"true\">\n"
+                + "      <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>\n"
+                + "      <properties>\n"
+                + "        <property name=\"foo\">bar</property>\n"
+                + "      </properties>\n"
+                + "    </ssl>\n"
+                + "    <socket-interceptor enabled=\"true\">\n"
+                + "      <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>\n"
+                + "      <properties>\n"
+                + "         <property name=\"foo\">baz</property>\n"
+                + "      </properties>\n"
+                + "    </socket-interceptor>\n"
+                + "    <socket-options>\n"
+                + "      <buffer-direct>true</buffer-direct>\n"
+                + "      <tcp-no-delay>true</tcp-no-delay>\n"
+                + "      <keep-alive>true</keep-alive>\n"
+                + "      <connect-timeout-seconds>33</connect-timeout-seconds>\n"
+                + "      <send-buffer-size-kb>34</send-buffer-size-kb>\n"
+                + "      <receive-buffer-size-kb>67</receive-buffer-size-kb>\n"
+                + "      <linger-seconds>11</linger-seconds>\n"
+                + "    </socket-options>\n"
+                + "    <symmetric-encryption enabled=\"true\">\n"
+                + "      <algorithm>Algorithm</algorithm>\n"
+                + "      <salt>thesalt</salt>\n"
+                + "      <password>thepassword</password>\n"
+                + "      <iteration-count>1000</iteration-count>\n"
+                + "    </symmetric-encryption>\n"
+                + "    <port port-count=\"93\" auto-increment=\"false\">9191</port>\n"
+                + "    <public-address>10.20.10.10</public-address>\n"
+                + "    <reuse-address>true</reuse-address>\n"
+                + "  </member-server-socket-endpoint-config>\n"
+                + "  <rest-server-socket-endpoint-config name=\"REST\">\n"
+                + "    <port>8080</port>"
+                + "    <endpoint-groups>"
+                + "      <endpoint-group name=\"WAN\" enabled=\"true\"/>\n"
+                + "      <endpoint-group name=\"CLUSTER_READ\" enabled=\"true\"/>\n"
+                + "      <endpoint-group name=\"CLUSTER_WRITE\" enabled=\"false\"/>\n"
+                + "      <endpoint-group name=\"HEALTH_CHECK\" enabled=\"true\"/>\n"
+                + "    </endpoint-groups>"
+                + "  </rest-server-socket-endpoint-config>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        JoinConfig joinConfig = advancedNetworkConfig.getJoin();
+        IcmpFailureDetectorConfig fdConfig = advancedNetworkConfig.getIcmpFailureDetectorConfig();
+        MemberAddressProviderConfig providerConfig = advancedNetworkConfig.getMemberAddressProviderConfig();
+
+        assertTrue(advancedNetworkConfig.isEnabled());
+        // join config
+        assertFalse(joinConfig.getMulticastConfig().isEnabled());
+        assertTrue(joinConfig.getTcpIpConfig().isEnabled());
+        assertEquals("10.10.1.10", joinConfig.getTcpIpConfig().getRequiredMember());
+        assertContains(joinConfig.getTcpIpConfig().getMembers(), "10.10.1.11");
+        assertContains(joinConfig.getTcpIpConfig().getMembers(), "10.10.1.12");
+        // failure detector config
+        assertTrue(fdConfig.isEnabled());
+        assertTrue(fdConfig.isParallelMode());
+        assertTrue(fdConfig.isFailFastOnStartup());
+        assertEquals(42, fdConfig.getTimeoutMilliseconds());
+        assertEquals(42, fdConfig.getMaxAttempts());
+        assertEquals(4200, fdConfig.getIntervalMilliseconds());
+        assertEquals(255, fdConfig.getTtl());
+        // member address provider config
+        assertEquals("com.hazelcast.test.Provider", providerConfig.getClassName());
+
+        // endpoint config
+        ServerSocketEndpointConfig memberEndpointConfig =
+                (ServerSocketEndpointConfig) advancedNetworkConfig.getEndpointConfigs().get(EndpointQualifier.MEMBER);
+        assertEquals("member-server-socket", memberEndpointConfig.getName());
+        assertEquals(ProtocolType.MEMBER, memberEndpointConfig.getProtocolType());
+        // port
+        assertEquals(93, memberEndpointConfig.getPortCount());
+        assertEquals(9191, memberEndpointConfig.getPort());
+        assertFalse(memberEndpointConfig.isPortAutoIncrement());
+        // reuse address
+        assertTrue(memberEndpointConfig.isReuseAddress());
+        // outbound ports
+        assertEquals("33000-33100", memberEndpointConfig.getOutboundPortDefinitions().iterator().next());
+        // interfaces
+        assertTrue(memberEndpointConfig.getInterfaces().isEnabled());
+        assertEquals("10.10.0.1", memberEndpointConfig.getInterfaces().getInterfaces().iterator().next());
+        // ssl
+        assertTrue(memberEndpointConfig.getSSLConfig().isEnabled());
+        assertEquals("com.hazelcast.examples.MySSLContextFactory", memberEndpointConfig.getSSLConfig().getFactoryClassName());
+        assertEquals("bar", memberEndpointConfig.getSSLConfig().getProperty("foo"));
+        // socket interceptor
+        assertTrue(memberEndpointConfig.getSocketInterceptorConfig().isEnabled());
+        assertEquals("com.hazelcast.examples.MySocketInterceptor",
+                memberEndpointConfig.getSocketInterceptorConfig().getClassName());
+        assertEquals("baz", memberEndpointConfig.getSocketInterceptorConfig().getProperty("foo"));
+        // symmetric encryption config
+        assertTrue(memberEndpointConfig.getSymmetricEncryptionConfig().isEnabled());
+        assertEquals("Algorithm", memberEndpointConfig.getSymmetricEncryptionConfig().getAlgorithm());
+        assertEquals("thesalt", memberEndpointConfig.getSymmetricEncryptionConfig().getSalt());
+        assertEquals("thepassword", memberEndpointConfig.getSymmetricEncryptionConfig().getPassword());
+        assertEquals(1000, memberEndpointConfig.getSymmetricEncryptionConfig().getIterationCount());
+        // socket options
+        assertTrue(memberEndpointConfig.isSocketBufferDirect());
+        assertTrue(memberEndpointConfig.isSocketTcpNoDelay());
+        assertTrue(memberEndpointConfig.isSocketKeepAlive());
+        assertEquals(33, memberEndpointConfig.getSocketConnectTimeoutSeconds());
+        assertEquals(34, memberEndpointConfig.getSocketSendBufferSizeKb());
+        assertEquals(67, memberEndpointConfig.getSocketRcvBufferSizeKb());
+        assertEquals(11, memberEndpointConfig.getSocketLingerSeconds());
+
+        RestServerEndpointConfig restServerEndpointConfig = advancedNetworkConfig.getRestEndpointConfig();
+        assertEquals(8080, restServerEndpointConfig.getPort());
+        assertContainsAll(restServerEndpointConfig.getEnabledGroups(),
+                Arrays.asList(CLUSTER_READ, WAN, HEALTH_CHECK));
     }
 }

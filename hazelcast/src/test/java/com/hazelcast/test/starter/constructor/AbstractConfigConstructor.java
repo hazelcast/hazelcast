@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.ProxyPolicy.RETURN_SAME;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.generateProxyForInterface;
+import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.shouldProxy;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
@@ -85,12 +86,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                 } else if (Map.class.isAssignableFrom(returnType) || ConcurrentMap.class.isAssignableFrom(returnType)) {
                     Map map = (Map) method.invoke(thisConfigObject, null);
                     Map otherMap = ConcurrentMap.class.isAssignableFrom(returnType) ? new ConcurrentHashMap() : new HashMap();
-                    for (Object entry : map.entrySet()) {
-                        String key = (String) ((Map.Entry) entry).getKey();
-                        Object value = ((Map.Entry) entry).getValue();
-                        Object otherMapItem = cloneConfig(value, classloader);
-                        otherMap.put(key, otherMapItem);
-                    }
+                    copyMap(map, otherMap, classloader);
                     updateConfig(setter, otherConfigObject, otherMap);
                 } else if (returnType.equals(List.class)) {
                     List list = (List) method.invoke(thisConfigObject, null);
@@ -123,6 +119,17 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
             }
         }
         return otherConfigObject;
+    }
+
+    private static void copyMap(Map source, Map destination, ClassLoader classLoader) throws Exception {
+        for (Object entry : source.entrySet()) {
+            // keys are either Strings or, since 3.12, EndpointQualifiers
+            Object key = ((Map.Entry) entry).getKey();
+            Object mappedKey = proxyObjectForStarter(classLoader, key);
+            Object value = ((Map.Entry) entry).getValue();
+            Object otherMapItem = cloneConfig(value, classLoader);
+            destination.put(mappedKey, otherMapItem);
+        }
     }
 
     private static boolean isGetter(Method method) {

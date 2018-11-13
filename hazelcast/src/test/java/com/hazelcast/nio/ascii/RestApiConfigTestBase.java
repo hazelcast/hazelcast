@@ -99,7 +99,9 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
         RestApiConfig restApiConfig = new RestApiConfig();
         restApiConfig.setEnabled(true);
         restApiConfig.enableAllGroups().disableGroups(group);
-        return new Config().setRestApiConfig(restApiConfig);
+        Config c = new Config();
+        c.getNetworkConfig().setRestApiConfig(restApiConfig);
+        return c;
     }
 
     /**
@@ -109,7 +111,9 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
         RestApiConfig restApiConfig = new RestApiConfig();
         restApiConfig.setEnabled(true);
         restApiConfig.disableAllGroups().enableGroups(group);
-        return new Config().setRestApiConfig(restApiConfig);
+        Config c = new Config();
+        c.getNetworkConfig().setRestApiConfig(restApiConfig);
+        return c;
     }
 
     protected static void assertEmptyString(String stringToCheck) {

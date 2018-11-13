@@ -23,6 +23,7 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionLifecycleListener;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 
@@ -45,13 +46,17 @@ import static com.hazelcast.nio.ConnectionType.NONE;
  * @see Networking
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class TcpIpConnection implements Connection {
+public class TcpIpConnection
+        implements Connection {
 
     private final Channel channel;
 
-    private final TcpIpConnectionManager connectionManager;
+    private final TcpIpEndpointManager endpointManager;
 
     private final AtomicBoolean alive = new AtomicBoolean(true);
+
+    // indicate whether connection bind exchange is in progress/done (true) or not yet initiated (when false)
+    private final AtomicBoolean binding = new AtomicBoolean();
 
     private final ILogger logger;
 
@@ -65,16 +70,20 @@ public class TcpIpConnection implements Connection {
 
     private volatile ConnectionType type = NONE;
 
+    private volatile ConnectionLifecycleListener lifecycleListener;
+
     private volatile Throwable closeCause;
 
     private volatile String closeReason;
 
-    public TcpIpConnection(TcpIpConnectionManager connectionManager,
+    public TcpIpConnection(TcpIpEndpointManager endpointManager,
+                           ConnectionLifecycleListener lifecycleListener,
                            int connectionId,
                            Channel channel) {
         this.connectionId = connectionId;
-        this.connectionManager = connectionManager;
-        this.ioService = connectionManager.getIoService();
+        this.endpointManager = endpointManager;
+        this.lifecycleListener = lifecycleListener;
+        this.ioService = endpointManager.getNetworkingService().getIoService();
         this.logger = ioService.getLoggingService().getLogger(TcpIpConnection.class);
         this.channel = channel;
         channel.attributeMap().put(TcpIpConnection.class, this);
@@ -108,8 +117,8 @@ public class TcpIpConnection implements Connection {
         return t == null ? -1 : t.ordinal();
     }
 
-    public TcpIpConnectionManager getConnectionManager() {
-        return connectionManager;
+    public TcpIpEndpointManager getEndpointManager() {
+        return endpointManager;
     }
 
     @Override
@@ -212,11 +221,15 @@ public class TcpIpConnection implements Connection {
             logger.warning(e);
         }
 
-        connectionManager.onConnectionClose(this);
+        lifecycleListener.onConnectionClose(this, null, false);
         ioService.onDisconnect(endPoint, cause);
         if (cause != null && errorHandler != null) {
             errorHandler.onError(cause);
         }
+    }
+
+    public boolean setBinding() {
+        return binding.compareAndSet(false, true);
     }
 
     private void logClose() {
@@ -278,6 +291,7 @@ public class TcpIpConnection implements Connection {
     public String toString() {
         return "Connection[id=" + connectionId
                 + ", " + channel.localSocketAddress() + "->" + channel.remoteSocketAddress()
+                + ", qualifier=" + endpointManager.getEndpointQualifier()
                 + ", endpoint=" + endPoint
                 + ", alive=" + alive
                 + ", type=" + type

@@ -43,6 +43,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 public final class MulticastService implements Runnable {
@@ -85,7 +86,7 @@ public final class MulticastService implements Runnable {
         this.sendOutput = node.getSerializationService().createObjectDataOutput(SEND_OUTPUT_SIZE);
 
         Config config = node.getConfig();
-        MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
+        MulticastConfig multicastConfig = getActiveMemberNetworkConfig(config).getJoin().getMulticastConfig();
         this.datagramPacketSend = new DatagramPacket(new byte[0], 0, InetAddress.getByName(multicastConfig.getMulticastGroup()),
                 multicastConfig.getMulticastPort());
         this.datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
@@ -96,7 +97,7 @@ public final class MulticastService implements Runnable {
     }
 
     public static MulticastService createMulticastService(Address bindAddress, Node node, Config config, ILogger logger) {
-        JoinConfig join = config.getNetworkConfig().getJoin();
+        JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         MulticastConfig multicastConfig = join.getMulticastConfig();
         if (!multicastConfig.isEnabled()) {
             return null;

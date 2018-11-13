@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
@@ -61,41 +62,41 @@ public class NodeIOServiceTest extends HazelcastTestSupport {
     @Test
     public void testGetOutboundPorts_zeroTakesPrecedenceInRange() {
         networkConfig.addOutboundPortDefinition("0-100");
-        Collection<Integer> outboundPorts = ioService.getOutboundPorts();
+        Collection<Integer> outboundPorts = ioService.getOutboundPorts(MEMBER);
         assertEquals(0, outboundPorts.size());
     }
 
     @Test
     public void testGetOutboundPorts_zeroTakesPrecedenceInCSV() {
         networkConfig.addOutboundPortDefinition("5701, 0, 63");
-        Collection<Integer> outboundPorts = ioService.getOutboundPorts();
+        Collection<Integer> outboundPorts = ioService.getOutboundPorts(MEMBER);
         assertEquals(0, outboundPorts.size());
     }
 
     @Test
     public void testGetOutboundPorts_acceptsZero() {
         networkConfig.addOutboundPortDefinition("0");
-        Collection<Integer> outboundPorts = ioService.getOutboundPorts();
+        Collection<Integer> outboundPorts = ioService.getOutboundPorts(MEMBER);
         assertEquals(0, outboundPorts.size());
     }
 
     @Test
     public void testGetOutboundPorts_acceptsWildcard() {
         networkConfig.addOutboundPortDefinition("*");
-        Collection<Integer> outboundPorts = ioService.getOutboundPorts();
+        Collection<Integer> outboundPorts = ioService.getOutboundPorts(MEMBER);
         assertEquals(0, outboundPorts.size());
     }
 
     @Test
     public void testGetOutboundPorts_returnsEmptyCollectionByDefault() {
-        Collection<Integer> outboundPorts = ioService.getOutboundPorts();
+        Collection<Integer> outboundPorts = ioService.getOutboundPorts(MEMBER);
         assertEquals(0, outboundPorts.size());
     }
 
     @Test
     public void testGetOutboundPorts_acceptsRange() {
         networkConfig.addOutboundPortDefinition("29000-29001");
-        Collection<Integer> outboundPorts = ioService.getOutboundPorts();
+        Collection<Integer> outboundPorts = ioService.getOutboundPorts(MEMBER);
 
         assertThat(outboundPorts, hasSize(2));
         assertThat(outboundPorts, containsInAnyOrder(29000, 29001));
@@ -104,7 +105,7 @@ public class NodeIOServiceTest extends HazelcastTestSupport {
     @Test
     public void testGetOutboundPorts_acceptsSpaceAfterComma() {
         networkConfig.addOutboundPortDefinition("29000, 29001");
-        Collection<Integer> outboundPorts = ioService.getOutboundPorts();
+        Collection<Integer> outboundPorts = ioService.getOutboundPorts(MEMBER);
 
         assertThat(outboundPorts, hasSize(2));
         assertThat(outboundPorts, containsInAnyOrder(29000, 29001));
@@ -113,7 +114,7 @@ public class NodeIOServiceTest extends HazelcastTestSupport {
     @Test
     public void testGetOutboundPorts_acceptsSpaceAsASeparator() {
         networkConfig.addOutboundPortDefinition("29000 29001");
-        Collection<Integer> outboundPorts = ioService.getOutboundPorts();
+        Collection<Integer> outboundPorts = ioService.getOutboundPorts(MEMBER);
 
         assertThat(outboundPorts, hasSize(2));
         assertThat(outboundPorts, containsInAnyOrder(29000, 29001));
@@ -122,7 +123,7 @@ public class NodeIOServiceTest extends HazelcastTestSupport {
     @Test
     public void testGetOutboundPorts_acceptsSemicolonAsASeparator() {
         networkConfig.addOutboundPortDefinition("29000;29001");
-        Collection<Integer> outboundPorts = ioService.getOutboundPorts();
+        Collection<Integer> outboundPorts = ioService.getOutboundPorts(MEMBER);
 
         assertThat(outboundPorts, hasSize(2));
         assertThat(outboundPorts, containsInAnyOrder(29000, 29001));

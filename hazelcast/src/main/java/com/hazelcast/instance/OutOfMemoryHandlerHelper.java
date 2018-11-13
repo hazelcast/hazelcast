@@ -43,9 +43,9 @@ public final class OutOfMemoryHandlerHelper {
     }
 
     private static void closeSockets(HazelcastInstanceImpl factory) {
-        if (factory.node.connectionManager != null) {
+        if (factory.node.networkingService != null) {
             try {
-                factory.node.connectionManager.shutdown();
+                factory.node.networkingService.shutdown();
             } catch (Throwable ignored) {
                 ignore(ignored);
             }

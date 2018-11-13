@@ -31,7 +31,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,8 +66,10 @@ public class RestTest {
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
-    private HazelcastInstance instance;
-    private HTTPCommunicator communicator;
+    protected HazelcastInstance instance;
+    protected HazelcastInstance remoteInstance;
+    protected HTTPCommunicator communicator;
+    protected Config config = new Config();
 
     @BeforeClass
     public static void beforeClass() {
@@ -78,7 +79,7 @@ public class RestTest {
     private Config setup() {
         Config config = new Config();
         RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
-        config.setRestApiConfig(restApiConfig);
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
         instance = factory.newHazelcastInstance(config);
         communicator = new HTTPCommunicator(instance);
         return config;

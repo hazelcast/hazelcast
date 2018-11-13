@@ -45,6 +45,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.util.AddressUtil.AddressHolder;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
@@ -73,7 +75,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private int getConnTimeoutSeconds() {
-        return config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
+        return getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
     }
 
     @Override
@@ -85,7 +87,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (!clusterService.isJoined()) {
                 joinViaPossibleMembers();
             }
-        } else if (config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember() != null) {
+        } else if (getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig().getRequiredMember() != null) {
             Address requiredMember = getRequiredMemberAddress();
             long maxJoinMillis = getMaxJoinMillis();
             joinViaTargetMember(requiredMember, maxJoinMillis);
@@ -110,7 +112,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             Connection connection;
             while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
 
-                connection = node.connectionManager.getOrConnect(targetAddress);
+                connection = node.getEndpointManager(MEMBER).getOrConnect(targetAddress);
                 if (connection == null) {
                     //noinspection BusyWait
                     Thread.sleep(JOIN_RETRY_WAIT_TIME);
@@ -200,6 +202,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (isBlacklisted(address)) {
                 continue;
             }
+
             Future<Boolean> future = operationService
                     .createInvocationBuilder(SERVICE_NAME, new JoinMastershipClaimOp(), address)
                     .setTryCount(1).invoke();
@@ -227,7 +230,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (isBlacklisted(address)) {
                 continue;
             }
-            if (node.connectionManager.getConnection(address) != null) {
+            if (node.getEndpointManager(MEMBER).getConnection(address) != null) {
                 if (thisHashCode > address.hashCode()) {
                     return false;
                 }
@@ -281,14 +284,14 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private Address getRequiredMemberAddress() {
-        TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        TcpIpConfig tcpIpConfig = getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig();
         String host = tcpIpConfig.getRequiredMember();
         try {
-            AddressHolder addressHolder = AddressUtil.getAddressHolder(host, config.getNetworkConfig().getPort());
+            AddressHolder addressHolder = AddressUtil.getAddressHolder(host, getActiveMemberNetworkConfig(config).getPort());
             if (AddressUtil.isIpAddress(addressHolder.getAddress())) {
                 return new Address(addressHolder.getAddress(), addressHolder.getPort());
             }
-            InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
+            InterfacesConfig interfaces = getActiveMemberNetworkConfig(config).getInterfaces();
             if (interfaces.isEnabled()) {
                 InetAddress[] inetAddresses = InetAddress.getAllByName(addressHolder.getAddress());
                 if (inetAddresses.length > 1) {
@@ -313,7 +316,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     protected Collection<Address> getPossibleAddresses() {
         final Collection<String> possibleMembers = getMembers();
         final Set<Address> possibleAddresses = new HashSet<Address>();
-        final NetworkConfig networkConfig = config.getNetworkConfig();
+        final NetworkConfig networkConfig = getActiveMemberNetworkConfig(config);
         for (String possibleMember : possibleMembers) {
             AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
             try {
@@ -399,7 +402,10 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     public static Collection<String> getConfigurationMembers(Config config) {
-        final TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        return getConfigurationMembers(getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig());
+    }
+
+    public static Collection<String> getConfigurationMembers(TcpIpConfig tcpIpConfig) {
         final Collection<String> configMembers = tcpIpConfig.getMembers();
         final Set<String> possibleMembers = new HashSet<String>();
         for (String member : configMembers) {

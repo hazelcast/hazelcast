@@ -31,6 +31,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.util.function.Consumer;
+import com.hazelcast.nio.EndpointManager;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -148,6 +149,11 @@ public class ClientConnection implements Connection {
     @Override
     public int getPort() {
         return channel.socket().getPort();
+    }
+
+    @Override
+    public EndpointManager getEndpointManager() {
+        throw new UnsupportedOperationException();
     }
 
     public ClientConnectionManager getConnectionManager() {

@@ -16,13 +16,15 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -40,13 +42,16 @@ import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.WanSyncState;
+import com.hazelcast.nio.Address;
 
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
@@ -55,6 +60,7 @@ import static com.hazelcast.util.JsonUtil.getString;
 public class MemberStateImpl implements MemberState {
 
     private String address;
+    private Map<EndpointQualifier, Address> endpoints = new HashMap<EndpointQualifier, Address>();
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
     private Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
     private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
@@ -152,6 +158,14 @@ public class MemberStateImpl implements MemberState {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public Map<EndpointQualifier, Address> getEndpoints() {
+        return endpoints;
+    }
+
+    public void setEndpoints(Map<EndpointQualifier, Address> addressMap) {
+        this.endpoints = addressMap;
     }
 
     public void putLocalMapStats(String name, LocalMapStats localMapStats) {
@@ -286,6 +300,25 @@ public class MemberStateImpl implements MemberState {
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("address", address);
+
+        final JsonArray endpoints = new JsonArray();
+        for (Entry<EndpointQualifier, Address> entry : this.endpoints.entrySet()) {
+            JsonObject address = new JsonObject();
+            address.set("host", entry.getValue().getHost());
+            address.set("port", entry.getValue().getPort());
+
+            JsonObject endpoint = new JsonObject();
+            endpoint.set("protocol", entry.getKey().getType().name());
+            endpoint.set("address", address);
+
+            if (entry.getKey().getIdentifier() != null) {
+                endpoint.set("id", entry.getKey().getIdentifier());
+            }
+
+            endpoints.add(endpoint);
+        }
+        root.add("endpoints", endpoints);
+
         serializeMap(root, "mapStats", mapStats);
         serializeMap(root, "multiMapStats", multiMapStats);
         serializeMap(root, "replicatedMapStats", replicatedMapStats);
@@ -338,6 +371,28 @@ public class MemberStateImpl implements MemberState {
     @SuppressWarnings("checkstyle:methodlength")
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
+
+        JsonArray endpoints = getArray(json, "endpoints");
+        for (JsonValue obj : endpoints) {
+            JsonObject endpoint = obj.asObject();
+            String id = endpoint.getString("id", null);
+            ProtocolType type = ProtocolType.valueOf(endpoint.getString("protocol", "MEMBER"));
+
+            JsonValue addr = endpoint.get("address");
+            String host = addr.asObject().getString("host", "");
+            int port = addr.asObject().getInt("port", 0);
+            EndpointQualifier qualifier = EndpointQualifier.resolve(type, id);
+            Address address = null;
+            try {
+                address = new Address(host, port);
+            } catch (UnknownHostException e) {
+                //ignore
+                ignore(e);
+            }
+
+            this.endpoints.put(qualifier, address);
+        }
+
         for (JsonObject.Member next : getObject(json, "mapStats")) {
             LocalMapStatsImpl stats = new LocalMapStatsImpl();
             stats.fromJson(next.getValue().asObject());

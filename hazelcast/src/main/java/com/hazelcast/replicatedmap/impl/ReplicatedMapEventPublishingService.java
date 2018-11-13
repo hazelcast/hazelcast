@@ -55,7 +55,8 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
 /**
  * Dispatches published events on replicated map to corresponding listeners.
  */
-public class ReplicatedMapEventPublishingService implements EventPublishingService {
+public class ReplicatedMapEventPublishingService
+        implements EventPublishingService {
 
     private final HashMap<String, Boolean> statisticsMap = new HashMap<String, Boolean>();
 
@@ -161,7 +162,9 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
     private Member getMember(EventData eventData) {
         Member member = replicatedMapService.getNodeEngine().getClusterService().getMember(eventData.getCaller());
         if (member == null) {
-            member = new MemberImpl(eventData.getCaller(), nodeEngine.getVersion(), false);
+            member = new MemberImpl.Builder(eventData.getCaller())
+                    .version(nodeEngine.getVersion())
+                    .build();
         }
         return member;
     }

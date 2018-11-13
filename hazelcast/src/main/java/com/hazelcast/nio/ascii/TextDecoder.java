@@ -29,6 +29,7 @@ import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.memcache.ErrorCommand;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
+
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.logging.ILogger;
@@ -61,7 +62,7 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
 
     public TextDecoder(TcpIpConnection connection, TextEncoder encoder, TextProtocolFilter textProtocolFilter,
             TextParsers textParsers) {
-        IOService ioService = connection.getConnectionManager().getIoService();
+        IOService ioService = connection.getEndpointManager().getNetworkingService().getIoService();
         this.textCommandService = ioService.getTextCommandService();
         this.encoder = encoder;
         this.connection = connection;

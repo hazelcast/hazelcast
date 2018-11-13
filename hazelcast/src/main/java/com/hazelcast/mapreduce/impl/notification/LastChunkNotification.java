@@ -24,7 +24,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 
 /**
  * This notification is used to notify the reducer that this chunk is the last chunk of the
@@ -67,11 +68,7 @@ public class LastChunkNotification<KeyOut, Value>
     public void writeData(ObjectDataOutput out)
             throws IOException {
         super.writeData(out);
-        out.writeInt(chunk.size());
-        for (Map.Entry<KeyOut, Value> entry : chunk.entrySet()) {
-            out.writeObject(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+        writeMap(chunk, out);
         out.writeInt(partitionId);
         out.writeObject(sender);
     }
@@ -80,13 +77,7 @@ public class LastChunkNotification<KeyOut, Value>
     public void readData(ObjectDataInput in)
             throws IOException {
         super.readData(in);
-        int size = in.readInt();
-        chunk = createHashMap(size);
-        for (int i = 0; i < size; i++) {
-            KeyOut key = in.readObject();
-            Value value = in.readObject();
-            chunk.put(key, value);
-        }
+        chunk = readMap(in);
         partitionId = in.readInt();
         sender = in.readObject();
     }

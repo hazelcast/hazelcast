@@ -28,18 +28,12 @@ import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.TimeUnit;
 
-abstract class AbstractAddressPicker implements AddressPicker {
+final class ServerSocketHelper {
+
     private static final int SOCKET_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(1);
     private static final int SOCKET_BACKLOG_LENGTH = 100;
 
-    final ILogger logger;
-    private final NetworkConfig networkConfig;
-
-    private ServerSocketChannel serverSocketChannel;
-
-    AbstractAddressPicker(NetworkConfig networkConfig, ILogger logger) {
-        this.networkConfig = networkConfig;
-        this.logger = logger;
+    private ServerSocketHelper() {
     }
 
     /**
@@ -53,50 +47,55 @@ abstract class AbstractAddressPicker implements AddressPicker {
      * When {@code bindAny} is {@code false}, {@code ServerSocket} will be bound to specific {@code bindAddress}.
      * Otherwise, it will be bound to any local address ({@code 0.0.0.0}).
      *
-     * @param bindAddress InetAddress to bind created {@code ServerSocket}
-     * @param initialPort Initial port number to attempt to bind
-     * @param bindAny     Flag to decide whether to bind given {@code bindAddress} or any local address
+     * @param logger                logger instance
+     * @param qualifier             the {@link EndpointQualifier} that supplies network configuration for the
+     *                              server socket
+     * @param bindAddress           InetAddress to bind created {@code ServerSocket}
+     * @param port                  initial port number to attempt to bind
+     * @param portCount             count of subsequent ports to attempt to bind to if initial port is already bound
+     * @param isPortAutoIncrement   when {@code true} attempt to bind to {@code portCount} subsequent ports
+     *                              after {@code port} is found already bound
+     * @param isReuseAddress        sets reuse address socket option
+     * @param bindAny               when {@code true} bind any local address otherwise bind given {@code bindAddress}
      * @return actual port number that created {@code ServerSocketChannel} is bound to
      */
-    final int createServerSocketChannel(InetAddress bindAddress, int initialPort, boolean bindAny) {
-        int portCount = networkConfig.getPortCount();
-        boolean portAutoIncrement = networkConfig.isPortAutoIncrement();
-        logger.finest("inet reuseAddress:" + networkConfig.isReuseAddress());
+    static ServerSocketChannel createServerSocketChannel(ILogger logger, EndpointQualifier qualifier, InetAddress bindAddress,
+                                                         int port, int portCount, boolean isPortAutoIncrement,
+                                                         boolean isReuseAddress, boolean bindAny) {
+        logger.finest("inet reuseAddress:" + isReuseAddress);
 
-        if (initialPort == 0) {
-            initialPort = networkConfig.getPort() ;
-        }
-        if (initialPort == 0) {
+        if (port == 0) {
             logger.info("No explicit port is given, system will pick up an ephemeral port.");
         }
-        int portTrialCount = initialPort > 0 && portAutoIncrement ? portCount : 1;
+        int portTrialCount = port > 0 && isPortAutoIncrement ? portCount : 1;
 
         try {
-            return tryOpenServerSocketChannel(bindAddress, initialPort, portTrialCount, bindAny);
+            return tryOpenServerSocketChannel(qualifier, bindAddress, port, isReuseAddress, portTrialCount, bindAny, logger);
         } catch (IOException e) {
             String message = "Cannot bind to a given address: " + bindAddress + ". Hazelcast cannot start. ";
-            if (networkConfig.isPortAutoIncrement()) {
-                message += "Config-port: " + networkConfig.getPort() + ", latest-port: " + (initialPort + portTrialCount - 1);
+            if (isPortAutoIncrement) {
+                message += "Config-port: " + port + ", latest-port: " + (port + portTrialCount - 1);
             } else {
-                message += "Port [" + initialPort + "] is already in use and auto-increment is disabled.";
+                message += "Port [" + port + "] is already in use and auto-increment is disabled.";
             }
             throw new HazelcastException(message, e);
         }
     }
 
-    private int tryOpenServerSocketChannel(InetAddress bindAddress, int initialPort, int portTrialCount, boolean bindAny)
+    static ServerSocketChannel tryOpenServerSocketChannel(EndpointQualifier qualifier, InetAddress bindAddress,
+                                                          int initialPort, boolean isReuseAddress,  int portTrialCount,
+                                                          boolean bindAny, ILogger logger)
             throws IOException {
         assert portTrialCount > 0 : "Port trial count must be positive: " + portTrialCount;
 
         IOException error = null;
         for (int i = 0; i < portTrialCount; i++) {
             int actualPort = initialPort + i;
-            boolean reuseAddress = networkConfig.isReuseAddress();
             InetSocketAddress socketBindAddress = bindAny
                     ? new InetSocketAddress(actualPort)
                     : new InetSocketAddress(bindAddress, actualPort);
             try {
-                return openServerSocketChannel(socketBindAddress, reuseAddress);
+                return openServerSocketChannel(qualifier, socketBindAddress, isReuseAddress, logger);
             } catch (IOException e) {
                 error = e;
             }
@@ -104,10 +103,12 @@ abstract class AbstractAddressPicker implements AddressPicker {
         throw error;
     }
 
-    private int openServerSocketChannel(InetSocketAddress socketBindAddress, boolean reuseAddress)
+    static ServerSocketChannel openServerSocketChannel(EndpointQualifier qualifier, InetSocketAddress socketBindAddress,
+                                                        boolean reuseAddress, ILogger logger)
             throws IOException {
 
         ServerSocket serverSocket = null;
+        ServerSocketChannel serverSocketChannel = null;
         try {
             /*
              * Instead of reusing the ServerSocket/ServerSocketChannel, we are going to close and replace them on
@@ -126,7 +127,7 @@ abstract class AbstractAddressPicker implements AddressPicker {
             logger.fine("Bind successful to inet socket address: " + serverSocket.getLocalSocketAddress());
 
             serverSocketChannel.configureBlocking(false);
-            return serverSocket.getLocalPort();
+            return serverSocketChannel;
         } catch (IOException e) {
             IOUtil.close(serverSocket);
             IOUtil.closeResource(serverSocketChannel);
@@ -134,8 +135,5 @@ abstract class AbstractAddressPicker implements AddressPicker {
         }
     }
 
-    @Override
-    public final ServerSocketChannel getServerSocketChannel() {
-        return serverSocketChannel;
-    }
+
 }

@@ -29,6 +29,8 @@ import com.hazelcast.quorum.PingAware;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+
 /**
  * Base class for quorum functions which may use ICMP failure detector information to determine
  * presence of quorum.
@@ -40,7 +42,7 @@ public abstract class AbstractPingAwareQuorumFunction implements PingAware, Haze
     @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         Config config = hazelcastInstance.getConfig();
-        IcmpFailureDetectorConfig icmpFailureDetectorConfig = config.getNetworkConfig().getIcmpFailureDetectorConfig();
+        IcmpFailureDetectorConfig icmpFailureDetectorConfig = getActiveMemberNetworkConfig(config).getIcmpFailureDetectorConfig();
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
         boolean icmpEnabled = icmpFailureDetectorConfig == null
                 ? hazelcastProperties.getBoolean(GroupProperty.ICMP_ENABLED)

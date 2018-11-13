@@ -218,7 +218,10 @@ public class ClusterFailureDetectorTest {
 
     private static Member newMember(int port) {
         MemberVersion memberVersion = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
-        return new MemberImpl(newAddress(port), memberVersion, false, newUnsecureUuidString());
+        return new MemberImpl.Builder(newAddress(port))
+                .version(memberVersion)
+                .uuid(newUnsecureUuidString())
+                .build();
     }
 
     private static Address newAddress(int port) {

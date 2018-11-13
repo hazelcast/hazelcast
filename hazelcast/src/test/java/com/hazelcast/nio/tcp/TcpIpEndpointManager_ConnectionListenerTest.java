@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.test.AssertTask;
@@ -25,26 +26,28 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class TcpIpConnectionManager_ConnectionListenerTest extends TcpIpConnection_AbstractTest {
+public class TcpIpEndpointManager_ConnectionListenerTest
+        extends TcpIpConnection_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void addConnectionListener_whenNull() {
-        connManagerA.addConnectionListener(null);
+        networkingServiceA.getEndpointManager(MEMBER).addConnectionListener(null);
     }
 
     @Test
-    public void whenConnectionAdded() throws Exception {
-        startAllConnectionManagers();
+    public void whenConnectionAdded() {
+        startAllNetworkingServices();
 
         final ConnectionListener listener = mock(ConnectionListener.class);
-        connManagerA.addConnectionListener(listener);
+        networkingServiceA.getEndpointManager(MEMBER).addConnectionListener(listener);
 
-        final Connection c = connect(connManagerA, addressB);
+        final Connection c = connect(networkingServiceA, addressB);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -55,14 +58,14 @@ public class TcpIpConnectionManager_ConnectionListenerTest extends TcpIpConnecti
     }
 
     @Test
-    public void whenConnectionDestroyed() throws Exception {
-        startAllConnectionManagers();
+    public void whenConnectionDestroyed() {
+        startAllNetworkingServices();
 
 
         final ConnectionListener listener = mock(ConnectionListener.class);
-        connManagerA.addConnectionListener(listener);
+        networkingServiceA.getEndpointManager(MEMBER).addConnectionListener(listener);
 
-        final Connection c = connect(connManagerA, addressB);
+        final Connection c = connect(networkingServiceA, addressB);
         c.close(null, null);
 
         assertTrueEventually(new AssertTask() {
@@ -75,13 +78,16 @@ public class TcpIpConnectionManager_ConnectionListenerTest extends TcpIpConnecti
 
     @Test
     public void whenConnectionManagerShutdown_thenListenersRemoved() {
-        startAllConnectionManagers();
+        startAllNetworkingServices();
 
         ConnectionListener listener = mock(ConnectionListener.class);
-        connManagerA.addConnectionListener(listener);
+        networkingServiceA.getEndpointManager(MEMBER).addConnectionListener(listener);
 
-        connManagerA.shutdown();
+        networkingServiceA.shutdown();
 
-        assertEquals(0, connManagerA.connectionListeners.size());
+        final MemberViewUnifiedEndpointManager endpointManager = (MemberViewUnifiedEndpointManager) networkingServiceA
+                .getEndpointManager(EndpointQualifier.MEMBER);
+
+        assertEquals(0, endpointManager.getConnectionListenersCount());
     }
 }

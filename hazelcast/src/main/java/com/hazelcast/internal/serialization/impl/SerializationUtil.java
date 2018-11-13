@@ -30,15 +30,20 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public final class SerializationUtil {
 
@@ -163,7 +168,7 @@ public final class SerializationUtil {
     /**
      * Read a list written by {@link #writeNullableList(List, ObjectDataOutput)}
      *
-     * It does not gurantee to use the same implementation of a list as was written
+     * It does not guarantee to use the same implementation of a list as was written
      * into the stream.
      *
      * @param in data input to read from
@@ -183,5 +188,101 @@ public final class SerializationUtil {
             }
         }
         return list;
+    }
+
+    /**
+     * Writes a map to given {@code ObjectDataOutput}.
+     *
+     * @param map           the map to serialize, can be {@code null}
+     * @param out           the output to write the map to
+     */
+    public static <K, V> void writeNullableMap(Map<K, V> map, ObjectDataOutput out) throws IOException {
+        // write true when the map is NOT null
+        out.writeBoolean(map != null);
+        if (map == null) {
+            return;
+        }
+
+        writeMap(map, out);
+    }
+
+    public static <K, V> void writeMap(@Nonnull Map<K, V> map, ObjectDataOutput out) throws IOException {
+        out.writeInt(map.size());
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            out.writeObject(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
+    }
+
+    /**
+     * Reads a map written by {@link #writeNullableMap(Map, ObjectDataOutput)}. The map itself
+     * may be {@code null}. No guarantee is provided about the type of Map returned or its suitability
+     * to be used in a thread-safe manner.
+     *
+     * @param in            the {@code ObjectDataInput} input to read from
+     * @param <K>           type of key class
+     * @param <V>           type of value class
+     * @return              a {@code Map} containing the keys & values read from the input or {@code null}
+     *                      if the original serialized map was {@code null}
+     * @throws IOException  when an error occurs while reading from the input
+     */
+    public static <K, V> Map<K, V> readNullableMap(ObjectDataInput in) throws IOException {
+        boolean isNull = !in.readBoolean();
+        if (isNull) {
+            return null;
+        }
+        return readMap(in);
+    }
+
+    @Nonnull
+    public static <K, V> Map<K, V> readMap(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+        Map<K, V> map = createHashMap(size);
+        for (int i = 0; i < size; i++) {
+            K key = in.readObject();
+            V value = in.readObject();
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    /**
+     * Writes a collection to an {@link ObjectDataOutput}. The collection's size is written
+     * to the data output, then each object in the collection is serialized.
+     *
+     * @param items collection of items to be serialized
+     * @param out   data output to write to
+     * @param <T>   type of items
+     * @throws NullPointerException if {@code items} or {@code out} is {@code null}
+     * @throws IOException
+     */
+    public static <T> void writeCollection(Collection<T> items, ObjectDataOutput out) throws IOException {
+        out.writeInt(items.size());
+        for (T item : items) {
+            out.writeObject(item);
+        }
+    }
+
+    /**
+     * Reads a collection from the given {@link ObjectDataInput}. It is expected that
+     * the next int read from the data input is the collection's size, then that
+     * many objects are read from the data input and returned as a collection.
+     *
+     * @param in    data input to read from
+     * @param <T>   type of items
+     * @return      collection of items read from data input
+     * @throws IOException
+     */
+    public static <T> Collection<T> readCollection(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+        if (size == 0) {
+            return Collections.emptyList();
+        }
+        Collection<T> collection = new ArrayList<T>(size);
+        for (int i = 0; i < size; i++) {
+            T item = in.readObject();
+            collection.add(item);
+        }
+        return collection;
     }
 }

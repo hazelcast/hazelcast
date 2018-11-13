@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.net.InetSocketAddress;
@@ -57,6 +58,8 @@ public interface MemberAddressProvider {
      */
     InetSocketAddress getBindAddress();
 
+    InetSocketAddress getBindAddress(EndpointQualifier qualifier);
+
     /**
      * What address should Hazelcast advertise to other members and clients.
      * When the port is set to {@code 0} then it will broadcast the same
@@ -65,4 +68,6 @@ public interface MemberAddressProvider {
      * @return address to advertise to others
      */
     InetSocketAddress getPublicAddress();
+
+    InetSocketAddress getPublicAddress(EndpointQualifier qualifier);
 }

@@ -120,6 +120,11 @@ public class XmlOnlyConfigBuilderTest {
     }
 
     @Test
+    public void testConfig2Xml2Config_withAdvancedNetworkConfig() {
+        testConfig2Xml2Config("hazelcast-full-advanced-network-config.xml");
+    }
+
+    @Test
     public void testXSDDefaultXML() throws Exception {
         testXSDConfigXML("hazelcast-default.xml");
     }

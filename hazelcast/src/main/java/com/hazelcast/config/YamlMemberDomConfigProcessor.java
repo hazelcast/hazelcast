@@ -842,8 +842,8 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleMemberList(Node node) {
-        JoinConfig join = config.getNetworkConfig().getJoin();
+    protected void handleMemberList(Node node, boolean advancedNetworkConfig) {
+        JoinConfig join = joinConfig(advancedNetworkConfig);
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         for (Node n : childElements(node)) {
             String value = getTextContent(n).trim();

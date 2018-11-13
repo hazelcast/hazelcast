@@ -17,10 +17,9 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.spi.annotation.PrivateApi;
-
-import java.nio.channels.ServerSocketChannel;
 
 /**
  * A context for node to provide its dependencies. Acts as a dependency factory.
@@ -38,5 +37,6 @@ public interface NodeContext {
 
     Joiner createJoiner(Node node);
 
-    ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel);
+    // TODO Consider the changes here (JET?)
+    NetworkingService createNetworkingService(Node node, ServerSocketRegistry registry);
 }

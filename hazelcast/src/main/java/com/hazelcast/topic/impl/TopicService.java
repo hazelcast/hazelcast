@@ -127,7 +127,9 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         ClusterService clusterService = nodeEngine.getClusterService();
         MemberImpl member = clusterService.getMember(topicEvent.publisherAddress);
         if (member == null) {
-            member = new MemberImpl(topicEvent.publisherAddress, nodeEngine.getVersion(), false);
+            member = new MemberImpl.Builder(topicEvent.publisherAddress)
+                    .version(nodeEngine.getVersion())
+                    .build();
         }
         Message message = new DataAwareMessage(topicEvent.name, topicEvent.data, topicEvent.publishTime, member
                 , nodeEngine.getSerializationService());

@@ -26,23 +26,24 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class TcpIpConnectionManager_BasicTest extends TcpIpConnection_AbstractTest {
+public class TcpIpEndpointManager_BasicTest
+        extends TcpIpConnection_AbstractTest {
 
     @Test
     public void start() {
-        connManagerA.start();
+        networkingServiceA.start();
 
-        assertTrue(connManagerA.isLive());
+        assertTrue(networkingServiceA.isLive());
     }
 
     @Test
     public void start_whenAlreadyStarted_thenCallIgnored() {
         // first time
-        connManagerA.start();
+        networkingServiceA.start();
 
         // second time
-        connManagerA.start();
+        networkingServiceA.start();
 
-        assertTrue(connManagerA.isLive());
+        assertTrue(networkingServiceA.isLive());
     }
 }

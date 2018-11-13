@@ -43,7 +43,7 @@ public final class StartServer {
      * @param args none
      */
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         printMemberPort(hz);
     }
 

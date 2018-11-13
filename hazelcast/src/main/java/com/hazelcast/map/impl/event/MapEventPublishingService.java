@@ -187,7 +187,9 @@ public class MapEventPublishingService implements EventPublishingService<Object,
     private Member getMember(EventData eventData) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         if (member == null) {
-            member = new MemberImpl(eventData.getCaller(), nodeEngine.getVersion(), false);
+            member = new MemberImpl.Builder(eventData.getCaller())
+                    .version(nodeEngine.getVersion())
+                    .build();
         }
         return member;
     }

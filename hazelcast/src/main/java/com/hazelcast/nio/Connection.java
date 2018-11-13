@@ -57,6 +57,8 @@ public interface Connection {
      */
     ConnectionType getType();
 
+    EndpointManager getEndpointManager();
+
     /**
      * Sets the type of the connection
      *

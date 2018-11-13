@@ -31,7 +31,8 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.EndpointManager;
+import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BlockingOperation;
@@ -198,6 +199,8 @@ public abstract class Invocation<T> implements OperationResponseHandler {
      */
     private int memberListVersion;
 
+    private EndpointManager endpointManager;
+
     /**
      * Shows maximum number of retry counts for this Invocation.
      * @see #invokeCount
@@ -213,13 +216,15 @@ public abstract class Invocation<T> implements OperationResponseHandler {
      */
     private final Runnable taskDoneCallback;
 
+
     Invocation(Context context,
                Operation op,
                Runnable taskDoneCallback,
                int tryCount,
                long tryPauseMillis,
                long callTimeoutMillis,
-               boolean deserialize) {
+               boolean deserialize,
+               EndpointManager endpointManager) {
         this.context = context;
         this.op = op;
         this.taskDoneCallback = taskDoneCallback;
@@ -227,6 +232,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);
         this.future = new InvocationFuture(this, deserialize);
+        this.endpointManager = getEndpointManager(endpointManager);
     }
 
     @Override
@@ -653,11 +659,16 @@ public abstract class Invocation<T> implements OperationResponseHandler {
     }
 
     private void doInvokeRemote() {
-        Connection connection = context.connectionManager.getOrConnect(targetAddress);
+        assert endpointManager != null : "Endpoint manager was null";
+        Connection connection = endpointManager.getOrConnect(targetAddress);
         this.connection = connection;
         if (!context.outboundOperationHandler.send(op, connection)) {
             notifyError(new RetryableIOException("Packet not sent to -> " + targetAddress + " over " + connection));
         }
+    }
+
+    private EndpointManager getEndpointManager(EndpointManager endpointManager) {
+        return endpointManager != null ? endpointManager : context.defaultEndpointManager;
     }
 
     private long getCallTimeoutMillis(long callTimeoutMillis) {
@@ -855,7 +866,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
         final ManagedExecutorService asyncExecutor;
         final ClusterClock clusterClock;
         final ClusterService clusterService;
-        final ConnectionManager connectionManager;
+        final NetworkingService networkingService;
         final InternalExecutionService executionService;
         final long defaultCallTimeoutMillis;
         final InvocationRegistry invocationRegistry;
@@ -870,12 +881,13 @@ public abstract class Invocation<T> implements OperationResponseHandler {
         final InternalSerializationService serializationService;
         final Address thisAddress;
         final OutboundOperationHandler outboundOperationHandler;
+        final EndpointManager defaultEndpointManager;
 
         @SuppressWarnings("checkstyle:parameternumber")
         Context(ManagedExecutorService asyncExecutor,
                 ClusterClock clusterClock,
                 ClusterService clusterService,
-                ConnectionManager connectionManager,
+                NetworkingService networkingService,
                 InternalExecutionService executionService,
                 long defaultCallTimeoutMillis,
                 InvocationRegistry invocationRegistry,
@@ -889,11 +901,12 @@ public abstract class Invocation<T> implements OperationResponseHandler {
                 MwCounter retryCount,
                 InternalSerializationService serializationService,
                 Address thisAddress,
-                OutboundOperationHandler outboundOperationHandler) {
+                OutboundOperationHandler outboundOperationHandler,
+                EndpointManager endpointManager) {
             this.asyncExecutor = asyncExecutor;
             this.clusterClock = clusterClock;
             this.clusterService = clusterService;
-            this.connectionManager = connectionManager;
+            this.networkingService = networkingService;
             this.executionService = executionService;
             this.defaultCallTimeoutMillis = defaultCallTimeoutMillis;
             this.invocationRegistry = invocationRegistry;
@@ -908,6 +921,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
             this.serializationService = serializationService;
             this.thisAddress = thisAddress;
             this.outboundOperationHandler = outboundOperationHandler;
+            this.defaultEndpointManager = endpointManager;
         }
     }
 }

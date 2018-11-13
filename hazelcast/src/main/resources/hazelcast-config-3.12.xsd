@@ -19,7 +19,8 @@
            xmlns="http://www.hazelcast.com/schema/config"
            targetNamespace="http://www.hazelcast.com/schema/config"
            elementFormDefault="qualified"
-           attributeFormDefault="unqualified">
+           attributeFormDefault="unqualified"
+           version="1.1">
 
     <xs:element name="hazelcast">
         <xs:complexType>
@@ -76,8 +77,7 @@
                 <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="crdt-replication" type="crdt-replication" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="pn-counter" type="pn-counter" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="rest-api" type="rest-api" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="memcache-protocol" type="memcache-protocol" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="advanced-network" type="advanced-network" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -1637,6 +1637,8 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="failure-detector" type="failure-detector" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="rest-api" type="rest-api" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="memcache-protocol" type="memcache-protocol" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="tcp-ip">
@@ -2421,6 +2423,7 @@
             <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wan-sync" type="wan-sync" minOccurs="0"/>
+            <xs:element name="endpoint-qualifier" type="xs:string" minOccurs="0"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="group-name" type="xs:string" use="required">
@@ -4105,6 +4108,48 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="advanced-network">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="failure-detector" type="failure-detector" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="member-address-provider" type="member-address-provider" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        IMPORTANT
+                        This configuration is not intended to provide addresses of other cluster members with
+                        which the hazelcast instance will form a cluster. This is an SPI for advanced use in
+                        cases where the DefaultAddressPicker does not pick suitable addresses to bind to
+                        and publish to other cluster members. For instance, this could allow easier
+                        deployment in some cases when running on Docker, AWS or other cloud environments.
+                        That said, if you are just starting with Hazelcast, you will probably want to
+                        set the member addresses by using the tcp-ip or multicast configuration
+                        or adding a discovery strategy.
+                        Member address provider allows to plug in own strategy to customize:
+                        1. What address Hazelcast will bind to
+                        2. What address Hazelcast will advertise to other members on which they can bind to
+
+                        In most environments you don't need to customize this and the default strategy will work just
+                        fine. However in some cloud environments the default strategy does not make the right choice and
+                        the member address provider delegates the process of address picking to external code.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="wan-endpoint-config" type="endpoint-config" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="wan-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="member-server-socket-endpoint-config" type="server-socket-endpoint-config"/>
+            <xs:element name="client-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="rest-server-socket-endpoint-config" type="rest-server-socket-endpoint-config" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="memcache-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0" maxOccurs="1"/>
+        </xs:choice>
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates whether the advanced network configuration is enabled or not. Default is false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="rest-api">
         <xs:annotation>
             <xs:documentation>
@@ -4148,4 +4193,210 @@
             <xs:enumeration value="DATA"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="endpoint-config">
+        <xs:all>
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation.
+                        But security policies/firewalls may require to restrict outbound ports to be used by
+                        Hazelcast-enabled applications. To fulfill this requirement, you can configure Hazelcast to use
+                        only defined outbound ports.
+                        outbound-ports has the ports attribute to allow you to define outbound ports.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
+            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
+            <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
+            <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default="">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the endpoint configuration. When using MEMBER or CLIENT protocol types,
+                    name is irrelevant as a single MEMBER and CLIENT endpoint config is allowed.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="server-socket-endpoint-config">
+        <xs:all>
+            <xs:element name="port" type="port" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The ports which Hazelcast will use to communicate between cluster members. Its default value is
+                        5701.
+                        It has the following attributes.
+                        port-count: The default value is 100, meaning that Hazelcast will try to bind 100 ports.
+                        If you set the value of port as 5701, as members join the cluster, Hazelcast tries to find
+                        ports between 5701 and 5801. You can change the port count in cases like having large
+                        instances on a single machine or you are willing to have only a few ports assigned.
+                        auto-increment: Default value is true. If port is set to 5701, Hazelcast will try to find free
+                        ports between 5701 and 5801. Normally, you will not need to change this value, but it comes
+                        in handy when needed. You may also want to choose to use only one port. In that case, you can
+                        disable the auto-increment feature of port by setting its value as false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="public-address" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Overrides the public address of a node. By default, a node selects its socket address
+                        as its public address. But behind a network address translation (NAT), two endpoints (nodes)
+                        may not be able to see/access each other. If both nodes set their public addresses to their
+                        defined addresses on NAT, then they can communicate with each other. In this case, their
+                        public addresses are not an address of a local network interface but a virtual address defined by
+                        NAT.
+                        This is optional to set and useful when you have a private cloud.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        When you shutdown a cluster member, the server socket port will be in the TIME_WAIT
+                        state for the next couple of minutes. If you start the member right after shutting it down,
+                        you may not be able to bind it to the same port because it is in the TIME_WAIT state. If you
+                        set reuse-address to true, the TIME_WAIT state is ignored and you can bind the member to the
+                        same port again. Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation.
+                        But security policies/firewalls may require to restrict outbound ports to be used by
+                        Hazelcast-enabled applications. To fulfill this requirement, you can configure Hazelcast to use
+                        only defined outbound ports.
+                        outbound-ports has the ports attribute to allow you to define outbound ports.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
+            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
+            <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
+            <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default="">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the endpoint configuration. Only relevant when defining WAN server sockets.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="socket-options">
+        <xs:all>
+            <xs:element name="buffer-direct" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="tcp-no-delay" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="keep-alive" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="connect-timeout-seconds" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="send-buffer-size-kb" type="xs:positiveInteger" minOccurs="0"/>
+            <xs:element name="receive-buffer-size-kb" type="xs:positiveInteger" minOccurs="0"/>
+            <xs:element name="linger-seconds" type="xs:nonNegativeInteger" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="rest-server-socket-endpoint-config">
+        <xs:annotation>
+            <xs:documentation>
+                Controls access to Hazelcast HTTP REST API.
+                The methods available through REST API are grouped to several REST endpoint groups, which can be specified
+                in this section.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="port" type="port" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The ports which Hazelcast will use to communicate between cluster members. Its default value is
+                        5701.
+                        It has the following attributes.
+                        port-count: The default value is 100, meaning that Hazelcast will try to bind 100 ports.
+                        If you set the value of port as 5701, as members join the cluster, Hazelcast tries to find
+                        ports between 5701 and 5801. You can change the port count in cases like having large
+                        instances on a single machine or you are willing to have only a few ports assigned.
+                        auto-increment: Default value is true. If port is set to 5701, Hazelcast will try to find free
+                        ports between 5701 and 5801. Normally, you will not need to change this value, but it comes
+                        in handy when needed. You may also want to choose to use only one port. In that case, you can
+                        disable the auto-increment feature of port by setting its value as false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="public-address" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Overrides the public address of a node. By default, a node selects its socket address
+                        as its public address. But behind a network address translation (NAT), two endpoints (nodes)
+                        may not be able to see/access each other. If both nodes set their public addresses to their
+                        defined addresses on NAT, then they can communicate with each other. In this case, their
+                        public addresses are not an address of a local network interface but a virtual address defined by
+                        NAT.
+                        This is optional to set and useful when you have a private cloud.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        When you shutdown a cluster member, the server socket port will be in the TIME_WAIT
+                        state for the next couple of minutes. If you start the member right after shutting it down,
+                        you may not be able to bind it to the same port because it is in the TIME_WAIT state. If you
+                        set reuse-address to true, the TIME_WAIT state is ignored and you can bind the member to the
+                        same port again. Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation.
+                        But security policies/firewalls may require to restrict outbound ports to be used by
+                        Hazelcast-enabled applications. To fulfill this requirement, you can configure Hazelcast to use
+                        only defined outbound ports.
+                        outbound-ports has the ports attribute to allow you to define outbound ports.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
+            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
+            <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
+            <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
+            <xs:element name="endpoint-groups" type="endpoint-groups" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Enables or disables named REST endpoint groups.
+                        If a group is not listed within the rest-api configuration, then it's 'enabledByDefault' flag is used
+                        to control the behavior of the group.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default="">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the endpoint configuration. When using MEMBER or CLIENT protocol types,
+                    name is irrelevant as a single MEMBER and CLIENT endpoint config is allowed.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="endpoint-groups">
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="endpoint-group" type="endpoint-group">
+                <xs:annotation>
+                    <xs:documentation>
+                        Enables or disables named REST endpoint group.
+                        If a group is not listed within the rest-api configuration, then it's 'enabledByDefault' flag is used
+                        to control the behavior of the group.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
 </xs:schema>

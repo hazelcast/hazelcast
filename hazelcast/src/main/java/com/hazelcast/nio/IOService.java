@@ -22,6 +22,7 @@ import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -34,6 +35,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.Map;
 
 @PrivateApi
 public interface IOService {
@@ -48,11 +50,18 @@ public interface IOService {
 
     LoggingService getLoggingService();
 
+    // returns the MEMBER server socket address
     Address getThisAddress();
+
+    /**
+      * @return all server socket addresses of this Hazelcast member, as picked by the
+      *         configured {@link com.hazelcast.instance.AddressPicker}
+      */
+    Map<EndpointQualifier, Address> getThisAddresses();
 
     void onFatalError(Exception e);
 
-    SymmetricEncryptionConfig getSymmetricEncryptionConfig();
+    SymmetricEncryptionConfig getSymmetricEncryptionConfig(EndpointQualifier endpointQualifier);
 
     /**
      * Returns initialized {@link RestApiConfig} for the node.
@@ -63,7 +72,7 @@ public interface IOService {
      */
     MemcacheProtocolConfig getMemcacheProtocolConfig();
 
-    SSLConfig getSSLConfig();
+    SSLConfig getSSLConfig(EndpointQualifier endpointQualifier);
 
     ClientEngine getClientEngine();
 
@@ -81,11 +90,11 @@ public interface IOService {
 
     boolean isSocketBindAny();
 
-    void interceptSocket(Socket socket, boolean onAccept) throws IOException;
+    void interceptSocket(EndpointQualifier endpointQualifier, Socket socket, boolean onAccept) throws IOException;
 
-    boolean isSocketInterceptorEnabled();
+    boolean isSocketInterceptorEnabled(EndpointQualifier endpointQualifier);
 
-    int getSocketConnectTimeoutSeconds();
+    int getSocketConnectTimeoutSeconds(EndpointQualifier endpointQualifier);
 
     long getConnectionMonitorInterval();
 
@@ -97,13 +106,13 @@ public interface IOService {
 
     EventService getEventService();
 
-    Collection<Integer> getOutboundPorts();
+    Collection<Integer> getOutboundPorts(EndpointQualifier endpointQualifier);
 
     InternalSerializationService getSerializationService();
 
-    MemberSocketInterceptor getMemberSocketInterceptor();
+    MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier);
 
-    InboundHandler[] createMemberInboundHandlers(TcpIpConnection connection);
+    InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
 
-    OutboundHandler[] createMemberOutboundHandlers(TcpIpConnection connection);
+    OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
 }

@@ -34,7 +34,9 @@ import java.util.Map;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.internal.cluster.Versions.V3_10;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static java.util.Collections.singletonMap;
 
 public class MemberInfo implements IdentifiedDataSerializable, Versioned {
 
@@ -97,7 +99,13 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
     }
 
     public MemberImpl toMember() {
-        return new MemberImpl(address, version, false, uuid, attributes, liteMember, memberListJoinVersion, null);
+        return new MemberImpl.Builder(singletonMap(MEMBER, address))
+                .version(version)
+                .uuid(uuid)
+                .attributes(attributes)
+                .liteMember(liteMember)
+                .memberListJoinVersion(memberListJoinVersion)
+                .build();
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.impl.VectorClock;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
@@ -104,8 +105,10 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int HEARTBEAT_COMPLAINT = 41;
     public static final int PROMOTE_LITE_MEMBER = 42;
     public static final int VECTOR_CLOCK = 43;
+    public static final int EXTENDED_BIND_MESSAGE = 44;
+    public static final int ENDPOINT_QUALIFIER = 45;
 
-    static final int LEN = VECTOR_CLOCK + 1;
+    static final int LEN = ENDPOINT_QUALIFIER + 1;
 
     @Override
     public int getFactoryId() {
@@ -331,6 +334,16 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[VECTOR_CLOCK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new VectorClock();
+            }
+        };
+        constructors[EXTENDED_BIND_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ExtendedBindMessage();
+            }
+        };
+        constructors[ENDPOINT_QUALIFIER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EndpointQualifier();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

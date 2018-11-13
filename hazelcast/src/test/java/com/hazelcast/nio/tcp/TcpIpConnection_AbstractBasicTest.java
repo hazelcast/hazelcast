@@ -48,7 +48,7 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
     public void setup() throws Exception {
         super.setup();
         packetsB = Collections.synchronizedList(new ArrayList<Packet>());
-        startAllConnectionManagers();
+        startAllNetworkingServices();
         ioServiceB.packetConsumer = new Consumer<Packet>() {
             @Override
             public void accept(Packet packet) {
@@ -59,7 +59,7 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
 
     @Test
     public void write_whenNonUrgent() {
-        TcpIpConnection c = connect(connManagerA, addressB);
+        TcpIpConnection c = connect(networkingServiceA, addressB);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
 
@@ -79,7 +79,7 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
 
     @Test
     public void write_whenUrgent() {
-        TcpIpConnection c = connect(connManagerA, addressB);
+        TcpIpConnection c = connect(networkingServiceA, addressB);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
         packet.raiseFlags(Packet.FLAG_URGENT);
@@ -100,7 +100,7 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
 
     @Test
     public void lastWriteTimeMillis_whenPacketWritten() {
-        TcpIpConnection connAB = connect(connManagerA, addressB);
+        TcpIpConnection connAB = connect(networkingServiceA, addressB);
 
         // we need to sleep some so that the lastWriteTime of the connection gets nice and old.
         // we need this so we can determine the lastWriteTime got updated
@@ -132,7 +132,7 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
 
     @Test
     public void lastWriteTime_whenNothingWritten() {
-        TcpIpConnection c = connect(connManagerA, addressB);
+        TcpIpConnection c = connect(networkingServiceA, addressB);
 
         long result1 = c.lastWriteTimeMillis();
         long result2 = c.lastWriteTimeMillis();
@@ -144,8 +144,8 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
     // on the remote side we check the if the lastReadTime is updated
     @Test
     public void lastReadTimeMillis() {
-        TcpIpConnection connAB = connect(connManagerA, addressB);
-        TcpIpConnection connBA = connect(connManagerB, addressA);
+        TcpIpConnection connAB = connect(networkingServiceA, addressB);
+        TcpIpConnection connBA = connect(networkingServiceB, addressA);
 
         // we need to sleep some so that the lastReadTime of the connection gets nice and old.
         // we need this so we can determine the lastReadTime got updated
@@ -177,7 +177,7 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
 
     @Test
     public void lastReadTime_whenNothingWritten() {
-        TcpIpConnection c = connect(connManagerA, addressB);
+        TcpIpConnection c = connect(networkingServiceA, addressB);
 
         long result1 = c.lastReadTimeMillis();
         long result2 = c.lastReadTimeMillis();
@@ -187,7 +187,7 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
 
     @Test
     public void write_whenNotAlive() {
-        TcpIpConnection c = connect(connManagerA, addressB);
+        TcpIpConnection c = connect(networkingServiceA, addressB);
         c.close(null, null);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
@@ -199,7 +199,7 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
 
     @Test
     public void getInetAddress() {
-        TcpIpConnection c = connect(connManagerA, addressB);
+        TcpIpConnection c = connect(networkingServiceA, addressB);
 
         InetAddress result = c.getInetAddress();
 
@@ -208,7 +208,7 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
 
     @Test
     public void getRemoteSocketAddress() {
-        TcpIpConnection c = connect(connManagerA, addressB);
+        TcpIpConnection c = connect(networkingServiceA, addressB);
 
         InetSocketAddress result = c.getRemoteSocketAddress();
 
@@ -217,7 +217,7 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
 
     @Test
     public void getPort() {
-        TcpIpConnection c = connect(connManagerA, addressB);
+        TcpIpConnection c = connect(networkingServiceA, addressB);
 
         int result = c.getPort();
 
@@ -226,8 +226,8 @@ public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_
 
     @Test
     public void test_equals() {
-        TcpIpConnection connAB = connect(connManagerA, addressB);
-        TcpIpConnection connAC = connect(connManagerA, addressC);
+        TcpIpConnection connAB = connect(networkingServiceA, addressB);
+        TcpIpConnection connAC = connect(networkingServiceA, addressC);
 
         assertEquals(connAB, connAB);
         assertEquals(connAC, connAC);

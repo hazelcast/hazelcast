@@ -27,8 +27,9 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.Map;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.MEMBER_BIN;
-import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class SyncStateOperation
         extends AbstractBackupAwareSchedulerOperation {
@@ -92,11 +93,7 @@ public class SyncStateOperation
             throws IOException {
         super.writeInternal(out);
         out.writeUTF(taskName);
-        out.writeInt(state.size());
-        for (Map.Entry entry : state.entrySet()) {
-            out.writeObject(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+        writeMap(state, out);
         out.writeObject(stats);
         out.writeObject(result);
     }
@@ -106,11 +103,7 @@ public class SyncStateOperation
             throws IOException {
         super.readInternal(in);
         this.taskName = in.readUTF();
-        int stateSize = in.readInt();
-        this.state = createHashMap(stateSize);
-        for (int i = 0; i < stateSize; i++) {
-            this.state.put(in.readObject(), in.readObject());
-        }
+        this.state = readMap(in);
         this.stats = in.readObject();
         this.result = in.readObject();
     }

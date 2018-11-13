@@ -17,13 +17,21 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.AggregateEndpointManager;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.EndpointManager;
+import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
+
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSupport {
 
@@ -36,9 +44,9 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             hazelcastInstance.shutdown();
         }
         if (hazelcastInstanceThrowsException != null) {
-            ConnectionManager connectionManager = hazelcastInstanceThrowsException.node.getConnectionManager();
+            NetworkingService networkingService = hazelcastInstanceThrowsException.node.getNetworkingService();
             // Failing connection manager throws error, so we should disable this behaviour to shutdown instance properly
-            ((FailingConnectionManager) connectionManager).switchToDummyMode();
+            ((FailingNetworkingService) networkingService).switchToDummyMode();
             hazelcastInstanceThrowsException.shutdown();
         }
     }
@@ -47,85 +55,113 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
         Config config = new Config();
 
         NodeContext nodeContext = new TestNodeContext();
-        NodeContext nodeContextWithThrowable = new TestNodeContext(new FailingConnectionManager());
+        NodeContext nodeContextWithThrowable = new TestNodeContext(new FailingNetworkingService());
 
         hazelcastInstance = new HazelcastInstanceImpl("OutOfMemoryHandlerHelper", config, nodeContext);
         hazelcastInstanceThrowsException = new HazelcastInstanceImpl("OutOfMemoryHandlerHelperThrowsException", config,
                 nodeContextWithThrowable);
     }
 
-    private static class FailingConnectionManager implements ConnectionManager {
+    private static class FailingNetworkingService
+            implements NetworkingService {
 
         private boolean dummyMode;
+
+        EndpointManager dummy = new EndpointManager() {
+
+            @Override
+            public Set getActiveConnections() {
+                return null;
+            }
+
+            @Override
+            public Collection getConnections() {
+                return null;
+            }
+
+            @Override
+            public Connection getConnection(Address address) {
+                return null;
+            }
+
+            @Override
+            public Connection getOrConnect(Address address) {
+                return null;
+            }
+
+            @Override
+            public Connection getOrConnect(Address address, boolean silent) {
+                return null;
+            }
+
+            @Override
+            public boolean registerConnection(Address address, Connection connection) {
+                return false;
+            }
+
+            @Override
+            public boolean transmit(Packet packet, Connection connection) {
+                return false;
+            }
+
+            @Override
+            public boolean transmit(Packet packet, Address target) {
+                return false;
+            }
+
+            @Override
+            public void addConnectionListener(ConnectionListener listener) {
+
+            }
+
+            @Override
+            public void accept(Object o) {
+
+            }
+        };
 
         private void switchToDummyMode() {
             dummyMode = true;
         }
 
         @Override
-        public int getCurrentClientConnections() {
-            return 0;
-        }
-
-        @Override
-        public int getAllTextConnections() {
-            return 0;
-        }
-
-        @Override
-        public int getConnectionCount() {
-            return 0;
-        }
-
-        @Override
-        public int getActiveConnectionCount() {
-            return 0;
-        }
-
-        @Override
-        public Connection getConnection(Address address) {
+        public IOService getIoService() {
             return null;
         }
 
         @Override
-        public Connection getOrConnect(Address address) {
+        public AggregateEndpointManager getAggregateEndpointManager() {
             return null;
         }
 
         @Override
-        public Connection getOrConnect(Address address, boolean silent) {
+        public EndpointManager getEndpointManager(EndpointQualifier qualifier) {
+            return dummy;
+        }
+
+        @Override
+        public void scheduleDeferred(Runnable task, long delay, TimeUnit unit) {
+
+        }
+
+        @Override
+        public Networking getNetworking() {
             return null;
         }
 
         @Override
-        public boolean registerConnection(Address address, Connection connection) {
-            return false;
-        }
-
-        @Override
-        public void onConnectionClose(Connection connection) {
-        }
-
-        @Override
-        public void addConnectionListener(ConnectionListener listener) {
-        }
-
-        @Override
-        public boolean transmit(Packet packet, Connection connection) {
-            return false;
-        }
-
-        @Override
-        public boolean transmit(Packet packet, Address target) {
+        public boolean isLive() {
             return false;
         }
 
         @Override
         public void start() {
+
         }
 
         @Override
         public void stop() {
+
         }
 
         @Override
@@ -135,4 +171,5 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             }
         }
     }
+
 }

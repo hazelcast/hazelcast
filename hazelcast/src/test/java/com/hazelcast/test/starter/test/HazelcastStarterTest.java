@@ -24,8 +24,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.partition.TestPartitionUtils;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
+import com.hazelcast.nio.tcp.FirewallingNetworkingService;
+import com.hazelcast.nio.tcp.TcpIpNetworkingService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
@@ -106,9 +106,9 @@ public class HazelcastStarterTest {
         assertEquals("Expected the same address from HazelcastInstance and Node",
                 hz.getCluster().getLocalMember().getAddress(), node.getThisAddress());
         if (supportsFirewallingConnectionManager) {
-            assertInstanceOf(FirewallingConnectionManager.class, node.getConnectionManager());
+            assertInstanceOf(FirewallingNetworkingService.class, node.getNetworkingService());
         } else {
-            assertInstanceOf(TcpIpConnectionManager.class, node.getConnectionManager());
+            assertInstanceOf(TcpIpNetworkingService.class, node.getNetworkingService());
         }
     }
 

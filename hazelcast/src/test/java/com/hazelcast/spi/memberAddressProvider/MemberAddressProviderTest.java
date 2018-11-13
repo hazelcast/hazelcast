@@ -22,6 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -277,6 +278,16 @@ public class MemberAddressProviderTest {
         public InetSocketAddress getPublicAddress() {
             return new InetSocketAddress("localhost", 0);
         }
+
+        @Override
+        public InetSocketAddress getBindAddress(EndpointQualifier qualifier) {
+            return new InetSocketAddress("localhost", 0);
+        }
+
+        @Override
+        public InetSocketAddress getPublicAddress(EndpointQualifier qualifier) {
+            return new InetSocketAddress("localhost", 0);
+        }
     }
 
     public static final class MemberAddressProviderWithLogger implements MemberAddressProvider {
@@ -292,7 +303,17 @@ public class MemberAddressProviderTest {
         }
 
         @Override
+        public InetSocketAddress getBindAddress(EndpointQualifier qualifier) {
+            return new InetSocketAddress("localhost", 0);
+        }
+
+        @Override
         public InetSocketAddress getPublicAddress() {
+            return new InetSocketAddress("localhost", 0);
+        }
+
+        @Override
+        public InetSocketAddress getPublicAddress(EndpointQualifier qualifier) {
             return new InetSocketAddress("localhost", 0);
         }
     }
@@ -313,7 +334,17 @@ public class MemberAddressProviderTest {
         }
 
         @Override
+        public InetSocketAddress getBindAddress(EndpointQualifier qualifier) {
+            return new InetSocketAddress("localhost", 0);
+        }
+
+        @Override
         public InetSocketAddress getPublicAddress() {
+            return new InetSocketAddress("localhost", 0);
+        }
+
+        @Override
+        public InetSocketAddress getPublicAddress(EndpointQualifier qualifier) {
             return new InetSocketAddress("localhost", 0);
         }
     }
@@ -334,7 +365,17 @@ public class MemberAddressProviderTest {
         }
 
         @Override
+        public InetSocketAddress getBindAddress(EndpointQualifier qualifier) {
+            return new InetSocketAddress("localhost", 0);
+        }
+
+        @Override
         public InetSocketAddress getPublicAddress() {
+            return new InetSocketAddress("localhost", 0);
+        }
+
+        @Override
+        public InetSocketAddress getPublicAddress(EndpointQualifier qualifier) {
             return new InetSocketAddress("localhost", 0);
         }
     }
@@ -347,6 +388,16 @@ public class MemberAddressProviderTest {
 
         @Override
         public InetSocketAddress getPublicAddress() {
+            return new InetSocketAddress("1.2.3.4", 0);
+        }
+
+        @Override
+        public InetSocketAddress getBindAddress(EndpointQualifier qualifier) {
+            return new InetSocketAddress("localhost", 9999);
+        }
+
+        @Override
+        public InetSocketAddress getPublicAddress(EndpointQualifier qualifier) {
             return new InetSocketAddress("1.2.3.4", 0);
         }
     }
@@ -366,7 +417,17 @@ public class MemberAddressProviderTest {
         }
 
         @Override
+        public InetSocketAddress getBindAddress(EndpointQualifier qualifier) {
+            return new InetSocketAddress("localhost", 9999);
+        }
+
+        @Override
         public InetSocketAddress getPublicAddress() {
+            return new InetSocketAddress("1.2.3.4", 0);
+        }
+
+        @Override
+        public InetSocketAddress getPublicAddress(EndpointQualifier qualifier) {
             return new InetSocketAddress("1.2.3.4", 0);
         }
     }

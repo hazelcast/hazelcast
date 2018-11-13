@@ -19,7 +19,7 @@ package com.hazelcast.nio;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
- * A listener for the {@link com.hazelcast.nio.ConnectionManager} to listen to connections
+ * A listener for the {@link EndpointManager} to listen to connections
  * being added or removed.
  */
 @PrivateApi

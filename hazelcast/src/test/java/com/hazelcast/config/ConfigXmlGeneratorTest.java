@@ -47,7 +47,10 @@ import java.util.Properties;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.ACCESSED;
+import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
+import static com.hazelcast.instance.ProtocolType.MEMBER;
+import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -161,28 +164,14 @@ public class ConfigXmlGeneratorTest {
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         IcmpFailureDetectorConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getIcmpFailureDetectorConfig();
 
-        assertEquals(expected.isEnabled(), actual.isEnabled());
-        assertEquals(expected.getIntervalMilliseconds(), actual.getIntervalMilliseconds());
-        assertEquals(expected.getTimeoutMilliseconds(), actual.getTimeoutMilliseconds());
-        assertEquals(expected.getTtl(), actual.getTtl());
-        assertEquals(expected.getMaxAttempts(), actual.getMaxAttempts());
-        assertEquals(expected.isFailFastOnStartup(), actual.isFailFastOnStartup());
-        assertEquals(expected.isParallelMode(), actual.isParallelMode());
-        assertEquals(expected, actual);
+        assertFailureDetectorConfigEquals(expected, actual);
     }
 
     @Test
     public void testNetworkMulticastJoinConfig() {
         Config cfg = new Config();
 
-        MulticastConfig expectedConfig = new MulticastConfig()
-                .setEnabled(true)
-                .setMulticastTimeoutSeconds(10)
-                .setLoopbackModeEnabled(true)
-                .setMulticastGroup("224.2.2.3")
-                .setMulticastTimeToLive(42)
-                .setMulticastPort(4242)
-                .setTrustedInterfaces(newHashSet("*"));
+        MulticastConfig expectedConfig = multicastConfig();
 
         cfg.getNetworkConfig().getJoin().setMulticastConfig(expectedConfig);
 
@@ -195,11 +184,7 @@ public class ConfigXmlGeneratorTest {
     public void testNetworkTcpJoinConfig() {
         Config cfg = new Config();
 
-        TcpIpConfig expectedConfig = new TcpIpConfig()
-                .setEnabled(true)
-                .setConnectionTimeoutSeconds(10)
-                .addMember("10.11.12.1,10.11.12.2")
-                .setRequiredMember("10.11.11.2");
+        TcpIpConfig expectedConfig = tcpIpConfig();
 
         cfg.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         cfg.getNetworkConfig().getJoin().setTcpIpConfig(expectedConfig);
@@ -1361,8 +1346,9 @@ public class ConfigXmlGeneratorTest {
     @Test
     public void testMemcacheProtocolConfig() {
         MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig().setEnabled(true);
-        Config config = new Config().setMemcacheProtocolConfig(memcacheProtocolConfig);
-        MemcacheProtocolConfig generatedConfig = getNewConfigViaXMLGenerator(config).getMemcacheProtocolConfig();
+        Config config = new Config();
+        config.getNetworkConfig().setMemcacheProtocolConfig(memcacheProtocolConfig);
+        MemcacheProtocolConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getMemcacheProtocolConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + memcacheProtocolConfig.toString(),
                 new ConfigCompatibilityChecker.MemcacheProtocolConfigChecker().check(memcacheProtocolConfig, generatedConfig));
     }
@@ -1370,8 +1356,9 @@ public class ConfigXmlGeneratorTest {
     @Test
     public void testEmptyRestApiConfig() {
         RestApiConfig restApiConfig = new RestApiConfig();
-        Config config = new Config().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getRestApiConfig();
+        Config config = new Config();
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -1380,8 +1367,9 @@ public class ConfigXmlGeneratorTest {
     public void testAllEnabledRestApiConfig() {
         RestApiConfig restApiConfig = new RestApiConfig();
         restApiConfig.setEnabled(true).enableAllGroups();
-        Config config = new Config().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getRestApiConfig();
+        Config config = new Config();
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -1390,16 +1378,137 @@ public class ConfigXmlGeneratorTest {
     public void testExplicitlyAssignedGroupsRestApiConfig() {
         RestApiConfig restApiConfig = new RestApiConfig();
         restApiConfig.setEnabled(true);
-        restApiConfig.enableGroups(RestEndpointGroup.CLUSTER_READ,
-                RestEndpointGroup.HEALTH_CHECK,
-                RestEndpointGroup.HOT_RESTART,
+        restApiConfig.enableGroups(RestEndpointGroup.CLUSTER_READ, RestEndpointGroup.HEALTH_CHECK, RestEndpointGroup.HOT_RESTART,
                 RestEndpointGroup.WAN);
-        restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE,
-                RestEndpointGroup.DATA);
-        Config config = new Config().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getRestApiConfig();
+        restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
+        Config config = new Config();
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
+    }
+
+    @Test
+    public void testAdvancedNetworkMulticastJoinConfig() {
+        Config cfg = new Config();
+        cfg.getAdvancedNetworkConfig().setEnabled(true);
+        MulticastConfig expectedConfig = multicastConfig();
+
+        cfg.getAdvancedNetworkConfig().getJoin().setMulticastConfig(expectedConfig);
+        cfg.getAdvancedNetworkConfig().setEnabled(true);
+
+        MulticastConfig actualConfig = getNewConfigViaXMLGenerator(cfg)
+                .getAdvancedNetworkConfig().getJoin().getMulticastConfig();
+
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testAdvancedNetworkTcpJoinConfig() {
+        Config cfg = new Config();
+        cfg.getAdvancedNetworkConfig().setEnabled(true);
+        TcpIpConfig expectedConfig = tcpIpConfig();
+
+        cfg.getAdvancedNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        cfg.getAdvancedNetworkConfig().getJoin().setTcpIpConfig(expectedConfig);
+
+        TcpIpConfig actualConfig = getNewConfigViaXMLGenerator(cfg)
+                .getAdvancedNetworkConfig().getJoin().getTcpIpConfig();
+
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testAdvancedNetworkFailureDetectorConfigGenerator() {
+        Config cfg = new Config();
+        IcmpFailureDetectorConfig expected = new IcmpFailureDetectorConfig();
+        expected.setEnabled(true)
+                .setIntervalMilliseconds(1001)
+                .setTimeoutMilliseconds(1002)
+                .setMaxAttempts(4)
+                .setTtl(300)
+                .setParallelMode(false) // Defaults to false
+                .setFailFastOnStartup(false); // Defaults to false
+
+        cfg.getAdvancedNetworkConfig().setEnabled(true);
+        cfg.getAdvancedNetworkConfig().setIcmpFailureDetectorConfig(expected);
+
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        IcmpFailureDetectorConfig actual = newConfigViaXMLGenerator.getAdvancedNetworkConfig().getIcmpFailureDetectorConfig();
+
+        assertFailureDetectorConfigEquals(expected, actual);
+    }
+
+    @Test
+    public void testAdvancedNetworkMemberAddressProvider() {
+        Config cfg = new Config();
+        cfg.getAdvancedNetworkConfig().setEnabled(true);
+        MemberAddressProviderConfig expected = cfg.getAdvancedNetworkConfig()
+                                                  .getMemberAddressProviderConfig();
+        expected.setEnabled(true)
+                .setEnabled(true)
+                .setClassName("ClassName");
+        expected.getProperties().setProperty("p1", "v1");
+
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getAdvancedNetworkConfig().getMemberAddressProviderConfig();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testEndpointConfig_completeConfiguration() {
+        Config cfg = new Config();
+
+        ServerSocketEndpointConfig expected = new ServerSocketEndpointConfig();
+        expected.setName(randomName());
+        expected.setPort(9393);
+        expected.setPortCount(22);
+        expected.setPortAutoIncrement(false);
+        expected.setPublicAddress("194.143.14.17");
+        expected.setReuseAddress(true);
+        expected.addOutboundPortDefinition("4242-4244")
+                .addOutboundPortDefinition("5252;5254");
+
+        SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig()
+                .setEnabled(true)
+                .setClassName("socketInterceptor")
+                .setProperty("key", "value");
+        expected.setSocketInterceptorConfig(socketInterceptorConfig);
+
+        expected.getInterfaces().addInterface("127.0.0.*").setEnabled(true);
+
+        expected.setSocketConnectTimeoutSeconds(67);
+        expected.setSocketRcvBufferSizeKb(192);
+        expected.setSocketSendBufferSizeKb(384);
+        expected.setSocketLingerSeconds(3);
+        expected.setSocketKeepAlive(true);
+        expected.setSocketTcpNoDelay(true);
+        expected.setSocketBufferDirect(true);
+
+        cfg.getAdvancedNetworkConfig().setEnabled(true);
+        cfg.getAdvancedNetworkConfig().addWanEndpointConfig(expected);
+
+        EndpointConfig actual = getNewConfigViaXMLGenerator(cfg)
+                .getAdvancedNetworkConfig().getEndpointConfigs().get(expected.getQualifier());
+
+        checkEndpointConfigCompatible(expected, actual);
+    }
+
+    @Test
+    public void testEndpointConfig_defaultConfiguration() {
+        Config cfg = new Config();
+
+        ServerSocketEndpointConfig expected = new ServerSocketEndpointConfig();
+        expected.setProtocolType(MEMBER);
+
+        cfg.getAdvancedNetworkConfig().setEnabled(true);
+        cfg.getAdvancedNetworkConfig().setMemberEndpointConfig(expected);
+
+        EndpointConfig actual = getNewConfigViaXMLGenerator(cfg)
+                .getAdvancedNetworkConfig().getEndpointConfigs().get(expected.getQualifier());
+
+        checkEndpointConfigCompatible(expected, actual);
     }
 
     private DiscoveryConfig getDummyDiscoveryConfig() {
@@ -1435,7 +1544,7 @@ public class ConfigXmlGeneratorTest {
     private static Config getNewConfigViaXMLGenerator(Config config, boolean maskSensitiveFields) {
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true, maskSensitiveFields);
         String xml = configXmlGenerator.generate(config);
-
+        System.err.println("XML: " + xml);
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
         return configBuilder.build();
@@ -1461,5 +1570,36 @@ public class ConfigXmlGeneratorTest {
                 .setComparatorClassName("comparatorClassName")
                 .setSize(10)
                 .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
+    }
+
+    private static TcpIpConfig tcpIpConfig() {
+        return new TcpIpConfig()
+                .setEnabled(true)
+                .setConnectionTimeoutSeconds(10)
+                .addMember("10.11.12.1,10.11.12.2")
+                .setRequiredMember("10.11.11.2");
+    }
+
+    private static MulticastConfig multicastConfig() {
+        return new MulticastConfig()
+                .setEnabled(true)
+                .setMulticastTimeoutSeconds(10)
+                .setLoopbackModeEnabled(true)
+                .setMulticastGroup("224.2.2.3")
+                .setMulticastTimeToLive(42)
+                .setMulticastPort(4242)
+                .setTrustedInterfaces(newHashSet("*"));
+    }
+
+    private static void assertFailureDetectorConfigEquals(IcmpFailureDetectorConfig expected,
+                                                          IcmpFailureDetectorConfig actual) {
+        assertEquals(expected.isEnabled(), actual.isEnabled());
+        assertEquals(expected.getIntervalMilliseconds(), actual.getIntervalMilliseconds());
+        assertEquals(expected.getTimeoutMilliseconds(), actual.getTimeoutMilliseconds());
+        assertEquals(expected.getTtl(), actual.getTtl());
+        assertEquals(expected.getMaxAttempts(), actual.getMaxAttempts());
+        assertEquals(expected.isFailFastOnStartup(), actual.isFailFastOnStartup());
+        assertEquals(expected.isParallelMode(), actual.isParallelMode());
+        assertEquals(expected, actual);
     }
 }

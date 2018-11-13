@@ -17,40 +17,41 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.function.Consumer;
+
+import java.util.Collection;
 
 /**
  * Responsible for managing {@link com.hazelcast.nio.Connection} objects.
  */
 @PrivateApi
-public interface ConnectionManager extends ConnectionListenable {
+public interface EndpointManager<T extends Connection>
+        extends ConnectionListenable, Consumer<Packet>  {
 
     /**
-     * Gets the number of client connections.
-     *
-     * @return number of client connections
+     * Returns connections that have been successfully established (ie. Bind was completed)
      */
-    int getCurrentClientConnections();
+    Collection<T> getConnections();
 
     /**
-     * Gets the number of text connections (rest/memcache)
+     * Returns <b>all</b> connections bind or not that are currently holding resources on this member.
+     * If the connection never successfully finishes with the handshake then it will only be visible
+     * through this sub-set.
      *
-     * @return the number of text connections
+     * @return Collection of all connections hold on this member
      */
-    int getAllTextConnections();
+    Collection<T> getActiveConnections();
 
     /**
-     * Gets the total number of connections.
+     * Registers (ie. stores) the connection for the given remote address.
+     * Once this call finishes every subsequent call to {@link #getConnection(Address)} will return
+     * the relevant {@link Connection} resource.
      *
-     * @return the total number of connections
+     * @param address - The remote endpoint to register the connection under
+     * @param connection - The connection to be registered
+     * @return True if the call was successful
      */
-    int getConnectionCount();
-
-    /**
-     * Gets the number of active connections.
-     *
-     * @return the number of active connections
-     */
-    int getActiveConnectionCount();
+    boolean registerConnection(Address address, T connection);
 
     /**
      * Gets the connection for a given address. If the connection does not exist, it returns null.
@@ -58,7 +59,7 @@ public interface ConnectionManager extends ConnectionListenable {
      * @param address the remote side of the connection
      * @return the found Connection, or none if one doesn't exist
      */
-    Connection getConnection(Address address);
+    T getConnection(Address address);
 
     /**
      * Gets the existing connection for a given address or connects. This call is silent.
@@ -67,7 +68,7 @@ public interface ConnectionManager extends ConnectionListenable {
      * @return the found connection, or {@code null} if no connection exists
      * @see #getOrConnect(Address, boolean)
      */
-    Connection getOrConnect(Address address);
+    T getOrConnect(Address address);
 
     /**
      * Gets the existing connection for a given address. If it does not exist, the system will try to connect
@@ -80,15 +81,7 @@ public interface ConnectionManager extends ConnectionListenable {
      * @param silent  if logging should be done on debug level ({@code silent=true}) or on info level ({@code silent=false})
      * @return the existing connection
      */
-    Connection getOrConnect(Address address, boolean silent);
-
-    boolean registerConnection(Address address, Connection connection);
-
-    /**
-     * Deals with cleaning up a closed connection. This method should only be called once by the
-     * {@link Connection#close(String, Throwable)} method where it is protected against multiple closes.
-     */
-    void onConnectionClose(Connection connection);
+    T getOrConnect(Address address, boolean silent);
 
     /**
      * Transmits a packet to a certain connection.
@@ -101,7 +94,7 @@ public interface ConnectionManager extends ConnectionListenable {
      * actually going to be received since the packet perhaps is stuck in some buffer; it just means that it's buffered somewhere)
      * @throws NullPointerException if the packet is {@code null}
      */
-    boolean transmit(Packet packet, Connection connection);
+    boolean transmit(Packet packet, T connection);
 
     /**
      * Transmits a packet to a certain address.
@@ -117,32 +110,4 @@ public interface ConnectionManager extends ConnectionListenable {
      */
     boolean transmit(Packet packet, Address target);
 
-    /**
-     * Starts ConnectionManager, initializes its resources, starts threads, etc. After start, ConnectionManager
-     * becomes fully operational.
-     * <p>
-     * If it is already started, then this method has no effect.
-     *
-     * @throws IllegalStateException if ConnectionManager is shutdown
-     */
-    void start();
-
-    /**
-     * Stops ConnectionManager, releases its resources, stops threads, etc. When stopped, ConnectionManager
-     * can be started again using {@link #start()}.
-     * <p>
-     * This method has no effect if it is already stopped or shutdown.
-     * <p>
-     * Currently {@code stop} is called during the merge process to detach node from the current cluster. After
-     * node becomes ready to join to the new cluster, {@code start} is called to re-initialize the ConnectionManager.
-     */
-    void stop();
-
-    /**
-     * Shutdowns ConnectionManager completely. ConnectionManager will not be operational anymore and cannot
-     * be restarted.
-     * <p>
-     * This method has no effect if it is already shutdown.
-     */
-    void shutdown();
 }

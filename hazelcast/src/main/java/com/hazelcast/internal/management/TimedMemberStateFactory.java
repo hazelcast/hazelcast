@@ -77,6 +77,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
@@ -136,11 +137,12 @@ public class TimedMemberStateFactory {
         timedMemberState.setMemberState(memberState);
         GroupConfig groupConfig = instance.getConfig().getGroupConfig();
         timedMemberState.setClusterName(groupConfig.getName());
-        SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
+        SSLConfig sslConfig = getActiveMemberNetworkConfig(instance.getConfig()).getSSLConfig();
         timedMemberState.setSslEnabled(sslConfig != null && sslConfig.isEnabled());
         timedMemberState.setLite(instance.node.isLiteMember());
 
-        SocketInterceptorConfig interceptorConfig = instance.getConfig().getNetworkConfig().getSocketInterceptorConfig();
+        SocketInterceptorConfig interceptorConfig = getActiveMemberNetworkConfig(instance.getConfig())
+                .getSocketInterceptorConfig();
         timedMemberState.setSocketInterceptorEnabled(interceptorConfig != null && interceptorConfig.isEnabled());
 
         ManagementCenterConfig managementCenterConfig = instance.node.getConfig().getManagementCenterConfig();
@@ -170,6 +172,7 @@ public class TimedMemberStateFactory {
 
         Address thisAddress = node.getThisAddress();
         memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());
+        memberState.setEndpoints(node.getLocalMember().getAddressMap());
         TimedMemberStateFactoryHelper.registerJMXBeans(instance, memberState);
 
         MemberPartitionStateImpl memberPartitionState = (MemberPartitionStateImpl) memberState.getMemberPartitionState();

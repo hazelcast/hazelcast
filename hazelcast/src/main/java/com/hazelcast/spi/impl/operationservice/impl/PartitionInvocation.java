@@ -21,6 +21,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
@@ -42,8 +43,9 @@ final class PartitionInvocation extends Invocation<PartitionReplica> {
                         long tryPauseMillis,
                         long callTimeoutMillis,
                         boolean deserialize,
-                        boolean failOnIndeterminateOperationState) {
-        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
+                        boolean failOnIndeterminateOperationState,
+                        EndpointManager endpointManager) {
+        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, endpointManager);
         this.failOnIndeterminateOperationState = failOnIndeterminateOperationState && !(op instanceof ReadonlyOperation);
     }
 
@@ -55,7 +57,7 @@ final class PartitionInvocation extends Invocation<PartitionReplica> {
                         boolean deserialize,
                         boolean failOnIndeterminateOperationState) {
         this(context, op, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize,
-                failOnIndeterminateOperationState);
+                failOnIndeterminateOperationState, null);
     }
 
     @Override

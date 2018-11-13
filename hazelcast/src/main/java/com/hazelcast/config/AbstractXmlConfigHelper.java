@@ -179,4 +179,5 @@ public abstract class AbstractXmlConfigHelper {
         builder.append(string);
         token.setLength(0);
     }
+
 }

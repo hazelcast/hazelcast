@@ -67,6 +67,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceTestSupport {
 
+
     @Rule
     public ExpectedException expected = ExpectedException.none();
 

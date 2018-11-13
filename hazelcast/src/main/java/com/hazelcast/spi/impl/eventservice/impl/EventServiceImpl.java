@@ -27,6 +27,7 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
@@ -56,6 +57,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
@@ -517,7 +519,9 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
             Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey)
                     .setPacketType(Packet.Type.EVENT);
 
-            if (!nodeEngine.getNode().getConnectionManager().transmit(packet, subscriber)) {
+            //TODO (TK) : Can the subscriber be other than MEMBER?
+            EndpointManager em = nodeEngine.getNode().getNetworkingService().getEndpointManager(MEMBER);
+            if (!em.transmit(packet, subscriber)) {
                 if (nodeEngine.isRunning()) {
                     logFailure("Failed to send event packet to: %s, connection might not be alive.", subscriber);
                 }
