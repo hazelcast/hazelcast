@@ -188,7 +188,7 @@ Note however that, by default, Hazelcast does not shutdown gracefully. It means 
 - `-Dhazelcast.shutdownhook.policy=GRACEFUL`: in the JVM parameters
 - `-Dhazelcast.graceful.shutdown.max.wait`: in the JVM parameters; the value should be high enough to cover the data migration process
 
-The graceful shutdown configuration is already included in Hazelcast Helm Charts.
+The graceful shutdown configuration is already included in [Hazelcast Helm Charts](#helm-chart).
 
 ## Plugin Usages
 
