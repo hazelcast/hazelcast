@@ -342,18 +342,11 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public void doEvictionIfRequired() {
+        public void doEviction(boolean withoutMaxSizeCheck) {
             if (expectedKeyValueMappings == null) {
                 throw new IllegalStateException("Near Cache is already destroyed");
             }
             doEvictionIfRequiredCalled = true;
-        }
-
-        @Override
-        public void doEviction() {
-            if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near Cache is already destroyed");
-            }
         }
 
         @Override
@@ -367,11 +360,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public void setStaleReadDetector(StaleReadDetector detector) {
             staleReadDetector = detector;
-        }
-
-        @Override
-        public StaleReadDetector getStaleReadDetector() {
-            return staleReadDetector;
         }
 
         @Override
