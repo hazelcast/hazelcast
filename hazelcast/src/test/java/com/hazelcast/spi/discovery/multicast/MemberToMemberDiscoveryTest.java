@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -44,6 +45,8 @@ public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
     public final OverridePropertyRule overrideJoinWaitSecondsRule = set("hazelcast.wait.seconds.before.join", "10");
     @Rule
     public final OverridePropertyRule overridePreferIpv4Rule = set("java.net.preferIPv4Stack", "true");
+    @Rule
+    public final OverridePropertyRule overrideHazelcastLocalAddressRule = clear("hazelcast.local.localAddress");
 
     private Config config;
 
