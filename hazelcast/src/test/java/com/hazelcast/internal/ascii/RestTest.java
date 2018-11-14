@@ -224,7 +224,7 @@ public class RestTest extends HazelcastTestSupport {
         wanConfig.setName("test");
         WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanConfig);
         String result = communicator.addWanConfig(dto.toJson().toString());
-        assertEquals("{\"status\":\"fail\",\"message\":\"java.lang.UnsupportedOperationException: Adding new WAN config is not supported.\"}", result);
+        assertEquals("{\"status\":\"fail\",\"message\":\"Adding new WAN config is not supported.\"}", result);
     }
 
     @Test
