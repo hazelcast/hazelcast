@@ -24,4 +24,9 @@ public class GcpConfig
     public GcpConfig() {
         super("gcp");
     }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.GCP_CONFIG;
+    }
 }

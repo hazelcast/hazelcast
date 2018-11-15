@@ -17,6 +17,7 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -56,13 +57,25 @@ public class AddWanConfigLegacyOperation extends AbstractManagementOperation imp
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        wanReplicationConfig.writeData(out);
+        // RU_COMPAT_3_10
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
+            // using this method is nicer since the object
+            // can implement Versioned and have a version injected
+            out.writeObject(wanReplicationConfig);
+        } else {
+            wanReplicationConfig.writeData(out);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        wanReplicationConfig = new WanReplicationConfig();
-        wanReplicationConfig.readData(in);
+        // RU_COMPAT_3_10
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
+            wanReplicationConfig = in.readObject();
+        } else {
+            wanReplicationConfig = new WanReplicationConfig();
+            wanReplicationConfig.readData(in);
+        }
     }
 
     @Override

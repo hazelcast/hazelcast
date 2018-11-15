@@ -24,4 +24,9 @@ public class KubernetesConfig
     public KubernetesConfig() {
         super("kubernetes");
     }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.KUBERNETES_CONFIG;
+    }
 }

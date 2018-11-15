@@ -95,8 +95,15 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int PN_COUNTER_CONFIG = 53;
     public static final int MERKLE_TREE_CONFIG = 54;
     public static final int WAN_SYNC_CONFIG = 55;
+    public static final int KUBERNETES_CONFIG = 56;
+    public static final int EUREKA_CONFIG = 57;
+    public static final int GCP_CONFIG = 58;
+    public static final int AZURE_CONFIG = 59;
+    public static final int AWS_CONFIG = 60;
+    public static final int DISCOVERY_CONFIG = 61;
+    public static final int DISCOVERY_STRATEGY_CONFIG = 62;
 
-    private static final int LEN = WAN_SYNC_CONFIG + 1;
+    private static final int LEN = DISCOVERY_STRATEGY_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -453,6 +460,55 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                     @Override
                     public IdentifiedDataSerializable createNew(Integer arg) {
                         return new WanSyncConfig();
+                    }
+                };
+        constructors[KUBERNETES_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new KubernetesConfig();
+                    }
+                };
+        constructors[EUREKA_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new EurekaConfig();
+                    }
+                };
+        constructors[GCP_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new GcpConfig();
+                    }
+                };
+        constructors[AZURE_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new AzureConfig();
+                    }
+                };
+        constructors[AWS_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new AwsConfig();
+                    }
+                };
+        constructors[DISCOVERY_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new DiscoveryConfig();
+                    }
+                };
+        constructors[DISCOVERY_STRATEGY_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new DiscoveryStrategyConfig();
                     }
                 };
         return new ArrayDataSerializableFactory(constructors);

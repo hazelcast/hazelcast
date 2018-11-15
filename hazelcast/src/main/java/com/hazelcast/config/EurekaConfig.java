@@ -24,4 +24,9 @@ public class EurekaConfig
     public EurekaConfig() {
         super("eureka");
     }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.EUREKA_CONFIG;
+    }
 }
