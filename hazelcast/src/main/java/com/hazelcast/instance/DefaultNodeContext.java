@@ -38,18 +38,26 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ServerSocketChannel;
+import java.util.List;
 import java.util.Properties;
 
 import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
 
 @PrivateApi
 public class DefaultNodeContext implements NodeContext {
 
+    public static final List<String> EXTENSION_PRIORITY_LIST = unmodifiableList(asList(
+            "com.hazelcast.instance.EnterpriseNodeExtension",
+            "com.hazelcast.instance.DefaultNodeExtension"
+    ));
+
     @Override
     public NodeExtension createNodeExtension(Node node) {
-        return NodeExtensionFactory.create(node);
+        return NodeExtensionFactory.create(node, EXTENSION_PRIORITY_LIST);
     }
 
     @Override

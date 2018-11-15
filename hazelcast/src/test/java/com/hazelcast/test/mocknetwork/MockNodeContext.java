@@ -19,6 +19,7 @@ package com.hazelcast.test.mocknetwork;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.DefaultNodeContext;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeExtension;
@@ -56,11 +57,9 @@ public class MockNodeContext implements NodeContext {
 
     @Override
     public NodeExtension createNodeExtension(Node node) {
-        if (TestEnvironment.isRecordingSerializedClassNames()) {
-            return constructSamplingNodeExtension(node);
-        } else {
-            return NodeExtensionFactory.create(node);
-        }
+        return TestEnvironment.isRecordingSerializedClassNames()
+                ? constructSamplingNodeExtension(node)
+                : NodeExtensionFactory.create(node, DefaultNodeContext.EXTENSION_PRIORITY_LIST);
     }
 
     @Override
@@ -95,7 +94,7 @@ public class MockNodeContext implements NodeContext {
                 throw rethrow(e);
             }
         } else {
-            NodeExtension wrapped = NodeExtensionFactory.create(node);
+            NodeExtension wrapped = NodeExtensionFactory.create(node, DefaultNodeContext.EXTENSION_PRIORITY_LIST);
             return new SamplingNodeExtension(wrapped);
         }
     }
