@@ -17,6 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cache.HazelcastExpiryPolicy;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
@@ -43,6 +44,8 @@ import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.CacheEntryExpiredListener;
 import javax.cache.event.CacheEntryListenerException;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.ExpiryPolicy;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -52,6 +55,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -136,6 +140,67 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
     @Test
     public void stops_running_backgroundClearTask_when_lifecycleState_MERGING() {
         backgroundClearTaskStops_whenLifecycleState(MERGING);
+    }
+
+    @Test
+    public void no_expiration_task_starts_on_new_node_after_migration_when_there_is_no_expirable_entry() {
+        Config config = new Config();
+        config.setProperty(taskPeriodSecondsPropName(), "1");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+
+        CacheManager cacheManager = createCacheManager(node1);
+        Cache cache = cacheManager.createCache("test", new CacheConfig());
+        cache.put(1, 1);
+
+        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        node1.shutdown();
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse("There should be zero CacheClearExpiredRecordsTask",
+                        hasClearExpiredRecordsTaskStarted(node2));
+            }
+        }, 3);
+    }
+
+    @Test
+    public void expiration_task_starts_on_new_node_after_migration_when_there_is_expirable_entry() {
+        Config config = new Config();
+        config.setProperty(taskPeriodSecondsPropName(), "1");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+
+        CacheManager cacheManager = createCacheManager(node1);
+        Cache cache = cacheManager.createCache("test", new CacheConfig());
+        ((ICache) cache).put(1, 1, new ExpiryPolicy() {
+            @Override
+            public Duration getExpiryForCreation() {
+                return Duration.ONE_HOUR;
+            }
+
+            @Override
+            public Duration getExpiryForAccess() {
+                return Duration.ONE_HOUR;
+            }
+
+            @Override
+            public Duration getExpiryForUpdate() {
+                return Duration.ONE_HOUR;
+            }
+        });
+
+        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        node1.shutdown();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue("There should be one ClearExpiredRecordsTask started",
+                        hasClearExpiredRecordsTaskStarted(node2));
+            }
+        });
     }
 
 
