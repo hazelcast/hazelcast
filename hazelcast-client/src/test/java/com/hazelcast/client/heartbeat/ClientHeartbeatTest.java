@@ -18,6 +18,7 @@ package com.hazelcast.client.heartbeat;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
@@ -79,7 +80,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     }
 
     @Test
-    public void testConnectionClosed_whenHeartbeatStopped() throws InterruptedException {
+    public void testOwnerConnectionClosed_whenHeartbeatStopped() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
 
@@ -94,7 +95,46 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
             @Override
             public void connectionRemoved(Connection connection) {
-                countDownLatch.countDown();
+                ClientConnection clientConnection = (ClientConnection) connection;
+                if (clientConnection.isAuthenticatedAsOwner()) {
+                    countDownLatch.countDown();
+                }
+            }
+        });
+
+        blockMessagesFromInstance(instance, client);
+        assertOpenEventually(countDownLatch);
+    }
+
+    @Test
+    public void testNonOwnerConnectionClosed_whenHeartbeatStopped() {
+        hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+
+        HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
+        final ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, connectionManager.getActiveConnections().size());
+            }
+        });
+
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        connectionManager.addConnectionListener(new ConnectionListener() {
+            @Override
+            public void connectionAdded(Connection connection) {
+
+            }
+
+            @Override
+            public void connectionRemoved(Connection connection) {
+                ClientConnection clientConnection = (ClientConnection) connection;
+                if (!clientConnection.isAuthenticatedAsOwner()) {
+                    countDownLatch.countDown();
+                }
             }
         });
 
