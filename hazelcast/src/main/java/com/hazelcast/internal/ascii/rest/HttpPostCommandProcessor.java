@@ -31,10 +31,13 @@ import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
+import com.hazelcast.wan.AddWanConfigResult;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Collection;
+import java.util.Iterator;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
@@ -484,10 +487,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             WanReplicationConfigDTO dto = new WanReplicationConfigDTO(new WanReplicationConfig());
             dto.fromJson(Json.parse(wanConfigJson).asObject());
 
-            textCommandService.getNode().getNodeEngine()
-                              .getWanReplicationService()
-                              .addWanReplicationConfig(dto.getConfig());
-            res = response(ResponseType.SUCCESS, "message", "WAN configuration added.");
+            AddWanConfigResult result = textCommandService.getNode().getNodeEngine()
+                                                          .getWanReplicationService()
+                                                          .addWanReplicationConfig(dto.getConfig());
+            res = response(ResponseType.SUCCESS,
+                    "message", "WAN configuration added.",
+                    "addedPublisherIds", result.getAddedPublisherIds(),
+                    "ignoredPublisherIds", result.getIgnoredPublisherIds());
         } catch (Exception ex) {
             logger.warning("Error occurred while adding WAN config", ex);
             res = exceptionResponse(ex);
@@ -621,19 +627,56 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return response(ResponseType.FAIL, "message", throwable.getMessage());
     }
 
-    private static String response(ResponseType type, String... attributes) {
+    private static String response(ResponseType type, Object... attributes) {
         final StringBuilder builder = new StringBuilder("{");
         builder.append("\"status\":\"").append(type).append("\"");
         if (attributes.length > 0) {
             for (int i = 0; i < attributes.length; ) {
-                final String key = attributes[i++];
-                final String value = attributes[i++];
+                final String key = attributes[i++].toString();
+                final Object value = attributes[i++];
                 if (value != null) {
-                    builder.append(String.format(",\"%s\":\"%s\"", key, value));
+                    builder.append(String.format(",\"%s\":%s", key, jsonLiteral(value)));
                 }
             }
         }
         return builder.append("}").toString();
+    }
+
+    private static String jsonLiteral(Object value) {
+        if (value instanceof String) {
+            return '"' + (String) value + '"';
+        } else if (value instanceof Collection) {
+            return "[" + join((Collection) value, ",") + "]";
+        } else {
+            throw new IllegalArgumentException("Unsupported ");
+        }
+    }
+
+    public static String join(Collection strings, final String separator) {
+        Iterator iterator = strings.iterator();
+        if (!iterator.hasNext()) {
+            return "";
+        }
+        final Object first = iterator.next();
+        if (!iterator.hasNext()) {
+            return jsonLiteral(first);
+        }
+
+        final StringBuilder buf = new StringBuilder();
+        if (first != null) {
+            buf.append(jsonLiteral(first));
+        }
+
+        while (iterator.hasNext()) {
+            if (separator != null) {
+                buf.append(separator);
+            }
+            final Object obj = iterator.next();
+            if (obj != null) {
+                buf.append(jsonLiteral(obj));
+            }
+        }
+        return buf.toString();
     }
 
     private enum ResponseType {
