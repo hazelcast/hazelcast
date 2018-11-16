@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -379,10 +378,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         out.writeObject(queueStoreConfig);
         out.writeBoolean(statisticsEnabled);
         out.writeUTF(quorumName);
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeObject(mergePolicyConfig);
-        }
+        out.writeObject(mergePolicyConfig);
     }
 
     @Override
@@ -396,10 +392,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         queueStoreConfig = in.readObject();
         statisticsEnabled = in.readBoolean();
         quorumName = in.readUTF();
-        // RU_COMPAT_3_9
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            mergePolicyConfig = in.readObject();
-        }
+        mergePolicyConfig = in.readObject();
     }
 
     @Override

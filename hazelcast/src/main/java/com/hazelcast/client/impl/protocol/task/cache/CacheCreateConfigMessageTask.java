@@ -62,7 +62,7 @@ public class CacheCreateConfigMessageTask
 
             Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
             checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
-                    nodeEngine.getClusterService().getClusterVersion(), true, logger);
+                    true, logger);
 
             ICompletableFuture future = cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
             future.andThen(this);

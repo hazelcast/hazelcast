@@ -83,11 +83,6 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void selectToSaveFromNearCache() {
-        doSelectToSaveFromNearCache();
-    }
-
-    @Test
     @Ignore
     public void createNearCacheAndWaitForExpirationCalledWithTTL() {
         doCreateNearCacheAndWaitForExpirationCalled(true);

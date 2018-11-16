@@ -176,7 +176,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected void markRecordStoreExpirable(long ttl, long maxIdle) {
-        if (!isInfiniteTTL(ttl) || isMaxIdleDefined(maxIdle)) {
+        if (isTtlDefined(ttl) || isMaxIdleDefined(maxIdle)) {
             hasEntryWithCustomExpiration = true;
         }
 
@@ -185,17 +185,13 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
     }
 
-    /**
-     * @return {@code true} if the supplied ttl doesn't not represent infinity and as a result entry should be
-     * removed after some time, otherwise return {@code false} to indicate entry should live forever.
-     */
     // this method is overridden on ee
-    protected boolean isInfiniteTTL(long ttl) {
-        return !(ttl > 0L && ttl < Long.MAX_VALUE);
+    protected boolean isTtlDefined(long ttl) {
+        return ttl > 0L && ttl < Long.MAX_VALUE;
     }
 
     protected boolean isMaxIdleDefined(long maxIdle) {
-        return maxIdle > 0L;
+        return maxIdle > 0L && maxIdle < Long.MAX_VALUE;
     }
 
     /**

@@ -349,11 +349,11 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     private void invalidate(Set<? extends K> keys, Set<Data> keysData) {
         if (serializeKeys) {
-            for (Data key: keysData) {
+            for (Data key : keysData) {
                 invalidateNearCache(key);
             }
         } else {
-            for (K key: keys) {
+            for (K key : keys) {
                 invalidateNearCache(key);
             }
         }
@@ -511,8 +511,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @SuppressWarnings("unchecked")
     private void cacheOrInvalidate(Object key, Data keyData, V value, Data valueData) {
         if (cacheOnUpdate) {
-            V valueToStore = (V) nearCache.selectToSave(valueData, value);
-            nearCache.put(key, keyData, valueToStore);
+            nearCache.put(key, keyData, value, valueData);
         } else {
             invalidateNearCache(key);
         }

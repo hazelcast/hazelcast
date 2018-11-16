@@ -263,14 +263,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     /** Sends a {@link AssignPartitions} to the master to assign partitions. */
     private void triggerMasterToAssignPartitions() {
-        if (partitionStateManager.isInitialized()) {
+        if (!shouldTriggerMasterToAssignPartitions()) {
             return;
         }
 
         ClusterServiceImpl clusterService = node.getClusterService();
-        if (!clusterService.isJoined()) {
-            return;
-        }
 
         ClusterState clusterState = clusterService.getClusterState();
         if (!clusterState.isMigrationAllowed()) {
@@ -308,6 +305,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
             masterTrigger.executeWithDelay();
         }
+    }
+
+    private boolean shouldTriggerMasterToAssignPartitions() {
+        ClusterServiceImpl clusterService = node.getClusterService();
+        return !partitionStateManager.isInitialized() && clusterService.isJoined() && node.getNodeExtension().isStartCompleted();
     }
 
     private void resetMasterTriggeredFlag() {

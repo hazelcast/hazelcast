@@ -27,8 +27,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_10;
-
 /**
  * This subclass of {@link CacheConfig} is used to communicate cache configurations in pre-join cache operations when cluster
  * version is at least 3.9. The key difference against {@link CacheConfig} is that the key/value class names are used in its
@@ -75,55 +73,35 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
 
     @Override
     protected void writeFactories(ObjectDataOutput out) throws IOException {
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(V3_10)) {
-            SerializationService serializationService = out.getSerializationService();
-            out.writeData(cacheLoaderFactory.getSerializedValue(serializationService));
-            out.writeData(cacheWriterFactory.getSerializedValue(serializationService));
-            out.writeData(expiryPolicyFactory.getSerializedValue(serializationService));
-        } else {
-            super.writeFactories(out);
-        }
+        SerializationService serializationService = out.getSerializationService();
+        out.writeData(cacheLoaderFactory.getSerializedValue(serializationService));
+        out.writeData(cacheWriterFactory.getSerializedValue(serializationService));
+        out.writeData(expiryPolicyFactory.getSerializedValue(serializationService));
     }
 
     @Override
     protected void readFactories(ObjectDataInput in) throws IOException {
-        // RU_COMPAT_3_9
-        if (in.getVersion().isUnknownOrLessThan(V3_10)) {
-            super.readFactories(in);
-        } else {
-            cacheLoaderFactory = DeferredValue.withSerializedValue(in.readData());
-            cacheWriterFactory = DeferredValue.withSerializedValue(in.readData());
-            expiryPolicyFactory = DeferredValue.withSerializedValue(in.readData());
-        }
+        cacheLoaderFactory = DeferredValue.withSerializedValue(in.readData());
+        cacheWriterFactory = DeferredValue.withSerializedValue(in.readData());
+        expiryPolicyFactory = DeferredValue.withSerializedValue(in.readData());
     }
 
     @Override
     protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(V3_10)) {
-            out.writeInt(listenerConfigurations.size());
-            for (DeferredValue<CacheEntryListenerConfiguration<K, V>> config : listenerConfigurations) {
-                out.writeData(config.getSerializedValue(out.getSerializationService()));
-            }
-        } else {
-            super.writeListenerConfigurations(out);
+        out.writeInt(listenerConfigurations.size());
+        for (DeferredValue<CacheEntryListenerConfiguration<K, V>> config : listenerConfigurations) {
+            out.writeData(config.getSerializedValue(out.getSerializationService()));
         }
     }
 
     @Override
     protected void readListenerConfigurations(ObjectDataInput in) throws IOException {
-        // RU_COMPAT_3_9
-        if (in.getVersion().isUnknownOrLessThan(V3_10)) {
-            super.readListenerConfigurations(in);
-        } else {
-            int size = in.readInt();
-            listenerConfigurations = createConcurrentSet();
-            for (int i = 0; i < size; i++) {
-                DeferredValue<CacheEntryListenerConfiguration<K, V>> serializedConfig =
-                        DeferredValue.withSerializedValue(in.readData());
-                listenerConfigurations.add(serializedConfig);
-            }
+        int size = in.readInt();
+        listenerConfigurations = createConcurrentSet();
+        for (int i = 0; i < size; i++) {
+            DeferredValue<CacheEntryListenerConfiguration<K, V>> serializedConfig =
+                    DeferredValue.withSerializedValue(in.readData());
+            listenerConfigurations.add(serializedConfig);
         }
     }
 

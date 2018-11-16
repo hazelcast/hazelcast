@@ -87,9 +87,10 @@ public class DefaultNearCacheManager implements NearCacheManager {
 
                     nearCacheMap.put(name, nearCache);
 
-                    if (nearCache.getPreloaderConfig().isEnabled()) {
+                    NearCachePreloaderConfig preloaderConfig = nearCacheConfig.getPreloaderConfig();
+                    if (preloaderConfig.isEnabled()) {
                         createAndSchedulePreloadTask(nearCache, dataStructureAdapter);
-                        createAndScheduleStorageTask();
+                        createAndScheduleStorageTask(preloaderConfig);
                     }
                 }
             }
@@ -164,15 +165,14 @@ public class DefaultNearCacheManager implements NearCacheManager {
         }
     }
 
-    private void createAndScheduleStorageTask() {
+    private void createAndScheduleStorageTask(NearCachePreloaderConfig preloaderConfig) {
         if (storageTaskFuture == null) {
-            StorageTask storageTask = new StorageTask();
+            StorageTask storageTask = new StorageTask(preloaderConfig);
             storageTaskFuture = scheduler.scheduleWithRepetition(storageTask, 0, 1, SECONDS);
         }
     }
 
     private class PreloadTask implements Runnable {
-
         private final NearCache nearCache;
         private final DataStructureAdapter adapter;
 
@@ -197,6 +197,11 @@ public class DefaultNearCacheManager implements NearCacheManager {
     private class StorageTask implements Runnable {
 
         private final long started = System.currentTimeMillis();
+        private final NearCachePreloaderConfig preloaderConfig;
+
+        public StorageTask(NearCachePreloaderConfig preloaderConfig) {
+            this.preloaderConfig = preloaderConfig;
+        }
 
         @Override
         public void run() {
@@ -211,7 +216,6 @@ public class DefaultNearCacheManager implements NearCacheManager {
 
         private boolean isScheduled(NearCache nearCache, long now) {
             NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
-            NearCachePreloaderConfig preloaderConfig = nearCache.getPreloaderConfig();
             if (nearCacheStats.getLastPersistenceTime() == 0) {
                 // check initial delay seconds for first persistence
                 long runningSeconds = MILLISECONDS.toSeconds(now - started);

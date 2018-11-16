@@ -270,7 +270,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
                 Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
                 checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
-                        nodeEngine.getClusterService().getClusterVersion(), true, logger);
+                        true, logger);
 
                 if (putCacheConfigIfAbsent(cacheConfig) == null) {
                     // if the cache config was not previously known, ensure the new cache config

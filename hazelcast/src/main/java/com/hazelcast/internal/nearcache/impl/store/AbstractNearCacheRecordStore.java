@@ -18,6 +18,7 @@ package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.eviction.EvictionChecker;
@@ -47,6 +48,7 @@ import static com.hazelcast.internal.nearcache.NearCacheRecord.RESERVED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.UPDATE_STARTED;
 import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.lang.String.format;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
@@ -79,20 +81,20 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected final long timeToLiveMillis;
     protected final long maxIdleMillis;
-    protected final NearCacheConfig nearCacheConfig;
-    protected final SerializationService serializationService;
-    protected final ClassLoader classLoader;
-    protected final NearCacheStatsImpl nearCacheStats;
-
     protected final boolean evictionDisabled;
+    protected final ClassLoader classLoader;
+    protected final InMemoryFormat inMemoryFormat;
+    protected final NearCacheConfig nearCacheConfig;
+    protected final NearCacheStatsImpl nearCacheStats;
+    protected final SerializationService serializationService;
 
+    protected NCRM records;
     protected EvictionChecker evictionChecker;
     protected SamplingEvictionStrategy<KS, R, NCRM> evictionStrategy;
     protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
-    protected NCRM records;
 
-    protected volatile StaleReadDetector staleReadDetector = ALWAYS_FRESH;
     protected volatile long reservationId;
+    protected volatile StaleReadDetector staleReadDetector = ALWAYS_FRESH;
 
     public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
                                         ClassLoader classLoader) {
@@ -103,12 +105,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheStatsImpl nearCacheStats,
                                            SerializationService serializationService, ClassLoader classLoader) {
         this.nearCacheConfig = nearCacheConfig;
+        this.inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         this.timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.serializationService = serializationService;
         this.classLoader = classLoader;
         this.nearCacheStats = nearCacheStats;
-
         this.evictionDisabled = nearCacheConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.NONE;
     }
 
@@ -126,12 +128,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     @Override
     public void setStaleReadDetector(StaleReadDetector staleReadDetector) {
         this.staleReadDetector = staleReadDetector;
-    }
-
-    @Override
-    public StaleReadDetector getStaleReadDetector() {
-        checkAvailable();
-        return staleReadDetector;
     }
 
     @Override
@@ -158,8 +154,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract R putRecord(K key, R record);
 
-    protected abstract R removeRecord(K key);
-
     protected abstract boolean containsRecordKey(K key);
 
     protected void checkAvailable() {
@@ -168,8 +162,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
-    @Override
-    public boolean isAvailable() {
+    private boolean isAvailable() {
         return records != null;
     }
 
@@ -302,7 +295,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public void put(K key, Data keyData, V value) {
+    public void put(K key, Data keyData, V value, Data valueData) {
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
@@ -313,7 +306,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         R record = null;
         R oldRecord = null;
         try {
-            record = valueToRecord(value);
+            record = valueToRecord((V) selectInMemoryFormatFriendlyValue(inMemoryFormat, value, valueData));
             onRecordCreate(key, keyData, record);
             oldRecord = putRecord(key, record);
             if (oldRecord == null) {
@@ -325,6 +318,63 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             throw rethrow(error);
         }
     }
+
+    private static Object selectInMemoryFormatFriendlyValue(InMemoryFormat inMemoryFormat,
+                                                            Object value1, Object value2) {
+        switch (inMemoryFormat) {
+            case OBJECT:
+                return prioritizeObjectValue(value1, value2);
+            case BINARY:
+            case NATIVE:
+                return prioritizeDataValue(value1, value2);
+            default:
+                throw new IllegalArgumentException(format("Unrecognized in memory format "
+                        + "was found: '%s'", inMemoryFormat));
+        }
+    }
+
+    private static Object prioritizeObjectValue(Object value1, Object value2) {
+        boolean value1NotNull = value1 != null;
+        if (value1NotNull && !(value1 instanceof Data)) {
+            return value1;
+        }
+
+        boolean value2NotNull = value2 != null;
+        if (value2NotNull && !(value2 instanceof Data)) {
+            return value2;
+        }
+
+        if (value1NotNull) {
+            return value1;
+        }
+
+        if (value2NotNull) {
+            return value2;
+        }
+
+        return null;
+    }
+
+    private static Object prioritizeDataValue(Object value1, Object value2) {
+        if (value1 instanceof Data) {
+            return value1;
+        }
+
+        if (value2 instanceof Data) {
+            return value2;
+        }
+
+        if (value1 != null) {
+            return value1;
+        }
+
+        if (value2 != null) {
+            return value2;
+        }
+
+        return null;
+    }
+
 
     protected boolean canUpdateStats(R record) {
         return record != null && record.getRecordState() == READ_PERMITTED;
@@ -362,20 +412,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public void doEvictionIfRequired() {
+    public void doEviction(boolean withoutMaxSizeCheck) {
         checkAvailable();
 
         if (!evictionDisabled) {
+            EvictionChecker evictionChecker = withoutMaxSizeCheck ? null : this.evictionChecker;
             evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
-        }
-    }
-
-    @Override
-    public void doEviction() {
-        checkAvailable();
-
-        if (!evictionDisabled) {
-            evictionStrategy.evict(records, evictionPolicyEvaluator, null, this);
         }
     }
 
@@ -401,6 +443,11 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
         checkAvailable();
         return updateAndGetReserved(key, value, reservationId, deserialize);
+    }
+
+    // only used for testing purposes
+    public StaleReadDetector getStaleReadDetector() {
+        return staleReadDetector;
     }
 
     protected void onRecordCreate(K key, Data keyData, R record) {

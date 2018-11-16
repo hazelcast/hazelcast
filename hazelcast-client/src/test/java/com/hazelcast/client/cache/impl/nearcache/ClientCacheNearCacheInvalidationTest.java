@@ -515,7 +515,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
     private static <K, V, NK, NV> NV getFromNearCache(NearCacheTestContext<K, V, NK, NV> nearCacheTestContext, Object key) {
-        if (nearCacheTestContext.nearCache.getInMemoryFormat() == InMemoryFormat.NATIVE) {
+        if (nearCacheTestContext.nearCacheConfig.getInMemoryFormat() == InMemoryFormat.NATIVE) {
             key = nearCacheTestContext.serializationService.toData(key);
         }
         return nearCacheTestContext.nearCache.get((NK) key);

@@ -57,7 +57,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
 
     @Test
     public void restarts_running_backgroundClearTask_when_lifecycleState_turns_to_MERGED() {
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(taskPeriodSecondsPropName(), "1");
         HazelcastInstance node = createHazelcastInstance(config);
 
@@ -87,7 +87,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
 
     @Test
     public void clearExpiredRecordsTask_should_not_be_started_if_map_has_no_expirable_records() {
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(taskPeriodSecondsPropName(), "1");
         final HazelcastInstance node = createHazelcastInstance(config);
 
@@ -118,11 +118,11 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
 
     @Test
     public void clearExpiredRecordsTask_should_not_be_started_if_member_is_lite() {
-        Config liteMemberConfig = new Config();
+        Config liteMemberConfig = getConfig();
         liteMemberConfig.setLiteMember(true);
         liteMemberConfig.setProperty(taskPeriodSecondsPropName(), "1");
 
-        Config dataMemberConfig = new Config();
+        Config dataMemberConfig = getConfig();
         dataMemberConfig.setProperty(taskPeriodSecondsPropName(), "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -145,7 +145,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
     public void clearExpiredRecordsTask_should_be_started_when_mapConfig_ttl_is_configured() {
         String mapName = "test";
 
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(taskPeriodSecondsPropName(), "1");
         config.getMapConfig(mapName).setTimeToLiveSeconds(2);
         HazelcastInstance node = createHazelcastInstance(config);
@@ -161,7 +161,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
     public void clearExpiredRecordsTask_should_be_started_when_mapConfig_has_idle_configured() {
         String mapName = "test";
 
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(taskPeriodSecondsPropName(), "1");
         config.getMapConfig(mapName).setMaxIdleSeconds(2);
         HazelcastInstance node = createHazelcastInstance(config);
@@ -227,8 +227,52 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
         return expirationCounter;
     }
 
+    @Test
+    public void no_expiration_task_starts_on_new_node_after_migration_when_there_is_no_expirable_entry() {
+        Config config = getConfig();
+        config.setProperty(taskPeriodSecondsPropName(), "1");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = node1.getMap("test");
+        map.put(1, 1);
+
+        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        node1.shutdown();
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse("There should be zero ClearExpiredRecordsTask",
+                        hasClearExpiredRecordsTaskStarted(node2));
+            }
+        }, 3);
+    }
+
+    @Test
+    public void expiration_task_starts_on_new_node_after_migration_when_there_is_expirable_entry() {
+        Config config = getConfig();
+        config.setProperty(taskPeriodSecondsPropName(), "1");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = node1.getMap("test");
+        map.put(1, 1, 100, TimeUnit.SECONDS);
+
+        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        node1.shutdown();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue("There should be a ClearExpiredRecordsTask",
+                        hasClearExpiredRecordsTaskStarted(node2));
+            }
+        });
+    }
+
     private void backgroundClearTaskStops_whenLifecycleState(LifecycleEvent.LifecycleState lifecycleState) {
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(taskPeriodSecondsPropName(), "1");
         HazelcastInstance node = createHazelcastInstance(config);
 
@@ -256,6 +300,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
     }
 
     protected ExpirationManager newExpirationManager(HazelcastInstance node) {
-        return new ExpirationManager(new MapClearExpiredRecordsTask(getPartitionContainers(node), getNodeEngineImpl(node)), getNodeEngineImpl(node));
+        return new ExpirationManager(new MapClearExpiredRecordsTask(getPartitionContainers(node),
+                getNodeEngineImpl(node)), getNodeEngineImpl(node));
     }
 }

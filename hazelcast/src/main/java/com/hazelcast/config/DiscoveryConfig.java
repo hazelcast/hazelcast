@@ -16,10 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,7 +32,7 @@ import java.util.List;
  * This configuration class describes the top-level config of the discovery
  * SPI and its discovery strategies.
  */
-public class DiscoveryConfig {
+public class DiscoveryConfig implements IdentifiedDataSerializable {
 
     private List<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
     private DiscoveryServiceProvider discoveryServiceProvider;
@@ -91,9 +95,9 @@ public class DiscoveryConfig {
     }
 
     /**
-     * Returns the defined {@link DiscoveryStrategy}
-     * configurations. This collection does not include deactivated configurations
-     * since those are automatically skipped while reading the configuration file.
+     * Returns the defined {@link DiscoveryStrategy} configurations.
+     * This collection does not include deactivated configurations since those
+     * are automatically skipped while reading the configuration file.
      * <p>
      * All returned configurations are expected to be active, this is to remember
      * when building custom {@link com.hazelcast.config.Config} instances.
@@ -104,8 +108,15 @@ public class DiscoveryConfig {
         return discoveryStrategyConfigs;
     }
 
+    /**
+     * Sets the strategy configurations for this discovery config.
+     *
+     * @param discoveryStrategyConfigs the strategy configurations
+     */
     public void setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
-        this.discoveryStrategyConfigs = discoveryStrategyConfigs;
+        this.discoveryStrategyConfigs = discoveryStrategyConfigs == null
+                ? new ArrayList<DiscoveryStrategyConfig>(1)
+                : discoveryStrategyConfigs;
     }
 
     /**
@@ -128,5 +139,31 @@ public class DiscoveryConfig {
                 + ", nodeFilter=" + nodeFilter
                 + ", nodeFilterClass='" + nodeFilterClass + '\''
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.DISCOVERY_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(discoveryStrategyConfigs);
+        out.writeObject(discoveryServiceProvider);
+        out.writeObject(nodeFilter);
+        out.writeUTF(nodeFilterClass);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        discoveryStrategyConfigs = in.readObject();
+        discoveryServiceProvider = in.readObject();
+        nodeFilter = in.readObject();
+        nodeFilterClass = in.readUTF();
     }
 }

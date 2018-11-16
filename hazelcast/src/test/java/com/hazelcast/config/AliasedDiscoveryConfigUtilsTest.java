@@ -46,8 +46,9 @@ public class AliasedDiscoveryConfigUtilsTest {
     public void tagFor() {
         assertEquals("gcp", AliasedDiscoveryConfigUtils.tagFor(new GcpConfig()));
         assertEquals("aws", AliasedDiscoveryConfigUtils.tagFor(new AwsConfig()));
-        assertEquals("aws", AliasedDiscoveryConfigUtils.tagFor(new AwsConfig() { }));
-        assertNull(AliasedDiscoveryConfigUtils.tagFor(new AliasedDiscoveryConfig(null) { }));
+        assertEquals("aws", AliasedDiscoveryConfigUtils.tagFor(new AwsConfig() {
+        }));
+        assertNull(AliasedDiscoveryConfigUtils.tagFor(new DummyAliasedDiscoveryConfig(null)));
     }
 
     @Test
@@ -132,7 +133,7 @@ public class AliasedDiscoveryConfigUtilsTest {
     @Test(expected = InvalidConfigurationException.class)
     public void validateUnknownEnvironments() {
         // given
-        AliasedDiscoveryConfig aliasedDiscoveryConfig = new AliasedDiscoveryConfig("invalid-tag") {
+        AliasedDiscoveryConfig aliasedDiscoveryConfig = new DummyAliasedDiscoveryConfig("invalid-tag") {
         }.setEnabled(true);
         List<AliasedDiscoveryConfig<?>> configs = new ArrayList<AliasedDiscoveryConfig<?>>();
         configs.add(aliasedDiscoveryConfig);
@@ -230,5 +231,16 @@ public class AliasedDiscoveryConfigUtilsTest {
 
         // then
         assertFalse(result);
+    }
+
+    private static class DummyAliasedDiscoveryConfig extends AliasedDiscoveryConfig {
+        protected DummyAliasedDiscoveryConfig(String tag) {
+            super(tag);
+        }
+
+        @Override
+        public int getId() {
+            throw new UnsupportedOperationException("Deserialization not supported!");
+        }
     }
 }

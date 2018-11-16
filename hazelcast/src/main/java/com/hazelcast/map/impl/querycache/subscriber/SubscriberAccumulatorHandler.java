@@ -146,7 +146,7 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
      */
     private boolean noMissingMapWideEvent(AtomicReferenceArray<Queue<Integer>> removedCountHolders) {
         for (int i = 0; i < partitionCount; i++) {
-            if (removedCountHolders.get(i).size() < 1) {
+            if (removedCountHolders.get(i).isEmpty()) {
                 // means we still have not-received map-wide event for this partition
                 return false;
             }

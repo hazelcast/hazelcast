@@ -110,7 +110,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         // show that NearCache delegates put call to wrapped NearCacheRecordStore
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String value = "Record-" + i;
-            nearCache.put(i, null, value);
+            nearCache.put(i, null, value, null);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnPut);
             assertEquals(value, managedNearCacheRecordStore.latestValueOnPut);
         }
@@ -189,8 +189,8 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         NearCache nearCache2 = createNearCache(config2.getName(), config2, createManagedNearCacheRecordStore());
 
         // show that NearCache gets "inMemoryFormat" configuration from specified NearCacheConfig
-        assertEquals(InMemoryFormat.OBJECT, nearCache1.getInMemoryFormat());
-        assertEquals(InMemoryFormat.BINARY, nearCache2.getInMemoryFormat());
+        assertEquals(InMemoryFormat.OBJECT, config1.getInMemoryFormat());
+        assertEquals(InMemoryFormat.BINARY, config2.getInMemoryFormat());
     }
 
     protected void doGetNearCacheStatsFromNearCache() {
@@ -199,17 +199,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         // show that NearCache gets NearCacheStats from specified NearCacheRecordStore
         assertEquals(managedNearCacheRecordStore.getNearCacheStats(), nearCache.getNearCacheStats());
-    }
-
-    protected void doSelectToSaveFromNearCache() {
-        ManagedNearCacheRecordStore managedNearCacheRecordStore = createManagedNearCacheRecordStore();
-        NearCache<Integer, String> nearCache = createNearCache(DEFAULT_NEAR_CACHE_NAME, managedNearCacheRecordStore);
-
-        Object selectedCandidate = nearCache.selectToSave();
-
-        // show that NearCache gets selected candidate from specified NearCacheRecordStore
-        assertTrue(managedNearCacheRecordStore.selectToSaveCalled);
-        assertEquals(managedNearCacheRecordStore.selectedCandidateToSave, selectedCandidate);
     }
 
     protected void doCreateNearCacheAndWaitForExpirationCalled(boolean useTTL) {
@@ -239,7 +228,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         ManagedNearCacheRecordStore managedNearCacheRecordStore = createManagedNearCacheRecordStore();
         NearCache<Integer, String> nearCache = createNearCache(DEFAULT_NEAR_CACHE_NAME, managedNearCacheRecordStore);
 
-        nearCache.put(1, null, "1");
+        nearCache.put(1, null, "1", null);
 
         // show that NearCache checks eviction from specified NearCacheRecordStore
         assertTrue(managedNearCacheRecordStore.doEvictionIfRequiredCalled);
@@ -292,7 +281,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public void put(Integer key, Data keyData, String value) {
+        public void put(Integer key, Data keyData, String value, Data valueData) {
             if (expectedKeyValueMappings == null) {
                 throw new IllegalStateException("Near Cache is already destroyed");
             }
@@ -336,12 +325,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public Object selectToSave(Object... candidates) {
-            selectToSaveCalled = true;
-            return selectedCandidateToSave;
-        }
-
-        @Override
         public int size() {
             if (expectedKeyValueMappings == null) {
                 throw new IllegalStateException("Near Cache is already destroyed");
@@ -359,18 +342,11 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public void doEvictionIfRequired() {
+        public void doEviction(boolean withoutMaxSizeCheck) {
             if (expectedKeyValueMappings == null) {
                 throw new IllegalStateException("Near Cache is already destroyed");
             }
             doEvictionIfRequiredCalled = true;
-        }
-
-        @Override
-        public void doEviction() {
-            if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near Cache is already destroyed");
-            }
         }
 
         @Override
@@ -387,11 +363,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public StaleReadDetector getStaleReadDetector() {
-            return staleReadDetector;
-        }
-
-        @Override
         public long tryReserveForUpdate(Integer key, Data keyData) {
             return NOT_RESERVED;
         }
@@ -399,11 +370,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public String tryPublishReserved(Integer key, String value, long reservationId, boolean deserialize) {
             return null;
-        }
-
-        @Override
-        public boolean isAvailable() {
-            return true;
         }
     }
 }

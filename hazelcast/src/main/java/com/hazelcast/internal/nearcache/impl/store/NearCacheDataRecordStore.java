@@ -101,30 +101,4 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
     protected void updateRecordValue(NearCacheDataRecord record, V value) {
         record.setValue(toData(value));
     }
-
-    @Override
-    public Object selectToSave(Object... candidates) {
-        Object selectedCandidate = null;
-        if (candidates != null && candidates.length > 0) {
-            for (Object candidate : candidates) {
-                // give priority to Data typed candidate, so there will be no extra conversion from Object to Data
-                if (candidate instanceof Data) {
-                    selectedCandidate = candidate;
-                    break;
-                }
-            }
-            if (selectedCandidate != null) {
-                return selectedCandidate;
-            } else {
-                // select a non-null candidate
-                for (Object candidate : candidates) {
-                    if (candidate != null) {
-                        selectedCandidate = candidate;
-                        break;
-                    }
-                }
-            }
-        }
-        return selectedCandidate;
-    }
 }

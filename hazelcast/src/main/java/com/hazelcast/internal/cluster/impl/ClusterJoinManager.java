@@ -542,9 +542,10 @@ public class ClusterJoinManager {
                         masterAddress, callerAddress, currentMaster));
                 sendJoinRequest(currentMaster, true);
             } else {
-                logger.warning(format("Ambiguous master response: This node has a master %s, but does not have a connection"
-                                + " to %s. Sent master response as %s. Master field will be unset now...",
-                        currentMaster, callerAddress, masterAddress));
+                logger.warning(format("Ambiguous master response! Received master response %s from %s. "
+                                + "This node has a master %s, but does not have an active connection to it. "
+                                + "Master field will be unset now.",
+                        masterAddress, callerAddress, currentMaster));
                 clusterService.setMasterAddress(null);
             }
         } finally {

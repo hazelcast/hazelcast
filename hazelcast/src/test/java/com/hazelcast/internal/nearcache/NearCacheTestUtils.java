@@ -32,6 +32,8 @@ import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
@@ -443,11 +445,15 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void assertNearCacheSize(NearCacheTestContext<?, ?, ?, ?> context, long expectedSize, String... messages) {
         String message = messages.length > 0 ? messages[0] + " " : "";
 
-        if (context.nearCache.isAvailable()) {
+        try {
             // if near cache is destroyed, it will not be available for size check.
             long nearCacheSize = context.nearCache.size();
             assertEquals(format("%sNear Cache size didn't reach the desired value (%d vs. %d) (%s)",
                     message, expectedSize, nearCacheSize, context.stats), expectedSize, nearCacheSize);
+        } catch (IllegalStateException e) {
+            ILogger logger = Logger.getLogger(NearCacheTestUtils.class);
+            logger.info(format("Size check cannot be done on '%s' named Near Cache because it was destroyed",
+                    context.nearCache.getName()));
         }
 
         long ownedEntryCount = context.stats.getOwnedEntryCount();

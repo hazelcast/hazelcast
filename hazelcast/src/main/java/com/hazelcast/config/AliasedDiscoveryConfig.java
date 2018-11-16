@@ -16,15 +16,22 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Configuration for discovery strategy aliases, e.g. {@literal <gcp>}.
  *
  * @param <T> Subclass that extends {@link AliasedDiscoveryConfig}.
  */
-public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>> {
+public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>>
+        implements IdentifiedDataSerializable {
     private static final String USE_PUBLIC_IP_PROPERTY = "use-public-ip";
     private static final String ENABLED_PROPERTY = "enabled";
 
@@ -124,5 +131,32 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
     public String toString() {
         return "AliasedDiscoveryConfig{" + "tag='" + tag + '\'' + ", enabled=" + enabled + ", usePublicIp=" + usePublicIp
                 + ", properties=" + properties + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(enabled);
+        out.writeBoolean(usePublicIp);
+        out.writeInt(properties.size());
+        for (Entry<String, String> entry : properties.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeUTF(entry.getValue());
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        enabled = in.readBoolean();
+        usePublicIp = in.readBoolean();
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            properties.put(in.readUTF(), in.readUTF());
+        }
     }
 }

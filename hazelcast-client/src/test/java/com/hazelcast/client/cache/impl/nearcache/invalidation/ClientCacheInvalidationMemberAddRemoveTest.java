@@ -38,6 +38,7 @@ import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
+import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -218,7 +219,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
                 long memberSequence2 = metaDataGenerator2.currentSequence("/hz/" + DEFAULT_CACHE_NAME, partitionId);
                 UUID memberUuid2 = metaDataGenerator2.getUuidOrNull(partitionId);
 
-                StaleReadDetector staleReadDetector = nearCacheRecordStore.getStaleReadDetector();
+                StaleReadDetector staleReadDetector = getStaleReadDetector((AbstractNearCacheRecordStore) nearCacheRecordStore);
                 MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
                 return format("On client: [uuid=%s, partition=%d, onRecordSequence=%d, latestSequence=%d, staleSequence=%d],"
                                 + "%nOn members: [memberUuid1=%s, memberSequence1=%d, memberUuid2=%s, memberSequence2=%d]",
@@ -238,6 +239,10 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
                 return defaultNearCache.getNearCacheRecordStore();
             }
         });
+    }
+
+    protected StaleReadDetector getStaleReadDetector(NearCacheRecordStore nearCacheRecordStore) {
+        return ((AbstractNearCacheRecordStore) nearCacheRecordStore).getStaleReadDetector();
     }
 
     @Override

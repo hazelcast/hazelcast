@@ -88,15 +88,6 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    protected R removeRecord(K key) {
-        R removedRecord = records.remove(key);
-        if (canUpdateStats(removedRecord)) {
-            nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, removedRecord));
-        }
-        return removedRecord;
-    }
-
-    @Override
     protected boolean containsRecordKey(K key) {
         return records.containsKey(key);
     }

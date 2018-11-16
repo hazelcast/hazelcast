@@ -16,8 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
+import com.hazelcast.util.MapUtil;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,13 +31,17 @@ import java.util.Map;
  * This configuration class describes a {@link com.hazelcast.spi.discovery.DiscoveryStrategy}
  * based on a parsed XML or configured manually using the config API
  */
-public class DiscoveryStrategyConfig {
+public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     private String className;
-    private DiscoveryStrategyFactory discoveryStrategyFactory;
+    // we skip serialization since this may be a user-supplied object and
+    // it may not be serializable. Since we send the WAN config in the
+    // FinalizeJoinOp, this may prevent a node from sending it to a joining
+    // member
+    private transient DiscoveryStrategyFactory discoveryStrategyFactory;
     private Map<String, Comparable> properties;
 
     public DiscoveryStrategyConfig() {
-        properties = new HashMap<String, Comparable>();
+        properties = MapUtil.createHashMap(1);
     }
 
     public DiscoveryStrategyConfig(String className) {
@@ -42,7 +51,9 @@ public class DiscoveryStrategyConfig {
     public DiscoveryStrategyConfig(String className,
                                    Map<String, Comparable> properties) {
         this.className = className;
-        this.properties = new HashMap<String, Comparable>(properties);
+        this.properties = properties == null
+                ? MapUtil.<String, Comparable>createHashMap(1)
+                : new HashMap<String, Comparable>(properties);
         this.discoveryStrategyFactory = null;
     }
 
@@ -53,7 +64,9 @@ public class DiscoveryStrategyConfig {
 
     public DiscoveryStrategyConfig(DiscoveryStrategyFactory discoveryStrategyFactory, Map<String, Comparable> properties) {
         this.className = null;
-        this.properties = new HashMap<String, Comparable>(properties);
+        this.properties = properties == null
+                ? MapUtil.<String, Comparable>createHashMap(1)
+                : new HashMap<String, Comparable>(properties);
         this.discoveryStrategyFactory = discoveryStrategyFactory;
     }
 
@@ -84,7 +97,9 @@ public class DiscoveryStrategyConfig {
     }
 
     public DiscoveryStrategyConfig setProperties(Map<String, Comparable> properties) {
-        this.properties = properties;
+        this.properties = properties == null
+                ? MapUtil.<String, Comparable>createHashMap(1)
+                : new HashMap<String, Comparable>(properties);
         return this;
     }
 
@@ -99,5 +114,35 @@ public class DiscoveryStrategyConfig {
                 + ", className='" + className + '\''
                 + ", discoveryStrategyFactory=" + discoveryStrategyFactory
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.DISCOVERY_STRATEGY_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(className);
+
+        out.writeInt(properties.size());
+        for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        className = in.readUTF();
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            properties.put(in.readUTF(), (Comparable) in.readObject());
+        }
     }
 }

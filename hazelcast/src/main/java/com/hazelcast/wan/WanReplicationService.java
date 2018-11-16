@@ -133,17 +133,37 @@ public interface WanReplicationService extends CoreService {
      *
      * @param wanReplicationName the name of the wan replication config
      * @param targetGroupName    the target cluster group name
+     * @throws UnsupportedOperationException if invoked on OS
      */
     void clearQueues(String wanReplicationName, String targetGroupName);
 
     /**
      * Adds a new {@link WanReplicationConfig} to this member and creates the
      * {@link WanReplicationPublisher}s specified in the config.
+     * This method can also accept WAN configs with an existing WAN replication
+     * name. Such configs will be merged into the existing WAN replication
+     * config by adding publishers with publisher IDs which are not already part
+     * of the existing configuration.
+     *
+     * @throws UnsupportedOperationException if invoked on OS
+     */
+    void addWanReplicationConfigLocally(WanReplicationConfig wanConfig);
+
+    /**
+     * Adds a new {@link WanReplicationConfig} to the cluster.
+     * This method can also accept WAN configs with an existing WAN replication
+     * name. Such configs will be merged into the existing WAN replication
+     * config by adding publishers with publisher IDs which are not already part
+     * of the existing configuration.
+     *
+     * @throws UnsupportedOperationException if invoked on OS
+     * @see #addWanReplicationConfigLocally(WanReplicationConfig)
      */
     void addWanReplicationConfig(WanReplicationConfig wanConfig);
 
     /**
-     * Returns current status of WAN sync operation
+     * Returns current status of WAN sync operation or {@code null} when there
+     * is no status.
      */
     WanSyncState getWanSyncState();
 

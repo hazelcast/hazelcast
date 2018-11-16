@@ -18,7 +18,6 @@ package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
@@ -119,12 +118,12 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public void put(K key, Data keyData, V value) {
+    public void put(K key, Data keyData, V value, Data valueData) {
         checkKeyFormat(key);
 
-        nearCacheRecordStore.doEvictionIfRequired();
+        nearCacheRecordStore.doEviction(false);
 
-        nearCacheRecordStore.put(key, keyData, value);
+        nearCacheRecordStore.put(key, keyData, value, valueData);
     }
 
     @Override
@@ -148,16 +147,6 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public InMemoryFormat getInMemoryFormat() {
-        return nearCacheConfig.getInMemoryFormat();
-    }
-
-    @Override
-    public NearCachePreloaderConfig getPreloaderConfig() {
-        return nearCacheConfig.getPreloaderConfig();
-    }
-
-    @Override
     public NearCacheStats getNearCacheStats() {
         return nearCacheRecordStore.getNearCacheStats();
     }
@@ -168,18 +157,8 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public Object selectToSave(Object... candidates) {
-        return nearCacheRecordStore.selectToSave(candidates);
-    }
-
-    @Override
     public int size() {
         return nearCacheRecordStore.size();
-    }
-
-    @Override
-    public boolean isAvailable() {
-        return nearCacheRecordStore.isAvailable();
     }
 
     @Override
@@ -212,7 +191,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     @Override
     public long tryReserveForUpdate(K key, Data keyData) {
-        nearCacheRecordStore.doEvictionIfRequired();
+        nearCacheRecordStore.doEviction(false);
 
         return nearCacheRecordStore.tryReserveForUpdate(key, keyData);
     }

@@ -27,10 +27,9 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
-import java.util.concurrent.TimeUnit;
-
 import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_INTERVAL;
 import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_TIMEOUT;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * HeartbeatManager manager used by connection manager.
@@ -47,9 +46,9 @@ public class HeartbeatManager implements Runnable {
     HeartbeatManager(ClientConnectionManagerImpl clientConnectionManager, HazelcastClientInstanceImpl client) {
         this.clientConnectionManager = clientConnectionManager;
         this.client = client;
-        HazelcastProperties hazelcastProperties = client.getProperties();
-        this.heartbeatTimeout = hazelcastProperties.getPositiveMillisOrDefault(HEARTBEAT_TIMEOUT);
-        this.heartbeatInterval = hazelcastProperties.getPositiveMillisOrDefault(HEARTBEAT_INTERVAL);
+        HazelcastProperties properties = client.getProperties();
+        this.heartbeatTimeout = properties.getPositiveMillisOrDefault(HEARTBEAT_TIMEOUT);
+        this.heartbeatInterval = properties.getPositiveMillisOrDefault(HEARTBEAT_INTERVAL);
         this.logger = client.getLoggingService().getLogger(HeartbeatManager.class);
         ClientIcmpPingConfig icmpPingConfig = client.getClientConfig().getNetworkConfig().getClientIcmpPingConfig();
         this.clientICMPManager = new ClientICMPManager(icmpPingConfig,
@@ -58,8 +57,8 @@ public class HeartbeatManager implements Runnable {
     }
 
     public void start() {
-        final ClientExecutionServiceImpl es = (ClientExecutionServiceImpl) client.getClientExecutionService();
-        es.scheduleWithRepetition(this, heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
+        client.getClientExecutionService()
+                .scheduleWithRepetition(this, heartbeatInterval, heartbeatInterval, MILLISECONDS);
         clientICMPManager.start();
     }
 
