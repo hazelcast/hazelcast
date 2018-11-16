@@ -1099,6 +1099,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         assertNotNull(managementCenterConfig);
         assertTrue(managementCenterConfig.isEnabled());
+        assertFalse(managementCenterConfig.isScriptingEnabled());
         assertEquals("myserver:80", managementCenterConfig.getUrl());
         assertEquals(2, managementCenterConfig.getUpdateInterval());
         assertTrue(managementCenterConfig.getMutualAuthConfig().isEnabled());

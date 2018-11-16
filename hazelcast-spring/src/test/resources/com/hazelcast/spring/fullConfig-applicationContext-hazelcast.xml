@@ -24,7 +24,7 @@
         http://www.hazelcast.com/schema/sample
         hazelcast-sample-service.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.12.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -42,7 +42,7 @@
                     name="${cluster.group.name}"
                     password="${cluster.group.password}"/>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
-            <hz:management-center enabled="true" update-interval="2">
+            <hz:management-center enabled="true" update-interval="2" scripting-enabled="false">
                 <hz:url>myserver:80</hz:url>
                 <hz:mutual-auth enabled="true">
                     <hz:factory-class-name>who.let.the.cat.out.class</hz:factory-class-name>

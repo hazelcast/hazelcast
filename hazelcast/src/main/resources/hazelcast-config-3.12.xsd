@@ -2626,6 +2626,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="scripting-enabled" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    True to allow scripting on the member, false to disallow.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional">
             <xs:annotation>
                 <xs:documentation>

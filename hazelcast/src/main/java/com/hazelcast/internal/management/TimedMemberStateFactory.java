@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Client;
@@ -65,7 +66,6 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.wan.WanReplicationService;
@@ -143,8 +143,8 @@ public class TimedMemberStateFactory {
         SocketInterceptorConfig interceptorConfig = instance.getConfig().getNetworkConfig().getSocketInterceptorConfig();
         timedMemberState.setSocketInterceptorEnabled(interceptorConfig != null && interceptorConfig.isEnabled());
 
-        boolean scriptingEnabled = instance.node.getProperties().getBoolean(GroupProperty.SCRIPTING_ENABLED);
-        timedMemberState.setScriptingEnabled(scriptingEnabled);
+        ManagementCenterConfig managementCenterConfig = instance.node.getConfig().getManagementCenterConfig();
+        timedMemberState.setScriptingEnabled(managementCenterConfig.isScriptingEnabled());
 
         return timedMemberState;
     }

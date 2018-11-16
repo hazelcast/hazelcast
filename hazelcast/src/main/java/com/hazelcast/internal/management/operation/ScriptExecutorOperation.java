@@ -16,14 +16,13 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.script.ScriptEngine;
@@ -54,8 +53,8 @@ public class ScriptExecutorOperation extends AbstractManagementOperation impleme
 
     @Override
     public void run() {
-        HazelcastProperties hzProperties = getNodeEngine().getProperties();
-        if (! hzProperties.getBoolean(GroupProperty.SCRIPTING_ENABLED)) {
+        ManagementCenterConfig managementCenterConfig = getNodeEngine().getConfig().getManagementCenterConfig();
+        if (!managementCenterConfig.isScriptingEnabled()) {
             throw new AccessControlException("Using ScriptEngine is not allowed on this Hazelcast member.");
         }
         ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();

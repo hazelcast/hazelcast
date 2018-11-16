@@ -174,6 +174,7 @@ public class ConfigXmlGenerator {
             ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
             gen.open("management-center",
                     "enabled", mcConfig.isEnabled(),
+                    "scripting-enabled", mcConfig.isScriptingEnabled(),
                     "update-interval", mcConfig.getUpdateInterval());
             gen.node("url", mcConfig.getUrl());
             if (mcConfig.getUrl() != null) {
