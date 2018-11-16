@@ -45,15 +45,15 @@ import java.util.concurrent.Executor;
 public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {
 
     protected final Ringbuffer<ReliableTopicMessage> ringbuffer;
-    final ReliableMessageListener<E> listener;
-    private final String topicName;
+    protected final ILogger logger;
+    protected final ReliableMessageListener<E> listener;
+    protected final String topicName;
+    protected long sequence;
     private final SerializationService serializationService;
     private final ConcurrentMap<String, MessageRunner<E>> runnersMap;
     private final String id;
-    private final ILogger logger;
     private final Executor executor;
     private final int batchSze;
-    private long sequence;
     private volatile boolean cancelled;
 
     public MessageRunner(String id,
@@ -125,9 +125,8 @@ public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSe
      * calling the user supplied listener.
      *
      * @param message the reliable topic message
-     * @throws Throwable
      */
-    private void process(ReliableTopicMessage message) throws Throwable {
+    private void process(ReliableTopicMessage message) {
         updateStatistics();
         listener.onMessage(toMessage(message));
     }
@@ -150,17 +149,24 @@ public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSe
         }
 
         t = adjustThrowable(t);
+        if (handleInternalException(t)) {
+            next();
+        } else {
+            cancel();
+        }
+    }
+
+    /**
+     * @param t throwable to check if it is terminal or can be handled so that topic can continue
+     * @return true if the exception was handled and the listener may continue reading
+     */
+    protected boolean handleInternalException(Throwable t) {
         if (t instanceof OperationTimeoutException) {
-            handleOperationTimeoutException();
-            return;
-        } else if (t instanceof IllegalArgumentException && listener.isLossTolerant()) {
-            if (handleIllegalArgumentException((IllegalArgumentException) t)) {
-                return;
-            }
+            return handleOperationTimeoutException();
+        } else if (t instanceof IllegalArgumentException) {
+            return handleIllegalArgumentException((IllegalArgumentException) t);
         } else if (t instanceof StaleSequenceException) {
-            if (handleStaleSequenceException((StaleSequenceException) t)) {
-                return;
-            }
+            return handleStaleSequenceException((StaleSequenceException) t);
         } else if (t instanceof HazelcastInstanceNotActiveException) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Terminating MessageListener " + listener + " on topic: " + topicName + ". "
@@ -175,16 +181,15 @@ public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSe
             logger.warning("Terminating MessageListener " + listener + " on topic: " + topicName + ". "
                     + "Reason: Unhandled exception, message: " + t.getMessage(), t);
         }
-
-        cancel();
+        return false;
     }
 
-    private void handleOperationTimeoutException() {
+    private boolean handleOperationTimeoutException() {
         if (logger.isFinestEnabled()) {
             logger.finest("MessageListener " + listener + " on topic: " + topicName + " timed out. "
                     + "Continuing from last known sequence: " + sequence);
         }
-        next();
+        return true;
     }
 
     /**
@@ -213,7 +218,6 @@ public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSe
                         + " to sequence: " + headSeq);
             }
             sequence = headSeq;
-            next();
             return true;
         }
 
@@ -236,14 +240,16 @@ public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSe
      */
     private boolean handleIllegalArgumentException(IllegalArgumentException t) {
         final long currentHeadSequence = ringbuffer.headSequence();
-        if (logger.isFinestEnabled()) {
-            logger.finest(String.format("MessageListener %s on topic %s requested a too large sequence: %s. "
-                            + ". Jumping from old sequence: %s to sequence: %s",
-                    listener, topicName, t.getMessage(), sequence, currentHeadSequence));
+        if (listener.isLossTolerant()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest(String.format("MessageListener %s on topic %s requested a too large sequence: %s. "
+                                + ". Jumping from old sequence: %s to sequence: %s",
+                        listener, topicName, t.getMessage(), sequence, currentHeadSequence));
+            }
+            this.sequence = currentHeadSequence;
+            return true;
         }
-        this.sequence = currentHeadSequence;
-        next();
-        return true;
+        return false;
     }
 
     public void cancel() {
