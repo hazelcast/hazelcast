@@ -1303,6 +1303,7 @@ public class ConfigCompatibilityChecker {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                    && (c1.isScriptingEnabled() == c2.isScriptingEnabled())
                     && nullSafeEqual(c1.getUrl(), c2.getUrl())
                     && nullSafeEqual(c1.getUpdateInterval(), c2.getUpdateInterval()));
         }

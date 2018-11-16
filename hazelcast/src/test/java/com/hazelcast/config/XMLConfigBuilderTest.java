@@ -759,7 +759,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"true\">"
+                + "<management-center enabled=\"true\" scripting-enabled='false'>"
                 + "someUrl"
                 + "</management-center>"
                 + HAZELCAST_END_TAG;
@@ -768,6 +768,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
 
         assertTrue(manCenterCfg.isEnabled());
+        assertFalse(manCenterCfg.isScriptingEnabled());
         assertEquals("someUrl", manCenterCfg.getUrl());
     }
 

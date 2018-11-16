@@ -44,7 +44,7 @@
     </group>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
-    <management-center enabled="true" update-interval="5">
+    <management-center enabled="true" update-interval="5" scripting-enabled="false">
         <url>http://mywebserver:8080</url>
         <mutual-auth enabled="true">
             <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>

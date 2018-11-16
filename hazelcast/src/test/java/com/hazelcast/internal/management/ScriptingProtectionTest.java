@@ -36,7 +36,6 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -133,10 +132,9 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
         return op;
     }
 
-    @SuppressWarnings("deprecation")
     protected Config createConfig(boolean scriptingEnabled) {
         Config config = new Config();
-        config.setProperty(GroupProperty.SCRIPTING_ENABLED.getName(), String.valueOf(scriptingEnabled));
+        config.getManagementCenterConfig().setScriptingEnabled(scriptingEnabled);
         return config;
     }
 }
