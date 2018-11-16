@@ -646,14 +646,20 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         if (value instanceof String) {
             return '"' + (String) value + '"';
         } else if (value instanceof Collection) {
-            return "[" + join((Collection) value, ",") + "]";
+            return "[" + toJson((Collection) value) + "]";
         } else {
             throw new IllegalArgumentException("Unsupported ");
         }
     }
 
-    public static String join(Collection strings, final String separator) {
-        Iterator iterator = strings.iterator();
+    /**
+     * Serializes a collection of objects into its JSON representation.
+     *
+     * @param objects collection of items to be serialized into JSON
+     * @return the serialized JSON
+     */
+    public static String toJson(Collection objects) {
+        Iterator iterator = objects.iterator();
         if (!iterator.hasNext()) {
             return "";
         }
@@ -668,9 +674,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
 
         while (iterator.hasNext()) {
-            if (separator != null) {
-                buf.append(separator);
-            }
+            buf.append(',');
             final Object obj = iterator.next();
             if (obj != null) {
                 buf.append(jsonLiteral(obj));
