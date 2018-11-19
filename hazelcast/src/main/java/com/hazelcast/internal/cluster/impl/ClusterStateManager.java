@@ -59,6 +59,7 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
  * When a cluster state change is requested, a cluster-wide transaction is started
  * and state is changed all over the cluster atomically.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class ClusterStateManager {
 
     private static final TransactionOptions DEFAULT_TX_OPTIONS = new TransactionOptions()
@@ -186,12 +187,7 @@ public class ClusterStateManager {
     }
 
     /**
-     * Validate cluster state change requested and set a {@code ClusterStateLock}.
-     * @param stateChange
-     * @param initiator
-     * @param txnId
-     * @param leaseTime
-     * @param partitionStateVersion
+     * Validates the requested cluster state change and sets a {@code ClusterStateLock}.
      */
     public void lockClusterState(ClusterStateChange stateChange, Address initiator, String txnId, long leaseTime,
             int memberListVersion, int partitionStateVersion) {
@@ -357,32 +353,36 @@ public class ClusterStateManager {
         }
     }
 
-    void changeClusterState(ClusterStateChange newState, MemberMap memberMap, int partitionStateVersion,
-            boolean isTransient) {
-        changeClusterState(newState, memberMap, DEFAULT_TX_OPTIONS, partitionStateVersion, isTransient);
+    void changeClusterState(
+            ClusterStateChange stateChange, MemberMap memberMap, int partitionStateVersion, boolean isTransient
+    ) {
+        changeClusterState(stateChange, memberMap, DEFAULT_TX_OPTIONS, partitionStateVersion, isTransient);
     }
 
-    void changeClusterState(ClusterStateChange newState, MemberMap memberMap, TransactionOptions options,
-            int partitionStateVersion, boolean isTransient) {
-        checkParameters(newState, options);
-        if (isCurrentStateEqualToRequestedOne(newState)) {
+    void changeClusterState(
+            ClusterStateChange stateChange, MemberMap memberMap, TransactionOptions options,
+            int partitionStateVersion, boolean isTransient
+    ) {
+        checkParameters(stateChange, options);
+        if (isCurrentStateEqualToRequestedOne(stateChange)) {
             return;
         }
-
+        ClusterState oldState = getState();
+        ClusterState requestedState = stateChange.getClusterStateOrNull();
         NodeEngineImpl nodeEngine = node.getNodeEngine();
         TransactionManagerServiceImpl txManagerService
                 = (TransactionManagerServiceImpl) nodeEngine.getTransactionManagerService();
         Transaction tx = txManagerService.newAllowedDuringPassiveStateTransaction(options);
+        notifyBeforeStateChange(oldState, requestedState, isTransient);
         tx.begin();
-
         try {
             String txnId = tx.getTxnId();
             Collection<MemberImpl> members = memberMap.getMembers();
             int memberListVersion = memberMap.getVersion();
 
-            addTransactionRecords(newState, tx, members, memberListVersion, partitionStateVersion, isTransient);
+            addTransactionRecords(stateChange, tx, members, memberListVersion, partitionStateVersion, isTransient);
 
-            lockClusterStateOnAllMembers(newState, nodeEngine, options.getTimeoutMillis(), txnId, members,
+            lockClusterStateOnAllMembers(stateChange, nodeEngine, options.getTimeoutMillis(), txnId, members,
                     memberListVersion, partitionStateVersion);
 
             checkMemberListChange(memberListVersion);
@@ -391,6 +391,7 @@ public class ClusterStateManager {
 
         } catch (Throwable e) {
             tx.rollback();
+            notifyAfterStateChange(oldState, requestedState, isTransient);
             if (e instanceof TargetNotMemberException || e.getCause() instanceof MemberLeftException) {
                 throw new IllegalStateException("Cluster members changed during state change!", e);
             }
@@ -409,6 +410,21 @@ public class ClusterStateManager {
                 return;
             }
             throw ExceptionUtil.rethrow(e);
+        } finally {
+            notifyAfterStateChange(oldState, requestedState, isTransient);
+        }
+    }
+
+    private void notifyBeforeStateChange(ClusterState oldState, ClusterState requestedState, boolean isTransient) {
+        if (requestedState != null) {
+            node.getNodeExtension().beforeClusterStateChange(oldState, requestedState, isTransient);
+        }
+    }
+
+    private void notifyAfterStateChange(ClusterState oldState, ClusterState requestedState, boolean isTransient) {
+        if (requestedState != null) {
+            // on failure, the actual state is not equal to requestedState, that's why we pass getState()
+            node.getNodeExtension().afterClusterStateChange(oldState, getState(), isTransient);
         }
     }
 

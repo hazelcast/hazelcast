@@ -83,7 +83,7 @@ public class MockNodeContext implements NodeContext {
      * @return {@code NodeExtension} suitable for sampling serialized objects in OSS or EE environment
      */
     @SuppressWarnings("unchecked")
-    private NodeExtension constructSamplingNodeExtension(Node node) {
+    private static NodeExtension constructSamplingNodeExtension(Node node) {
         if (BuildInfoProvider.getBuildInfo().isEnterprise()) {
             try {
                 Class<? extends NodeExtension> klass = (Class<? extends NodeExtension>)

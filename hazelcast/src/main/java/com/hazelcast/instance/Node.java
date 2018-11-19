@@ -247,7 +247,7 @@ public class Node {
         }
     }
 
-    private ClassLoader getConfigClassloader(Config config) {
+    private static ClassLoader getConfigClassloader(Config config) {
         UserCodeDeploymentConfig userCodeDeploymentConfig = config.getUserCodeDeploymentConfig();
         ClassLoader classLoader;
         if (userCodeDeploymentConfig.isEnabled()) {
