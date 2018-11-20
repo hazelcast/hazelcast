@@ -31,7 +31,9 @@ public class SocketOptions {
      */
     public static final int DEFAULT_BUFFER_SIZE_BYTE = 128 * KILO_BYTE;
 
-    static final int DEFAULT_BUFFER_SIZE = 128;
+    static final int DEFAULT_BUFFER_SIZE_IN_KB = 128;
+
+    static final int DEFAULT_LINGER_SECONDS = 3;
 
     // socket options
 
@@ -41,9 +43,9 @@ public class SocketOptions {
 
     private boolean reuseAddress = true;
 
-    private int lingerSeconds = 3;
+    private int lingerSeconds = DEFAULT_LINGER_SECONDS;
 
-    private int bufferSize = DEFAULT_BUFFER_SIZE;
+    private int bufferSizeInKB = DEFAULT_BUFFER_SIZE_IN_KB;
 
     /**
      * TCP_NODELAY socket option
@@ -115,6 +117,9 @@ public class SocketOptions {
 
     /**
      * Enable/disable SO_LINGER with the specified linger time in seconds
+     * If set to a value of 0 or less then it is disabled.
+     *
+     * Default value is {@link SocketOptions#DEFAULT_LINGER_SECONDS}
      *
      * @param lingerSeconds value in seconds
      * @return SocketOptions configured
@@ -125,11 +130,11 @@ public class SocketOptions {
     }
 
     /**
-     * Gets the SO_SNDBUF and SO_RCVBUF options to the specified value in KB
+     * Gets the SO_SNDBUF and SO_RCVBUF option value
      * @return bufferSize KB value
      */
     public int getBufferSize() {
-        return bufferSize;
+        return bufferSizeInKB;
     }
 
     /**
@@ -139,7 +144,7 @@ public class SocketOptions {
      * @return SocketOptions configured
      */
     public SocketOptions setBufferSize(int bufferSize) {
-        this.bufferSize = bufferSize;
+        this.bufferSizeInKB = bufferSize;
         return this;
     }
 
