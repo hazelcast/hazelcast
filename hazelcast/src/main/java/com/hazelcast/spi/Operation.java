@@ -181,7 +181,7 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Method is intended to be subclassed. If it returns {@code true},
+     * Method is intended to be overridden. If it returns {@code true},
      * {@link #getResponse()} will be called right after {@link #run()} method.
      * If it returns {@code false}, {@link #sendResponse(Object)} must be
      * called later to finish the operation.

@@ -25,8 +25,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * The internal {@link ExecutionService}. Currently this method doesn't contains any additional methods, but
- * in the future they can be added here.
+ * The internal {@link ExecutionService}.
  */
 public interface InternalExecutionService extends ExecutionService {
 

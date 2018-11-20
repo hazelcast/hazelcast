@@ -327,14 +327,15 @@ public interface HazelcastInstance {
     ISemaphore getSemaphore(String name);
 
     /**
-     * Returns all {@link DistributedObject}'s such as; queue, map, set, list, topic, lock, multimap.
+     * Returns all {@link DistributedObject}s, that is all maps, queues,
+     * topics, locks etc.
      * <p>
      * The results are returned on a best-effort basis. The result might miss
      * just-created objects and contain just-deleted objects. An existing
      * object can also be missing from the list occasionally. One cluster
      * member is queried to obtain the list.
      *
-     * @return the collection of instances created by Hazelcast.
+     * @return the collection of all instances in the cluster
      */
     Collection<DistributedObject> getDistributedObjects();
 
