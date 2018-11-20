@@ -1606,7 +1606,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
      * @param expiryTime
      */
     protected void markExpirable(long expiryTime) {
-        if (expiryTime != TIME_NOT_AVAILABLE) {
+        if (expiryTime > 0 && expiryTime < Long.MAX_VALUE) {
             hasEntryWithExpiration = true;
         }
 
