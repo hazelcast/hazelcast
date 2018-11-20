@@ -99,6 +99,29 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
+    public void exception_suppressesFutureExecutions()
+            throws ExecutionException, InterruptedException {
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService("test");
+
+        final IScheduledFuture f = service.scheduleAtFixedRate(
+                new ErroneousRunnableTask(), 1, 1, TimeUnit.SECONDS);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(f.isDone());
+            }
+        });
+
+        assertEquals(1L, f.getStats().getTotalRuns());
+        expected.expect(ExecutionException.class);
+        expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Erroneous task"));
+
+        f.get();
+    }
+
+    @Test
     public void capacity_whenNoLimit() {
         String schedulerName = "foobar";
 
