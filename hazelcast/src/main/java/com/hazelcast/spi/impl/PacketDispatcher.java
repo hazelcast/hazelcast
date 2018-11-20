@@ -25,8 +25,8 @@ import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 
 /**
- * A {@link Consumer} that dispatches the {@link Packet} to the right service. So operations are send to the
- * {@link com.hazelcast.spi.OperationService}, events are send to the {@link com.hazelcast.spi.EventService} etc.
+ * A {@link Consumer} that dispatches the {@link Packet} to the right service. For example, operations are sent to the
+ * {@link com.hazelcast.spi.OperationService}, events are sent to the {@link com.hazelcast.spi.EventService} etc.
  */
 public final class PacketDispatcher implements Consumer<Packet> {
 

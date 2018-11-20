@@ -29,17 +29,17 @@ public final class TimeUtil {
     private TimeUtil() { }
 
     /**
-     * Convert time to milliseconds based on the input time-unit.
-     * If conversion results in the value 0, then it the value is replaced with the positive 1.
+     * Convert time to milliseconds based on the given time unit.
+     * If conversion result is 0 and {@code time} was > 0, then 1 is returned.
      *
      * @param time The input time
-     * @param timeunit The input time-unit to base the conversion on
+     * @param timeUnit The time unit to base the conversion on
      *
-     * @throws NullPointerException if timeunit is <code>null</code>
-     * @return The milliseconds representation of the input time
+     * @throws NullPointerException if time unit is <code>null</code>
+     * @return The millisecond representation of the input time
      */
-    public static long timeInMsOrOneIfResultIsZero(long time, TimeUnit timeunit) {
-        long timeInMillis = timeunit.toMillis(time);
+    public static long timeInMsOrOneIfResultIsZero(long time, TimeUnit timeUnit) {
+        long timeInMillis = timeUnit.toMillis(time);
         if (time > 0 && timeInMillis == 0) {
             timeInMillis = 1;
         }
@@ -48,16 +48,16 @@ public final class TimeUtil {
     }
 
     /**
-     * Convert time to milliseconds based on the input time-unit.
-     * If time-unit is null, then input time is treated as milliseconds
+     * Convert time to milliseconds based on the given time unit.
+     * If time unit is null, then input time is treated as milliseconds.
      *
      * @param time The input time
-     * @param timeunit The input time-unit to base the conversion on
-     * @return The milliseconds representation of the time based on the unit, or the time
-     * itself if unit is <code>null</code>
+     * @param timeUnit The time unit to base the conversion on
+     * @return The millisecond representation of the time based on the unit, or the time
+     * itself if the unit is <code>null</code>
      */
-    public static long timeInMsOrTimeIfNullUnit(long time, TimeUnit timeunit) {
-        return timeunit != null ? timeunit.toMillis(time) : time;
+    public static long timeInMsOrTimeIfNullUnit(long time, TimeUnit timeUnit) {
+        return timeUnit != null ? timeUnit.toMillis(time) : time;
     }
 
     /**

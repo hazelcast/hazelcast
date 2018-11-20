@@ -17,8 +17,8 @@
 package com.hazelcast.spi;
 
 /**
- * The possible actions that can be taken when a certain exception is thrown. E.g. when a map.get is executed on a member
- * where the partition has just moved to another box, the ExceptionAction.RETRY_INVOCATION would be used.
+ * The possible actions that can be taken when a certain exception is thrown. E.g. when a map.get() is executed on a member
+ * where the partition has just moved to another member, the RETRY_INVOCATION would be used.
  */
 public enum ExceptionAction {
 
@@ -28,7 +28,7 @@ public enum ExceptionAction {
     RETRY_INVOCATION,
 
     /**
-     * Indicates that the exception should be bubble up.
+     * Indicates that the exception should bubble up.
      */
     THROW_EXCEPTION
 }
