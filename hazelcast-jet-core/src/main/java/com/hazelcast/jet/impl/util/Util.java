@@ -16,11 +16,14 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.ClientConfigXmlGenerator;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.JetEvent;
@@ -39,6 +42,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +51,7 @@ import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -503,4 +508,22 @@ public final class Util {
     public static String escapeGraphviz(String value) {
         return value.replace("\"", "\\\"");
     }
+
+    /**
+     * Converts {@link ClientConfig} to xml representation using {@link
+     * ClientConfigXmlGenerator}.
+     */
+    public static String asXmlString(ClientConfig clientConfig) {
+        return clientConfig == null ? null : ClientConfigXmlGenerator.generate(clientConfig);
+    }
+
+    /**
+     * Converts client-config xml string to {@link ClientConfig} using {@link
+     * XmlClientConfigBuilder}.
+     */
+    public static ClientConfig asClientConfig(String xml) {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+        return new XmlClientConfigBuilder(inputStream).build();
+    }
+
 }

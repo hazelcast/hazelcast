@@ -53,6 +53,8 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
+import static com.hazelcast.jet.impl.util.Util.asClientConfig;
+import static com.hazelcast.jet.impl.util.Util.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
 import static java.util.stream.Collectors.groupingBy;
@@ -196,7 +198,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private final SerializableClientConfig serializableConfig;
+        private final String clientXml;
         private final DistributedFunction<? super HazelcastInstance, ? extends Function<Integer, Iterator<T>>>
                 iteratorSupplier;
 
@@ -206,7 +208,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
             ClientConfig clientConfig,
             DistributedFunction<? super HazelcastInstance, ? extends Function<Integer, Iterator<T>>> iteratorSupplier
         ) {
-            this.serializableConfig = new SerializableClientConfig(clientConfig);
+            this.clientXml = asXmlString(clientConfig);
             this.iteratorSupplier = iteratorSupplier;
         }
 
@@ -217,7 +219,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) {
-            HazelcastInstance client = newHazelcastClient(serializableConfig.asClientConfig());
+            HazelcastInstance client = newHazelcastClient(asClientConfig(clientXml));
             try {
                 HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
                 remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
@@ -235,7 +237,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                              .collect(groupingBy(partition -> addresses.get(partition % addresses.size())));
 
             return address -> new RemoteClusterProcessorSupplier<>(membersToPartitions.get(address),
-                    serializableConfig, iteratorSupplier);
+                    clientXml, iteratorSupplier);
         }
     }
 
@@ -244,7 +246,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final List<Integer> ownedPartitions;
-        private final SerializableClientConfig serializableClientConfig;
+        private final String clientXml;
         private final DistributedFunction<? super HazelcastInstance, ? extends Function<Integer, Iterator<T>>>
                 iteratorSupplier;
 
@@ -254,17 +256,17 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
         RemoteClusterProcessorSupplier(
             List<Integer> ownedPartitions,
-            SerializableClientConfig serializableClientConfig,
+            String clientXml,
             DistributedFunction<? super HazelcastInstance, ? extends Function<Integer, Iterator<T>>> iteratorSupplier
         ) {
             this.ownedPartitions = ownedPartitions;
-            this.serializableClientConfig = serializableClientConfig;
+            this.clientXml = clientXml;
             this.iteratorSupplier = iteratorSupplier;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            client = newHazelcastClient(serializableClientConfig.asClientConfig());
+            client = newHazelcastClient(asClientConfig(clientXml));
             migrationWatcher = new MigrationWatcher(client);
             partitionToIterator = iteratorSupplier.apply(client);
         }

@@ -29,10 +29,10 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
@@ -65,6 +65,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
+import static com.hazelcast.jet.impl.util.Util.asClientConfig;
+import static com.hazelcast.jet.impl.util.Util.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
@@ -319,7 +321,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private final SerializableClientConfig serializableConfig;
+        private final String clientXml;
         private final DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
                 eventJournalReaderSupplier;
         private final DistributedPredicate<? super E> predicate;
@@ -339,7 +341,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 @Nonnull JournalInitialPosition initialPos,
                 @Nonnull EventTimePolicy<? super T> eventTimePolicy
         ) {
-            this.serializableConfig = clientConfig == null ? null : new SerializableClientConfig(clientConfig);
+            this.clientXml = asXmlString(clientConfig);
             this.eventJournalReaderSupplier = eventJournalReaderSupplier;
             this.predicate = predicate;
             this.projection = projection;
@@ -349,12 +351,12 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public int preferredLocalParallelism() {
-            return serializableConfig != null ? 1 : 2;
+            return clientXml != null ? 1 : 2;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            if (serializableConfig != null) {
+            if (clientXml != null) {
                 initRemote();
             } else {
                 initLocal(context.jetInstance().getHazelcastInstance().getPartitionService().getPartitions());
@@ -362,7 +364,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
 
         private void initRemote() {
-            HazelcastInstance client = newHazelcastClient(serializableConfig.asClientConfig());
+            HazelcastInstance client = newHazelcastClient(asClientConfig(clientXml));
             try {
                 HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
                 remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
@@ -387,7 +389,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             }
 
             return address -> new ClusterProcessorSupplier<>(addrToPartitions.get(address),
-                    serializableConfig, eventJournalReaderSupplier, predicate, projection, initialPos,
+                    clientXml, eventJournalReaderSupplier, predicate, projection, initialPos,
                     eventTimePolicy);
         }
 
@@ -400,7 +402,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Nonnull
         private final List<Integer> ownedPartitions;
         @Nullable
-        private final SerializableClientConfig serializableClientConfig;
+        private final String clientXml;
         @Nonnull
         private final DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
                 eventJournalReaderSupplier;
@@ -418,7 +420,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         ClusterProcessorSupplier(
                 @Nonnull List<Integer> ownedPartitions,
-                @Nullable SerializableClientConfig serializableClientConfig,
+                @Nullable String clientXml,
                 @Nonnull DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
                         eventJournalReaderSupplier,
                 @Nonnull DistributedPredicate<? super E> predicate,
@@ -427,7 +429,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 @Nonnull EventTimePolicy<? super T> eventTimePolicy
         ) {
             this.ownedPartitions = ownedPartitions;
-            this.serializableClientConfig = serializableClientConfig;
+            this.clientXml = clientXml;
             this.eventJournalReaderSupplier = eventJournalReaderSupplier;
             this.predicate = predicate;
             this.projection = projection;
@@ -438,8 +440,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Override
         public void init(@Nonnull Context context) {
             HazelcastInstance instance = context.jetInstance().getHazelcastInstance();
-            if (serializableClientConfig != null) {
-                client = newHazelcastClient(serializableClientConfig.asClientConfig());
+            if (clientXml != null) {
+                client = newHazelcastClient(asClientConfig(clientXml));
                 instance = client;
             }
             eventJournalReader = eventJournalReaderSupplier.apply(instance);

@@ -30,6 +30,8 @@ import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
+import static com.hazelcast.jet.impl.util.Util.asClientConfig;
+import static com.hazelcast.jet.impl.util.Util.asXmlString;
 import static java.lang.Math.min;
 import static java.util.stream.IntStream.rangeClosed;
 
@@ -37,14 +39,14 @@ public final class ReadIListP extends AbstractProcessor {
 
     static final int FETCH_SIZE = 16384;
     private final String name;
-    private final SerializableClientConfig clientConfig;
+    private final String clientXml;
 
     private Traverser<Object> traverser;
     private HazelcastInstance client;
 
-    ReadIListP(String name, SerializableClientConfig clientConfig) {
+    ReadIListP(String name, String clientXml) {
         this.name = name;
-        this.clientConfig = clientConfig;
+        this.clientXml = clientXml;
     }
 
     @Override
@@ -56,7 +58,7 @@ public final class ReadIListP extends AbstractProcessor {
     protected void init(@Nonnull Context context) {
         HazelcastInstance instance;
         if (isRemote()) {
-            instance = client = newHazelcastClient(clientConfig.asClientConfig());
+            instance = client = newHazelcastClient(asClientConfig(clientXml));
         } else {
             instance = context.jetInstance().getHazelcastInstance();
         }
@@ -82,13 +84,15 @@ public final class ReadIListP extends AbstractProcessor {
     }
 
     private boolean isRemote() {
-        return clientConfig != null;
+        return clientXml != null;
     }
 
     public static ProcessorMetaSupplier metaSupplier(String listName, ClientConfig clientConfig) {
-        SerializableClientConfig config = clientConfig != null ? new SerializableClientConfig(clientConfig) : null;
+        String clientXml = asXmlString(clientConfig);
         return forceTotalParallelismOne(
-                ProcessorSupplier.of(() -> new ReadIListP(listName, config)), listName
+                ProcessorSupplier.of(() -> {
+                    return new ReadIListP(listName, clientXml);
+                }), listName
         );
     }
 }
