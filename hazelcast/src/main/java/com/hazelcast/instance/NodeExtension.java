@@ -27,8 +27,8 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
@@ -197,13 +197,42 @@ public interface NodeExtension {
     void validateJoinRequest(JoinMessage joinMessage);
 
     /**
-     * Called when cluster state is changed
+     * Called before starting a cluster state change transaction. Called only
+     * on the member that initiated the state change.
      *
-     * @param newState new state
-     * @param isTransient status of the change. A cluster state change may be transient if it has been done temporarily
-     *                         during system operations such cluster start etc.
+     * @param currState the state before the change
+     * @param requestedState the requested cluster state
+     * @param isTransient whether the change will be recorded in persistent storage, affecting the
+     *                    initial state after cluster restart. Transient changes happen during
+     *                    system operations such as an orderly all-cluster shutdown.
+     */
+    void beforeClusterStateChange(ClusterState currState, ClusterState requestedState, boolean isTransient);
+
+    /**
+     * Called during the commit phase of the cluster state change transaction,
+     * just after updating the value of the cluster state on the local member,
+     * while still holding the cluster lock. Called on all cluster members.
+     *
+     * @param newState the new cluster state
+     * @param isTransient whether the change will be recorded in persistent storage, affecting the
+     *                    initial state after cluster restart. Transient changes happen during
+     *                    system operations such as an orderly all-cluster shutdown.
      */
     void onClusterStateChange(ClusterState newState, boolean isTransient);
+
+    /**
+     * Called after the cluster state change transaction has completed
+     * (successfully or otherwise). Called only on the member that initiated
+     * the state change.
+     *
+     * @param oldState the state before the change
+     * @param newState the new cluster state, can be equal to {@code oldState} if the
+     *                 state change transaction failed
+     * @param isTransient whether the change will be recorded in persistent storage, affecting the
+     *                    initial state after cluster restart. Transient changes happen during
+     *                    system operations such as an orderly all-cluster shutdown.
+     */
+    void afterClusterStateChange(ClusterState oldState, ClusterState newState, boolean isTransient);
 
     /**
      * Called synchronously when partition state (partition assignments, version etc) changes

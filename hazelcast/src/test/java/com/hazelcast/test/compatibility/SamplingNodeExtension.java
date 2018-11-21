@@ -158,8 +158,18 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
+    public void beforeClusterStateChange(ClusterState currState, ClusterState requestedState, boolean isTransient) {
+        nodeExtension.beforeClusterStateChange(currState, requestedState, isTransient);
+    }
+
+    @Override
     public void onClusterStateChange(ClusterState newState, boolean isTransient) {
         nodeExtension.onClusterStateChange(newState, isTransient);
+    }
+
+    @Override
+    public void afterClusterStateChange(ClusterState oldState, ClusterState newState, boolean isTransient) {
+        nodeExtension.afterClusterStateChange(oldState, newState, isTransient);
     }
 
     @Override
