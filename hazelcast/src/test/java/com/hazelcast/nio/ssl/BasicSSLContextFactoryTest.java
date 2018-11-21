@@ -32,8 +32,9 @@ import static com.hazelcast.nio.ssl.TestKeyStoreUtil.JAVAX_NET_SSL_KEY_STORE;
 import static com.hazelcast.nio.ssl.TestKeyStoreUtil.JAVAX_NET_SSL_TRUST_STORE;
 import static com.hazelcast.nio.ssl.TestKeyStoreUtil.JAVAX_NET_SSL_TRUST_STORE_PASSWORD;
 import static com.hazelcast.nio.ssl.TestKeyStoreUtil.createSslProperties;
-import static com.hazelcast.nio.ssl.TestKeyStoreUtil.getMalformedKeyStoreFilePath;
-import static com.hazelcast.nio.ssl.TestKeyStoreUtil.getWrongKeyStoreFilePath;
+import static com.hazelcast.nio.ssl.TestKeyStoreUtil.getOrCreateTempFile;
+import static com.hazelcast.nio.ssl.TestKeyStoreUtil.malformedKeystore;
+import static com.hazelcast.nio.ssl.TestKeyStoreUtil.wrongKeyStore;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -91,7 +92,7 @@ public class BasicSSLContextFactoryTest {
     @Test
     public void testInit_withWrongKeyStore() throws Exception {
         Properties properties = createSslProperties();
-        properties.setProperty(JAVAX_NET_SSL_KEY_STORE, getWrongKeyStoreFilePath());
+        properties.setProperty(JAVAX_NET_SSL_KEY_STORE, getOrCreateTempFile(wrongKeyStore));
 
         factory.init(properties);
 
@@ -101,7 +102,7 @@ public class BasicSSLContextFactoryTest {
     @Test(expected = IOException.class)
     public void testInit_withMalformedKeyStore() throws Exception {
         Properties properties = createSslProperties();
-        properties.setProperty(JAVAX_NET_SSL_KEY_STORE, getMalformedKeyStoreFilePath());
+        properties.setProperty(JAVAX_NET_SSL_KEY_STORE, getOrCreateTempFile(malformedKeystore));
 
         factory.init(properties);
     }
