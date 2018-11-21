@@ -17,6 +17,7 @@
 package com.hazelcast.wan;
 
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.util.Preconditions;
 
 import java.util.Collection;
 
@@ -32,15 +33,25 @@ public class AddWanConfigResult {
 
     public AddWanConfigResult(Collection<String> addedPublisherIds,
                               Collection<String> ignoredPublisherIds) {
+        Preconditions.checkNotNull(addedPublisherIds, "Added publisher IDs must not be null");
+        Preconditions.checkNotNull(ignoredPublisherIds, "Ignored publisher IDs must not be null");
         this.addedPublisherIds = addedPublisherIds;
         this.ignoredPublisherIds = ignoredPublisherIds;
     }
 
 
+    /**
+     * Returns the IDs for the WAN publishers which were added to the
+     * configuration.
+     */
     public Collection<String> getAddedPublisherIds() {
         return addedPublisherIds;
     }
 
+    /**
+     * Returns the IDs for the WAN publishers which were ignored and not added
+     * to the configuration.
+     */
     public Collection<String> getIgnoredPublisherIds() {
         return ignoredPublisherIds;
     }

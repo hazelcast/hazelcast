@@ -29,6 +29,7 @@ import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.JsonUtil;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.AddWanConfigResult;
@@ -36,8 +37,6 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.Collection;
-import java.util.Iterator;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
@@ -635,52 +634,11 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 final String key = attributes[i++].toString();
                 final Object value = attributes[i++];
                 if (value != null) {
-                    builder.append(String.format(",\"%s\":%s", key, jsonLiteral(value)));
+                    builder.append(String.format(",\"%s\":%s", key, JsonUtil.toJson(value)));
                 }
             }
         }
         return builder.append("}").toString();
-    }
-
-    private static String jsonLiteral(Object value) {
-        if (value instanceof String) {
-            return '"' + (String) value + '"';
-        } else if (value instanceof Collection) {
-            return "[" + toJson((Collection) value) + "]";
-        } else {
-            throw new IllegalArgumentException("Unsupported ");
-        }
-    }
-
-    /**
-     * Serializes a collection of objects into its JSON representation.
-     *
-     * @param objects collection of items to be serialized into JSON
-     * @return the serialized JSON
-     */
-    public static String toJson(Collection objects) {
-        Iterator iterator = objects.iterator();
-        if (!iterator.hasNext()) {
-            return "";
-        }
-        final Object first = iterator.next();
-        if (!iterator.hasNext()) {
-            return jsonLiteral(first);
-        }
-
-        final StringBuilder buf = new StringBuilder();
-        if (first != null) {
-            buf.append(jsonLiteral(first));
-        }
-
-        while (iterator.hasNext()) {
-            buf.append(',');
-            final Object obj = iterator.next();
-            if (obj != null) {
-                buf.append(jsonLiteral(obj));
-            }
-        }
-        return buf.toString();
     }
 
     private enum ResponseType {
