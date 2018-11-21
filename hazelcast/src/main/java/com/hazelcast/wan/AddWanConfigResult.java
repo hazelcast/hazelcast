@@ -16,7 +16,6 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.util.Preconditions;
 
 import java.util.Collection;
@@ -24,7 +23,7 @@ import java.util.Collection;
 /**
  * The result of adding WAN configuration.
  *
- * @see WanReplicationService#addWanReplicationConfig(WanReplicationConfig)
+ * @see WanReplicationService#addWanReplicationConfig(com.hazelcast.config.WanReplicationConfig)
  */
 public class AddWanConfigResult {
 
