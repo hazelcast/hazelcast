@@ -53,7 +53,7 @@ public final class Extractors {
     public Extractors(List<MapAttributeConfig> mapAttributeConfigs, ClassLoader classLoader) {
         this.extractors = ExtractorHelper.instantiateExtractors(mapAttributeConfigs, classLoader);
         this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE, MAX_GETTERS_PER_CLASS_IN_CACHE,
-                EVICTION_PERCENTAGE);
+                EVICTION_PERCENTAGE, false);
         this.argumentsParser = new DefaultArgumentParser();
     }
 
