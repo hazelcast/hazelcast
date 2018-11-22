@@ -2948,7 +2948,16 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public MerkleTreeConfig getMapMerkleTreeConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, mapMerkleTreeConfigs, name, MerkleTreeConfig.class);
+        return ConfigUtils.getConfig(configPatternMatcher, mapMerkleTreeConfigs, name, MerkleTreeConfig.class,
+                new BiConsumer<MerkleTreeConfig, String>() {
+                    @Override
+                    public void accept(MerkleTreeConfig merkleTreeConfig, String name) {
+                        merkleTreeConfig.setMapName(name);
+                        if ("default".equals(name)) {
+                            merkleTreeConfig.setEnabled(false);
+                        }
+                    }
+                });
     }
 
     /**

@@ -83,8 +83,8 @@ public final class ConfigUtils {
      * create a hazelcast instance. Afterwards, newly added configurations
      * may be ignored.
      *
-     * @param name name of the lock config
-     * @return the lock configuration
+     * @param name name of the config
+     * @return the configuration
      * @throws ConfigurationException if ambiguous configurations are found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see Config#setConfigPatternMatcher(ConfigPatternMatcher)

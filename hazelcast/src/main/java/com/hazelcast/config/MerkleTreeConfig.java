@@ -54,7 +54,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @since 3.11
  */
 @Beta
-public class MerkleTreeConfig implements IdentifiedDataSerializable, NamedConfig {
+public class MerkleTreeConfig implements IdentifiedDataSerializable {
     /**
      * Minimal depth of the merkle tree.
      */
@@ -228,16 +228,6 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable, NamedConfig
         result = 31 * result + depth;
         result = 31 * result + (mapName != null ? mapName.hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public MerkleTreeConfig setName(String name) {
-        return setMapName(name);
-    }
-
-    @Override
-    public String getName() {
-        return getMapName();
     }
 
     // not private for testing
