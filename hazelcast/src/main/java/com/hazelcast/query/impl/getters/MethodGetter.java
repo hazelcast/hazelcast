@@ -35,7 +35,7 @@ final class MethodGetter extends AbstractMultiValueGetter {
 
     @Override
     boolean isCacheable() {
-        return ReflectionHelper.THIS_CL.equals(method.getDeclaringClass().getClassLoader());
+        return true;
     }
 
     @Override

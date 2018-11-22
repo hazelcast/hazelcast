@@ -34,7 +34,7 @@ public class FieldGetter extends AbstractMultiValueGetter {
 
     @Override
     boolean isCacheable() {
-        return ReflectionHelper.THIS_CL.equals(field.getDeclaringClass().getClassLoader());
+        return true;
     }
 
     @Override

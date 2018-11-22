@@ -37,7 +37,7 @@ public class EvictableGetterCacheTest {
     @Test
     public void get_put_correctResult() {
         // GIVEN
-        EvictableGetterCache cache = new EvictableGetterCache(10, 10, 0.5f);
+        EvictableGetterCache cache = new EvictableGetterCache(10, 10, 0.5f, true);
         Getter x = mock(Getter.class);
         Getter y = mock(Getter.class);
 
@@ -53,7 +53,7 @@ public class EvictableGetterCacheTest {
     @Test
     public void get_put_correctSize() {
         // GIVEN
-        EvictableGetterCache cache = new EvictableGetterCache(10, 10, 0.5f);
+        EvictableGetterCache cache = new EvictableGetterCache(10, 10, 0.5f, true);
         Getter x = mock(Getter.class);
         Getter y = mock(Getter.class);
 
@@ -72,7 +72,7 @@ public class EvictableGetterCacheTest {
         // GIVEN
         int getterCacheSize = 10;
         float evictPercentage = 0.3f;
-        EvictableGetterCache cache = new EvictableGetterCache(10, getterCacheSize, evictPercentage);
+        EvictableGetterCache cache = new EvictableGetterCache(10, getterCacheSize, evictPercentage, true);
 
         // WHEN
         for (int i = 0; i < getterCacheSize - 1; i++) {
@@ -89,7 +89,7 @@ public class EvictableGetterCacheTest {
         // GIVEN
         int getterCacheSize = 10;
         float evictPercentage = 0.3f;
-        EvictableGetterCache cache = new EvictableGetterCache(10, getterCacheSize, evictPercentage);
+        EvictableGetterCache cache = new EvictableGetterCache(10, getterCacheSize, evictPercentage, true);
 
         // WHEN
         for (int i = 0; i < getterCacheSize; i++) {
@@ -107,7 +107,7 @@ public class EvictableGetterCacheTest {
         // GIVEN
         int classCacheSize = 10;
         float evictPercentage = 0.3f;
-        EvictableGetterCache cache = new EvictableGetterCache(classCacheSize, 10, evictPercentage);
+        EvictableGetterCache cache = new EvictableGetterCache(classCacheSize, 10, evictPercentage, true);
         Class[] classes = {
                 String.class, Character.class, Integer.class, Double.class, Byte.class, Long.class,
                 Number.class, Float.class, BigDecimal.class, BigInteger.class,
@@ -127,7 +127,7 @@ public class EvictableGetterCacheTest {
         // GIVEN
         int classCacheSize = 10;
         float evictPercentage = 0.3f;
-        EvictableGetterCache cache = new EvictableGetterCache(classCacheSize, 10, evictPercentage);
+        EvictableGetterCache cache = new EvictableGetterCache(classCacheSize, 10, evictPercentage, true);
         Class[] classes = {
                 String.class, Character.class, Integer.class, Double.class, Byte.class, Long.class,
                 Number.class, Float.class, BigDecimal.class, BigInteger.class,
