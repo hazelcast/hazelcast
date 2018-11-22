@@ -155,7 +155,7 @@ public class PartitionScanRunner {
                 return true;
             default:
                 //if index exists then cached value is already set -> let's use it
-                return mapContainer.getIndexes(partitionId).hasIndex();
+                return mapContainer.getIndexes(partitionId).haveAtLeastOneIndex();
         }
     }
 

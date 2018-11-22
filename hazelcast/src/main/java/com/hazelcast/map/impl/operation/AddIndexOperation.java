@@ -72,7 +72,7 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-            index.saveEntryIndex(queryEntry, null, Index.OperationSource.USER);
+            index.putEntry(queryEntry, null, Index.OperationSource.USER);
         }
         index.markPartitionAsIndexed(partitionId);
     }

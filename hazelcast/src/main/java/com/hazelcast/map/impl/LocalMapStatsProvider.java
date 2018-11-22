@@ -375,7 +375,7 @@ public class LocalMapStatsProvider {
         }
 
         for (InternalIndex index : freshIndexes) {
-            String indexName = index.getAttributeName();
+            String indexName = index.getName();
             OnDemandIndexStats freshIndexStats = freshStats.get(indexName);
             if (freshIndexStats == null) {
                 freshIndexStats = new OnDemandIndexStats();

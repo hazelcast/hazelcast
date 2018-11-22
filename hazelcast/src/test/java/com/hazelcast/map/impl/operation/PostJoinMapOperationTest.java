@@ -22,7 +22,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.IndexAwarePredicate;
-import com.hazelcast.query.impl.ComparisonType;
+import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -143,7 +143,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Index ix = queryContext.getIndex("age");
             if (ix != null) {
-                return ix.getSubRecords(ComparisonType.GREATER, 50);
+                return ix.getRecords(Comparison.GREATER, 50);
             } else {
                 return null;
             }

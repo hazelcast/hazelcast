@@ -25,31 +25,31 @@ import java.io.IOException;
 
 public class IndexInfo implements IdentifiedDataSerializable, Comparable<IndexInfo> {
 
-    private String attributeName;
+    private String name;
     private boolean ordered;
 
     public IndexInfo() {
     }
 
-    public IndexInfo(String attributeName, boolean ordered) {
-        this.attributeName = attributeName;
+    public IndexInfo(String name, boolean ordered) {
+        this.name = name;
         this.ordered = ordered;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributeName);
+        out.writeUTF(name);
         out.writeBoolean(ordered);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        attributeName = in.readUTF();
+        name = in.readUTF();
         ordered = in.readBoolean();
     }
 
-    public String getAttributeName() {
-        return attributeName;
+    public String getName() {
+        return name;
     }
 
     public boolean isOrdered() {
@@ -79,20 +79,20 @@ public class IndexInfo implements IdentifiedDataSerializable, Comparable<IndexIn
         if (ordered != indexInfo.ordered) {
             return false;
         }
-        return attributeName != null ? attributeName.equals(indexInfo.attributeName) : indexInfo.attributeName == null;
+        return name != null ? name.equals(indexInfo.name) : indexInfo.name == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = attributeName != null ? attributeName.hashCode() : 0;
+        int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (ordered ? 1 : 0);
         return result;
     }
 
     @Override
     public int compareTo(IndexInfo other) {
-        int attributeNameCompareResult = attributeName.compareTo(other.attributeName);
+        int attributeNameCompareResult = name.compareTo(other.name);
         if (attributeNameCompareResult == 0) {
             return Boolean.valueOf(ordered).compareTo(other.ordered);
         }

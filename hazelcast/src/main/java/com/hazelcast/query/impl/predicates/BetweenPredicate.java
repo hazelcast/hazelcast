@@ -19,7 +19,10 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -31,7 +34,7 @@ import java.util.Set;
  * Between Predicate
  */
 @BinaryInterface
-public class BetweenPredicate extends AbstractIndexAwarePredicate {
+public class BetweenPredicate extends AbstractIndexAwarePredicate implements VisitablePredicate, RangePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -41,8 +44,8 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
     public BetweenPredicate() {
     }
 
-    public BetweenPredicate(String first, Comparable from, Comparable to) {
-        super(first);
+    public BetweenPredicate(String attribute, Comparable from, Comparable to) {
+        super(attribute);
         if (from == null || to == null) {
             throw new NullPointerException("Arguments can't be null");
         }
@@ -66,8 +69,8 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = getIndex(queryContext);
-        return index.getSubRecordsBetween(from, to);
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED);
+        return index.getRecords(from, true, to, true);
     }
 
     @Override
@@ -130,4 +133,35 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
         result = 31 * result + (from != null ? from.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        return visitor.visit(this, indexes);
+    }
+
+    @Override
+    public String getAttribute() {
+        return attributeName;
+    }
+
+    @Override
+    public Comparable getFrom() {
+        return from;
+    }
+
+    @Override
+    public boolean isFromInclusive() {
+        return true;
+    }
+
+    @Override
+    public Comparable getTo() {
+        return to;
+    }
+
+    @Override
+    public boolean isToInclusive() {
+        return true;
+    }
+
 }

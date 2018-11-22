@@ -311,8 +311,8 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testNotEqualsPredicateDoesNotUseIndex() {
-        Index dummyIndex = new IndexImpl("foo", false, ss,
-                Extractors.newBuilder(ss).build(), COPY_ON_READ, PerIndexStats.EMPTY);
+        Index dummyIndex =
+                new IndexImpl("foo", null, false, ss, Extractors.newBuilder(ss).build(), COPY_ON_READ, PerIndexStats.EMPTY);
         QueryContext mockQueryContext = mock(QueryContext.class);
         when(mockQueryContext.getIndex(anyString())).thenReturn(dummyIndex);
 

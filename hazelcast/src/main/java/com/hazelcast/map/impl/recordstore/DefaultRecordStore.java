@@ -1294,7 +1294,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     private void clearGlobalIndexes() {
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.isGlobal()) {
-            if (indexes.hasIndex()) {
+            if (indexes.haveAtLeastOneIndex()) {
                 // clears indexed data of this partition
                 // from shared global index.
                 fullScanLocalDataToClear(indexes);
@@ -1324,7 +1324,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         for (Record record : storage.values()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntryIndex(key, value, Index.OperationSource.SYSTEM);
+            indexes.removeEntry(key, value, Index.OperationSource.SYSTEM);
         }
         Indexes.markPartitionAsUnindexed(partitionId, indexesSnapshot);
     }

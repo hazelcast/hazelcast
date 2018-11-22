@@ -31,13 +31,17 @@ public abstract class AbstractIndexAwarePredicate<K, V> extends AbstractPredicat
         super(attributeName);
     }
 
+    protected Index getIndex(QueryContext queryContext) {
+        return matchIndex(queryContext, QueryContext.IndexMatchHint.NONE);
+    }
+
+    protected Index matchIndex(QueryContext queryContext, QueryContext.IndexMatchHint matchHint) {
+        return queryContext.matchIndex(attributeName, matchHint);
+    }
+
     @Override
     public boolean isIndexed(QueryContext queryContext) {
         return getIndex(queryContext) != null;
-    }
-
-    protected Index getIndex(QueryContext queryContext) {
-        return queryContext.getIndex(attributeName);
     }
 
 }

@@ -27,22 +27,24 @@ import com.hazelcast.query.impl.getters.Extractors;
 public interface IndexProvider {
 
     /**
-     * Creates a new index for the given attribute name.
+     * Creates a new index with the given name.
      *
-     * @param attributeName the attribute name to create the index for.
-     * @param ordered       {@code true} to create an ordered index supporting
-     *                      fast range queries, {@code false} to create an
-     *                      unordered index supporting fast point queries only.
-     * @param extractors    the extractors to extract values of the given
-     *                      attribute.
-     * @param ss            the serialization service to perform the
-     *                      deserialization of entries while extracting values
-     *                      from them.
-     * @param copyBehavior  the desired index copy behaviour.
-     * @param stats         the index stats instance to report the statistics to.
+     * @param name         the name of the index to create or {@code null} if
+     *                     the index being created is not composite.
+     * @param components   the components of the index to create.
+     * @param ordered      {@code true} to create an ordered index supporting
+     *                     fast range queries, {@code false} to create an
+     *                     unordered index supporting fast point queries only.
+     * @param extractors   the extractors to extract values of the given
+     *                     name.
+     * @param ss           the serialization service to perform the
+     *                     deserialization of entries while extracting values
+     *                     from them.
+     * @param copyBehavior the desired index copy behaviour.
+     * @param stats        the index stats instance to report the statistics to.
      * @return the created index instance.
      */
-    InternalIndex createIndex(String attributeName, boolean ordered, Extractors extractors, InternalSerializationService ss,
-                              IndexCopyBehavior copyBehavior, PerIndexStats stats);
+    InternalIndex createIndex(String name, String[] components, boolean ordered, Extractors extractors,
+                              InternalSerializationService ss, IndexCopyBehavior copyBehavior, PerIndexStats stats);
 
 }
