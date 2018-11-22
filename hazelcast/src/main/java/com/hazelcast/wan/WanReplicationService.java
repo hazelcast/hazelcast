@@ -154,11 +154,18 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * name. Such configs will be merged into the existing WAN replication
      * config by adding publishers with publisher IDs which are not already part
      * of the existing configuration.
+     * The return value is a best-effort guess at the result of adding WAN
+     * replication config based on the existing local WAN replication config.
+     * An exact result is difficult to calculate since not all members might
+     * have the same existing configuration and there might be a concurrent
+     * request to add overlapping WAN replication config.
      *
+     * @param wanConfig the WAN replication config to add
+     * @return a best-effort guess at the result of adding WAN replication config
      * @throws UnsupportedOperationException if invoked on OS
      * @see #addWanReplicationConfigLocally(WanReplicationConfig)
      */
-    void addWanReplicationConfig(WanReplicationConfig wanConfig);
+    AddWanConfigResult addWanReplicationConfig(WanReplicationConfig wanConfig);
 
     /**
      * Returns current status of WAN sync operation or {@code null} when there
