@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapLoadAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -30,7 +31,7 @@ import com.hazelcast.security.permission.MapPermission;
 import java.security.Permission;
 
 public class MapLoadAllMessageTask
-        extends AbstractCallableMessageTask<MapLoadAllCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<MapLoadAllCodec.RequestParameters> implements BlockingMessageTask {
 
     public MapLoadAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

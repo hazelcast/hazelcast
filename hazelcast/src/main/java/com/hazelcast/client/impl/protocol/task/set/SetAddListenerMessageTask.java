@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SetAddListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.collection.impl.collection.CollectionEventFilter;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.set.SetService;
@@ -39,7 +40,8 @@ import java.security.Permission;
  * SetAddListenerMessageTask
  */
 public class SetAddListenerMessageTask
-        extends AbstractCallableMessageTask<SetAddListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<SetAddListenerCodec.RequestParameters>
+        implements ListenerMessageTask {
 
     public SetAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

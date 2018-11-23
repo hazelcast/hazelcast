@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Connection;
@@ -46,7 +47,7 @@ import java.util.concurrent.Callable;
  * @see CacheService#registerListener(String, CacheEventListener, boolean localOnly)
  */
 public class CacheAddEntryListenerMessageTask
-        extends AbstractCallableMessageTask<CacheAddEntryListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<CacheAddEntryListenerCodec.RequestParameters> implements ListenerMessageTask {
 
     public CacheAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

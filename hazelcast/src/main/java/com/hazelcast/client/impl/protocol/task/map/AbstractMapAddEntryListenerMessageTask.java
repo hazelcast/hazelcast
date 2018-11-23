@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
@@ -35,7 +36,7 @@ import com.hazelcast.spi.EventFilter;
 import java.security.Permission;
 
 public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
-        extends AbstractCallableMessageTask<Parameter> {
+        extends AbstractCallableMessageTask<Parameter> implements ListenerMessageTask {
 
     public AbstractMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

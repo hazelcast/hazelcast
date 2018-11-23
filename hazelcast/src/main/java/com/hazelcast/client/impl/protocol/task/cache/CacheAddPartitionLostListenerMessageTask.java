@@ -25,6 +25,7 @@ import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.EventFilter;
@@ -34,7 +35,8 @@ import com.hazelcast.spi.EventService;
 import java.security.Permission;
 
 public class CacheAddPartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<CacheAddPartitionLostListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<CacheAddPartitionLostListenerCodec.RequestParameters>
+        implements ListenerMessageTask {
 
 
     public CacheAddPartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {

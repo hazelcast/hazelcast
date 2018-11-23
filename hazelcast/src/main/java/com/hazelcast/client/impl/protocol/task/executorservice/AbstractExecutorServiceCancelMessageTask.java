@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -31,7 +32,8 @@ import java.util.concurrent.ExecutionException;
 
 import static java.lang.Thread.currentThread;
 
-public abstract class AbstractExecutorServiceCancelMessageTask<P> extends AbstractCallableMessageTask<P> {
+public abstract class AbstractExecutorServiceCancelMessageTask<P> extends AbstractCallableMessageTask<P>
+        implements BlockingMessageTask {
 
     private static final int CANCEL_TRY_COUNT = 50;
     private static final int CANCEL_TRY_PAUSE_MILLIS = 250;

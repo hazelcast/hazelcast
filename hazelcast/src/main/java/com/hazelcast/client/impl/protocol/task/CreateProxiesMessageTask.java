@@ -35,7 +35,7 @@ import java.util.Map;
 
 
 public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<ClientCreateProxiesCodec.RequestParameters>
-        implements Supplier<Operation> {
+        implements Supplier<Operation>, BlockingMessageTask {
 
     public CreateProxiesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

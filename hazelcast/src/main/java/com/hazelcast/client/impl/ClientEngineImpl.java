@@ -25,9 +25,12 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMessageTask;
 import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetPartitionsMessageTask;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.PingMessageTask;
+import com.hazelcast.client.impl.protocol.task.TransactionalMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.AbstractMapQueryMessageTask;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
@@ -104,7 +107,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     public static final String SERVICE_NAME = "hz:core:clientEngine";
 
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
-    private static final int THREADS_PER_CORE = 20;
+    private static final int BLOCKING_THREADS_PER_CORE = 20;
+    private static final int THREADS_PER_CORE = 1;
     private static final int QUERY_THREADS_PER_CORE = 1;
     private static final ConstructorFunction<String, AtomicLong> LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC =
             new ConstructorFunction<String, AtomicLong>() {
@@ -116,6 +120,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
+    private final Executor blockingExecutor;
     private final ExecutorService clientManagementExecutor;
     private final Executor queryExecutor;
 
@@ -143,6 +148,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         this.endpointManager = new ClientEndpointManagerImpl(nodeEngine);
         this.executor = newClientExecutor();
         this.queryExecutor = newClientQueryExecutor();
+        this.blockingExecutor = newBlockingExecutor();
         this.clientManagementExecutor = newClientsManagementExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(nodeEngine);
         this.clientExceptions = initClientExceptionFactory();
@@ -195,6 +201,22 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                 ExecutorType.CONCRETE);
     }
 
+    private Executor newBlockingExecutor() {
+        final ExecutionService executionService = nodeEngine.getExecutionService();
+        int coreSize = Runtime.getRuntime().availableProcessors();
+
+        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_BLOCKING_THREAD_COUNT);
+        if (threadCount <= 0) {
+            threadCount = coreSize * BLOCKING_THREADS_PER_CORE;
+        }
+
+        logger.finest("Creating new client executor for blocking tasks with threadCount=" + threadCount);
+
+        return executionService.register(ExecutionService.CLIENT_BLOCKING_EXECUTOR,
+                threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
+                ExecutorType.CONCRETE);
+    }
+
     //needed for testing purposes
     public ConnectionListener getConnectionListener() {
         return connectionListener;
@@ -221,6 +243,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                 operationService.execute(new PriorityPartitionSpecificRunnable(messageTask));
             } else if (isQuery(messageTask)) {
                 queryExecutor.execute(messageTask);
+            } else if (messageTask instanceof TransactionalMessageTask) {
+                blockingExecutor.execute(messageTask);
+            } else if (messageTask instanceof BlockingMessageTask) {
+                blockingExecutor.execute(messageTask);
+            } else if (messageTask instanceof ListenerMessageTask) {
+                blockingExecutor.execute(messageTask);
             } else {
                 executor.execute(messageTask);
             }

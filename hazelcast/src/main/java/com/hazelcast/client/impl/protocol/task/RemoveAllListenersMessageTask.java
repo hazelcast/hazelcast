@@ -24,7 +24,7 @@ import com.hazelcast.nio.Connection;
 import java.security.Permission;
 
 public class RemoveAllListenersMessageTask
-        extends AbstractCallableMessageTask<ClientRemoveAllListenersCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<ClientRemoveAllListenersCodec.RequestParameters> implements ListenerMessageTask {
 
     public RemoveAllListenersMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

@@ -171,4 +171,16 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
             sb.append(timeToString(lastHeartbeatMillis)).append(". ");
         }
     }
+
+    @Override
+    public E get() throws InterruptedException, ExecutionException {
+        assert (!Thread.currentThread().getName().contains("client.thread"));
+        return super.get();
+    }
+
+    @Override
+    public E get(final long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        assert (!Thread.currentThread().getName().contains("client.thread"));
+        return super.get(timeout, unit);
+    }
 }
