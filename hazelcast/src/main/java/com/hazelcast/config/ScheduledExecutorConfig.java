@@ -33,7 +33,8 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 /**
  * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
  */
-public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned {
+public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable,
+        Versioned, NamedConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -197,19 +198,19 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
 
 
     /**
-    * Gets the {@link MergePolicyConfig} for the scheduler.
-    *
-    * @return the {@link MergePolicyConfig} for the scheduler
-    */
+     * Gets the {@link MergePolicyConfig} for the scheduler.
+     *
+     * @return the {@link MergePolicyConfig} for the scheduler
+     */
     public MergePolicyConfig getMergePolicyConfig() {
         return mergePolicyConfig;
     }
 
     /**
-    * Sets the {@link MergePolicyConfig} for the scheduler.
-    *
-    * @return this executor config instance
-    */
+     * Sets the {@link MergePolicyConfig} for the scheduler.
+     *
+     * @return this executor config instance
+     */
     public ScheduledExecutorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
         return this;

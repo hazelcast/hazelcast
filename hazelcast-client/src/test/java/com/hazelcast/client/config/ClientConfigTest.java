@@ -98,4 +98,15 @@ public class ClientConfigTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setUserContext(null);
     }
+
+    @Test
+    public void testReliableTopic() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientReliableTopicConfig defaultReliableTopicConfig = new ClientReliableTopicConfig("default");
+        defaultReliableTopicConfig.setReadBatchSize(100);
+        clientConfig.addReliableTopicConfig(defaultReliableTopicConfig);
+        ClientReliableTopicConfig newConfig = clientConfig.getReliableTopicConfig("newConfig");
+
+        assertEquals(100, newConfig.getReadBatchSize());
+    }
 }

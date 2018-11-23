@@ -28,7 +28,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Contains the configuration for the {@link com.hazelcast.core.ILock}.
  */
-public class LockConfig implements IdentifiedDataSerializable {
+public class LockConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String name;
     private String quorumName;

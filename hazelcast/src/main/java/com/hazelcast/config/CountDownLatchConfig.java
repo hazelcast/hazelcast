@@ -31,7 +31,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  *
  * @since 3.10
  */
-public class CountDownLatchConfig implements IdentifiedDataSerializable, Versioned {
+public class CountDownLatchConfig implements IdentifiedDataSerializable, Versioned, NamedConfig {
 
     private transient CountDownLatchConfigReadOnly readOnly;
 

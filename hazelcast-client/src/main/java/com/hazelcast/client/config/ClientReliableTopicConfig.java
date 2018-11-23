@@ -58,6 +58,18 @@ public class ClientReliableTopicConfig {
     }
 
     /**
+     * Create a clone of given reliable topic
+     *
+     * @param reliableTopicConfig topic
+     */
+    public ClientReliableTopicConfig(ClientReliableTopicConfig reliableTopicConfig) {
+        this.executor = reliableTopicConfig.executor;
+        this.readBatchSize = reliableTopicConfig.readBatchSize;
+        this.name = reliableTopicConfig.name;
+        this.topicOverloadPolicy = reliableTopicConfig.topicOverloadPolicy;
+    }
+
+    /**
      * Gets the name of the reliable topic.
      *
      * @return the name of the reliable topic.

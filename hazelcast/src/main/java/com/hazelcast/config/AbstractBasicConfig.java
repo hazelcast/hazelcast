@@ -29,7 +29,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
-        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable {
+        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     protected String name;
     protected String quorumName;

@@ -40,7 +40,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <T> Type of Collection such as List, Set
  */
 public abstract class CollectionConfig<T extends CollectionConfig>
-        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned {
+        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned, NamedConfig {
 
     /**
      * Default maximum size for the Configuration.

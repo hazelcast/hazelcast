@@ -54,6 +54,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.function.Supplier;
 
+import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -162,6 +163,7 @@ public class DefaultClientExtension implements ClientExtension {
                 NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig(id);
                 if (nearCacheConfig != null) {
                     checkNearCacheConfig(id, nearCacheConfig, clientConfig.getNativeMemoryConfig(), true);
+                    initDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
                     return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id, context);
                 } else {
                     return new ClientMapProxy(MapService.SERVICE_NAME, id, context);

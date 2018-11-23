@@ -40,7 +40,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * CacheConfig depends on the JCache API. If the JCache API is not in the classpath,
  * you can use CacheSimpleConfig as a communicator between the code and CacheConfig.
  */
-public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable {
+public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The minimum number of backups.
