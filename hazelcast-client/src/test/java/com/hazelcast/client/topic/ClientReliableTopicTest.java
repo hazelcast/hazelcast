@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.topic;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.proxy.ClientReliableTopicProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -28,8 +30,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.impl.reliable.DurableSubscriptionTest;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerMock;
 import com.hazelcast.util.Clock;
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -297,4 +301,49 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
         topic.getLocalTopicStats();
     }
+
+    @Test
+    public void shouldNotBeTerminated_whenClientIsOffline() {
+        final HazelcastInstance ownerMember = hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().setReconnectMode(ClientConnectionStrategyConfig.ReconnectMode.ASYNC);
+        String topicName = "topic";
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        int publishCount = 1000;
+
+        final CountDownLatch messageArrived = new CountDownLatch(publishCount);
+        ITopic<String> topic = client.getReliableTopic(topicName);
+        final String id = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
+            @Override
+            public void onMessage(Message<String> message) {
+                messageArrived.countDown();
+            }
+
+        });
+
+        HazelcastInstance member2 = hazelcastFactory.newHazelcastInstance();
+        waitAllForSafeState(ownerMember, member2);
+
+        ITopic<Object> reliableTopic = member2.getReliableTopic(topicName);
+
+        //kill the the owner member, while messages are coming
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                sleepMillis(1);
+                ownerMember.shutdown();
+            }
+        }).start();
+
+        for (int i = 0; i < publishCount; i++) {
+            reliableTopic.publish("msg " + (i + 100));
+        }
+
+        assertOpenEventually(messageArrived);
+        TestCase.assertTrue(topic.removeMessageListener(id));
+    }
+
 }

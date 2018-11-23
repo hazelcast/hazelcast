@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -58,6 +59,18 @@ public class ClientReliableMessageRunner<E> extends MessageRunner<E> {
             member = new com.hazelcast.client.impl.MemberImpl(m.getPublisherAddress(), MemberVersion.UNKNOWN);
         }
         return member;
+    }
+
+    @Override
+    protected boolean handleInternalException(Throwable t) {
+        if (t instanceof HazelcastClientOfflineException) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("MessageListener " + listener + " on topic: " + topicName + " got exception: " + t
+                        + ". Continuing from last known sequence: " + sequence);
+            }
+            return true;
+        }
+        return super.handleInternalException(t);
     }
 
     @Override
