@@ -25,6 +25,7 @@ import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
+import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
@@ -56,6 +57,7 @@ class MapRemoteService implements RemoteService {
                 true, nodeEngine.getLogger(getClass()));
 
         if (mapConfig.isNearCacheEnabled()) {
+            initDefaultMaxSizeForOnHeapMaps(mapConfig.getNearCacheConfig());
             checkNearCacheConfig(name, mapConfig.getNearCacheConfig(), config.getNativeMemoryConfig(), false);
             return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);
         } else {
