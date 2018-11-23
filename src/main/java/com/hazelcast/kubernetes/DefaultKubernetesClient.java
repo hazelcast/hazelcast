@@ -48,6 +48,8 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
+import static java.util.Collections.EMPTY_MAP;
+
 /**
  * Responsible for connecting to the Kubernetes API.
  * <p>
@@ -70,8 +72,8 @@ class DefaultKubernetesClient
 
     @Override
     public Endpoints endpoints(String namespace) {
-        String urlString = String.format("%s/api/v1/namespaces/%s/endpoints", kubernetesMaster, namespace);
-        return parseEndpointsList(callGet(urlString));
+        String urlString = String.format("%s/api/v1/namespaces/%s/pods", kubernetesMaster, namespace);
+        return parsePodsList(callGet(urlString));
 
     }
 
@@ -120,6 +122,56 @@ class DefaultKubernetesClient
         return scanner.next();
     }
 
+    private static Endpoints parsePodsList(JsonObject json) {
+        List<EntrypointAddress> addresses = new ArrayList<EntrypointAddress>();
+        List<EntrypointAddress> notReadyAddresses = new ArrayList<EntrypointAddress>();
+
+        for (JsonValue item : toJsonArray(json.get("items"))) {
+            JsonObject status = item.asObject().get("status").asObject();
+            String ip = toString(status.get("podIP"));
+            if (ip != null) {
+                Integer port = getPortFromPodItem(item);
+                EntrypointAddress address = new EntrypointAddress(ip, port, EMPTY_MAP);
+
+                if (isReady(status)) {
+                    addresses.add(address);
+                } else {
+                    notReadyAddresses.add(address);
+                }
+            }
+        }
+
+        return new Endpoints(addresses, notReadyAddresses);
+    }
+
+    private static Integer getPortFromPodItem(JsonValue item) {
+        JsonArray containers = toJsonArray(item.asObject().get("spec").asObject().get("containers"));
+        // If multiple containers are in one POD, then use the default Hazelcast port from the configuration.
+        if (containers.size() == 1) {
+            JsonValue container = containers.get(0);
+            JsonArray ports = toJsonArray(container.asObject().get("ports"));
+            // If multiple ports are exposed by a container, then use the default Hazelcast port from the configuration.
+            if (ports.size() == 1) {
+                JsonValue port = ports.get(0);
+                JsonValue containerPort = port.asObject().get("containerPort");
+                if (containerPort != null && containerPort.isNumber()) {
+                    return containerPort.asInt();
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean isReady(JsonObject status) {
+        for (JsonValue containerStatus : toJsonArray(status.get("containerStatuses"))) {
+            // If multiple containers are in one POD, then each needs to be ready.
+            if (!containerStatus.asObject().get("ready").asBoolean()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static Endpoints parseEndpointsList(JsonObject json) {
         List<EntrypointAddress> addresses = new ArrayList<EntrypointAddress>();
         List<EntrypointAddress> notReadyAddresses = new ArrayList<EntrypointAddress>();
@@ -150,12 +202,22 @@ class DefaultKubernetesClient
 
     private static EntrypointAddress parseEntrypointAddress(JsonValue endpointAddressJson) {
         String ip = endpointAddressJson.asObject().get("ip").asString();
+        Integer port = getPortFromEndpointAddress(endpointAddressJson);
         Map<String, Object> additionalProperties = parseAdditionalProperties(endpointAddressJson);
-        return new EntrypointAddress(ip, additionalProperties);
+        return new EntrypointAddress(ip, port, additionalProperties);
+    }
+
+    private static Integer getPortFromEndpointAddress(JsonValue endpointAddressJson) {
+        JsonValue servicePort = endpointAddressJson.asObject().get("hazelcast-service-port");
+        if (servicePort != null && servicePort.isNumber()) {
+            return servicePort.asInt();
+        }
+        return null;
     }
 
     private static Map<String, Object> parseAdditionalProperties(JsonValue endpointAddressJson) {
-        Set<String> knownFieldNames = new HashSet<String>(Arrays.asList("ip", "nodeName", "targetRef", "hostname"));
+        Set<String> knownFieldNames = new HashSet<String>(
+                Arrays.asList("ip", "nodeName", "targetRef", "hostname", "hazelcast-service-port"));
 
         Map<String, Object> result = new HashMap<String, Object>();
         Iterator<JsonObject.Member> iter = endpointAddressJson.asObject().iterator();
@@ -177,7 +239,9 @@ class DefaultKubernetesClient
     }
 
     private static String toString(JsonValue jsonValue) {
-        if (jsonValue.isString()) {
+        if (jsonValue == null || jsonValue.isNull()) {
+            return null;
+        } else if (jsonValue.isString()) {
             return jsonValue.asString();
         } else {
             return jsonValue.toString();

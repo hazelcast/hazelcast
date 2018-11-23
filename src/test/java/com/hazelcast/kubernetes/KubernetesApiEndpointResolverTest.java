@@ -40,15 +40,14 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(ServiceEndpointResolver.class)
-public class ServiceEndpointResolverTest {
+@PrepareForTest(KubernetesApiEndpointResolver.class)
+public class KubernetesApiEndpointResolverTest {
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
     private static final String SERVICE_NAME = "serviceName";
     private static final String SERVICE_LABEL = "theLabel";
@@ -74,7 +73,7 @@ public class ServiceEndpointResolverTest {
                 Collections.<EntrypointAddress>emptyList());
         given(client.endpoints(NAMESPACE)).willReturn(endpoints);
 
-        ServiceEndpointResolver sut = new ServiceEndpointResolver(LOGGER, null, 0, null, null, NAMESPACE, null,
+        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, null, 0, null, null, NAMESPACE, null,
                 KUBERNETES_MASTER_URL, API_TOKEN);
 
         // when
@@ -99,7 +98,8 @@ public class ServiceEndpointResolverTest {
         Endpoints endpoints = createEndpoints(1);
         given(client.endpointsByName(NAMESPACE, SERVICE_NAME)).willReturn(endpoints);
 
-        ServiceEndpointResolver sut = new ServiceEndpointResolver(LOGGER, SERVICE_NAME, port, null, null, NAMESPACE, null,
+        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, port, null, null, NAMESPACE,
+                null,
                 KUBERNETES_MASTER_URL, API_TOKEN);
 
         // when
@@ -116,7 +116,8 @@ public class ServiceEndpointResolverTest {
         Endpoints endpoints = createEndpoints(2);
         given(client.endpointsByLabel(NAMESPACE, SERVICE_LABEL, SERVICE_LABEL_VALUE)).willReturn(endpoints);
 
-        ServiceEndpointResolver sut = new ServiceEndpointResolver(LOGGER, null, 0, SERVICE_LABEL, SERVICE_LABEL_VALUE, NAMESPACE,
+        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, null, 0, SERVICE_LABEL, SERVICE_LABEL_VALUE,
+                NAMESPACE,
                 null, KUBERNETES_MASTER_URL, API_TOKEN);
 
         // when
@@ -133,7 +134,7 @@ public class ServiceEndpointResolverTest {
         Endpoints endpoints = createNotReadyEndpoints(2);
         given(client.endpointsByName(NAMESPACE, SERVICE_NAME)).willReturn(endpoints);
 
-        ServiceEndpointResolver sut = new ServiceEndpointResolver(LOGGER, SERVICE_NAME, 0, null, null, NAMESPACE,
+        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, 0, null, null, NAMESPACE,
                 RESOLVE_NOT_READY_ADDRESSES, KUBERNETES_MASTER_URL, API_TOKEN);
 
         // when
@@ -149,7 +150,8 @@ public class ServiceEndpointResolverTest {
         Endpoints endpoints = createNotReadyEndpoints(2);
         given(client.endpointsByName(NAMESPACE, SERVICE_NAME)).willReturn(endpoints);
 
-        ServiceEndpointResolver sut = new ServiceEndpointResolver(LOGGER, SERVICE_NAME, 0, null, null, NAMESPACE, null,
+        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, 0, null, null, NAMESPACE,
+                null,
                 KUBERNETES_MASTER_URL, API_TOKEN);
 
         // when
@@ -164,7 +166,7 @@ public class ServiceEndpointResolverTest {
             throws IOException {
         String expectedContents = "Hello, world!\nThis is a test with Unicode ✓.";
         String testFile = createTestFile(expectedContents);
-        String actualContents = ServiceEndpointResolver.readFileContents(testFile);
+        String actualContents = KubernetesApiEndpointResolver.readFileContents(testFile);
         Assert.assertEquals(expectedContents, actualContents);
     }
 
@@ -192,8 +194,6 @@ public class ServiceEndpointResolverTest {
 
     private static EntrypointAddress createEntrypointAddress(int customPort) {
         String ip = "1.1.1.1";
-        Map<String, Object> additionalProperties = new HashMap<String, Object>();
-        additionalProperties.put("hazelcast-service-port", String.valueOf(customPort));
-        return new EntrypointAddress(ip, additionalProperties);
+        return new EntrypointAddress(ip, customPort, new HashMap<String, Object>());
     }
 }

@@ -81,15 +81,27 @@ interface KubernetesClient {
      */
     final class EntrypointAddress {
         private final String ip;
+        private final Integer port;
         private final Map<String, Object> additionalProperties;
 
         EntrypointAddress(String ip, Map<String, Object> additionalProperties) {
             this.ip = ip;
+            this.port = null;
+            this.additionalProperties = additionalProperties;
+        }
+
+        EntrypointAddress(String ip, Integer port, Map<String, Object> additionalProperties) {
+            this.ip = ip;
+            this.port = port;
             this.additionalProperties = additionalProperties;
         }
 
         String getIp() {
             return ip;
+        }
+
+        Integer getPort() {
+            return port;
         }
 
         Map<String, Object> getAdditionalProperties() {
