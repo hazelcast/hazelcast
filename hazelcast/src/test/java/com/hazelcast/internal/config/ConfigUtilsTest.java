@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -24,12 +27,72 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ConfigUtilsTest extends HazelcastTestSupport {
 
+    private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
+    private final ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
+
     @Test
     public void testConstructor() {
         assertUtilityConstructor(ConfigUtils.class);
+    }
+
+    @Test
+    public void getNonExistingConfig_createNewWithCloningDefault() {
+        QueueConfig aDefault = new QueueConfig("default");
+        aDefault.setBackupCount(5);
+        queueConfigs.put(aDefault.getName(), aDefault);
+        QueueConfig newConfig = ConfigUtils.getConfig(configPatternMatcher, queueConfigs, "newConfig", QueueConfig.class);
+
+        assertEquals("newConfig", newConfig.getName());
+        assertEquals(5, newConfig.getBackupCount());
+        assertEquals(2, queueConfigs.size());
+        assertTrue(queueConfigs.containsKey("newConfig"));
+        assertTrue(queueConfigs.containsKey("default"));
+    }
+
+    @Test
+    public void getNonExistingConfig() {
+        QueueConfig newConfig = ConfigUtils.getConfig(configPatternMatcher, queueConfigs, "newConfig", QueueConfig.class);
+
+        assertEquals("newConfig", newConfig.getName());
+        assertEquals(1, newConfig.getBackupCount());
+        assertEquals(2, queueConfigs.size());
+        assertTrue(queueConfigs.containsKey("newConfig"));
+        assertTrue(queueConfigs.containsKey("default"));
+    }
+
+    @Test
+    public void getExistingConfig() {
+        QueueConfig aDefault = new QueueConfig("newConfig");
+        aDefault.setBackupCount(5);
+        queueConfigs.put(aDefault.getName(), aDefault);
+        QueueConfig newConfig = ConfigUtils.getConfig(configPatternMatcher, queueConfigs, "newConfig", QueueConfig.class);
+
+        assertEquals("newConfig", newConfig.getName());
+        assertEquals(5, newConfig.getBackupCount());
+        assertEquals(1, queueConfigs.size());
+        assertTrue(queueConfigs.containsKey("newConfig"));
+    }
+
+    @Test
+    public void getConfigWithDefaultNameMatcher() {
+        QueueConfig aDefault = new QueueConfig("newConfig");
+        aDefault.setBackupCount(5);
+        queueConfigs.put(aDefault.getName(), aDefault);
+        QueueConfig newConfig = ConfigUtils.getConfig(configPatternMatcher, queueConfigs, "newConfig@partition1", QueueConfig.class);
+
+        assertEquals("newConfig", newConfig.getName());
+        assertEquals(5, newConfig.getBackupCount());
+        assertEquals(1, queueConfigs.size());
+        assertTrue(queueConfigs.containsKey("newConfig"));
     }
 }

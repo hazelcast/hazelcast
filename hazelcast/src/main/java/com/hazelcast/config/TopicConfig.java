@@ -32,7 +32,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
  */
-public class TopicConfig implements IdentifiedDataSerializable {
+public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Default global ordering configuration.

@@ -38,7 +38,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned {
+public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned , NamedConfig {
 
     /**
      * Default value for the maximum size of the Queue.

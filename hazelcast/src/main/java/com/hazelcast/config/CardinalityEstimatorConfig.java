@@ -34,7 +34,7 @@ import static java.lang.String.format;
 /**
  * Configuration options for the {@link com.hazelcast.cardinality.CardinalityEstimator}
  */
-public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, Versioned {
+public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, Versioned, NamedConfig {
 
     /**
      * The number of sync backups per estimator

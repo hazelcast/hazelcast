@@ -38,7 +38,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Contains the configuration for an {@link com.hazelcast.core.ReplicatedMap}
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned {
+public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned, NamedConfig {
 
     /**
      * Default value of concurrency level
