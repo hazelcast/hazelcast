@@ -250,6 +250,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         // wait for the first snapshot
         JetService jetService = getNode(instances[0]).nodeEngine.getService(JetService.SERVICE_NAME);
         JobRepository jobRepository = jetService.getJobCoordinationService().jobRepository();
+        assertJobStatusEventually(job, RUNNING);
         assertTrueEventually(() -> assertTrue(
                 jobRepository.getJobExecutionRecord(job.getId()).dataMapIndex() >= 0));
 
