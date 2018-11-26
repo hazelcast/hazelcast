@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -26,8 +28,11 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.mapreduce.helpers.Employee;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.extractor.ValueCollector;
+import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -228,6 +233,39 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         keySet.add(2);
 
         queryCache.getAll(keySet);
+    }
+
+    @Test
+    public void testQueryCache_with_mapAttribute_inPredicate() {
+
+        String MAP_ATTRIBUTE_NAME = "booleanMapAttribute";
+
+        Config config = new Config();
+        config.getMapConfig(mapName)
+                .addQueryCacheConfig(
+                        new QueryCacheConfig(cacheName)
+                                .setIncludeValue(true)
+                                .setPredicateConfig(// use map attribute in a predicate
+                                        new PredicateConfig(Predicates.equal(MAP_ATTRIBUTE_NAME, true))
+                                ))
+                .addMapAttributeConfig(
+                        new MapAttributeConfig()
+                                .setExtractor(EvenNumberEmployeeValueExtractor.class.getName())
+                                .setName(MAP_ATTRIBUTE_NAME));
+
+        IMap<Integer, Employee> map = getIMap(config);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+
+        populateMap(map, 100);
+
+        assertQueryCacheSizeEventually(50, queryCache);
+    }
+
+    public static class EvenNumberEmployeeValueExtractor extends ValueExtractor<Employee, Integer> {
+        @Override
+        public void extract(Employee target, Integer argument, ValueCollector collector) {
+            collector.addObject(target.getId() % 2 == 0);
+        }
     }
 
     @SuppressWarnings("unchecked")
