@@ -1,4 +1,18 @@
-This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.11 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
+This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.11.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
+
+==== 3.11.1 ====
+
+1. Fixes
+
+* When the client (having a Reliable Topic) reconnects to the cluster, the `MessageListener` added to the client was no longer receiving messages, unlike the `MapListener`. This has been fixed by making the Reliable Topic structure to continue from the last known sequence ID, in case of an `HazelcastClientOfflineException`. [#14123]
+* Fixed an issue where the members and clients were not disconnecting the connection as soon as a heartbeat timeout is detected. The member side heartbeat monitor was still checking if the connection is the owner connection. This activity has also been removed. [#14094]
+* Fixed an issue where the `mapEvictionPolicy` configuration became null, when the JSON file is used to start a Hazelcast instance on the PCF environment. [#14086]
+* Fixed an issue where the failed store operations was filling the write-behind queues by duplicating themselves, in each run of the store-worker thread (this was happening when `write-batch-size` is larger than 1 and `write-coalescing` is disabled, there was and is no issue for the default values of these properties). [#14019]
+* Fixed an issue where the querying performance dropped when running Hazelcast within OSGi. [#13785]
+
+2. Behavioral Changes
+
+* Starting with Hazelcast IMDG 3.11.1 and for the future releases, when you enable TLS/SSL and do not provide the `trustStore` property, the default trusted certificates are/will be used, i.e., the Java provided list of trusted CA certificates.
 
 
 ==== 3.11 ====
