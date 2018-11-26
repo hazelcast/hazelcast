@@ -226,16 +226,6 @@ public class CacheClearExpiredRecordsTask
     }
 
     @Override
-    protected void clearLeftoverExpiredKeyQueues(CachePartitionSegment container) {
-        Iterator<ICacheRecordStore> iterator = container.recordStoreIterator();
-        while (iterator.hasNext()) {
-            ICacheRecordStore store = iterator.next();
-            InvalidationQueue expiredKeys = store.getExpiredKeysQueue();
-            expiredKeys.clear();
-        }
-    }
-
-    @Override
     protected void sortPartitionContainers(List<CachePartitionSegment> containers) {
         for (CachePartitionSegment segment : containers) {
             segment.storeLastCleanupTime();
