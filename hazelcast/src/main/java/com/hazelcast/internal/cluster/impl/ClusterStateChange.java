@@ -49,8 +49,12 @@ public class ClusterStateChange<T> implements IdentifiedDataSerializable {
         return newState;
     }
 
-    public <T> boolean isOfType(Class<T> type) {
+    public <T_SUGGESTED> boolean isOfType(Class<T_SUGGESTED> type) {
         return this.type.equals(type);
+    }
+
+    public ClusterState getClusterStateOrNull() {
+        return isOfType(ClusterState.class) ? (ClusterState) newState : null;
     }
 
     public void validate() {
