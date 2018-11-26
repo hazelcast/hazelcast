@@ -68,14 +68,13 @@ public abstract class SSLEngineFactorySupport {
                                                               String trustStore,
                                                               String trustManagerAlgorithm,
                                                               String trustStoreType) throws Exception {
+        if (trustStore == null) {
+            return null;
+        }
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerAlgorithm);
         KeyStore ts = KeyStore.getInstance(trustStoreType);
-        if (trustStore == null) {
-            ts.load(null, null);
-        } else {
-            char[] passPhrase = trustStorePassword == null ? null : trustStorePassword.toCharArray();
-            loadKeyStore(ts, passPhrase, trustStore);
-        }
+        char[] passPhrase = trustStorePassword == null ? null : trustStorePassword.toCharArray();
+        loadKeyStore(ts, passPhrase, trustStore);
         tmf.init(ts);
         return tmf;
     }
