@@ -312,8 +312,6 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     protected abstract boolean notHaveAnyExpirableRecord(T container);
 
-    protected abstract void clearLeftoverExpiredKeyQueues(T container);
-
     protected abstract void sortPartitionContainers(List<T> containers);
 
     protected abstract void setHasRunningCleanup(T container);
@@ -329,9 +327,9 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     public abstract Iterator<S> storeIterator(T container);
 
     /**
-     * Used when traversing partitions.
-     * Map needs to traverse both backup and primary partitions due to catch
-     * ttl expired entries but Cache only needs primary ones.
+     * Used when traversing partitions. Map needs to traverse both
+     * backup and primary partitions due to catch ttl expired entries
+     * but Cache only needs primary ones.
      */
     protected enum ProcessablePartitionType {
         PRIMARY_PARTITION {

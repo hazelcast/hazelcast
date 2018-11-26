@@ -205,27 +205,13 @@ public class MapClearExpiredRecordsTask
     }
 
     /**
-     * This can happen due to the partition ownership changes.
-     */
-    @Override
-    protected void clearLeftoverExpiredKeyQueues(PartitionContainer container) {
-        ConcurrentMap<String, RecordStore> maps = container.getMaps();
-        for (RecordStore store : maps.values()) {
-            InvalidationQueue expiredKeys = store.getExpiredKeysQueue();
-            for (; ; ) {
-                if (expiredKeys.poll() == null) {
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
      * Here we check if that partition has any expirable record or not,
-     * if no expirable record exists in that partition no need to fire an expiration operation.
+     * if no expirable record exists in that partition no need to fire
+     * an expiration operation.
      *
      * @param partitionContainer corresponding partition container.
-     * @return <code>true</code> if no expirable record in that partition <code>false</code> otherwise.
+     * @return <code>true</code> if no expirable record in that
+     * partition <code>false</code> otherwise.
      */
     @Override
     protected boolean notHaveAnyExpirableRecord(PartitionContainer partitionContainer) {
