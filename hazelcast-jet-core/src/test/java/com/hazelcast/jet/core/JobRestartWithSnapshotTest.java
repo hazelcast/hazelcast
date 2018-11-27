@@ -120,11 +120,11 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         Map.Entry(partitionId, timestamp). For each partition timestamps from
         0..elementsInPartition are generated.
 
-        We start the test with two nodes and localParallelism(1) for source.
-        Source instances generate items at the same rate of 10 per second: this
-        causes one instance to be twice as fast as the other in terms of
+        We start the test with two nodes and localParallelism(1) and 3 partitions
+        for source. Source instances generate items at the same rate of 10 per
+        second: this causes one instance to be twice as fast as the other in terms of
         timestamp. The source processor saves partition offsets similarly to how
-        streamKafka() and streamMap() do.
+        KafkaSources.kafka() and Sources.mapJournal() do.
 
         After some time we shut down one instance. The job restarts from the
         snapshot and all partitions are restored to single source processor
@@ -152,7 +152,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         result.clear();
 
         int numPartitions = 3;
-        int elementsInPartition = 200;
+        int elementsInPartition = 250;
         DistributedSupplier<Processor> sup = () ->
                 new SequencesInPartitionsGeneratorP(numPartitions, elementsInPartition, true);
         Vertex generator = dag.newVertex("generator", throttle(sup, 30))
