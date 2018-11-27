@@ -12,6 +12,7 @@ Hazelcast IMDG Enterprise Enhancements:
 * Fine-Grained Control over WAN Replication Events: Introduced the new event type LOADED and the class EntryLoadedListener through which all the loads can be listened to. Also introduced the new configuration element persist-wan-replicated-data to specify whether to persist an incoming event over WAN replication or not. See the Configuring Consumer section.
 * License Enforcements and Warnings: Introduced a license monitor daemon that warns about expirations and instructs about the next steps. These information are also available through REST/JMX APIs. See the License Information section.
 * Delta WAN Synchronization: Introduced WAN anti-entropy mechanism utilizing Merkle Tree to synchronize only the affected subsets for Maps, improving network and heap utilization. See the Delta WAN Synchronization section.
+* Support for Adding/Removing WAN Publishers in a Running Cluster: Introduced the ability to add a newly defined WAN Publisher configuration which defines the replication information for new target clusters and then to assign this configuration to a map or cache. The replication to these target clusters resumes as if it has been defined in the configuration. See the Dynamically Adding WAN Publishers section.
 
 Hazelcast IMDG Open Source Enhancements:
 
