@@ -484,6 +484,38 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         assertEquals(500, lostCount);
     }
 
+
+    @Test
+    public void nextSequenceProceedsWhenReadFromEventJournalWhileMinSizeIsZero() throws Exception {
+        init();
+
+        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+
+        final int count = 1000;
+        assertEventJournalSize(context.dataAdapter, 0);
+
+        for (int i = 0; i < count; i++) {
+            context.dataAdapter.put(randomPartitionKey(), i);
+        }
+
+        final EventJournalInitialSubscriberState state = subscribeToEventJournal(context.dataAdapter, partitionId);
+
+        assertEquals(500, state.getOldestSequence());
+        assertEquals(999, state.getNewestSequence());
+        assertEventJournalSize(context.dataAdapter, 500);
+
+        final int startSequence = 0;
+        final ReadResultSet<EJ_TYPE> resultSet = readFromEventJournal(
+                context.dataAdapter, startSequence, 1, 0, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION).get();
+
+        assertEquals(1, resultSet.size());
+        assertEquals(1, resultSet.readCount());
+        assertNotEquals(startSequence + resultSet.readCount(), resultSet.getNextSequenceToReadFrom());
+        assertEquals(501, resultSet.getNextSequenceToReadFrom());
+        final long lostCount = resultSet.getNextSequenceToReadFrom() - resultSet.readCount() - startSequence;
+        assertEquals(500, lostCount);
+    }
+
     @Test
     public void allowReadingWithFutureSeq() throws Exception {
         init();
@@ -742,7 +774,37 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
             int partitionId,
             Predicate<EJ_TYPE> predicate,
             Projection<EJ_TYPE, PROJ_TYPE> projection) {
-        return adapter.readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
+        return readFromEventJournal(adapter, startSequence, maxSize, 1, partitionId, predicate, projection);
+    }
+
+    /**
+     * Reads from the event journal a set of events.
+     *
+     * @param adapter       the adapter for a specific data structure
+     * @param startSequence the sequence of the first item to read
+     * @param maxSize       the maximum number of items to read
+     * @param minSize       the minimum number of items to read
+     * @param partitionId   the partition ID of the entries in the journal
+     * @param predicate     the predicate which the events must pass to be included in the response.
+     *                      May be {@code null} in which case all events pass the predicate
+     * @param projection    the projection which is applied to the events before returning.
+     *                      May be {@code null} in which case the event is returned without being
+     *                      projected
+     * @param <K>           the data structure entry key type
+     * @param <V>the        data structure entry value type
+     * @param <PROJ_TYPE>   the return type of the projection. It is equal to the journal event type
+     *                      if the projection is {@code null} or it is the identity projection
+     * @return the future with the filtered and projected journal items
+     */
+    private <K, V, PROJ_TYPE> ICompletableFuture<ReadResultSet<PROJ_TYPE>> readFromEventJournal(
+            EventJournalDataStructureAdapter<K, V, EJ_TYPE> adapter,
+            long startSequence,
+            int maxSize,
+            int minSize,
+            int partitionId,
+            Predicate<EJ_TYPE> predicate,
+            Projection<EJ_TYPE, PROJ_TYPE> projection) {
+        return adapter.readFromEventJournal(startSequence, minSize, maxSize, partitionId, predicate, projection);
     }
 
     /**

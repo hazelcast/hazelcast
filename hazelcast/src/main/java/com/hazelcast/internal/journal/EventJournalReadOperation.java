@@ -119,6 +119,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         if (minSize == 0) {
             if (!journal.isNextAvailableSequence(namespace, partitionId, sequence)) {
                 sequence = journal.readMany(namespace, partitionId, sequence, resultSet);
+                resultSet.setNextSequenceToReadFrom(sequence);
             }
             return false;
         }
