@@ -17,14 +17,12 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.util.concurrent.TimeUnit;
 
 /**
  * Statistics and timing info for a {@link IScheduledFuture} accessible through {@link IScheduledFuture#getStats()}
  */
-@Beta
 public interface ScheduledTaskStatistics
         extends IdentifiedDataSerializable {
 
