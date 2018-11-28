@@ -297,6 +297,15 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
+    static class ErroneousRunnableTask implements Runnable, Serializable {
+
+        @Override
+        public void run() {
+            throw new IllegalStateException("Erroneous task");
+        }
+
+    }
+
     static class PlainPartitionAwareCallableTask implements Callable<Double>, Serializable, PartitionAware<String> {
 
         @Override
