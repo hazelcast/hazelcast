@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
@@ -45,6 +46,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
@@ -81,7 +83,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         config.getMapConfig(ALWAYS_FAILING_MAP)
               .getMapStoreConfig()
               .setEnabled(true)
-              .setImplementation(new AsyncMapWriterTest.AlwaysFailingMapStore());
+              .setImplementation(new AlwaysFailingMapStore());
 
         JetInstance instance = createJetMember(jetConfig);
         NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
@@ -299,5 +301,13 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         exception.expect(RuntimeException.class);
         // When
         os.write(1);
+    }
+
+    static class AlwaysFailingMapStore extends AMapStore implements Serializable {
+
+        @Override
+        public void store(Object o, Object o2) {
+            throw new RuntimeException("Always failing store");
+        }
     }
 }
