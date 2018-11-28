@@ -91,10 +91,14 @@ public class JobRepositoryTest extends JetTestSupport {
 
         jobRepository.cleanup(emptySet());
 
-        assertNull(jobRepository.getJobRecord(jobId));
-        assertTrue(jobRepository.getJobResources(jobId).isEmpty());
-        assertFalse(jobIds.containsKey(executionId1));
-        assertFalse(jobIds.containsKey(executionId2));
+        assertNull("jobRecord not null", jobRepository.getJobRecord(jobId));
+        // There's a race in IMap.destroy: when two threads destroy the same map, the isEmpty call
+        // just after the destroy call can return false. In this test, one thread is this test and the other
+        // is the automatic cleanup.
+        assertTrueEventually(() ->
+                assertTrue("job resources not empty", jobRepository.getJobResources(jobId).isEmpty()), 3);
+        assertFalse("jobIds contains executionId1", jobIds.containsKey(executionId1));
+        assertFalse("jobIds contains executionId2", jobIds.containsKey(executionId2));
     }
 
     @Test

@@ -350,8 +350,9 @@ public class JobRepository {
         validJobIds.addAll(jobRecords.keySet());
 
         // Job ids are never cleaned up.
-        // We also don't clean up job records here because they might be started in parallel while cleanup is running
-        // If a job id is not running or is completed it might be suitable to clean up job resources
+        // We also don't clean up job records here because they might be started in parallel
+        // while cleanup is running. If a job id is not running or is completed, it might be
+        // suitable to clean up job resources.
         randomIds.keySet(new FilterJobIdPredicate())
                  .stream()
                  .filter(jobId -> !validJobIds.contains(jobId))
