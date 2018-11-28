@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Statistics and timing info for a {@link IScheduledFuture} accessible through {@link IScheduledFuture#getStats()}
  */
-@Beta
 public interface ScheduledTaskStatistics
         extends IdentifiedDataSerializable {
 
