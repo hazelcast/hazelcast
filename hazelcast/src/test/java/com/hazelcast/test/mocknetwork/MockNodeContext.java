@@ -34,32 +34,37 @@ import com.hazelcast.test.compatibility.SamplingNodeExtension;
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-@SuppressWarnings("WeakerAccess")
 public class MockNodeContext implements NodeContext {
 
     private final TestNodeRegistry registry;
     private final Address thisAddress;
     private final Set<Address> initiallyBlockedAddresses;
+    private final List<String> nodeExtensionPriorityList;
 
     protected MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
-        this(registry, thisAddress, Collections.<Address>emptySet());
+        this(registry, thisAddress, Collections.<Address>emptySet(), DefaultNodeContext.EXTENSION_PRIORITY_LIST);
     }
 
-    protected MockNodeContext(TestNodeRegistry registry, Address thisAddress, Set<Address> initiallyBlockedAddresses) {
+    protected MockNodeContext(
+            TestNodeRegistry registry, Address thisAddress, Set<Address> initiallyBlockedAddresses,
+            List<String> nodeExtensionPriorityList
+    ) {
         this.registry = registry;
         this.thisAddress = thisAddress;
         this.initiallyBlockedAddresses = initiallyBlockedAddresses;
+        this.nodeExtensionPriorityList = nodeExtensionPriorityList;
     }
 
     @Override
     public NodeExtension createNodeExtension(Node node) {
         return TestEnvironment.isRecordingSerializedClassNames()
                 ? constructSamplingNodeExtension(node)
-                : NodeExtensionFactory.create(node, DefaultNodeContext.EXTENSION_PRIORITY_LIST);
+                : NodeExtensionFactory.create(node, nodeExtensionPriorityList);
     }
 
     @Override
