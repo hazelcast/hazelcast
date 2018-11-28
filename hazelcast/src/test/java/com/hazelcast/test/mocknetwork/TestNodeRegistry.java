@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,9 +44,11 @@ public final class TestNodeRegistry {
 
     private final ConcurrentMap<Address, Node> nodes = new ConcurrentHashMap<Address, Node>(10);
     private final Collection<Address> joinAddresses;
+    private final List<String> nodeExtensionPriorityList;
 
-    public TestNodeRegistry(Collection<Address> addresses) {
+    public TestNodeRegistry(Collection<Address> addresses, List<String> nodeExtensionPriorityList) {
         this.joinAddresses = addresses;
+        this.nodeExtensionPriorityList = nodeExtensionPriorityList;
     }
 
     public NodeContext createNodeContext(Address address) {
@@ -64,7 +67,7 @@ public final class TestNodeRegistry {
             });
             nodes.remove(address, node);
         }
-        return new MockNodeContext(this, address, initiallyBlockedAddresses);
+        return new MockNodeContext(this, address, initiallyBlockedAddresses, nodeExtensionPriorityList);
     }
 
     public HazelcastInstance getInstance(Address address) {
