@@ -96,7 +96,8 @@ public interface IScheduledExecutorService
      * Creates and executes a periodic action that becomes enabled first after the given initial delay, and subsequently with the
      * given period. Executions will commence after {@code initialDelay} then {@code initialDelay+period}, then {@code
      * initialDelay + 2 * period}, and so on. If any execution of this task takes longer than its period, then subsequent
-     * execution will be skipped.
+     * execution will be skipped. If any execution of the task encounters an exception, subsequent executions are suppressed.
+     * Otherwise, the task will only terminate via cancellation or termination of the executor.
      *
      * @param command      the task to execute
      * @param initialDelay the time to delay first execution
@@ -141,7 +142,9 @@ public interface IScheduledExecutorService
      * Creates and executes a periodic action that becomes enabled first after the given initial delay, and subsequently with the
      * given period at the given {@link Member}. Executions will commence after {@code initialDelay} then {@code
      * initialDelay+period}, then {@code initialDelay + 2 * period}, and so on. If any execution of this task takes longer than
-     * its period, then subsequent execution will be skipped.
+     * its period, then subsequent execution will be skipped. If any execution of the task encounters an exception,
+     * subsequent executions are suppressed. Otherwise, the task will only terminate via cancellation or termination of the
+     * executor.
      *
      * @param command      the task to execute
      * @param member       the member to execute the task
@@ -188,7 +191,9 @@ public interface IScheduledExecutorService
      * Creates and executes a periodic action that becomes enabled first after the given initial delay, and subsequently with the
      * given period on the partition owner of the given key. Executions will commence after {@code initialDelay} then {@code
      * initialDelay+period}, then {@code initialDelay + 2 * period}, and so on. If any execution of this task takes longer than
-     * its period, then subsequent execution will be skipped.
+     * its period, then subsequent execution will be skipped. If any execution of the task encounters an exception,
+     * subsequent executions are suppressed. Otherwise, the task will only terminate via cancellation or termination of the
+     * executor.
      *
      * @param command      the task to execute
      * @param key          the key to identify the partition owner, which will execute the task
@@ -241,7 +246,9 @@ public interface IScheduledExecutorService
      * Creates and executes a periodic action that becomes enabled first after the given initial delay, and subsequently with the
      * given period on all cluster {@link Member}s. Executions will commence after {@code initialDelay} then {@code
      * initialDelay+period}, then {@code initialDelay + 2 * period}, and so on. If any execution of this task takes longer than
-     * its period, then subsequent execution will be skipped.
+     * its period, then subsequent execution will be skipped. If any execution of the task encounters an exception,
+     * subsequent executions are suppressed. Otherwise, the task will only terminate via cancellation or termination of the
+     * executor.
      *
      * <p>
      * <b>Note: </b> In the event of Member leaving the cluster, for whatever reason, the task is lost. If a new member is
@@ -298,7 +305,9 @@ public interface IScheduledExecutorService
      * Creates and executes a periodic action that becomes enabled first after the given initial delay, and subsequently with the
      * given period on all {@link Member}s given. Executions will commence after {@code initialDelay} then {@code
      * initialDelay+period}, then {@code initialDelay + 2 * period}, and so on. If any execution of this task takes longer than
-     * its period, then subsequent execution will be skipped.
+     * its period, then subsequent execution will be skipped. If any execution of the task encounters an exception,
+     * subsequent executions are suppressed. Otherwise, the task will only terminate via cancellation or termination of the
+     * executor.
      *
      * <p>
      * <b>Note: </b> In the event of Member leaving the cluster, for whatever reason, the task is lost.
