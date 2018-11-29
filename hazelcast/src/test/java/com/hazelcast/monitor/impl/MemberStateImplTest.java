@@ -21,12 +21,12 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hotrestart.BackupTaskState;
 import com.hazelcast.hotrestart.BackupTaskStatus;
+import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.NodeState;
-import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
-import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -76,6 +75,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.uuid = "abc123456";
         client.address = "localhost";
         client.clientType = "undefined";
+        client.name = "aClient";
         clients.add(client);
 
         Map<String, Long> runtimeProps = new HashMap<String, Long>();
@@ -144,6 +144,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals("abc123456", client.uuid);
         assertEquals("localhost", client.address);
         assertEquals("undefined", client.clientType);
+        assertEquals("aClient", client.name);
 
         NodeState deserializedState = deserialized.getNodeState();
         assertEquals(clusterState, deserializedState.getClusterState());

@@ -62,6 +62,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private String clientVersionString;
     private long authenticationCorrelationId;
     private volatile String stats;
+    private String clientName;
 
     public ClientEndpointImpl(ClientEngineImpl clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
@@ -109,13 +110,14 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection,
-                              String clientVersion, long authCorrelationId) {
+                              String clientVersion, long authCorrelationId, String clientName) {
         this.principal = principal;
         this.ownerConnection = firstConnection;
         this.credentials = credentials;
         this.authenticated = true;
         this.authenticationCorrelationId = authCorrelationId;
         this.setClientVersion(clientVersion);
+        this.clientName = clientName;
     }
 
     @Override
@@ -187,6 +189,11 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 throw new IllegalArgumentException("Invalid connection type: " + connection.getType());
         }
         return type;
+    }
+
+    @Override
+    public String getName() {
+        return clientName;
     }
 
     @Override

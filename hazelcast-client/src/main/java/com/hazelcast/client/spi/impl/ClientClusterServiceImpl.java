@@ -146,7 +146,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
         ClientPrincipal principal = cm.getPrincipal();
         final String uuid = principal != null ? principal.getUuid() : null;
-        return new ClientImpl(uuid, inetSocketAddress);
+        return new ClientImpl(uuid, inetSocketAddress, client.getName());
     }
 
     @Override

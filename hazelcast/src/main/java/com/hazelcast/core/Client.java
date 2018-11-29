@@ -47,4 +47,13 @@ public interface Client extends Endpoint {
      * @return the type of this client
      */
     ClientType getClientType();
+
+
+    /**
+     * This method may return null depending on the client version and the client type
+     * Java client provides client name starting with 3.12
+     *
+     * @return the name of this client if provided, null otherwise
+     */
+    String getName();
 }

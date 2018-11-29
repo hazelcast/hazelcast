@@ -30,12 +30,14 @@ public class ClientEvent implements Client {
     private final ClientEventType eventType;
     private final InetSocketAddress address;
     private final ClientType clientType;
+    private final String name;
 
-    public ClientEvent(String uuid, ClientEventType eventType, InetSocketAddress address, ClientType clientType) {
+    public ClientEvent(String uuid, ClientEventType eventType, InetSocketAddress address, ClientType clientType, String name) {
         this.uuid = uuid;
         this.eventType = eventType;
         this.address = address;
         this.clientType = clientType;
+        this.name = name;
     }
 
     @Override
@@ -53,6 +55,11 @@ public class ClientEvent implements Client {
         return clientType;
     }
 
+    @Override
+    public String getName() {
+        return name;
+    }
+
     public ClientEventType getEventType() {
         return eventType;
     }
@@ -64,6 +71,7 @@ public class ClientEvent implements Client {
                 + ", eventType=" + eventType
                 + ", address=" + address
                 + ", clientType=" + clientType
+                + ", name =" + name
                 + '}';
     }
 }

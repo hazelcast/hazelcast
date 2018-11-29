@@ -50,6 +50,7 @@ import static com.hazelcast.client.impl.protocol.AuthenticationStatus.SERIALIZAT
 public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClusterMessageTask<P> {
 
     protected transient ClientPrincipal principal;
+    protected transient String clientName;
     protected transient Credentials credentials;
     transient byte clientSerializationVersion;
     transient String clientVersion;
@@ -165,7 +166,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
     private ClientMessage prepareAuthenticatedClientMessage() {
         Connection connection = endpoint.getConnection();
 
-        endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion, clientMessage.getCorrelationId());
+        endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion,
+                clientMessage.getCorrelationId(), clientName);
         setConnectionType();
         logger.info("Received auth from " + connection + ", successfully authenticated" + ", principal: " + principal
                 + ", owner connection: " + isOwnerConnection() + ", client version: " + clientVersion);

@@ -30,6 +30,7 @@ public class ClientEndPointDTO implements JsonSerializable {
     public String uuid;
     public String address;
     public String clientType;
+    public String name;
 
     public ClientEndPointDTO() {
     }
@@ -38,6 +39,7 @@ public class ClientEndPointDTO implements JsonSerializable {
         this.uuid = client.getUuid();
         this.address = client.getSocketAddress().getHostName() + ":" + client.getSocketAddress().getPort();
         this.clientType = client.getClientType().toString();
+        this.name = client.getName();
     }
 
     @Override
@@ -46,6 +48,7 @@ public class ClientEndPointDTO implements JsonSerializable {
         root.add("uuid", uuid);
         root.add("address", address);
         root.add("clientType", clientType);
+        root.add("name", name);
         return root;
     }
 
@@ -54,5 +57,6 @@ public class ClientEndPointDTO implements JsonSerializable {
         uuid = getString(json, "uuid");
         address = getString(json, "address");
         clientType = getString(json, "clientType");
+        name = getString(json, "name");
     }
 }

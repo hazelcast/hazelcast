@@ -28,10 +28,12 @@ public class ClientImpl implements Client {
 
     private final String uuid;
     private final InetSocketAddress socketAddress;
+    private final String name;
 
-    public ClientImpl(String uuid, InetSocketAddress socketAddress) {
+    public ClientImpl(String uuid, InetSocketAddress socketAddress, String name) {
         this.uuid = uuid;
         this.socketAddress = socketAddress;
+        this.name = name;
     }
 
     @Override
@@ -47,5 +49,10 @@ public class ClientImpl implements Client {
     @Override
     public ClientType getClientType() {
         return ClientType.JAVA;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }
