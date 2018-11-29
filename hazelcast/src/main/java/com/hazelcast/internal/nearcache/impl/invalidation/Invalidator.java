@@ -28,7 +28,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import java.util.Collection;
 import java.util.UUID;
 
-import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -108,7 +107,7 @@ public abstract class Invalidator {
     protected Invalidation newInvalidation(Data key, String dataStructureName, String sourceUuid, int partitionId) {
         long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
-        return new SingleNearCacheInvalidation(toHeapData(key), dataStructureName, sourceUuid, partitionUuid, sequence);
+        return new SingleNearCacheInvalidation(key.toHeap(), dataStructureName, sourceUuid, partitionUuid, sequence);
     }
 
     private int getPartitionId(Data o) {

@@ -113,4 +113,10 @@ public interface Data {
      */
     boolean isPortable();
 
+    /**
+     * Converts Data to HeapData. Useful for offheap conversion.
+     *
+     * @return the onheap representation of data.
+     */
+    Data toHeap();
 }

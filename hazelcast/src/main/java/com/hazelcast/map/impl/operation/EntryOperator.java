@@ -48,11 +48,10 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 
 /**
  * Operator for single key processing logic of {@link EntryProcessor}/{@link EntryBackupProcessor} related operations.
@@ -337,7 +336,7 @@ public final class EntryOperator {
 
     private void publishEntryEvent() {
         Object oldValue = getOrNullOldValue();
-        mapEventPublisher.publishEvent(callerAddress, mapName, eventType, toHeapData(dataKey), oldValue, newValue);
+        mapEventPublisher.publishEvent(callerAddress, mapName, eventType, dataKey.toHeap(), oldValue, newValue);
     }
 
     /**

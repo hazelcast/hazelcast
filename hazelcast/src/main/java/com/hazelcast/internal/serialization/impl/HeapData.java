@@ -163,6 +163,11 @@ public class HeapData implements Data {
     }
 
     @Override
+    public Data toHeap() {
+        return new HeapData(toByteArray());
+    }
+
+    @Override
     public String toString() {
         return "HeapData{"
                 + "type=" + getType()

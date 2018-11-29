@@ -37,7 +37,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
-import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 
 /**
  * Base Cache Operation. Cache operations are named operations. Key based operations are subclasses of this base
@@ -181,7 +180,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
 
         NodeEngine nodeEngine = getNodeEngine();
         SerializationService serializationService = nodeEngine.getSerializationService();
-        Data dataValue = toHeapData(serializationService.toData(record.getValue()));
+        Data dataValue = serializationService.toData(record.getValue()).toHeap();
         publishWanUpdate(dataKey, dataValue, record);
     }
 
@@ -192,7 +191,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
         NodeEngine nodeEngine = getNodeEngine();
         SerializationService serializationService = nodeEngine.getSerializationService();
 
-        Data dataExpiryPolicy = toHeapData(serializationService.toData(record.getExpiryPolicy()));
+        Data dataExpiryPolicy = serializationService.toData(record.getExpiryPolicy()).toHeap();
         publishWanUpdate(dataKey, dataValue, dataExpiryPolicy, record);
     }
 
@@ -203,8 +202,8 @@ public abstract class CacheOperation extends AbstractNamedOperation
             return;
         }
 
-        CacheEntryView<Data, Data> entryView = createDefaultEntryView(toHeapData(dataKey),
-                toHeapData(dataValue), toHeapData(dataExpiryPolicy), record);
+        CacheEntryView<Data, Data> entryView = createDefaultEntryView(dataKey.toHeap(),
+                dataValue.toHeap(), (dataExpiryPolicy.toHeap()), record);
         wanEventPublisher.publishWanUpdate(name, entryView);
     }
 
@@ -213,6 +212,6 @@ public abstract class CacheOperation extends AbstractNamedOperation
             return;
         }
 
-        wanEventPublisher.publishWanRemove(name, toHeapData(dataKey));
+        wanEventPublisher.publishWanRemove(name, dataKey.toHeap());
     }
 }

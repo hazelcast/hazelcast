@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -55,5 +56,12 @@ public class HeapDataTest {
         heap.copyTo(bytes, 0);
 
         assertEquals(new String(inputBytes), new String(bytes));
+    }
+
+    @Test
+    public void toHeapData() {
+        Data data = new HeapData();
+        Data toHeap = data.toHeap();
+        assertEquals(data, toHeap);
     }
 }

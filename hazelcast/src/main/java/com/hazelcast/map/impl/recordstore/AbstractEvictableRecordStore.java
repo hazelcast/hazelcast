@@ -41,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
-import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.getIdlenessStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
@@ -321,7 +320,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
 
         if (record != null) {
-            expiredKeys.offer(new ExpiredKey(toHeapData(record.getKey()), record.getCreationTime()));
+            expiredKeys.offer(new ExpiredKey(record.getKey().toHeap(), record.getCreationTime()));
         }
 
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(this, true);
