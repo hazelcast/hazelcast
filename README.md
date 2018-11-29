@@ -50,7 +50,7 @@ This plugin supports **two different options** of how Hazelcast members discover
 
 **Kubernetes API** mode means that each node makes a REST call to Kubernetes Master in order to discover IPs of PODs (with Hazelcast members).
 
-#### Grating Permissions to use Kubernetes API
+#### Granting Permissions to use Kubernetes API
 
 Using Kubernetes API requires granting certain permissions. Therefore, you may need to create `rbac.yaml` with the following content.
 
