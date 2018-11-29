@@ -32,6 +32,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +111,7 @@ public final class AndPredicate
         return list;
     }
 
-    private static int sizeOf(Set<QueryableEntry> result) {
+    public static int sizeOf(Collection<QueryableEntry> result) {
         // In case of AndResultSet and OrResultSet calling size() may be very expensive so quicker estimatedSize() is used
         if (result instanceof AndResultSet) {
             return ((AndResultSet) result).estimatedSize();

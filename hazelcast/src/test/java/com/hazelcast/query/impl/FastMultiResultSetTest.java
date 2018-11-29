@@ -30,7 +30,9 @@ import java.util.concurrent.ConcurrentMap;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -114,6 +116,18 @@ public class FastMultiResultSetTest {
         addEntry(entry(data()));
 
         assertThat(result.isEmpty(), is(false));
+    }
+
+    @Test
+    public void is_empty_returns_true_when_result_set_has_no_entry() {
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void is_empty_returns_false_when_result_set_has_entries() {
+        addEntry(entry(data()));
+
+        assertFalse(result.isEmpty());
     }
 
     public QueryableEntry entry(Data data) {

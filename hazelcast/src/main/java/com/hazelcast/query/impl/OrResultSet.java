@@ -75,19 +75,23 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
     }
 
     private Set<QueryableEntry> getEntries() {
-        if (entries == null) {
-            if (indexedResults.isEmpty()) {
-                entries = Collections.emptySet();
-            } else {
-                if (indexedResults.size() == 1) {
-                    entries = new HashSet<QueryableEntry>(indexedResults.get(0));
-                } else {
-                    entries = createHashSet(Math.max(ENTRY_MIN_SIZE, indexedResults.size() * ENTRY_MULTIPLE));
-                    for (Set<QueryableEntry> result : indexedResults) {
-                        entries.addAll(result);
-                    }
-                }
-            }
+        if (entries != null) {
+            return entries;
+        }
+
+        if (indexedResults.isEmpty()) {
+            entries = Collections.emptySet();
+            return entries;
+        }
+
+        if (indexedResults.size() == 1) {
+            entries = new HashSet<QueryableEntry>(indexedResults.get(0));
+            return entries;
+        }
+
+        entries = createHashSet(Math.max(ENTRY_MIN_SIZE, indexedResults.size() * ENTRY_MULTIPLE));
+        for (Set<QueryableEntry> result : indexedResults) {
+            entries.addAll(result);
         }
         return entries;
     }

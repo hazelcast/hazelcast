@@ -39,7 +39,8 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     private final List<Predicate> lsNoIndexPredicates;
     private int cachedSize;
 
-    public AndResultSet(Set<QueryableEntry> setSmallest, List<Set<QueryableEntry>> otherIndexedResults,
+    public AndResultSet(Set<QueryableEntry> setSmallest,
+                        List<Set<QueryableEntry>> otherIndexedResults,
                         List<Predicate> lsNoIndexPredicates) {
         this.setSmallest = isNotNull(setSmallest, "setSmallest");
         this.otherIndexedResults = otherIndexedResults;
@@ -144,14 +145,12 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public int size() {
-        if (cachedSize == SIZE_UNINITIALIZED) {
-            int calculatedSize = 0;
-            for (Iterator<QueryableEntry> it = iterator(); it.hasNext(); it.next()) {
-                calculatedSize++;
-            }
-            cachedSize = calculatedSize;
-        }
-        return cachedSize;
+        throw new UnsupportedOperationException("no size");
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return !iterator().hasNext();
     }
 
     /**

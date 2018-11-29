@@ -33,13 +33,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.singletonList;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -180,6 +183,42 @@ public class AndResultSetTest extends HazelcastTestSupport {
         AndResultSet resultSet = new AndResultSet(entries, null, asList(new TruePredicate()));
 
         resultSet.remove(resultSet.iterator().next());
+    }
+
+    @Test
+    public void is_empty_returns_true_when_result_set_has_no_entry() {
+        Set<QueryableEntry> entries = Collections.emptySet();
+        List<Set<QueryableEntry>> otherIndexedResults = Collections.emptyList();
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+
+        assertTrue(resultSet.isEmpty());
+        assertEquals(0, resultSet.size());
+    }
+
+    @Test
+    public void is_empty_returns_false_when_result_set_has_entries() {
+        // 1. prepare matchingEntries
+        Set<QueryableEntry> matchingEntries = generateEntries(100);
+
+        // 2. prepare list of matchingEntries from indexes
+        Set<QueryableEntry> indexSearchResult = new HashSet<QueryableEntry>();
+        int count = 0;
+        for (QueryableEntry entry : matchingEntries) {
+            if (count == 10) {
+                break;
+            }
+            indexSearchResult.add(entry);
+            count++;
+        }
+        List<Set<QueryableEntry>> listOfIndexSearchResults
+                = new LinkedList<Set<QueryableEntry>>(singletonList(indexSearchResult));
+
+        // 3. add all results to result set
+        AndResultSet resultSet = new AndResultSet(matchingEntries,
+                listOfIndexSearchResults, asList(new TruePredicate()));
+
+        assertFalse(resultSet.isEmpty());
+        assertEquals(10, resultSet.size());
     }
 
     private static Set<QueryableEntry> generateEntries(int count) {

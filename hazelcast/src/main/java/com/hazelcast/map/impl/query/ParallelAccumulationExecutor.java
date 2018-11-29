@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.query.impl.predicates.AndPredicate.sizeOf;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -88,12 +89,12 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
     }
 
     private Collection<QueryableEntry>[] split(Collection<QueryableEntry> entries, int chunkCount) {
-        if (entries.size() < chunkCount * 2) {
+        if (sizeOf(entries) < chunkCount * 2) {
             return null;
         }
         int counter = 0;
         Collection<QueryableEntry>[] entriesSplit = new Collection[chunkCount];
-        int entriesPerChunk = entries.size() / chunkCount;
+        int entriesPerChunk = sizeOf(entries) / chunkCount;
         for (int i = 0; i < chunkCount; i++) {
             entriesSplit[i] = new ArrayList<QueryableEntry>(entriesPerChunk);
         }

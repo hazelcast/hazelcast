@@ -134,4 +134,14 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
         }
         return size;
     }
+
+    @Override
+    public boolean isEmpty() {
+        for (Map<Data, QueryableEntry> resultSet : resultSets) {
+            if (!resultSet.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

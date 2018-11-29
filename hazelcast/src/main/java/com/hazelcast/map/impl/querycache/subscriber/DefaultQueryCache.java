@@ -61,7 +61,6 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -338,17 +337,15 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        final Set<K> resultingSet;
+        Set<K> resultingSet = new HashSet<K>();
 
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
-            resultingSet = createHashSet(query.size());
             for (QueryableEntry entry : query) {
                 K key = (K) entry.getKey();
                 resultingSet.add(key);
             }
         } else {
-            resultingSet = new HashSet<K>();
             doFullKeyScan(predicate, resultingSet);
         }
 
@@ -359,19 +356,14 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public Set<Map.Entry<K, V>> entrySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        Set<Map.Entry<K, V>> resultingSet;
+        Set<Map.Entry<K, V>> resultingSet = new HashSet<Map.Entry<K, V>>();
 
-        Set<QueryableEntry> query = indexes.query(predicate);
-        if (query != null) {
-            if (query.isEmpty()) {
-                return Collections.emptySet();
-            }
-            resultingSet = createHashSet(query.size());
-            for (QueryableEntry entry : query) {
+        Set<QueryableEntry> indexResultSet = indexes.query(predicate);
+        if (indexResultSet != null) {
+            for (QueryableEntry entry : indexResultSet) {
                 resultingSet.add(entry);
             }
         } else {
-            resultingSet = new HashSet<Map.Entry<K, V>>();
             doFullEntryScan(predicate, resultingSet);
         }
         return resultingSet;
@@ -385,16 +377,14 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return Collections.emptySet();
         }
 
-        final Set<V> resultingSet;
+        Set<V> resultingSet = new HashSet<V>();
 
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
-            resultingSet = createHashSet(query.size());
             for (QueryableEntry entry : query) {
                 resultingSet.add((V) entry.getValue());
             }
         } else {
-            resultingSet = new HashSet<V>();
             doFullValueScan(predicate, resultingSet);
         }
         return resultingSet;
