@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.query.impl.predicates.AndPredicate.sizeOf;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -82,7 +83,7 @@ public class IndexesTest {
         PredicateBuilder predicate = entryObject.get("name").equal("0Name")
                 .and(entryObject.get("age").in(ages.toArray(new String[0])));
         Set<QueryableEntry> results = indexes.query(predicate);
-        assertEquals(1, results.size());
+        assertEquals(1, sizeOf(results));
     }
 
     @Test
@@ -99,9 +100,21 @@ public class IndexesTest {
 
         for (int i = 0; i < 10; i++) {
             SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
-            Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexes.query(predicate));
-            assertEquals(5, results.size());
+            assertEquals(5, size(indexes.query(predicate)));
         }
+    }
+
+    private static int size(Collection<QueryableEntry> result) {
+        // In case of AndResultSet and OrResultSet calling size() may be very expensive so quicker estimatedSize() is used
+        if (result instanceof AndResultSet) {
+            int size = 0;
+            for (QueryableEntry entry : result) {
+                size++;
+            }
+            return size;
+        }
+
+        return result.size();
     }
 
     @Test
@@ -135,7 +148,8 @@ public class IndexesTest {
      * throw exception.
      */
     @Test
-    public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
+    public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField
+    () {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("name", false);
 
@@ -143,13 +157,15 @@ public class IndexesTest {
     }
 
     @Test
-    public void shouldNotThrowException_withNullValues_whenNoIndexAdded() {
+    public void shouldNotThrowException_withNullValues_whenNoIndexAdded
+            () {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
 
-    private void shouldReturnNull_whenQueryingOnKeys(Indexes indexes) {
+    private void shouldReturnNull_whenQueryingOnKeys(Indexes
+                                                             indexes) {
         for (int i = 0; i < 50; i++) {
             // passing null value to QueryEntry
             indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, Extractors.empty()), null,
@@ -162,7 +178,8 @@ public class IndexesTest {
     }
 
     @Test
-    public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() {
+    public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField
+            () {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("__key", false);
 

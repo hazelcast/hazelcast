@@ -40,7 +40,6 @@ import java.util.Set;
 
 import static java.util.Collections.singletonList;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -59,77 +58,6 @@ public class AndResultSetTest extends HazelcastTestSupport {
         boolean result = it.hasNext();
 
         assertFalse(result);
-    }
-
-    @Test
-    // https://github.com/hazelcast/hazelcast/issues/9614
-    public void size_nonMatchingPredicate() {
-        Set<QueryableEntry> entries = generateEntries(100000);
-        AndResultSet resultSet = new AndResultSet(entries, null, asList(new FalsePredicate()));
-
-        int size = resultSet.size();
-        int countedSize = 0;
-        for (QueryableEntry queryableEntry : resultSet) {
-            countedSize++;
-        }
-
-        assertEquals(0, countedSize);
-        assertEquals(size, countedSize);
-    }
-
-    @Test
-    // https://github.com/hazelcast/hazelcast/issues/9614
-    public void size_matchingPredicate_notInResult() {
-        Set<QueryableEntry> entries = generateEntries(100000);
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
-        otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
-        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
-
-        int size = resultSet.size();
-        int countedSize = 0;
-        for (QueryableEntry queryableEntry : resultSet) {
-            countedSize++;
-        }
-
-        assertEquals(0, countedSize);
-        assertEquals(size, countedSize);
-    }
-
-    @Test
-    // https://github.com/hazelcast/hazelcast/issues/9614
-    public void size_matchingPredicate_noOtherResult() {
-        Set<QueryableEntry> entries = generateEntries(100000);
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
-        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
-
-        int size = resultSet.size();
-        int countedSize = 0;
-        for (QueryableEntry queryableEntry : resultSet) {
-            countedSize++;
-        }
-
-        assertEquals(100000, countedSize);
-        assertEquals(size, countedSize);
-    }
-
-    @Test
-    // https://github.com/hazelcast/hazelcast/issues/9614
-    public void size_matchingPredicate_inOtherResult() {
-        Set<QueryableEntry> entries = generateEntries(100000);
-        Set<QueryableEntry> otherIndexResult = new HashSet<QueryableEntry>();
-        otherIndexResult.add(entries.iterator().next());
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
-        otherIndexedResults.add(otherIndexResult);
-        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
-
-        int size = resultSet.size();
-        int countedSize = 0;
-        for (QueryableEntry queryableEntry : resultSet) {
-            countedSize++;
-        }
-
-        assertEquals(1, countedSize);
-        assertEquals(size, countedSize);
     }
 
     @Test
@@ -192,7 +120,6 @@ public class AndResultSetTest extends HazelcastTestSupport {
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
 
         assertTrue(resultSet.isEmpty());
-        assertEquals(0, resultSet.size());
     }
 
     @Test
@@ -218,7 +145,14 @@ public class AndResultSetTest extends HazelcastTestSupport {
                 listOfIndexSearchResults, asList(new TruePredicate()));
 
         assertFalse(resultSet.isEmpty());
-        assertEquals(10, resultSet.size());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void size_throws_unsupported_operation_exception() {
+        AndResultSet resultSet = new AndResultSet(Collections.<QueryableEntry>emptySet(),
+                Collections.<Set<QueryableEntry>>emptyList(), asList(new TruePredicate()));
+
+        resultSet.size();
     }
 
     private static Set<QueryableEntry> generateEntries(int count) {

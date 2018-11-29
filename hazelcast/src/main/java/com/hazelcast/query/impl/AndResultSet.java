@@ -145,7 +145,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public int size() {
-        throw new UnsupportedOperationException("no size");
+        throw new UnsupportedOperationException("size() is an unsupported method");
     }
 
     @Override
