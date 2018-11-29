@@ -96,7 +96,7 @@ public class MigrationManager {
     private final PartitionStateManager partitionStateManager;
     private final MigrationQueue migrationQueue = new MigrationQueue();
     private final MigrationThread migrationThread;
-    private final AtomicBoolean migrationAllowed = new AtomicBoolean(true);
+    private final AtomicBoolean migrationTasksAllowed = new AtomicBoolean(true);
     @Probe(name = "lastRepartitionTime")
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final long partitionMigrationTimeout;
@@ -146,15 +146,15 @@ public class MigrationManager {
 
     @Probe(name = "migrationActive")
     private int migrationActiveProbe() {
-        return migrationAllowed.get() ? 1 : 0;
+        return migrationTasksAllowed.get() ? 1 : 0;
     }
 
     void pauseMigration() {
-        migrationAllowed.set(false);
+        migrationTasksAllowed.set(false);
     }
 
     void resumeMigration() {
-        migrationAllowed.set(true);
+        migrationTasksAllowed.set(true);
     }
 
     private void resumeMigrationEventually() {
@@ -171,8 +171,8 @@ public class MigrationManager {
      * @see PartitionStateOperation
      * @see PartitionReplicaSyncRequest
      */
-    boolean isMigrationAllowed() {
-        return migrationAllowed.get();
+    boolean areMigrationTasksAllowed() {
+        return migrationTasksAllowed.get();
     }
 
     /**
@@ -632,11 +632,17 @@ public class MigrationManager {
             }
             partitionServiceLock.lock();
             try {
-                triggerRepartitioningWhenClusterStateAllowsMigration = !isMigrationAllowedByClusterState();
-                if (triggerRepartitioningWhenClusterStateAllowsMigration && logger.isFineEnabled()) {
-                    logger.fine("Migrations are not allowed yet, "
-                            + "repartitioning will be triggered when cluster state allows migrations.");
+                triggerRepartitioningWhenClusterStateAllowsMigration
+                        = !node.getClusterService().getClusterState().isMigrationAllowed();
+                if (triggerRepartitioningWhenClusterStateAllowsMigration) {
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Migrations are not allowed yet, "
+                                + "repartitioning will be triggered when cluster state allows migrations.");
+                    }
+                    assignCompletelyLostPartitions();
+                    return;
                 }
+
                 Address[][] newState = repartition();
                 if (newState == null) {
                     return;
@@ -644,7 +650,7 @@ public class MigrationManager {
                 lastRepartitionTime.set(Clock.currentTimeMillis());
                 processNewPartitionState(newState);
 
-                if (ASSERTION_ENABLED && isMigrationAllowedByClusterState()) {
+                if (ASSERTION_ENABLED) {
                     migrationQueue.add(new AssertPartitionTableTask(partitionService.getMaxAllowedBackupCount()));
                 }
 
@@ -662,27 +668,31 @@ public class MigrationManager {
          * @return the new partition table or {@code null} if the cluster is not stable or the repartitioning failed
          */
         private Address[][] repartition() {
-            if (!isRepartitioningAllowed()) {
+            if (!migrationsTasksAllowed()) {
                 return null;
             }
-            if (!isMigrationAllowedByClusterState()) {
-                logger.fine("Cluster state doesn't allow repartitioning. RepartitioningTask will only assign lost partitions.");
-                assignCompletelyLostPartitions();
-                return null;
-            }
-
             Address[][] newState = partitionStateManager.repartition(shutdownRequestedAddresses, null);
             if (newState == null) {
                 migrationQueue.add(new ProcessShutdownRequestsTask());
                 return null;
             }
-            if (!isRepartitioningAllowed()) {
+            if (!migrationsTasksAllowed()) {
                 return null;
             }
             return newState;
         }
 
+        /**
+         * Assigns new owners to completely lost partitions (which do not have owners for any replica)
+         * when cluster state does not allow migrations/repartitioning but allows promotions.
+         */
         private void assignCompletelyLostPartitions() {
+            if (!node.getClusterService().getClusterState().isPartitionPromotionAllowed()) {
+                // Migrations and partition promotions are not allowed. We cannot modify partition table.
+                return;
+            }
+
+            logger.fine("Cluster state doesn't allow repartitioning. RepartitioningTask will only assign lost partitions.");
             Collection<Integer> partitions = new ArrayList<Integer>();
             for (InternalPartition partition : partitionStateManager.getPartitions()) {
                 boolean empty = true;
@@ -772,19 +782,14 @@ public class MigrationManager {
          * ongoing repartitioning,
          * otherwise triggers the control task.
          */
-        private boolean isRepartitioningAllowed() {
-            boolean migrationAllowed = isMigrationAllowed();
+        private boolean migrationsTasksAllowed() {
+            boolean migrationTasksAllowed = areMigrationTasksAllowed();
             boolean hasMigrationTasks = migrationQueue.migrationTaskCount() > 1;
-            if (migrationAllowed && !hasMigrationTasks) {
+            if (migrationTasksAllowed && !hasMigrationTasks) {
                 return true;
             }
             triggerControlTask();
             return false;
-        }
-
-        private boolean isMigrationAllowedByClusterState() {
-            ClusterState clusterState = node.getClusterService().getClusterState();
-            return clusterState.isMigrationAllowed();
         }
 
         private class MigrationCollector implements MigrationDecisionCallback {
@@ -1161,6 +1166,16 @@ public class MigrationManager {
             if (!partitionStateManager.isInitialized()) {
                 return;
             }
+            ClusterState clusterState = node.getClusterService().getClusterState();
+            if (!clusterState.isMigrationAllowed() && !clusterState.isPartitionPromotionAllowed()) {
+                // If migrations and promotions are not allowed, partition table cannot be modified and we should have
+                // the most recent partition table already. Because cluster state cannot be changed
+                // when our partition table is stale.
+                logger.fine("Will not repair partition table at the moment. "
+                        + "Cluster state does not allow to modify partition table.");
+                return;
+            }
+
             Map<Address, Collection<MigrationInfo>> promotions = removeUnknownAddressesAndCollectPromotions();
             boolean success = promoteBackupsForMissingOwners(promotions);
             partitionServiceLock.lock();

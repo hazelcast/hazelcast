@@ -410,25 +410,21 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             migrationManager.onMemberRemove(member);
             replicaManager.cancelReplicaSyncRequestsTo(member.getAddress());
 
-            if (!node.getClusterService().getClusterState().isJoinAllowed()) {
-                // If join is not allowed, partition table cannot be modified and we should have
-                // the most recent partition table already. Because cluster state cannot be changed
-                // when our partition table is stale.
-                return;
-            }
+            ClusterState clusterState = node.getClusterService().getClusterState();
+            if (clusterState.isMigrationAllowed() || clusterState.isPartitionPromotionAllowed()) {
+                partitionStateManager.updateMemberGroupsSize();
 
-            partitionStateManager.updateMemberGroupsSize();
-
-            boolean isThisNodeNewMaster = node.isMaster() && !node.getThisAddress().equals(lastMaster);
-            if (isThisNodeNewMaster) {
-                assert !shouldFetchPartitionTables : "SOMETHING IS WRONG! Removed member: " + member;
-                shouldFetchPartitionTables = true;
+                boolean isThisNodeNewMaster = node.isMaster() && !node.getThisAddress().equals(lastMaster);
+                if (isThisNodeNewMaster) {
+                    assert !shouldFetchPartitionTables;
+                    shouldFetchPartitionTables = true;
+                }
+                if (node.isMaster()) {
+                    migrationManager.triggerControlTask();
+                }
             }
 
             lastMaster = node.getClusterService().getMasterAddress();
-            if (node.isMaster()) {
-                migrationManager.triggerControlTask();
-            }
         } finally {
             lock.unlock();
         }
@@ -567,7 +563,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
 
-        if (!isMigrationAllowed()) {
+        if (!areMigrationTasksAllowed()) {
             // migration is disabled because of a member leave, wait till enabled!
             return;
         }
@@ -1044,8 +1040,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         migrationManager.resumeMigration();
     }
 
-    public boolean isMigrationAllowed() {
-        return migrationManager.isMigrationAllowed();
+    public boolean areMigrationTasksAllowed() {
+        return migrationManager.areMigrationTasksAllowed();
     }
 
     @Override
@@ -1224,6 +1220,16 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         private PartitionRuntimeState newState;
 
         public void run() {
+            ClusterState clusterState = node.getClusterService().getClusterState();
+            if (!clusterState.isMigrationAllowed() && !clusterState.isPartitionPromotionAllowed()) {
+                // If migrations and promotions are not allowed, partition table cannot be modified and we should have
+                // the most recent partition table already. Because cluster state cannot be changed
+                // when our partition table is stale.
+                logger.fine("No need to fetch the latest partition table. "
+                        + "Cluster state does not allow to modify partition table.");
+                shouldFetchPartitionTables = false;
+                return;
+            }
             maxVersion = partitionStateManager.getVersion();
             logger.info("Fetching most recent partition table! my version: " + maxVersion);
 

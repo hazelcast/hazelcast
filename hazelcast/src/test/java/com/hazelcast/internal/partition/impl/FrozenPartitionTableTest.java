@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -31,17 +32,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -57,8 +55,38 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         testPartitionTableIsFrozenDuring(ClusterState.PASSIVE);
     }
 
+    private void testPartitionTableIsFrozenDuring(final ClusterState clusterState) {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance[] instances = factory.newInstances();
+        warmUpPartitions(instances);
+
+        changeClusterStateEventually(instances[0], clusterState);
+        List<HazelcastInstance> instancesList = new ArrayList<HazelcastInstance>(asList(instances));
+        Collections.shuffle(instancesList);
+
+        final PartitionTableView partitionTable = getPartitionTable(instances[0]);
+
+        while (instancesList.size() > 1) {
+            final HazelcastInstance instanceToShutdown = instancesList.remove(0);
+            instanceToShutdown.shutdown();
+            for (HazelcastInstance instance : instancesList) {
+                assertClusterSizeEventually(instancesList.size(), instance);
+                assertEquals(partitionTable, getPartitionTable(instance));
+            }
+        }
+    }
+
     @Test
     public void partitionTable_isFrozen_whenMemberReJoins_duringClusterStateIsFrozen() {
+        partitionTable_isFrozen_whenMemberReJoins_duringClusterStateIs(ClusterState.FROZEN);
+    }
+
+    @Test
+    public void partitionTable_isFrozen_whenMemberReJoins_duringClusterStateIsPassive() {
+        partitionTable_isFrozen_whenMemberReJoins_duringClusterStateIs(ClusterState.PASSIVE);
+    }
+
+    private void partitionTable_isFrozen_whenMemberReJoins_duringClusterStateIs(ClusterState state) {
         Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         HazelcastInstance[] instances = factory.newInstances(config, 3);
@@ -68,24 +96,26 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         Address hz3Address = getNode(hz3).getThisAddress();
         warmUpPartitions(instances);
 
-        final Map<Integer, List<Address>> partitionTable = getPartitionTable(hz1);
+        final PartitionTableView partitionTable = getPartitionTable(hz1);
 
-        changeClusterStateEventually(hz2, ClusterState.FROZEN);
+        changeClusterStateEventually(hz2, state);
 
+        terminateInstance(hz2);
         terminateInstance(hz3);
         hz3 = factory.newHazelcastInstance(hz3Address);
 
-        assertClusterSizeEventually(3, hz1, hz2, hz3);
+        assertClusterSizeEventually(2, hz1, hz3);
 
-        for (HazelcastInstance instance : Arrays.asList(hz1, hz2, hz3)) {
+        for (HazelcastInstance instance : asList(hz1, hz3)) {
             final HazelcastInstance hz = instance;
-            assertTrueEventually(new AssertTask() {
+            AssertTask assertTask = new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
-                    assertPartitionTablesSame(partitionTable, getPartitionTable(hz));
+                public void run() {
+                    assertEquals(partitionTable, getPartitionTable(hz));
                 }
-            });
+            };
+            assertTrueEventually(assertTask);
+            assertTrueAllTheTime(assertTask, 3);
         }
     }
 
@@ -99,52 +129,6 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         testPartitionTableIsHealedWhenClusterStateIsActiveAfter(ClusterState.PASSIVE);
     }
 
-    private void testPartitionTableIsFrozenDuring(final ClusterState clusterState) {
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances();
-        warmUpPartitions(instances);
-
-        changeClusterStateEventually(instances[0], clusterState);
-        List<HazelcastInstance> instancesList = new ArrayList<HazelcastInstance>(Arrays.asList(instances));
-        Collections.shuffle(instancesList);
-
-        final Map<Integer, List<Address>> partitionTable = getPartitionTable(instances[0]);
-
-        while (instancesList.size() > 1) {
-            final HazelcastInstance instanceToShutdown = instancesList.remove(0);
-            instanceToShutdown.shutdown();
-            for (HazelcastInstance instance : instancesList) {
-                assertClusterSizeEventually(instancesList.size(), instance);
-                assertPartitionTablesSame(partitionTable, getPartitionTable(instance));
-            }
-        }
-    }
-
-    private Map<Integer, List<Address>> getPartitionTable(final HazelcastInstance instance) {
-        final InternalPartitionServiceImpl partitionService = getNode(instance).partitionService;
-        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
-        final Map<Integer, List<Address>> partitionTable = new HashMap<Integer, List<Address>>();
-        for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
-            final InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
-            for (int replicaIndex = 0; replicaIndex < InternalPartitionImpl.MAX_REPLICA_COUNT; replicaIndex++) {
-                Address replicaAddress = partition.getReplicaAddress(replicaIndex);
-                if (replicaAddress == null) {
-                    break;
-                }
-
-                List<Address> replicaAddresses = partitionTable.get(partitionId);
-                if (replicaAddresses == null) {
-                    replicaAddresses = new ArrayList<Address>();
-                    partitionTable.put(partitionId, replicaAddresses);
-                }
-
-                replicaAddresses.add(replicaAddress);
-            }
-        }
-
-        return partitionTable;
-    }
-
     private void testPartitionTableIsHealedWhenClusterStateIsActiveAfter(final ClusterState clusterState) {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances();
@@ -152,7 +136,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(instances[0], clusterState);
 
-        List<HazelcastInstance> instancesList = new ArrayList<HazelcastInstance>(Arrays.asList(instances));
+        List<HazelcastInstance> instancesList = new ArrayList<HazelcastInstance>(asList(instances));
         Collections.shuffle(instancesList);
         final HazelcastInstance instanceToShutdown = instancesList.remove(0);
         final Address addressToShutdown = getNode(instanceToShutdown).getThisAddress();
@@ -162,31 +146,20 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
             assertClusterSizeEventually(2, instance);
         }
 
-        instancesList.get(0).getCluster().changeClusterState(ClusterState.ACTIVE);
+        changeClusterStateEventually(instancesList.get(0), ClusterState.ACTIVE);
         waitAllForSafeState(instancesList);
 
         for (HazelcastInstance instance : instancesList) {
-            final Map<Integer, List<Address>> partitionTable = getPartitionTable(instance);
-            for (List<Address> addresses : partitionTable.values()) {
-                for (Address address : addresses) {
+            PartitionTableView partitionTable = getPartitionTable(instance);
+            for (int i = 0; i < partitionTable.getLength(); i++) {
+                for (Address address : partitionTable.getAddresses(i)) {
                     assertNotEquals(addressToShutdown, address);
                 }
             }
         }
     }
 
-    private void assertPartitionTablesSame(Map<Integer, List<Address>> partitionTable1,
-                                           Map<Integer, List<Address>> partitionTable2) {
-        for (Map.Entry<Integer, List<Address>> partition : partitionTable1.entrySet()) {
-            int partitionId = partition.getKey();
-            List<Address> replicaAddresses1 = partition.getValue();
-            List<Address> replicaAddresses2 = partitionTable2.get(partitionId);
-            assertNotNull(replicaAddresses2);
-            assertEquals(replicaAddresses1.size(), replicaAddresses2.size());
-            for (int replicaIndex = 0; replicaIndex < replicaAddresses1.size(); replicaIndex++) {
-                assertEquals(replicaAddresses1.get(replicaIndex), replicaAddresses2.get(replicaIndex));
-            }
-        }
+    private static PartitionTableView getPartitionTable(HazelcastInstance instance) {
+        return getPartitionService(instance).createPartitionTableView();
     }
-
 }
