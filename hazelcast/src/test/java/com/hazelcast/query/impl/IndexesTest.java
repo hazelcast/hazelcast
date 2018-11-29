@@ -148,8 +148,7 @@ public class IndexesTest {
      * throw exception.
      */
     @Test
-    public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField
-    () {
+    public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("name", false);
 
@@ -157,15 +156,13 @@ public class IndexesTest {
     }
 
     @Test
-    public void shouldNotThrowException_withNullValues_whenNoIndexAdded
-            () {
+    public void shouldNotThrowException_withNullValues_whenNoIndexAdded() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
 
-    private void shouldReturnNull_whenQueryingOnKeys(Indexes
-                                                             indexes) {
+    private void shouldReturnNull_whenQueryingOnKeys(Indexes indexes) {
         for (int i = 0; i < 50; i++) {
             // passing null value to QueryEntry
             indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, Extractors.empty()), null,
@@ -178,8 +175,7 @@ public class IndexesTest {
     }
 
     @Test
-    public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField
-            () {
+    public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("__key", false);
 
