@@ -23,26 +23,32 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 
 abstract class BaseMigrationOperation extends AbstractPartitionOperation
-        implements MigrationCycleOperation, PartitionAwareOperation {
+        implements MigrationCycleOperation, PartitionAwareOperation, Versioned {
 
     protected MigrationInfo migrationInfo;
     protected boolean success;
@@ -74,7 +80,8 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         try {
             onMigrationStart();
             verifyNodeStarted();
-            verifyMemberUuid();
+            verifyMaster();
+            verifyMigrationParticipant();
             verifyClusterState();
             verifyPartitionStateVersion();
         } catch (Exception e) {
@@ -107,24 +114,65 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         }
     }
 
+    /** Verifies that the local master is equal to the migration master. */
+    final void verifyMaster() {
+        NodeEngine nodeEngine = getNodeEngine();
+        Address masterAddress = nodeEngine.getMasterAddress();
+
+        if (!migrationInfo.getMaster().equals(masterAddress)) {
+            throw new IllegalStateException("Migration initiator is not master node! => " + toString());
+        }
+
+        if (getMigrationParticipantType() == MigrationParticipant.SOURCE && !masterAddress.equals(getCallerAddress())) {
+            throw new IllegalStateException("Caller is not master node! => " + toString());
+        }
+    }
+
     /**
-     * Checks if the local UUID matches the migration source or destination UUID if this node is the migration source or
+     * Checks if the local member matches the migration source or destination if this node is the migration source or
      * destination.
      */
-    private void verifyMemberUuid() {
+    private void verifyMigrationParticipant() {
         Member localMember = getNodeEngine().getLocalMember();
-        if (localMember.getAddress().equals(migrationInfo.getSource())) {
-            if (!localMember.getUuid().equals(migrationInfo.getSourceUuid())) {
+        if (getMigrationParticipantType() == MigrationParticipant.SOURCE) {
+            if (migrationInfo.getSourceCurrentReplicaIndex() == 0
+                    && !migrationInfo.getSource().isIdentical(localMember)) {
                 throw new IllegalStateException(localMember
-                        + " is the migration source but has a different UUID! Migration: " + migrationInfo);
+                        + " is the migration source but has a different identity! Migration: " + migrationInfo);
             }
-        } else if (localMember.getAddress().equals(migrationInfo.getDestination())) {
-            if (!localMember.getUuid().equals(migrationInfo.getDestinationUuid())) {
+            verifyPartitionOwner();
+            verifyExistingDestination();
+        } else if (getMigrationParticipantType() == MigrationParticipant.DESTINATION) {
+            if (!migrationInfo.getDestination().isIdentical(localMember)) {
                 throw new IllegalStateException(localMember
-                        + " is the migration destination but has a different UUID! Migration: " + migrationInfo);
+                        + " is the migration destination but has a different identity! Migration: " + migrationInfo);
             }
         }
     }
+
+    /** Verifies that this node is the owner of the partition. */
+    private void verifyPartitionOwner() {
+        InternalPartition partition = getPartition();
+        PartitionReplica owner = partition.getOwnerReplicaOrNull();
+        if (owner == null) {
+            throw new RetryableHazelcastException("Cannot migrate at the moment! Owner of the partition is null => "
+                    + migrationInfo);
+        }
+
+        if (!owner.isIdentical(getNodeEngine().getLocalMember())) {
+            throw new RetryableHazelcastException("Owner of partition is not this node! => " + toString());
+        }
+    }
+
+    /** Verifies that the destination is a cluster member. */
+    final void verifyExistingDestination() {
+        PartitionReplica destination = migrationInfo.getDestination();
+        Member target = getNodeEngine().getClusterService().getMember(destination.address(), destination.uuid());
+        if (target == null) {
+            throw new TargetNotMemberException("Destination of migration could not be found! => " + toString());
+        }
+    }
+
 
     /** Verifies that the cluster is active. */
     private void verifyClusterState() {
@@ -187,7 +235,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     /** Returns the event which will be forwarded to {@link MigrationAwareService}s. */
     protected abstract PartitionMigrationEvent getMigrationEvent();
 
-    protected abstract InternalMigrationListener.MigrationParticipant getMigrationParticipantType();
+    protected abstract MigrationParticipant getMigrationParticipantType();
 
     InternalPartition getPartition() {
         InternalPartitionServiceImpl partitionService = getService();

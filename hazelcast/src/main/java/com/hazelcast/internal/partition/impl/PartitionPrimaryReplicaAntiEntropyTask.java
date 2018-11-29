@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -41,9 +41,9 @@ final class PartitionPrimaryReplicaAntiEntropyTask extends AbstractPartitionPrim
         Collection<ServiceNamespace> namespaces = retainAndGetNamespaces();
 
         for (int index = 1; index < MAX_REPLICA_COUNT; index++) {
-            Address replicaAddress = partition.getReplicaAddress(index);
-            if (replicaAddress != null) {
-                invokePartitionBackupReplicaAntiEntropyOp(index, replicaAddress, namespaces, null);
+            PartitionReplica replica = partition.getReplica(index);
+            if (replica != null) {
+                invokePartitionBackupReplicaAntiEntropyOp(index, replica, namespaces, null);
             }
         }
     }

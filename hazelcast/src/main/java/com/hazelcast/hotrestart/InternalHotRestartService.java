@@ -27,6 +27,12 @@ import java.util.concurrent.TimeUnit;
  * Internal service for interacting with hot restart related functionalities (e.g. force and partial start)
  */
 public interface InternalHotRestartService {
+
+    /**
+     * Returns whether hot-restart is enabled or not.
+     */
+    boolean isEnabled();
+
     /**
      * Forces node to start by skipping hot-restart completely and removing all hot-restart data
      * even if node is still on validation phase or loading hot-restart data.

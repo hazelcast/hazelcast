@@ -16,15 +16,16 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
@@ -134,7 +135,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         assert replicaIndex >= 0 && replicaIndex < InternalPartition.MAX_REPLICA_COUNT
                 : "Invalid replica index! partitionId=" + partitionId + ", replicaIndex=" + replicaIndex;
 
-        Address target = checkAndGetPrimaryReplicaOwner(partitionId, replicaIndex);
+        PartitionReplica target = checkAndGetPrimaryReplicaOwner(partitionId, replicaIndex);
         if (target == null) {
             return;
         }
@@ -156,17 +157,17 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     /** Checks preconditions for replica sync - if we don't know the owner yet, if this node is the owner or not a replica */
-    Address checkAndGetPrimaryReplicaOwner(int partitionId, int replicaIndex) {
-        final InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
-        final Address target = partition.getOwnerOrNull();
-        if (target == null) {
+    PartitionReplica checkAndGetPrimaryReplicaOwner(int partitionId, int replicaIndex) {
+        InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
+        PartitionReplica owner = partition.getOwnerReplicaOrNull();
+        if (owner == null) {
             logger.info("Sync replica target is null, no need to sync -> partitionId=" + partitionId + ", replicaIndex="
                     + replicaIndex);
             return null;
         }
 
-        Address thisAddress = nodeEngine.getThisAddress();
-        if (target.equals(thisAddress)) {
+        PartitionReplica localReplica = PartitionReplica.from(nodeEngine.getLocalMember());
+        if (owner.equals(localReplica)) {
             if (logger.isFinestEnabled()) {
                 logger.finest("This node is now owner of partition, cannot sync replica -> partitionId=" + partitionId
                         + ", replicaIndex=" + replicaIndex + ", partition-info="
@@ -175,14 +176,14 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
             return null;
         }
 
-        if (!partition.isOwnerOrBackup(thisAddress)) {
+        if (!partition.isOwnerOrBackup(localReplica)) {
             if (logger.isFinestEnabled()) {
                 logger.finest("This node is not backup replica of partitionId=" + partitionId
                         + ", replicaIndex=" + replicaIndex + " anymore.");
             }
             return null;
         }
-        return target;
+        return owner;
     }
 
     /**
@@ -191,8 +192,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * partition and schedule a new sync request that is to be run in the case of timeout
      */
     private void sendSyncReplicaRequest(int partitionId, Collection<ServiceNamespace> requestedNamespaces,
-            int replicaIndex, Address target) {
-        if (node.clusterService.isMemberRemovedInNotJoinableState(target)) {
+            int replicaIndex, PartitionReplica target) {
+        if (node.clusterService.isMissingMember(target.address(), target.uuid())) {
             return;
         }
 
@@ -226,11 +227,11 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         replicaSyncRequestsCounter.inc();
 
         PartitionReplicaSyncRequest syncRequest = new PartitionReplicaSyncRequest(partitionId, namespaces, replicaIndex);
-        nodeEngine.getOperationService().send(syncRequest, target);
+        nodeEngine.getOperationService().send(syncRequest, target.address());
     }
 
     private List<ServiceNamespace> registerSyncInfoForNamespaces(int partitionId,
-            Collection<ServiceNamespace> requestedNamespaces, int replicaIndex, Address target, int permits) {
+            Collection<ServiceNamespace> requestedNamespaces, int replicaIndex, PartitionReplica target, int permits) {
 
         List<ServiceNamespace> namespaces = new ArrayList<ServiceNamespace>(permits);
         for (ServiceNamespace namespace : requestedNamespaces) {
@@ -248,7 +249,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         return namespaces;
     }
 
-    private boolean registerSyncInfoFor(int partitionId, ServiceNamespace namespace, int replicaIndex, Address target) {
+    private boolean registerSyncInfoFor(int partitionId, ServiceNamespace namespace, int replicaIndex, PartitionReplica target) {
         ReplicaFragmentSyncInfo syncInfo = new ReplicaFragmentSyncInfo(partitionId, namespace, replicaIndex, target);
         if (!replicaSyncRequests.add(syncInfo)) {
             if (logger.isFinestEnabled()) {
@@ -352,11 +353,11 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         replicaSyncTimeoutScheduler.cancelIfExists(syncInfo, null);
     }
 
-    void cancelReplicaSyncRequestsTo(Address deadAddress) {
+    void cancelReplicaSyncRequestsTo(Member member) {
         Iterator<ReplicaFragmentSyncInfo> iter = replicaSyncRequests.iterator();
         while (iter.hasNext()) {
             ReplicaFragmentSyncInfo syncInfo = iter.next();
-            if (deadAddress.equals(syncInfo.target)) {
+            if (syncInfo.target != null && syncInfo.target.isIdentical(member)) {
                 iter.remove();
                 replicaSyncTimeoutScheduler.cancel(syncInfo);
                 releaseReplicaSyncPermits(1);

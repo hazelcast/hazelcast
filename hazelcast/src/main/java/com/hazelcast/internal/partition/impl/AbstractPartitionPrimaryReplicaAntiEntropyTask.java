@@ -17,9 +17,11 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.operation.PartitionBackupReplicaAntiEntropyOperation;
-import com.hazelcast.nio.Address;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionReplicationEvent;
@@ -79,8 +81,12 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
         return replicaManager.getNamespaces(partitionId);
     }
 
-    final void invokePartitionBackupReplicaAntiEntropyOp(int replicaIndex, Address target,
+    final void invokePartitionBackupReplicaAntiEntropyOp(int replicaIndex, PartitionReplica target,
                                                          Collection<ServiceNamespace> namespaces, ExecutionCallback callback) {
+        if (skipSendingToTarget(target)) {
+            return;
+        }
+
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
         Map<ServiceNamespace, Long> versionMap = new HashMap<ServiceNamespace, Long>();
         for (ServiceNamespace ns : namespaces) {
@@ -99,14 +105,36 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
         OperationService operationService = nodeEngine.getOperationService();
 
         if (hasCallback) {
-            operationService.createInvocationBuilder(SERVICE_NAME, op, target)
+            operationService.createInvocationBuilder(SERVICE_NAME, op, target.address())
                             .setExecutionCallback(callback)
                             .setTryCount(OPERATION_TRY_COUNT)
                             .setTryPauseMillis(OPERATION_TRY_PAUSE_MILLIS)
                             .invoke();
         } else {
-            operationService.send(op, target);
+            operationService.send(op, target.address());
         }
     }
 
+    private boolean skipSendingToTarget(PartitionReplica target) {
+        ClusterServiceImpl clusterService = nodeEngine.getNode().getClusterService();
+
+        assert !target.isIdentical(nodeEngine.getLocalMember()) : "Could not send anti-entropy operation, because "
+                + target + " is local member itself! Local-member: " + clusterService.getLocalMember()
+                + ", " + partitionService.getPartition(partitionId);
+
+        if (clusterService.getMember(target.address(), target.uuid()) == null) {
+            ILogger logger = nodeEngine.getLogger(getClass());
+            if (logger.isFinestEnabled()) {
+                if (clusterService.isMissingMember(target.address(), target.uuid())) {
+                    logger.finest("Could not send anti-entropy operation, because " + target + " is a missing member. "
+                            + partitionService.getPartition(partitionId));
+                } else {
+                    logger.finest("Could not send anti-entropy operation, because " + target + " is not a known member. "
+                            + partitionService.getPartition(partitionId));
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 }

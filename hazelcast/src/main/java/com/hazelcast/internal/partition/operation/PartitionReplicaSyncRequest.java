@@ -20,6 +20,7 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
@@ -161,10 +162,10 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
         InternalPartitionServiceImpl partitionService = getService();
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(getPartitionId());
-        Address owner = partition.getOwnerOrNull();
+        PartitionReplica owner = partition.getOwnerReplicaOrNull();
 
         NodeEngine nodeEngine = getNodeEngine();
-        if (!nodeEngine.getThisAddress().equals(owner)) {
+        if (owner == null || !owner.isIdentical(nodeEngine.getLocalMember())) {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
                 logger.finest("This node is not owner partition. Cannot process request. partitionId="

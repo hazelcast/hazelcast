@@ -336,7 +336,7 @@ public class ClusterStateManagerTest {
         clusterStateManager.commitClusterState(newState, initiator, TXN);
 
         assertEquals(newState.getNewState(), clusterStateManager.getState());
-        verify(membershipManager, times(1)).removeMembersDeadInNotJoinableState();
+        verify(membershipManager, times(1)).removeAllMissingMembers();
     }
 
     private Address newAddress() throws UnknownHostException {

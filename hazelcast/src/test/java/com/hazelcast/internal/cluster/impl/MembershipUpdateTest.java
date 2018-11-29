@@ -74,6 +74,7 @@ import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
+import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
@@ -645,7 +646,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, hz1, hz4);
         assertClusterSize(4, hz2);
 
-        hz3 = newHazelcastInstance(new Config(), "test-instance", new StaticMemberNodeContext(factory, member3));
+        hz3 = newHazelcastInstance(initOrCreateConfig(new Config()), "test-instance", new StaticMemberNodeContext(factory, member3));
 
         assertClusterSizeEventually(4, hz1, hz4);
 
@@ -829,12 +830,16 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     public static class StaticMemberNodeContext implements NodeContext {
-        final NodeContext delegate;
-        final MemberImpl member;
+        private final NodeContext delegate;
+        private final String uuid;
 
         public StaticMemberNodeContext(TestHazelcastInstanceFactory factory, MemberImpl member) {
-            this.member = member;
-            delegate = factory.getRegistry().createNodeContext(member.getAddress());
+            this(factory, member.getUuid(), member.getAddress());
+        }
+
+        public StaticMemberNodeContext(TestHazelcastInstanceFactory factory, String uuid, Address address) {
+            this.uuid = uuid;
+            delegate = factory.getRegistry().createNodeContext(address);
         }
 
         @Override
@@ -842,7 +847,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
             return new DefaultNodeExtension(node) {
                 @Override
                 public String createMemberUuid(Address address) {
-                    return member.getUuid();
+                    return uuid;
                 }
             };
         }

@@ -18,6 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -80,15 +81,15 @@ public class ClientPartitionListenerService {
 
         int partitionCount = partitionTableView.getLength();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            Address owner = partitionTableView.getAddress(partitionId, 0);
+            PartitionReplica owner = partitionTableView.getReplica(partitionId, 0);
             if (owner == null) {
                 partitionsMap.clear();
                 return partitionsMap.entrySet();
             }
-            List<Integer> indexes = partitionsMap.get(owner);
+            List<Integer> indexes = partitionsMap.get(owner.address());
             if (indexes == null) {
                 indexes = new LinkedList<Integer>();
-                partitionsMap.put(owner, indexes);
+                partitionsMap.put(owner.address(), indexes);
             }
             indexes.add(partitionId);
         }

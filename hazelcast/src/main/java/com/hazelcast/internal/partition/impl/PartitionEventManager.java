@@ -60,8 +60,8 @@ public class PartitionEventManager {
         }
 
         ClusterServiceImpl clusterService = node.getClusterService();
-        MemberImpl current = clusterService.getMember(migrationInfo.getSource());
-        MemberImpl newOwner = clusterService.getMember(migrationInfo.getDestination());
+        MemberImpl current = clusterService.getMember(migrationInfo.getSourceAddress());
+        MemberImpl newOwner = clusterService.getMember(migrationInfo.getDestinationAddress());
         MigrationEvent event = new MigrationEvent(migrationInfo.getPartitionId(), current, newOwner, status);
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, MIGRATION_EVENT_TOPIC);

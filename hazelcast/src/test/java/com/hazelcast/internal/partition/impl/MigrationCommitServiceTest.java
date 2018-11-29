@@ -21,6 +21,7 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionReplicaVersionsView;
 import com.hazelcast.internal.partition.service.TestGetOperation;
@@ -147,7 +148,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
     private void testSuccessfulMoveMigration(int partitionId, int replicaIndexToClear, int replicaIndexToMigrate)
             throws Exception {
-        Address destination = clearReplicaIndex(partitionId, replicaIndexToClear);
+        PartitionReplica destination = clearReplicaIndex(partitionId, replicaIndexToClear);
         MigrationInfo migration = createMoveMigration(partitionId, replicaIndexToMigrate, destination);
 
         migrateWithSuccess(migration);
@@ -159,7 +160,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     }
 
     private void testFailedMoveMigration(int partitionId, int replicaIndexToClear, int replicaIndexToMigrate) throws Exception {
-        Address destination = clearReplicaIndex(partitionId, replicaIndexToClear);
+        PartitionReplica destination = clearReplicaIndex(partitionId, replicaIndexToClear);
         MigrationInfo migration = createMoveMigration(partitionId, replicaIndexToMigrate, destination);
 
         migrateWithFailure(migration);
@@ -204,7 +205,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
     private void testSuccessfulShiftDownMigration(int partitionId, int replicaIndexToClear, int oldReplicaIndex,
                                                   int newReplicaIndex) throws Exception {
-        Address destination = clearReplicaIndex(partitionId, replicaIndexToClear);
+        PartitionReplica destination = clearReplicaIndex(partitionId, replicaIndexToClear);
         MigrationInfo migration = createShiftDownMigration(partitionId, oldReplicaIndex, newReplicaIndex, destination);
         migrateWithSuccess(migration);
 
@@ -215,7 +216,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
     private void testFailedShiftDownMigration(int partitionId, int replicaIndexToClear, int oldReplicaIndex,
                                               int newReplicaIndex) throws Exception {
-        Address destination = clearReplicaIndex(partitionId, replicaIndexToClear);
+        PartitionReplica destination = clearReplicaIndex(partitionId, replicaIndexToClear);
         MigrationInfo migration = createShiftDownMigration(partitionId, oldReplicaIndex, newReplicaIndex, destination);
         migrateWithFailure(migration);
 
@@ -226,7 +227,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testPartitionBackupCopyCommit() throws Exception {
-        Address destination = clearReplicaIndex(PARTITION_ID_TO_MIGRATE, NODE_COUNT - 1);
+        PartitionReplica destination = clearReplicaIndex(PARTITION_ID_TO_MIGRATE, NODE_COUNT - 1);
         MigrationInfo migration = createCopyMigration(PARTITION_ID_TO_MIGRATE, NODE_COUNT - 1, destination);
 
         migrateWithSuccess(migration);
@@ -238,7 +239,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testPartitionBackupCopyRollback() throws Exception {
-        Address destination = clearReplicaIndex(PARTITION_ID_TO_MIGRATE, NODE_COUNT - 1);
+        PartitionReplica destination = clearReplicaIndex(PARTITION_ID_TO_MIGRATE, NODE_COUNT - 1);
         MigrationInfo migration = createCopyMigration(PARTITION_ID_TO_MIGRATE, NODE_COUNT - 1, destination);
 
         migrateWithFailure(migration);
@@ -304,56 +305,42 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         assertPartitionDataAfterMigrations();
     }
 
-    private MigrationInfo createMoveMigration(int partitionId, int replicaIndex, Address destination) {
+    private MigrationInfo createMoveMigration(int partitionId, int replicaIndex, PartitionReplica destination) {
         InternalPartition partition = getPartition(instances[0], partitionId);
-        Address source = partition.getReplicaAddress(replicaIndex);
-        String sourceUuid = getMemberUuid(source);
-        String destinationUuid = getMemberUuid(destination);
+        PartitionReplica source = partition.getReplica(replicaIndex);
 
-        return new MigrationInfo(partitionId, source, sourceUuid, destination, destinationUuid, replicaIndex, -1, -1, replicaIndex);
+        return new MigrationInfo(partitionId, source, destination, replicaIndex, -1, -1, replicaIndex);
     }
 
     private MigrationInfo createShiftDownMigration(int partitionId, int oldReplicaIndex, int newReplicaIndex,
-                                                   Address destination) {
+            PartitionReplica destination) {
         InternalPartitionImpl partition = getPartition(instances[0], partitionId);
-        Address source = partition.getReplicaAddress(oldReplicaIndex);
-        String sourceUuid = getMemberUuid(source);
-        String destinationUuid = getMemberUuid(destination);
+        PartitionReplica source = partition.getReplica(oldReplicaIndex);
 
-        return new MigrationInfo(partitionId, source, sourceUuid, destination, destinationUuid, oldReplicaIndex,
+        return new MigrationInfo(partitionId, source, destination, oldReplicaIndex,
                 newReplicaIndex, -1, oldReplicaIndex);
     }
 
-    private MigrationInfo createCopyMigration(int partitionId, int copyReplicaIndex, Address destination) {
-        return new MigrationInfo(partitionId, null, null, destination, getMemberUuid(destination), -1, -1, -1,
-                copyReplicaIndex);
+    private MigrationInfo createCopyMigration(int partitionId, int copyReplicaIndex, PartitionReplica destination) {
+        return new MigrationInfo(partitionId, null, destination, -1, -1, -1, copyReplicaIndex);
     }
 
     private MigrationInfo createShiftUpMigration(int partitionId, int oldReplicaIndex, int newReplicaIndex) {
         InternalPartitionImpl partition = getPartition(instances[0], partitionId);
-        Address source = partition.getReplicaAddress(newReplicaIndex);
-        String sourceUuid = getMemberUuid(source);
-        Address destination = partition.getReplicaAddress(oldReplicaIndex);
-        String destinationUuid = getMemberUuid(destination);
+        PartitionReplica source = partition.getReplica(newReplicaIndex);
+        PartitionReplica destination = partition.getReplica(oldReplicaIndex);
 
-        return new MigrationInfo(partitionId, source, sourceUuid, destination, destinationUuid, newReplicaIndex, -1,
-                oldReplicaIndex, newReplicaIndex);
+        return new MigrationInfo(partitionId, source, destination, newReplicaIndex, -1, oldReplicaIndex, newReplicaIndex);
     }
 
-    private String getMemberUuid(Address address) {
-        return address != null
-                ? getNodeEngineImpl(factory.getInstance(address)).getLocalMember().getUuid()
-                : null;
-    }
-
-    private Address clearReplicaIndex(final int partitionId, int replicaIndexToClear) {
+    private PartitionReplica clearReplicaIndex(final int partitionId, int replicaIndexToClear) {
         final InternalPartitionServiceImpl partitionService
                 = (InternalPartitionServiceImpl) getPartitionService(instances[0]);
         InternalPartitionImpl partition = (InternalPartitionImpl) partitionService.getPartition(partitionId);
 
-        final Address oldReplicaOwner = partition.getReplicaAddress(replicaIndexToClear);
+        final PartitionReplica oldReplicaOwner = partition.getReplica(replicaIndexToClear);
 
-        partition.setReplicaAddress(replicaIndexToClear, null);
+        partition.setReplica(replicaIndexToClear, null);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -362,7 +349,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             }
         });
 
-        HazelcastInstance oldReplicaOwnerInstance = factory.getInstance(oldReplicaOwner);
+        HazelcastInstance oldReplicaOwnerInstance = factory.getInstance(oldReplicaOwner.address());
         ClearReplicaRunnable op = new ClearReplicaRunnable(partitionId, getNodeEngineImpl(oldReplicaOwnerInstance));
         getOperationService(oldReplicaOwnerInstance).execute(op);
 
@@ -370,14 +357,14 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 PartitionReplicaVersionsView replicaVersionsView
-                        = getPartitionReplicaVersionsView(getNode(factory.getInstance(oldReplicaOwner)), partitionId);
+                        = getPartitionReplicaVersionsView(getNode(factory.getInstance(oldReplicaOwner.address())), partitionId);
                 for (ServiceNamespace namespace : replicaVersionsView.getNamespaces()) {
                     assertArrayEquals(new long[InternalPartition.MAX_BACKUP_COUNT], replicaVersionsView.getVersions(namespace));
                 }
             }
         });
 
-        TestMigrationAwareService migrationAwareService = getService(oldReplicaOwner);
+        TestMigrationAwareService migrationAwareService = getService(oldReplicaOwner.address());
         migrationAwareService.clearPartitionReplica(partitionId);
 
         for (HazelcastInstance instance : instances) {
@@ -399,15 +386,15 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
                 for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
                     InternalPartitionImpl partition = getPartition(instance, migration.getPartitionId());
                     assertEquals(partition.getReplicaAddress(migration.getDestinationNewReplicaIndex()),
-                            migration.getDestination());
+                            migration.getDestinationAddress());
                 }
             }
         });
     }
 
     private void migrateWithFailure(final MigrationInfo migration) {
-        if (!getAddress(instances[0]).equals(migration.getDestination())) {
-            HazelcastInstance destinationInstance = factory.getInstance(migration.getDestination());
+        if (!getAddress(instances[0]).equals(migration.getDestinationAddress())) {
+            HazelcastInstance destinationInstance = factory.getInstance(migration.getDestinationAddress());
             RejectMigrationOnComplete destinationListener = new RejectMigrationOnComplete(destinationInstance);
             InternalPartitionServiceImpl destinationPartitionService
                     = (InternalPartitionServiceImpl) getPartitionService(destinationInstance);
@@ -427,7 +414,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                TestMigrationAwareService service = getService(migration.getSource());
+                TestMigrationAwareService service = getService(migration.getSourceAddress());
 
                 String msg = getAssertMessage(migration, service);
 
@@ -440,7 +427,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
                 assertSourcePartitionMigrationEvent(msg, beforeEvent, migration);
                 assertSourcePartitionMigrationEvent(msg, sourceCommitEvent, migration);
 
-                assertReplicaVersionsAndServiceData(msg, migration.getSource(), migration.getPartitionId(),
+                assertReplicaVersionsAndServiceData(msg, migration.getSourceAddress(), migration.getPartitionId(),
                         migration.getSourceNewReplicaIndex());
             }
         });
@@ -451,7 +438,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                TestMigrationAwareService service = getService(migration.getSource());
+                TestMigrationAwareService service = getService(migration.getSourceAddress());
 
                 String msg = getAssertMessage(migration, service);
 
@@ -464,7 +451,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
                 assertSourcePartitionMigrationEvent(msg, beforeEvent, migration);
                 assertSourcePartitionMigrationEvent(msg, rollbackEvent, migration);
 
-                assertReplicaVersionsAndServiceData(msg, migration.getSource(), migration.getPartitionId(),
+                assertReplicaVersionsAndServiceData(msg, migration.getSourceAddress(), migration.getPartitionId(),
                         migration.getSourceCurrentReplicaIndex());
             }
         });
@@ -475,7 +462,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                TestMigrationAwareService service = getService(migration.getDestination());
+                TestMigrationAwareService service = getService(migration.getDestinationAddress());
 
                 String msg = getAssertMessage(migration, service);
 
@@ -490,7 +477,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
                 assertTrue(msg, service.contains(migration.getPartitionId()));
 
-                assertReplicaVersionsAndServiceData(msg, migration.getDestination(), migration.getPartitionId(),
+                assertReplicaVersionsAndServiceData(msg, migration.getDestinationAddress(), migration.getPartitionId(),
                         migration.getDestinationNewReplicaIndex());
             }
         });
@@ -501,7 +488,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                TestMigrationAwareService service = getService(migration.getDestination());
+                TestMigrationAwareService service = getService(migration.getDestinationAddress());
 
                 String msg = getAssertMessage(migration, service);
 
@@ -514,7 +501,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
                 assertDestinationPartitionMigrationEvent(msg, beforeEvent, migration);
                 assertDestinationPartitionMigrationEvent(msg, destinationRollbackEvent, migration);
 
-                assertReplicaVersionsAndServiceData(msg, migration.getDestination(), migration.getPartitionId(),
+                assertReplicaVersionsAndServiceData(msg, migration.getDestinationAddress(), migration.getPartitionId(),
                         migration.getDestinationCurrentReplicaIndex());
             }
         });

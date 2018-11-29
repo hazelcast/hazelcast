@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -38,18 +39,18 @@ public class MigrationPlannerCycleTest {
 
     @Test
     public void testCycle1() throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
+        final PartitionReplica[] oldReplicas = {
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
                 null,
                 null,
                 null,
                 null,
                 null,
         };
-        final Address[] newReplicas = new Address[]{
-                new Address("localhost", 5702),
-                new Address("localhost", 5701),
+        final PartitionReplica[] newReplicas = {
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
                 null,
                 null,
                 null,
@@ -62,18 +63,18 @@ public class MigrationPlannerCycleTest {
 
     @Test
     public void testCycle1_fixed() throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
+        final PartitionReplica[] oldReplicas = {
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
                 null,
                 null,
                 null,
                 null,
                 null,
         };
-        final Address[] newReplicas = new Address[]{
-                new Address("localhost", 5702),
-                new Address("localhost", 5701),
+        final PartitionReplica[] newReplicas = new PartitionReplica[] {
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
                 null,
                 null,
                 null,
@@ -87,19 +88,19 @@ public class MigrationPlannerCycleTest {
 
     @Test
     public void testCycle2() throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
-                new Address("localhost", 5703),
+        final PartitionReplica[] oldReplicas = {
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
                 null,
                 null,
                 null,
                 null,
         };
-        final Address[] newReplicas = new Address[]{
-                new Address("localhost", 5703),
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
+        final PartitionReplica[] newReplicas = {
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
                 null,
                 null,
                 null,
@@ -111,19 +112,19 @@ public class MigrationPlannerCycleTest {
 
     @Test
     public void testCycle2_fixed() throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
-                new Address("localhost", 5703),
+        final PartitionReplica[] oldReplicas = {
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
                 null,
                 null,
                 null,
                 null,
         };
-        final Address[] newReplicas = new Address[]{
-                new Address("localhost", 5703),
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
+        final PartitionReplica[] newReplicas = {
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
                 null,
                 null,
                 null,
@@ -136,21 +137,21 @@ public class MigrationPlannerCycleTest {
 
     @Test
     public void testCycle3() throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
-                new Address("localhost", 5703),
-                new Address("localhost", 5704),
-                new Address("localhost", 5705),
+        final PartitionReplica[] oldReplicas = {
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
+                new PartitionReplica(new Address("localhost", 5704), "5704"),
+                new PartitionReplica(new Address("localhost", 5705), "5705"),
                 null,
                 null,
         };
-        final Address[] newReplicas = new Address[]{
-                new Address("localhost", 5705),
-                new Address("localhost", 5702),
-                new Address("localhost", 5701),
-                new Address("localhost", 5704),
-                new Address("localhost", 5703),
+        final PartitionReplica[] newReplicas = {
+                new PartitionReplica(new Address("localhost", 5705), "5705"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5704), "5704"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
                 null,
                 null,
         };
@@ -160,21 +161,21 @@ public class MigrationPlannerCycleTest {
 
     @Test
     public void testCycle3_fixed() throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
-                new Address("localhost", 5703),
-                new Address("localhost", 5704),
-                new Address("localhost", 5705),
+        final PartitionReplica[] oldReplicas = {
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
+                new PartitionReplica(new Address("localhost", 5704), "5704"),
+                new PartitionReplica(new Address("localhost", 5705), "5705"),
                 null,
                 null,
         };
-        final Address[] newReplicas = new Address[]{
-                new Address("localhost", 5705),
-                new Address("localhost", 5702),
-                new Address("localhost", 5701),
-                new Address("localhost", 5704),
-                new Address("localhost", 5703),
+        final PartitionReplica[] newReplicas = {
+                new PartitionReplica(new Address("localhost", 5705), "5705"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5704), "5704"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
                 null,
                 null,
         };
@@ -185,23 +186,23 @@ public class MigrationPlannerCycleTest {
 
     @Test
     public void testCycle4() throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
-                new Address("localhost", 5703),
-                new Address("localhost", 5704),
-                new Address("localhost", 5705),
-                new Address("localhost", 5706),
-                new Address("localhost", 5707),
+        final PartitionReplica[] oldReplicas = {
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
+                new PartitionReplica(new Address("localhost", 5704), "5704"),
+                new PartitionReplica(new Address("localhost", 5705), "5705"),
+                new PartitionReplica(new Address("localhost", 5706), "5706"),
+                new PartitionReplica(new Address("localhost", 5707), "5707"),
         };
-        final Address[] newReplicas = new Address[]{
-                new Address("localhost", 5705),
-                new Address("localhost", 5702),
-                new Address("localhost", 5701),
-                new Address("localhost", 5704),
-                new Address("localhost", 5703),
-                new Address("localhost", 5707),
-                new Address("localhost", 5706),
+        final PartitionReplica[] newReplicas = {
+                new PartitionReplica(new Address("localhost", 5705), "5705"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5704), "5704"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
+                new PartitionReplica(new Address("localhost", 5707), "5707"),
+                new PartitionReplica(new Address("localhost", 5706), "5706"),
         };
 
         assertTrue(migrationPlanner.isCyclic(oldReplicas, newReplicas));
@@ -209,23 +210,23 @@ public class MigrationPlannerCycleTest {
 
     @Test
     public void testCycle4_fixed() throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
-                new Address("localhost", 5703),
-                new Address("localhost", 5704),
-                new Address("localhost", 5705),
-                new Address("localhost", 5706),
-                new Address("localhost", 5707),
+        final PartitionReplica[] oldReplicas = {
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
+                new PartitionReplica(new Address("localhost", 5704), "5704"),
+                new PartitionReplica(new Address("localhost", 5705), "5705"),
+                new PartitionReplica(new Address("localhost", 5706), "5706"),
+                new PartitionReplica(new Address("localhost", 5707), "5707"),
         };
-        final Address[] newReplicas = new Address[]{
-                new Address("localhost", 5705),
-                new Address("localhost", 5702),
-                new Address("localhost", 5701),
-                new Address("localhost", 5704),
-                new Address("localhost", 5703),
-                new Address("localhost", 5707),
-                new Address("localhost", 5706),
+        final PartitionReplica[] newReplicas = {
+                new PartitionReplica(new Address("localhost", 5705), "5705"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5704), "5704"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
+                new PartitionReplica(new Address("localhost", 5707), "5707"),
+                new PartitionReplica(new Address("localhost", 5706), "5706"),
         };
 
         assertTrue(migrationPlanner.fixCycle(oldReplicas, newReplicas));
@@ -234,18 +235,18 @@ public class MigrationPlannerCycleTest {
 
     @Test
     public void testNoCycle() throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
+        final PartitionReplica[] oldReplicas = {
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
                 null,
                 null,
                 null,
                 null,
                 null,
         };
-        final Address[] newReplicas = new Address[]{
-                new Address("localhost", 5702),
-                new Address("localhost", 5703),
+        final PartitionReplica[] newReplicas = {
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
                 null,
                 null,
                 null,
@@ -258,21 +259,21 @@ public class MigrationPlannerCycleTest {
 
     @Test
     public void testNoCycle2() throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{
-                new Address("localhost", 5701),
-                new Address("localhost", 5702),
-                new Address("localhost", 5703),
-                new Address("localhost", 5704),
-                new Address("localhost", 5705),
+        final PartitionReplica[] oldReplicas = {
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
+                new PartitionReplica(new Address("localhost", 5704), "5704"),
+                new PartitionReplica(new Address("localhost", 5705), "5705"),
                 null,
                 null,
         };
-        final Address[] newReplicas = new Address[]{
-                new Address("localhost", 5706),
-                new Address("localhost", 5702),
-                new Address("localhost", 5701),
-                new Address("localhost", 5704),
-                new Address("localhost", 5703),
+        final PartitionReplica[] newReplicas = {
+                new PartitionReplica(new Address("localhost", 5706), "5706"),
+                new PartitionReplica(new Address("localhost", 5702), "5702"),
+                new PartitionReplica(new Address("localhost", 5701), "5701"),
+                new PartitionReplica(new Address("localhost", 5704), "5704"),
+                new PartitionReplica(new Address("localhost", 5703), "5703"),
                 null,
                 null,
         };
