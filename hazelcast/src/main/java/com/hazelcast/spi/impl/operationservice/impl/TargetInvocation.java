@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
@@ -27,7 +28,7 @@ import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
  * A {@link Invocation} evaluates a Operation Invocation for a particular target running on top of the
  * {@link OperationServiceImpl}.
  */
-final class TargetInvocation extends Invocation {
+final class TargetInvocation extends Invocation<Address> {
 
     private final Address target;
 
@@ -54,8 +55,19 @@ final class TargetInvocation extends Invocation {
     }
 
     @Override
-    public Address getTarget() {
+    Address getInvocationTarget() {
         return target;
+    }
+
+    @Override
+    Address toTargetAddress(Address target) {
+        return target;
+    }
+
+    @Override
+    Member toTargetMember(Address target) {
+        assert target == this.target;
+        return context.clusterService.getMember(target);
     }
 
     @Override

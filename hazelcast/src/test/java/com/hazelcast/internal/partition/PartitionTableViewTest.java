@@ -17,11 +17,7 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -113,21 +109,6 @@ public class PartitionTableViewTest {
                 assertEquals(partitions[i].getReplica(j), table.getReplica(i, j));
             }
         }
-    }
-
-    @Test
-    public void test_writeAndReadData() throws Exception {
-        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-
-        PartitionTableView table1 = createRandomPartitionTable();
-        BufferObjectDataOutput out = serializationService.createObjectDataOutput();
-        out.writeObject(table1);
-
-        BufferObjectDataInput in = serializationService.createObjectDataInput(out.toByteArray());
-        PartitionTableView table2 = in.readObject();
-
-        assertEquals(table1, table2);
-        assertEquals(table1.hashCode(), table2.hashCode());
     }
 
     @Test

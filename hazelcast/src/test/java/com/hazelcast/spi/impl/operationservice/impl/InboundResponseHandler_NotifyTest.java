@@ -47,7 +47,6 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
     private OperationServiceImpl operationService;
-    private HazelcastInstance local;
     private InboundResponseHandler inboundResponseHandler;
 
     @Before
@@ -55,7 +54,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "false");
         config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "20000");
-        local = createHazelcastInstance(config);
+        HazelcastInstance local = createHazelcastInstance(config);
         warmUpPartitions(local);
 
         operationService = getOperationServiceImpl(local);
@@ -70,7 +69,11 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
     private Invocation newInvocation(Operation op) {
         Invocation.Context context = operationService.invocationContext;
         Invocation invocation = new PartitionInvocation(context, op, 0, 0, 0, false, false);
-        invocation.invTarget = getAddress(local);
+        try {
+            invocation.initInvocationTarget();
+        } catch (Exception e) {
+            fail(e.toString());
+        }
         return invocation;
     }
 

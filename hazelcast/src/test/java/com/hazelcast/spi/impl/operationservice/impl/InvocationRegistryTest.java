@@ -113,7 +113,6 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     public void deregister_whenSkipped() {
         Operation op = new DummyOperation();
         Invocation invocation = newInvocation(op);
-        invocation.remote = false;
 
         invocationRegistry.register(invocation);
         invocationRegistry.deregister(invocation);

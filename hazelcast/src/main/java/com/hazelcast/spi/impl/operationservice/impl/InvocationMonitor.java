@@ -364,9 +364,9 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
         }
 
         private boolean hasTargetLeft(Invocation invocation) {
-            MemberImpl targetMember = invocation.targetMember;
+            Member targetMember = invocation.getTargetMember();
             if (targetMember == null) {
-                Address invTarget = invocation.invTarget;
+                Address invTarget = invocation.getTargetAddress();
                 return leftMember.getAddress().equals(invTarget);
             } else {
                 return leftMember.getUuid().equals(targetMember.getUuid());
@@ -388,7 +388,7 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
             // operation is submitted to the target. If a member restarts with the same identity (UUID),
             // by comparing member-list-version during member removal with the invocation's member-list-version
             // we can determine whether invocation is submitted before member left or after restart.
-            if (invocation.memberListVersion < memberListVersion) {
+            if (invocation.getMemberListVersion() < memberListVersion) {
                 invocation.notifyError(new MemberLeftException(leftMember));
             }
         }
@@ -486,7 +486,7 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
             }
             for (Invocation invocation : invocationRegistry) {
                 if (invocation.future.isCancelled()) {
-                    calls.addOpToCancel(invocation.invTarget, invocation.op.getCallId());
+                    calls.addOpToCancel(invocation.getTargetAddress(), invocation.op.getCallId());
                 }
             }
             return calls;

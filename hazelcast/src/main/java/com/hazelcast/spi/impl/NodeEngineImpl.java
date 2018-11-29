@@ -411,7 +411,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public void onPartitionMigrate(MigrationInfo migrationInfo) {
-        operationParker.onPartitionMigrate(getThisAddress(), migrationInfo);
+        operationParker.onPartitionMigrate(migrationInfo);
     }
 
     /**
