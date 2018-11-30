@@ -45,8 +45,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
@@ -72,14 +70,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     private static final Random RANDOM = new Random();
 
     private ClientConfig clientConfig = new ClientConfig();
-
-    @Test
-    public void test() throws IOException {
-        URL resource = getClass().getClassLoader().getResource("hazelcast-client-c1.xml");
-        ClientConfig clientConfig = new XmlClientConfigBuilder(resource).build();
-        System.out.println(clientConfig.getGroupConfig().getName());
-        System.out.println(clientConfig.getGroupConfig().getPassword());
-    }
 
     @Test
     public void escape() {
