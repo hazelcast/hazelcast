@@ -21,6 +21,10 @@ import com.hazelcast.spi.ServiceConfigurationParser;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.config.DomConfigHelper.getTextContent;
+
 public class MyServiceConfigParser extends AbstractXmlConfigHelper implements ServiceConfigurationParser<MyServiceConfig> {
 
     public MyServiceConfig parse(Element element) {
@@ -30,12 +34,12 @@ public class MyServiceConfigParser extends AbstractXmlConfigHelper implements Se
                 for (Node node : childElements(configNode)) {
                     String name = cleanNodeName(node);
                     if ("string-prop".equals(name)) {
-                        config.stringProp = getTextContent(node);
+                        config.stringProp = getTextContent(node, domLevel3);
                     } else if ("int-prop".equals(name)) {
-                        String value = getTextContent(node);
+                        String value = getTextContent(node, domLevel3);
                         config.intProp = Integer.parseInt(value);
                     } else if ("bool-prop".equals(name)) {
-                        config.boolProp = Boolean.parseBoolean(getTextContent(node));
+                        config.boolProp = Boolean.parseBoolean(getTextContent(node, domLevel3));
                     }
                 }
             }

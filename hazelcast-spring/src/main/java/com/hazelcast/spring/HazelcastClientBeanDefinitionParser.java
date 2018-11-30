@@ -57,6 +57,10 @@ import org.w3c.dom.Node;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
+import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
 import static org.springframework.util.Assert.isTrue;
