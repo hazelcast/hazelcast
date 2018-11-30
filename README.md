@@ -27,7 +27,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.hazelcast.azure:hazelcast-azure:1.0'
+    compile 'com.hazelcast.azure:hazelcast-azure:${hazelcast-azure-version}'
 }
 ```
 
@@ -38,7 +38,7 @@ For Maven:
     <dependency>
         <groupId>com.hazelcast.azure</groupId>
         <artifactId>hazelcast-azure</artifactId>
-        <version>1.0</version>
+        <version>${hazelcast-azure-version}</version>
     </dependency>
 </dependencies>
 ```
@@ -48,7 +48,7 @@ For Maven:
 Run the following command to compile the plugin:
 
 ```gradle
-compile 'com.hazelcast.azure:hazelcast-azure:1.0'
+compile 'com.hazelcast.azure:hazelcast-azure:${hazelcast-azure-version}'
 ```
 
 Check the [releases](https://github.com/hazelcast/hazelcast-azure/releases) for the latest version.
@@ -60,31 +60,26 @@ Ensure that you have added the package `hazelcast-azure` to your Maven or Gradle
 In your Hazelcast configuration, use the `AzureDiscoveryStrategy` as shown below:
 
 ```xml
-<network>
+<hazelcast>
+  <network>
     <join>
-        <multicast enabled="false"/>
-        <tcp-ip enabled="false" />
-        <aws enabled="false"/>
-        <discovery-strategies>
-            <discovery-strategy enabled="true" class="com.hazelcast.azure.AzureDiscoveryStrategy">
-                <properties>
-                    <property name="client-id">CLIENT_ID</property>
-                    <property name="client-secret">CLIENT_SECRET</property>
-                    <property name="tenant-id">TENANT_ID</property>
-                    <property name="subscription-id">SUB_ID</property>
-                    <property name="cluster-id">HZLCAST001</property>
-                    <property name="group-name">GROUP-NAME</property>
-                </properties>
-            </discovery-strategy>
-        </discovery-strategies>
+      <multicast enabled="false"/>
+      <azure enabled="true">
+        <client-id>CLIENT_ID</client-id>
+        <client-secret>CLIENT_SECRET</client-secret>
+        <tenant-id>TENANT_ID</tenant-id>
+        <subscription-id>SUB_ID</subscription-id>
+        <cluster-id>HZLCAST001</cluster-id>
+        <group-name>GROUP-NAME</group-name>
+      </azure>
     </join>
-</network>
+  </network>
+</hazelcast>
 ```
 
 You will need to setup [Azure Active Directory Service Principal credentials](https://azure.microsoft.com/en-us/documentation/articles/resource-group-create-service-principal-portal/) for your Azure Subscription for this plugin to work. With the credentials, fill in the placeholder values above.
 
 # Configuring at Azure Side
-
 
 - `client-id` - The Azure Active Directory Service Principal client ID
 - `client-secret` - The Azure Active Directory Service Principal client secret
@@ -103,9 +98,7 @@ When you use Azure plugin as discovery provider, you can configure Hazelcast Par
 For more information please read: http://docs.hazelcast.org/docs/3.7/manual/html-single/index.html#partition-group-configuration.
 
 ```xml
-...
 <partition-group enabled="true" group-type="ZONE_AWARE" />
-...
 ```
 
 # Automated Deployment
