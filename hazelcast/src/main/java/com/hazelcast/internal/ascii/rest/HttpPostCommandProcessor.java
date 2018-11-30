@@ -29,8 +29,10 @@ import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.JsonUtil;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
+import com.hazelcast.wan.AddWanConfigResult;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
@@ -486,10 +488,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             WanReplicationConfigDTO dto = new WanReplicationConfigDTO(new WanReplicationConfig());
             dto.fromJson(Json.parse(wanConfigJson).asObject());
 
-            textCommandService.getNode().getNodeEngine()
-                              .getWanReplicationService()
-                              .addWanReplicationConfig(dto.getConfig());
-            res = response(ResponseType.SUCCESS, "message", "WAN configuration added.");
+            AddWanConfigResult result = textCommandService.getNode().getNodeEngine()
+                                                          .getWanReplicationService()
+                                                          .addWanReplicationConfig(dto.getConfig());
+            res = response(ResponseType.SUCCESS,
+                    "message", "WAN configuration added.",
+                    "addedPublisherIds", result.getAddedPublisherIds(),
+                    "ignoredPublisherIds", result.getIgnoredPublisherIds());
         } catch (Exception ex) {
             logger.warning("Error occurred while adding WAN config", ex);
             res = exceptionResponse(ex);
@@ -623,15 +628,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return response(ResponseType.FAIL, "message", throwable.getMessage());
     }
 
-    private static String response(ResponseType type, String... attributes) {
+    private static String response(ResponseType type, Object... attributes) {
         final StringBuilder builder = new StringBuilder("{");
         builder.append("\"status\":\"").append(type).append("\"");
         if (attributes.length > 0) {
             for (int i = 0; i < attributes.length; ) {
-                final String key = attributes[i++];
-                final String value = attributes[i++];
+                final String key = attributes[i++].toString();
+                final Object value = attributes[i++];
                 if (value != null) {
-                    builder.append(String.format(",\"%s\":\"%s\"", key, value));
+                    builder.append(String.format(",\"%s\":%s", key, JsonUtil.toJson(value)));
                 }
             }
         }
