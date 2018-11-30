@@ -1,166 +1,165 @@
+# Hazelcast Discovery Plugin for AWS
+
+This repository contains a plugin which provides the automatic Hazelcast member discovery in the Amazon Web Services Platform.
+
 ***NOTE:*** *hazelcast-cloud module has been renamed as hazelcast-aws module (starting with Hazelcast 3.7.3). If you want to use AWS Discovery, you should add the library hazelcast-aws JAR to your environment.*
 
 ***NOTE:*** *hazelcast-aws 2.3+* is compatible with *hazelcast 3.11+*, for older hazelcast versions you need to use *hazelcast-aws 2.2*.
-
-# Table of Contents
-
-  * [Requirements](#requirements)
-  * [Maven Coordinates](#maven-coordinates)
-  * [Discovering Members within EC2 Cloud](#discovering-members-within-ec2-cloud)
-    * [Zone Aware Support](#zone-aware-support)
-    * [Configuring Hazelcast Members with Discovery SPI](#configuring-hazelcast-members-with-discovery-spi)
-    * [Configuring Hazelcast Members for AWS ECS](#configuring-hazelcast-members-for-aws-ecs)
-    * [Configuring Hazelcast Client with Discovery SPI](#configuring-hazelcast-client-with-discovery-spi)
-    * [Configuring with "AwsConfig" (Deprecated)](#configuring-with-awsconfig-deprecated)
-  * [IAM Roles](#iam-roles)
-    * [IAM Roles in ECS Environment](#iam-roles-in-ecs-environment)
-    * [Policy for IAM User](#policy-for-iam-user)
-  * [AWS Autoscaling](#aws-autoscaling)
-    * [AWS Autoscaling using Lifecycle Hooks](#aws-autoscaling-using-lifecycle-hooks)
-      * [AWS Autoscaling Architecture](#aws-autoscaling-architecture)
-      * [Lifecycle Hook Listener Script](#lifecycle-hook-listener-script)
-    * [AWS Autoscaling Alternative Solutions](#aws-autoscaling-alternative-solutions)
-      * [Cooldown Period](#cooldown-period)
-      * [Graceful Shutdown](#graceful-shutdown)
-  * [AWSClient Configuration](#awsclient-configuration)
-  * [Debugging](#debugging)
-  * [Hazelcast Performance on AWS](#hazelcast-performance-on-aws)
-    * [Selecting EC2 Instance Type](#selecting-ec2-instance-type)
-    * [Dealing with Network Latency](#dealing-with-network-latency)
-    * [Selecting Virtualization](#selecting-virtualization)
 
 ## Requirements
 
 - Hazelcast 3.6+
 - Linux Kernel 3.19+ (TCP connections may get stuck when used with older Kernel versions, resulting in undefined timeouts)
 
-## Maven Coordinates
+## Embedded mode
+
+To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml` as presented below or an equivalent Java-based configuration, your Hazelcast instances discover themselves automatically.
+
+#### Maven
+
 ```xml
 <dependency>
-    <groupId>com.hazelcast</groupId>
-    <artifactId>hazelcast-aws</artifactId>
-    <version>${hazelcast-aws.version}</version>
+  <groupId>com.hazelcast</groupId>
+  <artifactId>hazelcast-aws</artifactId>
+  <version>${hazelcast-aws.version}</version>
 </dependency>
 ```
 
-## Discovering Members within EC2 Cloud
+#### Gradle
 
-Hazelcast supports EC2 auto-discovery. It is useful when you do not want to provide or you cannot provide the list of possible IP addresses. 
+```groovy
+compile group: "com.hazelcast", name: "hazelcast-aws", version: "${hazelcast-aws.version}"
+```
 
-There are two possible ways to configure your cluster to use EC2 auto-discovery.
-You can either choose to configure your cluster with `AwsConfig` (or `aws` element in your XML config)
-or you can choose configuring AWS discovery using [Discovery SPI](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovery-spi) implementation.
-Starting with hazelcast-aws-1.2, it's strongly recommended to use Discovery SPI implementation as
-the former one will be deprecated.
+## Understanding AWS Discovery Strategy
 
-### Zone Aware Support
+Hazelcast member starts by fetching a list of all instances (accessible by the user) filtered by region, security group, and instance tag key/value. Then, each instance is checked one-by-one with its IP and each of the ports defined in the `hz-port` property. When a member is discovered under IP:PORT, then it joins the cluster.
 
-***NOTE:*** *ZONE_AWARE configuration is only valid when you use Hazelcast Discovery SPI based configuration with `<discovery-strategies>`. `<aws>` based configuration is still using old implementation and does not support ZONE_AWARE feature.*
+If users want to create multiple Hazelcast clusters in one region, then they need to manually tag the instances.
 
-Zone Aware Support is available for Hazelcast Client 3.8.6 and newer releases.
+## Configuration
 
-As a discovery service, Hazelcast AWS plugin put the zone information into the Hazelcast's member attributes map during the discovery process. 
-Please see the [Defining Member Attributes section](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#defining-member-attributes) 
-to learn about the member attributes.
+The plugin supports **Members Discovery SPI** and **Zone Aware** features.
 
-When using `ZONE_AWARE` configuration, backups are created in the other Availability Zones. 
-Each zone will be accepted as one partition group.
+### Hazelcast Members Discovery SPI
 
-Following are declarative and programmatic configuration snippets that show how to enable `ZONE_AWARE` grouping.
+Make sure you have the `hazelcast-aws.jar` dependency in your classpath. Then, you can configure Hazelcast in one of the following manners.
+
+#### XML Configuration
+
+```xml
+<hazelcast>
+  <network>
+    <join>
+      <multicast enabled="false"/>
+      <aws enabled="true">
+        <access-key>my-access-key</access-key>
+        <secret-key>my-secret-key</secret-key>
+        <region>us-west-1</region>
+        <security-group-name>hazelcast</security-group-name>
+        <tag-key>aws-test-cluster</tag-key>
+        <tag-value>cluster1</tag-value>
+        <hz-port>5701-5708</hz-port>
+      </aws>
+    </join>
+  </network>
+</hazelcast>
+```
+
+#### Java-based Configuration
+
+```java
+config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+config.getNetworkConfig().getJoin().getAwsConfig().setEnabled(true)
+      .setProperty("access-key", "my-access-key")
+      .setProperty("secret-key", "my-secret-key")
+      .setProperty("region", "us-west-1")
+      .setProperty("security-group-name", "hazelcast")
+      .setProperty("tag-key", "aws-test-cluster")
+      .setProperty("tag-value", "cluster1")
+      .setProperty("hz-port", "5701-5708");
+```
+
+Here are the definitions of the properties
+
+* `access-key`, `secret-key`: access and secret keys of your account on EC2; if not set, `iam-role` is used
+* `iam-role`: AWS IAM Role to fetch credentials (used if `access-key`/`secret-key` not specified); if not set, the default IAM Role assigned to EC2 Instance is used
+* `region`: region where Hazelcast members are running; if not set, `us-east-1` region is used
+* `host-header`: URL that is the entry point for a web service; it is optional
+* `security-group-name`: filter to look only for EC2 Instances with the given security group; it is optional
+* `tag-key`, `tag-value`: filter to look only for EC2 Instances with the given `tag-key`/`tag-value`; they are optional
+* `connection-timeout-seconds`: maximum amount of time Hazelcast will try to connect to a well known member before giving up; setting this value too low could mean that a member is not able to connect to a cluster; setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up); its default value is 5
+* `hz-port`: a range of ports where the plugin looks for Hazelcast members; if not set, the default value `5701-5708` is used
+
+Note that:
+* If you don't specify any of the properties, then the plugin uses the IAM Role assigned to EC2 Instance and forms a cluster from all Hazelcast members running in the default region `us-east-1`
+* If you use the plugin in the Hazelcast Client running outside of the AWS network, then the following parameters are mandatory: `access-key` and `secret-key`
+
+### Zone Aware
+
+When using `ZONE_AWARE` configuration, backups are created in the other Availability Zone.
+
+#### XML Configuration
 
 ```xml
 <partition-group enabled="true" group-type="ZONE_AWARE" />
 ```
 
+#### Java-based Configuration
+
 ```java
-Config config = ...;
-PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
-partitionGroupConfig.setEnabled( true )
-    .setGroupType( MemberGroupType.ZONE_AWARE );
+config.getPartitionGroupConfig()
+    .setEnabled(true)
+    .setGroupType(MemberGroupType.ZONE_AWARE);
 ```
 
 ***NOTE:*** *When using the `ZONE_AWARE` partition grouping, a cluster spanning multiple Availability Zones (AZ) should have an equal number of members in each AZ. Otherwise, it will result in uneven partition distribution among the members.*
 
 
-### Configuring Hazelcast Members with Discovery SPI
+### Hazelcast Client with Discovery SPI
 
-- Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
-- Disable join over multicast, TCP/IP and AWS by setting the `enabled` attribute of the related tags to `false`.
-- Enable Discovery SPI by adding "hazelcast.discovery.enabled" property to your config.
+If Hazelcast Client is run inside AWS, then the configuration is exactly the same as for the Member.
 
-Following are example declarative and programmatic configuration snippets:
+If Hazelcast Client is run outside AWS, then you always need to specify the following parameters:
+- `access-key`, `secret-key` - IAM role cannot be used from outside AWS
+- `use-public-ip` - must be set to `true`
+
+Following are example declarative and programmatic configuration snippets.
+
+#### XML Configuration
 
 ```xml
- <hazelcast>
-   ...
-  <properties>
-     <property name="hazelcast.discovery.enabled">true</property>
-  </properties>
+<hazelcast-client>
   <network>
-    ...
-    <join>
-        <tcp-ip enabled="false"></tcp-ip>
-        <multicast enabled="false"/>
-        <aws enabled="false" />
-        <discovery-strategies>
-            <!-- class equals to the DiscoveryStrategy not the factory! -->
-            <discovery-strategy enabled="true" class="com.hazelcast.aws.AwsDiscoveryStrategy">
-                <properties>
-                   <property name="access-key">my-access-key</property>
-                   <property name="secret-key">my-secret-key</property>
-                   <property name="iam-role">s3access</property>
-                   <property name="region">us-west-1</property>
-                   <property name="host-header">ec2.amazonaws.com</property>
-                   <property name="security-group-name">hazelcast</property>
-                   <property name="tag-key">aws-test-cluster</property>
-                   <property name="tag-value">cluster1</property>
-                   <property name="hz-port">5701-5708</property>
-                </properties>
-            </discovery-strategy>
-        </discovery-strategies>
-    </join>
+    <aws enabled="true">
+      <access-key>my-access-key</access-key>
+      <secret-key>my-secret-key</secret-key>
+      <region>us-west-1</region>
+      <security-group-name>hazelcast</security-group-name>
+      <tag-key>aws-test-cluster</tag-key>
+      <tag-value>cluster1</tag-value>
+      <hz-port>5701-5708</hz-port>
+      <use-public-ip>true</use-public-ip>
+    </aws>
   </network>
- </hazelcast>
+</hazelcast-client>
 ```
+
+#### Java-based Configuration
 
 ```java
-        Config config = new Config();
-        config.getProperties().setProperty("hazelcast.discovery.enabled", "true");
-        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
-        joinConfig.getTcpIpConfig().setEnabled(false);
-        joinConfig.getMulticastConfig().setEnabled(false);
-        joinConfig.getAwsConfig().setEnabled(false);
-        AwsDiscoveryStrategyFactory awsDiscoveryStrategyFactory = new AwsDiscoveryStrategyFactory();
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
-        properties.put("access-key","my-access-key");
-        properties.put("secret-key","my-secret-key");
-        properties.put("iam-role","s3access");
-        properties.put("region","us-west-1");
-        properties.put("host-header","ec2.amazonaws.com");
-        properties.put("security-group-name","hazelcast");
-        properties.put("tag-key","aws-test-cluster");
-        properties.put("tag-value","cluster1");
-        properties.put("hz-port","5701-5708");
-        DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(awsDiscoveryStrategyFactory, properties);
-        joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
-        
-        //if you want to configure multiple discovery strategies at once
-        ArrayList<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
-        joinConfig.getDiscoveryConfig().setDiscoveryStrategyConfigs(discoveryStrategyConfigs);
+clientConfig.getAwsConfig().setEnabled(true)
+      .setProperty("access-key", "my-access-key")
+      .setProperty("secret-key", "my-secret-key")
+      .setProperty("region", "us-west-1")
+      .setProperty("security-group-name", "hazelcast")
+      .setProperty("tag-key", "aws-test-cluster")
+      .setProperty("tag-value", "cluster1")
+      .setProperty("hz-port", "5701-5708")
+      .setProperty("use-public-ip", "true");
 ```
 
-Here are the definitions of the properties
-
-* `access-key`, `secret-key`: Access and secret keys of your account on EC2.
-* `iam-role`: If you do not want to use access key and secret key, you can specify `iam-role`. Hazelcast-aws plugin fetches your credentials by using your IAM role. It is optional.
-* `region`: The region where your members are running. Default value is `us-east-1`. You need to specify this if the region is other than the default one.
-* `host-header`: The URL that is the entry point for a web service. It is optional.
-* `security-group-name`: Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast members to be within this group. It is optional.
-* `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast members, you can set these parameters as the ones you specified in the EC2 console. They are optional.
-* `connection-timeout-seconds`: The maximum amount of time Hazelcast will try to connect to a well known member before giving up. Setting this value too low could mean that a member is not able to connect to a cluster. Setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
-* `hz-port`: You can set searching for other ports rather than 5701-5708 if you've members on different ports. It is optional.
-
-### Configuring Hazelcast Members for AWS ECS
+## Configuration for AWS ECS
 
 In order to enable discovery within AWS ECS Cluster, within `taskdef.json` or container settings, Hazelcast member should be bind to `host` network. Therefore, proper json representation for task should contain below segment:
 ```
@@ -174,118 +173,7 @@ Also, cluster member should have below interface binding in `hazelcast.xml` conf
 </interfaces>
 ```
 Please note that `10.0.*.*` value depends on your CIDR block definition.
-If more than one `subnet` or `custom VPC` is used for cluster, it should be checked that `container instances` within cluster have newtork connectivity or have `tracepath` to each other. 
-
-### Configuring Hazelcast Client with Discovery SPI
-
-- Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
-- Enable Discovery SPI by adding "hazelcast.discovery.enabled" property to your config.
-- Enable public/private IP address translation using "hazelcast.discovery.public.ip.enabled" if your Hazelcast Client is not in AWS.
-- Make sure `access-key` and `secret-key` properties are set in case your client is outside AWS (`iam-role` works only for clients inside AWS)
-
-Following are example declarative and programmatic configuration snippets:
-
-```xml
- <hazelcast-client>
-   ...
-  <properties>
-    <property name="hazelcast.discovery.enabled">true</property>
-    <property name="hazelcast.discovery.public.ip.enabled">true</property>
-  </properties>
-
-  <network>
-    <discovery-strategies>
-        <!-- class equals to the DiscoveryStrategy not the factory! -->
-        <discovery-strategy enabled="true" class="com.hazelcast.aws.AwsDiscoveryStrategy">
-            <properties>
-               <property name="access-key">my-access-key</property>
-               <property name="secret-key">my-secret-key</property>
-               <property name="iam-role">s3access</property>
-               <property name="region">us-west-1</property>
-               <property name="host-header">ec2.amazonaws.com</property>
-               <property name="security-group-name">hazelcast</property>
-               <property name="tag-key">aws-test-cluster</property>
-               <property name="tag-value">cluster1</property>
-               <property name="hz-port">5701-5708</property>
-            </properties>
-        </discovery-strategy>
-    </discovery-strategies>
-  </network>
- </hazelcast-client>
-```
-
-```java
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getProperties().setProperty("hazelcast.discovery.enabled", "true");
-        //if your Hazelcast Client is not in AWS
-        clientConfig.getProperties().setProperty("hazelcast.discovery.public.ip.enabled", "true");
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
-        properties.put("access-key","my-access-key");
-        properties.put("secret-key","my-secret-key");
-        properties.put("iam-role","s3access");
-        properties.put("region","us-west-1");
-        properties.put("host-header","ec2.amazonaws.com");
-        properties.put("security-group-name","hazelcast");
-        properties.put("tag-key","aws-test-cluster");
-        properties.put("tag-value","cluster1");
-        properties.put("hz-port","5701-5708");
-        AwsDiscoveryStrategyFactory awsDiscoveryStrategyFactory = new AwsDiscoveryStrategyFactory();
-        DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(awsDiscoveryStrategyFactory, properties);
-        ClientNetworkConfig clientNetworkConfig = clientConfig.getNetworkConfig();
-        clientNetworkConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
-        
-        //if you want to configure multiple discovery strategies at once
-        ArrayList<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
-        clientNetworkConfig.getDiscoveryConfig().setDiscoveryStrategyConfigs(discoveryStrategyConfigs);
-```
-
-
-List of available properties and their documentation can be found at [AwsProperties.java](https://github.com/hazelcast/hazelcast-aws/blob/master/src/main/java/com/hazelcast/aws/AwsProperties.java)
-
-### Configuring with "AwsConfig" (Deprecated)
-
-- Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
-- Disable join over multicast and TCP/IP by setting the `enabled` attribute of the `multicast` element to "false", and set the `enabled` attribute of the `tcp-ip` element to "false".
-- Set the `enabled` attribute of the `aws` element to "true".
-- Within the `aws` element, provide your credentials (access and secret key), your region, etc.
-
-The following is an example declarative configuration.
-
-```xml
- <hazelcast>
-   ...
-  <network>
-    ...
-    <join>
-      <multicast enabled="false"></multicast>
-      <tcp-ip enabled="false"></tcp-ip>
-      <aws enabled="true">
-        <access-key>my-access-key</access-key>
-        <secret-key>my-secret-key</secret-key>
-        <iam-role>s3access</iam-role>
-        <region>us-west-1</region>
-        <host-header>ec2.amazonaws.com</host-header>
-        <security-group-name>hazelcast-sg</security-group-name>
-        <tag-key>type</tag-key>
-        <tag-value>hz-members</tag-value>
-      </aws>
-    </join>
-  </network>
- </hazelcast>
-```  
-
-Here are the definitions of `aws` element's attributes and sub-elements:
-
-* `enabled`: Specifies whether the EC2 discovery is enabled or not, true or false.
-* `access-key`, `secret-key`: Access and secret keys of your account on EC2.
-* `iam-role`: If you do not want to use access key and secret key, you can specify `iam-role`. Hazelcast-aws plugin fetches your credentials by using your IAM role. It is optional.
-* `region`: The region where your members are running. Default value is `us-east-1`. You need to specify this if the region is other than the default one.
-* `host-header`: The URL that is the entry point for a web service. It is optional.
-* `security-group-name`: Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast members to be within this group. It is optional.
-* `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast members, you can set these parameters as the ones you specified in the EC2 console. They are optional.
-* `connection-timeout-seconds`: The maximum amount of time Hazelcast will try to connect to a well known member before giving up. Setting this value too low could mean that a member is not able to connect to a cluster. Setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
-
-NOTE: If both iamrole and secretkey/accesskey are defined, hazelcast-aws will use iamrole to retrieve credentials and ignore defined secretkey/accesskey pair
+If more than one `subnet` or `custom VPC` is used for cluster, it should be checked that `container instances` within cluster have network connectivity or have `tracepath` to each other. 
 
 ## IAM Roles
 
@@ -385,34 +273,6 @@ Such solution may work correctly, however is definitely not recommended for the 
 * [AWS Autoscaling documentation](https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html) does not specify the instance termination process, so it's hard to rely on anything
 * Some sources ([here](https://stackoverflow.com/questions/11208869/amazon-ec2-autoscaling-down-with-graceful-shutdown)) specify that it's possible to gracefully shut down the processes, however after 20 seconds (which may not be enough for Hazelcast) the processes can be killed anyway
 * The [Amazon's recommended way](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html) to deal with graceful shutdowns is to use Lifecycle Hooks
-
-## AWSClient Configuration
-
-To make sure EC2 instances are found correctly, you can use the AWSClient class. It determines the private IP addresses of EC2 instances to be connected. Give the AWSClient class the values for the parameters that you specified in the aws element, as shown below. You will see whether your EC2 instances are found.
-
-```java
-public static void main( String[] args )throws Exception{ 
-  AwsConfig config = new AwsConfig(); 
-  config.setAccessKey( ... ) ;
-  config.setSecretKey( ... );
-  config.setRegion( ... );
-  config.setSecurityGroupName( ... );
-  config.setTagKey( ... );
-  config.setTagValue( ... );
-  config.setEnabled( true );
-  AWSClient client = new AWSClient( config );
-  List<String> ipAddresses = client.getPrivateIpAddresses();
-  System.out.println( "addresses found:" + ipAddresses ); 
-  for ( String ip: ipAddresses ) {
-    System.out.println( ip ); 
-  }
-}
-```
-
-## Debugging
-
-When needed, Hazelcast can log the events for the instances that exist in a region. To see what has happened or to trace the activities while forming the cluster, change the log level in your logging mechanism to `FINEST` or `DEBUG`. After this change, you can also see in the generated log whether the instances are accepted or rejected, and the reason the instances were rejected. Note that changing the log level in this way may affect the performance of the cluster. Please see the [Logging Configuration](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#logging-configuration) for information on logging mechanisms.
-
 
 ## Hazelcast Performance on AWS
 
