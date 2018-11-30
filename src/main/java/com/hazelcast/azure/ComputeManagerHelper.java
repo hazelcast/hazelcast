@@ -21,7 +21,10 @@ import com.microsoft.azure.management.compute.implementation.ComputeManager;
 
 import java.util.Map;
 
-import static com.hazelcast.azure.AzureProperties.*;
+import static com.hazelcast.azure.AzureProperties.CLIENT_ID;
+import static com.hazelcast.azure.AzureProperties.CLIENT_SECRET;
+import static com.hazelcast.azure.AzureProperties.SUBSCRIPTION_ID;
+import static com.hazelcast.azure.AzureProperties.TENANT_ID;
 
 /**
  * Azure {@link ComputeManager} helper
