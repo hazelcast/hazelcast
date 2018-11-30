@@ -27,7 +27,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.hazelcast.azure:hazelcast-azure:1.0'
+    compile 'com.hazelcast.azure:hazelcast-azure:${hazelcast-azure-version}'
 }
 ```
 
@@ -38,7 +38,7 @@ For Maven:
     <dependency>
         <groupId>com.hazelcast.azure</groupId>
         <artifactId>hazelcast-azure</artifactId>
-        <version>1.0</version>
+        <version>${hazelcast-azure-version}</version>
     </dependency>
 </dependencies>
 ```
@@ -48,7 +48,7 @@ For Maven:
 Run the following command to compile the plugin:
 
 ```gradle
-compile 'com.hazelcast.azure:hazelcast-azure:1.0'
+compile 'com.hazelcast.azure:hazelcast-azure:${hazelcast-azure-version}'
 ```
 
 Check the [releases](https://github.com/hazelcast/hazelcast-azure/releases) for the latest version.
