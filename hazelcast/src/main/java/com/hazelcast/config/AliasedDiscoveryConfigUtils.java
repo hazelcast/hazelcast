@@ -164,7 +164,7 @@ public final class AliasedDiscoveryConfigUtils {
     }
 
     /**
-     * Checks whether all aliased discovery configs have the tag {@literal <use-public-ip>trye</use-public-ip}.
+     * Checks whether all aliased discovery configs have the tag {@literal <use-public-ip>true</use-public-ip}.
      * <p>
      * Note that if no config is enabled, then the method returns {@literal false}.
      */
