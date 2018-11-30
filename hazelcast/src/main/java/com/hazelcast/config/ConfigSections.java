@@ -16,7 +16,11 @@
 
 package com.hazelcast.config;
 
-enum XmlElements {
+/**
+ * Configuration sections for the members shared by XML and YAML based
+ * configurations
+ */
+enum ConfigSections {
     HAZELCAST("hazelcast", false),
     INSTANCE_NAME("instance-name", false),
     IMPORT("import", true),
@@ -63,19 +67,18 @@ enum XmlElements {
     RELIABLE_ID_GENERATOR("reliable-id-generator", true),
     FLAKE_ID_GENERATOR("flake-id-generator", true),
     CRDT_REPLICATION("crdt-replication", false),
-    PN_COUNTER("pn-counter", true),
-    ;
+    PN_COUNTER("pn-counter", true);
 
     final String name;
     final boolean multipleOccurrence;
 
-    XmlElements(String name, boolean multipleOccurrence) {
+    ConfigSections(String name, boolean multipleOccurrence) {
         this.name = name;
         this.multipleOccurrence = multipleOccurrence;
     }
 
     public static boolean canOccurMultipleTimes(String name) {
-        for (XmlElements element : values()) {
+        for (ConfigSections element : values()) {
             if (name.equals(element.name)) {
                 return element.multipleOccurrence;
             }

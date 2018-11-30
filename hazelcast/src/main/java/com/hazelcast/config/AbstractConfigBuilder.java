@@ -39,8 +39,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.config.XmlElements.CONFIG_REPLACERS;
-import static com.hazelcast.config.XmlElements.IMPORT;
+import static com.hazelcast.config.DomConfigHelper.asElementIterable;
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.config.ConfigSections.CONFIG_REPLACERS;
+import static com.hazelcast.config.ConfigSections.IMPORT;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 
@@ -148,6 +151,14 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
      */
     @Override
     protected abstract ConfigType getXmlType();
+
+    String getAttribute(Node node, String attName) {
+        return DomConfigHelper.getAttribute(node, attName, domLevel3);
+    }
+
+    void fillProperties(Node node, Properties properties) {
+        DomConfigHelper.fillProperties(node, properties, domLevel3);
+    }
 
     private void traverseChildrenAndReplaceVariables(Node root) throws Exception {
         // if no config-replacer is defined, use backward compatible default behavior for missing properties

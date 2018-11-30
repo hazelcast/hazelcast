@@ -21,6 +21,7 @@ import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -47,6 +48,9 @@ import org.w3c.dom.Node;
 import java.util.Collection;
 import java.util.HashSet;
 
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 import static java.lang.Integer.parseInt;
@@ -100,6 +104,14 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     }
                 }
             }
+        }
+
+        protected String getTextContent(Node node) {
+            return DomConfigHelper.getTextContent(node, domLevel3);
+        }
+
+        protected String getAttribute(Node node, String attName) {
+            return DomConfigHelper.getAttribute(node, attName, domLevel3);
         }
 
         protected BeanDefinitionBuilder createBeanBuilder(Class clazz) {
