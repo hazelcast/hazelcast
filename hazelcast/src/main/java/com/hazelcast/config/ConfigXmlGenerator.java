@@ -1540,8 +1540,13 @@ public class ConfigXmlGenerator {
 
         private static void appendAttributes(StringBuilder xml, Object... attributes) {
             for (int i = 0; i < attributes.length; ) {
-                xml.append(" ").append(attributes[i++]).append("=\"");
-                escapeXmlAttr(attributes[i++], xml);
+                Object attributeName = attributes[i++];
+                Object attributeValue = attributes[i++];
+                if (attributeValue == null) {
+                    continue;
+                }
+                xml.append(" ").append(attributeName).append("=\"");
+                escapeXmlAttr(attributeValue, xml);
                 xml.append("\"");
             }
         }
