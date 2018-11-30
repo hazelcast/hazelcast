@@ -8,6 +8,32 @@ This repository contains a plugin which provides the automatic Hazelcast member 
 - GCP VM instances must have access to Cloud API (at minimum "Read Only" Access Scope to "Compute Engine" API)
 - Versions compatibility: hazelcast-gcp 1.1+ is compatible with hazelcast 3.11+; for older hazelcast versions you need to use hazelcast-gcp 1.0.
 
+## Embedded Mode
+
+To use Hazelcast GCP embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml` (or Java-based configuration) as presented above, your Hazelcast instances discover themselves automatically.
+
+#### Maven
+
+```xml
+<dependency>
+  <groupId>com.hazelcast</groupId>
+  <artifactId>hazelcast-gcp</artifactId>
+  <version>${hazelcast-gcp-version}</version>
+</dependency>
+```
+
+#### Gradle
+
+```groovy
+compile group: "com.hazelcast", name: "hazelcast-gcp", version: "${hazelcast-gcp-version}"
+```
+
+## Understanding GCP Discovery Strategy
+
+Hazelcast member starts by fetching a list of all instances filtered by projects, zones, and label. Then, each instance is checked one-by-one with its IP and each of the ports defined in the `hz-port` property. When a member is discovered under IP:PORT, then it joins the cluster.
+
+If users want to create multiple Hazelcast clusters in one project/zone, then they need to manually label the instances.
+
 ## Configuration
 
 The plugin supports **Members Discovery SPI** and **Zone Aware** features.
@@ -20,27 +46,14 @@ Make sure you have the `hazelcast-gcp.jar` dependency in your classpath. Then, y
 
 ```xml
 <hazelcast>
-   ...
-  <properties>
-    <property name="hazelcast.discovery.enabled">true</property>
-  </properties>
   <network>
-    ...
     <join>
-      <tcp-ip enabled="false" />
       <multicast enabled="false"/>
-      <aws enabled="false" />
-      <discovery-strategies>
-        <discovery-strategy enabled="true" class="com.hazelcast.gcp.GcpDiscoveryStrategy">
-          <properties>
-            <property name="private-key-path">/home/name/service/account/key.json</property>
-            <property name="projects">project-1,project-2</property>
-            <property name="zones">us-east1-a,us-east1-b</property>
-            <property name="label">application=hazelcast</property>
-            <property name="hz-port">5701-5708</property>
-          </properties>
-        </discovery-strategy>
-      </discovery-strategies>
+      <gcp enabled="true">
+        <zones>us-east1-a,us-east1-b</zones>
+        <label>application=hazelcast</label>
+        <hz-port>5701-5708</hz-port>
+      </gcp>
     </join>
   </network>
 </hazelcast>
@@ -49,22 +62,11 @@ Make sure you have the `hazelcast-gcp.jar` dependency in your classpath. Then, y
 #### Java-based Configuration
 
 ```java
-Config config = new Config();
-config.getProperties().setProperty("hazelcast.discovery.enabled", "true");
-JoinConfig joinConfig = config.getNetworkConfig().getJoin();
-joinConfig.getTcpIpConfig().setEnabled(false);
-joinConfig.getMulticastConfig().setEnabled(false);
-joinConfig.getAwsConfig().setEnabled(false);
-
-GcpDiscoveryStrategyFactory gcpDiscoveryStrategyFactory = new GcpDiscoveryStrategyFactory();
-Map<String, Comparable> properties = new HashMap<String, Comparable>();
-properties.put("private-key-path","/home/name/service/account/key.json");
-properties.put("projects","project-1,project-2");
-properties.put("zones","us-east1-a,us-east1-b");
-properties.put("label","application=hazelcast");
-properties.put("hz-port","5701-5708");
-DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(gcpDiscoveryStrategyFactory, properties);
-joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
+config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+config.getNetworkConfig().getJoin().getGcpConfig().setEnabled(true)
+      .setProperty("zones", "us-east1-a,us-east1-b")
+      .setProperty("label", "application=hazelcast")
+      .setProperty("hz-port", "5701-5708");
 ```
 
 The following properties can be configured:
@@ -92,37 +94,54 @@ When using `ZONE_AWARE` configuration, backups are created in the other availabi
 #### Java-based Configuration
 
 ```java
-PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
-partitionGroupConfig.setEnabled(true)
-    .setGroupType( MemberGroupType.ZONE_AWARE );
+config.getPartitionGroupConfig()
+    .setEnabled(true)
+    .setGroupType(MemberGroupType.ZONE_AWARE);
 ```
 
-## Understanding GCP Discovery Strategy
+***NOTE:*** *When using the `ZONE_AWARE` partition grouping, a cluster spanning multiple availability zones should have an equal number of members in each AZ. Otherwise, it will result in uneven partition distribution among the members.*
 
-Hazelcast member starts by fetching a list of all instances filtered by projects, zones, and label. Then, each instance is checked one-by-one with its IP and each of the ports defined in the `hz-port` property. When a member is discovered under IP:PORT, then it joins the cluster.
+### Hazelcast Client with Discovery SPI
 
-If users want to create multiple Hazelcast clusters in one project/zone, then they need to manually label the instances.
- 
-## Embedded Mode
+If Hazelcast Client is run inside GCP, then the configuration is exactly the same as for the Member.
 
-To use Hazelcast GCP embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml` (or Java-based configuration) as presented above, your Hazelcast instances discover themselves automatically.
+If Hazelcast Client is run outside GCP, then you always need to specify the following parameters:
+- `private-key-path` - path to the private key for GCP service account
+- `projects` - a list of projects where the plugin looks for instances
+- `zones`: a list of zones where the plugin looks for instances
+- `use-public-ip` - must be set to `true`
 
-### Maven
+Following are example declarative and programmatic configuration snippets.
+
+#### XML Configuration
 
 ```xml
-<dependency>
-  <groupId>com.hazelcast</groupId>
-  <artifactId>hazelcast-gcp</artifactId>
-  <version>${hazelcast-gcp-version}</version>
-</dependency>
+<hazelcast-client>
+  <network>
+    <gcp enabled="true">
+      <private-key-path>/home/name/service/account/key.json</private-key-path>
+      <projects>project-1,project-2</projects>
+      <zones>us-east1-a,us-east1-b</zones>
+      <label>application=hazelcast</label>
+      <hz-port>5701-5708</hz-port>
+      <use-public-ip>true</use-public-ip>
+    </gcp>
+  </network>
+</hazelcast-client>
 ```
 
-### Gradle
+#### Java-based Configuration
 
-```groovy
-compile group: "com.hazelcast", name: "hazelcast-gcp", version: "${hazelcast-gcp-version}"
+```java
+clientConfig.getGcpConfig().setEnabled(true)
+      .setProperty("private-key-path", "/home/name/service/account/key.json")
+      .setProperty("projects", "project-1,project-2")
+      .setProperty("zones", "us-east1-a,us-east1-b")
+      .setProperty("label", "application=hazelcast")
+      .setProperty("hz-port", "5701-5708")
+      .setProperty("use-public-ip", "true");
 ```
-
+ 
 ## How to find us?
 
 In case of any question or issue, please raise a GH issue, send an email to [Hazelcast Google Groups](https://groups.google.com/forum/#!forum/hazelcast) or contact as directly via [Hazelcast Gitter](https://gitter.im/hazelcast/hazelcast).
