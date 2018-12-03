@@ -233,10 +233,10 @@ public abstract class AbstractMultiValueGetter extends Getter {
     }
 
     protected static String composeAttributeValueExtractionFailedMessage(Member member) {
-        return "Attribute value extraction failed for: " + member + ". Make sure attribute values or collection/array " +
-                "attribute value elements are all of the same and preferably concrete type. Consider custom attribute " +
-                "extractors if it's impossible or undesirable to reduce the variety of types to a single type, see Custom " +
-                "Attributes section in the reference manual for more details.";
+        return "Attribute value extraction failed for: " + member + ". Make sure attribute values or collection/array "
+                + "attribute value elements are all of the same and preferably concrete type. Consider custom attribute "
+                + "extractors if it's impossible or undesirable to reduce the variety of types to a single type, see Custom "
+                + "Attributes section in the reference manual for more details.";
     }
 
 }
