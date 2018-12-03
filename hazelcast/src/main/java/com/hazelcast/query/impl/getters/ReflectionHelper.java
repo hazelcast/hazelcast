@@ -23,12 +23,18 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
@@ -164,8 +170,8 @@ public final class ReflectionHelper {
                     }
                 }
                 if (localGetter == null) {
-                    throw new IllegalArgumentException("There is no suitable accessor for '"
-                            + baseName + "' on class '" + clazz.getName() + "'");
+                    throw new IllegalArgumentException(
+                            "There is no suitable accessor for '" + baseName + "' on class '" + clazz.getName() + "'");
                 }
                 parent = localGetter;
             }
@@ -189,4 +195,147 @@ public final class ReflectionHelper {
             throw ExceptionUtil.rethrow(e);
         }
     }
+
+    public static Class[] resolveActualTypeArguments(Type type, Class target) {
+        Type[] resolvedArguments = resolveTypeArguments(getRawClass(type), getTypeArguments(type), target);
+        if (resolvedArguments == null) {
+            return null;
+        }
+
+        Class[] actualizedArguments = new Class[resolvedArguments.length];
+        for (int i = 0; i < actualizedArguments.length; ++i) {
+            actualizedArguments[i] = actualizeType(resolvedArguments[i]);
+        }
+        return actualizedArguments;
+    }
+
+    private static Type[] resolveTypeArguments(Class rawClass, Map<String, Type> typeArguments, Class target) {
+        if (rawClass == target) {
+            TypeVariable[] typeParameters = rawClass.getTypeParameters();
+            Type[] resolvedArguments = new Type[typeParameters.length];
+            for (int i = 0; i < resolvedArguments.length; ++i) {
+                resolvedArguments[i] = typeArguments.get(typeParameters[i].getName());
+            }
+            return resolvedArguments;
+        }
+
+        Type genericSuperclass = rawClass.getGenericSuperclass();
+        if (genericSuperclass != null) {
+            Map<String, Type> substitutedArguments = substituteTypeArguments(genericSuperclass, typeArguments);
+            Type[] resolvedArguments = resolveTypeArguments(getRawClass(genericSuperclass), substitutedArguments, target);
+            if (resolvedArguments != null) {
+                return resolvedArguments;
+            }
+        }
+
+        for (Type genericInterface : rawClass.getGenericInterfaces()) {
+            Map<String, Type> substitutedArguments = substituteTypeArguments(genericInterface, typeArguments);
+            Type[] resolvedArguments = resolveTypeArguments(getRawClass(genericInterface), substitutedArguments, target);
+            if (resolvedArguments != null) {
+                return resolvedArguments;
+            }
+        }
+
+        return null;
+    }
+
+    private static Map<String, Type> substituteTypeArguments(Type type, Map<String, Type> substitutions) {
+        Map<String, Type> typeArguments = getTypeArguments(type);
+
+        for (Map.Entry<String, Type> typeArgumentEntry : typeArguments.entrySet()) {
+            Type typeArgument = typeArgumentEntry.getValue();
+
+            if (typeArgument instanceof TypeVariable) {
+                TypeVariable typeVariable = (TypeVariable) typeArgument;
+
+                Type substitution = substitutions.get(typeVariable.getName());
+                if (substitution != null) {
+                    typeArgumentEntry.setValue(substitution);
+                }
+            }
+        }
+
+        return typeArguments;
+    }
+
+    private static Class getRawClass(Type type) {
+        if (type instanceof Class) {
+            return (Class) type;
+        }
+
+        if (type instanceof ParameterizedType) {
+            Type rawType = ((ParameterizedType) type).getRawType();
+            if (rawType instanceof Class) {
+                return (Class) rawType;
+            }
+        }
+
+        throw new IllegalArgumentException("Unable to obtain raw class: " + type);
+    }
+
+    private static Map<String, Type> getTypeArguments(Type type) {
+        Map<String, Type> typeArguments = new HashMap<String, Type>();
+        getTypeArguments(type, typeArguments);
+        return typeArguments;
+    }
+
+    private static void getTypeArguments(Type type, Map<String, Type> typeArguments) {
+        if (type instanceof Class) {
+            Class rawClass = (Class) type;
+
+            if (rawClass.isMemberClass() && !Modifier.isStatic(rawClass.getModifiers()) && !rawClass.isInterface()) {
+                Class enclosingClass = rawClass.getEnclosingClass();
+                if (enclosingClass != null) {
+                    getTypeArguments(enclosingClass, typeArguments);
+                }
+            }
+
+            TypeVariable[] typeParameters = rawClass.getTypeParameters();
+            for (TypeVariable typeVariable : typeParameters) {
+                typeArguments.put(typeVariable.getName(), typeVariable);
+            }
+            return;
+        }
+
+        if (type instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) type;
+
+            Type ownerType = parameterizedType.getOwnerType();
+            if (ownerType != null) {
+                getTypeArguments(ownerType, typeArguments);
+            }
+
+            Type rawType = parameterizedType.getRawType();
+            if (rawType instanceof Class) {
+                Class rawClass = (Class) rawType;
+
+                TypeVariable[] typeParameters = rawClass.getTypeParameters();
+                Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                for (int i = 0; i < typeParameters.length; ++i) {
+                    typeArguments.put(typeParameters[i].getName(), actualTypeArguments[i]);
+                }
+                return;
+            }
+        }
+
+        throw new IllegalArgumentException("Unable to obtain type arguments: " + type);
+    }
+
+    private static Class actualizeType(Type type) {
+        if (type instanceof Class) {
+            return (Class) type;
+        }
+
+        if (type instanceof ParameterizedType) {
+            Type rawType = ((ParameterizedType) type).getRawType();
+            if (rawType instanceof Class) {
+                return (Class) rawType;
+            }
+        }
+
+        // TODO: wildcards?
+
+        return null;
+    }
+
 }

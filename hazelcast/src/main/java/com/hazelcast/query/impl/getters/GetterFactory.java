@@ -20,6 +20,7 @@ import com.hazelcast.util.CollectionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Collection;
 
 import static com.hazelcast.query.impl.getters.AbstractMultiValueGetter.validateModifier;
@@ -33,8 +34,7 @@ public final class GetterFactory {
     private GetterFactory() {
     }
 
-    public static Getter newFieldGetter(Object object, Getter parentGetter, Field field, String modifierSuffix)
-            throws Exception {
+    public static Getter newFieldGetter(Object object, Getter parentGetter, Field field, String modifierSuffix) throws Exception {
         Class<?> fieldType = field.getType();
         Class<?> returnType = null;
         if (isExtractingFromCollection(fieldType, modifierSuffix)) {
@@ -48,7 +48,7 @@ public final class GetterFactory {
                 returnType = extractTypeFromMultiResult(field, multiResult);
             } else {
                 Collection collection = (Collection) field.get(currentObject);
-                returnType = getCollectionType(collection);
+                returnType = getCollectionType(field.getGenericType(), collection);
             }
             if (returnType == null) {
                 if (modifierSuffix.equals(ANY_POSTFIX)) {
@@ -81,8 +81,8 @@ public final class GetterFactory {
         return returnType;
     }
 
-    public static Getter newMethodGetter(Object object, Getter parentGetter, Method method, String modifierSuffix)
-            throws Exception {
+    public static Getter newMethodGetter(Object object, Getter parentGetter, Method method, String modifierSuffix) throws
+            Exception {
         Class<?> methodReturnType = method.getReturnType();
         Class<?> returnType = null;
         if (isExtractingFromCollection(methodReturnType, modifierSuffix)) {
@@ -133,7 +133,7 @@ public final class GetterFactory {
         return new ThisGetter(parent, object);
     }
 
-    private static Class<?> getCollectionType(Collection collection) throws Exception {
+    private static Class<?> getCollectionType(Collection collection) {
         if (collection == null || collection.isEmpty()) {
             return null;
         }
@@ -147,6 +147,20 @@ public final class GetterFactory {
             return null;
         }
         return targetObject.getClass();
+    }
+
+    private static Class<?> getCollectionType(Type genericType, Collection collection) {
+        Class[] actualTypeArguments = ReflectionHelper.resolveActualTypeArguments(genericType, Collection.class);
+        if (actualTypeArguments == null) {
+            return getCollectionType(collection);
+        }
+
+        Class elementType = actualTypeArguments[0];
+        if (elementType == null || elementType == Object.class) {
+            return getCollectionType(collection);
+        }
+
+        return elementType;
     }
 
     private static boolean isExtractingFromCollection(Class<?> type, String modifierSuffix) {
