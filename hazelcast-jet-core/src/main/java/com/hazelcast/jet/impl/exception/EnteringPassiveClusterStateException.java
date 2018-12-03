@@ -22,8 +22,8 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 
 /**
  * An exception thrown internally for {@link InitExecutionOperation} and
- * {@link StartExecutionOperation} to indicate that the member is shutting
- * down.
+ * {@link StartExecutionOperation} to indicate that the cluster is entering
+ * passive state.
  */
-public class ShutdownInProgressException extends JetException {
+public class EnteringPassiveClusterStateException extends JetException {
 }

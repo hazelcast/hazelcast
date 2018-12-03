@@ -21,10 +21,13 @@ import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.util.Set;
 
-public class GetJobIdsOperation extends Operation implements IdentifiedDataSerializable {
+public class GetJobIdsOperation
+        extends Operation
+        implements IdentifiedDataSerializable, AllowedDuringPassiveState {
 
     private Set<Long> response;
 

@@ -25,12 +25,14 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
+import com.hazelcast.jet.impl.JetNodeContext;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
@@ -63,7 +65,8 @@ public final class Jet {
      * Creates a member of the Jet cluster with the given configuration.
      */
     public static JetInstance newJetInstance(JetConfig config) {
-        return newJetInstanceImpl(config, Hazelcast::newHazelcastInstance);
+        return newJetInstanceImpl(config, cfg ->
+                HazelcastInstanceFactory.newHazelcastInstance(cfg, cfg.getInstanceName(), new JetNodeContext()));
     }
 
     /**
@@ -105,7 +108,6 @@ public final class Jet {
         HazelcastInstanceImpl hzImpl = ((HazelcastInstanceProxy) newHzFn.apply(config.getHazelcastConfig()))
                 .getOriginal();
         JetService jetService = hzImpl.node.nodeEngine.getService(JetService.SERVICE_NAME);
-        jetService.getJobCoordinationService().startScanningForJobs();
         return jetService.getJetInstance();
     }
 
@@ -113,7 +115,7 @@ public final class Jet {
         return new JetClientInstanceImpl(((HazelcastClientProxy) client).client);
     }
 
-    static void configureJetService(JetConfig jetConfig) {
+    private static void configureJetService(JetConfig jetConfig) {
         Config hzConfig = jetConfig.getHazelcastConfig();
         if (!(hzConfig.getConfigPatternMatcher() instanceof MatchingPointConfigPatternMatcher)) {
             throw new UnsupportedOperationException("Custom config pattern matcher is not supported in Jet");
@@ -142,17 +144,16 @@ public final class Jet {
                         .setClassName(JetMetricsService.class.getName())
                         .setConfigObject(jetConfig.getMetricsConfig()));
 
-        boolean hotRestartEnabled = hzConfig.getHotRestartPersistenceConfig().isEnabled();
         MapConfig metadataMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
                 .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
                 .setStatisticsEnabled(false);
         metadataMapConfig.getMergePolicyConfig().setPolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
-        metadataMapConfig.getHotRestartConfig().setEnabled(hotRestartEnabled);
+        boolean enabled = hzConfig.getHotRestartPersistenceConfig().isEnabled();
+        metadataMapConfig.getHotRestartConfig().setEnabled(enabled);
 
         MapConfig resultsMapConfig = new MapConfig(metadataMapConfig)
                 .setName(JOB_RESULTS_MAP_NAME)
                 .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
-        resultsMapConfig.getHotRestartConfig().setEnabled(hotRestartEnabled);
 
         hzConfig.addMapConfig(metadataMapConfig)
                 .addMapConfig(resultsMapConfig);

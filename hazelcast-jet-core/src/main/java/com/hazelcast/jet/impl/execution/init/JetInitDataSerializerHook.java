@@ -38,6 +38,7 @@ import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
+import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
@@ -90,6 +91,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int GET_JOB_SUMMARY_LIST_OP = 32;
     public static final int JOB_SUMMARY = 33;
     public static final int SNAPSHOT_STATS = 34;
+    public static final int PREPARE_FOR_PASSIVE_CLUSTER_OP = 35;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -177,6 +179,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new GetJobSummaryListOperation();
                 case SNAPSHOT_STATS:
                     return new SnapshotStats();
+                case PREPARE_FOR_PASSIVE_CLUSTER_OP:
+                    return new PrepareForPassiveClusterOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

@@ -22,10 +22,13 @@ import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.util.List;
 
-public class GetJobSummaryListOperation extends Operation implements IdentifiedDataSerializable {
+public class GetJobSummaryListOperation
+        extends Operation
+        implements IdentifiedDataSerializable, AllowedDuringPassiveState {
 
     private List<JobSummary> response;
 

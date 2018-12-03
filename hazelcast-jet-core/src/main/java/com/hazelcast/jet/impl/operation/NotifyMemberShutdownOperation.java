@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -28,7 +29,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
  * caller is about to shut down. The master should request termination of all
  * jobs running on caller and then the caller will actually shut down.
  */
-public class NotifyMemberShutdownOperation extends AsyncOperation {
+public class NotifyMemberShutdownOperation extends AsyncOperation implements AllowedDuringPassiveState {
 
     public NotifyMemberShutdownOperation() {
     }

@@ -19,8 +19,9 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
-public class GetJobStatusOperation extends AbstractJobOperation {
+public class GetJobStatusOperation extends AbstractJobOperation implements AllowedDuringPassiveState {
 
     private JobStatus response;
 

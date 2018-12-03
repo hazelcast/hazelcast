@@ -27,6 +27,7 @@ import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -72,7 +73,8 @@ public final class ExceptionUtil {
                 || t instanceof TargetNotMemberException
                 || t instanceof CallerNotMemberException
                 || t instanceof HazelcastInstanceNotActiveException
-                || t instanceof ShutdownInProgressException;
+                || t instanceof ShutdownInProgressException
+                || t instanceof EnteringPassiveClusterStateException;
     }
 
     /**

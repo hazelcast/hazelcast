@@ -44,7 +44,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
     private final NodeEngine nodeEngine;
     private final JetConfig config;
 
-    public JetInstanceImpl(HazelcastInstanceImpl hazelcastInstance, JetConfig config) {
+    JetInstanceImpl(HazelcastInstanceImpl hazelcastInstance, JetConfig config) {
         super(hazelcastInstance);
         this.nodeEngine = hazelcastInstance.node.getNodeEngine();
         this.config = config;

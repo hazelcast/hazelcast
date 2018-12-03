@@ -470,19 +470,15 @@ public class TopologyChangeTest extends JetTestSupport {
         for (JetInstance instance : instances) {
             warmUpPartitions(instance.getHazelcastInstance());
         }
-
         rejectOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(START_EXECUTION_OP));
 
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount - 1)));
-
         Job job = instances[0].newJob(dag);
-
         assertJobStatusEventually(job, RUNNING);
 
         // When a participant shuts down during execution
-        instances[2].shutdown();
-
+        instances[2].getHazelcastInstance().getLifecycleService().shutdown();
 
         // Then, the job restarts and successfully completes
         job.join();

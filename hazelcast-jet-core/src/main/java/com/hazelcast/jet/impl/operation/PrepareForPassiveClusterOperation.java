@@ -18,33 +18,29 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
-public class GetJobSubmissionTimeOperation extends AbstractJobOperation implements AllowedDuringPassiveState {
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
-    private long response;
+/**
+ * Sent from the member that initiates a cluster state change to the master.
+ * When the operation completes, all jobs have been terminated.
+ */
+public class PrepareForPassiveClusterOperation extends AsyncOperation {
 
-    public GetJobSubmissionTimeOperation() {
-    }
-
-    public GetJobSubmissionTimeOperation(long jobId) {
-        super(jobId);
-    }
-
-    @Override
-    public void run() {
-        JetService service = getService();
-        response = service.getJobCoordinationService().getJobSubmissionTime(jobId());
+    public PrepareForPassiveClusterOperation() {
     }
 
     @Override
-    public Object getResponse() {
-        return response;
+    protected void doRun() {
+        this.<JetService>getService()
+                .getJobCoordinationService()
+                .prepareForPassiveClusterState()
+                .whenComplete(withTryCatch(getLogger(), (r, t) -> doSendResponse(peel(t))));
     }
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.GET_JOB_SUBMISSION_TIME_OP;
+        return JetInitDataSerializerHook.PREPARE_FOR_PASSIVE_CLUSTER_OP;
     }
-
 }
