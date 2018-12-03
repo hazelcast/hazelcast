@@ -317,6 +317,6 @@ public class RestClusterTest extends HazelcastTestSupport {
     public void testHeadRequest_GarbageClusterHealth() throws Exception {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, communicator.headRequestToGarbageClusterHealthURI().responseCode);
+        assertEquals(HttpURLConnection.HTTP_NOT_FOUND, communicator.headRequestToGarbageClusterHealthURI().responseCode);
     }
 }
