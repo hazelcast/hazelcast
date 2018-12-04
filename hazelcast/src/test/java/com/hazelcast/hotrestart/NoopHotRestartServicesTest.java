@@ -50,7 +50,7 @@ public class NoopHotRestartServicesTest {
         final NoopInternalHotRestartService service = new NoopInternalHotRestartService();
         service.notifyExcludedMember(null);
         service.handleExcludedMemberUuids(null, null);
-        service.resetHotRestartData();
+        service.forceStartBeforeJoin();
 
         assertFalse(service.triggerForceStart());
         assertFalse(service.triggerPartialStart());
