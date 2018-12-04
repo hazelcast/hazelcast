@@ -51,6 +51,9 @@ public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation imp
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(isBinary() ? value : toObject(value));
         response = coll.remove(record);
+        if (coll.isEmpty()) {
+            container.delete(dataKey);
+        }
     }
 
     @Override
