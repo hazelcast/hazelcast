@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(ServiceEndpointResolver.class)
+@PrepareForTest(KubernetesApiEndpointResolver.class)
 public class KubernetesDiscoveryStrategyFactoryTest {
 
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");

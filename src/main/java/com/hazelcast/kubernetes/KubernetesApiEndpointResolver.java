@@ -16,6 +16,7 @@
 
 package com.hazelcast.kubernetes;
 
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoints;
 import com.hazelcast.kubernetes.KubernetesClient.EntrypointAddress;
 import com.hazelcast.logging.ILogger;
@@ -33,9 +34,8 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-class ServiceEndpointResolver
+class KubernetesApiEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
 
     private final String serviceName;
@@ -46,8 +46,8 @@ class ServiceEndpointResolver
     private final int port;
     private final KubernetesClient client;
 
-    ServiceEndpointResolver(ILogger logger, String serviceName, int port, String serviceLabel, String serviceLabelValue,
-                            String namespace, Boolean resolveNotReadyAddresses, String kubernetesMaster, String apiToken) {
+    KubernetesApiEndpointResolver(ILogger logger, String serviceName, int port, String serviceLabel, String serviceLabelValue,
+                                  String namespace, Boolean resolveNotReadyAddresses, String kubernetesMaster, String apiToken) {
 
         super(logger);
 
@@ -97,15 +97,24 @@ class ServiceEndpointResolver
     }
 
     private void addAddress(List<DiscoveryNode> discoveredNodes, EntrypointAddress entrypointAddress) {
-        Map<String, Object> properties = entrypointAddress.getAdditionalProperties();
         String ip = entrypointAddress.getIp();
         InetAddress inetAddress = mapAddress(ip);
-        int port = (this.port > 0) ? this.port : getServicePort(properties);
+        int port = port(entrypointAddress);
         Address address = new Address(inetAddress, port);
-        discoveredNodes.add(new SimpleDiscoveryNode(address, properties));
+        discoveredNodes.add(new SimpleDiscoveryNode(address, entrypointAddress.getAdditionalProperties()));
         if (logger.isFinestEnabled()) {
             logger.finest("Found node service with address: " + address);
         }
+    }
+
+    private int port(EntrypointAddress entrypointAddress) {
+        if (this.port > 0) {
+            return this.port;
+        }
+        if (entrypointAddress.getPort() != null) {
+            return entrypointAddress.getPort();
+        }
+        return NetworkConfig.DEFAULT_PORT;
     }
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")

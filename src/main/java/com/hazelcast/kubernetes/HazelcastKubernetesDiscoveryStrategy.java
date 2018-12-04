@@ -16,7 +16,6 @@
 
 package com.hazelcast.kubernetes;
 
-import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
@@ -44,7 +43,6 @@ final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
 
     private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
-    private static final String HAZELCAST_SERVICE_PORT = "hazelcast-service-port";
     private static final int DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS = 5;
 
     private final EndpointResolver endpointResolver;
@@ -79,7 +77,7 @@ final class HazelcastKubernetesDiscoveryStrategy
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns, port, serviceDnsTimeout);
         } else {
-            endpointResolver = new ServiceEndpointResolver(logger, serviceName, port, serviceLabel, serviceLabelValue,
+            endpointResolver = new KubernetesApiEndpointResolver(logger, serviceName, port, serviceLabel, serviceLabelValue,
                     namespace, resolveNotReadyAddresses, kubernetesMaster, apiToken);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
@@ -188,17 +186,6 @@ final class HazelcastKubernetesDiscoveryStrategy
                 logger.warning("Address '" + address + "' could not be resolved");
             }
             return null;
-        }
-
-        protected int getServicePort(Map<String, Object> properties) {
-            int port = NetworkConfig.DEFAULT_PORT;
-            if (properties != null) {
-                String servicePort = (String) properties.get(HAZELCAST_SERVICE_PORT);
-                if (servicePort != null) {
-                    port = Integer.parseInt(servicePort);
-                }
-            }
-            return port;
         }
     }
 }
