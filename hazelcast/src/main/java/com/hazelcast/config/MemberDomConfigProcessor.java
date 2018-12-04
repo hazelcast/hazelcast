@@ -27,6 +27,7 @@ import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.function.Function;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -108,7 +109,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private static final ILogger LOGGER = Logger.getLogger(MemberDomConfigProcessor.class);
 
-    private final Config config;
+    protected final Config config;
 
     MemberDomConfigProcessor(boolean domLevel3, Config config) {
         super(domLevel3);
@@ -123,7 +124,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 throw new InvalidConfigurationException(
                         "Duplicate '" + nodeName + "' definition found in XML configuration.");
             }
-            if (handleXmlNode(node, nodeName)) {
+            if (handleNode(node, nodeName)) {
                 continue;
             }
             if (!canOccurMultipleTimes(nodeName)) {
@@ -132,7 +133,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private boolean handleXmlNode(Node node, String nodeName) throws Exception {
+    private boolean handleNode(Node node, String nodeName) throws Exception {
         if (INSTANCE_NAME.isEqual(nodeName)) {
             handleInstanceName(node);
         } else if (NETWORK.isEqual(nodeName)) {
@@ -324,10 +325,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.setLiteMember(liteMember);
     }
 
-    private void handleQuorum(Node node) {
+    protected void handleQuorum(Node node) {
         QuorumConfig quorumConfig = new QuorumConfig();
         String name = getAttribute(node, "name");
         quorumConfig.setName(name);
+        handleQuorumNode(node, quorumConfig, name);
+    }
+
+    protected void handleQuorumNode(Node node, QuorumConfig quorumConfig, String name) {
         Node attrEnabled = node.getAttributes().getNamedItem("enabled");
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
         // probabilistic-quorum and recently-active-quorum quorum configs are constructed via QuorumConfigBuilder
@@ -339,12 +344,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("quorum-size".equals(nodeName)) {
                 quorumConfig.setSize(getIntegerValue("quorum-size", value));
             } else if ("quorum-listeners".equals(nodeName)) {
-                for (Node listenerNode : childElements(n)) {
-                    if ("quorum-listener".equals(cleanNodeName(listenerNode))) {
-                        String listenerClass = getTextContent(listenerNode);
-                        quorumConfig.addListenerConfig(new QuorumListenerConfig(listenerClass));
-                    }
-                }
+                handleQuorumListeners(quorumConfig, n);
             } else if ("quorum-type".equals(nodeName)) {
                 quorumConfig.setType(QuorumType.valueOf(upperCaseInternal(value)));
             } else if ("quorum-function-class-name".equals(nodeName)) {
@@ -369,6 +369,15 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             quorumConfig = constructedConfig;
         }
         config.addQuorumConfig(quorumConfig);
+    }
+
+    protected void handleQuorumListeners(QuorumConfig quorumConfig, Node n) {
+        for (Node listenerNode : childElements(n)) {
+            if ("quorum-listener".equals(cleanNodeName(listenerNode))) {
+                String listenerClass = getTextContent(listenerNode);
+                quorumConfig.addListenerConfig(new QuorumListenerConfig(listenerClass));
+            }
+        }
     }
 
     private QuorumConfigBuilder handleRecentlyActiveQuorum(String name, Node node, int quorumSize) {
@@ -452,36 +461,52 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleWanReplication(Node node) {
+    protected void handleWanReplication(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
 
         WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
         wanReplicationConfig.setName(name);
 
+        handleWanReplicationNode(node, wanReplicationConfig);
+    }
+
+    void handleWanReplicationNode(Node node, WanReplicationConfig wanReplicationConfig) {
         for (Node nodeTarget : childElements(node)) {
             String nodeName = cleanNodeName(nodeTarget);
-            if ("wan-publisher".equals(nodeName)) {
-                WanPublisherConfig publisherConfig = new WanPublisherConfig();
-                publisherConfig.setGroupName(getAttribute(nodeTarget, "group-name"));
-                publisherConfig.setPublisherId(getAttribute(nodeTarget, "publisher-id"));
-                for (Node targetChild : childElements(nodeTarget)) {
-                    handleWanPublisherConfig(publisherConfig, targetChild);
-                }
-                wanReplicationConfig.addWanPublisherConfig(publisherConfig);
-            } else if ("wan-consumer".equals(nodeName)) {
-                WanConsumerConfig consumerConfig = new WanConsumerConfig();
-                for (Node targetChild : childElements(nodeTarget)) {
-                    handleWanConsumerConfig(consumerConfig, targetChild);
-                }
-                wanReplicationConfig.setWanConsumerConfig(consumerConfig);
-            }
+            handleWanReplicationChild(wanReplicationConfig, nodeTarget, nodeName);
 
         }
         config.addWanReplicationConfig(wanReplicationConfig);
     }
 
-    private void handleWanPublisherConfig(WanPublisherConfig publisherConfig, Node targetChild) {
+    protected void handleWanReplicationChild(WanReplicationConfig wanReplicationConfig, Node nodeTarget, String nodeName) {
+        if ("wan-publisher".equals(nodeName)) {
+            WanPublisherConfig publisherConfig = new WanPublisherConfig();
+            publisherConfig.setPublisherId(getAttribute(nodeTarget, "publisher-id"));
+            publisherConfig.setGroupName(getAttribute(nodeTarget, "group-name"));
+            handleWanPublisherNode(wanReplicationConfig, nodeTarget, publisherConfig);
+        } else if ("wan-consumer".equals(nodeName)) {
+            handleWanConsumerNode(wanReplicationConfig, nodeTarget);
+        }
+    }
+
+    void handleWanPublisherNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget, WanPublisherConfig publisherConfig) {
+        for (Node targetChild : childElements(nodeTarget)) {
+            handleWanPublisherConfig(publisherConfig, targetChild);
+        }
+        wanReplicationConfig.addWanPublisherConfig(publisherConfig);
+    }
+
+    void handleWanConsumerNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget) {
+        WanConsumerConfig consumerConfig = new WanConsumerConfig();
+        for (Node targetChild : childElements(nodeTarget)) {
+            handleWanConsumerConfig(consumerConfig, targetChild);
+        }
+        wanReplicationConfig.setWanConsumerConfig(consumerConfig);
+    }
+
+    void handleWanPublisherConfig(WanPublisherConfig publisherConfig, Node targetChild) {
         String targetChildName = cleanNodeName(targetChild);
         if ("class-name".equals(targetChildName)) {
             publisherConfig.setClassName(getTextContent(targetChild));
@@ -535,7 +560,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 String value = getTextContent(child).trim();
                 config.getNetworkConfig().setReuseAddress(getBooleanValue(value));
             } else if ("port".equals(nodeName)) {
-                handlePort(child);
+                handlePort(child, config);
             } else if ("outbound-ports".equals(nodeName)) {
                 handleOutboundPorts(child);
             } else if ("public-address".equals(nodeName)) {
@@ -559,20 +584,24 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleExecutor(Node node) throws Exception {
+    protected void handleExecutor(Node node) throws Exception {
         ExecutorConfig executorConfig = new ExecutorConfig();
         handleViaReflection(node, config, executorConfig);
     }
 
-    private void handleDurableExecutor(Node node) throws Exception {
+    protected void handleDurableExecutor(Node node) throws Exception {
         DurableExecutorConfig durableExecutorConfig = new DurableExecutorConfig();
         handleViaReflection(node, config, durableExecutorConfig);
     }
 
-    private void handleScheduledExecutor(Node node) {
+    protected void handleScheduledExecutor(Node node) {
         ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
         scheduledExecutorConfig.setName(getTextContent(node.getAttributes().getNamedItem("name")));
 
+        handleScheduledExecutorNode(node, scheduledExecutorConfig);
+    }
+
+    void handleScheduledExecutorNode(Node node, ScheduledExecutorConfig scheduledExecutorConfig) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if ("merge-policy".equals(nodeName)) {
@@ -591,10 +620,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addScheduledExecutorConfig(scheduledExecutorConfig);
     }
 
-    private void handleCardinalityEstimator(Node node) {
+    protected void handleCardinalityEstimator(Node node) {
         CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
         cardinalityEstimatorConfig.setName(getTextContent(node.getAttributes().getNamedItem("name")));
 
+        handleCardinalityEstimatorNode(node, cardinalityEstimatorConfig);
+    }
+
+    void handleCardinalityEstimatorNode(Node node, CardinalityEstimatorConfig cardinalityEstimatorConfig) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if ("merge-policy".equals(nodeName)) {
@@ -612,14 +645,18 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addCardinalityEstimatorConfig(cardinalityEstimatorConfig);
     }
 
-    private void handlePNCounter(Node node) throws Exception {
+    protected void handlePNCounter(Node node) throws Exception {
         PNCounterConfig pnCounterConfig = new PNCounterConfig();
         handleViaReflection(node, config, pnCounterConfig);
     }
 
-    private void handleFlakeIdGenerator(Node node) {
+    protected void handleFlakeIdGenerator(Node node) {
         String name = getAttribute(node, "name");
         FlakeIdGeneratorConfig generatorConfig = new FlakeIdGeneratorConfig(name);
+        handleFlakeIdGeneratorNode(node, generatorConfig);
+    }
+
+    void handleFlakeIdGeneratorNode(Node node, FlakeIdGeneratorConfig generatorConfig) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
@@ -660,6 +697,10 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 interfaces.setEnabled(getBooleanValue(value));
             }
         }
+        handleInterfacesList(node, interfaces);
+    }
+
+    protected void handleInterfacesList(Node node, InterfacesConfig interfaces) {
         for (Node n : childElements(node)) {
             if ("interface".equals(lowerCaseInternal(cleanNodeName(n)))) {
                 String value = getTextContent(n).trim();
@@ -668,7 +709,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleViaReflection(Node node, Object parent, Object child) throws Exception {
+    void handleViaReflection(Node node, Object parent, Object child) throws Exception {
         NamedNodeMap attributes = node.getAttributes();
         if (attributes != null) {
             for (int a = 0; a < attributes.getLength(); a++) {
@@ -790,16 +831,20 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleDiscoveryStrategies(DiscoveryConfig discoveryConfig, Node node) {
         for (Node child : childElements(node)) {
-            String name = cleanNodeName(child);
-            if ("discovery-strategy".equals(name)) {
-                handleDiscoveryStrategy(child, discoveryConfig);
-            } else if ("node-filter".equals(name)) {
-                handleDiscoveryNodeFilter(child, discoveryConfig);
-            }
+            handleDiscoveryStrategiesChild(discoveryConfig, child);
         }
     }
 
-    private void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
+    protected void handleDiscoveryStrategiesChild(DiscoveryConfig discoveryConfig, Node child) {
+        String name = cleanNodeName(child);
+        if ("discovery-strategy".equals(name)) {
+            handleDiscoveryStrategy(child, discoveryConfig);
+        } else if ("node-filter".equals(name)) {
+            handleDiscoveryNodeFilter(child, discoveryConfig);
+        }
+    }
+
+    void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
         NamedNodeMap attributes = node.getAttributes();
         Node att = attributes.getNamedItem("class");
         if (att != null) {
@@ -807,7 +852,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleDiscoveryStrategy(Node node, DiscoveryConfig discoveryConfig) {
+    void handleDiscoveryStrategy(Node node, DiscoveryConfig discoveryConfig) {
         boolean enabled = false;
         String clazz = null;
 
@@ -893,11 +938,15 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("multicast-time-to-live".equals(cleanNodeName(n))) {
                 multicastConfig.setMulticastTimeToLive(parseInt(value));
             } else if ("trusted-interfaces".equals(cleanNodeName(n))) {
-                for (Node child : childElements(n)) {
-                    if ("interface".equals(lowerCaseInternal(cleanNodeName(child)))) {
-                        multicastConfig.addTrustedInterface(getTextContent(child).trim());
-                    }
-                }
+                handleTrustedInterfaces(multicastConfig, n);
+            }
+        }
+    }
+
+    protected void handleTrustedInterfaces(MulticastConfig multicastConfig, Node n) {
+        for (Node child : childElements(n)) {
+            if ("interface".equals(lowerCaseInternal(cleanNodeName(child)))) {
+                multicastConfig.addTrustedInterface(getTextContent(child).trim());
             }
         }
     }
@@ -932,7 +981,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleMemberList(Node node) {
+    protected void handleMemberList(Node node) {
         JoinConfig join = config.getNetworkConfig().getJoin();
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         for (Node n : childElements(node)) {
@@ -944,7 +993,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handlePort(Node node) {
+    protected void handlePort(Node node, Config config) {
         String portStr = getTextContent(node).trim();
         NetworkConfig networkConfig = config.getNetworkConfig();
         if (portStr.length() > 0) {
@@ -964,7 +1013,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleOutboundPorts(Node child) {
+    protected void handleOutboundPorts(Node child) {
         NetworkConfig networkConfig = config.getNetworkConfig();
         for (Node n : childElements(child)) {
             String nodeName = cleanNodeName(n);
@@ -975,10 +1024,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleLock(Node node) {
+    protected void handleLock(Node node) {
         String name = getAttribute(node, "name");
         LockConfig lockConfig = new LockConfig();
         lockConfig.setName(name);
+        handleLockNode(node, lockConfig);
+    }
+
+    void handleLockNode(Node node, LockConfig lockConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -989,11 +1042,15 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addLockConfig(lockConfig);
     }
 
-    private void handleQueue(Node node) {
+    protected void handleQueue(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         QueueConfig qConfig = new QueueConfig();
         qConfig.setName(name);
+        handleQueueNode(node, qConfig);
+    }
+
+    void handleQueueNode(Node node, final QueueConfig qConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -1004,14 +1061,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("async-backup-count".equals(nodeName)) {
                 qConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("item-listeners".equals(nodeName)) {
-                for (Node listenerNode : childElements(n)) {
-                    if ("item-listener".equals(cleanNodeName(listenerNode))) {
-                        NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
-                        String listenerClass = getTextContent(listenerNode);
-                        qConfig.addItemListenerConfig(new ItemListenerConfig(listenerClass, incValue));
+                handleItemListeners(n, new Function<ItemListenerConfig, Void>() {
+                    @Override
+                    public Void apply(ItemListenerConfig itemListenerConfig) {
+                        qConfig.addItemListenerConfig(itemListenerConfig);
+                        return null;
                     }
-                }
+                });
             } else if ("statistics-enabled".equals(nodeName)) {
                 qConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("queue-store".equals(nodeName)) {
@@ -1029,11 +1085,26 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addQueueConfig(qConfig);
     }
 
-    private void handleList(Node node) {
+    protected void handleItemListeners(Node n, Function<ItemListenerConfig, Void> configAddFunction) {
+        for (Node listenerNode : childElements(n)) {
+            if ("item-listener".equals(cleanNodeName(listenerNode))) {
+                NamedNodeMap attrs = listenerNode.getAttributes();
+                boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
+                String listenerClass = getTextContent(listenerNode);
+                configAddFunction.apply(new ItemListenerConfig(listenerClass, incValue));
+            }
+        }
+    }
+
+    protected void handleList(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         ListConfig lConfig = new ListConfig();
         lConfig.setName(name);
+        handleListNode(node, lConfig);
+    }
+
+    void handleListNode(Node node, final ListConfig lConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -1044,14 +1115,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("async-backup-count".equals(nodeName)) {
                 lConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("item-listeners".equals(nodeName)) {
-                for (Node listenerNode : childElements(n)) {
-                    if ("item-listener".equals(cleanNodeName(listenerNode))) {
-                        NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
-                        String listenerClass = getTextContent(listenerNode);
-                        lConfig.addItemListenerConfig(new ItemListenerConfig(listenerClass, incValue));
+                handleItemListeners(n, new Function<ItemListenerConfig, Void>() {
+                    @Override
+                    public Void apply(ItemListenerConfig itemListenerConfig) {
+                        lConfig.addItemListenerConfig(itemListenerConfig);
+                        return null;
                     }
-                }
+                });
             } else if ("statistics-enabled".equals(nodeName)) {
                 lConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("quorum-ref".equals(nodeName)) {
@@ -1065,11 +1135,15 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addListConfig(lConfig);
     }
 
-    private void handleSet(Node node) {
+    protected void handleSet(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         SetConfig sConfig = new SetConfig();
         sConfig.setName(name);
+        handleSetNode(node, sConfig);
+    }
+
+    void handleSetNode(Node node, final SetConfig sConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -1080,14 +1154,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("async-backup-count".equals(nodeName)) {
                 sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("item-listeners".equals(nodeName)) {
-                for (Node listenerNode : childElements(n)) {
-                    if ("item-listener".equals(cleanNodeName(listenerNode))) {
-                        NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
-                        String listenerClass = getTextContent(listenerNode);
-                        sConfig.addItemListenerConfig(new ItemListenerConfig(listenerClass, incValue));
+                handleItemListeners(n, new Function<ItemListenerConfig, Void>() {
+                    @Override
+                    public Void apply(ItemListenerConfig itemListenerConfig) {
+                        sConfig.addItemListenerConfig(itemListenerConfig);
+                        return null;
                     }
-                }
+                });
             } else if ("statistics-enabled".equals(nodeName)) {
                 sConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("quorum-ref".equals(nodeName)) {
@@ -1100,11 +1173,15 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addSetConfig(sConfig);
     }
 
-    private void handleMultiMap(Node node) {
+    protected void handleMultiMap(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         MultiMapConfig multiMapConfig = new MultiMapConfig();
         multiMapConfig.setName(name);
+        handleMultiMapNode(node, multiMapConfig);
+    }
+
+    void handleMultiMapNode(Node node, final MultiMapConfig multiMapConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -1117,15 +1194,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 multiMapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
                         , value));
             } else if ("entry-listeners".equals(nodeName)) {
-                for (Node listenerNode : childElements(n)) {
-                    if ("entry-listener".equals(cleanNodeName(listenerNode))) {
-                        NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
-                        boolean local = getBooleanValue(getTextContent(attrs.getNamedItem("local")));
-                        String listenerClass = getTextContent(listenerNode);
-                        multiMapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
+                handleEntryListeners(n, new Function<EntryListenerConfig, Void>() {
+                    @Override
+                    public Void apply(EntryListenerConfig entryListenerConfig) {
+                        multiMapConfig.addEntryListenerConfig(entryListenerConfig);
+                        return null;
                     }
-                }
+                });
             } else if ("statistics-enabled".equals(nodeName)) {
                 multiMapConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("binary".equals(nodeName)) {
@@ -1140,12 +1215,28 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addMultiMapConfig(multiMapConfig);
     }
 
+    protected void handleEntryListeners(Node n, Function<EntryListenerConfig, Void> configAddFunction) {
+        for (Node listenerNode : childElements(n)) {
+            if ("entry-listener".equals(cleanNodeName(listenerNode))) {
+                NamedNodeMap attrs = listenerNode.getAttributes();
+                boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
+                boolean local = getBooleanValue(getTextContent(attrs.getNamedItem("local")));
+                String listenerClass = getTextContent(listenerNode);
+                configAddFunction.apply(new EntryListenerConfig(listenerClass, local, incValue));
+            }
+        }
+    }
+
     @SuppressWarnings("deprecation")
-    private void handleReplicatedMap(Node node) {
+    protected void handleReplicatedMap(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
-        ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
+        final ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
         replicatedMapConfig.setName(name);
+        handleReplicatedMapNode(node, replicatedMapConfig);
+    }
+
+    void handleReplicatedMapNode(Node node, final ReplicatedMapConfig replicatedMapConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -1160,15 +1251,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("statistics-enabled".equals(nodeName)) {
                 replicatedMapConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("entry-listeners".equals(nodeName)) {
-                for (Node listenerNode : childElements(n)) {
-                    if ("entry-listener".equals(cleanNodeName(listenerNode))) {
-                        NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
-                        boolean local = getBooleanValue(getTextContent(attrs.getNamedItem("local")));
-                        String listenerClass = getTextContent(listenerNode);
-                        replicatedMapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
+                handleEntryListeners(n, new Function<EntryListenerConfig, Void>() {
+                    @Override
+                    public Void apply(EntryListenerConfig entryListenerConfig) {
+                        replicatedMapConfig.addEntryListenerConfig(entryListenerConfig);
+                        return null;
                     }
-                }
+                });
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 replicatedMapConfig.setMergePolicyConfig(mergePolicyConfig);
@@ -1180,10 +1269,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     @SuppressWarnings("deprecation")
-    private void handleMap(Node parentNode) {
+    protected void handleMap(Node parentNode) {
         String name = getAttribute(parentNode, "name");
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName(name);
+        handleMapNode(parentNode, mapConfig);
+    }
+
+    void handleMapNode(Node parentNode, final MapConfig mapConfig) {
         for (Node node : childElements(parentNode)) {
             String nodeName = cleanNodeName(node);
             String value = getTextContent(node).trim();
@@ -1196,13 +1289,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("eviction-policy".equals(nodeName)) {
                 mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
             } else if ("max-size".equals(nodeName)) {
-                MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
-                Node maxSizePolicy = node.getAttributes().getNamedItem("policy");
-                if (maxSizePolicy != null) {
-                    msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
-                            upperCaseInternal(getTextContent(maxSizePolicy))));
-                }
-                msc.setSize(getIntegerValue("max-size", value));
+                handleMaxSizeConfig(mapConfig, node, value);
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value
                 ));
@@ -1241,7 +1328,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("attributes".equals(nodeName)) {
                 mapAttributesHandle(node, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
-                mapEntryListenerHandle(node, mapConfig);
+                handleEntryListeners(node, new Function<EntryListenerConfig, Void>() {
+                    @Override
+                    public Void apply(EntryListenerConfig entryListenerConfig) {
+                        mapConfig.addEntryListenerConfig(entryListenerConfig);
+                        return null;
+                    }
+                });
             } else if ("partition-lost-listeners".equals(nodeName)) {
                 mapPartitionLostListenerHandle(node, mapConfig);
             } else if ("partition-strategy".equals(nodeName)) {
@@ -1261,6 +1354,16 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         config.addMapConfig(mapConfig);
+    }
+
+    protected void handleMaxSizeConfig(MapConfig mapConfig, Node node, String value) {
+        MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
+        Node maxSizePolicy = node.getAttributes().getNamedItem("policy");
+        if (maxSizePolicy != null) {
+            msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
+                    upperCaseInternal(getTextContent(maxSizePolicy))));
+        }
+        msc.setSize(getIntegerValue("max-size", value));
     }
 
     @SuppressWarnings("deprecation")
@@ -1320,10 +1423,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return hotRestartConfig;
     }
 
-    private void handleCache(Node node) {
+    protected void handleCache(Node node) {
         String name = getAttribute(node, "name");
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName(name);
+        handleCacheNode(node, cacheConfig);
+    }
+
+    void handleCacheNode(Node node, CacheSimpleConfig cacheConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -1489,7 +1596,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         cacheConfig.setWanReplicationRef(wanReplicationRef);
     }
 
-    private void handleWanFilters(Node wanChild, WanReplicationRef wanReplicationRef) {
+    protected void handleWanFilters(Node wanChild, WanReplicationRef wanReplicationRef) {
         for (Node filter : childElements(wanChild)) {
             if ("filter-impl".equals(cleanNodeName(filter))) {
                 wanReplicationRef.addFilter(getTextContent(filter));
@@ -1497,7 +1604,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void cachePartitionLostListenerHandle(Node n, CacheSimpleConfig cacheConfig) {
+    protected void cachePartitionLostListenerHandle(Node n, CacheSimpleConfig cacheConfig) {
         for (Node listenerNode : childElements(n)) {
             if ("partition-lost-listener".equals(cleanNodeName(listenerNode))) {
                 String listenerClass = getTextContent(listenerNode);
@@ -1527,10 +1634,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void mapWanReplicationRefHandle(Node n, MapConfig mapConfig) {
+    protected void mapWanReplicationRefHandle(Node n, MapConfig mapConfig) {
         WanReplicationRef wanReplicationRef = new WanReplicationRef();
         String wanName = getAttribute(n, "name");
         wanReplicationRef.setName(wanName);
+        handleMapWanReplicationRefNode(n, mapConfig, wanReplicationRef);
+    }
+
+    void handleMapWanReplicationRefNode(Node n, MapConfig mapConfig, WanReplicationRef wanReplicationRef) {
         for (Node wanChild : childElements(n)) {
             String wanChildName = cleanNodeName(wanChild);
             String wanChildValue = getTextContent(wanChild);
@@ -1545,7 +1656,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         mapConfig.setWanReplicationRef(wanReplicationRef);
     }
 
-    private void mapIndexesHandle(Node n, MapConfig mapConfig) {
+    protected void mapIndexesHandle(Node n, MapConfig mapConfig) {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
                 NamedNodeMap attrs = indexNode.getAttributes();
@@ -1556,7 +1667,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
+    protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
                 NamedNodeMap attrs = indexNode.getAttributes();
@@ -1567,7 +1678,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void mapAttributesHandle(Node n, MapConfig mapConfig) {
+    protected void mapAttributesHandle(Node n, MapConfig mapConfig) {
         for (Node extractorNode : childElements(n)) {
             if ("attribute".equals(cleanNodeName(extractorNode))) {
                 NamedNodeMap attrs = extractorNode.getAttributes();
@@ -1578,19 +1689,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void mapEntryListenerHandle(Node n, MapConfig mapConfig) {
-        for (Node listenerNode : childElements(n)) {
-            if ("entry-listener".equals(cleanNodeName(listenerNode))) {
-                NamedNodeMap attrs = listenerNode.getAttributes();
-                boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
-                boolean local = getBooleanValue(getTextContent(attrs.getNamedItem("local")));
-                String listenerClass = getTextContent(listenerNode);
-                mapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
-            }
-        }
-    }
-
-    private void mapPartitionLostListenerHandle(Node n, MapConfig mapConfig) {
+    protected void mapPartitionLostListenerHandle(Node n, MapConfig mapConfig) {
         for (Node listenerNode : childElements(n)) {
             if ("partition-lost-listener".equals(cleanNodeName(listenerNode))) {
                 String listenerClass = getTextContent(listenerNode);
@@ -1599,63 +1698,64 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void mapQueryCacheHandler(Node n, MapConfig mapConfig) {
+    protected void mapQueryCacheHandler(Node n, MapConfig mapConfig) {
         for (Node queryCacheNode : childElements(n)) {
             if ("query-cache".equals(cleanNodeName(queryCacheNode))) {
                 NamedNodeMap attrs = queryCacheNode.getAttributes();
                 String cacheName = getTextContent(attrs.getNamedItem("name"));
                 QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
-                for (Node childNode : childElements(queryCacheNode)) {
-                    String nodeName = cleanNodeName(childNode);
-                    if ("entry-listeners".equals(nodeName)) {
-                        for (Node listenerNode : childElements(childNode)) {
-                            if ("entry-listener".equals(cleanNodeName(listenerNode))) {
-                                NamedNodeMap listenerNodeAttributes = listenerNode.getAttributes();
-                                boolean incValue = getBooleanValue(
-                                        getTextContent(listenerNodeAttributes.getNamedItem("include-value")));
-                                boolean local = getBooleanValue(getTextContent(listenerNodeAttributes.getNamedItem("local")));
-                                String listenerClass = getTextContent(listenerNode);
-                                queryCacheConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
-                            }
-                        }
-                    } else {
-                        String textContent = getTextContent(childNode);
-                        if ("include-value".equals(nodeName)) {
-                            boolean includeValue = getBooleanValue(textContent);
-                            queryCacheConfig.setIncludeValue(includeValue);
-                        } else if ("batch-size".equals(nodeName)) {
-                            int batchSize = getIntegerValue("batch-size", textContent.trim());
-                            queryCacheConfig.setBatchSize(batchSize);
-                        } else if ("buffer-size".equals(nodeName)) {
-                            int bufferSize = getIntegerValue("buffer-size", textContent.trim());
-                            queryCacheConfig.setBufferSize(bufferSize);
-                        } else if ("delay-seconds".equals(nodeName)) {
-                            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim());
-                            queryCacheConfig.setDelaySeconds(delaySeconds);
-                        } else if ("in-memory-format".equals(nodeName)) {
-                            String value = textContent.trim();
-                            queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
-                        } else if ("coalesce".equals(nodeName)) {
-                            boolean coalesce = getBooleanValue(textContent);
-                            queryCacheConfig.setCoalesce(coalesce);
-                        } else if ("populate".equals(nodeName)) {
-                            boolean populate = getBooleanValue(textContent);
-                            queryCacheConfig.setPopulate(populate);
-                        } else if ("indexes".equals(nodeName)) {
-                            queryCacheIndexesHandle(childNode, queryCacheConfig);
-                        } else if ("predicate".equals(nodeName)) {
-                            queryCachePredicateHandler(childNode, queryCacheConfig);
-                        } else if ("eviction".equals(nodeName)) {
-                            queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode, false));
-                        }
-                    }
-                }
-                mapConfig.addQueryCacheConfig(queryCacheConfig);
+                handleMapQueryCacheNode(mapConfig, queryCacheNode, queryCacheConfig);
             }
         }
     }
 
-    private void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
+    void handleMapQueryCacheNode(MapConfig mapConfig, Node queryCacheNode, final QueryCacheConfig queryCacheConfig) {
+        for (Node childNode : childElements(queryCacheNode)) {
+            String nodeName = cleanNodeName(childNode);
+            if ("entry-listeners".equals(nodeName)) {
+                handleEntryListeners(childNode, new Function<EntryListenerConfig, Void>() {
+                    @Override
+                    public Void apply(EntryListenerConfig entryListenerConfig) {
+                        queryCacheConfig.addEntryListenerConfig(entryListenerConfig);
+                        return null;
+                    }
+                });
+            } else {
+                String textContent = getTextContent(childNode);
+                if ("include-value".equals(nodeName)) {
+                    boolean includeValue = getBooleanValue(textContent);
+                    queryCacheConfig.setIncludeValue(includeValue);
+                } else if ("batch-size".equals(nodeName)) {
+                    int batchSize = getIntegerValue("batch-size", textContent.trim());
+                    queryCacheConfig.setBatchSize(batchSize);
+                } else if ("buffer-size".equals(nodeName)) {
+                    int bufferSize = getIntegerValue("buffer-size", textContent.trim());
+                    queryCacheConfig.setBufferSize(bufferSize);
+                } else if ("delay-seconds".equals(nodeName)) {
+                    int delaySeconds = getIntegerValue("delay-seconds", textContent.trim());
+                    queryCacheConfig.setDelaySeconds(delaySeconds);
+                } else if ("in-memory-format".equals(nodeName)) {
+                    String value = textContent.trim();
+                    queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+                } else if ("coalesce".equals(nodeName)) {
+                    boolean coalesce = getBooleanValue(textContent);
+                    queryCacheConfig.setCoalesce(coalesce);
+                } else if ("populate".equals(nodeName)) {
+                    boolean populate = getBooleanValue(textContent);
+                    queryCacheConfig.setPopulate(populate);
+                } else if ("indexes".equals(nodeName)) {
+                    queryCacheIndexesHandle(childNode, queryCacheConfig);
+                } else if ("predicate".equals(nodeName)) {
+                    queryCachePredicateHandler(childNode, queryCacheConfig);
+                } else if ("eviction".equals(nodeName)) {
+                    queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode, false));
+                }
+            }
+        }
+        mapConfig.addQueryCacheConfig(queryCacheConfig);
+    }
+
+    protected void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
         NamedNodeMap predicateAttributes = childNode.getAttributes();
         String predicateType = getTextContent(predicateAttributes.getNamedItem("type"));
         String textContent = getTextContent(childNode);
@@ -1732,7 +1832,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return config;
     }
 
-    private MergePolicyConfig createMergePolicyConfig(Node node) {
+    protected MergePolicyConfig createMergePolicyConfig(Node node) {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
         String policyString = getTextContent(node).trim();
         mergePolicyConfig.setPolicy(policyString);
@@ -1867,21 +1967,27 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getNetworkConfig().setSocketInterceptorConfig(socketInterceptorConfig);
     }
 
-    private void handleTopic(Node node) {
+    protected void handleTopic(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         TopicConfig tConfig = new TopicConfig();
         tConfig.setName(name);
+        handleTopicNode(node, tConfig);
+    }
+
+    void handleTopicNode(Node node, final TopicConfig tConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (nodeName.equals("global-ordering-enabled")) {
                 tConfig.setGlobalOrderingEnabled(getBooleanValue(getTextContent(n)));
             } else if ("message-listeners".equals(nodeName)) {
-                for (Node listenerNode : childElements(n)) {
-                    if ("message-listener".equals(cleanNodeName(listenerNode))) {
-                        tConfig.addMessageListenerConfig(new ListenerConfig(getTextContent(listenerNode)));
+                handleMessageListeners(n, new Function<ListenerConfig, Void>() {
+                    @Override
+                    public Void apply(ListenerConfig listenerConfig) {
+                        tConfig.addMessageListenerConfig(listenerConfig);
+                        return null;
                     }
-                }
+                });
             } else if ("statistics-enabled".equals(nodeName)) {
                 tConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if ("multi-threading-enabled".equals(nodeName)) {
@@ -1891,10 +1997,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addTopicConfig(tConfig);
     }
 
-    private void handleReliableTopic(Node node) {
+    protected void handleReliableTopic(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         ReliableTopicConfig topicConfig = new ReliableTopicConfig(name);
+        handleReliableTopicNode(node, topicConfig);
+    }
+
+    void handleReliableTopicNode(Node node, final ReliableTopicConfig topicConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if ("read-batch-size".equals(nodeName)) {
@@ -1906,14 +2016,24 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 TopicOverloadPolicy topicOverloadPolicy = TopicOverloadPolicy.valueOf(upperCaseInternal(getTextContent(n)));
                 topicConfig.setTopicOverloadPolicy(topicOverloadPolicy);
             } else if ("message-listeners".equals(nodeName)) {
-                for (Node listenerNode : childElements(n)) {
-                    if ("message-listener".equals(cleanNodeName(listenerNode))) {
-                        topicConfig.addMessageListenerConfig(new ListenerConfig(getTextContent(listenerNode)));
+                handleMessageListeners(n, new Function<ListenerConfig, Void>() {
+                    @Override
+                    public Void apply(ListenerConfig listenerConfig) {
+                        topicConfig.addMessageListenerConfig(listenerConfig);
+                        return null;
                     }
-                }
+                });
             }
         }
         config.addReliableTopicConfig(topicConfig);
+    }
+
+    void handleMessageListeners(Node n, Function<ListenerConfig, Void> configAddFunction) {
+        for (Node listenerNode : childElements(n)) {
+            if ("message-listener".equals(cleanNodeName(listenerNode))) {
+                configAddFunction.apply(new ListenerConfig(getTextContent(listenerNode)));
+            }
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -1935,7 +2055,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 jConfig.setChunkSize(getIntegerValue("chunk-size", value));
             } else if ("communicate-stats".equals(nodeName)) {
                 jConfig.setCommunicateStats(value.length() == 0 ? DEFAULT_COMMUNICATE_STATS : parseBoolean(value));
-            } else if ("topology-changed-stategy".equals(nodeName)) {
+            } else if ("topology-changed-strategy".equals(nodeName)) {
                 TopologyChangedStrategy topologyChangedStrategy = JobTrackerConfig.DEFAULT_TOPOLOGY_CHANGED_STRATEGY;
                 for (TopologyChangedStrategy temp : TopologyChangedStrategy.values()) {
                     if (temp.name().equals(value)) {
@@ -1948,11 +2068,15 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addJobTrackerConfig(jConfig);
     }
 
-    private void handleSemaphore(Node node) {
+    protected void handleSemaphore(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         SemaphoreConfig sConfig = new SemaphoreConfig();
         sConfig.setName(name);
+        handleSemaphoreNode(node, sConfig);
+    }
+
+    void handleSemaphoreNode(Node node, SemaphoreConfig sConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -1971,22 +2095,26 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addSemaphoreConfig(sConfig);
     }
 
-    private void handleEventJournal(Node node) throws Exception {
+    protected void handleEventJournal(Node node) throws Exception {
         EventJournalConfig journalConfig = new EventJournalConfig();
         handleViaReflection(node, config, journalConfig);
         config.addEventJournalConfig(journalConfig);
     }
 
-    private void handleMerkleTree(Node node) throws Exception {
+    protected void handleMerkleTree(Node node) throws Exception {
         MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
         handleViaReflection(node, config, merkleTreeConfig);
         config.addMerkleTreeConfig(merkleTreeConfig);
     }
 
-    private void handleRingbuffer(Node node) {
+    protected void handleRingbuffer(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         RingbufferConfig rbConfig = new RingbufferConfig(name);
+        handleRingBufferNode(node, rbConfig);
+    }
+
+    void handleRingBufferNode(Node node, RingbufferConfig rbConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -2018,10 +2146,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addRingBufferConfig(rbConfig);
     }
 
-    private void handleAtomicLong(Node node) {
+    protected void handleAtomicLong(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         AtomicLongConfig atomicLongConfig = new AtomicLongConfig(name);
+        handleAtomicLongNode(node, atomicLongConfig);
+    }
+
+    void handleAtomicLongNode(Node node, AtomicLongConfig atomicLongConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -2035,10 +2167,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addAtomicLongConfig(atomicLongConfig);
     }
 
-    private void handleAtomicReference(Node node) {
+    protected void handleAtomicReference(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         AtomicReferenceConfig atomicReferenceConfig = new AtomicReferenceConfig(name);
+        handleAtomicReferenceNode(node, atomicReferenceConfig);
+    }
+
+    void handleAtomicReferenceNode(Node node, AtomicReferenceConfig atomicReferenceConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -2052,10 +2188,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addAtomicReferenceConfig(atomicReferenceConfig);
     }
 
-    private void handleCountDownLatchConfig(Node node) {
+    protected void handleCountDownLatchConfig(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         CountDownLatchConfig countDownLatchConfig = new CountDownLatchConfig(name);
+        handleCountDownLatchNode(node, countDownLatchConfig);
+    }
+
+    void handleCountDownLatchNode(Node node, CountDownLatchConfig countDownLatchConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -2066,7 +2206,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addCountDownLatchConfig(countDownLatchConfig);
     }
 
-    private void handleListeners(Node node) {
+    protected void handleListeners(Node node) {
         for (Node child : childElements(node)) {
             if ("listener".equals(cleanNodeName(child))) {
                 String listenerClass = getTextContent(child);
@@ -2087,12 +2227,12 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getPartitionGroupConfig().setGroupType(groupType);
         for (Node child : childElements(node)) {
             if ("member-group".equals(cleanNodeName(child))) {
-                handleMemberGroup(child);
+                handleMemberGroup(child, config);
             }
         }
     }
 
-    private void handleMemberGroup(Node node) {
+    protected void handleMemberGroup(Node node, Config config) {
         MemberGroupConfig memberGroupConfig = new MemberGroupConfig();
         for (Node child : childElements(node)) {
             if ("interface".equals(cleanNodeName(child))) {
@@ -2166,9 +2306,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("member-credentials-factory".equals(nodeName)) {
                 handleCredentialsFactory(child);
             } else if ("member-login-modules".equals(nodeName)) {
-                handleLoginModules(child, true);
+                handleLoginModules(child, true, config);
             } else if ("client-login-modules".equals(nodeName)) {
-                handleLoginModules(child, false);
+                handleLoginModules(child, false, config);
             } else if ("client-permission-policy".equals(nodeName)) {
                 handlePermissionPolicy(child);
             } else if ("client-permissions".equals(nodeName)) {
@@ -2184,44 +2324,52 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleSecurityInterceptors(Node node) {
         SecurityConfig cfg = config.getSecurityConfig();
         for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            if ("interceptor".equals(nodeName)) {
-                NamedNodeMap attrs = child.getAttributes();
-                Node classNameNode = attrs.getNamedItem("class-name");
-                String className = getTextContent(classNameNode);
-                cfg.addSecurityInterceptorConfig(new SecurityInterceptorConfig(className));
-            }
+            handleSecurityInterceptorsChild(cfg, child);
         }
     }
 
-    private void handleMemberAttributes(Node node) {
+    protected void handleSecurityInterceptorsChild(SecurityConfig cfg, Node child) {
+        String nodeName = cleanNodeName(child);
+        if ("interceptor".equals(nodeName)) {
+            NamedNodeMap attrs = child.getAttributes();
+            Node classNameNode = attrs.getNamedItem("class-name");
+            String className = getTextContent(classNameNode);
+            cfg.addSecurityInterceptorConfig(new SecurityInterceptorConfig(className));
+        }
+    }
+
+    protected void handleMemberAttributes(Node node) {
         for (Node n : childElements(node)) {
             String name = cleanNodeName(n);
             if (!"attribute".equals(name)) {
                 continue;
             }
-            String attributeName = getTextContent(n.getAttributes().getNamedItem("name"));
-            String attributeType = getTextContent(n.getAttributes().getNamedItem("type"));
             String value = getTextContent(n);
-            if ("string".equals(attributeType)) {
-                config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
-            } else if ("boolean".equals(attributeType)) {
-                config.getMemberAttributeConfig().setBooleanAttribute(attributeName, parseBoolean(value));
-            } else if ("byte".equals(attributeType)) {
-                config.getMemberAttributeConfig().setByteAttribute(attributeName, Byte.parseByte(value));
-            } else if ("double".equals(attributeType)) {
-                config.getMemberAttributeConfig().setDoubleAttribute(attributeName, Double.parseDouble(value));
-            } else if ("float".equals(attributeType)) {
-                config.getMemberAttributeConfig().setFloatAttribute(attributeName, Float.parseFloat(value));
-            } else if ("int".equals(attributeType)) {
-                config.getMemberAttributeConfig().setIntAttribute(attributeName, parseInt(value));
-            } else if ("long".equals(attributeType)) {
-                config.getMemberAttributeConfig().setLongAttribute(attributeName, parseLong(value));
-            } else if ("short".equals(attributeType)) {
-                config.getMemberAttributeConfig().setShortAttribute(attributeName, Short.parseShort(value));
-            } else {
-                config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
-            }
+            String attributeName = getTextContent(n.getAttributes().getNamedItem("name"));
+            handleMemberAttributesNode(n, attributeName, value);
+        }
+    }
+
+    void handleMemberAttributesNode(Node n, String attributeName, String value) {
+        String attributeType = getTextContent(n.getAttributes().getNamedItem("type"));
+        if ("string".equals(attributeType)) {
+            config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
+        } else if ("boolean".equals(attributeType)) {
+            config.getMemberAttributeConfig().setBooleanAttribute(attributeName, parseBoolean(value));
+        } else if ("byte".equals(attributeType)) {
+            config.getMemberAttributeConfig().setByteAttribute(attributeName, Byte.parseByte(value));
+        } else if ("double".equals(attributeType)) {
+            config.getMemberAttributeConfig().setDoubleAttribute(attributeName, Double.parseDouble(value));
+        } else if ("float".equals(attributeType)) {
+            config.getMemberAttributeConfig().setFloatAttribute(attributeName, Float.parseFloat(value));
+        } else if ("int".equals(attributeType)) {
+            config.getMemberAttributeConfig().setIntAttribute(attributeName, parseInt(value));
+        } else if ("long".equals(attributeType)) {
+            config.getMemberAttributeConfig().setLongAttribute(attributeName, parseLong(value));
+        } else if ("short".equals(attributeType)) {
+            config.getMemberAttributeConfig().setShortAttribute(attributeName, Short.parseShort(value));
+        } else {
+            config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
         }
     }
 
@@ -2241,7 +2389,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleLoginModules(Node node, boolean member) {
+    protected void handleLoginModules(Node node, boolean member, Config config) {
         SecurityConfig cfg = config.getSecurityConfig();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
@@ -2256,7 +2404,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private LoginModuleConfig handleLoginModule(Node node) {
+    LoginModuleConfig handleLoginModule(Node node) {
         NamedNodeMap attrs = node.getAttributes();
         Node classNameNode = attrs.getNamedItem("class-name");
         String className = getTextContent(classNameNode);
@@ -2291,7 +2439,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleSecurityPermissions(Node node) {
+    protected void handleSecurityPermissions(Node node) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             PermissionConfig.PermissionType type;
@@ -2346,7 +2494,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleSecurityPermission(Node node, PermissionConfig.PermissionType type) {
+    void handleSecurityPermission(Node node, PermissionConfig.PermissionType type) {
         SecurityConfig cfg = config.getSecurityConfig();
         NamedNodeMap attrs = node.getAttributes();
         Node nameNode = attrs.getNamedItem("name");
@@ -2365,7 +2513,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleSecurityPermissionEndpoints(Node node, PermissionConfig permConfig) {
+    void handleSecurityPermissionEndpoints(Node node, PermissionConfig permConfig) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if ("endpoint".equals(nodeName)) {
@@ -2374,7 +2522,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleSecurityPermissionActions(Node node, PermissionConfig permConfig) {
+    void handleSecurityPermissionActions(Node node, PermissionConfig permConfig) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if ("action".equals(nodeName)) {

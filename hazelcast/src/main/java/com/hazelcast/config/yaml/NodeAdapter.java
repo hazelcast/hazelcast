@@ -31,11 +31,15 @@ import org.w3c.dom.UserDataHandler;
 import static com.hazelcast.config.yaml.EmptyNamedNodeMap.emptyNamedNodeMap;
 import static com.hazelcast.config.yaml.EmptyNodeList.emptyNodeList;
 
-class NodeAdapter implements Node {
+public class NodeAdapter implements Node {
     private final YamlNode yamlNode;
 
     NodeAdapter(YamlNode yamlNode) {
         this.yamlNode = yamlNode;
+    }
+
+    public YamlNode getYamlNode() {
+        return yamlNode;
     }
 
     @Override
@@ -68,7 +72,7 @@ class NodeAdapter implements Node {
 
     @Override
     public NodeList getChildNodes() {
-        if (!(yamlNode instanceof YamlCollection) || ((YamlCollection) yamlNode).childCount() == 0) {
+        if (!hasChildNodes()) {
             return emptyNodeList();
         }
 
@@ -134,7 +138,7 @@ class NodeAdapter implements Node {
 
     @Override
     public boolean hasChildNodes() {
-        throw new UnsupportedOperationException();
+        return yamlNode instanceof YamlCollection && ((YamlCollection) yamlNode).childCount() > 0;
     }
 
     @Override

@@ -16,19 +16,11 @@
 
 package com.hazelcast.internal.yaml;
 
-final class YamlUtil {
+public final class YamlUtil {
     private YamlUtil() {
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     public static YamlMapping asMapping(YamlNode node) {
-=======
-    static YamlMapping asMapping(YamlNode node) {
->>>>>>> c7c962bb23... YAML loader and YAML specific DOM builder
-=======
-    public static YamlMapping asMapping(YamlNode node) {
->>>>>>> d32190751c... YAML to W3C DOM adapter
         if (node != null && !(node instanceof YamlMapping)) {
             String nodeName = node.nodeName();
             throw new YamlException("Child " + nodeName + " is not a mapping, it's actual type is " + node.getClass());
@@ -37,7 +29,7 @@ final class YamlUtil {
         return (YamlMapping) node;
     }
 
-    static YamlSequence asSequence(YamlNode node) {
+    public static YamlSequence asSequence(YamlNode node) {
         if (node != null && !(node instanceof YamlSequence)) {
             String nodeName = node.nodeName();
             throw new YamlException("Child " + nodeName + " is not a sequence, it's actual type is " + node.getClass());
@@ -46,7 +38,7 @@ final class YamlUtil {
         return (YamlSequence) node;
     }
 
-    static YamlScalar asScalar(YamlNode node) {
+    public static YamlScalar asScalar(YamlNode node) {
         if (node != null && !(node instanceof YamlScalar)) {
             String nodeName = node.nodeName();
             throw new YamlException("Child " + nodeName + " is not a scalar, it's actual type is " + node.getClass());

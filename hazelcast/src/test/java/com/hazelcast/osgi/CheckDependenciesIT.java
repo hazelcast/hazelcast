@@ -59,7 +59,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
             // these 2 XML-related packages are part of the platform since Java SE 6
             "org.xml.sax",
             "org.w3c.dom",
-    };
+            };
 
     @Test
     public void testNoMandatoryDependencyDeclared() throws IOException, InterruptedException {

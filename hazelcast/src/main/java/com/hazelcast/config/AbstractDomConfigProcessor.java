@@ -198,7 +198,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         }
     }
 
-    private ClassFilter parseClassFilterList(Node node) {
+    protected ClassFilter parseClassFilterList(Node node) {
         ClassFilter list = new ClassFilter();
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);

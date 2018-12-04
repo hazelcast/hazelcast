@@ -40,13 +40,12 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 /**
  * A XML {@link ConfigBuilder} implementation.
  */
-public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBuilder {
+public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements ConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlConfigBuilder.class);
 
     private final InputStream in;
 
-    private Properties properties = System.getProperties();
     private File configurationFile;
     private URL configurationUrl;
 
@@ -97,17 +96,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     }
 
     /**
-     * Gets the current used properties. Can be null if no properties are set.
-     *
-     * @return the current used properties
-     * @see #setProperties(java.util.Properties)
-     */
-    @Override
-    public Properties getProperties() {
-        return properties;
-    }
-
-    /**
      * Sets the used properties. Can be null if no properties should be used.
      * <p>
      * Properties are used to resolve ${variable} occurrences in the XML file.
@@ -115,13 +103,13 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
      * @param properties the new properties
      * @return the XmlConfigBuilder
      */
-    public XmlConfigBuilder setProperties(Properties properties) {
-        this.properties = properties;
+    protected XmlConfigBuilder setProperties(Properties properties) {
+        super.setPropertiesInternal(properties);
         return this;
     }
 
     @Override
-    protected ConfigType getXmlType() {
+    protected ConfigType getConfigType() {
         return ConfigType.SERVER;
     }
 

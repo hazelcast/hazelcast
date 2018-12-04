@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.AbstractConfigBuilder.ConfigType;
+import com.hazelcast.config.AbstractXmlConfigBuilder.ConfigType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
@@ -57,13 +57,13 @@ public abstract class AbstractXmlConfigHelper {
 
     final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
 
-    private final String hazelcastSchemaLocation = getXmlType().name + "-config-" + getReleaseVersion() + ".xsd";
+    private final String hazelcastSchemaLocation = getConfigType().name + "-config-" + getReleaseVersion() + ".xsd";
 
     public String getNamespaceType() {
-        return getXmlType().name.equals("hazelcast") ? "config" : "client-config";
+        return getConfigType().name.equals("hazelcast") ? "config" : "client-config";
     }
 
-    protected ConfigType getXmlType() {
+    protected ConfigType getConfigType() {
         return ConfigType.SERVER;
     }
 

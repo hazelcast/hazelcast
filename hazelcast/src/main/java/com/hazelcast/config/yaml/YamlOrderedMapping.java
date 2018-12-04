@@ -19,7 +19,7 @@ package com.hazelcast.config.yaml;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 
-interface YamlOrderedMapping extends YamlMapping {
+public interface YamlOrderedMapping extends YamlMapping {
 
     /**
      * Gets a child node by its index

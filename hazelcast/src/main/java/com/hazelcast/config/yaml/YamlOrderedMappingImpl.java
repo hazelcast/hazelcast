@@ -24,7 +24,7 @@ import com.hazelcast.internal.yaml.YamlSequence;
 import java.util.ArrayList;
 import java.util.List;
 
-class YamlOrderedMappingImpl implements YamlOrderedMapping {
+public class YamlOrderedMappingImpl implements YamlOrderedMapping {
     private final YamlMapping wrappedMapping;
     private final List<YamlNode> randomAccessChildren;
 
@@ -94,7 +94,7 @@ class YamlOrderedMappingImpl implements YamlOrderedMapping {
         return randomAccessChildren.get(index);
     }
 
-    static YamlOrderedMappingImpl asOrderedMapping(YamlMapping yamlMapping) {
+    public static YamlOrderedMappingImpl asOrderedMapping(YamlMapping yamlMapping) {
         return new YamlOrderedMappingImpl(yamlMapping);
     }
 

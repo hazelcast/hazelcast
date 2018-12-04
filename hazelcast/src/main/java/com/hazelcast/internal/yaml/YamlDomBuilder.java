@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.yaml;
 
+import com.hazelcast.config.InvalidConfigurationException;
+
 import java.util.List;
 import java.util.Map;
 
@@ -33,11 +35,11 @@ public final class YamlDomBuilder {
 
     static YamlNode build(Object document, String rootName) {
         if (document == null) {
-            throw new YamlException("The provided document is null");
+            throw new InvalidConfigurationException("The provided document is null");
         }
 
         if (rootName != null && !(document instanceof Map)) {
-            throw new YamlException("The provided document is not a Map, and rootName is defined.");
+            throw new InvalidConfigurationException("The provided document is not a Map, and rootName is defined.");
         }
 
         final Object rootNode;
@@ -45,7 +47,8 @@ public final class YamlDomBuilder {
             rootNode = ((Map) document).get(rootName);
 
             if (rootNode == null) {
-                throw new YamlException("The required " + rootName + " root node couldn't be found in the document root");
+                throw new InvalidConfigurationException("The required " + rootName
+                        + " root node couldn't be found in the document root");
             }
         } else {
             rootNode = document;

@@ -23,7 +23,7 @@ import org.w3c.dom.Node;
  * and filling config object graph.
  *
  * @see MemberDomConfigProcessor
- * @see AbstractConfigBuilder
+ * @see AbstractXmlConfigBuilder
  */
 public interface DomConfigProcessor {
 

@@ -67,7 +67,7 @@ public abstract class AbstractConfigLocator {
         }
     }
 
-    protected boolean loadHazelcastConfigFromClasspath(String configFileName) {
+    protected boolean loadConfigurationFromClasspath(String configFileName) {
         URL url = Config.class.getClassLoader().getResource(configFileName);
         if (url == null) {
             LOGGER.finest("Could not find '" + configFileName + "' in classpath.");
