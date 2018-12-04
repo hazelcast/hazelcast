@@ -105,10 +105,11 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
                 .aggregate(AggregateOperations.counting()).setLocalParallelism(PARTITION_COUNT)
                 .drainTo(SinkBuilder.sinkBuilder("throwing", ctx -> "").
                         <TimestampedEntry<String, Long>>receiveFn((w, e) -> {
-                    if (e.getValue() != COUNT) {
-                        throw new RuntimeException("Received unexpected item " + e + ", expected count is " + COUNT);
-                    }
-                }).build());
+                            if (e.getValue() != COUNT) {
+                                throw new RuntimeException("Received unexpected item " + e + ", expected count is "
+                                        + COUNT);
+                            }
+                        }).build());
 
         Job job = instance.newJob(p, new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE));
 
@@ -137,9 +138,10 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
             }
         }
 
-        // check, if the job failed
+        // check that the job is running
         JobStatus status = job.getStatus();
-        assertTrue(status != FAILED && status != COMPLETED && status != SUSPENDED);
+        assertTrue("job should not be completed, status=" + status,
+                status != FAILED && status != COMPLETED && status != SUSPENDED);
     }
 
     private void producer(String key, int delayMs) {

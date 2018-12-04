@@ -21,7 +21,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
-import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
@@ -50,8 +50,8 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
         MockPS.initCount.set(0);
         MockPS.receivedCloseErrors.clear();
 
-        StuckProcessor.proceedLatch = new CountDownLatch(1);
-        StuckProcessor.executionStarted = new CountDownLatch(PARALLELISM);
+        NoOutputSourceP.proceedLatch = new CountDownLatch(1);
+        NoOutputSourceP.executionStarted = new CountDownLatch(PARALLELISM);
 
         JetConfig config = new JetConfig();
         config.getHazelcastConfig().setLiteMember(true);
@@ -68,18 +68,18 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
                 SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
 
         Future<Job> future = spawn(() -> {
-            DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, 1)));
+            DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, 1)));
             return instance2.newJob(dag);
         });
 
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
 
         // When the coordinator leaves before the submission response is received
         instance1.getHazelcastInstance().getLifecycleService().terminate();
         Job job = future.get();
 
         // Then the job completes successfully
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
         job.join();
         assertEquals(2, MockPS.initCount.get());
     }
@@ -92,14 +92,14 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
 
         String jobName = "job1";
         Future<Job> future = spawn(() -> {
-            DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, 1)));
+            DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, 1)));
             return instance2.newJob(dag, new JobConfig().setName(jobName));
         });
 
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
         Job submittedJob = instance1.getJob(jobName);
         assertNotNull(submittedJob);
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
 
         submittedJob.join();
 

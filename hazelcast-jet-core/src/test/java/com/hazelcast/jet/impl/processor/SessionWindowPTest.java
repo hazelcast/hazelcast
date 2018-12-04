@@ -137,6 +137,19 @@ public class SessionWindowPTest {
                 ));
     }
 
+    @Test
+    public void when_sessionsTouch_then_shouldNotBeMerged() {
+        verifyProcessor(supplier)
+                .input(asList(
+                        entry("key", 0L),
+                        entry("key", 10L)
+                ))
+                .expectOutput(asList(
+                        new WindowResult(0, 10, "key", 1L),
+                        new WindowResult(10, 20, "key", 1L)
+                ));
+    }
+
     private void assertCorrectness(List<Object> events) {
         List<Object> expectedOutput = events.stream()
                                                .map(e -> ((Entry<String, Long>) e).getKey())

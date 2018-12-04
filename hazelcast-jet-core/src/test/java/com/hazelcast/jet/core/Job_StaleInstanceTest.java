@@ -20,7 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.core.TestProcessors.StuckForeverSourceP;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -30,15 +30,15 @@ import org.junit.runner.RunWith;
 import java.util.Iterator;
 import java.util.Optional;
 
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 
 /**
  * This class tests Job operations when a master doesn't know of the job
  * because it restarted. All tests check that it fails as it should.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-public class Job_StaleInstanceTest {
+public class Job_StaleInstanceTest extends JetTestSupport {
 
     private static JetTestInstanceFactory instanceFactory;
     private static JetInstance client;
@@ -46,19 +46,17 @@ public class Job_StaleInstanceTest {
 
     @BeforeClass
     public static void beforeClass() {
+        TestProcessors.reset(1);
         instanceFactory = new JetTestInstanceFactory();
         JetInstance instance = instanceFactory.newMember();
         DAG dag = new DAG();
-        dag.newVertex("v", StuckForeverSourceP::new);
-
+        dag.newVertex("v", () -> new NoOutputSourceP());
         client = instanceFactory.newClient();
         job = client.newJob(dag);
-        assertEqualsEventually(() -> job.getStatus(), JobStatus.RUNNING);
+        assertJobStatusEventually(job, RUNNING);
 
         instance.getHazelcastInstance().getLifecycleService().terminate();
-
         instance = instanceFactory.newMember();
-
         assertEqualsEventually(() -> firstItem(client.getHazelcastInstance().getCluster().getMembers())
                         .map(Member::getAddress).orElse(null),
                 instance.getHazelcastInstance().getCluster().getLocalMember().getAddress());
@@ -74,6 +72,7 @@ public class Job_StaleInstanceTest {
 
     @AfterClass
     public static void afterClass() {
+        TestProcessors.reset(1);
         instanceFactory.shutdownAll();
     }
 

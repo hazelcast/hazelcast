@@ -67,7 +67,7 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
         if (emitsWatermarks || eventTimePolicy == null) {
             // Reached when the source either emits both JetEvents and watermarks
             // or neither. In these cases we don't have to insert watermarks.
-            p.addVertex(this, p.uniqueVertexName(name(), ""), localParallelism(),
+            p.addVertex(this, p.uniqueVertexName(name()), localParallelism(),
                     metaSupplierFn.apply(eventTimePolicy != null ? eventTimePolicy : noEventTime())
             );
         } else {
@@ -80,7 +80,7 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
             //                  -------------
             //                 |  insertWMP  |
             //                  -------------
-            String v1name = p.uniqueVertexName(name(), "");
+            String v1name = p.uniqueVertexName(name());
             Vertex v1 = p.dag.newVertex(v1name, metaSupplierFn.apply(eventTimePolicy))
                              .localParallelism(localParallelism());
             PlannerVertex pv2 = p.addVertex(

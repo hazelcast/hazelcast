@@ -20,7 +20,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
-import com.hazelcast.jet.core.TestProcessors.StuckForeverSourceP;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,7 +40,7 @@ public class ScaleUpTest extends JetTestSupport {
     private void setup(long scaleUpDelay) {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
-        dag = new DAG().vertex(new Vertex("test", new MockPS(StuckForeverSourceP::new, NODE_COUNT)));
+        dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
         config = new JetConfig();
         config.getInstanceConfig().setScaleUpDelayMillis(scaleUpDelay);
         instances = createJetMembers(config, NODE_COUNT);

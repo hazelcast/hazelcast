@@ -51,7 +51,7 @@ public class SinkTransform<T> extends AbstractTransform {
     public void addToDag(Planner p) {
         PlannerVertex pv = p.addVertex(
                 this,
-                p.uniqueVertexName(name(), ""),
+                p.uniqueVertexName(name()),
                 localParallelism(),
                 adaptingMetaSupplier(metaSupplier, ordinalsToAdapt)
         );

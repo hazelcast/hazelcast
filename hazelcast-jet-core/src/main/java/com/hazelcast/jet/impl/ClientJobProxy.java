@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
@@ -30,6 +30,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
@@ -52,13 +53,13 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 /**
  * {@link Job} proxy on client.
  */
-public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl> {
+public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
 
-    ClientJobProxy(HazelcastClientInstanceImpl client, long jobId) {
+    ClientJobProxy(JetClientInstanceImpl client, long jobId) {
         super(client, jobId);
     }
 
-    ClientJobProxy(HazelcastClientInstanceImpl client, long jobId, DAG dag, JobConfig config) {
+    ClientJobProxy(JetClientInstanceImpl client, long jobId, DAG dag, JobConfig config) {
         super(client, jobId, dag, config);
     }
 
@@ -104,6 +105,28 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     @Override
+    public JobStateSnapshot cancelAndExportSnapshot(String name) {
+        ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, true);
+        try {
+            new CancellableFuture<>(invocation(request, masterAddress()).invoke()).get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+        return container().getJobStateSnapshot(name);
+    }
+
+    @Override
+    public JobStateSnapshot exportSnapshot(String name) {
+        ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, false);
+        try {
+            new CancellableFuture<>(invocation(request, masterAddress()).invoke()).get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+        return container().getJobStateSnapshot(name);
+    }
+
+    @Override
     protected long doGetJobSubmissionTime() {
         ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId());
         try {
@@ -132,16 +155,18 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
 
     @Override
     protected SerializationService serializationService() {
-        return container().getSerializationService();
+        return container().getHazelcastClient().getSerializationService();
     }
 
     @Override
     protected LoggingService loggingService() {
-        return container().getLoggingService();
+        return container().getHazelcastClient().getLoggingService();
     }
 
     private ClientInvocation invocation(ClientMessage request, Address invocationAddr) {
-        return new ClientInvocation(container(), request, "jobId=" + idToString(getId()), invocationAddr);
+        return new ClientInvocation(
+                container().getHazelcastClient(), request, "jobId=" + idToString(getId()), invocationAddr
+        );
     }
 
     /**

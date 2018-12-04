@@ -32,6 +32,7 @@ import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -94,18 +95,22 @@ public class DotTest {
         System.out.println(actualDag);
         // contains multiple subgraphs, order isn't stable, we'll assert individual lines and the length
         assertTrue(actualDag.startsWith("digraph DAG {"));
-        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToCount-step1\" [label=\"partitioned\"];"));
+        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
+                + "\" [label=\"partitioned\"];"));
         assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"filter\";"));
-        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToSet-step1\" [label=\"partitioned\"];"));
+        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToSet" + FIRST_STAGE_VERTEX_NAME_SUFFIX
+                + "\" [label=\"partitioned\"];"));
         assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n" +
-                "\t\t\"aggregateToCount-step1\" -> \"aggregateToCount-step2\" \\[label=\"distributed-partitioned\"];\n" +
+                "\t\t\"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
+                        + "\" -> \"aggregateToCount\" \\[label=\"distributed-partitioned\"];\n" +
                 "\t}"));
 
-        assertTrue(regexContains(actualDag, "\"aggregateToCount-step2\" -> \"loggerSink(-[23])?\";"));
+        assertTrue(regexContains(actualDag, "\"aggregateToCount\" -> \"loggerSink(-[23])?\";"));
         assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n" +
-                "\t\t\"aggregateToSet-step1\" -> \"aggregateToSet-step2\" \\[label=\"distributed-partitioned\"];\n" +
+                "\t\t\"aggregateToSet" + FIRST_STAGE_VERTEX_NAME_SUFFIX + "\" -> \"aggregateToSet\" "
+                        + "\\[label=\"distributed-partitioned\"];\n" +
                 "\t}"));
-        assertTrue(regexContains(actualDag, "\"aggregateToSet-step2\" -> \"loggerSink(-[23])?\";"));
+        assertTrue(regexContains(actualDag, "\"aggregateToSet\" -> \"loggerSink(-[23])?\";"));
         assertTrue(regexContains(actualDag, "\"filter\" -> \"loggerSink(-[23])?\";"));
         assertTrue(actualDag.endsWith("\n}"));
     }
@@ -129,11 +134,13 @@ public class DotTest {
                 "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
                 "}", p.toDotString());
         assertEquals("digraph DAG {\n" +
-                "\t\"mapSource(source1\\\")\" -> \"aggregateToCount-step1\" [label=\"partitioned\"];\n" +
+                "\t\"mapSource(source1\\\")\" -> \"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
+                        + "\" [label=\"partitioned\"];\n" +
                 "\tsubgraph cluster_0 {\n" +
-                "\t\t\"aggregateToCount-step1\" -> \"aggregateToCount-step2\" [label=\"distributed-partitioned\"];\n" +
+                "\t\t\"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
+                        + "\" -> \"aggregateToCount\" [label=\"distributed-partitioned\"];\n" +
                 "\t}\n" +
-                "\t\"aggregateToCount-step2\" -> \"loggerSink\";\n" +
+                "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
                 "}", p.toDag().toDotString());
     }
 }

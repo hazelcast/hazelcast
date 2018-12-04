@@ -157,7 +157,7 @@ public class ProcessorTaskletTest_Snapshots {
         assertEquals(emptyList(), getSnapshotBufferValues());
 
         // When
-        snapshotContext.startNewSnapshot(0, 0, false);
+        snapshotContext.startNewSnapshot(0, "map", false);
         outstream1.flush();
 
         callUntil(tasklet, NO_PROGRESS);

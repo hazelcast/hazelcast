@@ -21,7 +21,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import org.junit.Test;
 
-import static com.hazelcast.jet.Jet.INTERNAL_JET_OBJECTS_PREFIX;
+import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static org.junit.Assert.assertEquals;
 
 public class JetTest extends JetTestSupport {

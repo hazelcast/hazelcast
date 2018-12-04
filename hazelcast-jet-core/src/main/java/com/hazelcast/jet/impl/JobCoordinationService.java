@@ -61,7 +61,7 @@ import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
-import static com.hazelcast.jet.impl.TerminationMode.CANCEL;
+import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
@@ -222,7 +222,7 @@ public class JobCoordinationService {
 
         JobResult jobResult = jobRepository.getJobResult(jobId);
         if (jobResult != null) {
-            if (terminationMode == CANCEL) {
+            if (terminationMode == CANCEL_FORCEFUL) {
                 logger.fine("Ignoring cancellation of a completed job " + idToString(jobId));
                 return;
             }
@@ -249,7 +249,7 @@ public class JobCoordinationService {
         // it will restart.
         // In any case, it doesn't make sense to restart a suspended job.
         JobStatus jobStatus = masterContext.jobStatus();
-        if (jobStatus != RUNNING && terminationMode != CANCEL) {
+        if (jobStatus != RUNNING && terminationMode != CANCEL_FORCEFUL) {
             throw new IllegalStateException("Cannot " + terminationMode + ", job status is " + jobStatus
                     + ", should be " + RUNNING);
         }
@@ -355,6 +355,16 @@ public class JobCoordinationService {
             throw new JobNotFoundException("MasterContext not found to resume job " + idToString(jobId));
         }
         masterContext.resumeJob(jobRepository::newExecutionId);
+    }
+
+    public CompletableFuture<Void> exportSnapshot(long jobId, String name, boolean cancelJob) {
+        assertIsMaster("Cannot export snapshot for job " + idToString(jobId) + " from non-master node");
+
+        MasterContext masterContext = masterContexts.get(jobId);
+        if (masterContext == null) {
+            throw new JobNotFoundException("MasterContext not found to export snapshot of job " + idToString(jobId));
+        }
+        return masterContext.exportSnapshot(name, cancelJob);
     }
 
     /**
@@ -487,44 +497,14 @@ public class JobCoordinationService {
                 RETRY_DELAY_IN_MILLIS, MILLISECONDS);
     }
 
-    void scheduleSnapshot(long jobId, long executionId) {
-        MasterContext masterContext = masterContexts.get(jobId);
-        if (masterContext == null) {
-            logger.warning("MasterContext not found to schedule snapshot of " + idToString(jobId));
-            return;
-        }
-        long snapshotInterval = masterContext.jobConfig().getSnapshotIntervalMillis();
+    void scheduleSnapshot(MasterContext mc, long executionId) {
+        long snapshotInterval = mc.jobConfig().getSnapshotIntervalMillis();
         InternalExecutionService executionService = nodeEngine.getExecutionService();
         if (logger.isFineEnabled()) {
-            logger.fine(masterContext.jobIdString() + " snapshot is scheduled in " + snapshotInterval + "ms");
+            logger.fine(mc.jobIdString() + " snapshot is scheduled in " + snapshotInterval + "ms");
         }
-        executionService.schedule(COORDINATOR_EXECUTOR_NAME, () -> beginSnapshot(jobId, executionId),
+        executionService.schedule(COORDINATOR_EXECUTOR_NAME, () -> mc.startScheduledSnapshot(executionId),
                 snapshotInterval, MILLISECONDS);
-    }
-
-    void beginSnapshot(long jobId, long executionId) {
-        MasterContext masterContext = masterContexts.get(jobId);
-        if (masterContext == null) {
-            logger.warning("MasterContext not found to schedule snapshot of " + idToString(jobId));
-            return;
-        }
-        if (masterContext.jobCompletionFuture().isDone() || masterContext.isCancelled()
-                || masterContext.jobStatus() != RUNNING) {
-            logger.fine("Not starting snapshot since " + masterContext.jobIdString() + " is done.");
-            return;
-        }
-
-        if (!isMaster()) {
-            logger.warning("Not starting snapshot, not a master, master is "
-                    + nodeEngine.getClusterService().getMasterAddress());
-            return;
-        }
-        if (!nodeEngine.isRunning()) {
-            logger.warning("Not starting snapshot, node engine is not running");
-            return;
-        }
-
-        masterContext.beginSnapshot(executionId);
     }
 
     /**

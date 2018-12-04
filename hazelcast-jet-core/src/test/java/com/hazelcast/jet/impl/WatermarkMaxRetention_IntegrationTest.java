@@ -22,11 +22,13 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
-import com.hazelcast.jet.core.TestProcessors.StuckForeverSourceP;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -45,13 +47,18 @@ public class WatermarkMaxRetention_IntegrationTest extends JetTestSupport {
     private static final String SINK_NAME = "sink";
     private JetInstance instance = createJetMember();
 
+    @Before
+    public void before() {
+        TestProcessors.reset(1);
+    }
+
     @Test
     public void test_onEdgeCoalescing() {
         DAG dag = new DAG();
         // a vertex with two processor instances, one will emit a wm and the other won't
         Vertex source = dag.newVertex("source", (int count) -> asList(
                 new ListSource(singletonList(new Watermark(1))),
-                new StuckForeverSourceP()
+                new NoOutputSourceP()
         )).localParallelism(2);
         Vertex map = dag.newVertex("map", MapWmToStringP::new).localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeListP(SINK_NAME));
@@ -67,7 +74,7 @@ public class WatermarkMaxRetention_IntegrationTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source0 = dag.newVertex("source0",
                 () -> new ListSource(singletonList(new Watermark(1)))).localParallelism(1);
-        Vertex source1 = dag.newVertex("source1", StuckForeverSourceP::new);
+        Vertex source1 = dag.newVertex("source1", () -> new NoOutputSourceP());
         // a vertex with two inputs, one will emit a wm and the other won't
         Vertex map = dag.newVertex("map", MapWmToStringP::new).localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeListP(SINK_NAME));

@@ -114,11 +114,13 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     // value to be used temporarily during snapshot restore
     private long minRestoredNextWinToEmit = Long.MAX_VALUE;
+    private long minRestoredFrameTs = Long.MAX_VALUE;
     private ProcessingGuarantee processingGuarantee;
 
     // extracted lambdas to reduce GC litter
     private Function<Long, Map<K, A>> createMapPerTsFunction;
     private Function<K, A> createAccFunction;
+    private boolean badFrameRestored;
 
     @SuppressWarnings("unchecked")
     public SlidingWindowP(
@@ -234,14 +236,32 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             return;
         }
         SnapshotKey k = (SnapshotKey) key;
-        if (tsToKeyToAcc
-                .computeIfAbsent(k.timestamp, createMapPerTsFunction)
-                .put((K) k.key, (A) value) != null
-        ) {
-            throw new JetException("Duplicate key in snapshot: " + k);
+        // align frame timestamp to our frame - they can be misaligned if slide step was changed in updated DAG
+        long higherFrameTs = winPolicy.higherFrameTs(k.timestamp - 1);
+        if (higherFrameTs != k.timestamp) {
+            if (!badFrameRestored) {
+                badFrameRestored = true;
+                getLogger().warning("Frames in the state do not match the current frame size: they were likely " +
+                        "saved for different window slide step or different offset. The window results will probably be " +
+                        "incorrect until all restored frames are emitted.");
+            }
         }
+        minRestoredFrameTs = Math.min(higherFrameTs, minRestoredFrameTs);
+        tsToKeyToAcc
+                .computeIfAbsent(higherFrameTs, createMapPerTsFunction)
+                .merge((K) k.key, (A) value, (o, n) -> {
+                    if (!badFrameRestored) {
+                        throw new JetException("Duplicate key in snapshot: " + k);
+                    }
+                    if (combineFn == null) {
+                        throw new JetException("AggregateOperation.combineFn required for merging restored frames");
+                    }
+                    combineFn.accept(o, n);
+                    lazyAdd(totalKeysInFrames, -1);
+                    return o;
+                });
         lazyIncrement(totalKeysInFrames);
-        topTs = max(topTs, k.timestamp);
+        topTs = max(topTs, higherFrameTs);
     }
 
     @Override
@@ -251,8 +271,23 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         // tumbling window and it makes no difference in that case. So we don't
         // restore and remain at MIN_VALUE.
         if (isLastStage) {
-            nextWinToEmit = minRestoredNextWinToEmit;
+            // if nextWinToEmit is not on frame boundary, push it to next boundary
+            nextWinToEmit = minRestoredNextWinToEmit > Long.MIN_VALUE
+                    ? winPolicy.higherFrameTs(minRestoredNextWinToEmit - 1)
+                    : minRestoredNextWinToEmit;
             logFine(getLogger(), "Restored nextWinToEmit from snapshot to: %s", nextWinToEmit);
+            // Delete too old restored frames. This can happen when restoring from exported state and new job
+            // has smaller window size
+            if (nextWinToEmit > Long.MIN_VALUE + winPolicy.windowSize()) {
+                for (long ts = minRestoredFrameTs; ts <= nextWinToEmit - winPolicy.windowSize();
+                        ts += winPolicy.frameSize()) {
+                    Map<K, A> removed = tsToKeyToAcc.remove(ts);
+                    if (removed != null) {
+                        lazyAdd(totalFrames, -1);
+                        lazyAdd(totalKeysInFrames, -removed.size());
+                    }
+                }
+            }
         }
         return true;
     }

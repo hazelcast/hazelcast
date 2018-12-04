@@ -23,12 +23,20 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.impl.AbstractJetInstance;
+import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.map.impl.MapService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.List;
+
+import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Represents either an instance of a Jet server node or a Jet client
@@ -132,6 +140,41 @@ public interface JetInstance {
     @Nullable
     default Job getJob(@Nonnull String name) {
         return getJobs(name).stream().findFirst().orElse(null);
+    }
+
+    /**
+     * Returns the {@link JobStateSnapshot} object representing an exported
+     * snapshot with the given name. Returns {@code null} if no such snapshot
+     * exists.
+     */
+    @Nullable
+    default JobStateSnapshot getJobStateSnapshot(@Nonnull String name) {
+        String mapName = exportedSnapshotMapName(name);
+        if (!((AbstractJetInstance) this).existsDistributedObject(MapService.SERVICE_NAME, mapName)) {
+            return null;
+        }
+        IMapJet<Object, Object> map = getMap(mapName);
+        Object validationRecord = map.get(SnapshotValidationRecord.KEY);
+        if (validationRecord instanceof SnapshotValidationRecord) {
+            // update the cache - for robustness. For example after the map was copied
+            getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE).setAsync(name, validationRecord);
+            return new JobStateSnapshot(this, name, (SnapshotValidationRecord) validationRecord);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the collection of exported job state snapshots stored in the
+     * cluster.
+     */
+    @Nonnull
+    default Collection<JobStateSnapshot> getJobStateSnapshots() {
+        return getHazelcastInstance().getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE)
+                .entrySet().stream()
+                .map(entry -> new JobStateSnapshot(this, (String) entry.getKey(),
+                        (SnapshotValidationRecord) entry.getValue()))
+                .collect(toList());
     }
 
     /**

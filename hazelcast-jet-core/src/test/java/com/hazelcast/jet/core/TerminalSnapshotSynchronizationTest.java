@@ -20,7 +20,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
@@ -47,7 +47,7 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
         JetInstance[] instances = createJetMembers(new JetConfig(), NODE_COUNT);
 
         DAG dag = new DAG();
-        dag.newVertex("generator", () -> new StuckProcessor()).localParallelism(1);
+        dag.newVertex("generator", () -> new NoOutputSourceP()).localParallelism(1);
 
         JobConfig config = new JobConfig()
                 .setProcessingGuarantee(snapshotting ? EXACTLY_ONCE : NONE)
@@ -81,14 +81,14 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
     @Test
     public void when_jobRestartedForcefully_then_doesNotWaitForSnapshot() {
         Job job = setup(false);
-        assertEquals(2, StuckProcessor.initCount.get());
+        assertEquals(2, NoOutputSourceP.initCount.get());
 
         // When
         SnapshotOperation.postponeResponses = true;
         job.restart();
 
         // Then
-        assertTrueEventually(() -> assertEquals(4, StuckProcessor.initCount.get()), 5);
+        assertTrueEventually(() -> assertEquals(4, NoOutputSourceP.initCount.get()), 5);
         assertJobStatusEventually(job, JobStatus.RUNNING, 5);
     }
 }

@@ -72,6 +72,10 @@ public class ExplodeSnapshotP extends AbstractProcessor {
 
     @Override
     protected boolean tryProcess0(@Nonnull Object item) {
+        if (((Entry) item).getKey() instanceof SnapshotValidationRecord.SnapshotValidationKey) {
+            // ignore the validation record
+            return true;
+        }
         Entry<SnapshotDataKey, byte[]> casted = (Entry<SnapshotDataKey, byte[]>) item;
         String vertexName = casted.getKey().vertexName();
         FlatMapper<byte[], Object> flatMapper = vertexToFlatMapper.get(vertexName);

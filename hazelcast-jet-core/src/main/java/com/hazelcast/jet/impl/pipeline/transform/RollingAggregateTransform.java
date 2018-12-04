@@ -45,7 +45,7 @@ public class RollingAggregateTransform<T, K, R, OUT> extends AbstractTransform {
 
     @Override
     public void addToDag(Planner p) {
-        PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name(), ""), localParallelism(),
+        PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name()), localParallelism(),
                 rollingAggregateP(keyFn, aggrOp, mapToOutputFn));
         p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }

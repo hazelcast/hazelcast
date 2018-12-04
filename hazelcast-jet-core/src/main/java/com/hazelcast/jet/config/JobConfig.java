@@ -47,6 +47,7 @@ public class JobConfig implements Serializable {
     private final List<ResourceConfig> resourceConfigs = new ArrayList<>();
     private int maxWatermarkRetainMillis = -1;
     private JobClassLoaderFactory classLoaderFactory;
+    private String initialSnapshotName;
 
     /**
      * Returns the name of the job or {@code null} if no name was given.
@@ -401,7 +402,7 @@ public class JobConfig implements Serializable {
 
     private static String toFilename(URL url) {
         String urlFile = url.getPath();
-        return urlFile.substring(urlFile.lastIndexOf('/') + 1, urlFile.length());
+        return urlFile.substring(urlFile.lastIndexOf('/') + 1);
     }
 
     /**
@@ -421,5 +422,32 @@ public class JobConfig implements Serializable {
     @Nullable
     public JobClassLoaderFactory getClassLoaderFactory() {
         return classLoaderFactory;
+    }
+
+    /**
+     * Returns the configured {@linkplain #setInitialSnapshotName(String)
+     * initial snapshot name}.
+     */
+    public String getInitialSnapshotName() {
+        return initialSnapshotName;
+    }
+
+    /**
+     * Sets the {@linkplain Job#exportSnapshot(String) exported state snapshot}
+     * name to restore the initial job state from. This state will be used for
+     * initial state and also for the case when the execution restarts before
+     * it produces first snapshot.
+     * <p>
+     * The job will use the state even if {@linkplain
+     * #setProcessingGuarantee(ProcessingGuarantee) processing guarantee} is
+     * set to {@link ProcessingGuarantee#NONE NONE}.
+     *
+     * @param initialSnapshotName the snapshot name given to {@link
+     *      Job#exportSnapshot(String)}
+     * @return {@code this} instance for fluent API
+     */
+    public JobConfig setInitialSnapshotName(String initialSnapshotName) {
+        this.initialSnapshotName = initialSnapshotName;
+        return this;
     }
 }

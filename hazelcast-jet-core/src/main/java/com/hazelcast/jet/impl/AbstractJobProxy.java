@@ -136,7 +136,7 @@ public abstract class AbstractJobProxy<T> implements Job {
 
     @Override
     public void cancel() {
-        terminate(TerminationMode.CANCEL);
+        terminate(TerminationMode.CANCEL_FORCEFUL);
     }
 
     @Override

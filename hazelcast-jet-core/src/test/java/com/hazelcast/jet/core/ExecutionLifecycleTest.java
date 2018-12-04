@@ -29,7 +29,7 @@ import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPMS;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
-import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobResult;
@@ -102,13 +102,13 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
     public void when_processorCompletesSuccessfully_then_closeCalledImmediately() {
         DAG dag = new DAG();
         Vertex v1 = dag.newVertex("v1", MockP::new);
-        Vertex v2 = dag.newVertex("v2", () -> new StuckProcessor());
+        Vertex v2 = dag.newVertex("v2", () -> new NoOutputSourceP());
         dag.edge(between(v1, v2));
 
         Job job = member.newJob(dag);
         assertTrueEventually(this::assertPClosedWithoutError);
         assertEquals(JobStatus.RUNNING, job.getStatus());
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
         job.join();
         assertJobSucceeded(job);
     }
@@ -135,16 +135,16 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
         DAG dagFaulty = new DAG().vertex(new Vertex("faulty",
                 new MockPMS(() -> new MockPS(() -> new MockP().setCompleteError(e), MEMBER_COUNT))));
         DAG dagGood = new DAG();
-        dagGood.newVertex("good", () -> new StuckProcessor());
+        dagGood.newVertex("good", () -> new NoOutputSourceP());
 
         // When
         Job jobGood = member.newJob(dagGood);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
         runJobExpectFailure(dagFaulty, e);
 
         // Then
         assertTrueAllTheTime(() -> assertEquals(JobStatus.RUNNING, jobGood.getStatus()), 5);
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
         jobGood.join();
     }
 
@@ -350,12 +350,12 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
     public void when_executionCancelled_then_jobCompletedWithCancellationException() throws Throwable {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test",
-                new MockPMS(() -> new MockPS(StuckProcessor::new, MEMBER_COUNT))));
+                new MockPMS(() -> new MockPS(NoOutputSourceP::new, MEMBER_COUNT))));
 
         // When
         Job job = member.newJob(dag);
         try {
-            StuckProcessor.executionStarted.await();
+            NoOutputSourceP.executionStarted.await();
             job.cancel();
             job.join();
             fail("Job execution should fail");
@@ -373,7 +373,7 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
     public void when_executionCancelledBeforeStart_then_jobFutureIsCancelledOnExecute() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test",
-                new MockPS(StuckProcessor::new, MEMBER_COUNT)));
+                new MockPS(NoOutputSourceP::new, MEMBER_COUNT)));
 
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member.getHazelcastInstance());
         Address localAddress = nodeEngineImpl.getThisAddress();
@@ -409,12 +409,12 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
     public void when_jobCancelled_then_psCloseNotCalledBeforeTaskletsDone() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test",
-                new MockPS(() -> new StuckProcessor(10_000), MEMBER_COUNT)));
+                new MockPS(() -> new NoOutputSourceP(10_000), MEMBER_COUNT)));
 
         // When
         Job job = member.newJob(dag);
 
-        assertOpenEventually(StuckProcessor.executionStarted);
+        assertOpenEventually(NoOutputSourceP.executionStarted);
 
         // Then
         job.cancel();
@@ -427,7 +427,7 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
             assertEquals("PS.close called before execution finished", 0, MockPS.closeCount.get());
         });
 
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
 
         expectedException.expect(CancellationException.class);
         job.join();

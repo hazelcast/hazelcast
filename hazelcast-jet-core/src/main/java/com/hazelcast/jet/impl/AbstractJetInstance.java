@@ -29,12 +29,12 @@ import com.hazelcast.jet.impl.util.Util;
 import javax.annotation.Nonnull;
 import java.util.function.Supplier;
 
-abstract class AbstractJetInstance implements JetInstance {
+public abstract class AbstractJetInstance implements JetInstance {
     private final HazelcastInstance hazelcastInstance;
     private final JetCacheManagerImpl cacheManager;
     private final Supplier<JobRepository> jobRepository;
 
-    AbstractJetInstance(HazelcastInstance hazelcastInstance) {
+    public AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
         this.cacheManager = new JetCacheManagerImpl(this);
         this.jobRepository = Util.memoizeConcurrent(() -> new JobRepository(this));
@@ -83,4 +83,6 @@ abstract class AbstractJetInstance implements JetInstance {
     long uploadResourcesAndAssignId(JobConfig config) {
         return jobRepository.get().uploadJobResources(config);
     }
+
+    public abstract boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName);
 }

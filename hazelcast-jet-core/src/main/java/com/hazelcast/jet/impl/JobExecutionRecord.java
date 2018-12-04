@@ -50,48 +50,15 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
      * JobRepository#writeJobExecutionRecord}.
      */
     private final AtomicLong timestamp = new AtomicLong();
-
     private final AtomicInteger quorumSize = new AtomicInteger();
-
-    /**
-     * Indicates whether job is in suspended state
-     */
     private volatile boolean suspended;
-
-    /**
-     * ID for the latest successful snapshot.
-     */
     private volatile long snapshotId = NO_SNAPSHOT;
-
-    /**
-     * The data map index of current successful snapshot (0 or 1) or -1, if
-     * there's no successful snapshot.
-     */
     private volatile int dataMapIndex = -1;
-
-    /**
-     * ID for the ongoing or the next snapshot. The value is incremented each
-     * time we attempt a new snapshot.
-     */
     private volatile long ongoingSnapshotId = NO_SNAPSHOT;
-
-    /**
-     * Start time of the ongoing snapshot or {@code Long.MIN_VALUE}, if there's
-     * no ongoing snapshot.
-     */
     private volatile long ongoingSnapshotStartTime = Long.MIN_VALUE;
-
-    /**
-     * Contains the error message for the failure of the last attempted
-     * snapshot. If the last attempt was successful, it's null.
-     */
+    private volatile String exportedSnapshotMapName;
     @Nullable
     private volatile String lastSnapshotFailure;
-
-    /**
-     * Stats for the last successful snapshot. {@code null} if no successful
-     * snapshot exists.
-     */
     @Nullable
     private volatile SnapshotStats snapshotStats;
 
@@ -119,6 +86,9 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         quorumSize.getAndAccumulate(newQuorumSize, Math::max);
     }
 
+    /**
+     * Indicates whether job is in suspended state.
+     */
     public boolean isSuspended() {
         return suspended;
     }
@@ -130,21 +100,26 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "all updates to ongoingSnapshotId are synchronized")
-    public void startNewSnapshot() {
+    public void startNewSnapshot(String exportedSnapshotMapName) {
         ongoingSnapshotId++;
         ongoingSnapshotStartTime = Clock.currentTimeMillis();
+        this.exportedSnapshotMapName = exportedSnapshotMapName;
     }
 
-    public void ongoingSnapshotDone(long numBytes, long numKeys, long numChunks, @Nullable String failureText) {
+    public SnapshotStats ongoingSnapshotDone(long numBytes, long numKeys, long numChunks, @Nullable String failureText) {
         lastSnapshotFailure = failureText;
-        if (failureText == null) {
-            snapshotStats = new SnapshotStats(
-                    ongoingSnapshotId, ongoingSnapshotStartTime, Clock.currentTimeMillis(), numBytes, numKeys, numChunks
-            );
+        exportedSnapshotMapName = null;
+        SnapshotStats res = new SnapshotStats(
+                ongoingSnapshotId, ongoingSnapshotStartTime, Clock.currentTimeMillis(), numBytes, numKeys, numChunks
+        );
+        // switch dataMapIndex only if the snapshot was successful and it wasn't an exported one
+        if (failureText == null && exportedSnapshotMapName == null) {
             dataMapIndex = ongoingDataMapIndex();
             snapshotId = ongoingSnapshotId;
+            snapshotStats = res;
         }
         ongoingSnapshotStartTime = Long.MIN_VALUE;
+        return res;
     }
 
     /**
@@ -155,6 +130,10 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         return snapshotId;
     }
 
+    /**
+     * The data map index of current successful snapshot (0 or 1) or -1, if
+     * there's no successful snapshot.
+     */
     public int dataMapIndex() {
         return dataMapIndex;
     }
@@ -171,16 +150,34 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         return (dataMapIndex + 1) & 1;
     }
 
+    /**
+     * ID for the ongoing or the next snapshot. The value is incremented each
+     * time we attempt a new snapshot.
+     */
     public long ongoingSnapshotId() {
         return ongoingSnapshotId;
     }
 
+    /**
+     * Start time of the ongoing snapshot or {@code Long.MIN_VALUE}, if there's
+     * no ongoing snapshot.
+     */
     public long ongoingSnapshotStartTime() {
         return ongoingSnapshotStartTime;
     }
 
     /**
-     * Returns the stats for the last successful snapshot
+     * Name of the export map. The value is not-null while the job is exporting
+     * a state snapshot. The value is null when writing a normal snapshot or
+     * when no snapshot is in progress.
+     */
+    public String exportedSnapshotMapName() {
+        return exportedSnapshotMapName;
+    }
+
+    /**
+     * Stats for the last successful snapshot (except for the exported ones).
+     * {@code null} if no successful snapshot exists.
      */
     @Nullable
     public SnapshotStats snapshotStats() {
@@ -240,6 +237,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         // use writeObject instead of writeUTF to allow for nulls
         out.writeObject(lastSnapshotFailure);
         out.writeObject(snapshotStats);
+        out.writeObject(exportedSnapshotMapName);
         out.writeBoolean(suspended);
         out.writeLong(timestamp.get());
     }
@@ -254,6 +252,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         ongoingSnapshotStartTime = in.readLong();
         lastSnapshotFailure = in.readObject();
         snapshotStats = in.readObject();
+        exportedSnapshotMapName = in.readObject();
         suspended = in.readBoolean();
         timestamp.set(in.readLong());
     }

@@ -18,12 +18,11 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
  * Resumes the execution of a suspended job.
  */
-public class ResumeJobOperation extends AbstractJobOperation implements IdentifiedDataSerializable {
+public class ResumeJobOperation extends AbstractJobOperation {
 
     public ResumeJobOperation() {
     }

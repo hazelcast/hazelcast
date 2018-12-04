@@ -22,6 +22,7 @@ import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -29,10 +30,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -60,9 +65,13 @@ public final class TestProcessors {
         MockP.initCount.set(0);
         MockP.closeCount.set(0);
 
-        StuckProcessor.proceedLatch = new CountDownLatch(1);
-        StuckProcessor.executionStarted = new CountDownLatch(totalParallelism);
-        StuckProcessor.initCount.set(0);
+        NoOutputSourceP.proceedLatch = new CountDownLatch(1);
+        NoOutputSourceP.executionStarted = new CountDownLatch(totalParallelism);
+        NoOutputSourceP.initCount.set(0);
+        NoOutputSourceP.failure.set(null);
+
+        DummyStatefulP.parallelism = totalParallelism;
+        DummyStatefulP.wasRestored = true;
     }
 
     public static class Identity extends AbstractProcessor {
@@ -72,19 +81,25 @@ public final class TestProcessors {
         }
     }
 
-    public static final class StuckProcessor implements Processor {
+    /**
+     * A source processor (stream or batch) that outputs no items and allows to
+     * externally control when and whether to complete or fail.
+     */
+    public static final class NoOutputSourceP implements Processor {
         public static volatile CountDownLatch executionStarted;
         public static volatile CountDownLatch proceedLatch;
+        public static final AtomicReference<RuntimeException> failure = new AtomicReference<>();
         public static final AtomicInteger initCount = new AtomicInteger();
 
         // how long time to wait during calls to complete()
         private final long timeoutMillis;
+        private boolean executionStartCountedDown;
 
-        public StuckProcessor() {
+        public NoOutputSourceP() {
             this(1);
         }
 
-        public StuckProcessor(long timeoutMillis) {
+        public NoOutputSourceP(long timeoutMillis) {
             this.timeoutMillis = timeoutMillis;
         }
 
@@ -95,22 +110,19 @@ public final class TestProcessors {
 
         @Override
         public boolean complete() {
-            executionStarted.countDown();
+            if (!executionStartCountedDown) {
+                executionStarted.countDown();
+                executionStartCountedDown = true;
+            }
             try {
+                RuntimeException localFailure = failure.getAndUpdate(e -> null);
+                if (localFailure != null) {
+                    throw localFailure;
+                }
                 return proceedLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 return false;
             }
-        }
-    }
-
-    /**
-     * A processor that emits nothing and never completes.
-     */
-    public static final class StuckForeverSourceP implements Processor {
-        @Override
-        public boolean complete() {
-            return false;
         }
     }
 
@@ -371,6 +383,51 @@ public final class TestProcessors {
         @Override
         public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
             return tryEmit("wm(" + watermark.timestamp() + ')');
+        }
+    }
+
+    /**
+     * A processor that saves dummy constant data to snapshot and asserts it
+     * receives the same data.
+     */
+    public static class DummyStatefulP extends AbstractProcessor {
+        public static volatile boolean wasRestored;
+        private static final int ITEMS_TO_SAVE = 100;
+        private static int parallelism;
+
+        private Traverser<Map.Entry<BroadcastKey<Integer>, Integer>> traverser;
+        private int[] restored;
+
+        @Override
+        public boolean complete() {
+            return false;
+        }
+
+        @Override
+        public boolean saveToSnapshot() {
+            if (traverser == null) {
+                traverser = traverseStream(IntStream.range(0, ITEMS_TO_SAVE)
+                                                    .mapToObj(i -> entry(broadcastKey(i), i)))
+                        .onFirstNull(() -> traverser = null);
+            }
+            return emitFromTraverserToSnapshot(traverser);
+        }
+
+        @Override
+        protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+            if (restored == null) {
+                restored = new int[ITEMS_TO_SAVE];
+            }
+            restored[(Integer) value]++;
+        }
+
+        @Override
+        public boolean finishSnapshotRestore() {
+            assertEquals(IntStream.generate(() -> parallelism).limit(ITEMS_TO_SAVE).boxed().collect(toList()),
+                    IntStream.of(restored).boxed().collect(toList()));
+            restored = null;
+            wasRestored = true;
+            return true;
         }
     }
 }

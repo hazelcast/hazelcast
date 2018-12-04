@@ -289,8 +289,7 @@ public class ProcessorTasklet implements Tasklet {
                         state = COMPLETE_EDGE;
                         progTracker.madeProgress();
                         return;
-                    } else if (context.snapshottingEnabled()
-                            && numActiveOrdinals > 0
+                    } else if (numActiveOrdinals > 0
                             && receivedBarriers.cardinality() == numActiveOrdinals) {
                         // we have an empty inbox and received the current snapshot barrier from all active ordinals
                         state = SAVE_SNAPSHOT;
@@ -314,8 +313,6 @@ public class ProcessorTasklet implements Tasklet {
                 return;
 
             case SAVE_SNAPSHOT:
-                assert context.snapshottingEnabled() : "Snapshotting is not enabled";
-
                 progTracker.notDone();
                 if (processor.saveToSnapshot()) {
                     progTracker.madeProgress();
@@ -324,7 +321,6 @@ public class ProcessorTasklet implements Tasklet {
                 return;
 
             case EMIT_BARRIER:
-                assert context.snapshottingEnabled() : "Snapshotting is not enabled";
                 assert currentBarrier != null : "currentBarrier == null";
                 if (outbox.offerToEdgesAndSnapshot(currentBarrier)) {
                     progTracker.madeProgress();
@@ -343,16 +339,14 @@ public class ProcessorTasklet implements Tasklet {
             case COMPLETE:
                 progTracker.notDone();
                 // check ssContext to see if a barrier should be emitted
-                if (context.snapshottingEnabled()) {
-                    long currSnapshotId = ssContext.activeSnapshotId();
-                    assert currSnapshotId <= pendingSnapshotId : "Unexpected new snapshot id " + currSnapshotId
-                            + ", current was" + pendingSnapshotId;
-                    if (currSnapshotId == pendingSnapshotId) {
-                        state = SAVE_SNAPSHOT;
-                        currentBarrier = new SnapshotBarrier(currSnapshotId, ssContext.isTerminalSnapshot());
-                        progTracker.madeProgress();
-                        return;
-                    }
+                long currSnapshotId = ssContext.activeSnapshotId();
+                assert currSnapshotId <= pendingSnapshotId : "Unexpected new snapshot id " + currSnapshotId
+                        + ", current was" + pendingSnapshotId;
+                if (currSnapshotId == pendingSnapshotId) {
+                    state = SAVE_SNAPSHOT;
+                    currentBarrier = new SnapshotBarrier(currSnapshotId, ssContext.isTerminalSnapshot());
+                    progTracker.madeProgress();
+                    return;
                 }
                 if (processor.complete()) {
                     progTracker.madeProgress();

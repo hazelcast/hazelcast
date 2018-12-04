@@ -86,7 +86,7 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
 
     @Override
     public void addToDag(Planner p) {
-        PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name(), ""), localParallelism(), processorSupplier);
+        PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name()), localParallelism(), processorSupplier);
         p.addEdges(this, pv.v, e -> e.partitioned(partitionKeyFn).distributed());
     }
 }

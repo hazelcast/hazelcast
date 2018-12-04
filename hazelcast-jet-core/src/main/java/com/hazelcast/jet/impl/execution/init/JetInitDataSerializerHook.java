@@ -28,7 +28,9 @@ import com.hazelcast.jet.impl.JobRepository.FilterJobResultByNamePredicate;
 import com.hazelcast.jet.impl.JobRepository.UpdateJobExecutionRecordEntryProcessor;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.JobSummary;
+import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
+import com.hazelcast.jet.impl.operation.ExportSnapshotOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
@@ -92,6 +94,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int JOB_SUMMARY = 33;
     public static final int SNAPSHOT_STATS = 34;
     public static final int PREPARE_FOR_PASSIVE_CLUSTER_OP = 35;
+    public static final int EXPORT_SNAPSHOT_OP = 36;
+    public static final int SNAPSHOT_VALIDATION_RECORD = 37;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -181,6 +185,10 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new SnapshotStats();
                 case PREPARE_FOR_PASSIVE_CLUSTER_OP:
                     return new PrepareForPassiveClusterOperation();
+                case EXPORT_SNAPSHOT_OP:
+                    return new ExportSnapshotOperation();
+                case SNAPSHOT_VALIDATION_RECORD:
+                    return new SnapshotValidationRecord();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

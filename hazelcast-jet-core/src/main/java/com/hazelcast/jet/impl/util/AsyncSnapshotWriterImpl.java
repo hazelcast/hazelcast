@@ -314,7 +314,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         public SnapshotDataKey() {
         }
 
-        SnapshotDataKey(int partitionKey, long snapshotId, String vertexName, int sequence) {
+        public SnapshotDataKey(int partitionKey, long snapshotId, String vertexName, int sequence) {
             this.partitionKey = partitionKey;
             this.snapshotId = snapshotId;
             this.vertexName = vertexName;

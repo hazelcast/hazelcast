@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
@@ -45,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.stream.Collectors.toList;
 
@@ -81,7 +83,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     @Nonnull @Override
     public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
         long jobId = uploadResourcesAndAssignId(config);
-        return new ClientJobProxy(client, jobId, dag, config);
+        return new ClientJobProxy(this, jobId, dag, config);
     }
 
     @Nonnull @Override
@@ -92,14 +94,14 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         return uncheckCall(() -> {
             ClientMessage response = invocation.invoke().get();
             Set<Long> jobs = serializationService.toObject(JetGetJobIdsCodec.decodeResponse(response).response);
-            return jobs.stream().map(jobId -> new ClientJobProxy(client, jobId)).collect(toList());
+            return jobs.stream().map(jobId -> new ClientJobProxy(this, jobId)).collect(toList());
         });
     }
 
     @Override
     public Job getJob(long jobId) {
         try {
-            Job job = new ClientJobProxy(client, jobId);
+            Job job = new ClientJobProxy(this, jobId);
             job.getStatus();
             return job;
         } catch (Exception e) {
@@ -113,7 +115,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
     @Nonnull @Override
     public List<Job> getJobs(@Nonnull String name) {
-        return getJobIdsByName(name).stream().map(jobId -> new ClientJobProxy(client, jobId)).collect(toList());
+        return getJobIdsByName(name).stream().map(jobId -> new ClientJobProxy(this, jobId)).collect(toList());
     }
 
     /**
@@ -162,5 +164,17 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         return cluster.getMembers().stream().findFirst()
                       .orElseThrow(() -> new IllegalStateException("No members found in cluster"))
                       .getAddress();
+    }
+
+    @Override
+    public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
+        ClientInvocation invocation =
+                new ClientInvocation(client, JetExistsDistributedObjectCodec.encodeRequest(serviceName, objectName), null);
+        try {
+            ClientMessage response = invocation.invoke().get();
+            return serializationService.toObject(JetExistsDistributedObjectCodec.decodeResponse(response).response);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
     }
 }

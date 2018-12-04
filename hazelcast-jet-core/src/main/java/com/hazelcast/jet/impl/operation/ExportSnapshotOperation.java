@@ -17,50 +17,57 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
-/**
- * Operation sent from client to coordinator member to terminate particular
- * job. See also {@link TerminateExecutionOperation}, which is sent from
- * coordinator to members to terminate execution.
- */
-public class TerminateJobOperation extends AbstractJobOperation {
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
-    private TerminationMode terminationMode;
+public class ExportSnapshotOperation extends AbstractJobOperation {
 
-    public TerminateJobOperation() {
+    private String name;
+    private boolean cancelJob;
+
+    public ExportSnapshotOperation() {
     }
 
-    public TerminateJobOperation(long jobId, TerminationMode mode) {
+    public ExportSnapshotOperation(long jobId, String name, boolean cancelJob) {
         super(jobId);
-        this.terminationMode = mode;
+        this.name = name;
+        this.cancelJob = cancelJob;
     }
 
     @Override
     public void run() {
         JetService service = getService();
-        service.getJobCoordinationService().terminateJob(jobId(), terminationMode);
+        CompletableFuture<Void> future = service.getJobCoordinationService().exportSnapshot(jobId(), name, cancelJob);
+        future.whenComplete(withTryCatch(getLogger(), (r, t) -> sendResponse(r != null ? r : t)));
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.TERMINATE_JOB_OP;
+        return JetInitDataSerializerHook.EXPORT_SNAPSHOT_OP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeByte(terminationMode.ordinal());
+        out.writeUTF(name);
+        out.writeBoolean(cancelJob);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        terminationMode = TerminationMode.values()[in.readByte()];
+        name = in.readUTF();
+        cancelJob = in.readBoolean();
     }
 }

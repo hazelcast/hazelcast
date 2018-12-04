@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
@@ -36,6 +37,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,7 +55,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.zip.DeflaterOutputStream;
 
-import static com.hazelcast.jet.Jet.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.Collections.newSetFromMap;
@@ -64,12 +65,29 @@ import static java.util.stream.Collectors.toList;
 public class JobRepository {
 
     /**
-     * Name of internal IMap which stores job resources
+     * Prefix of all Hazelcast internal objects used by Jet (such as job
+     * metadata, snapshots etc.)
+     */
+    public static final String INTERNAL_JET_OBJECTS_PREFIX = "__jet.";
+
+    /**
+     * State snapshot exported using {@link Job#exportSnapshot(String)} is
+     * currently stored in IMaps named with this prefix.
+     */
+    public static final String EXPORTED_SNAPSHOTS_PREFIX = INTERNAL_JET_OBJECTS_PREFIX + "exportedSnapshot.";
+
+    /**
+     * A cache to speed up access to details about exported snapshots.
+     */
+    public static final String EXPORTED_SNAPSHOTS_DETAIL_CACHE = "exportedSnapshotsCache";
+
+    /**
+     * Name of internal IMap which stores job resources.
      */
     public static final String RESOURCES_MAP_NAME_PREFIX = INTERNAL_JET_OBJECTS_PREFIX + "resources.";
 
     /**
-     * Name of internal IMap which is used for unique id generation
+     * Name of internal IMap which is used for unique id generation.
      */
     public static final String RANDOM_IDS_MAP_NAME = INTERNAL_JET_OBJECTS_PREFIX + "ids";
 
@@ -109,6 +127,7 @@ public class JobRepository {
     private final IMap<Long, JobRecord> jobRecords;
     private final IMap<Long, JobExecutionRecord> jobExecutionRecords;
     private final IMap<Long, JobResult> jobResults;
+    private final IMap<String, SnapshotValidationRecord> exportedSnapshotDetailsCache;
     private long resourcesExpirationMillis = DEFAULT_RESOURCES_EXPIRATION_MILLIS;
 
     /**
@@ -132,6 +151,7 @@ public class JobRepository {
         this.jobRecords = instance.getMap(JOB_RECORDS_MAP_NAME);
         this.jobExecutionRecords = instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME);
         this.jobResults = instance.getMap(JOB_RESULTS_MAP_NAME);
+        this.exportedSnapshotDetailsCache = instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE);
     }
 
     // for tests
@@ -421,6 +441,13 @@ public class JobRepository {
     }
 
     /**
+     * Returns map name in the form {@code "_jet.exportedSnapshot.<jobId>.<dataMapIndex>"}.
+     */
+    public static String exportedSnapshotMapName(String name) {
+        return JobRepository.EXPORTED_SNAPSHOTS_PREFIX + name;
+    }
+
+    /**
      * Delete all snapshots for a given job.
      */
     private void destroySnapshotDataMaps(long jobId) {
@@ -437,6 +464,10 @@ public class JobRepository {
         } catch (Exception logged) {
             logger.warning("Cannot delete old snapshot data  " + idToString(jobId), logged);
         }
+    }
+
+    void cacheValidationRecord(@Nonnull String snapshotMapName, @Nonnull SnapshotValidationRecord validationRecord) {
+        exportedSnapshotDetailsCache.set(snapshotMapName, validationRecord);
     }
 
     public static final class UpdateJobExecutionRecordEntryProcessor implements

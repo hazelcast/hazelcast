@@ -22,7 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPMS;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
-import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +60,7 @@ public class ClusterStateChangeTest extends JetTestSupport {
         }
         cluster = jet.getCluster();
         dag = new DAG().vertex(new Vertex("test",
-                new MockPMS(() -> new MockPS(StuckProcessor::new, NODE_COUNT))));
+                new MockPMS(() -> new MockPS(NoOutputSourceP::new, NODE_COUNT))));
     }
 
     @Test(expected = IllegalStateException.class)
@@ -74,7 +74,7 @@ public class ClusterStateChangeTest extends JetTestSupport {
     public void when_enterPassiveState_then_jobTerminated() throws Exception {
         // Given
         Job job = jet.newJob(dag);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
 
         // When
         cluster.changeClusterState(PASSIVE);
@@ -90,7 +90,7 @@ public class ClusterStateChangeTest extends JetTestSupport {
     public void when_goPassiveAndBack_then_jobResumes() throws Exception {
         // Given
         jet.newJob(dag);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
 
         // When
         cluster.changeClusterState(PASSIVE);
@@ -100,6 +100,6 @@ public class ClusterStateChangeTest extends JetTestSupport {
 
         // Then
         assertEquals("Cluster state", ACTIVE, cluster.getClusterState());
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
     }
 }

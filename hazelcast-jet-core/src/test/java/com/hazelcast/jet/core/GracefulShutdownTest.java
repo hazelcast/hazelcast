@@ -23,7 +23,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockP;
-import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.JetService;
@@ -147,7 +147,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         liteMemberConfig.getHazelcastConfig().setLiteMember(true);
         JetInstance liteMember = createJetMember(liteMemberConfig);
         DAG dag = new DAG();
-        dag.newVertex("v", (DistributedSupplier<Processor>) StuckProcessor::new);
+        dag.newVertex("v", (DistributedSupplier<Processor>) NoOutputSourceP::new);
         Job job = instances[0].newJob(dag);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         Future future = spawn(liteMember::shutdown);
@@ -158,7 +158,7 @@ public class GracefulShutdownTest extends JetTestSupport {
     @Test
     public void when_nonParticipatingMemberShutDown_then_jobKeepsRunning() throws Exception {
         DAG dag = new DAG();
-        dag.newVertex("v", (DistributedSupplier<Processor>) StuckProcessor::new);
+        dag.newVertex("v", (DistributedSupplier<Processor>) NoOutputSourceP::new);
         Job job = instances[0].newJob(dag);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         Future future = spawn(() -> {
@@ -183,7 +183,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         // submit a job, the init operation should fail with a ShutdownInProgressOperation.
         // Unfortunately, we can't assert that.
         DAG dag = new DAG();
-        dag.newVertex("v", (DistributedSupplier<Processor>) StuckProcessor::new);
+        dag.newVertex("v", (DistributedSupplier<Processor>) NoOutputSourceP::new);
         Job job = instances[0].newJob(dag);
 
         // after that, the job should become RUNNING

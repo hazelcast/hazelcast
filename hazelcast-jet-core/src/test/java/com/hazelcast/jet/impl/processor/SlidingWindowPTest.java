@@ -135,6 +135,7 @@ public class SlidingWindowPTest {
     public void simple_smokeTest() {
         verifyProcessor(supplier)
                 .disableCompleteCall()
+                .disableLogging()
                 .input(asList(
                         event(0, 1),
                         wm(3)))
@@ -264,6 +265,7 @@ public class SlidingWindowPTest {
         ));
         verifyProcessor(supplier)
                 .disableCompleteCall()
+                .disableLogging()
                 .input(inbox)
                 .expectOutput(expectedOutbox);
     }

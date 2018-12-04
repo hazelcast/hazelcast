@@ -131,11 +131,11 @@ public class PipelineImpl implements Pipeline {
         for (Entry<Transform, List<Transform>> entry : adjMap.entrySet()) {
             Transform src = entry.getKey();
             String srcName = transformNames.computeIfAbsent(
-                    src, t -> uniqueName(knownNames, t.name(), "")
+                    src, t -> uniqueName(knownNames, t.name())
             );
             for (Transform dest : entry.getValue()) {
                 String destName = transformNames.computeIfAbsent(
-                        dest, t -> uniqueName(knownNames, t.name(), "")
+                        dest, t -> uniqueName(knownNames, t.name())
                 );
                 builder.append("\t")
                        .append("\"").append(escapeGraphviz(srcName)).append("\"")

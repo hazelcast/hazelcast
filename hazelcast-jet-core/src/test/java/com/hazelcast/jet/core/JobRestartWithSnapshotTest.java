@@ -25,10 +25,11 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.JobExecutionRecord;
@@ -51,12 +52,13 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.locks.LockSupport;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
@@ -67,6 +69,7 @@ import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindow
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
@@ -197,7 +200,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
            .edge(between(map, writeMap));
 
         JobConfig config = new JobConfig();
-        config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+        config.setProcessingGuarantee(EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(1200);
         Job job = instance1.newJob(dag, config);
 
@@ -281,7 +284,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         dag.newVertex("p", FirstSnapshotProcessor::new).localParallelism(1);
 
         JobConfig config = new JobConfig();
-        config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+        config.setProcessingGuarantee(EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(0);
         Job job = instance1.newJob(dag, config);
         JobRepository repository = new JobRepository(instance1);
@@ -309,7 +312,6 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
     private void waitForNextSnapshot(JobRepository jr, long jobId, int timeoutSeconds) {
         long originalSnapshotId = jr.getJobExecutionRecord(jobId).snapshotId();
-        assertTrue("no snapshot found", originalSnapshotId >= 0);
         // wait until there is at least one more snapshot
         long[] snapshotId = {-1};
         assertTrueEventually(() -> {
@@ -335,7 +337,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         dag.edge(between(generator, sink));
 
         JobConfig config = new JobConfig();
-        config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+        config.setProcessingGuarantee(EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(3600_000); // set long interval so that the first snapshot does not execute
         Job job = instance1.newJob(dag, config);
 
@@ -357,98 +359,84 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
     @Test
     public void stressTest_restart() throws Exception {
-        stressTest(job -> {
+        stressTest(tuple -> {
             logger.info("restarting");
-            job.restart();
+            tuple.f2().restart();
             logger.info("restarted");
             // Sleep a little in order to not observe the RUNNING status from the execution
             // before the restart.
             LockSupport.parkNanos(MILLISECONDS.toNanos(500));
-            assertJobStatusEventually(job, JobStatus.RUNNING);
+            assertJobStatusEventually(tuple.f2(), JobStatus.RUNNING);
+            return tuple.f2();
         });
     }
 
     @Test
     public void stressTest_suspendAndResume() throws Exception {
-        stressTest(job -> {
+        stressTest(tuple -> {
             logger.info("Suspending the job...");
-            job.suspend();
+            tuple.f2().suspend();
             logger.info("suspend() returned");
-            assertJobStatusEventually(job, JobStatus.SUSPENDED, 15);
+            assertJobStatusEventually(tuple.f2(), JobStatus.SUSPENDED, 15);
             // The Job.resume() call might overtake the suspension.
             // resume() does nothing when job is not suspended. Without
             // the sleep, the job might remain suspended.
             sleepSeconds(1);
             logger.info("Resuming the job...");
-            job.resume();
+            tuple.f2().resume();
             logger.info("resume() returned");
-            assertJobStatusEventually(job, JobStatus.RUNNING, 15);
+            assertJobStatusEventually(tuple.f2(), JobStatus.RUNNING, 15);
+            return tuple.f2();
         });
     }
 
-    private void stressTest(Consumer<Job> action) throws Exception {
+    @Test
+    public void stressTest_cancelWithSnapshotAndResubmit() throws Exception {
+        stressTest(tuple -> {
+            logger.info("Cancelling the job with snapshot...");
+            tuple.f2().cancelAndExportSnapshot("state");
+            logger.info("cancel() returned");
+            assertJobStatusEventually(tuple.f2(), JobStatus.COMPLETED, 15);
+            logger.info("Resubmitting the job...");
+            Job newJob = tuple.f0().newJob(tuple.f1(),
+                    new JobConfig()
+                            .setInitialSnapshotName("state")
+                            .setProcessingGuarantee(EXACTLY_ONCE)
+                            .setSnapshotIntervalMillis(10));
+            logger.info("newJob() returned");
+            assertJobStatusEventually(newJob, JobStatus.RUNNING, 15);
+            return newJob;
+        });
+    }
+
+    private void stressTest(Function<Tuple3<JetInstance, DAG, Job>, Job> action) throws Exception {
         JobRepository jobRepository = new JobRepository(instance1);
+        TestProcessors.reset(2);
 
         DAG dag = new DAG();
-        dag.newVertex("generator", SnapshotStressSourceP::new)
+        dag.newVertex("generator", DummyStatefulP::new)
            .localParallelism(1);
 
-        Job job = instance1.newJob(dag,
+        Job[] job = {instance1.newJob(dag,
                 new JobConfig().setSnapshotIntervalMillis(10)
-                               .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
+                               .setProcessingGuarantee(EXACTLY_ONCE))};
 
         logger.info("waiting for 1st snapshot");
-        waitForFirstSnapshot(jobRepository, job.getId(), 5);
+        waitForFirstSnapshot(jobRepository, job[0].getId(), 5);
         logger.info("first snapshot found");
         spawn(() -> {
             for (int i = 0; i < 10; i++) {
-                action.accept(job);
-                waitForNextSnapshot(jobRepository, job.getId(), 5);
+                job[0] = action.apply(tuple3(instance1, dag, job[0]));
+                waitForNextSnapshot(jobRepository, job[0].getId(), 5);
             }
             return null;
         }).get();
 
-        job.cancel();
+        job[0].cancel();
         try {
-            job.join();
+            job[0].join();
             fail("CancellationException was expected");
         } catch (CancellationException expected) {
-        }
-    }
-
-    private static class SnapshotStressSourceP extends AbstractProcessor {
-        private static final int ITEMS_TO_SAVE = 100;
-
-        private Traverser<Map.Entry<BroadcastKey, Integer>> traverser;
-        private int numRestored;
-
-        @Override
-        public boolean complete() {
-            traverser = null;
-            return false;
-        }
-
-        @Override
-        public boolean saveToSnapshot() {
-            if (traverser == null) {
-                traverser = Traversers
-                        .traverseStream(IntStream.range(0, ITEMS_TO_SAVE)
-                                                 .mapToObj(i -> entry(broadcastKey(i), i)));
-            }
-            return emitFromTraverserToSnapshot(traverser);
-        }
-
-        @Override
-        protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-            numRestored++;
-        }
-
-        @Override
-        public boolean finishSnapshotRestore() {
-            // multiply expected count by 2 because the restored items are broadcast from 2 members
-            assertEquals(ITEMS_TO_SAVE * 2, numRestored);
-            numRestored = 0;
-            return true;
         }
     }
 

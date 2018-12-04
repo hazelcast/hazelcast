@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.GenericPredicates;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -240,7 +241,7 @@ public final class Sources {
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events. If you want to specify just the
      *                  projection, use {@link
-     *                  com.hazelcast.jet.GenericPredicates#alwaysTrue()} as a pass-through
+     *                  GenericPredicates#alwaysTrue()} as a pass-through
      *                  predicate
      * @param projection the projection to map the events. If the projection returns a {@code
      *                   null} for an item, that item will be filtered out. If you want to
@@ -310,7 +311,7 @@ public final class Sources {
      * @param map        the Hazelcast map to draw data from
      * @param predicate  the predicate to filter the events. If you want to specify just the
      *                   projection, use {@link
-     *                   com.hazelcast.jet.GenericPredicates#alwaysTrue()} as a pass-through
+     *                   GenericPredicates#alwaysTrue()} as a pass-through
      *                   predicate
      * @param projection the projection to map the events. If the projection returns a {@code
      *                   null} for an item, that item will be filtered out. If you want to
@@ -373,9 +374,12 @@ public final class Sources {
      * configure the event journal} for it. The journal has fixed capacity and
      * will drop events if it overflows.
      * <p>
-     * The source saves the journal offset to the snapshot. If the job restarts,
-     * it starts emitting from the saved offset with an exactly-once guarantee
-     * (unless the journal has overflowed).
+     * The source saves the journal offsets to the snapshot. If the job
+     * restarts, it starts emitting from the saved offsets with an exactly-once
+     * guarantee (unless the journal has overflowed).
+     * <p>
+     * If you start a new job from an exported state, you can change the source
+     * parameters as needed.
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
@@ -393,12 +397,12 @@ public final class Sources {
      *
      * @param mapName      the name of the map
      * @param predicateFn  the predicate to filter the events. If you want to specify just the
-     *                     projection, use {@link com.hazelcast.jet.Util#mapPutEvents} to pass
-     *                     only {@link com.hazelcast.core.EntryEventType#ADDED ADDED} and
-     *                     {@link com.hazelcast.core.EntryEventType#UPDATED UPDATED} events.
+     *                     projection, use {@link Util#mapPutEvents} to pass
+     *                     only {@link EntryEventType#ADDED ADDED} and
+     *                     {@link EntryEventType#UPDATED UPDATED} events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     com.hazelcast.jet.Util#mapEventToEntry()} to extract just the key and
+     *                     Util#mapEventToEntry()} to extract just the key and
      *                     the new value.
      * @param initialPos   describes which event to start receiving from
      * @param <T>          type of emitted item
@@ -435,9 +439,12 @@ public final class Sources {
      * will drop events if it
      * overflows.
      * <p>
-     * The source saves the journal offset to the snapshot. If the job
-     * restarts, it starts emitting from the saved offset with an
-     * exactly-once guarantee (unless the journal has overflowed).
+     * The source saves the journal offsets to the snapshot. If the job
+     * restarts, it starts emitting from the saved offsets with an exactly-once
+     * guarantee (unless the journal has overflowed).
+     * <p>
+     * If you start a new job from an exported state, you can change the source
+     * parameters as needed.
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
@@ -455,12 +462,12 @@ public final class Sources {
      *
      * @param map          the map to draw data from
      * @param predicateFn  the predicate to filter the events. If you want to specify just the
-     *                     projection, use {@link com.hazelcast.jet.Util#mapPutEvents} to pass
-     *                     only {@link com.hazelcast.core.EntryEventType#ADDED ADDED} and
-     *                     {@link com.hazelcast.core.EntryEventType#UPDATED UPDATED} events.
+     *                     projection, use {@link Util#mapPutEvents} to pass
+     *                     only {@link EntryEventType#ADDED ADDED} and
+     *                     {@link EntryEventType#UPDATED UPDATED} events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     com.hazelcast.jet.Util#mapEventToEntry()} to extract just the key and
+     *                     Util#mapEventToEntry()} to extract just the key and
      *                     the new value.
      * @param initialPos   describes which event to start receiving from
      * @param <T>          type of emitted item
@@ -546,11 +553,8 @@ public final class Sources {
      * data traffic. If your data is stored in the IMDG using the <a href=
      *     "http://docs.hazelcast.org/docs/3.10/manual/html-single/index.html#implementing-portable-serialization">
      * portable serialization format</a>, there are additional optimizations
-     * available when using {@link
-     *     com.hazelcast.projection.Projections#singleAttribute(String)
-     * Projections.singleAttribute()} and {@link
-     *     com.hazelcast.projection.Projections#multiAttribute(String...)
-     * Projections.multiAttribute()}) to create your projection instance and
+     * available when using {@link Projections#singleAttribute} and {@link
+     * Projections#multiAttribute}) to create your projection instance and
      * using the {@link GenericPredicates} factory or
      * {@link PredicateBuilder PredicateBuilder} to create
      * the predicate. In this case Jet can test the predicate and apply the
@@ -584,9 +588,8 @@ public final class Sources {
      *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events. If you want to specify just the
-     *                  projection, use {@link
-     *                  com.hazelcast.jet.GenericPredicates#alwaysTrue()} as a pass-through
-     *                  predicate
+     *                  projection, use {@link GenericPredicates#alwaysTrue()}
+     *                  as a pass-through predicate
      * @param projection the projection to map the events. If the projection returns a {@code
      *                   null} for an item, that item will be filtered out. If you want to
      *                   specify just the predicate, use {@link Projections#identity()}.
@@ -630,9 +633,14 @@ public final class Sources {
      * configure the event journal} for it. The journal has fixed capacity and
      * will drop events if it overflows.
      * <p>
-     * The source saves the journal offset to the snapshot. If the job
-     * restarts, it starts emitting from the saved offset with an
-     * exactly-once guarantee (unless the journal has overflowed).
+     * The source saves the journal offsets to the snapshot. If the job
+     * restarts, it starts emitting from the saved offsets with an exactly-once
+     * guarantee (unless the journal has overflowed).
+     * <p>
+     * If you start a new job from an exported state, you can change the source
+     * parameters as needed. If you connect to another cluster, keep in mind
+     * that the same offsets will be used. To avoid this, give different
+     * {@linkplain Stage#setName name} to this source.
      * <p>
      * The default local parallelism for this processor is 1.
      *
@@ -650,12 +658,12 @@ public final class Sources {
      * @param mapName the name of the map
      * @param clientConfig configuration for the client to connect to the remote cluster
      * @param predicateFn the predicate to filter the events. You may use {@link
-     *                    com.hazelcast.jet.Util#mapPutEvents} to pass only {@link
+     *                    Util#mapPutEvents} to pass only {@link
      *                    EntryEventType#ADDED ADDED} and {@link EntryEventType#UPDATED UPDATED}
      *                    events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     com.hazelcast.jet.Util#mapEventToEntry()} to extract just the key and
+     *                     Util#mapEventToEntry()} to extract just the key and
      *                     the new value.
      * @param initialPos describes which event to start receiving from
      * @param <K> type of key
@@ -730,9 +738,12 @@ public final class Sources {
      * configure the event journal} for it. The journal has fixed capacity and
      * will drop events if it overflows.
      * <p>
-     * The source saves the journal offset to the snapshot. If the job
-     * restarts, it starts emitting from the saved offset with an
-     * exactly-once guarantee (unless the journal has overflowed).
+     * The source saves the journal offsets to the snapshot. If the job
+     * restarts, it starts emitting from the saved offsets with an exactly-once
+     * guarantee (unless the journal has overflowed).
+     * <p>
+     * If you start a new job from an exported state, you can change the source
+     * parameters as needed.
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
@@ -750,12 +761,12 @@ public final class Sources {
      *
      * @param cacheName the name of the cache
      * @param predicateFn the predicate to filter the events. You may use {@link
-     *                    com.hazelcast.jet.Util#cachePutEvents()} to pass only {@link
-     *                    com.hazelcast.cache.CacheEventType#CREATED CREATED} and {@link
-     *                    com.hazelcast.cache.CacheEventType#UPDATED UPDATED} events.
+     *                    Util#cachePutEvents()} to pass only {@link
+     *                    CacheEventType#CREATED CREATED} and {@link
+     *                    CacheEventType#UPDATED UPDATED} events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     com.hazelcast.jet.Util#cacheEventToEntry()} to extract just the key
+     *                     Util#cacheEventToEntry()} to extract just the key
      *                     and the new value.
      * @param initialPos describes which event to start receiving from
      * @param <T> type of emitted item
@@ -827,9 +838,14 @@ public final class Sources {
      * configure the event journal} for it. The journal has fixed capacity and
      * will drop events if it overflows.
      * <p>
-     * The source saves the journal offset to the snapshot. If the job
-     * restarts, it starts emitting from the saved offset with an
-     * exactly-once guarantee (unless the journal has overflowed).
+     * The source saves the journal offsets to the snapshot. If the job
+     * restarts, it starts emitting from the saved offsets with an exactly-once
+     * guarantee (unless the journal has overflowed).
+     * <p>
+     * If you start a new job from an exported state, you can change the source
+     * parameters as needed. If you connect to another cluster, keep in mind
+     * that the same offsets will be used. To avoid this, give different
+     * {@linkplain Stage#setName name} to this source.
      * <p>
      * The default local parallelism for this processor is 1.
      *
@@ -847,12 +863,12 @@ public final class Sources {
      * @param cacheName the name of the cache
      * @param clientConfig configuration for the client to connect to the remote cluster
      * @param predicateFn the predicate to filter the events. You may use {@link
-     *                    com.hazelcast.jet.Util#cachePutEvents()} to pass only {@link
-     *                    com.hazelcast.cache.CacheEventType#CREATED CREATED} and {@link
-     *                    com.hazelcast.cache.CacheEventType#UPDATED UPDATED} events.
+     *                    Util#cachePutEvents()} to pass only {@link
+     *                    CacheEventType#CREATED CREATED} and {@link
+     *                    CacheEventType#UPDATED UPDATED} events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     com.hazelcast.jet.Util#cacheEventToEntry()} to extract just the key
+     *                     Util#cacheEventToEntry()} to extract just the key
      *                     and the new value.
      * @param initialPos describes which event to start receiving from
      * @param <T> type of emitted item

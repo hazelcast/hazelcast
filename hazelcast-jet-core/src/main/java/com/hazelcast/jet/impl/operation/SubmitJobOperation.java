@@ -23,11 +23,10 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class SubmitJobOperation extends AbstractJobOperation implements IdentifiedDataSerializable {
+public class SubmitJobOperation extends AbstractJobOperation {
 
     private Data dag;
     private JobConfig config;

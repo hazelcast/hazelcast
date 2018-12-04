@@ -38,9 +38,13 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.lang.reflect.Modifier.FINAL;
+import static java.lang.reflect.Modifier.STATIC;
+import static java.lang.reflect.Modifier.TRANSIENT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
@@ -70,28 +74,15 @@ public class JetInitDataSerializerHookTest {
                         singleton("config")},
 
                 new Object[]{
-                        "sampleJobExecutionRecord_whenSuccessfulSnapshot",
-                        sampleJobExecutionRecord_whenSuccessfulSnapshot(),
+                        "JobExecutionRecord",
+                        populateFields(new JobExecutionRecord(), singletonList("snapshotStats")),
                         emptyList()},
+
                 new Object[]{
-                        "sampleJobExecutionRecord_whenFailedSnapshot",
-                        sampleJobExecutionRecord_whenFailedSnapshot(),
+                        "JobExecutionRecord.SnapshotStats",
+                        populateFields(new JobExecutionRecord.SnapshotStats(), emptyList()),
                         emptyList()}
         );
-    }
-
-    private static JobExecutionRecord sampleJobExecutionRecord_whenSuccessfulSnapshot() {
-        JobExecutionRecord r = new JobExecutionRecord(1, 2, true);
-        r.startNewSnapshot();
-        r.ongoingSnapshotDone(10, 11, 12, null);
-        return r;
-    }
-
-    private static JobExecutionRecord sampleJobExecutionRecord_whenFailedSnapshot() {
-        JobExecutionRecord r = new JobExecutionRecord(1, 2, true);
-        r.startNewSnapshot();
-        r.ongoingSnapshotDone(10, 11, 12, "Failed");
-        return r;
     }
 
     @Test
@@ -103,16 +94,71 @@ public class JetInitDataSerializerHookTest {
         assertNotSame("serialization/deserialization didn't take place", instance, deserialized);
 
         //compare all field using reflection
-        compareFields(instance, deserialized, instance.getClass(), ignoredFields);
+        compareFields(instance, deserialized, ignoredFields);
     }
 
-    private static void compareFields(Object original, Object cloned, Class<?> clazz, Collection<String> ignoredFields)
+    private static Object populateFields(Object object, Collection<String> ignoredFields) {
+        return populateFields2(object, object.getClass(), ignoredFields);
+    }
+
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private static Object populateFields2(Object object, Class<?> clazz, Collection<String> ignoredFields) {
+        byte i = 1;
+        for (Field field : clazz.getDeclaredFields()) {
+            int modifiers = field.getModifiers();
+            if (ignoredFields.contains(field.getName()) || (modifiers & (TRANSIENT | STATIC)) != 0) {
+                continue;
+            }
+            field.setAccessible(true);
+            Class<?> type = field.getType();
+            try {
+                if ((modifiers & FINAL) != 0) {
+                    if (type == AtomicInteger.class) {
+                        AtomicInteger val = (AtomicInteger) field.get(object);
+                        val.set(i);
+                    } else if (type == AtomicLong.class) {
+                        AtomicLong val = (AtomicLong) field.get(object);
+                        val.set(i);
+                    } else {
+                        throw new UnsupportedOperationException("Unsupported type: " + type);
+                    }
+                } else {
+                    Object val;
+                    if (type == String.class) {
+                        val = String.valueOf(i);
+                    } else if (type == int.class || type == long.class || type == byte.class || type == short.class
+                            || type == float.class || type == double.class) {
+                        val = i;
+                    } else if (type == boolean.class) {
+                        val = true;
+                    } else {
+                        throw new UnsupportedOperationException("Unsupported type: " + type);
+                    }
+                    field.set(object, val);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Error when setting value for '" + clazz.getSimpleName() + '.' + field.getName()
+                        + "': " + e);
+            }
+            i++;
+        }
+        if (clazz.getSuperclass() != null) {
+            populateFields2(object, clazz.getSuperclass(), ignoredFields);
+        }
+        return object;
+    }
+
+    private static void compareFields(Object original, Object cloned, Collection<String> ignoredFields) throws Exception {
+        compareFields2(original, cloned, original.getClass(), ignoredFields);
+    }
+
+    private static void compareFields2(Object original, Object cloned, Class<?> clazz, Collection<String> ignoredFields)
             throws Exception {
         for (Field field : clazz.getDeclaredFields()) {
             field.setAccessible(true);
             Object valueOriginal = field.get(original);
             Object valueCloned = field.get(cloned);
-            if (ignoredFields.contains(field.getName())) {
+            if (ignoredFields.contains(field.getName()) || (field.getModifiers() & TRANSIENT) != 0) {
                 assertTrue("Field '" + field.getName() + "': both values should be null or not null, but are original="
                         + valueOriginal + ", cloned=" + valueCloned,
                         valueOriginal == null == (valueCloned == null));
@@ -121,7 +167,7 @@ public class JetInitDataSerializerHookTest {
             customAssertEquals("Field '" + field.getName() + "' not equal", valueOriginal, valueCloned);
         }
         if (clazz.getSuperclass() != null) {
-            compareFields(original, cloned, clazz.getSuperclass(), ignoredFields);
+            compareFields2(original, cloned, clazz.getSuperclass(), ignoredFields);
         }
     }
 

@@ -38,6 +38,7 @@ import static com.hazelcast.jet.core.processor.Processors.aggregateToSessionWind
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.function.DistributedFunctions.constantKey;
+import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SESSION;
 import static java.util.Collections.nCopies;
 
@@ -96,7 +97,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     //            | aggregateToSlidingWindowP | local parallelism = 1
     //             ---------------------------
     private void addSlidingWindowSingleStage(Planner p, SlidingWindowDef wDef) {
-        PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name(), ""), 1,
+        PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name()), 1,
                 aggregateToSlidingWindowP(
                         nCopies(aggrOp.arity(), constantKey()),
                         nCopies(aggrOp.arity(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
@@ -126,9 +127,9 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     //              | combineToSlidingWindowP | local parallelism = 1
     //               -------------------------
     private void addSlidingWindowTwoStage(Planner p, SlidingWindowDef wDef) {
-        String namePrefix = p.uniqueVertexName(name(), "-step");
+        String vertexName = p.uniqueVertexName(name());
         SlidingWindowPolicy winPolicy = wDef.toSlidingWindowPolicy();
-        Vertex v1 = p.dag.newVertex(namePrefix + '1', accumulateByFrameP(
+        Vertex v1 = p.dag.newVertex(vertexName + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByFrameP(
                 nCopies(aggrOp.arity(), constantKey()),
                 nCopies(aggrOp.arity(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
                 TimestampKind.EVENT,
@@ -136,7 +137,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
                 aggrOp
         ));
         v1.localParallelism(localParallelism());
-        PlannerVertex pv2 = p.addVertex(this, namePrefix + '2', 1,
+        PlannerVertex pv2 = p.addVertex(this, vertexName, 1,
                 combineToSlidingWindowP(winPolicy, aggrOp, mapToOutputFn.toKeyedWindowResultFn()));
         p.addEdges(this, v1);
         p.dag.edge(between(v1, pv2.v).distributed().allToOne());
@@ -155,7 +156,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     //            | aggregateToSessionWindowP | local parallelism = 1
     //             ---------------------------
     private void addSessionWindow(Planner p, SessionWindowDef wDef) {
-        PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name(), ""), localParallelism(),
+        PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name()), localParallelism(),
                 aggregateToSessionWindowP(
                         wDef.sessionTimeout(),
                         nCopies(aggrOp.arity(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),

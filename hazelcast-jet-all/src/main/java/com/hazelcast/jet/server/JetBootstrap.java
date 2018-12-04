@@ -19,16 +19,17 @@ package com.hazelcast.jet.server;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
+import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.IListJet;
-import com.hazelcast.jet.IMapJet;
-import com.hazelcast.jet.JetCacheManager;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
@@ -94,7 +95,7 @@ public final class JetBootstrap {
     private final JetInstance instance;
 
     private JetBootstrap(JetInstance instance) {
-        this.instance = new InstanceProxy(instance);
+        this.instance = new InstanceProxy((AbstractJetInstance) instance);
     }
 
     /**
@@ -145,11 +146,12 @@ public final class JetBootstrap {
         return SUPPLIER.get().instance;
     }
 
-    private static class InstanceProxy implements JetInstance {
+    private static class InstanceProxy extends AbstractJetInstance {
 
-        private final JetInstance instance;
+        private final AbstractJetInstance instance;
 
-        InstanceProxy(JetInstance instance) {
+        InstanceProxy(AbstractJetInstance instance) {
+            super(instance.getHazelcastInstance());
             this.instance = instance;
         }
 
@@ -224,6 +226,11 @@ public final class JetBootstrap {
         @Override
         public void shutdown() {
             instance.shutdown();
+        }
+
+        @Override
+        public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
+            return instance.existsDistributedObject(serviceName, objectName);
         }
     }
 }

@@ -26,7 +26,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
-import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository;
@@ -130,13 +130,13 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_addNodeDuringExecution_then_completeSuccessfully() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, nodeCount)));
 
         // When
         Job job = instances[0].newJob(dag);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
         createJetMember();
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
         job.join();
 
         // Then
@@ -151,14 +151,14 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_addAndRemoveNodeDuringExecution_then_completeSuccessfully() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, nodeCount)));
 
         // When
         Job job = instances[0].newJob(dag);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
         JetInstance instance = createJetMember();
         instance.shutdown();
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
         job.join();
 
         // Then
@@ -173,14 +173,14 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_nonCoordinatorLeavesDuringExecution_then_jobRestarts() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, nodeCount)));
 
         // When
         Job job = instances[0].newJob(dag);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
 
         instances[2].getHazelcastInstance().getLifecycleService().terminate();
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
 
         job.join();
 
@@ -211,17 +211,17 @@ public class TopologyChangeTest extends JetTestSupport {
 
     private void when_nonCoordinatorLeaves_AutoScalingOff_then_jobFailsOrSuspends(boolean snapshotted) throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, nodeCount)));
         JobConfig config = new JobConfig();
         config.setAutoScaling(false);
         config.setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE);
 
         // When
         Job job = instances[0].newJob(dag, config);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
 
         instances[2].getHazelcastInstance().getLifecycleService().terminate();
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
 
         assertJobStatusEventually(job, snapshotted ? SUSPENDED : FAILED, 10);
     }
@@ -230,14 +230,14 @@ public class TopologyChangeTest extends JetTestSupport {
     public void when_nonCoordinatorLeavesDuringExecution_then_clientStillGetsJobResult() throws Throwable {
         // Given
         JetInstance client = createJetClient();
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, nodeCount)));
 
         // When
         Job job = client.newJob(dag);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
 
         instances[2].getHazelcastInstance().getLifecycleService().terminate();
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
 
         job.join();
     }
@@ -245,7 +245,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_coordinatorLeavesDuringExecution_then_jobCompletes() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, nodeCount)));
 
         // When
         Long jobId = null;
@@ -253,10 +253,10 @@ public class TopologyChangeTest extends JetTestSupport {
             Job job = instances[0].newJob(dag);
             Future<Void> future = job.getFuture();
             jobId = job.getId();
-            StuckProcessor.executionStarted.await();
+            NoOutputSourceP.executionStarted.await();
 
             instances[0].getHazelcastInstance().getLifecycleService().terminate();
-            StuckProcessor.proceedLatch.countDown();
+            NoOutputSourceP.proceedLatch.countDown();
 
             future.get();
             fail();
@@ -303,17 +303,17 @@ public class TopologyChangeTest extends JetTestSupport {
     private void when_coordinatorLeaves_AutoScalingOff_then_jobFailsOrSuspends(boolean snapshotted) throws Throwable {
         // Given
         JetInstance client = createJetClient();
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, nodeCount)));
         JobConfig config = new JobConfig();
         config.setAutoScaling(false);
         config.setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE);
 
         // When
         Job job = client.newJob(dag, config);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
 
         instances[0].getHazelcastInstance().getLifecycleService().terminate();
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
 
         assertTrueEventually(() -> {
             JobStatus status = null;
@@ -331,14 +331,14 @@ public class TopologyChangeTest extends JetTestSupport {
     public void when_coordinatorLeavesDuringExecution_then_nonCoordinatorJobSubmitterStillGetsJobResult()
             throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, nodeCount)));
 
         // When
         Job job = instances[1].newJob(dag);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
 
         instances[0].getHazelcastInstance().getLifecycleService().terminate();
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
 
         // Then
         job.join();
@@ -348,14 +348,14 @@ public class TopologyChangeTest extends JetTestSupport {
     public void when_coordinatorLeavesDuringExecution_then_clientStillGetsJobResult() throws Throwable {
         // Given
         JetInstance client = createJetClient();
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, nodeCount)));
 
         // When
         Job job = client.newJob(dag);
-        StuckProcessor.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
 
         instances[0].getHazelcastInstance().getLifecycleService().terminate();
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
 
         // Then
         job.join();

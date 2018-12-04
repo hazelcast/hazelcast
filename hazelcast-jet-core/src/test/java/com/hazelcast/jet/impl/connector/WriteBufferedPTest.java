@@ -24,7 +24,8 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
-import com.hazelcast.jet.core.TestProcessors.StuckForeverSourceP;
+import com.hazelcast.jet.core.TestProcessors;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -52,6 +53,7 @@ public class WriteBufferedPTest extends JetTestSupport {
     @Before
     public void setup() {
         events.clear();
+        TestProcessors.reset(1);
     }
 
     @Test
@@ -92,7 +94,7 @@ public class WriteBufferedPTest extends JetTestSupport {
     public void when_writeBufferedJobFailed_then_bufferDisposed() throws Exception {
         JetInstance instance = createJetMember();
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", StuckForeverSourceP::new);
+        Vertex source = dag.newVertex("source", () -> new NoOutputSourceP());
         Vertex sink = dag.newVertex("sink", getLoggingBufferedWriter()).localParallelism(1);
 
         dag.edge(Edge.between(source, sink));

@@ -24,7 +24,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsGeneratorP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
-import com.hazelcast.jet.core.TestProcessors.StuckForeverSourceP;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -71,7 +71,7 @@ public class ManualRestartTest extends JetTestSupport {
     public void setup() {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
-        dag = new DAG().vertex(new Vertex("test", new MockPS(StuckForeverSourceP::new, NODE_COUNT)));
+        dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
         instances = createJetMembers(new JetConfig(), NODE_COUNT);
     }
 
@@ -81,7 +81,7 @@ public class ManualRestartTest extends JetTestSupport {
     }
 
     @Test
-    public void when_autoRestartOnMemberFailureDisabled_then_jobRestarts() {
+    public void when_autoScalingDisabled_then_jobRestarts() {
         testJobRestartWhenJobIsRunning(false);
     }
 

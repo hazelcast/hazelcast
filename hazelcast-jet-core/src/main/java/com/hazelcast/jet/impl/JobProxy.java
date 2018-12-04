@@ -18,9 +18,11 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.operation.ExportSnapshotOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
@@ -38,6 +40,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
@@ -84,6 +87,26 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
         } catch (Exception e) {
             throw rethrow(e);
         }
+    }
+
+    @Override
+    public JobStateSnapshot cancelAndExportSnapshot(String name) {
+        try {
+            invokeOp(new ExportSnapshotOperation(getId(), name, true)).get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+        return getJetInstance(container()).getJobStateSnapshot(name);
+    }
+
+    @Override
+    public JobStateSnapshot exportSnapshot(String name) {
+        try {
+            invokeOp(new ExportSnapshotOperation(getId(), name, false)).get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+        return getJetInstance(container()).getJobStateSnapshot(name);
     }
 
     @Override

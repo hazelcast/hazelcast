@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.jet.impl.SerializationConstants;
@@ -29,6 +30,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.UuidUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
@@ -364,15 +366,18 @@ public class Edge implements IdentifiedDataSerializable {
 
     /**
      * Returns the {@code EdgeConfig} instance associated with this edge.
+     * Default value is {@code null}.
      */
+    @Nullable
     public EdgeConfig getConfig() {
         return config;
     }
 
     /**
-     * Assigns an {@code EdgeConfig} to this edge.
+     * Assigns an {@code EdgeConfig} to this edge. If {@code null} is supplied,
+     * the edge will use {@link JetConfig#getDefaultEdgeConfig()}.
      */
-    public Edge setConfig(EdgeConfig config) {
+    public Edge setConfig(@Nullable EdgeConfig config) {
         this.config = config;
         return this;
     }

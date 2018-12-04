@@ -28,6 +28,7 @@ import java.util.HashSet;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingContextP;
+import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 
 public class DistinctTransform<T, K> extends AbstractTransform {
     private final DistributedFunction<? super T, ? extends K> keyFn;
@@ -39,10 +40,10 @@ public class DistinctTransform<T, K> extends AbstractTransform {
 
     @Override
     public void addToDag(Planner p) {
-        String namePrefix = p.uniqueVertexName(this.name(), "-step");
-        Vertex v1 = p.dag.newVertex(namePrefix + '1', distinctP(keyFn))
+        String vertexName = p.uniqueVertexName(this.name());
+        Vertex v1 = p.dag.newVertex(vertexName + FIRST_STAGE_VERTEX_NAME_SUFFIX, distinctP(keyFn))
                          .localParallelism(localParallelism());
-        PlannerVertex pv2 = p.addVertex(this, namePrefix + '2', localParallelism(), distinctP(keyFn));
+        PlannerVertex pv2 = p.addVertex(this, vertexName, localParallelism(), distinctP(keyFn));
         p.addEdges(this, v1, (e, ord) -> e.partitioned(keyFn, HASH_CODE));
         p.dag.edge(between(v1, pv2.v).distributed().partitioned(keyFn));
     }

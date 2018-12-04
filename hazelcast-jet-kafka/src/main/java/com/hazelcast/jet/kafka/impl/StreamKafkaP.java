@@ -248,12 +248,12 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         long watermark = value1[1];
         long[] topicOffsets = offsets.get(topicPartition.topic());
         if (topicOffsets == null) {
-            getLogger().severe("Offset for topic '" + topicPartition.topic()
+            getLogger().warning("Offset for topic '" + topicPartition.topic()
                     + "' is present in snapshot, but the topic is not supposed to be read");
             return;
         }
         if (topicPartition.partition() >= topicOffsets.length) {
-            getLogger().severe("Offset for partition '" + topicPartition + "' is present in snapshot," +
+            getLogger().warning("Offset for partition '" + topicPartition + "' is present in snapshot," +
                     " but that topic currently has only " + topicOffsets.length + " partitions");
         }
         Integer partitionIndex = currentAssignment.get(topicPartition);

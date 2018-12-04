@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class SnapshotContext {
@@ -87,10 +86,11 @@ public class SnapshotContext {
     private long currentSnapshotId;
 
     /**
-     * The data map index the active snapshot will be written to. It's either 0
-     * or 1 (a valid index) or -1 (meaning we don't know).
+     * The data map name the active snapshot will be written to. If it's null,
+     * we can't write the snapshot - we have to learn the name from the master
+     * first.
      */
-    private volatile int currentDataMapIndex = -1;
+    private volatile String currentMapName;
 
     /**
      * Future which will be created when a snapshot starts and completed and
@@ -129,11 +129,7 @@ public class SnapshotContext {
      * to.
      */
     public String currentMapName() {
-        int mapIndex = this.currentDataMapIndex;
-        if (mapIndex < 0) {
-            return null;
-        }
-        return snapshotDataMapName(jobId, mapIndex);
+        return currentMapName;
     }
 
     boolean isTerminalSnapshot() {
@@ -160,7 +156,7 @@ public class SnapshotContext {
      * SnapshotOperation}.
      */
     synchronized CompletableFuture<SnapshotOperationResult> startNewSnapshot(
-            long snapshotId, int dataMapIndex, boolean isTerminal) {
+            long snapshotId, String mapName, boolean isTerminal) {
         assert snapshotId == currentSnapshotId + 1
                 : "new snapshotId not incremented by 1. Previous=" + currentSnapshotId + ", new=" + snapshotId;
         assert currentSnapshotId == activeSnapshotId : "last snapshot was postponed but not started";
@@ -174,7 +170,7 @@ public class SnapshotContext {
         assert success : "numRemainingTasklets wasn't 0, but " + numRemainingTasklets.get();
 
         currentSnapshotId = snapshotId;
-        currentDataMapIndex = dataMapIndex;
+        currentMapName = mapName;
 
         if (numHigherPriorityTasklets == 0) {
             // if there are no higher priority tasklets, start the snapshot immediately
@@ -270,7 +266,7 @@ public class SnapshotContext {
         totalBytes.set(0);
         totalKeys.set(0);
         totalChunks.set(0);
-        currentDataMapIndex = -1;
+        currentMapName = null;
     }
 
     void reportError(Throwable ex) {

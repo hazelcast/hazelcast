@@ -22,7 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
-import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
@@ -72,20 +72,20 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         int firstSubClusterSize = 3;
         int secondSubClusterSize = 2;
         int clusterSize = firstSubClusterSize + secondSubClusterSize;
-        StuckProcessor.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
+        NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
         Job[] jobRef = new Job[1];
 
         Consumer<JetInstance[]> beforeSplit = instances -> {
-            MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
+            MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
-            assertOpenEventually(StuckProcessor.executionStarted);
+            assertOpenEventually(NoOutputSourceP.executionStarted);
         };
 
         Future[] minorityJobFutureRef = new Future[1];
 
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
-            StuckProcessor.proceedLatch.countDown();
+            NoOutputSourceP.proceedLatch.countDown();
 
             assertTrueEventually(() ->
                     assertEquals(clusterSize + firstSubClusterSize, MockPS.initCount.get()));
@@ -136,18 +136,18 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         int firstSubClusterSize = 2;
         int secondSubClusterSize = 2;
         int clusterSize = firstSubClusterSize + secondSubClusterSize;
-        StuckProcessor.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
+        NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
         Job[] jobRef = new Job[1];
 
         Consumer<JetInstance[]> beforeSplit = instances -> {
-            MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
+            MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
-            assertOpenEventually(StuckProcessor.executionStarted);
+            assertOpenEventually(NoOutputSourceP.executionStarted);
         };
 
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
-            StuckProcessor.proceedLatch.countDown();
+            NoOutputSourceP.proceedLatch.countDown();
 
             long jobId = jobRef[0].getId();
 
@@ -188,18 +188,18 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         int firstSubClusterSize = 2;
         int secondSubClusterSize = 2;
         int clusterSize = firstSubClusterSize + secondSubClusterSize;
-        StuckProcessor.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
+        NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
         Job[] jobRef = new Job[1];
 
         Consumer<JetInstance[]> beforeSplit = instances -> {
-            MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
+            MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = instances[0].newJob(dag);
-            assertOpenEventually(StuckProcessor.executionStarted);
+            assertOpenEventually(NoOutputSourceP.executionStarted);
         };
 
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
-            StuckProcessor.proceedLatch.countDown();
+            NoOutputSourceP.proceedLatch.countDown();
 
             long jobId = jobRef[0].getId();
 
@@ -233,14 +233,14 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
     public void when_jobIsSubmittedToMinoritySide_then_jobIsCancelledDuringMerge() {
         int firstSubClusterSize = 3;
         int secondSubClusterSize = 2;
-        StuckProcessor.executionStarted = new CountDownLatch(secondSubClusterSize * PARALLELISM);
+        NoOutputSourceP.executionStarted = new CountDownLatch(secondSubClusterSize * PARALLELISM);
         Job[] jobRef = new Job[1];
 
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
-            MockPS processorSupplier = new MockPS(StuckProcessor::new, secondSubClusterSize);
+            MockPS processorSupplier = new MockPS(NoOutputSourceP::new, secondSubClusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = secondSubCluster[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
-            assertOpenEventually(StuckProcessor.executionStarted);
+            assertOpenEventually(NoOutputSourceP.executionStarted);
         };
 
         Consumer<JetInstance[]> afterMerge = instances -> {
@@ -268,11 +268,11 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             instances[i] = createJetMember(jetConfig);
         }
 
-        StuckProcessor.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
-        MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
+        NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
+        MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
         DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
         Job job = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
-        assertOpenEventually(StuckProcessor.executionStarted);
+        assertOpenEventually(NoOutputSourceP.executionStarted);
 
         createJetMember(jetConfig);
 
@@ -285,7 +285,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             assertEquals(3, masterContext.jobExecutionRecord().getQuorumSize());
         });
 
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
     }
 
     @Test
@@ -297,17 +297,17 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             instances[i] = createJetMember(jetConfig);
         }
 
-        StuckProcessor.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
-        MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
+        NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
+        MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
         DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
         Job job = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
-        assertOpenEventually(StuckProcessor.executionStarted);
+        assertOpenEventually(NoOutputSourceP.executionStarted);
 
         for (int i = 1; i < clusterSize; i++) {
             instances[i].shutdown();
         }
 
-        StuckProcessor.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
 
         assertJobStatusEventually(job, NOT_RUNNING, 10);
 
@@ -325,14 +325,14 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         int firstSubClusterSize = 2;
         int secondSubClusterSize = 1;
         int clusterSize = firstSubClusterSize + secondSubClusterSize;
-        StuckProcessor.executionStarted = new CountDownLatch(secondSubClusterSize * PARALLELISM);
+        NoOutputSourceP.executionStarted = new CountDownLatch(secondSubClusterSize * PARALLELISM);
         Job[] jobRef = new Job[1];
 
         Consumer<JetInstance[]> beforeSplit = instances -> {
-            MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
+            MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = instances[2].newJob(dag);
-            assertOpenEventually(StuckProcessor.executionStarted);
+            assertOpenEventually(NoOutputSourceP.executionStarted);
         };
 
         Consumer<JetInstance[]> afterMerge = instances -> {
@@ -345,8 +345,6 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
             logger.info("Shutting down 2nd instance");
             instances[1].shutdown();
-            logger.info("2nd instance down, starting another instance");
-            createJetMember();
 
             assertTrue(((ClusterService) instances[2].getCluster()).isMaster());
 
@@ -362,15 +360,15 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         int firstSubClusterSize = 3;
         int secondSubClusterSize = 2;
         int clusterSize = firstSubClusterSize + secondSubClusterSize;
-        StuckProcessor.executionStarted = new CountDownLatch(secondSubClusterSize * PARALLELISM);
+        NoOutputSourceP.executionStarted = new CountDownLatch(secondSubClusterSize * PARALLELISM);
         Job[] jobRef = new Job[1];
 
         Consumer<JetInstance[]> beforeSplit = instances -> {
-            MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
+            MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(false));
             assertTrueEventually(() -> assertEquals("initCount", clusterSize, MockPS.initCount.get()), 10);
-            assertOpenEventually("executionStarted", StuckProcessor.executionStarted);
+            assertOpenEventually("executionStarted", NoOutputSourceP.executionStarted);
         };
 
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {

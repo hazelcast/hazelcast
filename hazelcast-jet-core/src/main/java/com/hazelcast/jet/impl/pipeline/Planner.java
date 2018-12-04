@@ -151,8 +151,8 @@ public class Planner {
      * @return unique name to be used for the vertex
      */
     @Nonnull
-    public String uniqueVertexName(@Nonnull String proposedName, @Nonnull String proposedNameSuffix) {
-        return uniqueName(vertexNames, proposedName, proposedNameSuffix);
+    public String uniqueVertexName(@Nonnull String proposedName) {
+        return uniqueName(vertexNames, proposedName);
     }
 
     /**
@@ -163,12 +163,11 @@ public class Planner {
      */
     @Nonnull
     static String uniqueName(
-            @Nonnull Set<String> knownNames, @Nonnull String proposedName, @Nonnull String proposedNameSuffix
+            @Nonnull Set<String> knownNames, @Nonnull String proposedName
     ) {
         for (int index = 1; ; index++) {
             String candidate = proposedName
-                    + (index == 1 ? "" : "-" + index)
-                    + proposedNameSuffix;
+                    + (index == 1 ? "" : "-" + index);
             if (knownNames.add(candidate)) {
                 return candidate;
             }

@@ -590,7 +590,7 @@ public final class Processors {
      * <p>
      * The functioning of this vertex is easiest to explain in terms of the
      * <em>event interval</em>: the range {@code [timestamp, timestamp +
-     * sessionTimeout]}. Initially an event causes a new session window to be
+     * sessionTimeout)}. Initially an event causes a new session window to be
      * created, covering exactly the event interval. A following event under
      * the same key belongs to this window iff its interval overlaps it. The
      * window is extended to cover the entire interval of the new event. The

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -32,6 +33,8 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
+import static com.hazelcast.jet.core.ExportSnapshotTest.getSnapshotMap;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static org.junit.Assert.assertFalse;
@@ -53,7 +56,7 @@ public class PostponedSnapshotTest extends JetTestSupport {
 
     @Test
     public void when_jobHasHigherPriorityEdge_then_noSnapshotUntilEdgeDone() {
-        Job job = startJob();
+        Job job = startJob(100);
 
         latches.set(0, 1);
         JobRepository jr = new JobRepository(instance);
@@ -67,7 +70,7 @@ public class PostponedSnapshotTest extends JetTestSupport {
 
     @Test
     public void when_gracefulShutdownWhilePostponed_then_shutsDown() {
-        startJob();
+        startJob(100);
 
         // When
         Future shutdownFuture = spawn(() -> instance.shutdown());
@@ -80,7 +83,36 @@ public class PostponedSnapshotTest extends JetTestSupport {
         assertTrueEventually(() -> assertTrue(shutdownFuture.isDone()));
     }
 
-    private Job startJob() {
+    @Test
+    public void when_exportStateWhilePostponed_beforeFirstSnapshot_then_exportWaits() {
+        when_exportStateWhilePostponed_then_exportWaits(true);
+    }
+
+    @Test
+    public void when_exportStateWhilePostponed_afterFirstSnapshot_then_exportWaits() {
+        when_exportStateWhilePostponed_then_exportWaits(false);
+    }
+
+    private void when_exportStateWhilePostponed_then_exportWaits(boolean beforeFirstSnapshot) {
+        Job job = startJob(beforeFirstSnapshot ? 20_000 : 10);
+
+        // When
+        Future snapshotFuture = spawn(() -> job.exportSnapshot("state"));
+        IMap<Object, Object> snapshotMap = getSnapshotMap(instance, "state");
+        assertTrueAllTheTime(() -> {
+            assertFalse(snapshotFuture.isDone());
+            assertTrue(snapshotMap.isEmpty());
+        }, 3);
+
+        // finish the job
+        latches.set(0, 1);
+
+        // Then
+        assertTrueEventually(() -> assertTrue(snapshotFuture.isDone()));
+        assertFalse(snapshotMap.isEmpty());
+    }
+
+    private Job startJob(long snapshotInterval) {
         DAG dag = new DAG();
         Vertex highPrioritySource = dag.newVertex("highPrioritySource", () -> new SourceP(0)).localParallelism(1);
         Vertex lowPrioritySource = dag.newVertex("lowPrioritySource", () -> new SourceP(1)).localParallelism(1);
@@ -91,23 +123,27 @@ public class PostponedSnapshotTest extends JetTestSupport {
 
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        config.setSnapshotIntervalMillis(100);
+        config.setSnapshotIntervalMillis(snapshotInterval);
 
         Job job = instance.newJob(dag, config);
         JobRepository jr = new JobRepository(instance);
 
         // check, that snapshot starts, but stays in ONGOING state
-        assertTrueEventually(() -> {
-            JobExecutionRecord record = jr.getJobExecutionRecord(job.getId());
-            assertNotNull("record is null", record);
-            assertTrue(record.ongoingSnapshotId() >= 0);
-        }, 5);
-        assertTrueAllTheTime(() -> {
-            JobExecutionRecord record = jr.getJobExecutionRecord(job.getId());
-            assertTrue(record.ongoingSnapshotId() >= 0);
-            assertTrue("snapshotId=" + record.snapshotId(),
-                    record.snapshotId() < 0);
-        }, 2);
+        if (snapshotInterval < 1000) {
+            assertTrueEventually(() -> {
+                JobExecutionRecord record = jr.getJobExecutionRecord(job.getId());
+                assertNotNull("record is null", record);
+                assertTrue(record.ongoingSnapshotId() >= 0);
+            }, 5);
+            assertTrueAllTheTime(() -> {
+                JobExecutionRecord record = jr.getJobExecutionRecord(job.getId());
+                assertTrue(record.ongoingSnapshotId() >= 0);
+                assertTrue("snapshotId=" + record.snapshotId(),
+                        record.snapshotId() < 0);
+            }, 2);
+        } else {
+            assertJobStatusEventually(job, RUNNING);
+        }
         return job;
     }
 

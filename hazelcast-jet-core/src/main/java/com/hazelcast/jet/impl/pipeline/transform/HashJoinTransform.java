@@ -95,7 +95,7 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
     @Override
     @SuppressWarnings("unchecked")
     public void addToDag(Planner p) {
-        String namePrefix = p.uniqueVertexName(this.name(), "");
+        String namePrefix = p.uniqueVertexName(this.name());
         PlannerVertex primary = p.xform2vertex.get(this.upstream().get(0));
         List keyFns = this.clauses.stream()
                                   .map(JoinClause::leftKeyFn)

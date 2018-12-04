@@ -39,18 +39,18 @@ public class SnapshotOperation extends AsyncJobOperation {
 
     private long executionId;
     private long snapshotId;
-    private int ongoingDataMapIndex;
+    private String mapName;
     private boolean isTerminal;
 
     // for deserialization
     public SnapshotOperation() {
     }
 
-    public SnapshotOperation(long jobId, long executionId, long snapshotId, int ongoingDataMapIndex, boolean isTerminal) {
+    public SnapshotOperation(long jobId, long executionId, long snapshotId, String mapName, boolean isTerminal) {
         super(jobId);
         this.executionId = executionId;
         this.snapshotId = snapshotId;
-        this.ongoingDataMapIndex = ongoingDataMapIndex;
+        this.mapName = mapName;
         this.isTerminal = isTerminal;
     }
 
@@ -60,7 +60,7 @@ public class SnapshotOperation extends AsyncJobOperation {
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, getClass().getSimpleName()
         );
-        ctx.beginSnapshot(snapshotId, ongoingDataMapIndex, isTerminal).whenComplete(withTryCatch(getLogger(),
+        ctx.beginSnapshot(snapshotId, mapName, isTerminal).whenComplete(withTryCatch(getLogger(),
                 (result, exc) -> {
                     if (exc != null) {
                         result = new SnapshotOperationResult(0, 0, 0, exc);
@@ -97,8 +97,8 @@ public class SnapshotOperation extends AsyncJobOperation {
         super.writeInternal(out);
         out.writeLong(executionId);
         out.writeLong(snapshotId);
+        out.writeUTF(mapName);
         out.writeBoolean(isTerminal);
-        out.writeInt(ongoingDataMapIndex);
     }
 
     @Override
@@ -106,8 +106,8 @@ public class SnapshotOperation extends AsyncJobOperation {
         super.readInternal(in);
         executionId = in.readLong();
         snapshotId = in.readLong();
+        mapName = in.readUTF();
         isTerminal = in.readBoolean();
-        ongoingDataMapIndex = in.readInt();
     }
 
     /**

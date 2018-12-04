@@ -45,6 +45,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -80,6 +81,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
             instanceFactory = new JetTestInstanceFactory();
         }
         return instanceFactory.newMember(config);
+    }
+
+    protected JetInstance[] createJetMembers(int nodeCount) {
+        return createJetMembers(new JetConfig(), nodeCount);
     }
 
     protected JetInstance[] createJetMembers(JetConfig config, int nodeCount) {
@@ -136,14 +141,12 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static void assertJobStatusEventually(Job job, JobStatus expected) {
         assertJobStatusEventually(job, expected, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-
     }
 
     public static void assertJobStatusEventually(Job job, JobStatus expected, int timeoutSeconds) {
         assertNotNull(job);
-        assertTrueEventually(() -> assertEquals(job.getStatus(), expected), timeoutSeconds);
+        assertTrueEventually(() -> assertEquals(expected, job.getStatus()), timeoutSeconds);
     }
-
 
     public static void assertTrueEventually(RunnableExc runnable) {
         HazelcastTestSupport.assertTrueEventually(assertTask(runnable));
@@ -198,12 +201,12 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         instanceFactory.terminate(instance);
     }
 
-    public static void spawnSafe(RunnableExc r) {
-        spawn(() -> {
+    public Future spawnSafe(RunnableExc r) {
+        return spawn(() -> {
             try {
                 r.run();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.warning("Spawned Runnable failed", e);
             }
         });
     }

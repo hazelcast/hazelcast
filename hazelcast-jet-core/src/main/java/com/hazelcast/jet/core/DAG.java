@@ -36,11 +36,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
+import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.util.Collections.emptyList;
@@ -386,7 +385,6 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     public String toDotString() {
         final StringBuilder builder = new StringBuilder(512);
         builder.append("digraph DAG {\n");
-        Pattern stepPattern = Pattern.compile("(?<stepName>.+)-step[12]");
         int clusterCount = 0;
         for (Vertex v : this) {
             List<Edge> out = getOutboundEdges(v.getName());
@@ -406,10 +404,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 if (e.getRoutingPolicy() != RoutingPolicy.UNICAST) {
                     labels.add(e.getRoutingPolicy().toString().toLowerCase());
                 }
-                Matcher srcMatcher = stepPattern.matcher(e.getSourceName());
-                Matcher destMatcher = stepPattern.matcher(e.getDestName());
-                boolean inSubgraph = srcMatcher.matches() && destMatcher.matches()
-                        && srcMatcher.group("stepName").equals(destMatcher.group("stepName"));
+                boolean inSubgraph = e.getSourceName().equals(e.getDestName() + FIRST_STAGE_VERTEX_NAME_SUFFIX);
                 if (inSubgraph) {
                     builder.append("\tsubgraph cluster_").append(clusterCount++).append(" {\n")
                            .append("\t");
