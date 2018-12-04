@@ -19,11 +19,7 @@ package com.hazelcast.wan;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.DefaultNodeContext;
-import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
@@ -143,34 +139,5 @@ public class WanRESTTest extends HazelcastTestSupport {
     private void assertSuccess(String jsonResult) {
         JsonObject result = Json.parse(jsonResult).asObject();
         assertEquals("success", result.getString("status", null));
-    }
-
-    private static class WanServiceMockingNodeContext extends DefaultNodeContext {
-        private final WanReplicationService wanReplicationService;
-
-        WanServiceMockingNodeContext(WanReplicationService wanReplicationService) {
-            super();
-            this.wanReplicationService = wanReplicationService;
-        }
-
-        @Override
-        public NodeExtension createNodeExtension(Node node) {
-            return new WanServiceMockingNodeExtension(node, wanReplicationService);
-        }
-    }
-
-    private static class WanServiceMockingNodeExtension extends DefaultNodeExtension {
-        private final WanReplicationService wanReplicationService;
-
-        WanServiceMockingNodeExtension(Node node, WanReplicationService wanReplicationService) {
-            super(node);
-            this.wanReplicationService = wanReplicationService;
-        }
-
-        @Override
-        public <T> T createService(Class<T> clazz) {
-            return clazz.isAssignableFrom(WanReplicationService.class)
-                    ? (T) wanReplicationService : super.createService(clazz);
-        }
     }
 }

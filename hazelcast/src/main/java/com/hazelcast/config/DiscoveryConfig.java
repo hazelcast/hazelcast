@@ -166,4 +166,40 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         nodeFilter = in.readObject();
         nodeFilterClass = in.readUTF();
     }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DiscoveryConfig that = (DiscoveryConfig) o;
+
+        if (!discoveryStrategyConfigs.equals(that.discoveryStrategyConfigs)) {
+            return false;
+        }
+
+        if (discoveryServiceProvider != null
+                ? !discoveryServiceProvider.equals(that.discoveryServiceProvider)
+                : that.discoveryServiceProvider != null) {
+            return false;
+        }
+        if (nodeFilter != null ? !nodeFilter.equals(that.nodeFilter) : that.nodeFilter != null) {
+            return false;
+        }
+        return nodeFilterClass != null ? nodeFilterClass.equals(that.nodeFilterClass) : that.nodeFilterClass == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = discoveryStrategyConfigs.hashCode();
+        result = 31 * result + (discoveryServiceProvider != null ? discoveryServiceProvider.hashCode() : 0);
+        result = 31 * result + (nodeFilter != null ? nodeFilter.hashCode() : 0);
+        result = 31 * result + (nodeFilterClass != null ? nodeFilterClass.hashCode() : 0);
+        return result;
+    }
 }
