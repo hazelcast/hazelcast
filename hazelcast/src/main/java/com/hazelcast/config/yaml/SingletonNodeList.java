@@ -16,38 +16,27 @@
 
 package com.hazelcast.config.yaml;
 
-import com.hazelcast.internal.yaml.YamlNode;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import static com.hazelcast.config.yaml.EmptyNodeList.emptyNodeList;
+class SingletonNodeList implements NodeList {
 
-/**
- * Utility methods for YAML to W3C adaptors
- */
-public final class W3cDomUtil {
-    private W3cDomUtil() {
+    private final Node singletonItem;
+
+    SingletonNodeList(Node singletonItem) {
+        this.singletonItem = singletonItem;
     }
 
-    /**
-     * Returns an adapted W3C {@link Node} view of the provided {@link YamlNode}
-     *
-     * @param yamlNode The YAML node to adapt
-     * @return the adapted W3C Node or {@code null} if the provided YAML node is {@code null}
-     */
-    public static Node asW3cNode(YamlNode yamlNode) {
-        if (yamlNode == null) {
+    @Override
+    public Node item(int index) {
+        if (index != 0) {
             return null;
         }
-
-        return new ElementAdapter(yamlNode);
+        return singletonItem;
     }
 
-    static NodeList asNodeList(Node node) {
-        if (node == null) {
-            return emptyNodeList();
-        }
-
-        return new SingletonNodeList(node);
+    @Override
+    public int getLength() {
+        return 1;
     }
 }

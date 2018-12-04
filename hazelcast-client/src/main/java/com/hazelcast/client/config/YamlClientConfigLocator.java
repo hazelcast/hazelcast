@@ -20,30 +20,30 @@ import com.hazelcast.config.AbstractConfigLocator;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * A support class for the {@link XmlClientConfigBuilder} to locate the client
- * xml configuration.
+ * A support class for the {@link YamlClientConfigBuilder} to locate the client
+ * YAML configuration.
  */
-public class XmlClientConfigLocator extends AbstractConfigLocator {
+public class YamlClientConfigLocator extends AbstractConfigLocator {
     /**
      * Constructs a XmlClientConfigBuilder.
      *
-     * @throws com.hazelcast.core.HazelcastException if the client XML config is not located.
+     * @throws com.hazelcast.core.HazelcastException if the client YAML config is not located.
      */
-    public XmlClientConfigLocator() {
+    public YamlClientConfigLocator() {
         try {
             if (loadFromSystemProperty("hazelcast.client.config")) {
                 return;
             }
 
-            if (loadFromWorkingDirectory("hazelcast-client.xml")) {
+            if (loadFromWorkingDirectory("hazelcast-client.yaml")) {
                 return;
             }
 
-            if (loadConfigurationFromClasspath("hazelcast-client.xml")) {
+            if (loadConfigurationFromClasspath("hazelcast-client.yaml")) {
                 return;
             }
 
-            loadDefaultConfigurationFromClasspath("hazelcast-client-default.xml");
+            loadDefaultConfigurationFromClasspath("hazelcast-client.yaml");
         } catch (final RuntimeException e) {
             throw new HazelcastException("Failed to load ClientConfig", e);
         }

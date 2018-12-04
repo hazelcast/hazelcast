@@ -1,0 +1,982 @@
+# Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# A comprehensive example of Hazelcast configuration.
+#
+# Hazelcast resolves configuration using the following approach:
+#
+# 1. First is checks to see if the ’hazelcast.config’ system property is set. If it is, then the value is used as the path.
+#
+#    The config option can be set by adding the following to the java command: -Dhazelcast.config=path_to_the_hazelcast.yaml.
+#
+#    The value can be a normal file path, but can also be a classpath reference if it is prefixed with ’classpath:’.
+#
+# 2. Otherwise it checks if there is a ’hazelcast.yaml’ in the working directory.
+#
+# 3. After that it checks if there is a ’hazelcast.yaml’ in the root of the classpath.
+#
+# 4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
+#    ’hazelcast-default.yaml’, which is included in the the Hazelcast jar
+
+hazelcast:
+  group:
+    name: dev
+    password: dev-pass
+  license-key: HAZELCAST_ENTERPRISE_LICENSE_KEY
+  instance-name: dummy
+
+  management-center:
+    enabled: true
+    update-interval: 5
+    scripting-enabled: false
+    url: http://mywebserver:8080
+    mutual-auth:
+      enabled: true
+      factory-class-name: com.hazelcast.examples.MySSLContextFactory
+      properties:
+        foo: bar
+
+  properties:
+    foo: bar
+
+  wan-replication:
+    my-wan-cluster:
+      wan-publisher:
+
+        tokyoPublisherId:
+          group-name: tokyo
+          class-name: com.hazelcast.enterprise.wan.replication.WanBatchReplication
+          queue-capacity: 1000
+          queue-full-behavior: THROW_EXCEPTION
+          initial-publisher-state: REPLICATING
+          wan-sync:
+            consistency-check-strategy: MERKLE_TREES
+          properties:
+            batch.size: 50
+            batch.max.delay.millis: 3000
+            response.timeout.millis: 5000
+            ack.type: ACK_ON_OPERATION_COMPLETE
+            endpoints: "10.3.5.1:5701, 10.3.5.2:5701"
+            snapshot.enabled: false
+            group.password: pass
+
+        istanbul:
+          class-name: com.hazelcast.wan.custom.WanPublisher
+          queue-full-behavior: DISCARD_AFTER_MUTATION
+          initial-publisher-state: STOPPED
+          queue-capacity: 10000
+          aws:
+            enabled: false
+            connection-timeout-seconds: 10
+            access-key: sample-access-key
+            secret-key: sample-secret-key
+            iam-role: sample-role
+            region: sample-region
+            host-header: sample-header
+            security-group-name: sample-group
+            tag-key: sample-tag-key
+            tag-value: sample-tag-value
+          gcp:
+            enabled: false
+            zones: us-east1-b,us-east1-c
+          azure:
+            enabled: false
+            client-id: CLIENT_ID
+            client-secret: CLIENT_SECRET
+            tenant-id: TENANT_ID
+            subscription-id: SUB_ID
+            cluster-id: HZLCAST001
+            group-name: GROUP-NAME
+          kubernetes:
+            enabled: false
+            namespace: MY-KUBERNETES-NAMESPACE
+            service-name: MY-SERVICE-NAME
+            service-label-name: MY-SERVICE-LABEL-NAME
+            service-label-value: MY-SERVICE-LABEL-VALUE
+          eureka:
+            enabled: false
+            self-registration: true
+            namespace: hazelcast
+          discovery-strategies:
+            node-filter:
+              class: DummyFilterClass
+            discovery-strategies:
+              - class: DummyDiscoveryStrategy1
+                enabled: true
+                properties:
+                  key-string: foo
+                  key-int: 123
+                  key-boolean: true
+          properties:
+            custom.prop.publisher: prop.publisher
+            discovery.period: 5
+            maxEndpoints: 2
+
+      wan-consumer:
+        class-name: com.hazelcast.wan.custom.WanConsumer
+        properties:
+          custom.prop.consumer: prop.consumer
+        persist-wan-replicated-data: true
+
+  network:
+    public-address: dummy
+    port:
+      auto-increment: true
+      port-count: 100
+      port: 5701
+    # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
+    reuse-address: true
+    outbound-ports:
+      - 33000-35000
+      - 37000,37001,37002,37003
+      - 38000,38500-38600
+    join:
+      multicast:
+        enabled: true
+        loopbackModeEnabled: true
+        multicast-group: 1.2.3.4
+        multicast-port: 12345
+        multicast-timeout-seconds: 5
+        multicast-time-to-live: 10
+        trusted-interfaces:
+          - 10.10.1.*
+          - 10.10.2.*
+      tcp-ip:
+        enabled: false
+        connection-timeout-seconds: 123
+        required-member: dummy
+        member: dummy1,dummy2
+        interface: 127.0.0.10
+        members: dummy3,dummy4
+        member-list:
+          - dummy5
+          - dummy6
+      aws:
+        enabled: false
+        access-key: my-access-key
+        secret-key: my-secret-key
+        iam-role: dummy
+        # optional, default is us-east-1
+        region: us-west-1
+        # optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property
+        host-header: ec2.amazonaws.com
+        # optional, only instances belonging to this group will be discovered, default will try all running instances
+        security-group-name: hazelcast-sg
+        tag-key: type
+        tag-value: hz-nodes
+        use-public-ip: true
+      gcp:
+        enabled: false
+        zones: us-east1-b,us-east1-c
+      azure:
+        enabled: false
+        client-id: CLIENT_ID
+        client-secret: CLIENT_SECRET
+        tenant-id: TENANT_ID
+        subscription-id: SUB_ID
+        cluster-id: HZLCAST001
+        group-name: GROUP-NAME
+      kubernetes:
+        enabled: false
+        namespace: MY-KUBERNETES-NAMESPACE
+        service-name: MY-SERVICE-NAME
+        service-label-name: MY-SERVICE-LABEL-NAME
+        service-label-value: MY-SERVICE-LABEL-VALUE
+      eureka:
+        enabled: false
+        self-registration: true
+        namespace: hazelcast
+#       <discovery-strategies>
+#            <node-filter class="DummyFilterClass"/>
+#            <discovery-strategy class="DummyClass" enabled="true">
+#                <properties>
+#                    <property name="foo">bar</property>
+#                </properties>
+#            </discovery-strategy>
+#        </discovery-strategies>-->
+    interfaces:
+      enabled: true
+      interfaces:
+        - 10.10.1.*
+    ssl:
+      enabled: true
+      factory-class-name: com.hazelcast.examples.MySSLContextFactory
+      properties:
+        foo: bar
+    socket-interceptor:
+      enabled: true
+      class-name: com.hazelcast.examples.MySocketInterceptor
+      properties:
+        foo: bar
+    symmetric-encryption:
+      enabled: false
+      #   encryption algorithm such as
+      #   DES/ECB/PKCS5Padding,
+      #   PBEWithMD5AndDES,
+      #   AES/CBC/PKCS5Padding,
+      #   Blowfish,
+      #   DESede
+      algorithm: PBEWithMD5AndDES
+      # salt value to use when generating the secret key
+      salt: thesalt
+      # pass phrase to use when generating the secret key
+      password: thepass
+      # iteration count to use when generating the secret key
+      iteration-count: 19
+    member-address-provider:
+      enabled: false
+      class-name: DummyMemberAddressProvider
+      properties:
+        foo: bar
+    failure-detector:
+      icmp:
+        enabled: false
+        timeout-milliseconds: 1000
+        fail-fast-on-startup: true
+        interval-milliseconds: 1000
+        max-attempts: 2
+        parallel-mode: true
+        ttl: 255
+
+  partition-group:
+    enabled: true
+    group-type: CUSTOM
+    member-group:
+      -
+        - 10.10.0.*
+        - 10.10.3.*
+        - 10.10.5.*
+      -
+        - 10.10.10.10-100
+        - 10.10.1.*
+        - 10.10.2.*
+
+  executor-service:
+    default:
+      statistics-enabled: false
+      pool-size: 16
+      queue-capacity: 1000
+      quorum-ref: quorumRuleWithThreeMembers
+
+  durable-executor-service:
+    dummy:
+      pool-size: 10
+      durability: 2
+      capacity: 10
+      quorum-ref: quorumRuleWithThreeMembers
+
+  scheduled-executor-service:
+    dummy:
+      pool-size: 10
+      durability: 2
+      capacity: 50
+      quorum-ref: quorumRuleWithThreeMembers
+      merge-policy:
+        batch-size: 10
+        class-name: PutIfAbsentMergePolicy
+
+  cardinality-estimator:
+    dummy:
+      backup-count: 1
+      async-backup-count: 0
+      quorum-ref: quorumRuleWithThreeNodes
+      merge-policy:
+        batch-size: 50
+        class-name: HyperLogLogMergePolicy
+
+  queue:
+    default:
+      statistics-enabled: false
+        # Maximum size of the queue. When a JVM's local queue size reaches the maximum,
+        # all put/offer operations will get blocked until the queue size
+        # of the JVM goes down below the maximum.
+        # Any integer between 0 and Integer.MAX_VALUE. 0 means
+        # Integer.MAX_VALUE. Default is 0.
+      max-size: 10
+
+      backup-count: 2
+      async-backup-count: 2
+      empty-queue-ttl: 12
+
+      item-listeners:
+         - include-value: true
+           class-name: com.hazelcast.examples.ItemListener
+      queue-store:
+         enabled: true
+         # class-name: DummyClass
+         factory-class-name: DummyFactoryClass
+         properties:
+           foo: bar
+
+      quorum-ref: quorumRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  map:
+    default:
+      # Data type that will be used for storing recordMap.
+      # Possible values:
+      # BINARY (default): keys and values will be stored as binary data
+      # OBJECT : values will be stored in their object forms
+      # NATIVE : values will be stored in non-heap region of JVM
+      in-memory-format: OBJECT
+
+      # Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
+      # You can disable if you do not plan to use eviction on your entries.
+      statistics-enabled: false
+
+      optimize-queries: true
+      cache-deserialized-values: ALWAYS
+
+      # Number of backups. If 1 is set as the backup-count for example,
+      # then all entries of the map will be copied to another JVM for
+      # fail-safety. 0 means no backup.
+      backup-count: 2
+
+      # Number of async backups. 0 means no backup.
+      async-backup-count: 2
+
+      # Maximum number of seconds for each item to live.
+      # Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+      time-to-live-seconds: 2
+
+      # Maximum number of seconds for each item to stay idle (untouched).
+      # Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+      max-idle-seconds: 2
+
+      # Valid values are:
+      # NONE (no eviction),
+      # LRU (Least Recently Used),
+      # LFU (Least Frequently Used).
+      # NONE is the default.
+      eviction-policy: LRU
+
+      # Maximum size of the map. When max size is reached,
+      # map is evicted based on the policy defined.
+      # Any integer between 0 and Integer.MAX_VALUE. 0 means
+      # Integer.MAX_VALUE. Default is 0.
+      max-size:
+        policy: PER_NODE
+        max-size: 20
+
+      # `eviction-percentage` property is deprecated.
+      #
+      # As of version 3.7, eviction mechanism changed.
+      # It uses a probabilistic algorithm based on sampling. Please see documentation for further details
+      eviction-percentage: 25
+
+      # `min-eviction-check-millis` property is deprecated.
+      #
+      # As of version 3.7, eviction mechanism changed.
+      # It uses a probabilistic algorithm based on sampling. Please see documentation for further details
+      min-eviction-check-millis: 200
+
+      # While recovering from split-brain (network partitioning), data structure entries in the small cluster
+      # merge into the bigger cluster based on the policy set here. When an entry merges into the cluster,
+      # an entry with the same key (or value) might already exist in the cluster.
+      # The merge policy resolves these conflicts with different out-of-the-box or custom strategies.
+      # The out-of-the-box merge polices can be references by their simple class name.
+      # For custom merge policies you have to provide a fully qualified class name.
+      #
+      # The out-of-the-box policies are:
+      #  * DiscardMergePolicy: the entry from the smaller cluster will be discarded.
+      #  * HigherHitsMergePolicy: the entry with the higher number of hits wins.
+      #  * LatestAccessMergePolicy: the entry with the latest access wins.
+      #  * LatestUpdateMergePolicy: the entry with the latest update wins.
+      #  * PassThroughMergePolicy: the entry from the smaller cluster wins.
+      #  * PutIfAbsentMergePolicy: the entry from the smaller cluster wins if it doesn't exist in the cluster.
+      #  * The default policy is: PutIfAbsentMergePolicy
+      # Beware that `merge-policy` is not supported for NATIVE in-memory format.
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+      read-backup-data: true
+
+      hot-restart:
+        fsync: true
+
+      # Used to store Map entries in a backing store. If configured entries will be loaded from this store on startup.
+      #
+      # On startup, may be loaded in two ways, controlled by the initial-mode attribute:
+      #     - LAZY. Asynchronously loads the entries. This is the default.
+      #     - EAGER. Synchronously loads the entries. Calls to getMap() are blocked while this happens.
+      map-store:
+        enabled: true
+        initial-mode: LAZY
+        class-name: com.hazelcast.examples.DummyStore
+        # factory-class-name: com.hazelcast.examples.DummyStoreFactory
+        write-delay-seconds: 0
+        write-batch-size: 1
+        write-coalescing: true
+        properties:
+          dummy.property: value
+
+      # Note that the Near Cache eviction configuration is different for NATIVE in-memory format.
+      # Proper eviction configuration example for NATIVE in-memory format :
+      #    `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
+      near-cache:
+        max-size: 10000
+        time-to-live-seconds: 0
+        max-idle-seconds: 0
+        eviction-policy: LFU
+        invalidate-on-change: true
+        cache-local-entries: false
+
+      wan-replication-ref:
+        my-wan-cluster:
+          merge-policy: hz.PASS_THROUGH
+          filters:
+            - com.example.WanTestFilter1
+            - com.example.WanTestFilter2
+          republishing-enabled: false
+
+      indexes:
+        name:
+          ordered: false
+        age:
+          ordered: true
+
+      attributes:
+        currency:
+          extractor: com.example.CurrencyExtractor
+        age:
+          extractor: com.example.AgeExtractor
+
+      entry-listeners:
+        - include-value: true
+          local: false
+          class-name: com.hazelcast.examples.EntryListener
+
+      partition-lost-listeners:
+        - com.hazelcast.examples.MapPartitionLostListener
+
+      query-caches:
+        query-cache-name:
+          predicate:
+            class-name: com.hazelcast.examples.ExamplePredicate
+          entry-listeners:
+            - include-value: true
+              local: false
+              class-name: com.hazelcast.examples.EntryListener
+          include-value: true
+          batch-size: 1
+          buffer-size: 16
+          delay-seconds: 0
+          in-memory-format: BINARY
+          coalesce: false
+          populate: true
+          eviction:
+            eviction-policy: LRU
+            max-size-policy: ENTRY_COUNT
+            size: 10000
+          indexes:
+            name:
+              ordered: false
+            age:
+              ordered: true
+
+  multimap:
+    default:
+      backup-count: 1
+      async-backup-count: 0
+      statistics-enabled: false
+      binary: false
+      value-collection-type: SET
+      entry-listeners:
+        - include-value: true
+          local: true
+          class-name: com.hazelcast.examples.EntryListener
+      quorum-ref: quorumRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  replicatedmap:
+    dummy:
+      in-memory-format: BINARY
+      concurrency-level: 12
+      replication-delay-millis: 12
+      async-fillup: false
+      statistics-enabled: false
+      quorum-ref: quorumRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+      entry-listeners:
+        - include-value: false
+          local: true
+          class-name: DummyListener
+
+  list:
+    default:
+      statistics-enabled: false
+      max-size: 5
+      backup-count: 2
+      async-backup-count: 2
+      item-listeners:
+        - include-value: true
+          class-name: com.hazelcast.examples.ItemListener
+      quorum-ref: quorumRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  set:
+    default:
+      statistics-enabled: false
+      max-size: 0
+      backup-count: 1
+      async-backup-count: 0
+      item-listeners:
+        - include-value: true
+          class-name: com.hazelcast.examples.ItemListener
+      quorum-ref: quorumRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  topic:
+    default:
+      statistics-enabled: false
+      global-ordering-enabled: true
+      message-listeners:
+        - com.hazelcast.examples.MessageListener
+      multi-threading-enabled: false
+
+  reliable-topic:
+    default:
+      statistics-enabled: true
+      topic-overload-policy: ERROR
+      read-batch-size: 10
+      message-listeners:
+        - com.hazelcast.examples.MessageListener
+
+  semaphore:
+    default:
+      initial-permits: 10
+      backup-count: 1
+      async-backup-count: 0
+      quorum-ref: quorumRuleWithThreeMembers
+
+  lock:
+    default:
+      quorum-ref: quorumRuleWithThreeMembers
+
+  atomic-long:
+    default:
+      quorum-ref: quorumRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  atomic-reference:
+    default:
+      quorum-ref: quorumRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  count-down-latch:
+    default:
+      quorum-ref: quorumRuleWithThreeMembers
+
+  ringbuffer:
+    default:
+      capacity: 25311
+      backup-count: 2
+      async-backup-count: 1
+      time-to-live-seconds: 29
+      in-memory-format: OBJECT
+      quorum-ref: quorumRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  cache:
+    default:
+      key-type:
+        class-name: java.lang.Object
+      value-type:
+        class-name: java.lang.String
+      statistics-enabled: false
+      management-enabled: false
+
+      read-through: true
+      write-through: true
+      cache-loader-factory:
+        class-name: com.example.cache.MyCacheLoaderFactory
+      cache-writer-factory:
+        class-name: com.example.cache.MyCacheWriterFactory
+      expiry-policy-factory:
+        class-name: com.example.cache.MyExpirePolicyFactory
+        timed-expiry-policy-factory:
+          expiry-policy-type: ETERNAL
+          duration-amount: 123
+          time-unit: MICROSECONDS
+
+      cache-entry-listeners:
+        cache-entry-listener:
+          old-value-required: true
+          synchronous: true
+          cache-entry-listener-factory:
+            class-name: com.example.cache.MyEntryListenerFactory
+          cache-entry-event-filter-factory:
+            class-name: com.example.cache.MyEntryEventFilterFactory
+      in-memory-format: OBJECT
+      backup-count: 2
+      async-backup-count: 2
+      eviction:
+        comparator-class-name: DummyClass
+        eviction-policy: LRU
+        max-size-policy: FREE_NATIVE_MEMORY_PERCENTAGE
+        size: 50
+      wan-replication-ref:
+        name: my-wan-cluster
+        merge-policy: hz.PASS_THROUGH
+        filters:
+          - com.example.WanTestFilter1
+          - com.example.WanTestFilter2
+      quorum-ref: DummyQuorum
+      merge-policy: DummyMergePolicy
+      partition-lost-listeners:
+        - DummyListener
+      hot-restart:
+        fsync: true
+
+  flake-id-generator:
+    default:
+      prefetch-count: 100
+      prefetch-validity-millis: 600000
+      id-offset: 0
+      node-id-offset: 0
+      statistics-enabled: false
+
+  listeners:
+    - com.hazelcast.examples.MembershipListener
+    - com.hazelcast.examples.InstanceListener
+    - com.hazelcast.examples.MigrationListener
+    - com.hazelcast.examples.PartitionLostListener
+
+  serialization:
+    portable-version: 0
+    use-native-byte-order: true
+    byte-order: LITTLE_ENDIAN
+    enable-compression: true
+    enable-shared-object: true
+    allow-unsafe: true
+    data-serializable-factories:
+      - factory-id: 1
+        class-name: com.hazelcast.examples.DataSerializableFactory
+    portable-factories:
+      - factory-id: 1
+        class-name: com.hazelcast.examples.PortableFactory
+    global-serializer:
+       override-java-serialization: true
+       class-name: com.hazelcast.examples.GlobalSerializerFactory
+    serializers:
+       - type-class: com.hazelcast.examples.DummyType
+         class-name: com.hazelcast.examples.SerializerFactory
+    check-class-def-errors: false
+    java-serialization-filter:
+      defaults-disabled: true
+      blacklist:
+        class:
+          - com.acme.app.BeanComparator
+      whitelist:
+        class:
+          - java.lang.String
+          - example.Foo
+        package:
+          - com.acme.app
+          - com.acme.app.subpkg
+        prefix:
+          - java
+          - "["
+          - com.
+
+  native-memory:
+    allocator-type: STANDARD
+    enabled: true
+    size:
+      unit: MEGABYTES
+      value: 256
+    min-block-size: 123
+    page-size: 123
+    metadata-space-percentage: 12.5
+
+  services:
+    enable-defaults: false
+    service:
+      enabled: true
+      name: custom-service
+      class-name: com.hazelcast.examples.MyService
+      properties:
+        prop1: prop1-value
+        prop2: prop2-value
+
+  security:
+    enabled: false
+    member-credentials-factory:
+      class-name: com.hazelcast.examples.MyCredentialsFactory
+      properties:
+        property: value
+    member-login-modules:
+      - class-name: com.hazelcast.examples.MyRequiredLoginModule
+        usage: REQUIRED
+        properties:
+          property: value
+    client-login-modules:
+      - class-name: com.hazelcast.examples.MyOptionalLoginModule
+        usage: OPTIONAL
+        properties:
+          property: value
+      - class-name: com.hazelcast.examples.MyRequiredLoginModule
+        usage: REQUIRED
+        properties:
+          property: value
+    client-permission-policy:
+      class-name: com.hazelcast.examples.MyPermissionPolicy
+      properties:
+        property: value
+    client-permissions:
+      all:
+        principal: admin
+        endpoints:
+          - 127.0.0.1
+      config:
+        principal: deployer
+      countdown-latch:
+        - name: "*"
+          actions:
+            - all
+      id-generator:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      set:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      cardinality-estimator:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      scheduled-executor:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      atomic-long:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      transaction:
+        principal: deployer
+      pn-counter:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      semaphore:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      user-code-deployment:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      durable-executor-service:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      map:
+        - name: custom
+          principal: dev
+          endpoints:
+            - 127.0.0.1
+          actions:
+            - create
+            - destroy
+            - put
+            - read
+      flake-id-generator:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      topic:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      multimap:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      cache:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      lock:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      queue:
+        - name: "*"
+          actions:
+            - all
+      list:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      executor-service:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+    client-block-unmapped-actions: true
+
+  member-attributes:
+    attribute.string:
+      value: hazelcast
+    attribute.int:
+      type: int
+      value: 123
+    attribute.long:
+      type: long
+      value: 456
+    attribute.short:
+      type: short
+      value: 789
+    attribute.byte:
+      type: byte
+      value: 111
+    attribute.boolean:
+      type: boolean
+      value: true
+    attribute.double:
+      type: double
+      value: 0.0d
+    attribute.float:
+      type: float
+      value: 1234.5678
+
+
+  crdt-replication:
+    replication-period-millis: 1000
+    max-concurrent-replication-targets: 1
+
+  pn-counter:
+    pn-counter-1:
+      replica-count: 100
+      quorum-ref: quorumRuleWithThreeMembers
+      statistics-enabled: false
+
+  quorum:
+    quorumRuleWithThreeMembers:
+      enabled: true
+      quorum-size: 3
+      quorum-type: READ_WRITE
+      
+    member-count-quorum:
+      enabled: true
+      quorum-type: READ_WRITE
+      quorum-size: 3
+      member-count-quorum: {}
+
+    probabilistic-quorum:
+      enabled: true
+      quorum-size: 3
+      quorum-type: READ_WRITE
+      probabilistic-quorum:
+        acceptable-heartbeat-pause-millis: 100
+        max-sample-size: 20
+        suspicion-threshold: 10
+
+    recently-active-quorum:
+      enabled: true
+      quorum-size: 4
+      quorum-type: READ_WRITE
+      recently-active-quorum:
+        heartbeat-tolerance-millis: 60000
+
+  merkle-tree:
+    map:
+      default:
+        enabled: true
+        depth: 5
+
+  hot-restart-persistence:
+    enabled: false
+    backup-dir: backup-dir
+    base-dir: base-dir
+    cluster-data-recovery-policy: FULL_RECOVERY_ONLY
+    data-load-timeout-seconds: 42
+    parallelism: 3
+    validation-timeout-seconds: 10
+
+  event-journal:
+    map:
+      mapName:
+        capacity: 10
+        time-to-live-seconds: 10
+
+    cache:
+      cacheName:
+        capacity: 100
+        time-to-live-seconds: 100
+
+  jobtracker:
+    jobTracker:
+      chunk-size: 100
+      queue-size: 200
+      retry-count: 10
+      max-thread-size: 20
+      communicate-stats: false
+      topology-changed-strategy: DISCARD_AND_RESTART
+
+  lite-member:
+    enabled: true
+
+  rest-api:
+    enabled: true
+    endpoint-groups:
+      CLUSTER_READ:
+        enabled: true
+      CLUSTER_WRITE:
+        enabled: true
+      DATA:
+        enabled: true
+      HEALTH_CHECK:
+        enabled: true
+      HOT_RESTART:
+        enabled: true
+      WAN:
+        enabled: true
+
+  memcache-protocol:
+    enabled: true

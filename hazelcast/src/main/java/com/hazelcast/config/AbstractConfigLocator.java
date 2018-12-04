@@ -51,6 +51,10 @@ public abstract class AbstractConfigLocator {
         return configurationUrl;
     }
 
+    public boolean isConfigPresent() {
+        return in != null || configurationFile != null || configurationUrl != null;
+    }
+
     protected void loadDefaultConfigurationFromClasspath(String defaultConfigFile) {
         LOGGER.info("Loading '" + defaultConfigFile + "' from classpath.");
 
@@ -67,7 +71,7 @@ public abstract class AbstractConfigLocator {
         }
     }
 
-    protected boolean loadHazelcastConfigFromClasspath(String configFileName) {
+    protected boolean loadConfigurationFromClasspath(String configFileName) {
         URL url = Config.class.getClassLoader().getResource(configFileName);
         if (url == null) {
             LOGGER.finest("Could not find '" + configFileName + "' in classpath.");
@@ -102,11 +106,16 @@ public abstract class AbstractConfigLocator {
         return true;
     }
 
-    protected boolean loadFromSystemProperty(String propertyKey) {
+    protected boolean loadFromSystemProperty(String propertyKey, String... expectedExtensions) {
         String configSystemProperty = System.getProperty(propertyKey);
 
         if (configSystemProperty == null) {
-            LOGGER.finest("Could not 'hazelcast.config' System property");
+            LOGGER.finest("Could not find 'hazelcast.config' System property");
+            return false;
+        }
+
+        if (expectedExtensions != null && expectedExtensions.length > 0
+                && !isExpectedExtensionConfigured(configSystemProperty, expectedExtensions)) {
             return false;
         }
 
@@ -118,6 +127,18 @@ public abstract class AbstractConfigLocator {
             loadSystemPropertyFileResource(configSystemProperty);
         }
         return true;
+    }
+
+    private boolean isExpectedExtensionConfigured(String configSystemProperty, String[] expectedExtensions) {
+        boolean expectedExtension = false;
+        String configSystemPropertyLower = configSystemProperty.toLowerCase();
+        for (String extension : expectedExtensions) {
+            if (configSystemPropertyLower.endsWith("." + extension.toLowerCase())) {
+                expectedExtension = true;
+                break;
+            }
+        }
+        return expectedExtension;
     }
 
     private void loadSystemPropertyFileResource(String configSystemProperty) {

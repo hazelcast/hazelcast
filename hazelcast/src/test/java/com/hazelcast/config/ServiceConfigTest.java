@@ -44,13 +44,27 @@ public class ServiceConfigTest extends HazelcastTestSupport {
         ServiceConfig serviceConfig = config.getServicesConfig().getServiceConfig("my-service");
         assertEquals("com.hazelcast.examples.MyService", serviceConfig.getClassName());
 
+        assertParsedServiceConfig(serviceConfig);
+    }
+
+    @Test
+    public void testYaml() {
+        Config config = new ClasspathYamlConfig("com/hazelcast/config/hazelcast-service.yaml");
+        ServiceConfig serviceConfig = config.getServicesConfig().getServiceConfig("my-service");
+        assertEquals("com.hazelcast.examples.MyService", serviceConfig.getClassName());
+
+        assertParsedServiceConfig(serviceConfig);
+    }
+
+    private void assertParsedServiceConfig(ServiceConfig serviceConfig) {
         MyServiceConfig configObject = (MyServiceConfig) serviceConfig.getConfigObject();
         assertNotNull(configObject);
         assertEquals("prop1", configObject.stringProp);
         assertEquals(123, configObject.intProp);
         assertTrue(configObject.boolProp);
+        assertEquals("nested-prop-value", configObject.nestedStringProp);
+        assertEquals("attr-value", configObject.nestedAttribute);
     }
-
 
     @Test
     public void testService() {

@@ -48,7 +48,7 @@ class YamlScalarImpl extends AbstractYamlNode implements YamlScalar {
     public String toString() {
         return "YamlScalarImpl{"
                 + "nodeName=" + nodeName()
-                + "value=" + value
+                + ", value=" + value
                 + '}';
     }
 }

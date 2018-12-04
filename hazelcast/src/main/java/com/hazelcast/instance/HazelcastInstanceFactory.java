@@ -18,6 +18,8 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.YamlConfigBuilder;
+import com.hazelcast.config.YamlConfigLocator;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
@@ -59,6 +61,7 @@ public final class HazelcastInstanceFactory {
 
     private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
     private static final ConcurrentMap<String, InstanceFuture> INSTANCE_MAP = new ConcurrentHashMap<String, InstanceFuture>(5);
+    private static final boolean DONT_USE_DEFAULT = false;
 
     static {
         ModularJavaUtils.checkJavaInternalAccess(Logger.getLogger(HazelcastInstanceFactory.class));
@@ -125,7 +128,13 @@ public final class HazelcastInstanceFactory {
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         if (config == null) {
-            config = new XmlConfigBuilder().build();
+            // try load config from any provided YAML config except for the default config
+            YamlConfigLocator yamlConfigLocator = new YamlConfigLocator(DONT_USE_DEFAULT);
+            if (yamlConfigLocator.isConfigPresent()) {
+                config = new YamlConfigBuilder().build();
+            } else {
+                config = new XmlConfigBuilder().build();
+            }
         }
 
         return newHazelcastInstance(

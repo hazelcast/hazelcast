@@ -1668,12 +1668,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     public void readMulticastConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <group>\n"
-                + "        <name>dev</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </group>\n"
                 + "    <network>\n"
-                + "        <port auto-increment=\"true\">5701</port>\n"
                 + "        <join>\n"
                 + "            <multicast enabled=\"false\" loopbackModeEnabled=\"true\">\n"
                 + "                <multicast-group>224.2.2.4</multicast-group>\n"

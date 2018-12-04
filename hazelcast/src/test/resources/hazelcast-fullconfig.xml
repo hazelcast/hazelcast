@@ -36,7 +36,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.12.xsd">
 
     <group>
         <name>dev</name>
@@ -300,6 +300,7 @@
         <durability>2</durability>
         <capacity>50</capacity>
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <merge-policy batch-size="10">PutIfAbsentMergePolicy</merge-policy>
     </scheduled-executor-service>
     <cardinality-estimator name="dummy">
         <backup-count>1</backup-count>
@@ -703,7 +704,8 @@
             <portable-factory factory-id="1">com.hazelcast.examples.PortableFactory</portable-factory>
         </portable-factories>
         <serializers>
-            <global-serializer override-java-serialization="true">com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
+            <global-serializer override-java-serialization="true">com.hazelcast.examples.GlobalSerializerFactory
+            </global-serializer>
             <serializer type-class="com.hazelcast.examples.DummyType"
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
@@ -935,4 +937,37 @@
         <mapName>default</mapName>
         <depth>5</depth>
     </merkle-tree>
+
+    <hot-restart-persistence enabled="false">
+        <backup-dir>backup-dir</backup-dir>
+        <base-dir>base-dir</base-dir>
+        <cluster-data-recovery-policy>FULL_RECOVERY_ONLY</cluster-data-recovery-policy>
+        <data-load-timeout-seconds>42</data-load-timeout-seconds>
+        <parallelism>3</parallelism>
+        <validation-timeout-seconds>10</validation-timeout-seconds>
+    </hot-restart-persistence>
+
+    <event-journal>
+        <mapName>mapName</mapName>
+        <capacity>10</capacity>
+        <time-to-live-seconds>10</time-to-live-seconds>
+    </event-journal>
+
+    <event-journal>
+        <cacheName>cacheName</cacheName>
+        <capacity>100</capacity>
+        <time-to-live-seconds>100</time-to-live-seconds>
+    </event-journal>
+
+    <jobtracker name="jobTracker">
+        <chunk-size>100</chunk-size>
+        <queue-size>200</queue-size>
+        <retry-count>10</retry-count>
+        <max-thread-size>20</max-thread-size>
+        <communicate-stats>false</communicate-stats>
+        <topology-changed-strategy>DISCARD_AND_RESTART</topology-changed-strategy>
+    </jobtracker>
+
+    <lite-member enabled="true"/>
+
 </hazelcast>

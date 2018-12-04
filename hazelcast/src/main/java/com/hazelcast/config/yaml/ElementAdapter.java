@@ -21,21 +21,33 @@ import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
+import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.TypeInfo;
 import org.w3c.dom.UserDataHandler;
 
 import static com.hazelcast.config.yaml.EmptyNamedNodeMap.emptyNamedNodeMap;
 import static com.hazelcast.config.yaml.EmptyNodeList.emptyNodeList;
 
-class NodeAdapter implements Node {
+/**
+ * Class adapting {@link YamlNode}s to {@link Element}
+ * <p/>
+ * Used for processing YAML configuration
+ */
+public class ElementAdapter implements Element {
     private final YamlNode yamlNode;
 
-    NodeAdapter(YamlNode yamlNode) {
+    ElementAdapter(YamlNode yamlNode) {
         this.yamlNode = yamlNode;
+    }
+
+    public YamlNode getYamlNode() {
+        return yamlNode;
     }
 
     @Override
@@ -68,15 +80,17 @@ class NodeAdapter implements Node {
 
     @Override
     public NodeList getChildNodes() {
-        if (!(yamlNode instanceof YamlCollection) || ((YamlCollection) yamlNode).childCount() == 0) {
+        if (!hasChildNodes()) {
             return emptyNodeList();
         }
 
         if (yamlNode instanceof YamlMapping) {
             return new NodeListMappingAdapter((YamlMapping) yamlNode);
+        } else if (yamlNode instanceof YamlSequence) {
+            return new NodeListSequenceAdapter((YamlSequence) yamlNode);
         }
 
-        return new NodeListSequenceAdapter((YamlSequence) yamlNode);
+        return new NodeListScalarAdapter((YamlScalar) yamlNode);
     }
 
     @Override
@@ -134,7 +148,8 @@ class NodeAdapter implements Node {
 
     @Override
     public boolean hasChildNodes() {
-        throw new UnsupportedOperationException();
+        return yamlNode instanceof YamlCollection && ((YamlCollection) yamlNode).childCount() > 0
+                || yamlNode instanceof YamlScalar;
     }
 
     @Override
@@ -234,6 +249,116 @@ class NodeAdapter implements Node {
 
     @Override
     public Object getUserData(String key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getTagName() {
+        return getNodeName();
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        if (yamlNode instanceof YamlMapping) {
+            YamlScalar yamlScalar = ((YamlMapping) yamlNode).childAsScalar(name);
+            if (yamlScalar != null) {
+                return yamlScalar.nodeValue().toString();
+            }
+        }
+        return "";
+    }
+
+    @Override
+    public void setAttribute(String name, String value) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void removeAttribute(String name) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Attr getAttributeNode(String name) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Attr setAttributeNode(Attr newAttr) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Attr removeAttributeNode(Attr oldAttr) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public NodeList getElementsByTagName(String name) {
+        // since this class adapts YAML documents that don't allow
+        // duplicates, there could be only one element with the given name
+        Node element = getAttributes().getNamedItem(name);
+
+        return W3cDomUtil.asNodeList(element);
+    }
+
+    @Override
+    public String getAttributeNS(String namespaceURI, String localName) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setAttributeNS(String namespaceURI, String qualifiedName, String value) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void removeAttributeNS(String namespaceURI, String localName) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Attr getAttributeNodeNS(String namespaceURI, String localName) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Attr setAttributeNodeNS(Attr newAttr) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public NodeList getElementsByTagNameNS(String namespaceURI, String localName) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean hasAttribute(String name) {
+        return getAttributes().getNamedItem(name) != null;
+    }
+
+    @Override
+    public boolean hasAttributeNS(String namespaceURI, String localName) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TypeInfo getSchemaTypeInfo() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setIdAttribute(String name, boolean isId) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setIdAttributeNS(String namespaceURI, String localName, boolean isId) throws DOMException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setIdAttributeNode(Attr idAttr, boolean isId) throws DOMException {
         throw new UnsupportedOperationException();
     }
 }

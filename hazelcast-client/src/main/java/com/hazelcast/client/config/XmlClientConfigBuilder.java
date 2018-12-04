@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.AbstractConfigBuilder;
+import com.hazelcast.config.AbstractXmlConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.ILogger;
@@ -41,13 +41,11 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
  * Loads the {@link com.hazelcast.client.config.ClientConfig} using XML.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class XmlClientConfigBuilder extends AbstractConfigBuilder {
+public class XmlClientConfigBuilder extends AbstractXmlConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
 
     private final InputStream in;
-
-    private Properties properties = System.getProperties();
 
     public XmlClientConfigBuilder(String resource) throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
@@ -109,17 +107,13 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         }
     }
 
-    @Override
-    protected Properties getProperties() {
-        return properties;
-    }
-
-    public void setProperties(Properties properties) {
-        this.properties = properties;
+    public XmlClientConfigBuilder setProperties(Properties properties) {
+        setPropertiesInternal(properties);
+        return this;
     }
 
     @Override
-    protected ConfigType getXmlType() {
+    protected ConfigType getConfigType() {
         return ConfigType.CLIENT;
     }
 

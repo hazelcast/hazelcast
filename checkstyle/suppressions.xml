@@ -97,7 +97,10 @@
     <suppress checks="MethodCount|MethodLength|FileLength" files="com[\\/]hazelcast[\\/]config[\\/]MemberDomConfigProcessor"/>
     <suppress checks="CyclomaticComplexity|ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]config[\\/]MemberDomConfigProcessor"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]yaml[\\/]NodeAdapter"/>
+    <suppress checks="CyclomaticComplexity|ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount"
+              files="com[\\/]hazelcast[\\/]config[\\/]YamlMemberDomConfigProcessor"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]yaml[\\/]ScalarTextNodeAdapter"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]yaml[\\/]ElementAdapter"/>
 
     <!-- Concurrent -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]concurrent[\\/]"/>

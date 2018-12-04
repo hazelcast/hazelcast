@@ -51,6 +51,9 @@
                     <s:string-prop>prop1</s:string-prop>
                     <s:int-prop>123</s:int-prop>
                     <s:bool-prop>true</s:bool-prop>
+                    <s:complex-prop an-attribute="attr-value">
+                        <s:nested-prop>nested-prop-value</s:nested-prop>
+                    </s:complex-prop>
                 </s:my-service>
             </configuration>
         </service>
