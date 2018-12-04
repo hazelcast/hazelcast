@@ -53,8 +53,8 @@ public class TestClientNetworkConfig {
     @BeforeClass
     @AfterClass
     public static void start() {
-        String keyStoreFilePath = TestKeyStoreUtil.getKeyStoreFilePath();
-        String trustStoreFilePath = TestKeyStoreUtil.getTrustStoreFilePath();
+        String keyStoreFilePath = TestKeyStoreUtil.getOrCreateTempFile(TestKeyStoreUtil.keyStore);
+        String trustStoreFilePath = TestKeyStoreUtil.getOrCreateTempFile(TestKeyStoreUtil.trustStore);
 
         System.setProperty("test.keyStore", keyStoreFilePath);
         System.setProperty("test.trustStore", trustStoreFilePath);

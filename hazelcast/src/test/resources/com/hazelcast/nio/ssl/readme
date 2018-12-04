@@ -5,3 +5,11 @@ keytool -import -v -trustcacerts -alias hazelcast -keypass password -file hazelc
 
 [pass]
 123456
+
+#generate a second key
+keytool -genkey -alias hazelcast2 -keyalg RSA -keypass 123456 -keystore hazelcast2.keystore -storepass 123456  -validity 3600
+keytool -export -alias hazelcast2 -file hazelcast2.cer -keystore hazelcast2.keystore -storepass 123456
+
+#import two certs into one trust store
+keytool -import -v -trustcacerts -alias hazelcast2 -keypass 123456 -file hazelcast2.cer -keystore hazelcastTwoCerts.truststore -storepass 123456
+keytool -import -v -trustcacerts -alias hazelcast  -keypass 123456 -file hazelcast.cer  -keystore hazelcastTwoCerts.truststore -storepass 123456
