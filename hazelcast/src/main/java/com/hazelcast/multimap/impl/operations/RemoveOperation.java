@@ -29,12 +29,10 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
 
 public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
     private Data value;
-    private long recordId;
 
     public RemoveOperation() {
     }
@@ -54,19 +52,7 @@ public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implem
         }
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(isBinary() ? value : toObject(value));
-        Iterator<MultiMapRecord> iterator = coll.iterator();
-        while (iterator.hasNext()) {
-            MultiMapRecord r = iterator.next();
-            if (r.equals(record)) {
-                iterator.remove();
-                recordId = r.getRecordId();
-                response = true;
-                if (coll.isEmpty()) {
-                    container.delete(dataKey);
-                }
-                break;
-            }
-        }
+        response = coll.remove(record);
     }
 
     @Override
@@ -84,7 +70,7 @@ public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implem
 
     @Override
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, dataKey, recordId);
+        return new RemoveBackupOperation(name, dataKey, value);
     }
 
     @Override
