@@ -30,7 +30,11 @@ final class MethodGetter extends AbstractMultiValueGetter {
 
     @Override
     protected Object extractFrom(Object object) throws IllegalAccessException, InvocationTargetException {
-        return method.invoke(object);
+        try {
+            return method.invoke(object);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(composeAttributeValueExtractionFailedMessage(method), e);
+        }
     }
 
     @Override
