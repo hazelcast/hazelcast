@@ -37,12 +37,13 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * The request sent from a replica to the partition owner to synchronize the replica data. The partition owner can send a
@@ -59,20 +60,20 @@ import java.util.Collections;
 public final class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation, Versioned {
 
-    private Collection<ServiceNamespace> allNamespaces;
+    private List<ServiceNamespace> namespaces;
 
     public PartitionReplicaSyncRequest() {
-        allNamespaces = Collections.emptySet();
+        namespaces = Collections.emptyList();
     }
 
-    public PartitionReplicaSyncRequest(int partitionId, Collection<ServiceNamespace> namespaces, int replicaIndex) {
-        this.allNamespaces = namespaces;
+    public PartitionReplicaSyncRequest(int partitionId, List<ServiceNamespace> namespaces, int replicaIndex) {
+        this.namespaces = namespaces;
         setPartitionId(partitionId);
         setReplicaIndex(replicaIndex);
     }
 
     @Override
-    public void beforeRun() throws Exception {
+    public void beforeRun() {
         int syncReplicaIndex = getReplicaIndex();
         if (syncReplicaIndex < 1 || syncReplicaIndex > InternalPartition.MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("Replica index " + syncReplicaIndex
@@ -81,42 +82,72 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
     }
 
     @Override
-    public void run() throws Exception {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
-        int partitionId = getPartitionId();
-        int replicaIndex = getReplicaIndex();
-
+    public void run() {
+        InternalPartitionServiceImpl partitionService = getService();
         if (!partitionService.areMigrationTasksAllowed()) {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest("Migration is paused! Cannot run replica sync -> " + toString());
+                logger.finest("Migration is paused! Cannot process request. partitionId="
+                        + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + ", namespaces=" + namespaces);
             }
             sendRetryResponse();
             return;
         }
 
-        if (!preCheckReplicaSync(nodeEngine, partitionId, replicaIndex)) {
+        if (!checkPartitionOwner()) {
+            sendRetryResponse();
             return;
         }
 
-        try {
-            PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
-            if (allNamespaces.remove(NonFragmentedServiceNamespace.INSTANCE)) {
-                Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
-                sendOperations(operations, NonFragmentedServiceNamespace.INSTANCE);
-            }
+        int permits = partitionService.getReplicaManager().tryAcquireReplicaSyncPermits(namespaces.size());
+        if (permits == 0) {
+            logNotEnoughPermits();
+            sendRetryResponse();
+            return;
+        }
 
-            for (ServiceNamespace namespace : allNamespaces) {
-                Collection<Operation> operations = createFragmentReplicationOperations(event, namespace);
-                sendOperations(operations, namespace);
-            }
-        } finally {
-            partitionService.getReplicaManager().releaseReplicaSyncPermit();
+        sendOperationsForNamespaces(permits);
+
+        // send retry response for remaining namespaces
+        if (!namespaces.isEmpty()) {
+            logNotEnoughPermits();
+            sendRetryResponse();
         }
     }
 
-    private void sendOperations(Collection<Operation> operations, ServiceNamespace ns) throws Exception {
+    private void logNotEnoughPermits() {
+        ILogger logger = getLogger();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Not enough permits available! Cannot process request. partitionId="
+                    + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + ", namespaces=" + namespaces);
+        }
+    }
+
+    /**
+     * Send responses for first number of {@code permits} namespaces and remove them from the list.
+     */
+    private void sendOperationsForNamespaces(int permits) {
+        InternalPartitionServiceImpl partitionService = getService();
+        try {
+            PartitionReplicationEvent event = new PartitionReplicationEvent(getPartitionId(), getReplicaIndex());
+            Iterator<ServiceNamespace> iterator = namespaces.iterator();
+            for (int i = 0; i < permits; i++) {
+                ServiceNamespace namespace = iterator.next();
+                Collection<Operation> operations;
+                if (NonFragmentedServiceNamespace.INSTANCE.equals(namespace)) {
+                    operations = createNonFragmentedReplicationOperations(event);
+                } else {
+                    operations = createFragmentReplicationOperations(event, namespace);
+                }
+                sendOperations(operations, namespace);
+                iterator.remove();
+            }
+        } finally {
+            partitionService.getReplicaManager().releaseReplicaSyncPermits(permits);
+        }
+    }
+
+    private void sendOperations(Collection<Operation> operations, ServiceNamespace ns) {
         if (operations.isEmpty()) {
             logNoReplicaDataFound(getPartitionId(), ns, getReplicaIndex());
             sendResponse(null, ns);
@@ -125,28 +156,20 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
         }
     }
 
-    /** Checks if we can continue with the replication or not. Can send a retry or empty response to the replica in some cases */
-    private boolean preCheckReplicaSync(NodeEngineImpl nodeEngine, int partitionId, int replicaIndex) throws IOException {
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
+    /** Checks if we are the primary owner of the partition. */
+    private boolean checkPartitionOwner() {
+        InternalPartitionServiceImpl partitionService = getService();
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
-        InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
+        InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(getPartitionId());
         Address owner = partition.getOwnerOrNull();
 
-        ILogger logger = getLogger();
+        NodeEngine nodeEngine = getNodeEngine();
         if (!nodeEngine.getThisAddress().equals(owner)) {
+            ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
+                logger.finest("This node is not owner partition. Cannot process request. partitionId="
+                        + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + ", namespaces=" + namespaces);
             }
-            sendRetryResponse();
-            return false;
-        }
-
-        if (!partitionService.getReplicaManager().tryToAcquireReplicaSyncPermit()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest(
-                        "Max parallel replication process limit exceeded! Could not run replica sync -> " + toString());
-            }
-            sendRetryResponse();
             return false;
         }
         return true;
@@ -158,7 +181,7 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
 
-        PartitionReplicaSyncRetryResponse response = new PartitionReplicaSyncRetryResponse(allNamespaces);
+        PartitionReplicaSyncRetryResponse response = new PartitionReplicaSyncRetryResponse(namespaces);
         response.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         Address target = getCallerAddress();
         OperationService operationService = nodeEngine.getOperationService();
@@ -166,7 +189,7 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
     }
 
     /** Send a synchronization response to the caller replica containing the replication operations to be executed */
-    private void sendResponse(Collection<Operation> operations, ServiceNamespace ns) throws IOException {
+    private void sendResponse(Collection<Operation> operations, ServiceNamespace ns) {
         NodeEngine nodeEngine = getNodeEngine();
 
         PartitionReplicaSyncResponse syncResponse = createResponse(operations, ns);
@@ -231,8 +254,8 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeInt(allNamespaces.size());
-        for (ServiceNamespace namespace : allNamespaces) {
+        out.writeInt(namespaces.size());
+        for (ServiceNamespace namespace : namespaces) {
             out.writeObject(namespace);
         }
     }
@@ -240,10 +263,10 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int len = in.readInt();
-        allNamespaces = new ArrayList<ServiceNamespace>(len);
+        namespaces = new ArrayList<ServiceNamespace>(len);
         for (int i = 0; i < len; i++) {
             ServiceNamespace ns = in.readObject();
-            allNamespaces.add(ns);
+            namespaces.add(ns);
         }
     }
 

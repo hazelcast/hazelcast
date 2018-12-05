@@ -60,7 +60,7 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSupport {
 
-    private static final int PARALLEL_REPLICATIONS = 10;
+    protected static final int PARALLEL_REPLICATIONS = 10;
     private static final int BACKUP_SYNC_INTERVAL = 1;
 
     private static final String[] NAMESPACES = {"ns1", "ns2"};
