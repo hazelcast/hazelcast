@@ -17,11 +17,18 @@
 package com.hazelcast.client.replicatedmap;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -32,7 +39,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
@@ -139,7 +149,52 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
         });
     }
 
-    private ReplicatedMap<Object, Object> createClusterAndGetRandomReplicatedMap() {
+    @Test
+    public void no_key_value_deserialization_on_server_when_in_memory_format_is_binary() {
+        final CountDownLatch eventReceivedLatch = new CountDownLatch(1);
+
+        Config config = new Config();
+        config.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
+
+        HazelcastInstance server = factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        ReplicatedMap<DeserializationCounter, DeserializationCounter> replicatedMap = client.getReplicatedMap("test");
+        replicatedMap.addEntryListener(new EntryAdapter<DeserializationCounter, DeserializationCounter>() {
+            @Override
+            public void onEntryEvent(EntryEvent<DeserializationCounter, DeserializationCounter> event) {
+                eventReceivedLatch.countDown();
+            }
+        }, TruePredicate.INSTANCE);
+
+        DeserializationCounter key = new DeserializationCounter();
+        DeserializationCounter value = new DeserializationCounter();
+
+        replicatedMap.put(key, value);
+
+        // wait to get event on client side
+        assertOpenEventually(eventReceivedLatch);
+
+        assertEquals(0, key.DESERIALIZATION_COUNT.get());
+        assertEquals(0, value.DESERIALIZATION_COUNT.get());
+    }
+
+    public static class DeserializationCounter implements DataSerializable {
+
+        protected static final AtomicInteger DESERIALIZATION_COUNT = new AtomicInteger();
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            DESERIALIZATION_COUNT.incrementAndGet();
+        }
+    }
+
+    private <K, V> ReplicatedMap<K, V> createClusterAndGetRandomReplicatedMap() {
         factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
         String mapName = randomMapName();
