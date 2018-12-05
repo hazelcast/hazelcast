@@ -498,4 +498,82 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
             discoveryConfig = in.readObject();
         }
     }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        WanPublisherConfig that = (WanPublisherConfig) o;
+
+        if (queueCapacity != that.queueCapacity) {
+            return false;
+        }
+        if (groupName != null ? !groupName.equals(that.groupName) : that.groupName != null) {
+            return false;
+        }
+        if (publisherId != null ? !publisherId.equals(that.publisherId) : that.publisherId != null) {
+            return false;
+        }
+        if (queueFullBehavior != that.queueFullBehavior) {
+            return false;
+        }
+        if (initialPublisherState != that.initialPublisherState) {
+            return false;
+        }
+        if (properties != null ? !properties.equals(that.properties) : that.properties != null) {
+            return false;
+        }
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
+            return false;
+        }
+        if (!awsConfig.equals(that.awsConfig)) {
+            return false;
+        }
+        if (!gcpConfig.equals(that.gcpConfig)) {
+            return false;
+        }
+        if (!azureConfig.equals(that.azureConfig)) {
+            return false;
+        }
+        if (!kubernetesConfig.equals(that.kubernetesConfig)) {
+            return false;
+        }
+        if (!eurekaConfig.equals(that.eurekaConfig)) {
+            return false;
+        }
+        if (!discoveryConfig.equals(that.discoveryConfig)) {
+            return false;
+        }
+        return wanSyncConfig != null ? wanSyncConfig.equals(that.wanSyncConfig) : that.wanSyncConfig == null;
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public int hashCode() {
+        int result = groupName != null ? groupName.hashCode() : 0;
+        result = 31 * result + (publisherId != null ? publisherId.hashCode() : 0);
+        result = 31 * result + queueCapacity;
+        result = 31 * result + (queueFullBehavior != null ? queueFullBehavior.hashCode() : 0);
+        result = 31 * result + initialPublisherState.hashCode();
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        result = 31 * result + (className != null ? className.hashCode() : 0);
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + awsConfig.hashCode();
+        result = 31 * result + gcpConfig.hashCode();
+        result = 31 * result + azureConfig.hashCode();
+        result = 31 * result + kubernetesConfig.hashCode();
+        result = 31 * result + eurekaConfig.hashCode();
+        result = 31 * result + discoveryConfig.hashCode();
+        result = 31 * result + (wanSyncConfig != null ? wanSyncConfig.hashCode() : 0);
+        return result;
+    }
 }
