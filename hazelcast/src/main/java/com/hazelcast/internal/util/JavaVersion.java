@@ -43,6 +43,16 @@ public enum JavaVersion {
         return isAtLeast(CURRENT_VERSION, version);
     }
 
+    /**
+     * Check if the current runtime version is at most the given version.
+     *
+     * @param version version to be compared against the current runtime version
+     * @return Return true if current runtime version of Java is the same or less than given version.
+     */
+    public static boolean isAtMost(JavaVersion version) {
+        return isAtMost(CURRENT_VERSION, version);
+    }
+
     private static JavaVersion detectCurrentVersion() {
         String version = System.getProperty("java.version");
         return parseVersion(version);
@@ -78,5 +88,9 @@ public enum JavaVersion {
 
     static boolean isAtLeast(JavaVersion currentVersion, JavaVersion minVersion) {
         return currentVersion.ordinal() >= minVersion.ordinal();
+    }
+
+    static boolean isAtMost(JavaVersion currentVersion, JavaVersion minVersion) {
+        return currentVersion.ordinal() <= minVersion.ordinal();
     }
 }
