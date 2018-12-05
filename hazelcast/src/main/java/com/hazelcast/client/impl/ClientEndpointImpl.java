@@ -35,6 +35,8 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -45,6 +47,7 @@ import java.util.concurrent.ConcurrentMap;
 public final class ClientEndpointImpl implements ClientEndpoint {
 
     private final ClientEngineImpl clientEngine;
+    private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final Connection connection;
     private final ConcurrentMap<String, TransactionContext> transactionContextMap
@@ -63,9 +66,11 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private long authenticationCorrelationId;
     private volatile String stats;
     private String clientName;
+    private Map<String, String> attributes;
 
     public ClientEndpointImpl(ClientEngineImpl clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
+        this.logger = clientEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
         this.connection = connection;
         if (connection instanceof TcpIpConnection) {
@@ -110,7 +115,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection,
-                              String clientVersion, long authCorrelationId, String clientName) {
+                              String clientVersion, long authCorrelationId, String clientName,
+                              Map<String, String> attributes) {
         this.principal = principal;
         this.ownerConnection = firstConnection;
         this.credentials = credentials;
@@ -118,6 +124,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         this.authenticationCorrelationId = authCorrelationId;
         this.setClientVersion(clientVersion);
         this.clientName = clientName;
+        this.attributes = attributes;
     }
 
     @Override
@@ -197,6 +204,16 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
+    public String getAttribute(String attributeKey) {
+        return attributes.get(attributeKey);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        return Collections.unmodifiableMap(attributes);
+    }
+
+    @Override
     public TransactionContext getTransactionContext(String txnId) {
         final TransactionContext transactionContext = transactionContextMap.get(txnId);
         if (transactionContext == null) {
@@ -247,7 +264,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             try {
                 removeAction.call();
             } catch (Exception e) {
-                getLogger().warning("Exception during remove listener action", e);
+                logger.warning("Exception during remove listener action", e);
             }
         }
         removeListenerActions.clear();
@@ -268,16 +285,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             try {
                 context.rollbackTransaction();
             } catch (HazelcastInstanceNotActiveException e) {
-                getLogger().finest(e);
+                logger.finest(e);
             } catch (Exception e) {
-                getLogger().warning(e);
+                logger.warning(e);
             }
         }
         authenticated = false;
-    }
-
-    private ILogger getLogger() {
-        return clientEngine.getLogger(getClass());
     }
 
     @Override

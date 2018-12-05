@@ -42,6 +42,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -76,6 +77,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.address = "localhost";
         client.clientType = "undefined";
         client.name = "aClient";
+        client.attributes = Collections.singletonMap("attrKey", "attrValue");
         clients.add(client);
 
         Map<String, Long> runtimeProps = new HashMap<String, Long>();
@@ -145,6 +147,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals("localhost", client.address);
         assertEquals("undefined", client.clientType);
         assertEquals("aClient", client.name);
+        assertEquals("attrValue", client.attributes.get("attrKey"));
 
         NodeState deserializedState = deserialized.getNodeState();
         assertEquals(clusterState, deserializedState.getClusterState());

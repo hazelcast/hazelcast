@@ -93,7 +93,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
                     ClientEventType.CONNECTED,
                     endpoint.getSocketAddress(),
                     endpoint.getClientType(),
-                    endpoint.getName());
+                    endpoint.getName(), endpoint.getAttributes());
             sendClientEvent(event);
             return true;
         }
@@ -121,7 +121,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
                 ClientEventType.DISCONNECTED,
                 endpoint.getSocketAddress(),
                 endpoint.getClientType(),
-                endpoint.getName());
+                endpoint.getName(), endpoint.getAttributes());
         sendClientEvent(event);
     }
 

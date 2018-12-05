@@ -20,6 +20,8 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 
 import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Default {@link com.hazelcast.core.Client} implementation.
@@ -29,11 +31,13 @@ public class ClientImpl implements Client {
     private final String uuid;
     private final InetSocketAddress socketAddress;
     private final String name;
+    private final Map<String, String> attributes;
 
-    public ClientImpl(String uuid, InetSocketAddress socketAddress, String name) {
+    public ClientImpl(String uuid, InetSocketAddress socketAddress, String name, Map<String, String> attributes) {
         this.uuid = uuid;
         this.socketAddress = socketAddress;
         this.name = name;
+        this.attributes = Collections.unmodifiableMap(attributes);
     }
 
     @Override
@@ -54,5 +58,15 @@ public class ClientImpl implements Client {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getAttribute(String attributeKey) {
+        return attributes.get(attributeKey);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        return attributes;
     }
 }

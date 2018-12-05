@@ -35,6 +35,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.util.function.BiConsumer;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -124,6 +125,7 @@ public class ClientConfig {
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
             new ConcurrentHashMap<String, ClientFlakeIdGeneratorConfig>();
 
+    private final Map<String, String> attributes = new ConcurrentHashMap<String, String>();
     private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
     /**
@@ -955,6 +957,27 @@ public class ClientConfig {
         }
 
         return lookupByPattern(configPatternMatcher, queryCacheConfigsForMap, cacheName);
+    }
+
+
+    /**
+     * Sets attribute to client to be used on the server side.
+     * Attributes can be accessed from {@link com.hazelcast.core.Client}
+     *
+     * @param key   the key of the attribute
+     * @param value the value of the attribute
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     */
+    public ClientConfig setAttribute(String key, String value) {
+        attributes.put(key, value);
+        return this;
+    }
+
+    /**
+     * @return unmodifiable map of all attributes
+     */
+    public Map<String, String> getAttributes() {
+        return Collections.unmodifiableMap(attributes);
     }
 
     public ClientConfig setUserContext(ConcurrentMap<String, Object> userContext) {

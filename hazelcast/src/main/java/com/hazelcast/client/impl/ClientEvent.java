@@ -20,6 +20,8 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 
 import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Event used for notification of client connection and disconnection
@@ -31,13 +33,16 @@ public class ClientEvent implements Client {
     private final InetSocketAddress address;
     private final ClientType clientType;
     private final String name;
+    private final Map<String, String> attributes;
 
-    public ClientEvent(String uuid, ClientEventType eventType, InetSocketAddress address, ClientType clientType, String name) {
+    public ClientEvent(String uuid, ClientEventType eventType, InetSocketAddress address,
+                       ClientType clientType, String name, Map<String, String> attributes) {
         this.uuid = uuid;
         this.eventType = eventType;
         this.address = address;
         this.clientType = clientType;
         this.name = name;
+        this.attributes = attributes;
     }
 
     @Override
@@ -58,6 +63,16 @@ public class ClientEvent implements Client {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getAttribute(String attributeKey) {
+        return attributes.get(attributeKey);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        return Collections.unmodifiableMap(attributes);
     }
 
     public ClientEventType getEventType() {

@@ -24,6 +24,7 @@ import com.hazelcast.transaction.TransactionContext;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -88,7 +89,7 @@ public interface ClientEndpoint extends Client {
     void setLoginContext(LoginContext lc);
 
     void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection,
-                       String clientVersion, long authCorrelationId, String clientName);
+                       String clientVersion, long authCorrelationId, String clientName, Map<String, String> attributes);
 
     void authenticated(ClientPrincipal principal);
 
