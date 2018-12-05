@@ -558,6 +558,8 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     protected abstract Config buildCompleteAdvancedNetworkConfig();
 
+    public abstract void testCPSubsystemConfig();
+
     protected static void assertAwsConfig(AwsConfig aws) {
         assertEquals("sample-access-key", aws.getProperties().get("access-key"));
         assertEquals("sample-secret-key", aws.getProperties().get("secret-key"));

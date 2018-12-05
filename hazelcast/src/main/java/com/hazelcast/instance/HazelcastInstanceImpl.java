@@ -52,6 +52,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.internal.CPSubsystemImpl;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -108,6 +110,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     final String name;
     final ManagementService managementService;
     final LifecycleServiceImpl lifecycleService;
+    final CPSubsystemImpl cpSubsystem;
     final ManagedContext managedContext;
     final HazelcastInstanceCacheManager hazelcastCacheManager;
 
@@ -115,6 +118,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) {
         this.name = name;
         this.lifecycleService = new LifecycleServiceImpl(this);
+        this.cpSubsystem = new CPSubsystemImpl(this);
 
         ManagedContext configuredManagedContext = config.getManagedContext();
         this.managedContext = new HazelcastManagedContext(this, configuredManagedContext);
@@ -421,6 +425,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     public IScheduledExecutorService getScheduledExecutorService(String name) {
         checkNotNull(name, "Retrieving a scheduled executor instance with a null name is not allowed!");
         return getDistributedObject(DistributedScheduledExecutorService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public CPSubsystem getCPSubsystem() {
+        return cpSubsystem;
     }
 
     @Override

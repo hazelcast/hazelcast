@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.Member;
@@ -33,7 +32,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.NetworkingService;
-import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
@@ -62,7 +60,6 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
@@ -334,17 +331,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
      */
     abstract Member toTargetMember(T target);
 
-    private Exception newTargetNullException() {
-        ClusterState clusterState = context.clusterService.getClusterState();
-        if (!clusterState.isMigrationAllowed()) {
-            return new IllegalStateException("Target of invocation cannot be found! Partition owner is null "
-                    + "but partitions can't be assigned in cluster-state: " + clusterState);
-        }
-        if (context.clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
-            return new NoDataMemberInClusterException(
-                    "Target of invocation cannot be found! Partition owner is null "
-                            + "but partitions can't be assigned since all nodes in the cluster are lite members.");
-        }
+    Exception newTargetNullException() {
         return new WrongTargetException(context.clusterService.getLocalMember(), null, op.getPartitionId(),
                 op.getReplicaIndex(), op.getClass().getName(), op.getServiceName());
     }

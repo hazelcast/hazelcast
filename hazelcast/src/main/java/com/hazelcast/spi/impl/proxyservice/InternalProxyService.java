@@ -25,4 +25,6 @@ import com.hazelcast.spi.ProxyService;
  * interface and additional methods we don't want to expose in the SPI, we can add here.
  */
 public interface InternalProxyService extends ProxyService {
+
+    void destroyLocalDistributedObject(String serviceName, String name, boolean fireEvent);
 }

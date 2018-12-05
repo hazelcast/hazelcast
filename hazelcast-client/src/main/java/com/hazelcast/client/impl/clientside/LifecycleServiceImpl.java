@@ -143,21 +143,25 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     @Override
     public void shutdown() {
+        doShutdown(true);
+    }
+
+    @Override
+    public void terminate() {
+        doShutdown(false);
+    }
+
+    private void doShutdown(boolean isGraceful) {
         if (!active.compareAndSet(true, false)) {
             return;
         }
 
         fireLifecycleEvent(SHUTTING_DOWN);
         HazelcastClient.shutdown(client.getName());
-        client.doShutdown();
+        client.doShutdown(isGraceful);
         fireLifecycleEvent(SHUTDOWN);
 
         shutdownExecutor();
-    }
-
-    @Override
-    public void terminate() {
-        shutdown();
     }
 
     private void shutdownExecutor() {

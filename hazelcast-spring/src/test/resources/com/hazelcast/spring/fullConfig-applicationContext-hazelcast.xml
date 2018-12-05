@@ -824,6 +824,42 @@
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
                 <hz:replica-count>100</hz:replica-count>
             </hz:pn-counter>
+
+            <hz:cp-subsystem>
+                <hz:cp-member-count>10</hz:cp-member-count>
+                <hz:group-size>5</hz:group-size>
+                <hz:session-time-to-live-seconds>15</hz:session-time-to-live-seconds>
+                <hz:session-heartbeat-interval-seconds>3</hz:session-heartbeat-interval-seconds>
+                <hz:missing-cp-member-auto-removal-seconds>120</hz:missing-cp-member-auto-removal-seconds>
+                <hz:fail-on-indeterminate-operation-state>true</hz:fail-on-indeterminate-operation-state>
+                <hz:raft-algorithm>
+                    <hz:leader-election-timeout-in-millis>500</hz:leader-election-timeout-in-millis>
+                    <hz:leader-heartbeat-period-in-millis>100</hz:leader-heartbeat-period-in-millis>
+                    <hz:append-request-max-entry-count>25</hz:append-request-max-entry-count>
+                    <hz:commit-index-advance-count-to-snapshot>250</hz:commit-index-advance-count-to-snapshot>
+                    <hz:uncommitted-entry-count-to-reject-new-appends>75</hz:uncommitted-entry-count-to-reject-new-appends>
+                </hz:raft-algorithm>
+                <hz:semaphores>
+                    <hz:cp-semaphore>
+                        <hz:name>sem1</hz:name>
+                        <hz:jdk-compatible>true</hz:jdk-compatible>
+                    </hz:cp-semaphore>
+                    <hz:cp-semaphore>
+                        <hz:name>sem2</hz:name>
+                        <hz:jdk-compatible>false</hz:jdk-compatible>
+                    </hz:cp-semaphore>
+                </hz:semaphores>
+                <hz:locks>
+                    <hz:fenced-lock>
+                        <hz:name>lock1</hz:name>
+                        <hz:lock-acquire-limit>1</hz:lock-acquire-limit>
+                    </hz:fenced-lock>
+                    <hz:fenced-lock>
+                        <hz:name>lock2</hz:name>
+                        <hz:lock-acquire-limit>2</hz:lock-acquire-limit>
+                    </hz:fenced-lock>
+                </hz:locks>
+            </hz:cp-subsystem>
         </hz:config>
     </hz:hazelcast>
 

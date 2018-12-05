@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.spi.properties.GroupProperty;
 
 /**
@@ -35,7 +36,7 @@ import com.hazelcast.spi.properties.GroupProperty;
  *
  * @see GroupProperty#OPERATION_BACKUP_TIMEOUT_MILLIS
  * @see GroupProperty#FAIL_ON_INDETERMINATE_OPERATION_STATE
- * @see com.hazelcast.config.raft.RaftAlgorithmConfig#setFailOnIndeterminateOperationState(boolean)
+ * @see CPSubsystemConfig#setFailOnIndeterminateOperationState(boolean)
  */
 public class IndeterminateOperationStateException extends HazelcastException {
 

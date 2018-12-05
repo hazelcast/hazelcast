@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.config.Config;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -490,6 +491,13 @@ public interface HazelcastInstance {
      * @return the scheduled executor service for the given name
      */
     IScheduledExecutorService getScheduledExecutorService(String name);
+
+    /**
+     * Returns the CP subsystem that offers a set of in-memory linearizable data structures
+     *
+     * @return the CP subsystem that offers a set of in-memory linearizable data structures
+     */
+    CPSubsystem getCPSubsystem();
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

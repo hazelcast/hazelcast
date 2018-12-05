@@ -284,6 +284,57 @@ public class HTTPCommunicator {
         return doPost(url, groupName, groupPassword, permConfJson).response;
     }
 
+    public ConnectionResponse getCPGroupIds() throws IOException {
+        String url = address + "cp-subsystem/cp-groups";
+        return doGet(url);
+    }
+
+    public ConnectionResponse getCPGroupByName(String name) throws IOException {
+        String url = address + "cp-subsystem/cp-groups/" + name;
+        return doGet(url);
+    }
+
+    public ConnectionResponse getLocalCPMember() throws IOException {
+        String url = address + "cp-subsystem/cp-members/local";
+        return doGet(url);
+    }
+
+    public ConnectionResponse getCPMembers() throws IOException {
+        String url = address + "cp-subsystem/cp-members";
+        return doGet(url);
+    }
+
+    public ConnectionResponse forceDestroyCPGroup(String cpGroupName, String groupName, String groupPassword) throws IOException {
+        String url = address + "cp-subsystem/cp-groups/" + cpGroupName + "/remove";
+        return doPost(url, groupName, groupPassword);
+    }
+
+    public ConnectionResponse removeCPMember(String cpMemberUid, String groupName, String groupPassword) throws IOException {
+        String url = address + "cp-subsystem/cp-members/" + cpMemberUid + "/remove";
+        return doPost(url, groupName, groupPassword);
+    }
+
+    public ConnectionResponse promoteCPMember(String groupName, String groupPassword) throws IOException {
+        String url = address + "cp-subsystem/cp-members";
+        return doPost(url, groupName, groupPassword);
+    }
+
+    public ConnectionResponse restart(String groupName, String groupPassword) throws IOException {
+        String url = address + "cp-subsystem/restart";
+        return doPost(url, groupName, groupPassword);
+    }
+
+    public ConnectionResponse getCPSessions(String groupName) throws IOException {
+        String url = address + "cp-subsystem/cp-groups/" + groupName + "/cp-sessions";
+        return doGet(url);
+    }
+
+    public ConnectionResponse forceCloseCPSession(String cpGroupName, long sessionId, String groupName, String groupPassword)
+            throws IOException {
+        String url = address + "cp-subsystem/cp-groups/" + cpGroupName + "/cp-sessions/" + sessionId + "/remove";
+        return doPost(url, groupName, groupPassword);
+    }
+
     static class ConnectionResponse {
         final String response;
         final int responseCode;

@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.cluster.impl.MembershipUpdateTest.StaticMemberNodeContext;
+import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;

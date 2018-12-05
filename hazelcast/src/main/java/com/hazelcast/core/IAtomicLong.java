@@ -16,12 +16,15 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.cp.CPSubsystem;
+
 /**
  * IAtomicLong is a redundant and highly available distributed alternative to
  * the {@link java.util.concurrent.atomic.AtomicLong}.
  * <p>
  * Asynchronous variants of all methods have been introduced in version 3.7.
- * Async methods return immediately an {@link ICompletableFuture} from which
+ * Async methods immediately return an {@link ICompletableFuture} from which
  * the operation's result can be obtained either in a blocking manner or by
  * registering a callback to be executed upon completion. For example:
  * <pre><code>
@@ -36,14 +39,31 @@ package com.hazelcast.core;
  *     }
  * });
  * </code></pre>
- * During a network partition event it is possible for the {@link IAtomicLong}
- * to exist in each of the partitioned clusters or to not exist at all. Under
- * these circumstances the values held in the {@link IAtomicLong} may diverge.
- * Once the network partition heals, Hazelcast will use the configured
- * split-brain merge policy to resolve conflicting values.
  * <p>
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in
- * cluster versions 3.10 and higher.
+ * As of version 3.12, Hazelcast offers 2 different {@link IAtomicLong} impls.
+ * Behaviour of {@link IAtomicLong} under failure scenarios, including network
+ * partitions, depends on the impl. The first impl is the good old
+ * {@link IAtomicLong} that is accessed via
+ * {@link HazelcastInstance#getAtomicLong(String)}. It works on top of
+ * Hazelcast's async replication algorithm and does not guarantee
+ * linearizability during failures. It is possible for an {@link IAtomicLong}
+ * instance to exist in each of the partitioned clusters or to not exist
+ * at all. Under these circumstances, the values held in the
+ * {@link IAtomicLong} instance may diverge. Once the network partition heals,
+ * Hazelcast will use the configured split-brain merge policy to resolve
+ * conflicting values.
+ * <p>
+ * This {@link IAtomicLong} impl also supports Quorum {@link QuorumConfig}
+ * in cluster versions 3.10 and higher. However, Hazelcast quorums do not
+ * guarantee strong consistency under failure scenarios.
+ * <p>
+ * The second impl is a new one introduced with the {@link CPSubsystem} in
+ * version 3.12. It is accessed via {@link CPSubsystem#getAtomicLong(String)}.
+ * It has a major difference to the old implementation, that is, it works on
+ * top of the Raft consensus algorithm. It offers linearizability during crash
+ * failures and network partitions. It is CP with respect to the CAP principle.
+ * If a network partition occurs, it remains available on at most one side
+ * of the partition.
  *
  * @see IAtomicReference
  */

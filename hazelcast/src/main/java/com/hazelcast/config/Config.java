@@ -16,9 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
-import com.hazelcast.config.raft.RaftConfig;
-import com.hazelcast.config.raft.RaftSemaphoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -170,9 +169,7 @@ public class Config {
 
     private boolean liteMember;
 
-    private RaftConfig raftConfig;
-
-    private final Map<String, RaftSemaphoreConfig> raftSemaphoreConfigs = new ConcurrentHashMap<String, RaftSemaphoreConfig>();
+    private CPSubsystemConfig cpSubsystemConfig = new CPSubsystemConfig();
 
     public Config() {
     }
@@ -3460,21 +3457,25 @@ public class Config {
         return this;
     }
 
-    public RaftConfig getRaftConfig() {
-        return raftConfig;
+    /**
+     * Get current configuration for the CP subsystem
+     *
+     * @return CP subsystem configuration
+     * @since 3.12
+     */
+    public CPSubsystemConfig getCPSubsystemConfig() {
+        return cpSubsystemConfig;
     }
 
-    public Config setRaftConfig(RaftConfig raftConfig) {
-        this.raftConfig = raftConfig;
-        return this;
-    }
-
-    public RaftSemaphoreConfig findRaftSemaphoreConfig(String name) {
-        return lookupByPattern(configPatternMatcher, raftSemaphoreConfigs, getBaseName(name));
-    }
-
-    public Config addRaftSemaphoreConfig(RaftSemaphoreConfig config) {
-        raftSemaphoreConfigs.put(config.getName(), config);
+    /**
+     * Set CP subsystem configuration
+     *
+     * @param cpSubsystemConfig the CP subsystem configuration
+     * @return this config instance
+     * @since 3.12
+     */
+    public Config setCPSubsystemConfig(CPSubsystemConfig cpSubsystemConfig) {
+        this.cpSubsystemConfig = cpSubsystemConfig;
         return this;
     }
 
@@ -3505,6 +3506,7 @@ public class Config {
                 + ", liteMember=" + liteMember
                 + ", crdtReplicationConfig=" + crdtReplicationConfig
                 + ", advancedNetworkConfig=" + advancedNetworkConfig
+                + ", cpSubsystemConfig=" + cpSubsystemConfig
                 + '}';
     }
 }
