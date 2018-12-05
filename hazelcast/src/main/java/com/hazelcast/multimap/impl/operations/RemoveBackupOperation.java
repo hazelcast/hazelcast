@@ -27,18 +27,17 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
 
 public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
-    private long recordId;
+    private Data value;
 
     public RemoveBackupOperation() {
     }
 
-    public RemoveBackupOperation(String name, Data dataKey, long recordId) {
+    public RemoveBackupOperation(String name, Data dataKey, Data value) {
         super(name, dataKey);
-        this.recordId = recordId;
+        this.value = value;
     }
 
     @Override
@@ -50,29 +49,23 @@ public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation imp
             return;
         }
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
-        Iterator<MultiMapRecord> iterator = coll.iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().getRecordId() == recordId) {
-                iterator.remove();
-                response = true;
-                if (coll.isEmpty()) {
-                    container.delete(dataKey);
-                }
-                break;
-            }
+        MultiMapRecord record = new MultiMapRecord(isBinary() ? value : toObject(value));
+        response = coll.remove(record);
+        if (coll.isEmpty()) {
+            container.delete(dataKey);
         }
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(recordId);
+        out.writeData(value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        recordId = in.readLong();
+        value = in.readData();
     }
 
     @Override
