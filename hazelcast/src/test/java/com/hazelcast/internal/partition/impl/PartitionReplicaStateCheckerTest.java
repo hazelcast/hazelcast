@@ -209,8 +209,9 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         InternalPartitionServiceImpl partitionService1 = getNode(hz).partitionService;
         InternalPartitionServiceImpl partitionService2 = getNode(hz2).partitionService;
-        drainAllReplicaSyncPermits(partitionService1);
-        drainAllReplicaSyncPermits(partitionService2);
+        int maxPermits = drainAllReplicaSyncPermits(partitionService1);
+        int maxPermits2 = drainAllReplicaSyncPermits(partitionService2);
+        assertEquals(maxPermits, maxPermits2);
 
         warmUpPartitions(hz, hz2);
 
@@ -229,8 +230,8 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         assertEquals(PartitionServiceState.REPLICA_NOT_SYNC, replicaStateChecker1.getPartitionServiceState());
         assertEquals(PartitionServiceState.REPLICA_NOT_SYNC, replicaStateChecker2.getPartitionServiceState());
 
-        addReplicaSyncPermits(partitionService1, 100);
-        addReplicaSyncPermits(partitionService2, 100);
+        addReplicaSyncPermits(partitionService1, maxPermits);
+        addReplicaSyncPermits(partitionService2, maxPermits);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -243,18 +244,12 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
     private void addReplicaSyncPermits(InternalPartitionServiceImpl partitionService, int k) {
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        for (int i = 0; i < k; i++) {
-            replicaManager.releaseReplicaSyncPermit();
-        }
+        replicaManager.releaseReplicaSyncPermits(k);
     }
 
     private int drainAllReplicaSyncPermits(InternalPartitionServiceImpl partitionService) {
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        int k = 0;
-        while (replicaManager.tryToAcquireReplicaSyncPermit()) {
-            k++;
-        }
-        return k;
+        return replicaManager.tryAcquireReplicaSyncPermits(Integer.MAX_VALUE);
     }
 
     private static class TestPutOperationWithAsyncBackup extends TestPutOperation {
