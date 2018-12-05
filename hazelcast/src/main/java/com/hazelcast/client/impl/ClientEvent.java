@@ -20,7 +20,6 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -72,7 +71,7 @@ public class ClientEvent implements Client {
 
     @Override
     public Map<String, String> getAttributes() {
-        return Collections.unmodifiableMap(attributes);
+        return attributes;
     }
 
     public ClientEventType getEventType() {

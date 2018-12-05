@@ -20,7 +20,6 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -37,7 +36,7 @@ public class ClientImpl implements Client {
         this.uuid = uuid;
         this.socketAddress = socketAddress;
         this.name = name;
-        this.attributes = Collections.unmodifiableMap(attributes);
+        this.attributes = attributes;
     }
 
     @Override

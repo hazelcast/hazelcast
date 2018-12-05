@@ -35,7 +35,6 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -210,7 +209,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public Map<String, String> getAttributes() {
-        return Collections.unmodifiableMap(attributes);
+        return attributes;
     }
 
     @Override

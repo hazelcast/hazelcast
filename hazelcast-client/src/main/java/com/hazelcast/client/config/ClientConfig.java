@@ -35,7 +35,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.util.function.BiConsumer;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -974,10 +973,10 @@ public class ClientConfig {
     }
 
     /**
-     * @return unmodifiable map of all attributes
+     * @return attributes of this client
      */
     public Map<String, String> getAttributes() {
-        return Collections.unmodifiableMap(attributes);
+        return attributes;
     }
 
     public ClientConfig setUserContext(ConcurrentMap<String, Object> userContext) {
