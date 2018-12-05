@@ -218,30 +218,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @SuppressWarnings("unused")
-    protected void onGet(K key, V value, R record) {
-    }
-
-    @SuppressWarnings("unused")
-    protected void onGetError(K key, V value, R record, Throwable error) {
-    }
-
-    @SuppressWarnings("unused")
-    protected void onPut(K key, V value, R record, R oldRecord) {
-    }
-
-    @SuppressWarnings("unused")
-    protected void onPutError(K key, V value, R record, R oldRecord, Throwable error) {
-    }
-
-    @SuppressWarnings("unused")
-    protected void onRemove(K key, R record, boolean removed) {
-    }
-
-    @SuppressWarnings("unused")
-    protected void onRemoveError(K key, R record, boolean removed, Throwable error) {
-    }
-
-    @SuppressWarnings("unused")
     protected void onExpire(K key, R record) {
         nearCacheStats.incrementExpirations();
     }
@@ -261,7 +237,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         checkAvailable();
 
         R record = null;
-        V value = null;
         try {
             record = getRecord(key);
             if (record != null) {
@@ -281,15 +256,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
                 onRecordAccess(record);
                 nearCacheStats.incrementHits();
-                value = recordToValue(record);
-                onGet(key, value, record);
-                return value;
+                return recordToValue(record);
             } else {
                 nearCacheStats.incrementMisses();
                 return null;
             }
         } catch (Throwable error) {
-            onGetError(key, value, record, error);
             throw rethrow(error);
         }
     }
@@ -312,9 +284,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             if (oldRecord == null) {
                 nearCacheStats.incrementOwnedEntryCount();
             }
-            onPut(key, value, record, oldRecord);
         } catch (Throwable error) {
-            onPutError(key, value, record, oldRecord, error);
             throw rethrow(error);
         }
     }
@@ -508,7 +478,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                 onRecordCreate(key, keyData, record);
                 record.casRecordState(READ_PERMITTED, RESERVED);
             } catch (Throwable throwable) {
-                onPutError(key, null, record, null, throwable);
                 throw rethrow(throwable);
             }
             return record;

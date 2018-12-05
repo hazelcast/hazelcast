@@ -41,14 +41,14 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     private static final AtomicLongFieldUpdater<AbstractNearCacheRecord> RECORD_STATE =
             AtomicLongFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "recordState");
 
-    protected long creationTime = TIME_NOT_SET;
+    protected long creationTime;
 
     protected volatile int partitionId;
     protected volatile long sequence;
     protected volatile UUID uuid;
 
     protected volatile V value;
-    protected volatile long expirationTime = TIME_NOT_SET;
+    protected volatile long expirationTime;
     protected volatile long accessTime = TIME_NOT_SET;
     protected volatile long recordState = READ_PERMITTED;
     protected volatile int accessHit;
