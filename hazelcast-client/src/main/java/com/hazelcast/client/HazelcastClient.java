@@ -30,14 +30,14 @@ import java.util.Collection;
  * the create and manage Hazelcast clients. Hazelcast clients are {@link HazelcastInstance} implementations, so
  * in most cases most of the code is unaware of talking to a cluster member or a client.
  * <p/>
- * <h1>Smart vs dumb clients</h1>
+ * <h1>Smart vs unisocket clients</h1>
  * Hazelcast Client enables you to do all Hazelcast operations without being a member of the cluster. Clients can be:
  * <ol>
  * <li>smart: this means that they immediately can send an operation like map.get(key) to the member that owns that
  * specific key.
  * </li>
  * <li>
- * dumb: it will connect to a random member in the cluster and send requests to this member. This member then needs
+ * unisocket: it will connect to a random member in the cluster and send requests to this member. This member then needs
  * to send the request to the correct member.
  * </li>
  * </ol>
