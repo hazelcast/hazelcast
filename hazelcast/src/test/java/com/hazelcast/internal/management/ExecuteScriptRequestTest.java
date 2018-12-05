@@ -39,6 +39,7 @@ import static com.hazelcast.util.JsonUtil.getString;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -104,7 +105,8 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         JsonObject result = (JsonObject) jsonObject.get("result");
         JsonObject json = getObject(result, nodeAddressWithBrackets);
         assertFalse(getBoolean(json, "success"));
-        assertContains(getString(json, "result"), "IllegalArgumentException");
+        assertNotNull(getString(json, "result"));
+        assertContains(getString(json, "stackTrace"), "IllegalArgumentException");
     }
 
     @Test
@@ -118,6 +120,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         JsonObject result = (JsonObject) jsonObject.get("result");
         JsonObject json = getObject(result, nodeAddressWithBrackets);
         assertFalse(getBoolean(json, "success"));
-        assertContains(getString(json, "result"), "ScriptException");
+        assertNotNull(getString(json, "result"));
+        assertContains(getString(json, "stackTrace"), "ScriptException");
     }
 }
