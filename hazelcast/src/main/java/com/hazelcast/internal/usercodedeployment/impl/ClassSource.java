@@ -70,6 +70,11 @@ public final class ClassSource extends ClassLoader {
         return classDefinitions.get(name);
     }
 
+    // for testing purposes
+    void addClassDefinition(String name, byte[] bytes) {
+        classDefinitions.put(name, bytes);
+    }
+
     Class getClazz(String name) {
         return classes.get(name);
     }
@@ -78,6 +83,11 @@ public final class ClassSource extends ClassLoader {
         ClassData classData = new ClassData();
         HashMap<String, byte[]> innerClassDefinitions = new HashMap<String, byte[]>(this.classDefinitions);
         byte[] mainClassDefinition = innerClassDefinitions.remove(className);
+        if (mainClassDefinition == null) {
+            // sometimes an inner class may be cached within its main class.
+            // However it does not mean another inner class within the same main class is cached too.
+            return null;
+        }
         classData.setInnerClassDefinitions(innerClassDefinitions);
         classData.setMainClassDefinition(mainClassDefinition);
         return classData;
