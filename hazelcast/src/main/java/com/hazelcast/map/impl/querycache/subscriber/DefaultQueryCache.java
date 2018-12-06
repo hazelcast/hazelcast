@@ -473,12 +473,13 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         InternalSerializationService serializationService = context.getSerializationService();
 
+        Extractors empty = Extractors.empty();
         Set<Map.Entry<Data, QueryCacheRecord>> entries = recordStore.entrySet();
         for (Map.Entry<Data, QueryCacheRecord> entry : entries) {
             Data keyData = entry.getKey();
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
-            QueryEntry queryable = new QueryEntry(serializationService, keyData, value, Extractors.empty());
+            QueryEntry queryable = new QueryEntry(serializationService, keyData, value, empty);
             indexes.saveEntryIndex(queryable, null, Index.OperationSource.USER);
         }
     }
