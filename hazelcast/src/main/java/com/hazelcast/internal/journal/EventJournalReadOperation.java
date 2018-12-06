@@ -118,7 +118,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
 
         if (minSize == 0) {
             if (!journal.isNextAvailableSequence(namespace, partitionId, sequence)) {
-                sequence = journal.readMany(namespace, partitionId, sequence, resultSet);
+                readMany(journal, partitionId);
             }
             return false;
         }
@@ -133,9 +133,13 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
             return true;
         }
 
+        readMany(journal, partitionId);
+        return !resultSet.isMinSizeReached();
+    }
+
+    private void readMany(EventJournal<J> journal, int partitionId) {
         sequence = journal.readMany(namespace, partitionId, sequence, resultSet);
         resultSet.setNextSequenceToReadFrom(sequence);
-        return !resultSet.isMinSizeReached();
     }
 
     @Override
