@@ -24,6 +24,7 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -88,15 +89,17 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
             return;
         }
 
-            Data key = serializationService.toData(event.getKey());
-            Data newValue = serializationService.toData(event.getValue());
-            Data oldValue = serializationService.toData(event.getOldValue());
-            Data mergingValue = serializationService.toData(event.getMergingValue());
+        DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
 
-            ClientMessage clientMessage = encodeEvent(key
-                    , newValue, oldValue, mergingValue, event.getEventType().getType(),
-                    event.getMember().getUuid(), 1);
-            sendClientMessage(key, clientMessage);
+        Data key = dataAwareEntryEvent.getKeyData();
+        Data newValue = dataAwareEntryEvent.getNewValueData();
+        Data oldValue = dataAwareEntryEvent.getOldValueData();
+        Data mergingValue = dataAwareEntryEvent.getMergingValueData();
+
+        ClientMessage clientMessage = encodeEvent(key
+                , newValue, oldValue, mergingValue, event.getEventType().getType(),
+                event.getMember().getUuid(), 1);
+        sendClientMessage(key, clientMessage);
     }
 
     private void handleMapEvent(MapEvent event) {
@@ -104,10 +107,10 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
             return;
         }
 
-            ClientMessage clientMessage = encodeEvent(null
-                    , null, null, null, event.getEventType().getType(),
-                    event.getMember().getUuid(), event.getNumberOfEntriesAffected());
-            sendClientMessage(null, clientMessage);
+        ClientMessage clientMessage = encodeEvent(null
+                , null, null, null, event.getEventType().getType(),
+                event.getMember().getUuid(), event.getNumberOfEntriesAffected());
+        sendClientMessage(null, clientMessage);
     }
 
     private boolean shouldSendEvent(IMapEvent event) {
