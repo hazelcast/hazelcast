@@ -354,31 +354,26 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue304EvictionDespitePut() {
-        GroupConfig groupConfig = new GroupConfig()
-                .setName("testIssue304EvictionDespitePut");
-        MapConfig mapConfig = newMapConfig("testIssue304EvictionDespitePut")
-                .setMaxIdleSeconds(5);
-        Config config = getConfig()
-                .setGroupConfig(groupConfig)
-                .addMapConfig(mapConfig);
+        String mapName = "testIssue304EvictionDespitePut";
+        MapConfig mapConfig = newMapConfig(mapName)
+                .setMaxIdleSeconds(10);
+        Config config = getConfig().addMapConfig(mapConfig);
 
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-        IMap<String, Long> map = hazelcastInstance.getMap("testIssue304EvictionDespitePut");
-
-        final AtomicInteger evictCount = new AtomicInteger(0);
-        map.addEntryListener(new EntryAdapter<String, Long>() {
-            public void entryEvicted(EntryEvent<String, Long> event) {
-                evictCount.incrementAndGet();
-            }
-        }, true);
+        IMap<String, Long> map = hazelcastInstance.getMap(mapName);
 
         String key = "key";
-        for (int i = 0; i < 5; i++) {
-            map.put(key, currentTimeMillis());
-            sleepAtLeastMillis(500);
-        }
-        assertEquals(evictCount.get(), 0);
-        assertNotNull(map.get(key));
+
+        map.put(key, currentTimeMillis());
+        long expirationTimeMillis1 = map.getEntryView(key).getExpirationTime();
+
+        sleepAtLeastSeconds(1);
+        map.put(key, currentTimeMillis());
+
+        long expirationTimeMillis2 = map.getEntryView(key).getExpirationTime();
+
+        assertTrue("before: " + expirationTimeMillis1 + ", after: " + expirationTimeMillis2,
+                expirationTimeMillis2 - expirationTimeMillis1 >= 1000);
     }
 
     // current eviction check period is 1 second
