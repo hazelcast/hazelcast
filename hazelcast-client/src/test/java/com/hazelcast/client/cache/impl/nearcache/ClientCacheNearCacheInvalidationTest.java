@@ -63,6 +63,7 @@ import static com.hazelcast.cache.CacheUtil.getPrefixedCacheName;
 import static com.hazelcast.client.cache.impl.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.client.cache.impl.nearcache.ClientNearCacheTestSupport.generateValueFromKey;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
@@ -417,6 +418,8 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
                                                                                   NearCacheConfig nearCacheConfig,
                                                                                   CacheConfig<K, V> cacheConfig) {
         ClientConfig clientConfig = getClientConfig()
+                // disable reconciliation, without reconciliation tests should pass
+                .setProperty(RECONCILIATION_INTERVAL_SECONDS.getName(), "0")
                 .addNearCacheConfig(nearCacheConfig);
 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
@@ -445,13 +448,6 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
         return new NearCacheConfig()
                 .setInMemoryFormat(inMemoryFormat)
                 .setName(DEFAULT_CACHE_NAME);
-    }
-
-    protected <K, V> CacheConfig<K, V> createCacheConfig(InMemoryFormat inMemoryFormat) {
-        return new CacheConfig<K, V>()
-                .setName(DEFAULT_CACHE_NAME)
-                .setInMemoryFormat(inMemoryFormat)
-                .setBackupCount(1);
     }
 
     private void populateMemberCache() {
