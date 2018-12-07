@@ -103,7 +103,9 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         Address serverAddress = server.getCluster().getLocalMember().getAddress();
         ClientConfig config = new ClientConfig();
         config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
-        config.getNetworkConfig().addAddress(illegalAddress).addAddress(serverAddress.getHost() + ":" + serverAddress.getPort());
+        config.getNetworkConfig()
+                .addAddress(illegalAddress)
+                .addAddress(serverAddress.getHost() + ":" + serverAddress.getPort());
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
 
         Collection<Client> connectedClients = server.getClientService().getConnectedClients();
