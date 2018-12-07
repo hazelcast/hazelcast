@@ -65,21 +65,21 @@ class ClusterConnector {
     private final ExecutorService clusterConnectionExecutor;
     private final boolean shuffleMemberList;
     private final WaitStrategy waitStrategy;
-    private final Collection<AddressProvider> addressProviders;
+    private final AddressProvider addressProvider;
     private volatile Address ownerConnectionAddress;
     private volatile Address previousOwnerConnectionAddress;
 
     ClusterConnector(HazelcastClientInstanceImpl client,
                      ClientConnectionManagerImpl connectionManager,
                      ClientConnectionStrategy connectionStrategy,
-                     Collection<AddressProvider> addressProviders) {
+                     AddressProvider addressProvider) {
         this.client = client;
         this.connectionManager = connectionManager;
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
         this.connectionStrategy = connectionStrategy;
         this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
-        this.addressProviders = addressProviders;
+        this.addressProvider = addressProvider;
         this.waitStrategy = initializeWaitStrategy(client.getClientConfig());
     }
 
@@ -247,14 +247,12 @@ class ClusterConnector {
         }
 
         LinkedHashSet<Address> providerAddresses = new LinkedHashSet<Address>();
-        for (AddressProvider addressProvider : addressProviders) {
-            try {
-                providerAddresses.addAll(addressProvider.loadAddresses());
-            } catch (NullPointerException e) {
-                throw e;
-            } catch (Exception e) {
-                logger.warning("Exception from AddressProvider: " + addressProvider, e);
-            }
+        try {
+            providerAddresses.addAll(addressProvider.loadAddresses());
+        } catch (NullPointerException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.warning("Exception from AddressProvider: " + addressProvider, e);
         }
 
         if (shuffleMemberList) {

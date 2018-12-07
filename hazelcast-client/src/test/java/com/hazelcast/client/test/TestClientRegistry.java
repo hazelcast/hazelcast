@@ -46,7 +46,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -84,8 +83,8 @@ class TestClientRegistry {
         @Override
         public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client,
                                                                AddressTranslator addressTranslator,
-                                                               Collection<AddressProvider> addressProviders) {
-            return new MockClientConnectionManager(client, addressTranslator, addressProviders, host, ports);
+                                                               AddressProvider addressProvider) {
+            return new MockClientConnectionManager(client, addressTranslator, addressProvider, host, ports);
         }
     }
 
@@ -98,8 +97,8 @@ class TestClientRegistry {
         private final AtomicInteger ports;
 
         MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
-                                    Collection<AddressProvider> addressProviders, String host, AtomicInteger ports) {
-            super(client, addressTranslator, addressProviders);
+                                    AddressProvider addressProvider, String host, AtomicInteger ports) {
+            super(client, addressTranslator, addressProvider);
             this.client = client;
             this.host = host;
             this.ports = ports;

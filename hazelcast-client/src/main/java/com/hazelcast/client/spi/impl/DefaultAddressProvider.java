@@ -33,17 +33,15 @@ import java.util.List;
 public class DefaultAddressProvider implements AddressProvider {
 
     private ClientNetworkConfig networkConfig;
-    private boolean noOtherAddressProviderExist;
 
-    public DefaultAddressProvider(ClientNetworkConfig networkConfig, boolean noOtherAddressProviderExist) {
+    public DefaultAddressProvider(ClientNetworkConfig networkConfig) {
         this.networkConfig = networkConfig;
-        this.noOtherAddressProviderExist = noOtherAddressProviderExist;
     }
 
     @Override
     public Collection<Address> loadAddresses() {
         final List<String> addresses = networkConfig.getAddresses();
-        if (addresses.isEmpty() && noOtherAddressProviderExist) {
+        if (addresses.isEmpty()) {
             addresses.add("127.0.0.1");
         }
         final List<Address> possibleAddresses = new LinkedList<Address>();
