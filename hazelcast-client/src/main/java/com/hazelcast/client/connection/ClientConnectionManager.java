@@ -40,24 +40,42 @@ public interface ClientConnectionManager extends ConnectionListenable {
     boolean isAlive();
 
     /**
-     * @param address to be connected
+     * Gets the connection for the given member address.
+     *
+     * If the connection is not established, null is returned. There will not be
+     * an attempt to create the connection.
+     *
+     * If address is null, null is returned.
+     *
+     * @param address of the member
      * @return connection if available, null otherwise
      */
-    Connection getActiveConnection(Address address);
+    Connection getConnection(Address address);
 
     /**
-     * @param address to be connected
+     * Gets the connection if it exist, or otherwise try to connect.
+     *
+     * If the connection to the given member already is established, return that connection.
+     *
+     * if the connection doesn't exist, the connection is established and the connection returned.
+     *
+     * @param address the address of the member.
      * @return associated connection if available, creates new connection otherwise
-     * @throws IOException if connection is not established
+     * @throws IOException if connection failed to be not established
      */
     Connection getOrConnect(Address address) throws IOException;
 
     /**
-     * @param address to be connected
-     * @return associated connection if available, returns null and triggers new connection creation otherwise
+     * Gets the connection if it exists, or asynchronously tries to establish the connection.
+     *
+     * If the connection is not yet established, null is returned and the ClientConnectionManager
+     * will asynchronously try once to make the connection.
+     *
+     * @param address the address of the member
+     * @return associated connection if available
      * @throws IOException if connection is not able to triggered
      */
-    Connection getOrTriggerConnect(Address address, boolean acquiresResource) throws IOException;
+    Connection getOrAsyncConnect(Address address, boolean acquiresResource) throws IOException;
 
     Collection<ClientConnection> getActiveConnections();
 

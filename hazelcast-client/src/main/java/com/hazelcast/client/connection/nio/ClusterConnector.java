@@ -133,7 +133,7 @@ class ClusterConnector {
         Connection connection = null;
         try {
             logger.info("Trying to connect to " + address + " as owner member");
-            connection = connectionManager.getOrConnect(address, true);
+            connection = connectionManager.getOrConnect0(address, true);
             client.onClusterConnect(connection);
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onConnectToCluster();

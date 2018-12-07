@@ -52,7 +52,7 @@ public class NonSmartClientInvocationService extends AbstractClientInvocationSer
 
     private ClientConnection getOwnerConnection() throws IOException {
         Address ownerConnectionAddress = connectionManager.getOwnerConnectionAddress();
-        ClientConnection ownerConnection = (ClientConnection) connectionManager.getActiveConnection(ownerConnectionAddress);
+        ClientConnection ownerConnection = (ClientConnection) connectionManager.getConnection(ownerConnectionAddress);
         if (ownerConnection == null) {
             throw new IOException("NonSmartClientInvocationService: Owner connection is not available.");
         }

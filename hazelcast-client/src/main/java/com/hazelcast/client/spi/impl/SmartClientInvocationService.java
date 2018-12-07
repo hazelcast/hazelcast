@@ -37,7 +37,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
 
     @Override
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
-        final Address owner = partitionService.getPartitionOwner(partitionId);
+        Address owner = partitionService.getPartitionOwner(partitionId);
         if (owner == null) {
             throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
         }
@@ -51,7 +51,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
 
     @Override
     public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
-        final Address randomAddress = getRandomAddress();
+        Address randomAddress = getRandomAddress();
         if (randomAddress == null) {
             throw new IOException("No address found to invoke");
         }
@@ -70,7 +70,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
     }
 
     private Connection getOrTriggerConnect(Address target, boolean acquiresResource) throws IOException {
-        Connection connection = connectionManager.getOrTriggerConnect(target, acquiresResource);
+        Connection connection = connectionManager.getOrAsyncConnect(target, acquiresResource);
         if (connection == null) {
             throw new IOException("No available connection to address " + target);
         }
@@ -91,7 +91,6 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
     }
 
     boolean isMember(Address target) {
-        final Member member = client.getClientClusterService().getMember(target);
-        return member != null;
+        return client.getClientClusterService().getMember(target) != null;
     }
 }

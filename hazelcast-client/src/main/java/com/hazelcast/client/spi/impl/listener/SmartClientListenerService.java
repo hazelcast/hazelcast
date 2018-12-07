@@ -47,7 +47,7 @@ public class SmartClientListenerService extends AbstractClientListenerService  {
                 Collection<Member> memberList = clientClusterService.getMemberList();
                 for (Member member : memberList) {
                     try {
-                        clientConnectionManager.getOrTriggerConnect(member.getAddress(), false);
+                        clientConnectionManager.getOrAsyncConnect(member.getAddress(), false);
                     } catch (IOException e) {
                         return;
                     }

@@ -91,7 +91,6 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
 
         @Override
         public void refresh() {
-
         }
     }
 
@@ -108,13 +107,13 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
 
     @Test
     public void testTranslatorNotIsUsedGetActiveConnection() throws Exception {
-        Connection connection = clientConnectionManager.getActiveConnection(privateAddress);
+        Connection connection = clientConnectionManager.getConnection(privateAddress);
         assertNotNull(connection);
     }
 
     @Test
     public void testTranslatorIsNotUsedOnTriggerConnect() throws Exception {
-        Connection connection = clientConnectionManager.getOrTriggerConnect(privateAddress, false);
+        Connection connection = clientConnectionManager.getOrAsyncConnect(privateAddress, false);
         assertNotNull(connection);
     }
 

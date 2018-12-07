@@ -154,7 +154,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     private void memberRemoved(Member member) {
         members.remove(member);
         logger.info(membersString());
-        final Connection connection = connectionManager.getActiveConnection(member.getAddress());
+        final Connection connection = connectionManager.getConnection(member.getAddress());
         if (connection != null) {
             connection.close(null, newTargetDisconnectedExceptionCausedByMemberLeftEvent(connection));
         }
@@ -186,7 +186,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
             Address address = member.getAddress();
             if (clusterService.getMember(address) == null) {
-                Connection connection = connectionManager.getActiveConnection(address);
+                Connection connection = connectionManager.getConnection(address);
                 if (connection != null) {
                     connection.close(null, newTargetDisconnectedExceptionCausedByMemberLeftEvent(connection));
                 }

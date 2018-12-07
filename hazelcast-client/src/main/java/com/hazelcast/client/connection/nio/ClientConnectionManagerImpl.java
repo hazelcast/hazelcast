@@ -99,7 +99,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
 
-    private final ClientExecutionServiceImpl executionService;
+    private final ClientExecutionServiceImpl executor;
     private final AddressTranslator addressTranslator;
     private final ConcurrentMap<Address, ClientConnection> activeConnections = new ConcurrentHashMap<Address, ClientConnection>();
     private final ConcurrentMap<Address, AuthenticationFuture> connectionsInProgress =
@@ -132,7 +132,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         final int connTimeout = networkConfig.getConnectionTimeout();
         this.connectionTimeoutMillis = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
-        this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        this.executor = (ClientExecutionServiceImpl) client.getClientExecutionService();
 
         this.networking = initNetworking(client);
 
@@ -281,7 +281,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public Connection getActiveConnection(Address target) {
+    public Connection getConnection(Address target) {
         if (target == null) {
             return null;
         }
@@ -290,16 +290,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public Connection getOrConnect(Address address) throws IOException {
-        return getOrConnect(address, false);
+        return getOrConnect0(address, false);
     }
 
     @Override
-    public Connection getOrTriggerConnect(Address target, boolean acquiresResources) throws IOException {
+    public Connection getOrAsyncConnect(Address target, boolean acquiresResources) throws IOException {
         Connection connection = getConnection(target, false, acquiresResources);
         if (connection != null) {
             return connection;
         }
-        triggerConnect(target, false);
+        asyncConnect(target, false);
         return null;
     }
 
@@ -354,14 +354,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return clusterConnector.getOwnerConnectionAddress();
     }
 
-    Connection getOrConnect(Address address, boolean asOwner) {
+    Connection getOrConnect0(Address address, boolean asOwner) {
         try {
             while (true) {
                 ClientConnection connection = (ClientConnection) getConnection(address, asOwner, true);
                 if (connection != null) {
                     return connection;
                 }
-                AuthenticationFuture future = triggerConnect(address, asOwner);
+                AuthenticationFuture future = asyncConnect(address, asOwner);
                 connection = (ClientConnection) future.get();
 
                 if (!asOwner) {
@@ -376,7 +376,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
+    private AuthenticationFuture asyncConnect(Address target, boolean asOwner) {
         if (!asOwner) {
             connectionStrategy.beforeOpenConnection(target);
         }
@@ -384,7 +384,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         AuthenticationFuture future = new AuthenticationFuture();
         AuthenticationFuture oldFuture = connectionsInProgress.putIfAbsent(target, future);
         if (oldFuture == null) {
-            executionService.execute(new InitConnectionTask(target, asOwner, future));
+            executor.execute(new InitConnectionTask(target, asOwner, future));
             return future;
         }
         return oldFuture;
@@ -396,7 +396,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (ownerConnectionAddress == null) {
             return null;
         }
-        return (ClientConnection) getActiveConnection(ownerConnectionAddress);
+        return (ClientConnection) getConnection(ownerConnectionAddress);
     }
 
     private void fireConnectionAddedEvent(ClientConnection connection) {
@@ -416,7 +416,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         connectionStrategy.onDisconnect(connection);
     }
-
 
     private boolean useAnyOutboundPort() {
         return outboundPortCount == 0;
@@ -518,12 +517,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private void authenticate(final Address target, final ClientConnection connection, final boolean asOwner,
                               final AuthenticationFuture future) {
-        final ClientPrincipal principal = getPrincipal();
+        ClientPrincipal principal = getPrincipal();
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
         ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
 
-        ScheduledFuture timeoutTaskFuture = executionService.schedule(
+        ScheduledFuture timeoutTaskFuture = executor.schedule(
                 new TimeoutAuthenticationTask(invocationFuture), authenticationTimeout, MILLISECONDS);
         invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future, timeoutTaskFuture));
     }
@@ -697,7 +696,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     public Future<Void> connectToClusterAsync() {
         return clusterConnector.connectToClusterAsync();
     }
-
 
     private class AuthCallback implements ExecutionCallback<ClientMessage> {
         private final ClientConnection connection;
