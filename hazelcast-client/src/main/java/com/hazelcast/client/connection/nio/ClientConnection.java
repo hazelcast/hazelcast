@@ -27,6 +27,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.util.Trace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -168,20 +169,34 @@ public class ClientConnection implements Connection {
             return;
         }
 
-        closeCause = cause;
-        closeReason = reason;
-
-        logClose();
-
+        Trace trace = Trace.getThreadLocalTrace();
+        trace.startSubtrace("closing connection " + this);
         try {
-            innerClose();
-        } catch (Exception e) {
-            logger.warning("Exception while closing connection" + e.getMessage());
+            closeCause = cause;
+            closeReason = reason;
+
+            logClose();
+
+            trace.subtrace("close channel", new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        closeChannel();
+                    } catch (Exception e) {
+                        logger.warning("Exception while closing connection" + e.getMessage());
+                    }
+                }
+            });
+
+
+            connectionManager.onClose(ClientConnection.this);
+
+
+            client.getMetricsRegistry().discardMetrics(ClientConnection.this);
+
+        } finally {
+            trace.completeSubtrace();
         }
-
-        connectionManager.onClose(this);
-
-        client.getMetricsRegistry().discardMetrics(this);
     }
 
     private void logClose() {
@@ -209,7 +224,7 @@ public class ClientConnection implements Connection {
         }
     }
 
-    protected void innerClose() throws IOException {
+    protected void closeChannel() throws IOException {
         channel.close();
     }
 

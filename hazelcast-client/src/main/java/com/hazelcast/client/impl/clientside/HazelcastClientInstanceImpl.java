@@ -31,6 +31,7 @@ import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.internal.util.Trace;
 import com.hazelcast.client.connection.nio.DefaultCredentialsFactory;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -169,6 +170,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -177,6 +179,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.client.spi.properties.ClientProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.client.spi.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
+import static com.hazelcast.internal.util.Trace.getThreadLocalTrace;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
@@ -216,9 +219,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientExceptionFactory clientExceptionFactory;
     private final ClientUserCodeDeploymentService userCodeDeploymentService;
 
-    public HazelcastClientInstanceImpl(ClientConfig config,
-                                       ClientConnectionManagerFactory clientConnectionManagerFactory,
-                                       AddressProvider externalAddressProvider) {
+    public HazelcastClientInstanceImpl(final ClientConfig config,
+                                       final ClientConnectionManagerFactory clientConnectionManagerFactory,
+                                       final AddressProvider externalAddressProvider) {
+        Trace trace = Trace.getThreadLocalTrace();
         this.config = config;
         if (config.getInstanceName() != null) {
             instanceName = config.getInstanceName();
@@ -244,26 +248,73 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         metricsRegistry.collectMetrics(clientExtension);
 
         proxyManager = new ProxyManager(this);
+
         executionService = initExecutionService();
+
         metricsRegistry.collectMetrics(executionService);
+
         loadBalancer = initLoadBalancer(config);
+
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
+
         partitionService = new ClientPartitionServiceImpl(this);
-        discoveryService = initDiscoveryService(config);
-        Collection<AddressProvider> addressProviders = createAddressProviders(externalAddressProvider);
-        AddressTranslator addressTranslator = createAddressTranslator();
-        connectionManager = (ClientConnectionManagerImpl) clientConnectionManagerFactory
-                .createConnectionManager(this, addressTranslator, addressProviders);
-        clusterService = new ClientClusterServiceImpl(this);
+
+        discoveryService = trace.subtrace("create discovery service", new Callable<DiscoveryService>() {
+            @Override
+            public DiscoveryService call() throws Exception {
+                return initDiscoveryService(config);
+            }
+        });
+        final Collection<AddressProvider> addressProviders = trace.subtrace("create address provider", new Callable<Collection<AddressProvider>>() {
+            @Override
+            public Collection<AddressProvider> call() throws Exception {
+                return createAddressProviders(externalAddressProvider);
+            }
+        });
+        final AddressTranslator addressTranslator = trace.subtrace("create address translator", new Callable<AddressTranslator>() {
+            @Override
+            public AddressTranslator call() throws Exception {
+                return createAddressTranslator();
+            }
+        });
+        connectionManager = trace.subtrace("create connection manager", new Callable<ClientConnectionManagerImpl>() {
+            @Override
+            public ClientConnectionManagerImpl call() throws Exception {
+                return (ClientConnectionManagerImpl) clientConnectionManagerFactory
+                        .createConnectionManager(HazelcastClientInstanceImpl.this, addressTranslator, addressProviders);
+            }
+        });
+
+        clusterService = trace.subtrace("new client cluster service", new Callable<ClientClusterServiceImpl>() {
+            @Override
+            public ClientClusterServiceImpl call() throws Exception {
+                return new ClientClusterServiceImpl(HazelcastClientInstanceImpl.this);
+            }
+        });
 
 
-        invocationService = initInvocationService();
-        listenerService = initListenerService();
+        invocationService = trace.subtrace("new invocation service", new Callable<AbstractClientInvocationService>() {
+            @Override
+            public AbstractClientInvocationService call() throws Exception {
+                return initInvocationService();
+            }
+        });
+        listenerService = trace.subtrace("new listener service", new Callable<AbstractClientListenerService>() {
+            @Override
+            public AbstractClientListenerService call() throws Exception {
+                return initListenerService();
+            }
+        });
         userContext = new ConcurrentHashMap<String, Object>();
         userContext.putAll(config.getUserContext());
         diagnostics = initDiagnostics();
 
-        hazelcastCacheManager = new ClientICacheManager(this);
+        hazelcastCacheManager = trace.subtrace("hazelcast manager", new Callable<ClientICacheManager>() {
+            @Override
+            public ClientICacheManager call() throws Exception {
+                return new ClientICacheManager(HazelcastClientInstanceImpl.this);
+            }
+        });
 
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
         nearCacheManager = clientExtension.createNearCacheManager();
@@ -567,16 +618,36 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     public void start() {
+        Trace trace = getThreadLocalTrace();
+
         lifecycleService.setStarted();
+
         invocationService.start();
+
         clusterService.start();
-        ClientContext clientContext = new ClientContext(this);
-        try {
-            userCodeDeploymentService.start();
-            connectionManager.start(clientContext);
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        final ClientContext clientContext = new ClientContext(HazelcastClientInstanceImpl.this);
+
+        trace.subtrace("user code deployment start", new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    userCodeDeploymentService.start();
+                } catch (Exception e) {
+                    throw rethrow(e);
+                }
+            }
+        });
+
+        trace.subtrace("connectionManager start", new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    connectionManager.start(clientContext);
+                } catch (Exception e) {
+                    throw rethrow(e);
+                }
+            }
+        });
 
         diagnostics.start();
 
@@ -592,14 +663,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics.register(
                 new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
         diagnostics.register(
-                new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
+                new SystemLogPlugin(properties, connectionManager, HazelcastClientInstanceImpl.this, loggingService.getLogger(SystemLogPlugin.class)));
         diagnostics.register(
                 new NetworkingImbalancePlugin(properties, connectionManager.getNetworking(),
                         loggingService.getLogger(NetworkingImbalancePlugin.class)));
         diagnostics.register(
                 new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
                         properties));
-
         metricsRegistry.collectMetrics(listenerService);
 
         proxyManager.init(config, clientContext);
@@ -607,14 +677,73 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         loadBalancer.init(getCluster(), config);
         partitionService.start();
         statistics.start();
-        clientExtension.afterStart(this);
+
+        clientExtension.afterStart(HazelcastClientInstanceImpl.this);
     }
 
+
+//    public void start() {
+//        lifecycleService.setStarted();
+//        invocationService.start();
+//        clusterService.start();
+//        ClientContext clientContext = new ClientContext(this);
+//        try {
+//            userCodeDeploymentService.start();
+//            connectionManager.start(clientContext);
+//        } catch (Exception e) {
+//            throw rethrow(e);
+//        }
+//
+//        diagnostics.start();
+//
+//        // static loggers at beginning of file
+//        diagnostics.register(
+//                new BuildInfoPlugin(loggingService.getLogger(BuildInfoPlugin.class)));
+//        diagnostics.register(
+//                new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
+//        diagnostics.register(
+//                new SystemPropertiesPlugin(loggingService.getLogger(SystemPropertiesPlugin.class)));
+//
+//        // periodic loggers
+//        diagnostics.register(
+//                new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
+//        diagnostics.register(
+//                new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
+//        diagnostics.register(
+//                new NetworkingImbalancePlugin(properties, connectionManager.getNetworking(),
+//                        loggingService.getLogger(NetworkingImbalancePlugin.class)));
+//        diagnostics.register(
+//                new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
+//                        properties));
+//
+//        metricsRegistry.collectMetrics(listenerService);
+//
+//        proxyManager.init(config, clientContext);
+//        listenerService.start();
+//        loadBalancer.init(getCluster(), config);
+//        partitionService.start();
+//        statistics.start();
+//        clientExtension.afterStart(this);
+//    }
+
     public void onClusterConnect(Connection ownerConnection) throws Exception {
+        Trace trace = getThreadLocalTrace();
+
+        trace.startSubtrace("getting partition table");
         partitionService.listenPartitionTable(ownerConnection);
+        trace.completeSubtrace();
+
+        trace.startSubtrace("wait for members list");
         clusterService.listenMembershipEvents(ownerConnection);
+        trace.completeSubtrace();
+
+        trace.startSubtrace("init user code Deployment");
         userCodeDeploymentService.deploy(this, ownerConnection);
+        trace.completeSubtrace();
+
+        trace.startSubtrace("create distributed objects on cluster");
         proxyManager.createDistributedObjectsOnCluster(ownerConnection);
+        trace.completeSubtrace();
     }
 
     public MetricsRegistryImpl getMetricsRegistry() {
@@ -954,21 +1083,99 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     public void doShutdown() {
-        proxyManager.destroy();
+        Trace trace = getThreadLocalTrace();
+        trace.subtrace("proxy manager destroy", new Runnable() {
+            @Override
+            public void run() {
+                proxyManager.destroy();
+            }
+        });
+
+//        trace.item("connection manager destroy", new Runnable() {
+//            @Override
+//            public void run() {
         connectionManager.shutdown();
-        clusterService.shutdown();
-        partitionService.stop();
-        transactionManager.shutdown();
-        invocationService.shutdown();
-        executionService.shutdown();
-        listenerService.shutdown();
-        nearCacheManager.destroyAllNearCaches();
-        if (discoveryService != null) {
-            discoveryService.destroy();
-        }
-        metricsRegistry.shutdown();
-        diagnostics.shutdown();
-        ((InternalSerializationService) serializationService).dispose();
+//            }
+//        });
+
+        trace.subtrace("cluster service shutdown", new Runnable() {
+            @Override
+            public void run() {
+                clusterService.shutdown();
+            }
+        });
+
+        trace.subtrace("partition service stop", new Runnable() {
+            @Override
+            public void run() {
+                partitionService.stop();
+            }
+        });
+
+        trace.subtrace("transactionManager shutdown", new Runnable() {
+            @Override
+            public void run() {
+                transactionManager.shutdown();
+            }
+        });
+
+        trace.subtrace("invocationService shutdown", new Runnable() {
+            @Override
+            public void run() {
+                invocationService.shutdown();
+            }
+        });
+
+        trace.subtrace("executionService shutdown", new Runnable() {
+            @Override
+            public void run() {
+                executionService.shutdown();
+            }
+        });
+
+        trace.subtrace("listenerService shutdown", new Runnable() {
+            @Override
+            public void run() {
+                listenerService.shutdown();
+            }
+        });
+
+        trace.subtrace("nearCacheManager shutdown", new Runnable() {
+            @Override
+            public void run() {
+                nearCacheManager.destroyAllNearCaches();
+            }
+        });
+
+        trace.subtrace("discoveryService destroy", new Runnable() {
+            @Override
+            public void run() {
+                if (discoveryService != null) {
+                    discoveryService.destroy();
+                }
+            }
+        });
+
+        trace.subtrace("metricsRegistry shutdown", new Runnable() {
+            @Override
+            public void run() {
+                metricsRegistry.shutdown();
+            }
+        });
+
+        trace.subtrace("diagnostics shutdown", new Runnable() {
+            @Override
+            public void run() {
+                diagnostics.shutdown();
+            }
+        });
+
+        trace.subtrace("serializationService dispose", new Runnable() {
+            @Override
+            public void run() {
+                ((InternalSerializationService) serializationService).dispose();
+            }
+        });
     }
 
     public ClientLockReferenceIdGenerator getLockReferenceIdGenerator() {

@@ -22,6 +22,7 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.internal.util.Trace;
 import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -119,7 +120,7 @@ class TestClientRegistry {
         }
 
         @Override
-        protected ClientConnection createSocketConnection(Address address) throws IOException {
+        protected ClientConnection createSocketConnection(Address address, Trace trace) throws IOException {
             if (!alive) {
                 throw new HazelcastException("ConnectionManager is not active!!!");
             }
@@ -297,7 +298,7 @@ class TestClientRegistry {
         }
 
         @Override
-        protected void innerClose() {
+        protected void closeChannel() {
             executor.executeOutgoing((new Runnable() {
                 @Override
                 public void run() {

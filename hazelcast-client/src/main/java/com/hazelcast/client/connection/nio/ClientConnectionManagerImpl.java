@@ -45,6 +45,7 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.Trace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -67,6 +68,7 @@ import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -79,6 +81,7 @@ import static com.hazelcast.client.spi.properties.ClientProperty.ALLOW_INVOCATIO
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
+import static com.hazelcast.internal.util.Trace.getThreadLocalTrace;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -233,16 +236,33 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return alive;
     }
 
-    public synchronized void start(ClientContext clientContext) {
+    public synchronized void start(final ClientContext clientContext) {
         if (alive) {
             return;
         }
         alive = true;
-        startNetworking();
 
-        heartbeat.start();
-        connectionStrategy.init(clientContext);
-        connectionStrategy.start();
+        Trace trace = getThreadLocalTrace();
+        trace.subtrace("connection manager start networking", new Runnable() {
+            @Override
+            public void run() {
+                startNetworking();
+            }
+        });
+
+        trace.subtrace("connection manager hearbeat start", new Runnable() {
+            @Override
+            public void run() {
+                heartbeat.start();
+            }
+        });
+        trace.subtrace("connection manager connection strategy start", new Runnable() {
+            @Override
+            public void run() {
+                connectionStrategy.init(clientContext);
+                connectionStrategy.start();
+            }
+        });
     }
 
     protected void startNetworking() {
@@ -255,17 +275,76 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         alive = false;
 
-        for (Connection connection : activeConnections.values()) {
-            connection.close("Hazelcast client is shutting down", null);
-        }
-        clusterConnector.shutdown();
-        stopNetworking();
-        connectionListeners.clear();
-        heartbeat.shutdown();
+        Trace trace = getThreadLocalTrace();
+        trace.subtrace("closing connections", new Runnable() {
+            @Override
+            public void run() {
+                for (Connection connection : activeConnections.values()) {
+                    connection.close("Hazelcast client is shutting down", null);
+                }
+            }
+        });
 
-        connectionStrategy.shutdown();
-        credentialsFactory.destroy();
+        trace.subtrace("cluster connector shutdown", new Runnable() {
+            @Override
+            public void run() {
+                clusterConnector.shutdown();
+            }
+        });
+
+        trace.subtrace("stop networking", new Runnable() {
+            @Override
+            public void run() {
+                stopNetworking();
+            }
+        });
+        connectionListeners.clear();
+
+        trace.subtrace("heartbeat shutdown", new Runnable() {
+            @Override
+            public void run() {
+                heartbeat.shutdown();
+            }
+        });
+
+        trace.subtrace("connection strategy shutdown", new Runnable() {
+            @Override
+            public void run() {
+                connectionStrategy.shutdown();
+            }
+        });
+
+        trace.subtrace("credentials factory shutdown", new Runnable() {
+            @Override
+            public void run() {
+                credentialsFactory.destroy();
+            }
+        });
     }
+
+//    public synchronized void shutdown() {
+//        if (!alive) {
+//            return;
+//        }
+//        alive = false;
+//
+//                Trace trace = Trace.getThreadLocalTrace();
+//        trace.item("closing connections", new Runnable() {
+//            @Override
+//            public void run() {
+//                for (Connection connection : activeConnections.values()) {
+//                    connection.close("Hazelcast client is shutting down", null);
+//                }
+//            }
+//        });
+//        clusterConnector.shutdown();
+//        stopNetworking();
+//        connectionListeners.clear();
+//        heartbeat.shutdown();
+//
+//        connectionStrategy.shutdown();
+//        credentialsFactory.destroy();
+//    }
 
     @Override
     public ClientPrincipal getPrincipal() {
@@ -299,7 +378,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (connection != null) {
             return connection;
         }
-        triggerConnect(target, false);
+        triggerConnect(target, false, false);
         return null;
     }
 
@@ -354,15 +433,32 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return clusterConnector.getOwnerConnectionAddress();
     }
 
-    Connection getOrConnect(Address address, boolean asOwner) {
+    Connection getOrConnect(final Address address, final boolean asOwner) {
         try {
+            Trace trace = getThreadLocalTrace();
             while (true) {
                 ClientConnection connection = (ClientConnection) getConnection(address, asOwner, true);
                 if (connection != null) {
                     return connection;
                 }
-                AuthenticationFuture future = triggerConnect(address, asOwner);
-                connection = (ClientConnection) future.get();
+
+                final AuthenticationFuture future = trace.subtrace("trigger connect", new Callable<AuthenticationFuture>() {
+                    @Override
+                    public AuthenticationFuture call() throws Exception {
+                        return triggerConnect(address, asOwner, true);
+                    }
+                });
+
+                connection = trace.subtrace("waiting for authentication", new Callable<ClientConnection>() {
+                    @Override
+                    public ClientConnection call() throws Exception {
+                        try {
+                            return (ClientConnection) future.get();
+                        } catch (Throwable throwable) {
+                            throw rethrow(throwable);
+                        }
+                    }
+                });
 
                 if (!asOwner) {
                     return connection;
@@ -376,7 +472,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
+    private AuthenticationFuture triggerConnect(Address target, boolean asOwner, boolean direct) {
         if (!asOwner) {
             connectionStrategy.beforeOpenConnection(target);
         }
@@ -384,7 +480,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         AuthenticationFuture future = new AuthenticationFuture();
         AuthenticationFuture oldFuture = connectionsInProgress.putIfAbsent(target, future);
         if (oldFuture == null) {
-            executionService.execute(new InitConnectionTask(target, asOwner, future));
+            Trace trace = getThreadLocalTrace();
+            trace.startSubtrace("execute");
+            Runnable task = new InitConnectionTask(target, asOwner, future, trace);
+            if (direct) {
+                task.run();
+            } else {
+                executionService.execute(task);
+            }
+
             return future;
         }
         return oldFuture;
@@ -459,26 +563,70 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    protected ClientConnection createSocketConnection(final Address remoteAddress) throws IOException {
+    protected ClientConnection createSocketConnection(final Address remoteAddress, Trace trace) throws IOException {
         SocketChannel socketChannel = null;
         try {
-            socketChannel = SocketChannel.open();
-            Socket socket = socketChannel.socket();
+            trace.startSubtrace("SocketChannel open");
+            try {
+                socketChannel = SocketChannel.open();
+            } finally {
+                trace.completeSubtrace();
+            }
 
-            bindSocketToPort(socket);
+            Socket socket;
+            trace.startSubtrace("socketChannel get socket");
+            try {
+                socket = socketChannel.socket();
+            } finally {
+                trace.completeSubtrace();
+            }
 
-            Channel channel = networking.register(socketChannel, true);
-            channel.connect(remoteAddress.getInetSocketAddress(), connectionTimeoutMillis);
 
-            ClientConnection connection
-                    = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
+            trace.startSubtrace("binding to socket");
+            try {
+                bindSocketToPort(socket);
+            } finally {
+                trace.completeSubtrace();
+            }
 
+            trace.startSubtrace("registering to networking");
+            Channel channel;
+            try {
+                channel = networking.register(socketChannel, true);
+            } finally {
+                trace.completeSubtrace();
+            }
+
+            trace.startSubtrace("channel connect");
+            try {
+                channel.connect(remoteAddress.getInetSocketAddress(), connectionTimeoutMillis);
+            } finally {
+                trace.completeSubtrace();
+            }
+
+
+            ClientConnection connection;
+            trace.startSubtrace("create connection");
+            try {
+                connection = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
+            } finally {
+                trace.completeSubtrace();
+            }
+
+            trace.startSubtrace("configure non blocking");
             socketChannel.configureBlocking(true);
+            trace.completeSubtrace();
+
+            trace.startSubtrace("socket interceptor");
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
             }
+            trace.completeSubtrace();
 
+            trace.startSubtrace("channel start");
             channel.start();
+            trace.completeSubtrace();
+
             return connection;
         } catch (Exception e) {
             closeResource(socketChannel);
@@ -626,15 +774,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         private final Address target;
         private final boolean asOwner;
         private final AuthenticationFuture future;
+        private final Trace trace;
 
-        InitConnectionTask(Address target, boolean asOwner, AuthenticationFuture future) {
+        InitConnectionTask(Address target, boolean asOwner, AuthenticationFuture future, Trace trace) {
             this.target = target;
             this.asOwner = asOwner;
             this.future = future;
+            this.trace = trace;
         }
 
         @Override
         public void run() {
+            trace.completeSubtrace();
+
             ClientConnection connection;
             try {
                 connection = getConnection(target);
@@ -645,12 +797,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return;
             }
 
+            trace.startSubtrace("authenticate");
             try {
                 authenticate(target, connection, asOwner, future);
             } catch (Exception e) {
                 future.onFailure(e);
                 connection.close("Failed to authenticate connection", e);
                 connectionsInProgress.remove(target);
+            } finally {
+                trace.completeSubtrace();
             }
         }
 
@@ -659,12 +814,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (connection != null) {
                 return connection;
             }
+            Trace trace = getThreadLocalTrace();
+
+            trace.startSubtrace("address translator translate");
             Address address = addressTranslator.translate(target);
+            trace.completeSubtrace();
+
             if (address == null) {
                 throw new NullPointerException("Address Translator " + addressTranslator.getClass()
                         + " could not translate address " + target);
             }
-            return createSocketConnection(address);
+            return createSocketConnection(address, trace);
         }
     }
 
