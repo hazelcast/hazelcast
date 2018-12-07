@@ -23,7 +23,6 @@ import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -66,7 +65,10 @@ public class ScriptExecutorOperation extends AbstractManagementOperation impleme
         try {
             this.result = engine.eval(script);
         } catch (ScriptException e) {
-            throw new HazelcastException(ExceptionUtil.toString(e));
+            // ScriptException's cause is not serializable - we don't need the cause
+            HazelcastException hazelcastException = new HazelcastException(e.getMessage());
+            hazelcastException.setStackTrace(e.getStackTrace());
+            throw hazelcastException;
         }
     }
 
