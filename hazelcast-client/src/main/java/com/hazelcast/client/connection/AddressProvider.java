@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.nio.Address;
-
-import java.util.Collection;
 
 /**
  * Provides initial addresses for client to find and connect to a node
@@ -28,6 +25,6 @@ public interface AddressProvider {
     /**
      * @return The possible member addresses to connect to.
      */
-    Collection<Address> loadAddresses();
+    Addresses loadAddresses();
 
 }

@@ -16,9 +16,11 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
+import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -97,9 +99,9 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
 
     private class TestAddressProvider implements AddressProvider {
         @Override
-        public Collection<Address> loadAddresses() {
+        public Addresses loadAddresses() {
             try {
-                return Collections.singletonList(new Address("127.0.0.1", 5701));
+                return new Addresses(ImmutableList.of(new Address("127.0.0.1", 5701)));
             } catch (UnknownHostException e) {
                 return null;
             }
