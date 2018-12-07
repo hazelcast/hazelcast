@@ -98,7 +98,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final int connectionTimeoutMillis;
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
-
     private final ClientExecutionServiceImpl executionService;
     private final AddressTranslator addressTranslator;
     private final ConcurrentMap<Address, ClientConnection> activeConnections = new ConcurrentHashMap<Address, ClientConnection>();
@@ -118,34 +117,25 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final int outboundPortCount;
     private volatile Credentials lastCredentials;
 
-    public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
+    public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client,
+                                       AddressTranslator addressTranslator,
                                        Collection<AddressProvider> addressProviders) {
-        allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
+        this.allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
         this.client = client;
-
         this.addressTranslator = addressTranslator;
-
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
-
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
-
-        final int connTimeout = networkConfig.getConnectionTimeout();
+        int connTimeout = networkConfig.getConnectionTimeout();
         this.connectionTimeoutMillis = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
-
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
-
         this.networking = initNetworking(client);
-
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
-
         this.credentialsFactory = client.getCredentialsFactory();
         this.connectionStrategy = initializeStrategy(client);
-
         this.outboundPorts.addAll(getOutboundPorts(networkConfig));
         this.outboundPortCount = outboundPorts.size();
         this.heartbeat = new HeartbeatManager(this, client);
         this.authenticationTimeout = heartbeat.getHeartbeatTimeout();
-
         this.clusterConnector = new ClusterConnector(client, this, connectionStrategy, addressProviders);
     }
 
