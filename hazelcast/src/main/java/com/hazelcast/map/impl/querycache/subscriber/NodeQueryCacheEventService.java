@@ -70,12 +70,13 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
 
     // TODO not used order key
     @Override
-    public void publish(String mapName, String cacheId, EventData eventData, int orderKey) {
+    public void publish(String mapName, String cacheId, EventData eventData,
+                        int orderKey, Extractors extractors) {
         checkHasText(mapName, "mapName");
         checkHasText(cacheId, "cacheId");
         checkNotNull(eventData, "eventData cannot be null");
 
-        publishLocalEvent(mapName, cacheId, eventData);
+        publishLocalEvent(mapName, cacheId, eventData, extractors);
     }
 
     @Override
@@ -157,7 +158,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     // TODO needs refactoring.
-    private void publishLocalEvent(String mapName, String cacheId, Object eventData) {
+    private void publishLocalEvent(String mapName, String cacheId, Object eventData, Extractors extractors) {
         String listenerName = generateListenerName(mapName, cacheId);
         Collection<EventRegistration> eventRegistrations = getRegistrations(listenerName);
         if (eventRegistrations.isEmpty()) {
@@ -178,11 +179,12 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
                 LocalEntryEventData localEntryEventData = (LocalEntryEventData) eventDataToPublish;
                 if (localEntryEventData.getEventType() != EventLostEvent.EVENT_TYPE) {
                     EventFilter filter = registration.getFilter();
-                    if (!canPassFilter(localEntryEventData, filter)) {
+                    if (!canPassFilter(localEntryEventData, filter, extractors)) {
                         continue;
                     } else {
                         boolean includeValue = isIncludeValue(filter);
-                        eventDataToPublish = includeValue ? localEntryEventData : localEntryEventData.cloneWithoutValue();
+                        eventDataToPublish = includeValue
+                                ? localEntryEventData : localEntryEventData.cloneWithoutValue();
                         Data keyData = localEntryEventData.getKeyData();
                         orderKey = keyData == null ? -1 : keyData.hashCode();
                     }
@@ -193,7 +195,8 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
         }
     }
 
-    private boolean canPassFilter(LocalEntryEventData localEntryEventData, EventFilter filter) {
+    private boolean canPassFilter(LocalEntryEventData localEntryEventData,
+                                  EventFilter filter, Extractors extractors) {
         if (filter == null || filter instanceof TrueEventFilter) {
             return true;
         }
@@ -205,7 +208,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
         Object value = getValueOrOldValue(localEntryEventData);
 
         QueryableEntry entry = new QueryEntry((InternalSerializationService) serializationService,
-                keyData, value, Extractors.empty());
+                keyData, value, extractors);
         return filter.eval(entry);
     }
 
