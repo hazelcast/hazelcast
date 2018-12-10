@@ -39,7 +39,6 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.FutureUtil;
@@ -101,7 +100,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
                 ? recordStore.add(keyData, valueData) : recordStore.addWithoutEvictionCheck(keyData, valueData);
 
         if (eventType != null) {
-            publishEntryEvent(context, mapName, cacheId, keyData, valueData, oldRecord, eventType);
+            publishEntryEvent(context, mapName, cacheId,
+                    keyData, valueData, oldRecord, eventType, extractors);
         }
     }
 
@@ -116,7 +116,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return;
         }
         if (eventType != null) {
-            publishEntryEvent(context, mapName, cacheId, keyData, null, oldRecord, eventType);
+            publishEntryEvent(context, mapName, cacheId, keyData,
+                    null, oldRecord, eventType, extractors);
         }
     }
 
@@ -463,13 +464,12 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         InternalSerializationService serializationService = context.getSerializationService();
 
-        Extractors empty = Extractors.empty();
         Set<Map.Entry<Data, QueryCacheRecord>> entries = recordStore.entrySet();
         for (Map.Entry<Data, QueryCacheRecord> entry : entries) {
             Data keyData = entry.getKey();
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
-            QueryEntry queryable = new QueryEntry(serializationService, keyData, value, empty);
+            QueryEntry queryable = new QueryEntry(serializationService, keyData, value, extractors);
             indexes.saveEntryIndex(queryable, null, Index.OperationSource.USER);
         }
     }

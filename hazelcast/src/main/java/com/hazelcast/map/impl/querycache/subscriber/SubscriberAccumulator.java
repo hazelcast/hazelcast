@@ -142,7 +142,8 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
                         currentSequence + 1L, sequence, queryCache.size()));
             }
 
-            publishEventLost(context, info.getMapName(), info.getCacheId(), event.getPartitionId());
+            publishEventLost(context, info.getMapName(), info.getCacheId(),
+                    event.getPartitionId(), queryCache.getExtractors());
         }
     }
 
