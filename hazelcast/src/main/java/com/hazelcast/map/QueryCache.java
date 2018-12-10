@@ -26,13 +26,15 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A concurrent, queryable data structure which is used to cache results of a continuous query executed
- * on an {@code IMap}. It can be also thought of as an always up to date view or snapshot of the {@code IMap}.
- * <p/>
+ * A concurrent, queryable data structure which is used to cache results of
+ * a continuous query executed on an {@code IMap}. It can be also thought
+ * of as an always up to date view or snapshot of the {@code IMap}.
+ *
  * Typically, {@code QueryCache} is used for performance reasons.
- * <p/>
- * This {@code QueryCache} can be configured via {@link com.hazelcast.config.QueryCacheConfig QueryCacheConfig}.
- * <p/>
+ *
+ * This {@code QueryCache} can be configured via {@link
+ * com.hazelcast.config.QueryCacheConfig QueryCacheConfig}.
+ *
  * It can be reached like this:
  * <pre>
  * <code>
@@ -44,34 +46,39 @@ import java.util.Set;
  * </code>
  * </pre>
  * <p/>
- * This cache is evictable. The eviction can be configured with {@link com.hazelcast.config.QueryCacheConfig#evictionConfig
- * evictionConfig}. Events caused by {@code IMap} eviction are not reflected to this cache. But the events published after
- * an explicit call to {@link com.hazelcast.core.IMap#evict} are reflected to this cache.
+ * This cache is evictable. The eviction can be configured with {@link
+ * com.hazelcast.config.QueryCacheConfig#setEvictionConfig}.
+ * Events caused by {@code IMap} eviction are not reflected to this cache.
+ * But the events published after an explicit call to {@link
+ * com.hazelcast.core.IMap#evict} are reflected to this cache.
  * <p/>
  * <b>GOTCHAS</b>
  * <ul>
  * <li>
- * This {@code QueryCache} implementation relies on the eventing system, if a listener is attached to this {@code QueryCache}
- * it may receive same event more than once in case of a system failure. Check out {@link QueryCache#tryRecover()}
+ * This {@code QueryCache} implementation relies on the eventing system, if
+ * a listener is attached to this {@code QueryCache} it may receive same
+ * event more than once in case of a system failure. Check out {@link
+ * QueryCache#tryRecover()}
  * </li>
  * <li>
- * All writes to this {@link QueryCache} is reflected to underlying {@code IMap} and that
- * write operation will eventually be reflected to this {@code QueryCache} after receiving the
- * event of that operation.
+ * All writes to this {@link QueryCache} is reflected to underlying {@code
+ * IMap} and that write operation will eventually be reflected to this
+ * {@code QueryCache} after receiving the event of that operation.
  * </li>
  * <li>
- * Currently, updates performed on the entries are reflected in the indexes in a
- * non-atomic way. Therefore, if there are indexes configured for the query
- * cache, their state may slightly lag behind the state of the entries.
- * Use map listeners if you need to observe the state when the entry store and
- * its indexes are consistent about the state of a particular entry, see
- * {@link IMap#addEntryListener(MapListener, boolean) addEntryListener} for more
- * details.
+ * Currently, updates performed on the entries are reflected in the indexes
+ * in a non-atomic way. Therefore, if there are indexes configured for the
+ * query cache, their state may slightly lag behind the state of the
+ * entries. Use map listeners if you need to observe the state when the
+ * entry store and its indexes are consistent about the state of a
+ * particular entry, see {@link IMap#addEntryListener(MapListener, boolean)
+ * addEntryListener} for more details.
  * </li>
  * <li>
- * There are some gotchas same with underlying {@link com.hazelcast.core.IMap IMap} implementation,
- * one should take care of them before using this {@code QueryCache}.
- * Please check gotchas section in {@link com.hazelcast.core.IMap IMap} class for them.
+ * There are some gotchas same with underlying {@link
+ * com.hazelcast.core.IMap IMap} implementation, one should take care of
+ * them before using this {@code QueryCache}. Please check gotchas section
+ * in {@link com.hazelcast.core.IMap IMap} class for them.
  * </li>
  * </ul>
  * <p/>

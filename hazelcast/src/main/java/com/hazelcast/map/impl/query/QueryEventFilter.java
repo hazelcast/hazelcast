@@ -28,7 +28,8 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Event filter which mathes map events on a specified entry key and matching a predefined {@link Predicate}.
+ * Event filter which matches map events on a specified entry key and
+ * matching a predefined {@link Predicate}.
  */
 public class QueryEventFilter extends EntryEventFilter {
 

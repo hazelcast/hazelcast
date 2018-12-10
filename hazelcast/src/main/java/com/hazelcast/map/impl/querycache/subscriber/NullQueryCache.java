@@ -21,6 +21,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.getters.Extractors;
 
 import java.util.Collection;
 import java.util.Map;
@@ -85,6 +86,11 @@ public final class NullQueryCache implements InternalQueryCache {
     @Override
     public boolean reachedMaxCapacity() {
         return false;
+    }
+
+    @Override
+    public Extractors getExtractors() {
+        return null;
     }
 
     @Override

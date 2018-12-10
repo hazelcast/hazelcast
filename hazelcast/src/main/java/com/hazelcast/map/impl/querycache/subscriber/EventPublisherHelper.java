@@ -31,6 +31,7 @@ import com.hazelcast.map.impl.querycache.event.LocalCacheWideEventData;
 import com.hazelcast.map.impl.querycache.event.LocalEntryEventData;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -52,8 +53,10 @@ public final class EventPublisherHelper {
      * @param oldRecord    the relevant {@code QueryCacheEntry}
      * @param context      the {@code QueryCacheContext}
      */
-    static void publishEntryEvent(QueryCacheContext context, String mapName, String cacheId, Data dataKey, Data dataNewValue,
-                                  QueryCacheRecord oldRecord, EntryEventType eventType) {
+    static void publishEntryEvent(QueryCacheContext context, String mapName,
+                                  String cacheId, Data dataKey, Data dataNewValue,
+                                  QueryCacheRecord oldRecord, EntryEventType eventType,
+                                  Extractors extractors) {
         if (!hasListener(context, mapName, cacheId)) {
             return;
         }
@@ -64,7 +67,7 @@ public final class EventPublisherHelper {
 
         LocalEntryEventData eventData = createLocalEntryEventData(cacheId, dataKey, dataNewValue, oldValue,
                 eventType.getType(), -1, context);
-        eventService.publish(mapName, cacheId, eventData, dataKey.hashCode());
+        eventService.publish(mapName, cacheId, eventData, dataKey.hashCode(), extractors);
     }
 
     public static boolean hasListener(QueryCache queryCache) {
@@ -83,7 +86,9 @@ public final class EventPublisherHelper {
      * As a result of map-wide events like {@link EntryEventType#CLEAR_ALL} or {@link EntryEventType#EVICT_ALL}
      * we also publish a matching event for query-cache listeners.
      */
-    static void publishCacheWideEvent(QueryCache queryCache, int numberOfEntriesAffected, EntryEventType eventType) {
+    static void publishCacheWideEvent(InternalQueryCache queryCache,
+                                      int numberOfEntriesAffected,
+                                      EntryEventType eventType) {
         if (!hasListener(queryCache)) {
             return;
         }
@@ -98,7 +103,7 @@ public final class EventPublisherHelper {
         LocalCacheWideEventData eventData
                 = new LocalCacheWideEventData(cacheId, eventType.getType(), numberOfEntriesAffected);
 
-        eventService.publish(mapName, cacheId, eventData, cacheId.hashCode());
+        eventService.publish(mapName, cacheId, eventData, cacheId.hashCode(), queryCache.getExtractors());
     }
 
     private static Object getOldValue(QueryCacheRecord oldRecord) {
@@ -117,13 +122,14 @@ public final class EventPublisherHelper {
         return subscriberContext.getEventService();
     }
 
-    public static void publishEventLost(QueryCacheContext context, String mapName, String cacheId, int partitionId) {
+    public static void publishEventLost(QueryCacheContext context, String mapName,
+                                        String cacheId, int partitionId, Extractors extractors) {
         QueryCacheEventService eventService = getQueryCacheEventService(context);
         int orderKey = cacheId.hashCode();
 
         eventService.publish(mapName, cacheId,
                 createLocalEntryEventData(cacheId, null, null, null,
-                        EventLostEvent.EVENT_TYPE, partitionId, context), orderKey);
+                        EventLostEvent.EVENT_TYPE, partitionId, context), orderKey, extractors);
     }
 
     public static IMapEvent createIMapEvent(EventData eventData, EventFilter filter, Member member,
