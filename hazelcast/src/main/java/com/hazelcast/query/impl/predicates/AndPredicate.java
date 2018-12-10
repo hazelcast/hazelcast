@@ -25,7 +25,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.AndResultSet;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -38,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf;
 
 /**
  * And Predicate
@@ -79,7 +79,7 @@ public final class AndPredicate
                 Set<QueryableEntry> currentResultSet = ((IndexAwarePredicate) predicate).filter(queryContext);
                 if (smallestResultSet == null) {
                     smallestResultSet = currentResultSet;
-                } else if (sizeOf(currentResultSet) < sizeOf(smallestResultSet)) {
+                } else if (estimatedSizeOf(currentResultSet) < estimatedSizeOf(smallestResultSet)) {
                     otherResultSets = initOrGetListOf(otherResultSets);
                     otherResultSets.add(smallestResultSet);
                     smallestResultSet = currentResultSet;
@@ -108,16 +108,6 @@ public final class AndPredicate
             list = new LinkedList<T>();
         }
         return list;
-    }
-
-    private static int sizeOf(Set<QueryableEntry> result) {
-        // In case of AndResultSet and OrResultSet calling size() may be very expensive so quicker estimatedSize() is used
-        if (result instanceof AndResultSet) {
-            return ((AndResultSet) result).estimatedSize();
-        } else if (result instanceof OrResultSet) {
-            return ((OrResultSet) result).estimatedSize();
-        }
-        return result.size();
     }
 
     @Override

@@ -155,7 +155,8 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     }
 
     /**
-     * @return returns estimated size without calculating the full result set in full-result scan.
+     * @return returns estimated size without calculating the full
+     * result set in full-result scan.
      */
     public int estimatedSize() {
         if (cachedSize == SIZE_UNINITIALIZED) {
