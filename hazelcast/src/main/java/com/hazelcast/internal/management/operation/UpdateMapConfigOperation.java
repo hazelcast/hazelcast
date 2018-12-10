@@ -54,8 +54,6 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         newConfig.setEvictionPercentage(mapConfig.getEvictionPercentage());
         newConfig.setMinEvictionCheckMillis(mapConfig.getMinEvictionCheckMillis());
         newConfig.setReadBackupData(mapConfig.isReadBackupData());
-        newConfig.setBackupCount(mapConfig.getBackupCount());
-        newConfig.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
         newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
         MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
         mapContainer.setMapConfig(newConfig.getAsReadOnly());
