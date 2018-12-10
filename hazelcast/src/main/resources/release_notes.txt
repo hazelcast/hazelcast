@@ -4,6 +4,8 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 1. Fixes
 
+* Fixed an issue where the client's Near Cache on Replicated Map with `Binary` storage was causing an exception on the member. [#14210]
+* Fixed an issue where the performance of `DefaultQueryCache` was degraded because of the flow in case of the index-aware queries. [#14177]
 * When the client (having a Reliable Topic) reconnects to the cluster, the `MessageListener` added to the client was no longer receiving messages, unlike the `MapListener`. This has been fixed by making the Reliable Topic structure to continue from the last known sequence ID, in case of an `HazelcastClientOfflineException`. [#14123]
 * Fixed an issue where the members and clients were not disconnecting the connection as soon as a heartbeat timeout is detected. The member side heartbeat monitor was still checking if the connection is the owner connection. This activity has also been removed. [#14094]
 * Fixed an issue where the `mapEvictionPolicy` configuration became null, when the JSON file is used to start a Hazelcast instance on the PCF environment. [#14086]
