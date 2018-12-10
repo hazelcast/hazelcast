@@ -23,7 +23,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 
 final class CollectionCycleImpl implements CollectionCycle {
     private final ProbeLevel probeLevel;
-    private MetricsRegistryImpl metricsRegistry;
+    private final MetricsRegistryImpl metricsRegistry;
     private final MetricsCollector collector;
 
     private final TagsImpl tags = new TagsImpl();
