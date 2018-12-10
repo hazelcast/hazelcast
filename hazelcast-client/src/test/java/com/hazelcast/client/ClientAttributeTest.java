@@ -57,6 +57,7 @@ public class ClientAttributeTest {
 
         clientConfig.setAttribute(key, value);
         assertEquals(value, clientConfig.getAttributes().get(key));
+        assertEquals(1, clientConfig.getAttributes().size());
         assertNull(clientConfig.getAttributes().get(nonExistingKey));
     }
 
