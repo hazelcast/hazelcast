@@ -407,7 +407,7 @@ public abstract class HazelcastTestSupport {
 
     public static void sleepSeconds(int seconds) {
         try {
-            TimeUnit.SECONDS.sleep(seconds);
+            SECONDS.sleep(seconds);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -984,7 +984,7 @@ public abstract class HazelcastTestSupport {
 
     public static void assertJoinable(long timeoutSeconds, Thread... threads) {
         try {
-            long remainingTimeout = TimeUnit.SECONDS.toMillis(timeoutSeconds);
+            long remainingTimeout = SECONDS.toMillis(timeoutSeconds);
             for (Thread thread : threads) {
                 long start = System.currentTimeMillis();
                 thread.join(remainingTimeout);
@@ -1185,7 +1185,7 @@ public abstract class HazelcastTestSupport {
 
     public static void assertOpenEventually(String message, Latch latch, long timeoutSeconds) {
         try {
-            boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
+            boolean completed = latch.await(timeoutSeconds, SECONDS);
             if (message == null) {
                 assertTrue(format("CountDownLatch failed to complete within %d seconds, count left: %d", timeoutSeconds,
                         latch.getCount()), completed);
@@ -1329,6 +1329,82 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(message, task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
+    public static void assertCompletesEventually(String message, ProgressCheckerTask task) {
+        assertCompletesEventually(message, task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertCompletesEventually(ProgressCheckerTask task, long stallToleranceSeconds) {
+        assertCompletesEventually(null, task, stallToleranceSeconds);
+    }
+
+    public static void assertCompletesEventually(ProgressCheckerTask task) {
+        assertCompletesEventually(null, task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    /**
+     * Asserts whether the provided task eventually reports completion.
+     * This form of eventual completion check has no strict time bounds.
+     * Instead, it lets the checked test to continue as long as there is
+     * progress observed within the provided stall tolerance time bound.
+     * <p/>
+     * This check may be useful for tests that can provide progress
+     * information to prevent unnecessary failures due to unexpectedly
+     * slow progress.
+     *
+     * @param task                  The task that checking the progress
+     *                              of some operation
+     * @param stallToleranceSeconds The time in seconds that we tolerate
+     *                              without progressing
+     */
+    public static void assertCompletesEventually(String message, ProgressCheckerTask task, long stallToleranceSeconds) {
+        long taskStartTimestamp = System.currentTimeMillis();
+        // we are going to check five times a second
+        int sleepMillis = 200;
+        List<TaskProgress> progresses = new LinkedList<TaskProgress>();
+        long lastProgressTimestamp = System.currentTimeMillis();
+        float lastProgress = 0;
+
+        while (true) {
+            try {
+                TaskProgress progress = task.checkProgress();
+                if (progress.isCompleted()) {
+                    return;
+                }
+                long lastProgressTimestampCompare = lastProgressTimestamp;
+                boolean toleranceExceeded = progress.timestamp() > lastProgressTimestampCompare
+                        + SECONDS.toMillis(stallToleranceSeconds);
+
+                // we store current progress if the task advanced or the tolerance exceeded
+                if (progress.progress() > lastProgress || toleranceExceeded) {
+                    progresses.add(progress);
+                    lastProgressTimestamp = progress.timestamp();
+                    lastProgress = progress.progress();
+                }
+
+                // if the task exceeded stall tolerance, we fail and log the history of the progress changes
+                if (toleranceExceeded) {
+                    StringBuilder sb = new StringBuilder("Stall tolerance " + stallToleranceSeconds + " seconds has been "
+                            + "exceeded without completing the task. Track of progress:\n");
+                    for (TaskProgress historicProgress : progresses) {
+                        long elapsedMillis = historicProgress.timestamp() - taskStartTimestamp;
+                        String elapsedMillisPadded = String.format("%1$5s", elapsedMillis);
+                        sb.append("\t")
+                          .append(elapsedMillisPadded).append("ms: ")
+                          .append(progress.getProgressString())
+                          .append("\n");
+                    }
+                    LOGGER.severe(sb.toString());
+                    fail("Stall tolerance " + stallToleranceSeconds
+                            + " seconds has been exceeded without completing the task. " + message);
+                }
+
+                sleepMillis(sleepMillis);
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+        }
+    }
+
     public static void assertTrueEventually(AssertTask task) {
         assertTrueEventually(null, task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
@@ -1381,7 +1457,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertExactlyOneSuccessfulRun(AssertTask task) {
-        assertExactlyOneSuccessfulRun(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+        assertExactlyOneSuccessfulRun(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
     }
 
     public static void assertExactlyOneSuccessfulRun(AssertTask task, int giveUpTime, TimeUnit timeUnit) {
