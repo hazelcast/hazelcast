@@ -52,11 +52,11 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
     public void setup() throws Exception {
         Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        Collection<AddressProvider> list = Collections.<AddressProvider>singletonList(new TestAddressProvider());
+        TestAddressProvider testAddressProvider = new TestAddressProvider();
 
         TestAddressTranslator translator = new TestAddressTranslator();
         clientConnectionManager =
-                new ClientConnectionManagerImpl(getHazelcastClientInstanceImpl(client), translator, list);
+                new ClientConnectionManagerImpl(getHazelcastClientInstanceImpl(client), translator, testAddressProvider);
         clientConnectionManager.start(new ClientContext(getHazelcastClientInstanceImpl(client)));
         clientConnectionManager.connectToCluster();
 

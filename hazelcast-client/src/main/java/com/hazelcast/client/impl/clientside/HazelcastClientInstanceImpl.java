@@ -166,7 +166,6 @@ import com.hazelcast.util.ServiceLoader;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -250,10 +249,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
         discoveryService = initDiscoveryService(config);
-        Collection<AddressProvider> addressProviders = createAddressProviders(externalAddressProvider);
+        AddressProvider addressProvider = createAddressProvider(externalAddressProvider);
         AddressTranslator addressTranslator = createAddressTranslator();
         connectionManager = (ClientConnectionManagerImpl) clientConnectionManagerFactory
-                .createConnectionManager(this, addressTranslator, addressProviders);
+                .createConnectionManager(this, addressTranslator, addressProvider);
         clusterService = new ClientClusterServiceImpl(this);
 
 
@@ -298,26 +297,24 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return metricsRegistry;
     }
 
-    private Collection<AddressProvider> createAddressProviders(AddressProvider externalAddressProvider) {
+    private AddressProvider createAddressProvider(AddressProvider externalAddressProvider) {
         ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
-        Collection<AddressProvider> addressProviders = new LinkedList<AddressProvider>();
 
         if (externalAddressProvider != null) {
-            addressProviders.add(externalAddressProvider);
+            return externalAddressProvider;
         }
 
         if (discoveryService != null) {
-            addressProviders.add(new DiscoveryAddressProvider(discoveryService, loggingService));
+            return new DiscoveryAddressProvider(discoveryService, loggingService);
         }
 
         ClientCloudConfig cloudConfig = networkConfig.getCloudConfig();
         HazelcastCloudAddressProvider cloudAddressProvider = initCloudAddressProvider(cloudConfig);
         if (cloudAddressProvider != null) {
-            addressProviders.add(cloudAddressProvider);
+            return cloudAddressProvider;
         }
 
-        addressProviders.add(new DefaultAddressProvider(networkConfig, addressProviders.isEmpty()));
-        return addressProviders;
+        return new DefaultAddressProvider(networkConfig);
     }
 
     private HazelcastCloudAddressProvider initCloudAddressProvider(ClientCloudConfig cloudConfig) {

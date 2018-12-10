@@ -119,7 +119,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private volatile Credentials lastCredentials;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
-                                       Collection<AddressProvider> addressProviders) {
+                                       AddressProvider addressProvider) {
         allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
         this.client = client;
 
@@ -146,7 +146,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.heartbeat = new HeartbeatManager(this, client);
         this.authenticationTimeout = heartbeat.getHeartbeatTimeout();
 
-        this.clusterConnector = new ClusterConnector(client, this, connectionStrategy, addressProviders);
+        this.clusterConnector = new ClusterConnector(client, this, connectionStrategy, addressProvider);
     }
 
     private Collection<Integer> getOutboundPorts(ClientNetworkConfig networkConfig) {

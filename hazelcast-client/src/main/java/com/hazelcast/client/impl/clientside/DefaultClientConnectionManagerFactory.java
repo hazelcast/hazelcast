@@ -21,8 +21,6 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 
-import java.util.Collection;
-
 public class DefaultClientConnectionManagerFactory implements ClientConnectionManagerFactory {
 
     public DefaultClientConnectionManagerFactory() {
@@ -31,9 +29,9 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
     @Override
     public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client,
                                                            AddressTranslator addressTranslator,
-                                                           Collection<AddressProvider> addressProviders) {
+                                                           AddressProvider addressProvider) {
 
 
-        return new ClientConnectionManagerImpl(client, addressTranslator, addressProviders);
+        return new ClientConnectionManagerImpl(client, addressTranslator, addressProvider);
     }
 }

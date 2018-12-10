@@ -20,11 +20,9 @@ import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 
-import java.util.Collection;
-
 public interface ClientConnectionManagerFactory {
 
     ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client,
                                                     AddressTranslator addressTranslator,
-                                                    Collection<AddressProvider> addressProviders);
+                                                    AddressProvider addressProvider);
 }
