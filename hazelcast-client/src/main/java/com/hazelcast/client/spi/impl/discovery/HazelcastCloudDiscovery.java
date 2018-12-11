@@ -20,7 +20,6 @@ import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.AddressUtil;
 
@@ -75,7 +74,7 @@ public class HazelcastCloudDiscovery {
 
     private Map<Address, Address> callService() throws IOException, CertificateException {
         URL url = new URL(endpointUrl);
-        HttpsURLConnection httpsConnection = (HttpsURLConnection) url.openConnection();
+        HttpURLConnection httpsConnection = (HttpURLConnection) url.openConnection();
         httpsConnection.setRequestMethod("GET");
         httpsConnection.setConnectTimeout(connectionTimeoutInMillis);
         httpsConnection.setReadTimeout(connectionTimeoutInMillis);
@@ -86,7 +85,11 @@ public class HazelcastCloudDiscovery {
         return parseResponse(httpsConnection.getInputStream());
     }
 
-    private void checkCertificate(HttpsURLConnection con) throws IOException, CertificateException {
+    private void checkCertificate(HttpURLConnection connection) throws IOException, CertificateException {
+        if (!(connection instanceof HttpsURLConnection)) {
+            return;
+        }
+        HttpsURLConnection con = (HttpsURLConnection) connection;
         for (Certificate cert : con.getServerCertificates()) {
             if (cert instanceof X509Certificate) {
                 ((X509Certificate) cert).checkValidity();
@@ -148,8 +151,7 @@ public class HazelcastCloudDiscovery {
         return scanner.hasNext() ? scanner.next() : "";
     }
 
-    public static String createUrlEndpoint(HazelcastProperties hazelcastProperties, String cloudToken) {
-        String cloudBaseUrl = hazelcastProperties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
+    public static String createUrlEndpoint(String cloudBaseUrl, String cloudToken) {
         return cloudBaseUrl + CLOUD_URL_PATH + cloudToken;
     }
 
