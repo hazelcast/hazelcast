@@ -58,7 +58,7 @@ public class BinaryCompatibilityNullFileGenerator {
         DataOutputStream outputStream = new DataOutputStream(out);
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(   aString ,   aString ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(   aString ,   aString ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString ,   aString ,   aListOfStringToString   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -70,7 +70,7 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(   aData ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(   aData ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString ,   aString ,   aListOfStringToString   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }

@@ -70,10 +70,10 @@ public class ClientCompatibilityTest_1_0 {
             DataInputStream inputStream = new DataInputStream(input);
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.0) which is earlier than latest change in the message
-    // (version 1.3), only the bytes after frame length fields are compared
+    // (version 1.8), only the bytes after frame length fields are compared
     int frameLength = clientMessage.getFrameLength();
     assertTrue(frameLength >= length);
     inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
@@ -98,10 +98,10 @@ public class ClientCompatibilityTest_1_0 {
 
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.0) which is earlier than latest change in the message
-    // (version 1.3), only the bytes after frame length fields are compared
+    // (version 1.8), only the bytes after frame length fields are compared
     int frameLength = clientMessage.getFrameLength();
     assertTrue(frameLength >= length);
     inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
