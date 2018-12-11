@@ -21,14 +21,14 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
+import com.hazelcast.nio.serialization.SerializableByConvention;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import com.hazelcast.nio.serialization.SerializableByConvention;
 
 /**
  * Represents a JSON array, an ordered collection of JSON values.

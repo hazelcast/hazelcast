@@ -26,6 +26,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IBiFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.json.HazelcastJson;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.AssertTask;
@@ -1290,6 +1293,17 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.setTtl("tempKey", -1, TimeUnit.SECONDS);
         sleepAtLeastMillis(1000);
         assertNull(map.get("tempKey"));
+    }
+
+    @Test
+    public void testJsonPutGet() {
+        final IMap<String, HazelcastJsonValue> map = getInstance().getMap(randomMapName());
+        HazelcastJsonValue value = HazelcastJson.fromString("{ \"age\": 4 }");
+        map.put("item1", value);
+        HazelcastJsonValue retrieved = map.get("item1");
+
+        assertEquals(value, retrieved);
+        assertEquals(4, Json.parse(retrieved.toString()).asObject().get("age").asInt());
     }
 
     @Test
